@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<title>VirtualDeck — Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: 'Inter', system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="../design-canvas.jsx"></script>
+<script type="text/babel" src="artboards/_shared.jsx"></script>
+<script type="text/babel" src="artboards/DesignNotes.jsx"></script>
+<script type="text/babel" src="artboards/MainA.jsx"></script>
+<script type="text/babel" src="artboards/MainB.jsx"></script>
+<script type="text/babel" src="artboards/FullscreenA.jsx"></script>
+<script type="text/babel" src="artboards/FullscreenB.jsx"></script>
+<script type="text/babel" src="artboards/EditorA.jsx"></script>
+<script type="text/babel" src="artboards/EditorB.jsx"></script>
+<script type="text/babel" src="artboards/WallpaperA.jsx"></script>
+<script type="text/babel" src="artboards/WallpaperB.jsx"></script>
+<script type="text/babel" src="artboards/MonitorA.jsx"></script>
+<script type="text/babel" src="artboards/MonitorB.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+// Tweaks defaults — persist via editmode markers
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "accent": "#a855f7",
+  "dotDensity": 1,
+  "showMetrics": true,
+  "gridHint": "5x3"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+  const [tw, setTw] = React.useState(TWEAKS);
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent?.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const patch = (k, v) => {
+    const next = { ...tw, [k]: v };
+    setTw(next);
+    window.parent?.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+    document.documentElement.style.setProperty('--vd-accent', next.accent);
+  };
+
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--vd-accent', tw.accent);
+  }, []);
+
+  return (
+    <>
+      <DesignCanvas>
+        {/* Section 0 — design notes section header area acts as top info */}
+        <DCSection id="intro" title="Sistema · VirtualDeck"
+          subtitle="Dark mode · tipografía de puntos · glass sobre wallpaper · acento configurable">
+          <DCArtboard id="memo" label="Memo" width={1000} height={180}>
+            <div style={{ width: '100%', height: '100%', background: '#181818', color: '#e6e6e6',
+              padding: '24px 32px', fontFamily: '"JetBrains Mono", monospace', fontSize: 12, lineHeight: 1.7, boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: '"DotGothic16", monospace', fontSize: 22, letterSpacing: 2, marginBottom: 12, color: '#fff' }}>
+                VIRTUALDECK · WIREFRAMES MID-FI
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, color: '#a8a8a8' }}>
+                <div>
+                  <div style={{ color: tw.accent, marginBottom: 4 }}>// SISTEMA</div>
+                  Dark puro · neutros sin tinte<br/>
+                  Bg <span style={{color:'#fff'}}>#0a0a0d</span> · Surface <span style={{color:'#fff'}}>#14141a</span><br/>
+                  Acento configurable (ver Tweaks)<br/>
+                  Dots display via 5×7 matrix + DotGothic16
+                </div>
+                <div>
+                  <div style={{ color: tw.accent, marginBottom: 4 }}>// ALCANCE</div>
+                  5 pantallas × 2 variantes cada una<br/>
+                  Main · Fullscreen · Editor · Wallpaper · Monitor<br/>
+                  Title bar integrado · sin chrome en kiosco<br/>
+                  Glass sobre wallpaper
+                </div>
+                <div>
+                  <div style={{ color: tw.accent, marginBottom: 4 }}>// CÓMO LEER</div>
+                  Click en cualquier tarjeta para verla grande<br/>
+                  Arrastra el grip para reordenar<br/>
+                  Toggle Tweaks (arriba) para ajustar acento<br/>
+                  ESC / ← → en vista focus
+                </div>
+              </div>
+            </div>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="main" title="01 · Vista principal"
+          subtitle="Grid de botones — la pantalla donde vive la app la mayor parte del tiempo">
+          <DCArtboard id="A" label="A · Clásico 5×3 + sidebar páginas" width={1200} height={760}>
+            <MainA />
+          </DCArtboard>
+          <DCArtboard id="B" label="B · Grid modular + panel métricas" width={1200} height={760}>
+            <MainB />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="fullscreen" title="02 · Modo pantalla completa (kiosco)"
+          subtitle="Sin barras de ventana · para pantalla táctil dedicada">
+          <DCArtboard id="A" label="A · Reloj gigante centrado + grid" width={1200} height={760}>
+            <FullscreenA />
+          </DCArtboard>
+          <DCArtboard id="B" label="B · Dashboard Nothing-style con widgets" width={1200} height={760}>
+            <FullscreenB />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="editor" title="03 · Editor de botón"
+          subtitle="Configurar acción, icono, color y comportamiento">
+          <DCArtboard id="A" label="A · Panel lateral con preview" width={1200} height={760}>
+            <EditorA />
+          </DCArtboard>
+          <DCArtboard id="B" label="B · Modal wizard en pasos" width={1200} height={760}>
+            <EditorB />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="wallpaper" title="04 · Selector de fondo"
+          subtitle="Gradientes · imágenes · live wallpapers">
+          <DCArtboard id="A" label="A · Galería con sidebar de categorías" width={1200} height={760}>
+            <WallpaperA />
+          </DCArtboard>
+          <DCArtboard id="B" label="B · Preview fullscreen + tray carousel" width={1200} height={760}>
+            <WallpaperB />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="monitor" title="05 · Monitor de sistema"
+          subtitle="Drawer inferior embebido en la app">
+          <DCArtboard id="A" label="A · Cards horizontales con números dot" width={1200} height={340}>
+            <MonitorA />
+          </DCArtboard>
+          <DCArtboard id="B" label="B · Osciloscopio + tabla procesos" width={1200} height={340}>
+            <MonitorB />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      {/* Tweaks panel */}
+      {tweaksOpen && (
+        <div style={{
+          position: 'fixed', right: 20, bottom: 20, width: 300,
+          background: '#181818', color: '#e6e6e6',
+          border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2,
+          padding: 18, fontFamily: '"JetBrains Mono", monospace', fontSize: 11,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.4)', zIndex: 1000,
+        }}>
+          <div style={{ fontFamily: '"DotGothic16", monospace', fontSize: 18, letterSpacing: 2, marginBottom: 14, color: '#fff' }}>
+            TWEAKS
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ color: '#8a8a93', marginBottom: 6, letterSpacing: 1 }}>ACCENT COLOR</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {['#ff3d3d','#ffb800','#00ff88','#00d4ff','#a855f7','#ff3d8f'].map(c => (
+                <div key={c} onClick={() => patch('accent', c)}
+                  style={{ width: 28, height: 28, borderRadius: 14, background: c, cursor: 'pointer',
+                    boxShadow: tw.accent === c ? '0 0 0 2px #181818, 0 0 0 3px #fff' : 'none' }}/>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ color: '#8a8a93', marginBottom: 6, letterSpacing: 1 }}>DOT DENSITY · {tw.dotDensity}×</div>
+            <input type="range" min="0" max="3" step="0.5" value={tw.dotDensity}
+              onChange={(e) => patch('dotDensity', parseFloat(e.target.value))}
+              style={{ width: '100%' }}/>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ color: '#8a8a93', marginBottom: 6, letterSpacing: 1 }}>GRID HINT</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {['3x3','4x3','5x3','6x4'].map(g => (
+                <div key={g} onClick={() => patch('gridHint', g)}
+                  style={{ padding: '6px 10px', border: `1px solid ${tw.gridHint === g ? '#fff' : 'rgba(255,255,255,0.1)'}`,
+                    color: tw.gridHint === g ? '#fff' : '#8a8a93', cursor: 'pointer', letterSpacing: 1 }}>
+                  {g}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input type="checkbox" checked={tw.showMetrics}
+                onChange={(e) => patch('showMetrics', e.target.checked)}/>
+              <span style={{ color: '#e6e6e6', letterSpacing: 1 }}>SHOW METRICS BAR</span>
+            </label>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
