@@ -1,0 +1,65 @@
+/* VirtualDeck icon system — animations & base classes */
+
+:root {
+  --vd-stroke: #dcdcdc; /* sync with VD.text */
+  --vd-danger: #d95f5f; /* sync with VD.danger */
+  /* --vd-accent is set dynamically by App.tsx */
+}
+
+.vd-icon {
+  stroke: var(--vd-stroke);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+  display: block;
+  flex-shrink: 0;
+}
+
+.vd-icon .fill-stroke { fill: var(--vd-stroke); stroke: none; }
+.vd-icon .fill-muted  { fill: var(--vd-stroke); stroke: none; opacity: 0.5; }
+.vd-icon .fill-accent { fill: var(--vd-accent); stroke: none; }
+.vd-icon .accent      { stroke: var(--vd-accent); }
+.vd-icon .danger      { stroke: var(--vd-danger); }
+.vd-icon .dashed      { stroke-dasharray: 2 2.2; }
+
+/* ─── Keyframes ─── */
+@keyframes vd-spin     { to { transform: rotate(360deg); } }
+@keyframes vd-dash     { to { stroke-dashoffset: -12; } }
+@keyframes vd-pulse    { 0%,100%{opacity:.3} 50%{opacity:1} }
+@keyframes vd-blink    { 0%,60%{opacity:1} 70%,100%{opacity:0} }
+@keyframes vd-wave1    { 0%,100%{opacity:.25} 50%{opacity:1} }
+@keyframes vd-wave2    { 0%,100%{opacity:1} 50%{opacity:.25} }
+@keyframes vd-bell     { 0%,92%,100%{transform:rotate(0)} 94%{transform:rotate(-8deg)} 96%{transform:rotate(8deg)} 98%{transform:rotate(-4deg)} }
+@keyframes vd-bolt     { 0%,70%,100%{opacity:.3} 80%{opacity:1} }
+@keyframes vd-rain     { 0%{transform:translateY(-3px);opacity:0} 30%{opacity:1} 100%{transform:translateY(4px);opacity:0} }
+@keyframes vd-snow     { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+@keyframes vd-arrow-up { 0%{transform:translateY(1px);opacity:.4} 50%{opacity:1} 100%{transform:translateY(-2px);opacity:.4} }
+@keyframes vd-arrow-dn { 0%{transform:translateY(-2px);opacity:.4} 50%{opacity:1} 100%{transform:translateY(1px);opacity:.4} }
+@keyframes vd-cursor   { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+@keyframes vd-toggle   { 0%{transform:translateX(0)} 100%{transform:translateX(8px)} }
+@keyframes vd-gear     { to { transform: rotate(360deg); } }
+@keyframes vd-flash    { 0%,85%,100%{opacity:1} 90%{opacity:0} }
+@keyframes vd-drift    { 0%,100%{transform:translateX(0)} 50%{transform:translateX(1.5px)} }
+
+/* ─── Animation triggers — activate on hover of .vd-btn parent ─── */
+.vd-btn:hover .anim-spin     { animation: vd-spin 4s linear infinite; transform-origin: center; }
+.vd-btn:hover .anim-dash     { animation: vd-dash 2s linear infinite; }
+.vd-btn:hover .anim-pulse    { animation: vd-pulse 1.6s ease-in-out infinite; }
+.vd-btn:hover .anim-blink    { animation: vd-blink 1.6s ease-in-out infinite; }
+.vd-btn:hover .anim-wave1    { animation: vd-wave1 1.6s ease-in-out infinite; }
+.vd-btn:hover .anim-wave2    { animation: vd-wave2 1.6s ease-in-out infinite; }
+.vd-btn:hover .anim-bell     { animation: vd-bell 3s ease-in-out infinite; transform-origin: 12px 6px; }
+.vd-btn:hover .anim-bolt     { animation: vd-bolt 1.6s ease-in-out infinite; }
+.vd-btn:hover .anim-rain     { animation: vd-rain 1.2s linear infinite; }
+.vd-btn:hover .anim-rain-2   { animation: vd-rain 1.2s linear infinite; animation-delay: .4s; }
+.vd-btn:hover .anim-rain-3   { animation: vd-rain 1.2s linear infinite; animation-delay: .8s; }
+.vd-btn:hover .anim-snow     { animation: vd-snow 6s linear infinite; transform-origin: center; }
+.vd-btn:hover .anim-arrow-up { animation: vd-arrow-up 1.4s ease-in-out infinite; }
+.vd-btn:hover .anim-arrow-dn { animation: vd-arrow-dn 1.4s ease-in-out infinite; }
+.vd-btn:hover .anim-cursor   { animation: vd-cursor 1s step-end infinite; }
+.vd-btn:hover .anim-toggle   { animation: vd-toggle .4s ease forwards; }
+.vd-btn:hover .anim-gear     { animation: vd-gear 6s linear infinite; transform-origin: 12px 12px; }
+.vd-btn:hover .anim-flash    { animation: vd-flash 2.4s ease-in-out infinite; }
+.vd-btn:hover .anim-drift    { animation: vd-drift 3s ease-in-out infinite; }

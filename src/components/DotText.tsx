@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react';
-import { GLYPHS_5x7 } from '../design';
+import { GLYPHS_5x7, VD } from '../design';
 
 interface DotTextProps {
   text: string | number;
@@ -10,7 +10,7 @@ interface DotTextProps {
   style?: CSSProperties;
 }
 
-export function DotText({ text, dotSize = 6, gap = 2, color = '#fff', density = 1, style = {} }: DotTextProps) {
+export function DotText({ text, dotSize = 6, gap = 2, color = VD.text, density = 1, style = {} }: DotTextProps) {
   const chars = String(text).toUpperCase().split('');
   return (
     <div style={{ display: 'inline-flex', gap: dotSize + gap * 2, alignItems: 'center', ...style }}>
