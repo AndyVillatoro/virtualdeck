@@ -1,105 +1,446 @@
-import React from 'react';
-import { VD } from '../design';
+import React, { useEffect, useRef, useState } from 'react';
+import { VD, ACCENT_PRESETS } from '../design';
+import { SOUND_PROFILES, playSound } from '../utils/sound';
+import type { Profile, RGBSettings, RGBStatus, SoundProfileId } from '../types';
 
 interface TitleBarProps {
   showControls?: boolean;
   pageName?: string;
   accent?: string;
+  autostart?: boolean;
+  soundOnPress?: boolean;
+  soundProfile?: SoundProfileId;
+  profiles?: Profile[];
   onFullscreen?: () => void;
   onWallpaper?: () => void;
+  onRGB?: () => void;
+  onConfigExport?: () => void;
+  onConfigImport?: () => void;
+  onConfigImportFromUrl?: (url: string) => void;
+  onAccentChange?: (color: string) => void;
+  onAutostartToggle?: () => void;
+  onSoundToggle?: () => void;
+  onSoundProfileChange?: (id: SoundProfileId) => void;
+  onSaveProfile?: (name: string) => void;
+  onLoadProfile?: (id: string) => void;
+  onDeleteProfile?: (id: string) => void;
+  // RGB integration
+  rgbStatus?: RGBStatus | null;
+  rgbConfig?: RGBSettings;
+  onRGBConfigChange?: (next: RGBSettings) => void;
 }
 
 export function TitleBar({
   showControls = true,
-  pageName = 'MAIN',
-  accent = 'var(--vd-accent)',
+  pageName = '',
+  accent = VD.accent,
+  autostart = false,
+  soundOnPress = true,
+  soundProfile = 'click',
+  profiles = [],
   onFullscreen,
   onWallpaper,
+  onRGB,
+  onConfigExport,
+  onConfigImport,
+  onConfigImportFromUrl,
+  onAccentChange,
+  onAutostartToggle,
+  onSoundToggle,
+  onSoundProfileChange,
+  onSaveProfile,
+  onLoadProfile,
+  onDeleteProfile,
+  rgbStatus,
+  rgbConfig,
+  onRGBConfigChange,
 }: TitleBarProps) {
+  const [showSettings, setShowSettings] = useState(false);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [galleryUrl, setGalleryUrl] = useState('');
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showSettings) return;
+    const close = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showSettings]);
+
   return (
-    <div
-      style={{
-        height: 36,
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 14px',
-        gap: 10,
-        borderBottom: `1px solid ${VD.border}`,
-        fontFamily: VD.mono,
-        fontSize: 11,
-        color: VD.textDim,
-        flexShrink: 0,
-        background: 'rgba(10,10,13,0.6)',
-        backdropFilter: 'blur(20px)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent }} />
-        <span style={{ color: VD.text, letterSpacing: 2, fontSize: 10 }}>VIRTUALDECK</span>
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <div
+        style={{
+          height: 36, display: 'flex', alignItems: 'center',
+          padding: '0 14px', gap: 10,
+          borderBottom: `1px solid ${VD.border}`,
+          fontFamily: VD.mono, fontSize: 11, color: VD.textDim,
+          background: VD.surface,
+          WebkitAppRegion: 'drag',
+        } as React.CSSProperties}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent }} />
+          <span style={{ color: VD.text, letterSpacing: 2, fontSize: 10 }}>VIRTUALDECK</span>
+        </div>
+        {pageName && (
+          <>
+            <div style={{ width: 1, height: 14, background: VD.border }} />
+            <span style={{ fontSize: 10, letterSpacing: 1, color: VD.textMuted }}>{pageName}</span>
+          </>
+        )}
+        <div style={{ flex: 1 }} />
+
+        {showControls && (
+          <div style={{ display: 'flex', gap: 4, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+            {onConfigExport && (
+              <button onClick={onConfigExport} style={btnStyle} title="Exportar configuración">↗ EXP</button>
+            )}
+            {onConfigImport && (
+              <button onClick={onConfigImport} style={btnStyle} title="Importar configuración">↙ IMP</button>
+            )}
+            {onWallpaper && (
+              <button onClick={onWallpaper} style={btnStyle}>FONDO</button>
+            )}
+            {onRGB && (
+              <button onClick={onRGB} title="Gestor RGB" style={{ ...btnStyle, borderColor: rgbStatus?.connected ? VD.success : VD.border }}>
+                <span style={{ marginRight: 4, color: rgbStatus?.connected ? VD.success : VD.textMuted }}>●</span>RGB
+              </button>
+            )}
+            <button
+              onClick={() => setShowSettings(v => !v)}
+              title="Configuración"
+              style={{ ...iconBtnStyle, color: showSettings ? accent : VD.textDim }}
+            >
+              ⚙
+            </button>
+            {onFullscreen && (
+              <button onClick={onFullscreen} title="Modo pantalla completa" style={iconBtnStyle}>⤢</button>
+            )}
+            <button onClick={() => window.electronAPI?.window.minimize()} title="Minimizar" style={iconBtnStyle}>—</button>
+            <button onClick={() => window.electronAPI?.window.close()} title="Cerrar (minimiza a bandeja)" style={{ ...iconBtnStyle, color: VD.danger }}>×</button>
+          </div>
+        )}
       </div>
-      <div style={{ width: 1, height: 14, background: VD.border }} />
-      {pageName && <span style={{ fontSize: 10, letterSpacing: 1 }}>{pageName}</span>}
-      <div style={{ flex: 1 }} />
-      {showControls && (
-        <div style={{ display: 'flex', gap: 4 }}>
-          {onWallpaper && (
-            <button
-              onClick={onWallpaper}
-              style={{
-                height: 22,
-                padding: '0 8px',
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: 9,
-                letterSpacing: 1,
-                color: VD.textDim,
-                background: 'transparent',
-                border: `1px solid ${VD.border}`,
-                borderRadius: 2,
-              }}
-            >
-              WALLPAPER
-            </button>
-          )}
-          {onFullscreen && (
-            <button
-              onClick={onFullscreen}
-              style={{
-                width: 22,
-                height: 22,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 14,
-                color: VD.textDim,
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 2,
-              }}
-              title="Enter kiosk mode"
-            >
-              ⤢
-            </button>
-          )}
-          {['—', '×'].map((g, i) => (
-            <div
-              key={i}
-              style={{
-                width: 22,
-                height: 22,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 11,
-                color: VD.textMuted,
-                borderRadius: 2,
-              }}
-            >
-              {g}
+
+      {/* Settings flyout */}
+      {showSettings && (
+        <div
+          ref={panelRef}
+          style={{
+            position: 'absolute', top: '100%', right: 0, zIndex: 200,
+            background: VD.surface, border: `1px solid ${VD.borderStrong}`,
+            borderRadius: `0 0 ${VD.radius.lg}px ${VD.radius.lg}px`, padding: 16, width: 260,
+            boxShadow: VD.shadow.menu,
+            display: 'flex', flexDirection: 'column', gap: 14,
+          }}
+        >
+          {/* Accent color */}
+          <div>
+            <SettingLabel>COLOR DE ACENTO</SettingLabel>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              <input
+                type="color"
+                value={accent}
+                onChange={(e) => onAccentChange?.(e.target.value)}
+                style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, cursor: 'pointer', padding: 2, background: 'none', borderRadius: VD.radius.sm }}
+              />
+              <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim }}>{accent}</span>
+              <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+                {ACCENT_PRESETS.map(c => (
+                  <div key={c} onClick={() => onAccentChange?.(c)} style={{ width: 14, height: 14, borderRadius: '50%', background: c, cursor: 'pointer', border: c === accent ? `2px solid ${VD.text}` : '2px solid transparent' }} />
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
+
+          <div style={{ height: 1, background: VD.border }} />
+
+          <ToggleRow label="INICIAR CON WINDOWS" value={autostart} accent={accent} onClick={onAutostartToggle} />
+          <ToggleRow label="SONIDO AL PRESIONAR" value={soundOnPress} accent={accent} onClick={onSoundToggle} />
+
+          {soundOnPress && (
+            <div>
+              <SettingLabel>TIMBRE</SettingLabel>
+              <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                {SOUND_PROFILES.map((p) => {
+                  const isActive = p.id === soundProfile;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => { onSoundProfileChange?.(p.id); playSound(p.id); }}
+                      style={{
+                        flex: '1 1 calc(50% - 2px)', padding: '5px 6px',
+                        fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
+                        background: isActive ? VD.accentBg : VD.elevated,
+                        border: `1px solid ${isActive ? accent : VD.border}`,
+                        color: isActive ? accent : VD.textDim,
+                        cursor: 'pointer', borderRadius: VD.radius.sm,
+                      }}
+                    >
+                      {p.label.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div style={{ height: 1, background: VD.border }} />
+
+          {/* 6.1 — Importar perfil desde URL */}
+          {onConfigImportFromUrl && (
+            <div>
+              <SettingLabel>IMPORTAR DESDE URL</SettingLabel>
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <input
+                  value={galleryUrl}
+                  onChange={(e) => setGalleryUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && galleryUrl.trim()) {
+                      onConfigImportFromUrl(galleryUrl.trim());
+                      setGalleryUrl('');
+                    }
+                  }}
+                  placeholder="https://...perfil.json"
+                  style={{
+                    flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
+                    padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
+                    outline: 'none', borderRadius: VD.radius.sm,
+                  }}
+                />
+                <button
+                  onClick={() => { if (galleryUrl.trim()) { onConfigImportFromUrl(galleryUrl.trim()); setGalleryUrl(''); } }}
+                  style={{
+                    padding: '5px 10px', background: VD.accentBg, border: `1px solid ${accent}`,
+                    fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
+                  }}
+                >IMPORTAR</button>
+              </div>
+            </div>
+          )}
+
+          {onRGBConfigChange && rgbConfig && (
+            <>
+              <div style={{ height: 1, background: VD.border }} />
+              <RGBSection
+                accent={accent}
+                config={rgbConfig}
+                status={rgbStatus ?? null}
+                onChange={onRGBConfigChange}
+              />
+            </>
+          )}
+
+          <div style={{ height: 1, background: VD.border }} />
+
+          {/* Profiles */}
+          <div>
+            <SettingLabel>PERFILES</SettingLabel>
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <input
+                value={newProfileName}
+                onChange={(e) => setNewProfileName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newProfileName.trim()) {
+                    onSaveProfile?.(newProfileName.trim());
+                    setNewProfileName('');
+                  }
+                }}
+                placeholder="Nombre del perfil..."
+                style={{
+                  flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
+                  padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
+                  outline: 'none', borderRadius: VD.radius.sm,
+                }}
+              />
+              <button
+                onClick={() => { if (newProfileName.trim()) { onSaveProfile?.(newProfileName.trim()); setNewProfileName(''); } }}
+                style={{
+                  padding: '5px 10px', background: VD.accentBg, border: `1px solid ${accent}`,
+                  fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
+                }}
+              >
+                GUARDAR
+              </button>
+            </div>
+            {profiles.length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 130, overflowY: 'auto' }}>
+                {profiles.map(p => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
+                    <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                    <button onClick={() => { onLoadProfile?.(p.id); setShowSettings(false); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>CARGAR</button>
+                    <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {profiles.length === 0 && (
+              <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
+                Sin perfiles guardados.
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+function RGBSection({
+  accent, config, status, onChange,
+}: {
+  accent: string;
+  config: RGBSettings;
+  status: RGBStatus | null;
+  onChange: (next: RGBSettings) => void;
+}) {
+  const api = window.electronAPI;
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  const setEnabled = () => onChange({ ...config, enabled: !config.enabled });
+  const setSpawn = () => onChange({ ...config, spawnOnStart: !config.spawnOnStart });
+  const setAuto = () => onChange({ ...config, autoConnect: !config.autoConnect });
+  const setHost = (host: string) => onChange({ ...config, host });
+  const setPort = (port: number) => onChange({ ...config, port });
+
+  const pickPath = async () => {
+    const path = await api?.rgb.pickFile();
+    if (path) onChange({ ...config, openrgbPath: path });
+  };
+
+  const testConnect = async () => {
+    if (!api) return;
+    setTesting(true); setTestResult(null);
+    try {
+      if (config.spawnOnStart && config.openrgbPath && !status?.serverRunning) {
+        const r = await api.rgb.spawnServer(config.openrgbPath);
+        if (!r.ok) { setTestResult(`Spawn falló: ${r.error}`); return; }
+      }
+      const s = await api.rgb.connect(config.host, config.port);
+      setTestResult(s.connected ? `OK · ${s.deviceCount} dispositivos` : `Falló: ${s.error ?? 'sin server'}`);
+    } finally { setTesting(false); }
+  };
+
+  return (
+    <div>
+      <SettingLabel>RGB (OPENRGB)</SettingLabel>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <ToggleRow label="HABILITADO" value={config.enabled} accent={accent} onClick={setEnabled} />
+        <ToggleRow label="LANZAR OPENRGB AL ARRANCAR" value={config.spawnOnStart} accent={accent} onClick={setSpawn} />
+        <ToggleRow label="AUTOCONECTAR" value={config.autoConnect} accent={accent} onClick={setAuto} />
+
+        <div>
+          <SettingLabel>RUTA OPENRGB.EXE</SettingLabel>
+          <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+            <input
+              value={config.openrgbPath ?? ''}
+              onChange={(e) => onChange({ ...config, openrgbPath: e.target.value })}
+              placeholder="C:\\Program Files\\OpenRGB\\OpenRGB.exe"
+              style={inputStyleRGB}
+            />
+            <button onClick={pickPath} style={miniBtnRGB(accent)}>...</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ flex: 1 }}>
+            <SettingLabel>HOST</SettingLabel>
+            <input
+              value={config.host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder="127.0.0.1"
+              style={{ ...inputStyleRGB, marginTop: 4 }}
+            />
+          </div>
+          <div style={{ width: 70 }}>
+            <SettingLabel>PUERTO</SettingLabel>
+            <input
+              type="number"
+              value={config.port}
+              onChange={(e) => setPort(parseInt(e.target.value, 10) || 6742)}
+              style={{ ...inputStyleRGB, marginTop: 4 }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={testConnect} disabled={testing} style={miniBtnRGB(accent)}>
+            {testing ? 'PROBANDO...' : 'PROBAR CONEXIÓN'}
+          </button>
+          {testResult && (
+            <span style={{ fontFamily: VD.mono, fontSize: 9, color: testResult.startsWith('OK') ? VD.success : VD.danger }}>
+              {testResult}
+            </span>
+          )}
+          {!testResult && status && (
+            <span style={{ fontFamily: VD.mono, fontSize: 9, color: status.connected ? VD.success : VD.textMuted }}>
+              {status.connected ? `● ${status.deviceCount} dev` : '○ desconectado'}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const inputStyleRGB: React.CSSProperties = {
+  flex: 1, width: '100%', boxSizing: 'border-box',
+  background: VD.elevated, border: `1px solid ${VD.border}`,
+  padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
+  outline: 'none', borderRadius: VD.radius.sm,
+};
+const miniBtnRGB = (accent: string): React.CSSProperties => ({
+  padding: '5px 10px', background: VD.accentBg, border: `1px solid ${accent}`,
+  fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer',
+  borderRadius: VD.radius.sm, letterSpacing: 1,
+});
+
+function ToggleRow({ label, value, accent, onClick }: { label: string; value: boolean; accent: string; onClick?: () => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <SettingLabel>{label}</SettingLabel>
+      <div
+        onClick={onClick}
+        style={{
+          width: 36, height: 20, borderRadius: 10, cursor: 'pointer',
+          background: value ? accent : VD.elevated,
+          border: `1px solid ${value ? accent : VD.border}`,
+          position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+        }}
+      >
+        <div style={{
+          position: 'absolute', top: 2, left: value ? 17 : 2,
+          width: 14, height: 14, borderRadius: '50%', background: VD.text,
+          transition: 'left 0.2s',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function SettingLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontFamily: VD.mono, fontSize: 8, letterSpacing: 2, color: VD.textMuted }}>{children}</div>
+  );
+}
+
+const btnStyle: React.CSSProperties = {
+  height: 22, padding: '0 8px',
+  display: 'flex', alignItems: 'center',
+  fontSize: 9, letterSpacing: 1, color: VD.textDim,
+  background: 'transparent', border: `1px solid ${VD.border}`,
+  borderRadius: VD.radius.sm, cursor: 'pointer',
+};
+
+const iconBtnStyle: React.CSSProperties = {
+  width: 22, height: 22,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontSize: 14, color: VD.textDim,
+  background: 'transparent', border: 'none', borderRadius: VD.radius.sm, cursor: 'pointer',
+};
