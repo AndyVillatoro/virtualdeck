@@ -1,0 +1,1960 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VirtualDeck — Brand Icon Pack (Dot Matrix)</title>
+<style>
+  :root{
+    --bg:#070708;
+    --panel:#0d0d0f;
+    --panel-2:#101013;
+    --line:#1a1a1d;
+    --text:#e8e8ea;
+    --muted:#5c5c63;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--text);margin:0;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:48px 56px 120px}
+
+  header{max-width:1320px;margin:0 auto 36px}
+  h1{font-size:24px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px}
+  header p{margin:0;color:var(--muted);font-family:var(--mono);font-size:12px}
+  header .meta{margin-top:16px;display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  header .meta b{color:var(--text);font-weight:500}
+
+  .wrap{max-width:1320px;margin:0 auto}
+  section{margin:42px 0 0}
+  section h2{
+    font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.14em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 18px;
+    padding-bottom:10px;border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;gap:14px;
+  }
+  section h2 .num{color:#2c2c30}
+  section h2 .count{margin-left:auto;color:#2c2c30}
+  section h2 .emoji{filter:grayscale(0.4);opacity:.85}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:16px;
+  }
+  .tile{
+    background:#000;
+    border-radius:10px;
+    padding:16px 14px 14px;
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    position:relative;
+    overflow:hidden;
+    border:1px solid #0e0e10;
+    box-shadow:inset 0 0 60px rgba(255,255,255,0.015), 0 1px 0 rgba(255,255,255,0.02);
+  }
+  .tile::before{
+    /* very subtle blue glow corner like reference */
+    content:"";position:absolute;inset:-30% -30% auto auto;width:60%;height:60%;
+    background:radial-gradient(circle at 30% 30%, rgba(60,90,160,.18), transparent 60%);
+    pointer-events:none;
+  }
+  .tile .panel{
+    position:relative;
+    width:140px;height:140px;
+    border-radius:6px;
+    background:#000;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+  }
+  .tile .panel::after{
+    content:"";position:absolute;inset:0;border-radius:inherit;
+    background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,.45) 100%);
+    pointer-events:none;
+  }
+  .tile svg{width:140px;height:140px;display:block}
+  .tile .lbl{
+    font-family:var(--mono);font-size:10.5px;color:#9b9ba1;
+    letter-spacing:0.04em;text-align:center;line-height:1.35;
+    text-transform:lowercase;
+  }
+  .tile .idx{
+    position:absolute;top:8px;left:10px;
+    font-family:var(--mono);font-size:9px;color:#2a2a2e;letter-spacing:0.06em;
+  }
+
+  /* dot grid background — off dots */
+  .off{ fill:#15151a }
+  .off-r{ fill:#1a1a20 }
+  /* glow halo behind on-dots */
+  .halo{ filter: blur(2.5px); opacity:.55 }
+
+  /* Subtle scanline texture */
+  .tile .panel::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+    pointer-events:none;mix-blend-mode:screen;
+  }
+
+  /* ============================================
+     PER-ICON IDLE ANIMATIONS
+     Subtle, looping, mostly affecting the .on layer or whole svg.
+     ============================================ */
+
+  /* default: gentle breathing on every tile */
+  .tile svg .on{ transform-origin:center; transform-box:fill-box; }
+  .tile svg .halo{ transform-origin:center; transform-box:fill-box; }
+  .tile svg{ transform-origin:50% 50%; }
+
+  @keyframes breathe { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+  .tile[data-anim] svg .on{ animation: breathe 3.6s ease-in-out infinite; animation-delay: var(--ad,0s); }
+  .tile[data-anim] svg .halo{ animation: breathe 3.6s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* spin — rotating browsers / loaders */
+  @keyframes spin { to{ transform: rotate(360deg) } }
+  .tile[data-anim="spin"] svg{ animation: spin 14s linear infinite; animation-delay: var(--ad,0s); }
+  .tile[data-anim="spin-slow"] svg{ animation: spin 24s linear infinite; animation-delay: var(--ad,0s); }
+  .tile[data-anim="spin-fast"] svg{ animation: spin 6s linear infinite; animation-delay: var(--ad,0s); }
+
+  /* gear — settings */
+  @keyframes gear { 0%{transform:rotate(0)} 100%{transform:rotate(60deg)} }
+  .tile[data-anim="gear"] svg{ animation: gear 3s steps(6) infinite; animation-delay: var(--ad,0s); }
+
+  /* pulse — heartbeat / glow */
+  @keyframes pulse-glow {
+    0%,100%{ filter: brightness(1) drop-shadow(0 0 0 currentColor); }
+    50%{ filter: brightness(1.45) drop-shadow(0 0 4px currentColor); }
+  }
+  .tile[data-anim="pulse"] svg .on,
+  .tile[data-anim="pulse"] svg .halo{ animation: pulse-glow 1.6s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* fast pulse for live/recording */
+  @keyframes rec-pulse {
+    0%,100%{ opacity:1 }
+    50%{ opacity:.35 }
+  }
+  .tile[data-anim="rec"] svg .on,
+  .tile[data-anim="rec"] svg .halo{ animation: rec-pulse 1.1s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* blink — comm/connection */
+  @keyframes blink {
+    0%,45%,100%{ opacity:1 }
+    50%,55%{ opacity:.25 }
+    60%{ opacity:1 }
+  }
+  .tile[data-anim="blink"] svg .on,
+  .tile[data-anim="blink"] svg .halo{ animation: blink 2.4s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* bounce — chat apps */
+  @keyframes bounce { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
+  .tile[data-anim="bounce"] svg{ animation: bounce 2s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* shake/glitch — tiktok/capcut */
+  @keyframes glitch {
+    0%,90%,100%{ transform: translate(0,0) }
+    92%{ transform: translate(-1.5px, 0.5px) }
+    94%{ transform: translate(1.5px, -0.5px) }
+    96%{ transform: translate(-1px, -0.5px) }
+    98%{ transform: translate(1px, 0.5px) }
+  }
+  .tile[data-anim="glitch"] svg{ animation: glitch 4s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* equalizer / music waves: scale-y rows */
+  @keyframes wave {
+    0%,100%{ transform: scaleY(1) }
+    50%{ transform: scaleY(1.25) }
+  }
+  .tile[data-anim="wave"] svg{ animation: wave 1.4s ease-in-out infinite; transform-origin: 50% 70%; animation-delay: var(--ad,0s); }
+
+  /* signal — wifi/bluetooth, expand outward */
+  @keyframes signal {
+    0%{ transform: scale(0.92); opacity:.55 }
+    50%{ transform: scale(1.04); opacity:1 }
+    100%{ transform: scale(0.92); opacity:.55 }
+  }
+  .tile[data-anim="signal"] svg .on,
+  .tile[data-anim="signal"] svg .halo{ animation: signal 2.2s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* float — gentle vertical drift (planes, fox, gem) */
+  @keyframes float { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-2px) } }
+  .tile[data-anim="float"] svg{ animation: float 3.4s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* slide-x — telegram plane */
+  @keyframes slide-x {
+    0%,100%{ transform: translateX(0) }
+    50%{ transform: translateX(3px) }
+  }
+  .tile[data-anim="slide"] svg{ animation: slide-x 2.6s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* shimmer — single sweep brightness */
+  @keyframes shimmer {
+    0%,100%{ filter: brightness(0.95) }
+    50%{ filter: brightness(1.4) }
+  }
+  .tile[data-anim="shimmer"] svg .on,
+  .tile[data-anim="shimmer"] svg .halo{ animation: shimmer 2.8s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* power — toggle blink for power buttons */
+  @keyframes power {
+    0%,100%{ opacity:1 }
+    48%{ opacity:1 }
+    50%{ opacity:.2 }
+    52%{ opacity:1 }
+  }
+  .tile[data-anim="power"] svg .on,
+  .tile[data-anim="power"] svg .halo{ animation: power 3s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* tilt — wobble (controllers/games) */
+  @keyframes tilt {
+    0%,100%{ transform: rotate(-2deg) }
+    50%{ transform: rotate(2deg) }
+  }
+  .tile[data-anim="tilt"] svg{ animation: tilt 3s ease-in-out infinite; animation-delay: var(--ad,0s); }
+
+  /* hover power-on flicker */
+  @keyframes flicker {
+    0%,100%{opacity:1}
+    8%{opacity:.85}
+    9%{opacity:1}
+    40%{opacity:.94}
+    41%{opacity:1}
+  }
+  .tile:hover svg .on, .tile:hover svg .halo{animation:flicker 2s ease-in-out infinite}
+
+  footer{max-width:1320px;margin:48px auto 0;color:#3a3a3e;font-family:var(--mono);font-size:10px;letter-spacing:0.06em}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>VirtualDeck — Brand Icon Pack</h1>
+  <p>Dot-matrix LED · 17×17 grid · brand colors · 36 programas</p>
+  <div class="meta">
+    <span>panel <b>140×140</b></span>
+    <span>grid <b>17×17</b></span>
+    <span>r <b>3.2px</b></span>
+    <span>halo <b>blur 2.5</b></span>
+    <span>hover para flicker</span>
+  </div>
+</header>
+
+<div class="wrap" id="wrap"></div>
+
+<footer>
+  virtualdeck/brand-icons · v1.0 · dot-matrix · marcas representadas en sus colores oficiales
+</footer>
+
+<script>
+/* -------------------------------------------------
+   Dot-matrix icon generator
+   - 17×17 grid, dot radius 3.2, pitch 8
+   - bitmap defined as 17 strings of 17 chars: "." off, "#" on
+   - color per icon = brand color
+-------------------------------------------------- */
+
+const SIZE = 17;
+const PITCH = 8;
+const PAD = 4;        // px padding inside 140 viewbox
+const R_ON = 3.2;
+const R_OFF = 1.6;
+
+function svg(bitmap, color, palette){
+  const VB = 140;
+  let halo = "";
+  let on = "";
+  let off = "";
+  // palette: map of char -> color. Default any non "." non " " to `color`.
+  const pal = palette || {};
+  for(let y=0;y<SIZE;y++){
+    for(let x=0;x<SIZE;x++){
+      const cx = PAD + x*PITCH + PITCH/2;
+      const cy = PAD + y*PITCH + PITCH/2;
+      const ch = bitmap[y]?.[x] ?? ".";
+      const isOn = ch !== "." && ch !== " ";
+      if(isOn){
+        const c = pal[ch] || color;
+        halo += `<circle class="halo" cx="${cx}" cy="${cy}" r="${R_ON+1.6}" fill="${c}"/>`;
+        on   += `<circle class="on"   cx="${cx}" cy="${cy}" r="${R_ON}" fill="${c}"/>`;
+      } else {
+        const cls = (x+y)%2 ? "off-r" : "off";
+        off  += `<circle class="${cls}" cx="${cx}" cy="${cy}" r="${R_OFF}"/>`;
+      }
+    }
+  }
+  return `<svg viewBox="0 0 ${VB} ${VB}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="vig" cx="50%" cy="40%" r="70%">
+        <stop offset="0%" stop-color="#0a0a0f"/>
+        <stop offset="100%" stop-color="#000"/>
+      </radialGradient>
+    </defs>
+    <rect width="${VB}" height="${VB}" rx="6" fill="url(#vig)"/>
+    <g>${off}</g>
+    <g>${halo}</g>
+    <g>${on}</g>
+  </svg>`;
+}
+
+/* Per-icon palette overrides (multi-color icons) */
+const PALETTES = {};
+
+/* ---- Bitmaps. Each is 17 lines × 17 chars ---- */
+/* I author them carefully so the silhouette reads at small size. */
+
+const I = {};
+
+/* ============================================
+   1) DISEÑO Y PRODUCCIÓN CREATIVA
+   ============================================ */
+
+// Blender — orange (#E87D0D), simplified shape: circle with notch + dot
+I.blender = [
+  ".................",
+  ".................",
+  ".................",
+  ".......###.......",
+  ".....##...##.....",
+  "....#..###..#....",
+  "...#..#####..#...",
+  "...#.##.#.##.#...",
+  "...#.#..#..#.#...",
+  "...#..#####..#...",
+  "....#.#####.#....",
+  ".....##...##.....",
+  ".......###.......",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Adobe Illustrator — orange/yellow (#FF9A00) — letter "Ai"
+I.illustrator = [
+  ".................",
+  ".................",
+  "....####...##....",
+  "...##..##..##....",
+  "...##..##..##....",
+  "..##....##.......",
+  "..##....##.##....",
+  "..########.##....",
+  "..##....##.##....",
+  ".##......##.##...",
+  ".##......##.##...",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Adobe After Effects — purple (#9999FF) — "Ae"
+I.aftereffects = [
+  ".................",
+  ".................",
+  "....####.........",
+  "...##..##.#####..",
+  "...##..##.##.....",
+  "..##....##.####..",
+  "..##....##.##....",
+  "..########.#####.",
+  "..##....##.......",
+  ".##......##......",
+  ".##......##......",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Adobe Photoshop — blue (#31A8FF) — "Ps"
+I.photoshop = [
+  ".................",
+  ".................",
+  "....####.........",
+  "...##..##..####..",
+  "...##..##.##....",
+  "..##....##.####..",
+  "..##....##.....#.",
+  "..########.####..",
+  "..##....##.......",
+  ".##......##......",
+  ".##......##......",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Figma — purple/magenta — letter F mark
+I.figma = [
+  ".................",
+  ".................",
+  "....##########...",
+  "....##########...",
+  "....####.........",
+  "....####.........",
+  "....####.........",
+  "....########.....",
+  "....########.....",
+  "....####.........",
+  "....####.........",
+  "....####.........",
+  "....####.........",
+  "....####.........",
+  "....####.........",
+  ".................",
+  ".................",
+];
+
+// Canva — cyan (#00C4CC) — letter C
+I.canva = [
+  ".................",
+  ".................",
+  "......######.....",
+  "....####..####...",
+  "...###......##...",
+  "...##........#...",
+  "..##.............",
+  "..##.............",
+  "..##.............",
+  "..##.............",
+  "..##.............",
+  "...##........#...",
+  "...###......##...",
+  "....####..####...",
+  "......######.....",
+  ".................",
+  ".................",
+];
+
+/* ============================================
+   2) STREAMING Y CREACIÓN DE CONTENIDO
+   ============================================ */
+
+// OBS — gray/white (#302E31 -> we'll use white) — three eyes / circle
+I.obs = [
+  ".................",
+  ".....#######.....",
+  "...###.....###...",
+  "..##....#....##..",
+  "..#....###....#..",
+  ".#..#..###..#..#.",
+  ".#.###..#..###.#.",
+  ".#..#......#..#..",
+  ".#.............#.",
+  ".#......#......#.",
+  ".#.....###.....#.",
+  ".#.....###.....#.",
+  "..#.....#.....#..",
+  "..##.........##..",
+  "...###.....###...",
+  ".....#######.....",
+  ".................",
+];
+
+// Streamlabs — green (#80F5D2)
+I.streamlabs = [
+  ".................",
+  ".......##........",
+  "......####.......",
+  ".....######......",
+  "....##.##.##.....",
+  "...##..##..##....",
+  "..##...##...##...",
+  "..##...##...##...",
+  "..##...##...##...",
+  "..##...##...##...",
+  "...##..##..##....",
+  "....##.##.##.....",
+  ".....######......",
+  "......####.......",
+  ".......##........",
+  ".................",
+  ".................",
+];
+
+// Twitch — purple (#9146FF)
+I.twitch = [
+  ".................",
+  "..############...",
+  "..#..........#...",
+  "..#..##..##..#...",
+  "..#..##..##..#...",
+  "..#..##..##..#...",
+  "..#..##..##..#...",
+  "..#..........##..",
+  "..#...........##.",
+  "..#............#.",
+  "..#...........##.",
+  "..#..........##..",
+  "..#####..#####...",
+  "....##....##.....",
+  "....##....##.....",
+  "....##....##.....",
+  ".................",
+];
+
+// YouTube Studio — red (#FF0000)
+I.youtubestudio = [
+  ".................",
+  ".................",
+  "..#############..",
+  ".###############.",
+  ".##....#.......##",
+  ".##....##......##",
+  ".##....###.....##",
+  ".##....####....##",
+  ".##....###.....##",
+  ".##....##......##",
+  ".##....#.......##",
+  ".###############.",
+  "..#############..",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// TikTok — musical note with red/cyan offset shadow (#FE2C55, #25F4EE, white)
+// Legend: C=cyan, R=red, W=white
+I.tiktok = [
+  ".................",
+  ".......WWWWW.....",
+  ".......WWWWWW....",
+  ".......WW..WW....",
+  ".......WW..WWW...",
+  "......CWW...WW...",
+  "......CWWW..WW...",
+  "....CCCWWWWWW....",
+  "...CCCRWWWWW.....",
+  "..CCC.RRWWW......",
+  ".CCC..RRR........",
+  ".CC...RRR........",
+  ".CC..RRRR........",
+  ".CCC.RRR.........",
+  "..CCCRR..........",
+  "...CCC...........",
+  ".................",
+];
+PALETTES.tiktok = { "C": "#25F4EE", "R": "#FE2C55", "W": "#FFFFFF" };
+
+// VoiceMeeter — green LEDs / VU meters (#7FFF00)
+I.voicemeeter = [
+  ".................",
+  ".................",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##....",
+  "..##.##.##.##....",
+  "..##.##.##.......",
+  "..##.##.##.......",
+  "..##.##..........",
+  "..##.##..........",
+  "..##.............",
+  "..##.............",
+];
+
+// Elgato — light blue (#1AABEE)
+I.elgato = [
+  ".................",
+  ".......####......",
+  "......######.....",
+  ".....##....##....",
+  "....##......##...",
+  "...##........##..",
+  "...##........##..",
+  "...##............",
+  "...##.....####...",
+  "...##.....####...",
+  "...##........##..",
+  "....##.......##..",
+  ".....##......##..",
+  "......##....##...",
+  ".......######....",
+  "........####.....",
+  ".................",
+];
+
+/* ============================================
+   3) PROGRAMACIÓN Y DESARROLLO
+   ============================================ */
+
+// VS Code — blue (#0098FF) — angled ribbon mark
+I.vscode = [
+  ".................",
+  "............##...",
+  "...........###...",
+  "..........####...",
+  "#........#####...",
+  "##......######...",
+  "###....##.####...",
+  "####..##..####...",
+  "#####.#...####...",
+  "########..####...",
+  "####..##..####...",
+  "###....##.####...",
+  "##......######...",
+  "#........#####...",
+  "..........####...",
+  "...........###...",
+  "............##...",
+];
+
+// GitHub — Octocat silhouette in white
+I.github = [
+  ".................",
+  ".....#######.....",
+  "...###########...",
+  "..#############..",
+  ".###############.",
+  ".###.#######.###.",
+  ".##...#####...##.",
+  ".##....###....##.",
+  ".##....###....##.",
+  ".###..#####..###.",
+  "..###########..#.",
+  "...#########.....",
+  "....#######......",
+  "....##.#.##......",
+  "....##.#.##......",
+  "....##.#.##......",
+  ".................",
+];
+
+// GitLab — orange (#FC6D26) — fox/tanuki triangle
+I.gitlab = [
+  ".................",
+  ".................",
+  "....##.....##....",
+  "...####...####...",
+  "...####...####...",
+  "..######.######..",
+  ".###############.",
+  ".###############.",
+  ".###############.",
+  ".##############..",
+  "..############...",
+  "...##########....",
+  "....########.....",
+  ".....######......",
+  "......####.......",
+  ".......##........",
+  ".................",
+];
+
+// Docker — blue (#2496ED) — whale stack
+I.docker = [
+  ".................",
+  ".................",
+  ".......####......",
+  ".......####......",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  ".................",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  ".................",
+  ".######.....####.",
+  "###################",
+  ".###############.",
+  "..#############..",
+  "...###########...",
+  ".................",
+];
+
+// Terminal / PowerShell — cyan/white prompt
+I.terminal = [
+  ".................",
+  ".................",
+  ".###############.",
+  ".#.............#.",
+  ".#.............#.",
+  ".#.##..........#.",
+  ".#...##........#.",
+  ".#.....##......#.",
+  ".#.......##....#.",
+  ".#.....##......#.",
+  ".#...##........#.",
+  ".#.##....####..#.",
+  ".#.............#.",
+  ".#.............#.",
+  ".###############.",
+  ".................",
+  ".................",
+];
+
+// ChatGPT — green (#10A37F) — flower mark simplified
+I.chatgpt = [
+  ".................",
+  ".......####......",
+  ".....########....",
+  "....##########...",
+  "...####....####..",
+  "..####......####.",
+  "..###........###.",
+  "..###........###.",
+  "..###...##...###.",
+  "..###..####..###.",
+  "..###..####..###.",
+  "..###........###.",
+  "..####......####.",
+  "...####....####..",
+  "....##########...",
+  ".....########....",
+  ".......####......",
+];
+
+// Claude — orange (#D97757) — abstract sun ray mark
+I.claude = [
+  ".................",
+  ".................",
+  ".......##........",
+  ".......##........",
+  "..#....##....#...",
+  "...#...##...#....",
+  "....#..##..#.....",
+  ".....#####.......",
+  "..########.......",
+  "..########.......",
+  ".....#####.......",
+  "....#..##..#.....",
+  "...#...##...#....",
+  "..#....##....#...",
+  ".......##........",
+  ".......##........",
+  ".................",
+];
+
+// Flutter DevTools — blue (#02569B)
+I.flutter = [
+  ".................",
+  ".............##..",
+  "............###..",
+  "...........####..",
+  "..........#####..",
+  ".........######..",
+  "........#######..",
+  ".......########..",
+  "......#######....",
+  ".......########..",
+  "........#######..",
+  ".........#####...",
+  "........######...",
+  ".......########..",
+  "......##########.",
+  ".....##########..",
+  ".................",
+];
+
+/* ============================================
+   4) PRODUCTIVIDAD Y GESTIÓN
+   ============================================ */
+
+// Notion — white/gray "N"
+I.notion = [
+  ".................",
+  ".................",
+  "..##############.",
+  "..##.........##..",
+  "..##.##......##..",
+  "..##.###.....##..",
+  "..##.####....##..",
+  "..##.#.###...##..",
+  "..##.#..###..##..",
+  "..##.#...###.##..",
+  "..##.#....####...",
+  "..##.#.....###...",
+  "..##.#......##...",
+  "..##.........##..",
+  "..##############.",
+  ".................",
+  ".................",
+];
+
+// Trello — blue (#0079BF) — two columns
+I.trello = [
+  ".................",
+  "..#############..",
+  "..#############..",
+  "..##.......##.##.",
+  "..##.#####.##.##.",
+  "..##.#####.##.##.",
+  "..##.#####.##.##.",
+  "..##.#####.##.##.",
+  "..##.#####.##....",
+  "..##.#####.##....",
+  "..##.......##....",
+  "..##.......##....",
+  "..##.......##....",
+  "..##.......##.##.",
+  "..#############..",
+  "..#############..",
+  ".................",
+];
+
+// Asana — red/orange (#F06A6A) — three dots triangle
+I.asana = [
+  ".................",
+  ".................",
+  ".......####......",
+  "......######.....",
+  ".....########....",
+  "......######.....",
+  ".......####......",
+  ".................",
+  "..####......####.",
+  ".######....######",
+  "########..########",
+  ".######....######",
+  "..####......####.",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Slack — multi-color (red/green/blue/yellow) hashtag-like marks
+// Legend: R=red, G=green, B=blue, Y=yellow
+I.slack = [
+  ".................",
+  ".................",
+  ".....RR....BB....",
+  ".....RR....BB....",
+  "..GGGGGGGGGGGGG..",
+  "..GGGGGGGGGGGGG..",
+  ".....RR....BB....",
+  ".....RR....BB....",
+  "..YYYYYYYYYYYYY..",
+  "..YYYYYYYYYYYYY..",
+  ".....RR....BB....",
+  ".....RR....BB....",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+PALETTES.slack = { "R": "#E01E5A", "G": "#36C5F0", "B": "#2EB67D", "Y": "#ECB22E" };
+
+// Discord — purple (#5865F2) — gamepad-shaped mascot face
+I.discord = [
+  ".................",
+  "...###########...",
+  "..#############..",
+  ".###############.",
+  "#################",
+  "##.###.....###.##",
+  "##.####...####.##",
+  "##.###.....###.##",
+  "##.............##",
+  "##.............##",
+  "##.............##",
+  ".###############.",
+  "..##############.",
+  "..###.......####.",
+  "...##.......###..",
+  "....##.....###...",
+  ".....##...##.....",
+];
+
+// Excel — green (#107C41) — letter X
+I.excel = [
+  ".................",
+  ".................",
+  "..##############.",
+  "..##..........##.",
+  "..##.##.....##.##",
+  "..##..##...##..##",
+  "..##...##.##...##",
+  "..##....###....##",
+  "..##....###....##",
+  "..##...##.##...##",
+  "..##..##...##..##",
+  "..##.##.....##.##",
+  "..##..........##.",
+  "..##############.",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Google Calendar — multi-color (red 31, blue/green/yellow accents)
+// Legend: B=blue, R=red, G=green, Y=yellow, W=white
+I.calendar = [
+  ".................",
+  ".....BB.....RR...",
+  ".....BB.....RR...",
+  "..BBBBBBBBBRRRR..",
+  "..BBBBBBBBBRRRR..",
+  "..WW..........WW.",
+  "..WW..GGG..YY.WW.",
+  "..WW.G...G..Y.WW.",
+  "..WW......G.Y.WW.",
+  "..WW....GG..Y.WW.",
+  "..WW...G....Y.WW.",
+  "..WW..G....YYY.WW",
+  "..WW.GGGGG.....WW",
+  "..WW...........WW",
+  "..WWWWWWWWWWWWWW.",
+  ".................",
+  ".................",
+];
+PALETTES.calendar = { "B": "#4285F4", "R": "#EA4335", "G": "#34A853", "Y": "#FBBC04", "W": "#FFFFFF" };
+
+// Obsidian — purple (#7C3AED) gem
+I.obsidian = [
+  ".................",
+  ".................",
+  ".......####......",
+  "......######.....",
+  ".....########....",
+  "....##########...",
+  "...############..",
+  "..##############.",
+  "..##############.",
+  "..##############.",
+  "...############..",
+  "....##########...",
+  ".....########....",
+  "......######.....",
+  ".......####......",
+  ".................",
+  ".................",
+];
+
+/* ============================================
+   5) MULTIMEDIA Y OCIO
+   ============================================ */
+
+// Spotify — green (#1DB954) — circle with sound waves
+I.spotify = [
+  ".................",
+  ".....#######.....",
+  "...###########...",
+  "..#############..",
+  ".###############.",
+  ".##.##########.##",
+  ".##....######..##",
+  ".##............##",
+  ".##..########..##",
+  ".##....####....##",
+  ".##............##",
+  ".##....##......##",
+  ".###############.",
+  "..#############..",
+  "...###########...",
+  ".....#######.....",
+  ".................",
+];
+
+// YouTube Music — red circle with white play triangle
+// Legend: R=red, W=white
+I.ytmusic = [
+  ".................",
+  ".....RRRRRRR.....",
+  "...RRRRRRRRRRR...",
+  "..RRRRRRRRRRRRR..",
+  ".RRRRRRRRRRRRRRR.",
+  "RRRRRWRRRRRRRRRRR",
+  "RRRRRWWRRRRRRRRRR",
+  "RRRRRWWWRRRRRRRRR",
+  "RRRRRWWWWRRRRRRRR",
+  "RRRRRWWWRRRRRRRRR",
+  "RRRRRWWRRRRRRRRRR",
+  "RRRRRWRRRRRRRRRRR",
+  ".RRRRRRRRRRRRRRR.",
+  "..RRRRRRRRRRRRR..",
+  "...RRRRRRRRRRR...",
+  ".....RRRRRRR.....",
+  ".................",
+];
+PALETTES.ytmusic = { "R": "#FF0033", "W": "#FFFFFF" };
+
+// Netflix — red (#E50914) — N
+I.netflix = [
+  ".................",
+  ".................",
+  "..##.........##..",
+  "..##.........##..",
+  "..##.........##..",
+  "..###........##..",
+  "..####.......##..",
+  "..#####......##..",
+  "..######.....##..",
+  "..##.####....##..",
+  "..##..####...##..",
+  "..##...####..##..",
+  "..##....####.##..",
+  "..##.....######..",
+  "..##......#####..",
+  "..##.......####..",
+  "..##........###..",
+];
+
+// Crunchyroll — orange (#F47521) — letter C with face
+I.crunchyroll = [
+  ".................",
+  ".....#######.....",
+  "...###########...",
+  "..####.....####..",
+  ".###.........###.",
+  ".##...........##.",
+  ".##............#.",
+  ".##.............",
+  ".##.............",
+  ".##.............",
+  ".##.............",
+  ".##............#.",
+  ".##...........##.",
+  ".###.........###.",
+  "..####.....####..",
+  "...###########...",
+  ".....#######.....",
+];
+
+// Steam — blue circle with valve/circle-and-trigger mark (#1B2838 / #66C0F4)
+// Legend: B=light blue body, W=white inner shapes
+I.steam = [
+  ".................",
+  ".....BBBBBBB.....",
+  "...BBBBBBBBBBB...",
+  "..BBBB.WWWWWBBB..",
+  ".BBB..WWWWWWW.BB.",
+  ".BB..WWW...WWW.B.",
+  "BB..WWW.....WWW.B",
+  "BB..WWW..W..WWW.B",
+  "BB..WWW.....WWW.B",
+  "BB.WWW.WWW..WWW.B",
+  "BBWWW.WWWWW..WW.B",
+  "BWWW.WWW.WWW..BBB",
+  "BWW..WW...WW.BBBB",
+  "BB...WW....BBBBBB",
+  "..BB..WW..BBBBB..",
+  "...BBBBBBBBBBB...",
+  ".....BBBBBBB.....",
+];
+PALETTES.steam = { "B": "#66C0F4", "W": "#FFFFFF" };
+
+// Pokémon Showdown — yellow (#FFCC00) — pokeball
+I.pokemonshowdown = [
+  ".................",
+  ".....#######.....",
+  "...###########...",
+  "..#############..",
+  ".###############.",
+  ".###############.",
+  ".###############.",
+  "##.....###.....##",
+  "##.....###.....##",
+  "##.....###.....##",
+  ".##....###....##.",
+  ".###...###...###.",
+  ".####.#####.####.",
+  "..#############..",
+  "...###########...",
+  ".....#######.....",
+  ".................",
+];
+
+/* ============================================
+   6) UTILIDADES Y HOGAR INTELIGENTE
+   ============================================ */
+
+// File Explorer — yellow (#FFC846) — folder with tab
+I.fileexplorer = [
+  ".................",
+  ".................",
+  "...####..........",
+  "...######........",
+  ".###############.",
+  ".###############.",
+  ".##...........##.",
+  ".##...........##.",
+  ".##.#########.##.",
+  ".##...........##.",
+  ".##.#########.##.",
+  ".##...........##.",
+  ".##.#########.##.",
+  ".##...........##.",
+  ".###############.",
+  ".###############.",
+  ".................",
+];
+
+// Calculator — orange (#FF9500)
+I.calculator = [
+  ".................",
+  "..#############..",
+  "..#############..",
+  "..##.........##..",
+  "..##.#######.##..",
+  "..##.#######.##..",
+  "..##.........##..",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.........##..",
+  "..##.##.##.##.##.",
+  "..##.##.##.##.##.",
+  "..##.........##..",
+  "..##.##.##.######",
+  "..##.##.##.######",
+  "..#############..",
+  ".................",
+];
+
+// Task Manager — white — ascending bar chart (process activity)
+I.taskmanager = [
+  ".................",
+  ".................",
+  "..##############.",
+  "..##............#",
+  "..##.........##.#",
+  "..##.........##.#",
+  "..##.........##.#",
+  "..##......####.##",
+  "..##......####.##",
+  "..##......####.##",
+  "..##...#######.##",
+  "..##...#######.##",
+  "..##...#######.##",
+  "..##.##########.#",
+  "..##.##########.#",
+  "..##############.",
+  ".................",
+];
+
+// Edge — multi-color (blue → teal → green) swirl
+// Legend: B=blue, T=teal, G=green
+I.edge = [
+  ".................",
+  ".....BBBBBBB.....",
+  "...BBBBBBBBBBB...",
+  "..BBBB.....BBBB..",
+  ".BBBB.......TTT..",
+  ".BBB..GGGGG..TTT.",
+  ".BB..GGGGGGG..TT.",
+  ".BB.GGGGGGGGG.TT.",
+  ".BB.GGGGGGGGG.TT.",
+  ".BB.GGGGGGGGG.TTT",
+  ".BB.GGGGGGGGGGTT.",
+  ".BB.GGGGGGGGGGT..",
+  ".BBB.GGGGGGGG....",
+  ".BBBB........TTTT",
+  "..BBBB......TTTT.",
+  "...BBBBBBBBBBB...",
+  ".....BBBBBBB.....",
+];
+PALETTES.edge = { "B": "#0078D7", "T": "#1FB1F2", "G": "#33D6A6" };
+
+// Home Assistant — blue (#41BDF5) — house with H
+I.homeassistant = [
+  ".................",
+  ".......##........",
+  "......####.......",
+  ".....######......",
+  "....########.....",
+  "...##########....",
+  "..############...",
+  ".##############..",
+  ".##.##....##.##..",
+  ".##.##....##.##..",
+  ".##.########.##..",
+  ".##.##....##.##..",
+  ".##.##....##.##..",
+  ".##############..",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Speedtest — blue/gradient — gauge
+I.speedtest = [
+  ".................",
+  ".................",
+  ".....#######.....",
+  "...###########...",
+  "..####.....####..",
+  ".###.........###.",
+  ".##...........##.",
+  ".##......##...##.",
+  ".##.....##....##.",
+  ".##....##.....##.",
+  ".##...##......##.",
+  ".###.........###.",
+  "..####.....####..",
+  "...###########...",
+  ".....#######.....",
+  ".................",
+  ".................",
+];
+
+// WhatsApp — classic phone handset silhouette: large earpiece bulb top-left,
+// mouthpiece bulb bottom-right, connected by a curved diagonal handle
+I.whatsapp = [
+  ".................",
+  ".######..........",
+  "########.........",
+  "##########.......",
+  "###########......",
+  "####....####.....",
+  "###......####....",
+  "###.......###....",
+  "####......###....",
+  ".####.....####...",
+  "..####.....####..",
+  "...####.....####.",
+  "....####....####.",
+  "....####.....####",
+  "....###......####",
+  "....####....####.",
+  ".....##########..",
+];
+PALETTES.whatsapp = { "#": "#25D366" };
+
+// Telegram — sky blue (#26A5E4) — paper plane
+I.telegram = [
+  ".................",
+  "..##############.",
+  "...############..",
+  ".....##########..",
+  ".......########..",
+  ".......########..",
+  "......##########.",
+  ".....############",
+  "....#############",
+  "...##############",
+  "..##.....########",
+  ".##......########",
+  ".#......##.######",
+  ".......##....####",
+  "......##........#",
+  "......##.........",
+  "......##.........",
+];
+
+// Chrome — multi-color: red (#EA4335) top-right, yellow (#FBBC04) bottom-right,
+// green (#34A853) bottom-left, blue (#4285F4) center sphere, white ring
+// Legend: R=red, Y=yellow, G=green, B=blue, W=white
+I.chrome = [
+  ".................",
+  ".....RRRRRRR.....",
+  "...RRRRRRRRRRR...",
+  "..RRRRRRRRRRRRR..",
+  ".RRRRWWWWWWWRRRR.",
+  ".RRRWWBBBBBWWRRR.",
+  "GGRWWBBBBBBBWWRY.",
+  "GGGWBBBBBBBBBWYY.",
+  "GGGWBBBBBBBBBWYYY",
+  "GGGWBBBBBBBBBWYYY",
+  "GGGWBBBBBBBBBWYYY",
+  "GGGWWBBBBBBBWWYYY",
+  ".GGGWWBBBBBWWYYY.",
+  "..GGGGWWWWWYYYY..",
+  "...GGGGGGYYYYY...",
+  "....GGGGYYYYY....",
+  "......GGYY.......",
+];
+PALETTES.chrome = { "R": "#EA4335", "Y": "#FBBC04", "G": "#34A853", "B": "#4285F4", "W": "#FFFFFF" };
+
+// Brave — orange (#FB542B) — lion mane silhouette
+I.brave = [
+  ".................",
+  "...##.......##...",
+  "..####.....####..",
+  ".######...######.",
+  "..##############.",
+  "..##############.",
+  ".###############.",
+  ".##.##.....##.##.",
+  ".##.##.....##.##.",
+  ".##..#######..##.",
+  ".###.#######.###.",
+  ".####.#####.####.",
+  ".#####.....#####.",
+  "..####.....####..",
+  "...###.....###...",
+  "....##.....##....",
+  ".................",
+];
+
+// Firefox — orange flame curling around blue globe
+// Legend: O=orange, Y=yellow flame tip, B=blue globe
+I.firefox = [
+  ".......OOO.......",
+  ".....OOOOOOO.....",
+  "....OOOYYY.OOO...",
+  "...OOOYYYY..OO...",
+  "..OOOYYYBBB..OO..",
+  ".OOOYYBBBBBB..OO.",
+  ".OOYYBBBBBBBB.OO.",
+  "OOOYBBBBBBBBB.OO.",
+  "OOOBBBBBBBBBB.OO.",
+  "OOOBBBBBBBBBB.OO.",
+  "OOOOBBBBBBBBOOOO.",
+  ".OOOOBBBBBBOOOOO.",
+  ".OOOOOBBBBOOOOO..",
+  "..OOOOOOOOOOOO...",
+  "...OOOOOOOOOO....",
+  "....OOOOOOOO.....",
+  ".....OOOOOO......",
+];
+PALETTES.firefox = { "O": "#FF7139", "Y": "#FFCB6B", "B": "#0061FE" };
+
+// Adobe Premiere Pro — violet (#9999FF) — "Pr"
+I.premiere = [
+  ".................",
+  ".................",
+  "....####.........",
+  "...##..##...##...",
+  "...##..##...##...",
+  "..##....##.##....",
+  "..##....##.###...",
+  "..########.##.##.",
+  "..##....##.##.##.",
+  ".##......##.###..",
+  ".##......##.##...",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// DaVinci Resolve — multi-color circular gradient ring
+I.davinci = [
+  ".................",
+  ".....OOORRR......",
+  "...OOOOORRRRR....",
+  "..OOOO...RRRR....",
+  ".YYY.......RRR...",
+  ".YY.........RR...",
+  "YY...........PP..",
+  "YY....###....PP..",
+  "YY...#####...PP..",
+  "YY....###....PP..",
+  "YY...........PP..",
+  ".GG.........BPP..",
+  ".GGG.......BBB...",
+  "..GGGG...BBBB....",
+  "...GGGGGBBBBB....",
+  ".....GGGBBB......",
+  ".................",
+];
+PALETTES.davinci = { "R":"#E54E5C","O":"#F19A4F","Y":"#F5C84B","G":"#5BC97F","B":"#3D8FE5","P":"#9D5FCB","#":"#E0E0E0"};
+
+// NVIDIA Broadcast — green (#76B900) — eye/lens with broadcast waves
+I.nvbroadcast = [
+  ".................",
+  "GG.............GG",
+  ".GG...........GG.",
+  "..GG.GGGGGGG.GG..",
+  "...GGG.....GGG...",
+  ".GG.GGG...GGG.GG.",
+  ".GG.GG..G..GG.GG.",
+  ".GG.GG.GGG.GG.GG.",
+  ".GG.GG..G..GG.GG.",
+  ".GG.GGG...GGG.GG.",
+  "...GGG.....GGG...",
+  "..GG.GGGGGGG.GG..",
+  ".GG...........GG.",
+  "GG.............GG",
+  ".................",
+  ".....GGGGGGG.....",
+  ".................",
+];
+PALETTES.nvbroadcast = { "G": "#76B900" };
+
+// Word — blue (#185ABD) — "W"
+I.word = [
+  ".................",
+  ".................",
+  "..##############.",
+  "..##............#",
+  "..##.##.....##..#",
+  "..##.##.....##..#",
+  "..##.##.....##..#",
+  "..##.##.###.##..#",
+  "..##.##.###.##..#",
+  "..##.##.###.##..#",
+  "..##.##.###.##..#",
+  "..##..##.#.##...#",
+  "..##..##.#.##...#",
+  "..##...###.##...#",
+  "..##............#",
+  "..##############.",
+  ".................",
+];
+
+// PowerPoint — orange (#D24726) — "P"
+I.powerpoint = [
+  ".................",
+  ".................",
+  "..##############.",
+  "..##............#",
+  "..##.######.....#",
+  "..##.##...##....#",
+  "..##.##....##...#",
+  "..##.##....##...#",
+  "..##.##...##....#",
+  "..##.######.....#",
+  "..##.##.........#",
+  "..##.##.........#",
+  "..##.##.........#",
+  "..##.##.........#",
+  "..##............#",
+  "..##############.",
+  ".................",
+];
+
+// Outlook — blue (#0078D4) — envelope/O
+I.outlook = [
+  ".................",
+  "..##############.",
+  "..##.........###.",
+  "..##.######..###.",
+  "..##.##...##.###.",
+  "..##.##....##.##.",
+  "..##.##....##.##.",
+  "..##.##....##.##.",
+  "..##.##....##.##.",
+  "..##.##....##.##.",
+  "..##.##...##.###.",
+  "..##.######..###.",
+  "..##.........###.",
+  "..##.........###.",
+  "..##.........###.",
+  "..##############.",
+  ".................",
+];
+
+// OneNote — purple (#7719AA) — "N"
+I.onenote = [
+  ".................",
+  ".................",
+  "..##############.",
+  "..##.........###.",
+  "..##.##......###.",
+  "..##.###.....###.",
+  "..##.####....###.",
+  "..##.##.##...###.",
+  "..##.##..##..###.",
+  "..##.##...##.###.",
+  "..##.##....####..",
+  "..##.##.....###..",
+  "..##.##......##..",
+  "..##.........###.",
+  "..##.........###.",
+  "..##############.",
+  ".................",
+];
+
+// Microsoft Teams — purple (#6264A7) — "T" with people
+I.teams = [
+  ".................",
+  "..############...",
+  "..############...",
+  "..############...",
+  "..####....####...",
+  "..####....####...",
+  "....####.........",
+  "....####....##...",
+  "....####...####..",
+  "....####....##...",
+  "....####.........",
+  "....####....##...",
+  "....####...####..",
+  "....####....##...",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// Zoom — blue (#2D8CFF) — camcorder
+I.zoom = [
+  ".................",
+  ".................",
+  "..############...",
+  ".##############..",
+  ".##..........###.",
+  ".##........#####.",
+  ".##......#######.",
+  ".##....#########.",
+  ".##....#########.",
+  ".##....#########.",
+  ".##......#######.",
+  ".##........#####.",
+  ".##..........###.",
+  ".##############..",
+  "..############...",
+  ".................",
+  ".................",
+];
+
+// Epic Games — white — "E"
+I.epic = [
+  ".................",
+  "..##############.",
+  "..##############.",
+  "..##.............",
+  "..##.............",
+  "..##.............",
+  "..############...",
+  "..############...",
+  "..##.............",
+  "..##.............",
+  "..##.............",
+  "..##############.",
+  "..##############.",
+  ".......##........",
+  "......####.......",
+  ".....######......",
+  ".................",
+];
+
+// Xbox — green — circle with X
+I.xbox = [
+  ".................",
+  ".....#######.....",
+  "...##.......##...",
+  "..##..#...#..##..",
+  ".##....#.#....##.",
+  ".##.....#.....##.",
+  "##......#......##",
+  "##.....#.#.....##",
+  "##....#...#....##",
+  "##...#.....#...##",
+  "##..#.......#..##",
+  ".##.#........###.",
+  ".##.#.......###..",
+  "..##.#....####...",
+  "...##.######.....",
+  ".....#######.....",
+  ".................",
+];
+
+// PlayStation — "PS" stacked
+I.playstation = [
+  ".................",
+  ".................",
+  ".....######......",
+  "....##....##.....",
+  "...##......##....",
+  "...##.####.##....",
+  "...##.######.....",
+  "...##.##.........",
+  "...##.##.........",
+  "...##.##.........",
+  "...##.##.........",
+  "...##.##.........",
+  "...##.##.........",
+  "...##.##.........",
+  ".................",
+  "..##############.",
+  "..##############.",
+];
+
+// Nintendo Switch — red — joycon controller
+I.nintendo = [
+  ".................",
+  "..####.....####..",
+  ".######...######.",
+  "###..###.###..###",
+  "##.#..###.###.###",
+  "##.....#.#.....##",
+  "##..............#",
+  "##....##.##.....#",
+  "##...####.##....#",
+  "##....##.##.....#",
+  "##..............#",
+  "##.....#.#.....##",
+  "##.....###.#..###",
+  "###..###.###..###",
+  ".######...######.",
+  "..####.....####..",
+  ".................",
+];
+
+// Minecraft — grass + dirt block isometric
+I.minecraft = [
+  ".................",
+  "....#######......",
+  "...GGGGGGGGG.....",
+  "..GGGGGGGGGGG....",
+  ".GGGGGGGGGGGGG...",
+  "GGGGGGGGGGGGGGG..",
+  "BB.GGGGGGGGG.BB..",
+  "BBBB.GGGGG.BBBB..",
+  "BBBBBB.G.BBBBBB..",
+  "BBBBBBBBBBBBBBB..",
+  "BBBBBBBBBBBBBBB..",
+  "BBBBBBBBBBBBBBB..",
+  "BBBBBBBBBBBBBBB..",
+  "BBBBBBBBBBBBBBB..",
+  ".BBBBBBBBBBBBB...",
+  "...BBBBBBBBB.....",
+  ".................",
+];
+PALETTES.minecraft = { "G": "#5D8731", "B": "#8B5A2B" };
+
+// Bluetooth — blue rune
+I.bluetooth = [
+  ".................",
+  ".......##........",
+  ".......###.......",
+  ".......####......",
+  "....##.##.##.....",
+  "....###.####.....",
+  ".....##..###.....",
+  "......##.##......",
+  ".......####......",
+  "......##.##......",
+  ".....##..###.....",
+  "....###.####.....",
+  "....##.##.##.....",
+  ".......####......",
+  ".......###.......",
+  ".......##........",
+  ".................",
+];
+
+// WiFi — waves
+I.wifi = [
+  ".................",
+  ".................",
+  "..#############..",
+  ".###.........###.",
+  "##.............##",
+  "#.....#####.....#",
+  "....###.....###..",
+  "...##.........##.",
+  "......#####......",
+  ".....##...##.....",
+  "....##.....##....",
+  ".......###.......",
+  "......##.##......",
+  ".......###.......",
+  ".................",
+  ".................",
+  ".................",
+];
+
+// VPN — shield + lock
+I.vpn = [
+  ".................",
+  ".......###.......",
+  "......#####......",
+  "....#########....",
+  "...###########...",
+  "..#############..",
+  "..####.....####..",
+  "..###.#####.###..",
+  "..###.##.##.###..",
+  "..###.##.##.###..",
+  "..###.#####.###..",
+  "..#############..",
+  "..#############..",
+  "...###########...",
+  "....#########....",
+  ".....#######.....",
+  ".......###.......",
+];
+
+// Antivirus — shield + virus dot
+I.antivirus = [
+  ".................",
+  ".......###.......",
+  "......#####......",
+  "....#########....",
+  "...###########...",
+  "..#############..",
+  "..####.....####..",
+  "..###.......###..",
+  "..###.#.#.#.###..",
+  "..###..###..###..",
+  "..###.#####.###..",
+  "..###..###..###..",
+  "..###.#.#.#.###..",
+  "...###########...",
+  "....#########....",
+  ".....#######.....",
+  ".......###.......",
+];
+
+// Settings — gear
+I.settings = [
+  ".................",
+  ".......##........",
+  "......####.......",
+  "...#..####..#....",
+  "..###.####.###...",
+  "..############...",
+  "..####....####...",
+  ".####..##..####..",
+  ".####.####.####..",
+  ".####..##..####..",
+  "..####....####...",
+  "..############...",
+  "..###.####.###...",
+  "...#..####..#....",
+  "......####.......",
+  ".......##........",
+  ".................",
+];
+
+// Control Panel — sliders dashboard
+I.controlpanel = [
+  ".................",
+  ".................",
+  "..#############..",
+  "..#############..",
+  "..##.........##..",
+  "..##.###.....##..",
+  "..##.###.#####...",
+  "..##.........##..",
+  "..##.#######.##..",
+  "..##.....###.##..",
+  "..##.........##..",
+  "..##.##......##..",
+  "..##.##.######...",
+  "..##.........##..",
+  "..#############..",
+  "..#############..",
+  ".................",
+];
+
+// Registry — key
+I.registry = [
+  ".................",
+  ".................",
+  "..####...........",
+  "..####.####......",
+  "..####.####......",
+  "..########.......",
+  "..####...........",
+  "..####.####......",
+  "..####.####.####.",
+  "..########.####..",
+  "..####.####......",
+  "..####.####......",
+  "..####...####....",
+  "..####...####....",
+  "..####...####....",
+  ".................",
+  ".................",
+];
+
+// Notepad++ — notepad with ++
+I.notepadpp = [
+  ".................",
+  "..##############.",
+  "..##............#",
+  "..##.########...#",
+  "..##.########...#",
+  "..##............#",
+  "..##.########...#",
+  "..##.########...#",
+  "..##............#",
+  "..##....##.##...#",
+  "..##....##.##...#",
+  "..##..######.##.#",
+  "..##....##.##...#",
+  "..##....##.##...#",
+  "..##............#",
+  "..##############.",
+  ".................",
+];
+
+/* ============================================
+   GROUPS
+   ============================================ */
+
+const GROUPS = [
+  {
+    title: "Diseño y Producción Creativa",
+    emoji: "🎨",
+    items: [
+      ["blender",      "Blender",            "#E87D0D"],
+      ["illustrator",  "Adobe Illustrator",  "#FF9A00"],
+      ["aftereffects", "Adobe After Effects","#9A9AFF"],
+      ["photoshop",    "Adobe Photoshop",    "#31A8FF"],
+      ["figma",        "Figma",              "#A259FF"],
+      ["canva",        "Canva",              "#00C4CC"],
+      ["premiere",     "Adobe Premiere Pro", "#9999FF"],
+      ["davinci",      "DaVinci Resolve",    "#E54E5C"],
+    ],
+  },
+  {
+    title: "Streaming y Creación de Contenido",
+    emoji: "🎥",
+    items: [
+      ["obs",          "OBS Studio",         "#E1E1E5"],
+      ["streamlabs",   "Streamlabs",         "#80F5D2"],
+      ["twitch",       "Twitch",             "#9146FF"],
+      ["youtubestudio","YouTube Studio",     "#FF3030"],
+      ["tiktok",       "TikTok Live Studio", "#25F4EE"],
+      ["voicemeeter",  "VoiceMeeter",        "#7FFF55"],
+      ["elgato",       "Elgato Control Ctr.","#1AABEE"],
+      ["nvbroadcast",  "NVIDIA Broadcast",   "#76B900"],
+    ],
+  },
+  {
+    title: "Programación y Desarrollo",
+    emoji: "💻",
+    items: [
+      ["vscode",       "VS Code",            "#0098FF"],
+      ["github",       "GitHub",             "#E8E8EA"],
+      ["gitlab",       "GitLab",             "#FC6D26"],
+      ["docker",       "Docker Desktop",     "#2496ED"],
+      ["terminal",     "Terminal / PowerShell","#7CFCB6"],
+      ["chatgpt",      "ChatGPT",            "#10A37F"],
+      ["claude",       "Claude",             "#D97757"],
+      ["flutter",      "Flutter DevTools",   "#54C5F8"],
+    ],
+  },
+  {
+    title: "Productividad y Gestión",
+    emoji: "🚀",
+    items: [
+      ["notion",       "Notion",             "#E8E8EA"],
+      ["trello",       "Trello",             "#0079BF"],
+      ["asana",        "Asana",              "#F06A6A"],
+      ["slack",        "Slack",              "#ECB22E"],
+      ["discord",      "Discord",            "#5865F2"],
+      ["excel",        "Microsoft Excel",    "#21A366"],
+      ["calendar",     "Google Calendar",    "#4285F4"],
+      ["obsidian",     "Obsidian",           "#A78BFA"],
+      ["word",         "Microsoft Word",     "#185ABD"],
+      ["powerpoint",   "Microsoft PowerPoint","#D24726"],
+      ["outlook",      "Microsoft Outlook",  "#0078D4"],
+      ["onenote",      "Microsoft OneNote",  "#7719AA"],
+      ["teams",        "Microsoft Teams",    "#6264A7"],
+      ["zoom",         "Zoom",               "#2D8CFF"],
+    ],
+  },
+  {
+    title: "Multimedia y Ocio",
+    emoji: "🔊",
+    items: [
+      ["spotify",      "Spotify",            "#1DB954"],
+      ["ytmusic",      "YouTube Music",      "#FF3030"],
+      ["netflix",      "Netflix",            "#E50914"],
+      ["crunchyroll",  "Crunchyroll",        "#F47521"],
+      ["steam",        "Steam",              "#66C0F4"],
+      ["pokemonshowdown","Pokémon Showdown", "#FFCC00"],
+      ["epic",         "Epic Games",         "#E8E8EA"],
+      ["xbox",         "Xbox",               "#107C10"],
+      ["playstation",  "PlayStation",        "#4A7AFF"],
+      ["nintendo",     "Nintendo Switch",    "#E60012"],
+      ["minecraft",    "Minecraft",          "#5D8731"],
+    ],
+  },
+  {
+    title: "Utilidades de Sistema y Hogar Inteligente",
+    emoji: "⚙️",
+    items: [
+      ["fileexplorer", "Explorador de Archivos", "#FFC846"],
+      ["calculator",   "Calculadora",        "#FF9500"],
+      ["taskmanager",  "Task Manager",       "#E8E8EA"],
+      ["homeassistant","Home Assistant",     "#41BDF5"],
+      ["speedtest",    "Speedtest",          "#5DADE2"],
+      ["whatsapp",     "WhatsApp",           "#25D366"],
+      ["telegram",     "Telegram",           "#26A5E4"],
+      ["chrome",       "Chrome",             "#EA4335"],
+      ["edge",         "Microsoft Edge",     "#0078D7"],
+      ["brave",        "Brave",              "#FB542B"],
+      ["firefox",      "Firefox",            "#FF7139"],
+      ["bluetooth",    "Bluetooth",          "#0082FC"],
+      ["wifi",         "Wi-Fi Toggle",       "#00BFFF"],
+      ["vpn",          "VPN",                "#22C55E"],
+      ["antivirus",    "Antivirus",          "#E50914"],
+      ["settings",     "Settings (Win/macOS)","#C0C0C8"],
+      ["controlpanel", "Control Panel",      "#F2C200"],
+      ["registry",     "Registry Editor",    "#00BCD4"],
+      ["notepadpp",    "Notepad++",          "#90E59A"],
+    ],
+  },
+];
+
+/* Per-icon animation kind. Default = breathe (no key needed). */
+const ANIMS = {
+  // Diseño y producción
+  blender: "spin-slow", illustrator: "shimmer", aftereffects: "shimmer",
+  photoshop: "shimmer", figma: "float", canva: "shimmer",
+  premiere: "shimmer", davinci: "shimmer",
+
+  // Streaming
+  obs: "rec", streamlabs: "rec", twitch: "rec", youtubestudio: "rec",
+  tiktok: "glitch", voicemeeter: "wave", elgato: "blink", nvbroadcast: "signal",
+
+  // Programación
+  vscode: "shimmer", github: "float", gitlab: "shimmer", docker: "float",
+  terminal: "blink", chatgpt: "pulse", claude: "pulse", flutter: "float",
+
+  // Productividad
+  notion: "shimmer", trello: "shimmer", asana: "pulse", slack: "pulse",
+  discord: "bounce", excel: "shimmer", calendar: "shimmer", obsidian: "float",
+  word: "shimmer", powerpoint: "shimmer", outlook: "shimmer",
+  onenote: "shimmer", teams: "pulse", zoom: "signal",
+
+  // Multimedia
+  spotify: "wave", ytmusic: "wave", netflix: "shimmer", crunchyroll: "shimmer",
+  steam: "spin-slow", pokemonshowdown: "spin-slow",
+  epic: "shimmer", xbox: "pulse", playstation: "pulse",
+  nintendo: "tilt", minecraft: "float",
+
+  // Sistema
+  fileexplorer: "shimmer", calculator: "blink", taskmanager: "wave",
+  homeassistant: "shimmer", speedtest: "gear",
+  whatsapp: "bounce", telegram: "slide",
+  chrome: "spin", edge: "spin", brave: "shimmer", firefox: "spin-slow",
+  bluetooth: "signal", wifi: "signal", vpn: "pulse", antivirus: "rec",
+  settings: "gear", controlpanel: "shimmer", registry: "blink",
+  notepadpp: "shimmer",
+};
+
+/* Render */
+const wrap = document.getElementById("wrap");
+let n = 0;
+GROUPS.forEach((g, gi) => {
+  const sec = document.createElement("section");
+  const num = String(gi+1).padStart(2,"0");
+  const total = g.items.length;
+  sec.innerHTML = `<h2><span class="num">${num}</span><span class="emoji">${g.emoji}</span> ${g.title} <span class="count">${total}</span></h2>
+    <div class="grid"></div>`;
+  const grid = sec.querySelector(".grid");
+  g.items.forEach(([key, label, color]) => {
+    n++;
+    const bm = I[key] || Array(SIZE).fill(".".repeat(SIZE));
+    // pad/clip bitmap to exactly SIZE×SIZE
+    const fixed = Array.from({length:SIZE}, (_,y) => {
+      const row = (bm[y]||"").padEnd(SIZE, ".").slice(0, SIZE);
+      return row;
+    });
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.setAttribute("data-anim", ANIMS[key] || "breathe");
+    // desync animations so the grid feels alive, not metronomic
+    tile.style.setProperty("--ad", (Math.random()*-3).toFixed(2)+"s");
+    tile.innerHTML = `
+      <span class="idx">${String(n).padStart(2,"0")}</span>
+      <div class="panel">${svg(fixed, color, PALETTES[key])}</div>
+      <div class="lbl">${label}</div>`;
+    grid.appendChild(tile);
+  });
+  wrap.appendChild(sec);
+});
+</script>
+</body>
+</html>

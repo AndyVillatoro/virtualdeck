@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VirtualDeck — Icon Set</title>
+<style>
+  :root{
+    --bg:#1a1a1a;
+    --bg-2:#141414;
+    --panel:#1f1f1f;
+    --line:#2a2a2a;
+    --stroke:#c8c8c8;
+    --muted:#6a6a6a;
+    --text:#e8e8e8;
+    --accent:#4a8ef0;
+    --danger:#e05555;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--text);margin:0;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{padding:48px 56px 120px}
+  header{max-width:1280px;margin:0 auto 40px}
+  h1{font-size:22px;font-weight:600;letter-spacing:-0.01em;margin:0 0 6px}
+  header p{margin:0;color:var(--muted);font-family:var(--mono);font-size:12px;letter-spacing:0.02em}
+  header .meta{margin-top:18px;display:flex;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  header .meta span b{color:var(--text);font-weight:500}
+  .swatch{display:inline-block;width:10px;height:10px;vertical-align:-1px;margin-right:6px;border-radius:2px}
+
+  .wrap{max-width:1280px;margin:0 auto}
+  section{margin:44px 0 0}
+  section h2{
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 18px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:baseline;gap:12px;
+  }
+  section h2 .num{color:#3a3a3a}
+  section h2 .count{margin-left:auto;color:#3a3a3a}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .cell{
+    background:var(--bg);
+    padding:18px 12px 14px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;
+    min-height:128px;
+    transition:background .15s ease;
+    position:relative;
+  }
+  .cell:hover{background:var(--panel)}
+  .cell .icon{
+    width:48px;height:48px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cell .icon svg{width:48px;height:48px;display:block}
+  .cell .lbl{
+    font-family:var(--mono);
+    font-size:10px;
+    color:#8a8a8a;
+    letter-spacing:0.02em;
+    text-align:center;
+    line-height:1.3;
+  }
+  .cell .idx{
+    position:absolute;top:6px;left:8px;
+    font-family:var(--mono);font-size:9px;color:#3a3a3a;
+  }
+
+  /* Icon conventions */
+  .vd-icon{stroke:var(--stroke);stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .vd-icon .accent{stroke:var(--accent)}
+  .vd-icon .danger{stroke:var(--danger)}
+  .vd-icon .fill-accent{fill:var(--accent);stroke:none}
+  .vd-icon .fill-stroke{fill:var(--stroke);stroke:none}
+  .vd-icon .fill-muted{fill:var(--stroke);stroke:none;opacity:.5}
+  .vd-icon .dashed{stroke-dasharray:2 2.2}
+
+  /* ---------- ANIMATIONS ---------- */
+  @keyframes vd-spin { to { transform:rotate(360deg) } }
+  @keyframes vd-dash { to { stroke-dashoffset:-12 } }
+  @keyframes vd-pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  @keyframes vd-blink { 0%,60%{opacity:1} 70%,100%{opacity:0} }
+  @keyframes vd-wave1 { 0%,100%{opacity:.25} 50%{opacity:1} }
+  @keyframes vd-wave2 { 0%,100%{opacity:1} 50%{opacity:.25} }
+  @keyframes vd-bell  { 0%,92%,100%{transform:rotate(0)} 94%{transform:rotate(-8deg)} 96%{transform:rotate(8deg)} 98%{transform:rotate(-4deg)} }
+  @keyframes vd-bolt  { 0%,70%,100%{opacity:.3} 80%{opacity:1} }
+  @keyframes vd-rain  { 0%{transform:translateY(-3px);opacity:0} 30%{opacity:1} 100%{transform:translateY(4px);opacity:0} }
+  @keyframes vd-snow  { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+  @keyframes vd-arrow-up { 0%{transform:translateY(1px);opacity:.4} 50%{opacity:1} 100%{transform:translateY(-2px);opacity:.4} }
+  @keyframes vd-arrow-dn { 0%{transform:translateY(-2px);opacity:.4} 50%{opacity:1} 100%{transform:translateY(1px);opacity:.4} }
+  @keyframes vd-cursor { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+  @keyframes vd-toggle { 0%{transform:translateX(0)} 100%{transform:translateX(8px)} }
+  @keyframes vd-gear { to { transform:rotate(360deg) } }
+  @keyframes vd-flash { 0%,85%,100%{opacity:1} 90%{opacity:0} }
+  @keyframes vd-drift { 0%,100%{transform:translateX(0)} 50%{transform:translateX(1.5px)} }
+
+  .cell:hover .anim-spin     { animation:vd-spin 4s linear infinite; transform-origin:center }
+  .cell:hover .anim-dash     { animation:vd-dash 2s linear infinite }
+  .cell:hover .anim-pulse    { animation:vd-pulse 1.6s ease-in-out infinite }
+  .cell:hover .anim-blink    { animation:vd-blink 1.6s ease-in-out infinite }
+  .cell:hover .anim-wave1    { animation:vd-wave1 1.6s ease-in-out infinite }
+  .cell:hover .anim-wave2    { animation:vd-wave2 1.6s ease-in-out infinite }
+  .cell:hover .anim-bell     { animation:vd-bell 3s ease-in-out infinite;transform-origin:12px 6px }
+  .cell:hover .anim-bolt     { animation:vd-bolt 1.6s ease-in-out infinite }
+  .cell:hover .anim-rain     { animation:vd-rain 1.2s linear infinite }
+  .cell:hover .anim-rain-2   { animation:vd-rain 1.2s linear infinite;animation-delay:.4s }
+  .cell:hover .anim-rain-3   { animation:vd-rain 1.2s linear infinite;animation-delay:.8s }
+  .cell:hover .anim-snow     { animation:vd-snow 6s linear infinite;transform-origin:center }
+  .cell:hover .anim-arrow-up { animation:vd-arrow-up 1.4s ease-in-out infinite }
+  .cell:hover .anim-arrow-dn { animation:vd-arrow-dn 1.4s ease-in-out infinite }
+  .cell:hover .anim-cursor   { animation:vd-cursor 1s step-end infinite }
+  .cell:hover .anim-toggle   { animation:vd-toggle .4s ease forwards }
+  .cell:hover .anim-gear     { animation:vd-gear 6s linear infinite;transform-origin:12px 12px }
+  .cell:hover .anim-flash    { animation:vd-flash 2.4s ease-in-out infinite }
+  .cell:hover .anim-drift    { animation:vd-drift 3s ease-in-out infinite }
+
+  /* Preview strip */
+  .preview{
+    margin:48px auto 0;max-width:1280px;
+    border:1px solid var(--line);border-radius:6px;overflow:hidden;
+    background:linear-gradient(180deg,#1a1a1a,#141414);
+  }
+  .preview .bar{
+    display:flex;align-items:center;gap:8px;padding:10px 14px;
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:11px;color:var(--muted)
+  }
+  .preview .bar .dot{width:8px;height:8px;border-radius:50%;background:#2a2a2a}
+  .preview .content{
+    display:grid;grid-template-columns:auto 1fr auto;gap:24px;
+    padding:22px 20px;align-items:center;
+  }
+  .deck{
+    display:grid;grid-template-columns:repeat(5,56px);grid-template-rows:repeat(3,56px);gap:6px;
+  }
+  .key{
+    background:#0f0f0f;border:1px solid #262626;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .key:hover{background:#171717;border-color:#333}
+  .key svg{width:28px;height:28px}
+  .right{display:flex;align-items:center;gap:14px;color:var(--muted);font-family:var(--mono);font-size:11px}
+  .right .chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:999px}
+  .right .chip svg{width:14px;height:14px}
+
+  footer{max-width:1280px;margin:48px auto 0;color:#444;font-family:var(--mono);font-size:10px;letter-spacing:0.06em}
+
+  /* color helpers for specific icons */
+  .txt-accent{fill:var(--accent)}
+  .txt-danger{fill:var(--danger)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>VirtualDeck — Icon Set</h1>
+  <p>88 iconos · 9 grupos · 24×24 grid · trazo 1.5</p>
+  <div class="meta">
+    <span><span class="swatch" style="background:#c8c8c8"></span>stroke <b>#c8c8c8</b></span>
+    <span><span class="swatch" style="background:#4a8ef0"></span>accent <b>#4a8ef0</b></span>
+    <span><span class="swatch" style="background:#e05555"></span>danger <b>#e05555</b></span>
+    <span>hover para ver animación</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ========== GROUP 1 ========== -->
+<section>
+  <h2><span class="num">01</span> Tipos de acción <span class="count">20</span></h2>
+  <div class="grid">
+
+    <!-- 1 none -->
+    <div class="cell"><span class="idx">01</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle class="anim-spin" cx="12" cy="12" r="7" stroke-dasharray="2 2.2"/>
+      </svg></div>
+      <div class="lbl">none</div>
+    </div>
+
+    <!-- 2 app -->
+    <div class="cell"><span class="idx">02</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="12" rx="2"/>
+        <line x1="8" y1="20" x2="16" y2="20"/>
+        <line x1="12" y1="17" x2="12" y2="20"/>
+      </svg></div>
+      <div class="lbl">app</div>
+    </div>
+
+    <!-- 3 web -->
+    <div class="cell"><span class="idx">03</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8"/>
+        <ellipse cx="12" cy="12" rx="3.5" ry="8"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+      </svg></div>
+      <div class="lbl">web</div>
+    </div>
+
+    <!-- 4 shortcut -->
+    <div class="cell"><span class="idx">04</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M10 14a4 4 0 0 1 0-5.6l2-2a4 4 0 0 1 5.6 5.6L16 13.5"/>
+        <path d="M14 10a4 4 0 0 1 0 5.6l-2 2a4 4 0 0 1-5.6-5.6L8 10.5"/>
+      </svg></div>
+      <div class="lbl">shortcut</div>
+    </div>
+
+    <!-- 5 script -->
+    <div class="cell"><span class="idx">05</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="5,9 9,12 5,15"/>
+        <line class="anim-cursor" x1="11" y1="16" x2="19" y2="16"/>
+      </svg></div>
+      <div class="lbl">script</div>
+    </div>
+
+    <!-- 6 audio-device (headphones) -->
+    <div class="cell"><span class="idx">06</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 14v-2a8 8 0 0 1 16 0v2"/>
+        <rect x="3" y="14" width="4" height="6" rx="1.5"/>
+        <rect x="17" y="14" width="4" height="6" rx="1.5"/>
+      </svg></div>
+      <div class="lbl">audio-device</div>
+    </div>
+
+    <!-- 7 hotkey -->
+    <div class="cell"><span class="idx">07</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="4" y="6" width="16" height="12" rx="2"/>
+        <path d="M15 10v2a1.5 1.5 0 0 1-1.5 1.5H9"/>
+        <polyline points="11,11.5 9,13.5 11,15.5"/>
+      </svg></div>
+      <div class="lbl">hotkey</div>
+    </div>
+
+    <!-- 8 clipboard -->
+    <div class="cell"><span class="idx">08</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="5" y="5" width="14" height="16" rx="2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <line x1="9" y1="12" x2="15" y2="12"/>
+        <line x1="9" y1="16" x2="13" y2="16"/>
+      </svg></div>
+      <div class="lbl">clipboard</div>
+    </div>
+
+    <!-- 9 type-text -->
+    <div class="cell"><span class="idx">09</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="5" y1="7" x2="14" y2="7"/>
+        <line x1="5" y1="12" x2="11" y2="12"/>
+        <line x1="5" y1="17" x2="13" y2="17"/>
+        <line class="anim-cursor" x1="18" y1="5" x2="18" y2="19"/>
+        <line x1="16.5" y1="5" x2="19.5" y2="5"/>
+        <line x1="16.5" y1="19" x2="19.5" y2="19"/>
+      </svg></div>
+      <div class="lbl">type-text</div>
+    </div>
+
+    <!-- 10 kill-process -->
+    <div class="cell"><span class="idx">10</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle class="danger" cx="12" cy="12" r="8"/>
+        <line class="danger" x1="9" y1="9" x2="15" y2="15"/>
+        <line class="danger" x1="15" y1="9" x2="9" y2="15"/>
+      </svg></div>
+      <div class="lbl">kill-process</div>
+    </div>
+
+    <!-- 11 volume-set -->
+    <div class="cell"><span class="idx">11</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <circle cx="14" cy="12" r="2.5" class="accent" style="fill:var(--accent);stroke:var(--accent)"/>
+      </svg></div>
+      <div class="lbl">volume-set</div>
+    </div>
+
+    <!-- 12 folder -->
+    <div class="cell"><span class="idx">12</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/>
+        <polyline points="13,11 16,13 13,15"/>
+        <line x1="8" y1="13" x2="16" y2="13"/>
+      </svg></div>
+      <div class="lbl">folder</div>
+    </div>
+
+    <!-- 13 media-play-pause -->
+    <div class="cell"><span class="idx">13</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="5,6 5,18 14,12" class="fill-stroke"/>
+        <line x1="17" y1="7" x2="17" y2="17"/>
+        <line x1="20" y1="7" x2="20" y2="17"/>
+      </svg></div>
+      <div class="lbl">media-play-pause</div>
+    </div>
+
+    <!-- 14 media-next -->
+    <div class="cell"><span class="idx">14</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="6,6 6,18 15,12" class="fill-stroke"/>
+        <line x1="17.5" y1="6" x2="17.5" y2="18"/>
+      </svg></div>
+      <div class="lbl">media-next</div>
+    </div>
+
+    <!-- 15 media-prev -->
+    <div class="cell"><span class="idx">15</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="6.5" y1="6" x2="6.5" y2="18"/>
+        <polygon points="18,6 18,18 9,12" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">media-prev</div>
+    </div>
+
+    <!-- 16 volume-up -->
+    <div class="cell"><span class="idx">16</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="4,10 4,14 8,14 12,18 12,6 8,10" class="fill-stroke"/>
+        <path class="anim-wave1" d="M15 9a4 4 0 0 1 0 6"/>
+        <path class="anim-wave2" d="M17.5 7a7 7 0 0 1 0 10"/>
+      </svg></div>
+      <div class="lbl">volume-up</div>
+    </div>
+
+    <!-- 17 volume-down -->
+    <div class="cell"><span class="idx">17</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="4,10 4,14 8,14 12,18 12,6 8,10" class="fill-stroke"/>
+        <path class="anim-wave1" d="M15 10a3 3 0 0 1 0 4"/>
+      </svg></div>
+      <div class="lbl">volume-down</div>
+    </div>
+
+    <!-- 18 mute -->
+    <div class="cell"><span class="idx">18</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="4,10 4,14 8,14 12,18 12,6 8,10" class="fill-stroke"/>
+        <line class="danger" x1="15" y1="9" x2="20" y2="15"/>
+        <line class="danger" x1="20" y1="9" x2="15" y2="15"/>
+      </svg></div>
+      <div class="lbl">mute</div>
+    </div>
+
+    <!-- 19 brightness -->
+    <div class="cell"><span class="idx">19</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g class="anim-spin" style="transform-origin:12px 12px">
+          <circle cx="12" cy="12" r="3.5"/>
+          <line x1="12" y1="3" x2="12" y2="5.5"/>
+          <line x1="12" y1="18.5" x2="12" y2="21"/>
+          <line x1="3" y1="12" x2="5.5" y2="12"/>
+          <line x1="18.5" y1="12" x2="21" y2="12"/>
+          <line x1="5.6" y1="5.6" x2="7.4" y2="7.4"/>
+          <line x1="16.6" y1="16.6" x2="18.4" y2="18.4"/>
+          <line x1="5.6" y1="18.4" x2="7.4" y2="16.6"/>
+          <line x1="16.6" y1="7.4" x2="18.4" y2="5.6"/>
+        </g>
+      </svg></div>
+      <div class="lbl">brightness</div>
+    </div>
+
+    <!-- 20 notify -->
+    <div class="cell"><span class="idx">20</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g class="anim-bell">
+          <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/>
+          <path d="M10 19a2 2 0 0 0 4 0"/>
+        </g>
+      </svg></div>
+      <div class="lbl">notify</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 2 ========== -->
+<section>
+  <h2><span class="num">02</span> Controles de media <span class="count">4</span></h2>
+  <div class="grid">
+
+    <!-- 21 media-skip-back -->
+    <div class="cell"><span class="idx">21</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="6" y1="5" x2="6" y2="19"/>
+        <polygon points="19,5 19,19 8,12" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">media-skip-back</div>
+    </div>
+
+    <!-- 22 media-play -->
+    <div class="cell"><span class="idx">22</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="7,5 7,19 19,12" style="fill:var(--stroke);fill-opacity:.5;stroke:var(--stroke)"/>
+      </svg></div>
+      <div class="lbl">media-play</div>
+    </div>
+
+    <!-- 23 media-pause -->
+    <div class="cell"><span class="idx">23</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="8" y="5" width="2.5" height="14" rx="1" class="fill-stroke"/>
+        <rect x="13.5" y="5" width="2.5" height="14" rx="1" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">media-pause</div>
+    </div>
+
+    <!-- 24 media-skip-forward -->
+    <div class="cell"><span class="idx">24</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="5,5 5,19 16,12" class="fill-stroke"/>
+        <line x1="18" y1="5" x2="18" y2="19"/>
+      </svg></div>
+      <div class="lbl">media-skip-forward</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 3 ========== -->
+<section>
+  <h2><span class="num">03</span> Interfaz / barra de título <span class="count">10</span></h2>
+  <div class="grid">
+
+    <!-- 25 window-minimize -->
+    <div class="cell"><span class="idx">25</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="6" y1="12" x2="18" y2="12"/>
+      </svg></div>
+      <div class="lbl">window-minimize</div>
+    </div>
+
+    <!-- 26 window-close -->
+    <div class="cell"><span class="idx">26</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="7" y1="7" x2="17" y2="17"/>
+        <line x1="17" y1="7" x2="7" y2="17"/>
+      </svg></div>
+      <div class="lbl">window-close</div>
+    </div>
+
+    <!-- 27 fullscreen-enter -->
+    <div class="cell"><span class="idx">27</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="10,4 4,4 4,10"/>
+        <polyline points="14,4 20,4 20,10"/>
+        <polyline points="14,20 20,20 20,14"/>
+        <polyline points="10,20 4,20 4,14"/>
+      </svg></div>
+      <div class="lbl">fullscreen-enter</div>
+    </div>
+
+    <!-- 28 fullscreen-exit -->
+    <div class="cell"><span class="idx">28</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="4,10 10,10 10,4"/>
+        <polyline points="20,10 14,10 14,4"/>
+        <polyline points="20,14 14,14 14,20"/>
+        <polyline points="4,14 10,14 10,20"/>
+      </svg></div>
+      <div class="lbl">fullscreen-exit</div>
+    </div>
+
+    <!-- 29 settings -->
+    <div class="cell"><span class="idx">29</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g class="anim-gear">
+          <path d="M12 3.5l1.2 2.2 2.4-.5.6 2.4 2.3.9-.9 2.3.9 2.3-2.3.9-.6 2.4-2.4-.5L12 18l-1.2-2.1-2.4.5-.6-2.4-2.3-.9.9-2.3-.9-2.3 2.3-.9.6-2.4 2.4.5z" transform="translate(0,1.5)"/>
+          <circle cx="12" cy="12" r="2.8" transform="translate(0,0)"/>
+        </g>
+      </svg></div>
+      <div class="lbl">settings</div>
+    </div>
+
+    <!-- 30 export -->
+    <div class="cell"><span class="idx">30</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
+        <polyline class="anim-arrow-up" points="8,8 12,4 16,8"/>
+        <line class="anim-arrow-up" x1="12" y1="4" x2="12" y2="15"/>
+      </svg></div>
+      <div class="lbl">export</div>
+    </div>
+
+    <!-- 31 import -->
+    <div class="cell"><span class="idx">31</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>
+        <polyline class="anim-arrow-dn" points="8,11 12,15 16,11"/>
+        <line class="anim-arrow-dn" x1="12" y1="4" x2="12" y2="15"/>
+      </svg></div>
+      <div class="lbl">import</div>
+    </div>
+
+    <!-- 32 undo -->
+    <div class="cell"><span class="idx">32</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M5 10h9a5 5 0 0 1 0 10h-3"/>
+        <polyline points="8,6 4,10 8,14"/>
+      </svg></div>
+      <div class="lbl">undo</div>
+    </div>
+
+    <!-- 33 sidebar-collapse -->
+    <div class="cell"><span class="idx">33</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="14,7 9,12 14,17"/>
+        <polyline points="19,7 14,12 19,17"/>
+      </svg></div>
+      <div class="lbl">sidebar-collapse</div>
+    </div>
+
+    <!-- 34 sidebar-expand -->
+    <div class="cell"><span class="idx">34</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="5,7 10,12 5,17"/>
+        <polyline points="10,7 15,12 10,17"/>
+      </svg></div>
+      <div class="lbl">sidebar-expand</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 4 ========== -->
+<section>
+  <h2><span class="num">04</span> Sistema / widgets <span class="count">11</span></h2>
+  <div class="grid">
+
+    <!-- 35 cpu -->
+    <div class="cell"><span class="idx">35</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="6" y="6" width="12" height="12" rx="2"/>
+        <rect x="9" y="9" width="6" height="6" rx="1"/>
+        <line x1="9" y1="3" x2="9" y2="6"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="15" y1="3" x2="15" y2="6"/>
+        <line x1="9" y1="18" x2="9" y2="21"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="15" y1="18" x2="15" y2="21"/>
+        <line x1="3" y1="9" x2="6" y2="9"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="3" y1="15" x2="6" y2="15"/>
+        <line x1="18" y1="9" x2="21" y2="9"/><line x1="18" y1="12" x2="21" y2="12"/><line x1="18" y1="15" x2="21" y2="15"/>
+      </svg></div>
+      <div class="lbl">cpu</div>
+    </div>
+
+    <!-- 36 ram -->
+    <div class="cell"><span class="idx">36</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="7" width="18" height="10" rx="1"/>
+        <line x1="7" y1="10" x2="7" y2="14"/>
+        <line x1="12" y1="10" x2="12" y2="14"/>
+        <line x1="17" y1="10" x2="17" y2="14"/>
+        <line x1="6" y1="17" x2="6" y2="20"/>
+        <line x1="10" y1="17" x2="10" y2="20"/>
+        <line x1="14" y1="17" x2="14" y2="20"/>
+        <line x1="18" y1="17" x2="18" y2="20"/>
+      </svg></div>
+      <div class="lbl">ram</div>
+    </div>
+
+    <!-- 37 gpu -->
+    <div class="cell"><span class="idx">37</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="10" width="18" height="8" rx="1"/>
+        <circle class="anim-spin" style="transform-origin:9px 14px" cx="9" cy="14" r="2.3"/>
+        <circle cx="16" cy="14" r="1" class="fill-stroke"/>
+        <line x1="5" y1="18" x2="5" y2="20"/>
+        <line x1="19" y1="18" x2="19" y2="20"/>
+      </svg></div>
+      <div class="lbl">gpu</div>
+    </div>
+
+    <!-- 38 network-down -->
+    <div class="cell"><span class="idx">38</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path class="anim-wave1" d="M5 10a9 9 0 0 1 14 0"/>
+        <path class="anim-wave2" d="M8 13.5a5 5 0 0 1 8 0"/>
+        <line class="anim-arrow-dn" x1="12" y1="13" x2="12" y2="20"/>
+        <polyline class="anim-arrow-dn" points="9,17 12,20 15,17"/>
+      </svg></div>
+      <div class="lbl">network-down</div>
+    </div>
+
+    <!-- 39 network-up -->
+    <div class="cell"><span class="idx">39</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path class="anim-wave1" d="M5 10a9 9 0 0 1 14 0"/>
+        <path class="anim-wave2" d="M8 13.5a5 5 0 0 1 8 0"/>
+        <line class="anim-arrow-up" x1="12" y1="20" x2="12" y2="13"/>
+        <polyline class="anim-arrow-up" points="9,16 12,13 15,16"/>
+      </svg></div>
+      <div class="lbl">network-up</div>
+    </div>
+
+    <!-- 40 battery-empty -->
+    <div class="cell"><span class="idx">40</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="16" height="8" rx="2"/>
+        <line x1="21" y1="11" x2="21" y2="13"/>
+      </svg></div>
+      <div class="lbl">battery-empty</div>
+    </div>
+
+    <!-- 41 battery-low -->
+    <div class="cell"><span class="idx">41</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="16" height="8" rx="2"/>
+        <rect x="5" y="10" width="3" height="4" rx="1" style="fill:var(--danger);stroke:none"/>
+        <line x1="21" y1="11" x2="21" y2="13"/>
+      </svg></div>
+      <div class="lbl">battery-low</div>
+    </div>
+
+    <!-- 42 battery-mid -->
+    <div class="cell"><span class="idx">42</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="16" height="8" rx="2"/>
+        <rect x="5" y="10" width="9" height="4" rx="1" class="fill-stroke"/>
+        <line x1="21" y1="11" x2="21" y2="13"/>
+      </svg></div>
+      <div class="lbl">battery-mid</div>
+    </div>
+
+    <!-- 43 battery-full -->
+    <div class="cell"><span class="idx">43</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="16" height="8" rx="2"/>
+        <rect x="5" y="10" width="12" height="4" rx="1" class="fill-stroke"/>
+        <line x1="21" y1="11" x2="21" y2="13"/>
+      </svg></div>
+      <div class="lbl">battery-full</div>
+    </div>
+
+    <!-- 44 battery-charging -->
+    <div class="cell"><span class="idx">44</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="16" height="8" rx="2"/>
+        <line x1="21" y1="11" x2="21" y2="13"/>
+        <polygon class="anim-bolt" points="11,9.5 8,12.5 11,12.5 10,14.5 13,11.5 10,11.5" style="fill:var(--accent);stroke:var(--accent)"/>
+      </svg></div>
+      <div class="lbl">battery-charging</div>
+    </div>
+
+    <!-- 45 weather-refresh -->
+    <div class="cell"><span class="idx">45</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g class="anim-spin" style="transform-origin:12px 12px">
+          <path d="M19 12a7 7 0 1 1-2.1-5"/>
+          <polyline points="19,5 19,10 14,10"/>
+        </g>
+      </svg></div>
+      <div class="lbl">weather-refresh</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 5 ========== -->
+<section>
+  <h2><span class="num">05</span> Menú contextual <span class="count">4</span></h2>
+  <div class="grid">
+
+    <!-- 46 edit -->
+    <div class="cell"><span class="idx">46</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 20l1-4L16 5l3 3L8 19z"/>
+        <line x1="14" y1="7" x2="17" y2="10"/>
+      </svg></div>
+      <div class="lbl">edit</div>
+    </div>
+
+    <!-- 47 duplicate -->
+    <div class="cell"><span class="idx">47</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="4" y="4" width="12" height="12" rx="2"/>
+        <rect x="8" y="8" width="12" height="12" rx="2"/>
+      </svg></div>
+      <div class="lbl">duplicate</div>
+    </div>
+
+    <!-- 48 clear (trash) -->
+    <div class="cell"><span class="idx">48</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="4,7 20,7"/>
+        <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/>
+        <path d="M9 7V5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5v2"/>
+        <line x1="10" y1="11" x2="10" y2="17"/>
+        <line x1="14" y1="11" x2="14" y2="17"/>
+      </svg></div>
+      <div class="lbl">clear</div>
+    </div>
+
+    <!-- 49 drag-handle -->
+    <div class="cell"><span class="idx">49</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="9" cy="6" r="1.2" class="fill-stroke"/>
+        <circle cx="15" cy="6" r="1.2" class="fill-stroke"/>
+        <circle cx="9" cy="12" r="1.2" class="fill-stroke"/>
+        <circle cx="15" cy="12" r="1.2" class="fill-stroke"/>
+        <circle cx="9" cy="18" r="1.2" class="fill-stroke"/>
+        <circle cx="15" cy="18" r="1.2" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">drag-handle</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 6 ========== -->
+<section>
+  <h2><span class="num">06</span> Páginas / tabs <span class="count">6</span></h2>
+  <div class="grid">
+
+    <!-- 50 page-add -->
+    <div class="cell"><span class="idx">50</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 9h6l2-3h8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+        <line x1="12" y1="12" x2="12" y2="18"/>
+        <line x1="9" y1="15" x2="15" y2="15"/>
+      </svg></div>
+      <div class="lbl">page-add</div>
+    </div>
+
+    <!-- 51 page-delete -->
+    <div class="cell"><span class="idx">51</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 9h6l2-3h8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+        <line class="danger" x1="10" y1="13" x2="14" y2="17"/>
+        <line class="danger" x1="14" y1="13" x2="10" y2="17"/>
+      </svg></div>
+      <div class="lbl">page-delete</div>
+    </div>
+
+    <!-- 52 page-rename -->
+    <div class="cell"><span class="idx">52</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 9h6l2-3h8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+        <path d="M9 17l.6-2 5-5 1.6 1.6-5 5z"/>
+      </svg></div>
+      <div class="lbl">page-rename</div>
+    </div>
+
+    <!-- 53 page-drag -->
+    <div class="cell"><span class="idx">53</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 9h6l2-3h8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+        <polyline points="10,13 8,15 10,17"/>
+        <polyline points="14,13 16,15 14,17"/>
+        <line x1="8" y1="15" x2="16" y2="15"/>
+      </svg></div>
+      <div class="lbl">page-drag</div>
+    </div>
+
+    <!-- 54 grid-3x3 -->
+    <div class="cell"><span class="idx">54</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="4" y="4" width="5" height="5" rx="1"/>
+        <rect x="10" y="4" width="5" height="5" rx="1"/>
+        <rect x="16" y="4" width="5" height="5" rx="1"/>
+        <rect x="4" y="10" width="5" height="5" rx="1"/>
+        <rect x="10" y="10" width="5" height="5" rx="1"/>
+        <rect x="16" y="10" width="5" height="5" rx="1"/>
+        <rect x="4" y="16" width="5" height="5" rx="1"/>
+        <rect x="10" y="16" width="5" height="5" rx="1"/>
+        <rect x="16" y="16" width="5" height="5" rx="1"/>
+      </svg></div>
+      <div class="lbl">grid-3x3</div>
+    </div>
+
+    <!-- 55 grid-4x4 -->
+    <div class="cell"><span class="idx">55</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g>
+        <rect x="4" y="4" width="3.5" height="3.5" rx="1"/><rect x="9" y="4" width="3.5" height="3.5" rx="1"/><rect x="14" y="4" width="3.5" height="3.5" rx="1"/><rect x="19" y="4" width="1" height="3.5" rx="0.5"/>
+        <rect x="4" y="9" width="3.5" height="3.5" rx="1"/><rect x="9" y="9" width="3.5" height="3.5" rx="1"/><rect x="14" y="9" width="3.5" height="3.5" rx="1"/><rect x="19" y="9" width="1" height="3.5" rx="0.5"/>
+        <rect x="4" y="14" width="3.5" height="3.5" rx="1"/><rect x="9" y="14" width="3.5" height="3.5" rx="1"/><rect x="14" y="14" width="3.5" height="3.5" rx="1"/><rect x="19" y="14" width="1" height="3.5" rx="0.5"/>
+        <rect x="4" y="19" width="3.5" height="1" rx="0.5"/><rect x="9" y="19" width="3.5" height="1" rx="0.5"/><rect x="14" y="19" width="3.5" height="1" rx="0.5"/>
+        </g>
+      </svg></div>
+      <div class="lbl">grid-4x4</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 7 ========== -->
+<section>
+  <h2><span class="num">07</span> Estados del botón <span class="count">5</span></h2>
+  <div class="grid">
+
+    <!-- 56 toggle-on -->
+    <div class="cell"><span class="idx">56</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="18" height="8" rx="4" style="fill:var(--accent);stroke:var(--accent)"/>
+        <circle class="anim-toggle" cx="15" cy="12" r="2.6" style="fill:#1a1a1a;stroke:#1a1a1a"/>
+      </svg></div>
+      <div class="lbl">toggle-on</div>
+    </div>
+
+    <!-- 57 toggle-off -->
+    <div class="cell"><span class="idx">57</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="8" width="18" height="8" rx="4"/>
+        <circle cx="9" cy="12" r="2.6" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">toggle-off</div>
+    </div>
+
+    <!-- 58 multi-action -->
+    <div class="cell"><span class="idx">58</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="5" cy="7" r="1.2" class="fill-stroke"/>
+        <line x1="9" y1="7" x2="19" y2="7"/>
+        <circle cx="5" cy="12" r="1.2" class="fill-stroke"/>
+        <line x1="9" y1="12" x2="19" y2="12"/>
+        <circle cx="5" cy="17" r="1.2" class="fill-stroke"/>
+        <line x1="9" y1="17" x2="19" y2="17"/>
+      </svg></div>
+      <div class="lbl">multi-action</div>
+    </div>
+
+    <!-- 59 status-active -->
+    <div class="cell"><span class="idx">59</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle class="anim-pulse" cx="12" cy="12" r="8" style="fill:var(--accent);stroke:none;opacity:.2"/>
+        <circle cx="12" cy="12" r="4" style="fill:var(--accent);stroke:none"/>
+      </svg></div>
+      <div class="lbl">status-active</div>
+    </div>
+
+    <!-- 60 no-image -->
+    <div class="cell"><span class="idx">60</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="4" y="5" width="16" height="14" rx="2"/>
+        <polyline points="4,16 9,11 13,15 16,12 20,16"/>
+        <circle cx="15" cy="9" r="1.2" class="fill-stroke"/>
+        <line class="danger" x1="6" y1="6" x2="18" y2="18"/>
+      </svg></div>
+      <div class="lbl">no-image</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 8 ========== -->
+<section>
+  <h2><span class="num">08</span> Clima <span class="count">11</span></h2>
+  <div class="grid">
+
+    <!-- 61 wx-sunny -->
+    <div class="cell"><span class="idx">61</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g class="anim-spin" style="transform-origin:12px 12px">
+          <circle cx="12" cy="12" r="4"/>
+          <line x1="12" y1="2" x2="12" y2="5.5"/>
+          <line x1="12" y1="18.5" x2="12" y2="22"/>
+          <line x1="2" y1="12" x2="5.5" y2="12"/>
+          <line x1="18.5" y1="12" x2="22" y2="12"/>
+          <line x1="4.9" y1="4.9" x2="7.4" y2="7.4"/>
+          <line x1="16.6" y1="16.6" x2="19.1" y2="19.1"/>
+          <line x1="4.9" y1="19.1" x2="7.4" y2="16.6"/>
+          <line x1="16.6" y1="7.4" x2="19.1" y2="4.9"/>
+        </g>
+      </svg></div>
+      <div class="lbl">wx-sunny</div>
+    </div>
+
+    <!-- 62 wx-partly-cloudy -->
+    <div class="cell"><span class="idx">62</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="9" cy="9" r="3"/>
+        <line x1="9" y1="3.5" x2="9" y2="5"/>
+        <line x1="3.5" y1="9" x2="5" y2="9"/>
+        <line x1="5.1" y1="5.1" x2="6.1" y2="6.1"/>
+        <line x1="13" y1="5.1" x2="11.9" y2="6.1"/>
+        <path d="M8 19h10a3 3 0 0 0 0-6 4 4 0 0 0-7.5-1.2A3 3 0 0 0 8 19z"/>
+      </svg></div>
+      <div class="lbl">wx-partly-cloudy</div>
+    </div>
+
+    <!-- 63 wx-cloudy -->
+    <div class="cell"><span class="idx">63</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path class="anim-drift" d="M6 18h12a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5-1A3.5 3.5 0 0 0 6 18z"/>
+      </svg></div>
+      <div class="lbl">wx-cloudy</div>
+    </div>
+
+    <!-- 64 wx-overcast -->
+    <div class="cell"><span class="idx">64</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M6 18h12a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5-1A3.5 3.5 0 0 0 6 18z" style="fill:var(--stroke);fill-opacity:.3;stroke:var(--stroke)"/>
+        <path class="anim-drift" d="M3 20h18" style="stroke-dasharray:3 2"/>
+      </svg></div>
+      <div class="lbl">wx-overcast</div>
+    </div>
+
+    <!-- 65 wx-fog -->
+    <div class="cell"><span class="idx">65</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line class="anim-drift" x1="4" y1="8" x2="20" y2="8" stroke-dasharray="6 3"/>
+        <line x1="3" y1="13" x2="21" y2="13" stroke-dasharray="3 2"/>
+        <line class="anim-drift" x1="5" y1="18" x2="19" y2="18" stroke-dasharray="5 2"/>
+      </svg></div>
+      <div class="lbl">wx-fog</div>
+    </div>
+
+    <!-- 66 wx-drizzle -->
+    <div class="cell"><span class="idx">66</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M6 14h12a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5-1A3.5 3.5 0 0 0 6 14z"/>
+        <line class="anim-rain"   x1="10" y1="16" x2="10" y2="19"/>
+        <line class="anim-rain-2" x1="14" y1="16" x2="14" y2="19"/>
+      </svg></div>
+      <div class="lbl">wx-drizzle</div>
+    </div>
+
+    <!-- 67 wx-rain -->
+    <div class="cell"><span class="idx">67</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M6 14h12a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5-1A3.5 3.5 0 0 0 6 14z"/>
+        <line class="anim-rain"   x1="9"  y1="16" x2="9"  y2="20"/>
+        <line class="anim-rain-2" x1="12" y1="16" x2="12" y2="20"/>
+        <line class="anim-rain-3" x1="15" y1="16" x2="15" y2="20"/>
+      </svg></div>
+      <div class="lbl">wx-rain</div>
+    </div>
+
+    <!-- 68 wx-heavy-rain -->
+    <div class="cell"><span class="idx">68</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M6 13h12a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5-1A3.5 3.5 0 0 0 6 13z"/>
+        <line class="anim-rain"   x1="9"  y1="15" x2="7"  y2="20"/>
+        <line class="anim-rain-2" x1="13" y1="15" x2="11" y2="20"/>
+        <line class="anim-rain-3" x1="17" y1="15" x2="15" y2="20"/>
+      </svg></div>
+      <div class="lbl">wx-heavy-rain</div>
+    </div>
+
+    <!-- 69 wx-snow -->
+    <div class="cell"><span class="idx">69</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <g class="anim-snow" style="transform-origin:12px 12px">
+          <line x1="12" y1="3" x2="12" y2="21"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>
+          <line x1="18.4" y1="5.6" x2="5.6" y2="18.4"/>
+          <polyline points="10,5 12,7 14,5"/>
+          <polyline points="10,19 12,17 14,19"/>
+          <polyline points="5,10 7,12 5,14"/>
+          <polyline points="19,10 17,12 19,14"/>
+        </g>
+      </svg></div>
+      <div class="lbl">wx-snow</div>
+    </div>
+
+    <!-- 70 wx-storm -->
+    <div class="cell"><span class="idx">70</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M6 13h12a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5-1A3.5 3.5 0 0 0 6 13z"/>
+        <polygon class="anim-flash" points="12,14 9,19 12,19 10,22 15,17 12,17 13,14" style="fill:var(--accent);stroke:var(--accent)"/>
+      </svg></div>
+      <div class="lbl">wx-storm</div>
+    </div>
+
+    <!-- 71 wx-unknown (thermometer) -->
+    <div class="cell"><span class="idx">71</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M12 4a2.5 2.5 0 0 0-2.5 2.5v9a4 4 0 1 0 5 0v-9A2.5 2.5 0 0 0 12 4z"/>
+        <line x1="12" y1="9" x2="12" y2="16"/>
+        <circle cx="12" cy="17.5" r="1.6" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">wx-unknown</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== GROUP 9 ========== -->
+<section>
+  <h2><span class="num">09</span> Presets creativos <span class="count">17</span></h2>
+  <div class="grid">
+
+    <!-- 72 creative-vector (orig) -->
+    <div class="cell"><span class="idx">72</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2" style="fill:#3a2418;stroke:#e07a3a"/>
+        <text x="12" y="16" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-weight="700" font-size="9" style="fill:#f2914d;stroke:none">VEC</text>
+      </svg></div>
+      <div class="lbl">creative-vector</div>
+    </div>
+
+    <!-- 73 creative-raster -->
+    <div class="cell"><span class="idx">73</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2" style="fill:#0f1e2e;stroke:#4a8ef0"/>
+        <text x="12" y="16" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-weight="700" font-size="9" style="fill:#4a8ef0;stroke:none">RAS</text>
+      </svg></div>
+      <div class="lbl">creative-raster</div>
+    </div>
+
+    <!-- 74 creative-video -->
+    <div class="cell"><span class="idx">74</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2" style="fill:#1f1430;stroke:#9b6ee0"/>
+        <text x="12" y="16" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-weight="700" font-size="9" style="fill:#b58cf0;stroke:none">VID</text>
+      </svg></div>
+      <div class="lbl">creative-video</div>
+    </div>
+
+    <!-- 75 select-tool -->
+    <div class="cell"><span class="idx">75</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polygon points="6,4 6,19 10,15 12,20 14,19 12,14 17,14" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">select-tool</div>
+    </div>
+
+    <!-- 76 pen-tool -->
+    <div class="cell"><span class="idx">76</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M5 19c0-5 4-9 9-14l4 4c-5 5-9 9-14 9z"/>
+        <circle cx="10" cy="14" r="1.4" class="fill-stroke"/>
+        <line x1="14" y1="5" x2="18" y2="9"/>
+      </svg></div>
+      <div class="lbl">pen-tool</div>
+    </div>
+
+    <!-- 77 text-tool -->
+    <div class="cell"><span class="idx">77</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="5,7 5,5 19,5 19,7"/>
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="9" y1="19" x2="15" y2="19"/>
+      </svg></div>
+      <div class="lbl">text-tool</div>
+    </div>
+
+    <!-- 78 brush-tool -->
+    <div class="cell"><span class="idx">78</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M14 4l6 6-7 7H9v-4z"/>
+        <path d="M9 17c0 2-1 3-3 3-0 0 1-1 1-3"/>
+      </svg></div>
+      <div class="lbl">brush-tool</div>
+    </div>
+
+    <!-- 79 eraser-tool -->
+    <div class="cell"><span class="idx">79</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M4 16l8-8 6 6-6 6H6z"/>
+        <line x1="9" y1="13" x2="15" y2="19"/>
+      </svg></div>
+      <div class="lbl">eraser-tool</div>
+    </div>
+
+    <!-- 80 zoom-tool -->
+    <div class="cell"><span class="idx">80</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="6"/>
+        <line x1="15.5" y1="15.5" x2="20" y2="20"/>
+        <line x1="8" y1="11" x2="14" y2="11"/>
+        <line x1="11" y1="8" x2="11" y2="14"/>
+      </svg></div>
+      <div class="lbl">zoom-tool</div>
+    </div>
+
+    <!-- 81 export-arrow -->
+    <div class="cell"><span class="idx">81</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <path d="M5 12V6a2 2 0 0 1 2-2h8l4 4v8a2 2 0 0 1-2 2h-3"/>
+        <polyline points="15,4 15,8 19,8"/>
+        <line class="anim-arrow-up" x1="8" y1="20" x2="8" y2="13"/>
+        <polyline class="anim-arrow-up" points="5,16 8,13 11,16"/>
+      </svg></div>
+      <div class="lbl">export-arrow</div>
+    </div>
+
+    <!-- 82 curves -->
+    <div class="cell"><span class="idx">82</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="4" y="4" width="16" height="16" rx="1" style="stroke:var(--stroke);opacity:.4"/>
+        <path d="M4 20 C 9 20, 12 12, 12 12 S 15 4, 20 4"/>
+        <rect x="10.3" y="10.3" width="3.4" height="3.4" rx="0.5" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">curves</div>
+    </div>
+
+    <!-- 83 levels -->
+    <div class="cell"><span class="idx">83</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <line x1="4" y1="18" x2="20" y2="18"/>
+        <path d="M4 18 L8 10 L10 14 L12 6 L14 12 L16 9 L20 18 Z" style="fill:var(--stroke);fill-opacity:.3;stroke:var(--stroke)"/>
+        <polygon points="12,19 10.5,21 13.5,21" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">levels</div>
+    </div>
+
+    <!-- 84 clone-stamp -->
+    <div class="cell"><span class="idx">84</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <ellipse cx="12" cy="17" rx="7" ry="2"/>
+        <rect x="8" y="10" width="8" height="5" rx="1"/>
+        <line x1="7" y1="10" x2="17" y2="10"/>
+        <path d="M10 10V6a2 2 0 0 1 4 0v4"/>
+      </svg></div>
+      <div class="lbl">clone-stamp</div>
+    </div>
+
+    <!-- 85 scissors-cut -->
+    <div class="cell"><span class="idx">85</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="7" cy="7" r="2.5"/>
+        <circle cx="7" cy="17" r="2.5"/>
+        <line x1="9" y1="8.5" x2="20" y2="17"/>
+        <line x1="9" y1="15.5" x2="20" y2="7"/>
+      </svg></div>
+      <div class="lbl">scissors-cut</div>
+    </div>
+
+    <!-- 86 mark-in -->
+    <div class="cell"><span class="idx">86</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <polyline points="5,5 5,19 8,19"/>
+        <polyline points="5,5 8,5"/>
+        <line x1="9" y1="12" x2="18" y2="12"/>
+        <polyline points="15,9 18,12 15,15"/>
+        <circle cx="19.5" cy="12" r="1.2" class="fill-stroke"/>
+      </svg></div>
+      <div class="lbl">mark-in</div>
+    </div>
+
+    <!-- 87 mark-out -->
+    <div class="cell"><span class="idx">87</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <circle cx="4.5" cy="12" r="1.2" class="fill-stroke"/>
+        <line x1="6" y1="12" x2="15" y2="12"/>
+        <polyline points="9,9 6,12 9,15"/>
+        <polyline points="16,5 19,5 19,19 16,19"/>
+      </svg></div>
+      <div class="lbl">mark-out</div>
+    </div>
+
+    <!-- 88 dissolve-transition -->
+    <div class="cell"><span class="idx">88</span>
+      <div class="icon"><svg class="vd-icon" viewBox="0 0 24 24">
+        <rect x="4" y="6" width="12" height="12" rx="1" style="fill:var(--stroke);fill-opacity:.35;stroke:var(--stroke)"/>
+        <rect x="8" y="6" width="12" height="12" rx="1" style="fill:var(--stroke);fill-opacity:.15;stroke:var(--stroke)"/>
+      </svg></div>
+      <div class="lbl">dissolve-transition</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PREVIEW -->
+<div class="preview">
+  <div class="bar">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span style="margin-left:8px">virtualdeck · live preview</span>
+  </div>
+  <div class="content">
+    <div class="deck" id="deck"></div>
+    <div style="color:#555;font-family:var(--mono);font-size:10px;line-height:1.6">
+      <div style="color:#8a8a8a">15 keys · page 1/3</div>
+      <div>hover cualquier tecla para activar</div>
+    </div>
+    <div class="right">
+      <div class="chip"><svg class="vd-icon" viewBox="0 0 24 24" style="stroke-width:2"><path class="anim-wave1" d="M5 10a9 9 0 0 1 14 0"/><path class="anim-wave2" d="M8 13.5a5 5 0 0 1 8 0"/><circle cx="12" cy="17" r="1" class="fill-stroke"/></svg> online</div>
+      <div class="chip"><svg class="vd-icon" viewBox="0 0 24 24" style="stroke-width:2"><rect x="3" y="8" width="16" height="8" rx="2"/><rect x="5" y="10" width="9" height="4" rx="1" class="fill-stroke"/><line x1="21" y1="11" x2="21" y2="13"/></svg> 67%</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  virtualdeck/icons · v1.0 · 88/88 · transparent · stroke 1.5 · 24×24 grid
+</footer>
+
+<script>
+  // Populate mini deck preview with a mix of icons
+  const icons = [
+    'app','web','shortcut','script','audio-device',
+    'hotkey','clipboard','type-text','folder','media-play-pause',
+    'volume-up','mute','brightness','notify','settings'
+  ];
+  // Grab first matching SVG from the main grid by label text
+  const deck = document.getElementById('deck');
+  const cells = document.querySelectorAll('.cell');
+  const byLabel = {};
+  cells.forEach(c => {
+    const lbl = c.querySelector('.lbl')?.textContent.trim();
+    if(lbl && !byLabel[lbl]) byLabel[lbl] = c.querySelector('svg');
+  });
+  icons.forEach(name => {
+    const svg = byLabel[name];
+    const key = document.createElement('div');
+    key.className = 'key';
+    if(svg){
+      const clone = svg.cloneNode(true);
+      key.appendChild(clone);
+    }
+    deck.appendChild(key);
+  });
+</script>
+</body>
+</html>
