@@ -8,11 +8,11 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0a0a0d;
+  background: #0f0f0f;
 }
 
 :root {
-  --vd-accent: #a855f7;
+  --vd-accent: #4a8ef0;
 }
 
 /* Hide scrollbars globally */
@@ -26,4 +26,37 @@ html, body, #root {
 button {
   cursor: pointer;
   font-family: inherit;
+}
+
+/* 5.3 — Pulso radial al presionar un botón. Reemplaza el flash de fondo plano. */
+@keyframes vd-flash-radial {
+  0%   { transform: scale(0.25); opacity: 0.9; }
+  60%  { opacity: 0.35; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.vd-flash-pulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(circle, var(--vd-accent) 0%, transparent 55%);
+  animation: vd-flash-radial 320ms ease-out forwards;
+}
+
+/* 5.2 — Flicker sutil para el wallpaper CRT (~25% irregular). */
+@keyframes vd-crt-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93%           { opacity: 0.78; }
+  94%           { opacity: 0.96; }
+  95%           { opacity: 0.82; }
+  96%           { opacity: 1; }
+}
+
+/* 5.5 — Shake del modal de PIN al fallar. */
+@keyframes vd-pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
 }

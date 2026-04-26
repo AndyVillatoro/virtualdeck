@@ -1,16 +1,43 @@
+// Paleta plana oscura — grises sólidos, sin efectos glass excesivos
 export const VD = {
-  bg: '#0a0a0d',
-  surface: '#14141a',
-  elevated: '#1d1d25',
-  border: 'rgba(255,255,255,0.06)',
-  borderStrong: 'rgba(255,255,255,0.12)',
-  text: '#f0f0f2',
-  textDim: '#8a8a93',
-  textMuted: '#55555e',
-  font: '"Inter", -apple-system, system-ui, sans-serif',
+  bg: '#0f0f0f',
+  surface: '#191919',
+  elevated: '#222222',
+  elevatedHover: '#272727', // step entre elevated y overlay para hover
+  overlay: '#2b2b2b',
+  border: '#2e2e2e',
+  borderStrong: '#3c3c3c',
+  text: '#dcdcdc',
+  textDim: '#888888',
+  textMuted: '#555555',
+  accent: '#4a8ef0',
+  accentBg: 'rgba(74,142,240,0.12)',
+  success: '#4caf7d',
+  warning: '#d4a234',
+  danger: '#d95f5f',
+  violet: '#a78bfa', // único acento extra fuera de la escala semántica
+  font: '"Inter", system-ui, sans-serif',
   mono: '"JetBrains Mono", ui-monospace, monospace',
   dots: '"DotGothic16", monospace',
+  // Escala única de radios — sharper-than-friendly, coherente con la firma dot-matrix
+  radius: { sm: 2, md: 3, lg: 4 } as const,
+  // Escala única de sombras — flat depth, sin glow ni glass
+  shadow: {
+    menu: '0 8px 24px rgba(0,0,0,0.7)',
+    modal: '0 16px 48px rgba(0,0,0,0.85)',
+  } as const,
+  // 4.7 — escala de spacing en múltiplos de 4. Cualquier valor nuevo debe encajar en esta escala.
+  // Uso: VD.space.xs (4) micro / sm (8) componente / md (12) sección / lg (16) bloque / xl (20) región / 2xl (24) mayor.
+  space: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32 } as const,
+  // Color del píxel apagado en la matriz de puntos — atado al token de texto
+  dotIdle: 'rgba(220,220,220,0.04)',
 } as const;
+
+// Presets del color de acento — todos referencian tokens semánticos del sistema.
+// Si el usuario quiere un color libre, sigue disponible vía <input type="color">.
+export const ACCENT_PRESETS: readonly string[] = [
+  VD.accent, VD.success, VD.warning, VD.violet, VD.danger,
+];
 
 // 5×7 dot-matrix glyph table (hand-authored for digits + key letters)
 // Each row is a bitmask: bits 4..0 = left..right
