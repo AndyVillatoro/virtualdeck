@@ -41,6 +41,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     typeText: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:typeText', text),
     killProcess: (name: string): Promise<boolean> => ipcRenderer.invoke('launch:killProcess', name),
     setVolume: (percent: number): Promise<boolean> => ipcRenderer.invoke('launch:setVolume', percent),
+    snapWindow: (position: string, processName?: string): Promise<boolean> => ipcRenderer.invoke('launch:snapWindow', position, processName),
   },
   dialog: {
     openFile: (opts?: object): Promise<string | null> => ipcRenderer.invoke('dialog:openFile', opts),
@@ -53,6 +54,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   app: {
     getAutostart: (): Promise<boolean> => ipcRenderer.invoke('app:autostart:get'),
     setAutostart: (enabled: boolean): Promise<void> => ipcRenderer.invoke('app:autostart:set', enabled),
+  },
+  state: {
+    activeApps: (): Promise<string[]> => ipcRenderer.invoke('state:activeApps'),
   },
   rgb: {
     status: () => ipcRenderer.invoke('rgb:status'),
@@ -72,6 +76,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resizeZone: (deviceId: number, zoneId: number, size: number) =>
       ipcRenderer.invoke('rgb:resizeZone', deviceId, zoneId, size),
     applyProfile: (profile: unknown) => ipcRenderer.invoke('rgb:applyProfile', profile),
+    smartPreset: (presetId: string) => ipcRenderer.invoke('rgb:smartPreset', presetId),
     pickFile: () => ipcRenderer.invoke('rgb:pickFile'),
   },
   events: {

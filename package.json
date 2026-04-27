@@ -5,7 +5,7 @@
   "main": "out/main/index.js",
   "private": true,
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/dev.js",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "build:win": "electron-builder --win --dir"
@@ -20,9 +20,9 @@
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.0",
-    "electron": "^31.7.7",
+    "electron": "^33.4.11",
     "electron-builder": "^24.9.0",
-    "electron-vite": "^2.3.0",
+    "electron-vite": "^5.0.0",
     "typescript": "^5.5.3",
     "vite": "^5.3.1"
   },

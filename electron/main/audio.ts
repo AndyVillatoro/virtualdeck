@@ -70,6 +70,8 @@ interface IPolicyConfig {
 class MMDeviceEnumeratorCom {}
 [ComImport, Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9"), ClassInterface(ClassInterfaceType.None)]
 class PolicyConfigClientCom {}
+[ComImport, Guid("294935CE-F637-4E7C-A41B-AB255460B862"), ClassInterface(ClassInterfaceType.None)]
+class PolicyConfigVistaClientCom {}
 
 public class VDAudio {
     static PropertyKey FriendlyName = new PropertyKey {
@@ -77,27 +79,44 @@ public class VDAudio {
     };
     public static List<string[]> ListDevices() {
         var result = new List<string[]>();
-        var enumerator = (IMMDeviceEnumerator)(object)new MMDeviceEnumeratorCom();
-        IMMDeviceCollection col; enumerator.EnumAudioEndpoints(0, 1, out col);
-        uint count; col.GetCount(out count);
-        IMMDevice def; enumerator.GetDefaultAudioEndpoint(0, 1, out def);
-        string defId; def.GetId(out defId);
-        for (uint i = 0; i < count; i++) {
-            IMMDevice dev; col.Item(i, out dev);
-            string id; dev.GetId(out id);
-            IPropertyStore store; dev.OpenPropertyStore(0, out store);
-            PropVariant pv = new PropVariant(); var key = FriendlyName;
-            store.GetValue(ref key, out pv);
-            string name = Marshal.PtrToStringAuto(pv.pointerValue) ?? "Desconocido";
-            result.Add(new string[]{ id, name, id == defId ? "true" : "false" });
+        try {
+            var enumerator = (IMMDeviceEnumerator)(object)new MMDeviceEnumeratorCom();
+            IMMDeviceCollection col; enumerator.EnumAudioEndpoints(0, 1, out col);
+            uint count; col.GetCount(out count);
+            IMMDevice def; enumerator.GetDefaultAudioEndpoint(0, 1, out def);
+            string defId; def.GetId(out defId);
+            for (uint i = 0; i < count; i++) {
+                IMMDevice dev; col.Item(i, out dev);
+                string id; dev.GetId(out id);
+                IPropertyStore store; dev.OpenPropertyStore(0, out store);
+                PropVariant pv = new PropVariant(); var key = FriendlyName;
+                store.GetValue(ref key, out pv);
+                string name = Marshal.PtrToStringAuto(pv.pointerValue) ?? "Desconocido";
+                result.Add(new string[]{ id, name, id == defId ? "true" : "false" });
+            }
+        } catch (Exception ex) {
+            result.Add(new string[]{ "__ERROR__", ex.Message, "false" });
         }
         return result;
     }
-    public static void SetDefault(string deviceId) {
-        var cfg = (IPolicyConfig)(object)new PolicyConfigClientCom();
-        cfg.SetDefaultEndpoint(deviceId, 0);
-        cfg.SetDefaultEndpoint(deviceId, 1);
-        cfg.SetDefaultEndpoint(deviceId, 2);
+    public static string SetDefault(string deviceId) {
+        try {
+            var cfg = (IPolicyConfig)(object)new PolicyConfigClientCom();
+            cfg.SetDefaultEndpoint(deviceId, 0);
+            cfg.SetDefaultEndpoint(deviceId, 1);
+            cfg.SetDefaultEndpoint(deviceId, 2);
+            return "OK";
+        } catch {
+            try {
+                var cfg2 = (IPolicyConfig)(object)new PolicyConfigVistaClientCom();
+                cfg2.SetDefaultEndpoint(deviceId, 0);
+                cfg2.SetDefaultEndpoint(deviceId, 1);
+                cfg2.SetDefaultEndpoint(deviceId, 2);
+                return "OK";
+            } catch (Exception ex2) {
+                return "ERROR:" + ex2.Message;
+            }
+        }
     }
 }
 `.trim();
@@ -136,25 +155,28 @@ foreach ($d in $devices) { Write-Output "$($d[0])|$($d[1])|$($d[2])" }
         name: parts[1]?.trim() ?? 'Dispositivo',
         isDefault: parts[2]?.trim() === 'true',
       };
-    });
-  } catch {
+    }).filter((d) => d.id !== '__ERROR__');
+  } catch (e) {
+    console.error('[audio] listAudioDevices failed:', e);
     return [];
   }
 }
 
 export async function setDefaultAudioDevice(deviceId: string): Promise<boolean> {
-  const safeId = deviceId.replace(/"/g, '');
+  const safeId = deviceId.replace(/"/g, '').replace(/`/g, '');
   const script = `
 Add-Type -TypeDefinition @"
 ${AUDIO_CS}
 "@ -IgnoreWarnings -ErrorAction SilentlyContinue
-[VDAudio]::SetDefault("${safeId}")
-Write-Output "OK"
+$result = [VDAudio]::SetDefault("${safeId}")
+Write-Output $result
 `;
   try {
     const out = await runPS(script);
-    return out.includes('OK');
-  } catch {
+    if (!out.startsWith('OK')) console.error('[audio] setDefault result:', out);
+    return out.startsWith('OK');
+  } catch (e) {
+    console.error('[audio] setDefaultAudioDevice failed:', e);
     return false;
   }
 }

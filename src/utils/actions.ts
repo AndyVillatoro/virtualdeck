@@ -40,7 +40,10 @@ function actionLabel(a: ButtonAction): string {
     case 'rgb-color':   return `RGB color ${a.rgbColor ?? ''}`.trim();
     case 'rgb-mode':    return a.rgbMode ? `RGB modo "${a.rgbMode}"` : 'RGB modo';
     case 'rgb-profile': return a.rgbProfileName ? `RGB perfil "${a.rgbProfileName}"` : 'RGB perfil';
-    default:            return a.type;
+    case 'rgb-preset':   return a.rgbPresetId ? `RGB preset "${a.rgbPresetId}"` : 'RGB preset';
+    case 'window-snap':  return a.snapPosition ? `Snap ${a.snapPosition}` : 'Window snap';
+    case 'branch':       return `If {${a.branchVar ?? '?'}} ${a.branchOp ?? '=='} "${a.branchValue ?? ''}"`;
+    default:             return a.type;
   }
 }
 
@@ -72,9 +75,17 @@ export async function executeAction(
         return ok ? OK : fail(`No se pudo abrir el acceso directo.`);
       }
       case 'audio-device': {
-        if (!action.deviceId) return fail('Falta el dispositivo de audio.');
-        const ok = await api.audio.setDefault(action.deviceId);
-        return ok ? OK : fail(`No se pudo cambiar el audio a "${action.deviceName ?? action.deviceId}".`);
+        if (!action.deviceId && !action.deviceName) return fail('Falta el dispositivo de audio.');
+        let deviceId = action.deviceId;
+        if (!deviceId && action.deviceName) {
+          const devices = await api.audio.list();
+          const match = devices.find((d) => d.name.toLowerCase() === action.deviceName!.toLowerCase())
+            ?? devices.find((d) => d.name.toLowerCase().includes(action.deviceName!.toLowerCase()));
+          if (!match) return fail(`Dispositivo "${action.deviceName}" no encontrado. Verifica el nombre en Configuración → Sonido.`);
+          deviceId = match.id;
+        }
+        const ok = await api.audio.setDefault(deviceId!);
+        return ok ? OK : fail(`No se pudo cambiar el audio a "${action.deviceName ?? deviceId}".`);
       }
       case 'hotkey': {
         if (!action.hotkey) return fail('Falta la combinación de teclas.');
@@ -204,12 +215,39 @@ export async function executeAction(
         const ok = await api.rgb.applyProfile(prof);
         return ok ? OK : fail('No se pudo aplicar el perfil RGB.');
       }
+      case 'rgb-preset': {
+        if (!action.rgbPresetId) return fail('Falta el ID del preset RGB.');
+        const ok = await api.rgb.smartPreset(action.rgbPresetId);
+        return ok ? OK : fail(`No se pudo aplicar el preset "${action.rgbPresetId}" (¿OpenRGB conectado?).`);
+      }
 
-      // 'script' y 'folder' los maneja el caller
+      // 3.x — Window snap
+      case 'window-snap': {
+        if (!action.snapPosition) return fail('Falta la posición de snap.');
+        const ok = await api.launch.snapWindow(action.snapPosition, action.snapProcessName);
+        return ok ? OK : fail(`No se pudo snapear la ventana (¿proceso no encontrado?).`);
+      }
+
+      // 'script', 'folder' y 'branch' los maneja el caller
       default: return OK;
     }
   } catch (e) {
     return fail(`Error inesperado en ${actionLabel(action)}: ${(e as Error).message ?? e}`);
+  }
+}
+
+function evaluateBranch(value: string, op: string, compareVal: string): boolean {
+  switch (op) {
+    case '==':        return value === compareVal;
+    case '!=':        return value !== compareVal;
+    case '>':         return parseFloat(value) > parseFloat(compareVal);
+    case '<':         return parseFloat(value) < parseFloat(compareVal);
+    case '>=':        return parseFloat(value) >= parseFloat(compareVal);
+    case '<=':        return parseFloat(value) <= parseFloat(compareVal);
+    case 'contains':  return value.toLowerCase().includes(compareVal.toLowerCase());
+    case 'empty':     return !value.trim();
+    case 'not-empty': return !!value.trim();
+    default:          return false;
   }
 }
 
@@ -248,10 +286,28 @@ export async function runActionSequence(
           res = ok ? OK : fail('El script terminó con error.');
         } else {
           const r2 = await scriptHooks.runScript(a.script, a.scriptShell);
-          res = r2.ok ? OK : fail(r2.error ?? 'El script terminó con error.');
+          if (!r2.ok) {
+            res = fail(r2.error ?? 'El script terminó con error.');
+          } else if (a.captureToVar && r2.output !== undefined) {
+            res = { ok: true, stateUpdate: { [a.captureToVar]: r2.output.trim() } };
+          } else {
+            res = OK;
+          }
         }
       } else if (a.type === 'folder') {
         res = OK;
+      } else if (a.type === 'branch') {
+        const varVal = merged[a.branchVar ?? ''] ?? '';
+        const compareVal = interpolate(a.branchValue, merged);
+        const condTrue = evaluateBranch(varVal, a.branchOp ?? '==', compareVal);
+        const subActions = condTrue ? (a.branchThen ?? []) : (a.branchElse ?? []);
+        if (subActions.length > 0) {
+          const sub = await runActionSequence(subActions, api, { ...merged }, scriptHooks, rgbProfiles);
+          Object.assign(merged, sub.stateUpdate);
+          res = sub.ok ? OK : fail(sub.error ?? '');
+        } else {
+          res = OK;
+        }
       } else {
         res = await executeAction(a, api, merged, rgbProfiles);
       }

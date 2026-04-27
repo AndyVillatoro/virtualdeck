@@ -10,10 +10,14 @@ interface ButtonCellProps {
   button: ButtonConfig;
   accent: string;
   toggled?: boolean;
+  isActive?: boolean;
   soundEnabled?: boolean;
   soundProfile?: SoundProfileId;
+  /** Etiqueta con variables ya interpoladas (Feature 3). Sustituye al label del botón. */
+  resolvedLabel?: string;
   onEdit: () => void;
   onExecute: () => void;
+  onLongPress?: () => void;
   onDuplicate?: () => void;
   onClear?: () => void;
   onDragStart?: () => void;
@@ -23,8 +27,8 @@ interface ButtonCellProps {
 const ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION_ICONS;
 
 function ButtonCellInner({
-  button, accent, toggled = false, soundEnabled = false, soundProfile = 'click',
-  onEdit, onExecute, onDuplicate, onClear, onDragStart, onDrop,
+  button, accent, toggled = false, isActive = false, soundEnabled = false, soundProfile = 'click',
+  resolvedLabel, onEdit, onExecute, onLongPress, onDuplicate, onClear, onDragStart, onDrop,
 }: ButtonCellProps) {
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -32,9 +36,24 @@ function ButtonCellInner({
   const [dragOver, setDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressTriggered = useRef(false);
+  const cellRef = useRef<HTMLDivElement>(null);
+  // Callback refs: memo comparator ignores handler identity, so we keep fresh
+  // copies without adding them to effect dependency arrays.
+  const onLongPressRef = useRef(onLongPress);
+  const onExecuteRef = useRef(onExecute);
+  const soundEnabledRef = useRef(soundEnabled);
+  const soundProfileRef = useRef(soundProfile);
+  onLongPressRef.current = onLongPress;
+  onExecuteRef.current = onExecute;
+  soundEnabledRef.current = soundEnabled;
+  soundProfileRef.current = soundProfile;
+  const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
   const hasCustomBg = !!button.bgColor;
+  const hasLongPress = !isEmpty && !!onLongPress;
 
   // 5.3 — el pulso radial reemplaza el flash de fondo plano. La celda mantiene
   // su bg estable durante la ejecución; la "ondita" se renderiza encima como overlay.
@@ -62,12 +81,37 @@ function ButtonCellInner({
     ? VD.borderStrong
     : VD.border;
 
-  const displayLabel = button.label || (button.action.type !== 'none' ? button.action.type.replace(/-/g, ' ').toUpperCase() : '');
+  const displayLabel = resolvedLabel ?? (button.label || (button.action.type !== 'none' ? button.action.type.replace(/-/g, ' ').toUpperCase() : ''));
   const ActionIcon = ACTION_ICONS[button.action.type] ?? IconNone;
   const iconColor = isEmpty ? VD.textMuted : (button.fgColor || (toggled ? accent : VD.text));
   const multiCount = button.actions && button.actions.length > 1 ? button.actions.length : 0;
 
+  function handleMouseDown() {
+    setPressed(true);
+    longPressTriggered.current = false;
+    if (onLongPress && !isEmpty) {
+      longPressTimer.current = window.setTimeout(() => {
+        longPressTriggered.current = true;
+        longPressTimer.current = null;
+        setPressed(false);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 300);
+        if (soundEnabled) playSound(soundProfile);
+        onLongPress();
+      }, 500);
+    }
+  }
+
+  function handleMouseUpOrLeave() {
+    setPressed(false);
+    if (longPressTimer.current !== null) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
   function handleClick() {
+    if (longPressTriggered.current) { longPressTriggered.current = false; return; }
     if (isEmpty) { onEdit(); return; }
     setFlash(true);
     setTimeout(() => setFlash(false), 300);
@@ -77,6 +121,9 @@ function ButtonCellInner({
 
   function handleContextMenu(e: React.MouseEvent) {
     e.preventDefault();
+    // Long press already fired → suppress the contextmenu the browser generates
+    // right after (timing varies by browser/OS but typically ~500 ms on touch).
+    if (longPressTriggered.current) { longPressTriggered.current = false; return; }
     setContextMenu({ x: e.clientX, y: e.clientY });
   }
 
@@ -87,18 +134,97 @@ function ButtonCellInner({
     return () => document.removeEventListener('click', close);
   }, [contextMenu]);
 
+  // Non-passive touchstart listener: blocks the browser's native long-press
+  // contextmenu when an alternate action is configured. React's synthetic
+  // touch events are passive by default and cannot call preventDefault().
+  useEffect(() => {
+    const el = cellRef.current;
+    if (!el || !hasLongPress) return;
+
+    let timer: number | null = null;
+    let fired = false;
+    let lastTap = 0;
+
+    const start = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      e.preventDefault(); // blocks native contextmenu + text selection on hold
+      fired = false;
+      setPressed(true);
+      longPressTriggered.current = false;
+      timer = window.setTimeout(() => {
+        fired = true;
+        timer = null;
+        longPressTriggered.current = true;
+        setPressed(false);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 300);
+        if (soundEnabledRef.current) playSound(soundProfileRef.current);
+        onLongPressRef.current?.();
+      }, 500);
+    };
+
+    const end = (e: TouchEvent) => {
+      e.preventDefault();
+      setPressed(false);
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+      if (!fired) {
+        const now = Date.now();
+        if (now - lastTap < 320) {
+          // Double-tap → alternate action
+          lastTap = 0;
+          setFlash(true);
+          setTimeout(() => setFlash(false), 300);
+          if (soundEnabledRef.current) playSound(soundProfileRef.current);
+          onLongPressRef.current?.();
+        } else {
+          // Single tap → main action
+          lastTap = now;
+          setFlash(true);
+          setTimeout(() => setFlash(false), 300);
+          if (soundEnabledRef.current) playSound(soundProfileRef.current);
+          onExecuteRef.current?.();
+        }
+      }
+      fired = false;
+    };
+
+    const cancel = () => {
+      setPressed(false);
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+      fired = false;
+    };
+
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchend', end, { passive: false });
+    el.addEventListener('touchcancel', cancel);
+    return () => {
+      el.removeEventListener('touchstart', start);
+      el.removeEventListener('touchend', end);
+      el.removeEventListener('touchcancel', cancel);
+      if (timer !== null) clearTimeout(timer);
+    };
+  }, [hasLongPress]);
+
   return (
     <>
       <div
+        ref={cellRef}
         className="vd-btn"
         title={isEmpty ? 'Clic para configurar · Clic derecho para más opciones' : `${displayLabel} — clic para ejecutar`}
         draggable={!isEmpty}
         onClick={handleClick}
+        onDoubleClick={() => {
+          if (!hasLongPress) return;
+          setFlash(true);
+          setTimeout(() => setFlash(false), 300);
+          if (soundEnabled) playSound(soundProfile);
+          onLongPress!();
+        }}
         onContextMenu={handleContextMenu}
-        onMouseDown={() => setPressed(true)}
-        onMouseUp={() => setPressed(false)}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUpOrLeave}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => { setHovered(false); setPressed(false); }}
+        onMouseLeave={() => { setHovered(false); handleMouseUpOrLeave(); }}
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move';
           onDragStart?.();
@@ -131,6 +257,15 @@ function ButtonCellInner({
           gap: 6,
         }}
       >
+        {/* Active state: thin green bar at top when external state matches (process running, device is default, etc.) */}
+        {isActive && (
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0,
+            height: 2, background: '#4caf50',
+            borderRadius: `${VD.radius.lg} ${VD.radius.lg} 0 0`,
+          }} />
+        )}
+
         {/* 5.3 — Pulso radial al ejecutar */}
         {flash && <span className="vd-flash-pulse" />}
 
@@ -202,7 +337,7 @@ function ButtonCellInner({
         </div>
 
         {/* Edit icon on hover */}
-        {!isEmpty && hovered && (
+        {!isEmpty && (hovered || isTouch) && (
           <div
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
             title="Editar botón"
@@ -302,9 +437,11 @@ function ButtonCellInner({
 export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
   prev.button === next.button &&
   prev.toggled === next.toggled &&
+  prev.isActive === next.isActive &&
   prev.accent === next.accent &&
   prev.soundEnabled === next.soundEnabled &&
-  prev.soundProfile === next.soundProfile,
+  prev.soundProfile === next.soundProfile &&
+  prev.resolvedLabel === next.resolvedLabel,
 );
 
 function ContextItem({ label, icon, onClick, danger }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {

@@ -4,7 +4,7 @@ import {
 } from '../components/VDIcon';
 import { VD } from '../design';
 import { playSound } from '../utils/sound';
-import { executeAction, runActionSequence } from '../utils/actions';
+import { executeAction, runActionSequence, interpolate } from '../utils/actions';
 import { DotLabel } from '../components/DotLabel';
 import { DotText } from '../components/DotText';
 import { TitleBar } from '../components/TitleBar';
@@ -92,6 +92,10 @@ export function MainB({
   const [toast, setToast] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
   const [rgbStatus, setRgbStatus] = useState<RGBStatus | null>(null);
+  const [activeAudioDeviceId, setActiveAudioDeviceId] = useState<string | null>(null);
+  const [runningProcesses, setRunningProcesses] = useState<Set<string>>(new Set());
+  const [execLog, setExecLog] = useState<{ ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
+  const [showLog, setShowLog] = useState(false);
   const toastTimer = useRef<number>();
 
   // Poll RGB status cada 5s y cuando OpenRGB notifica cambios.
@@ -106,6 +110,25 @@ export function MainB({
     const t = setInterval(tick, 5000);
     const off = api.events.onRGBDevicesChanged?.(() => { tick(); });
     return () => { cancelled = true; clearInterval(t); off?.(); };
+  }, [api]);
+
+  // Poll active audio device and running processes every 5s to drive button state indicators.
+  useEffect(() => {
+    if (!api) return;
+    let cancelled = false;
+    const tick = async () => {
+      const [audioList, procs] = await Promise.all([
+        api.audio.list().catch(() => []),
+        api.state.activeApps().catch(() => [] as string[]),
+      ]);
+      if (cancelled) return;
+      const defDev = audioList.find((d) => d.isDefault);
+      setActiveAudioDeviceId(defDev?.id ?? null);
+      setRunningProcesses(new Set(procs));
+    };
+    tick();
+    const t = setInterval(tick, 5000);
+    return () => { cancelled = true; clearInterval(t); };
   }, [api]);
 
   // Pausar el polling de nowPlaying cuando la sidebar está oculta (no hay consumidor visible).
@@ -142,6 +165,12 @@ export function MainB({
     if (btn.isToggle) {
       const wasToggled = toggledIds.has(btn.id);
       onToggle(btn.id);
+      // Radio group: desactivar otros botones del mismo grupo al activar este
+      if (!wasToggled && btn.radioGroup) {
+        config.buttons
+          .filter((b) => b.radioGroup === btn.radioGroup && b.id !== btn.id && toggledIds.has(b.id))
+          .forEach((b) => onToggle(b.id));
+      }
       if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
         const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles);
         if (!r.ok && r.error) showToast(r.error);
@@ -154,12 +183,12 @@ export function MainB({
     const baseState = config.state ?? {};
     const r = await runActionSequence(actionsToRun, api, baseState, {
       runScript: async (script, shell) => {
-        // Captura solo si el primer paso script lo pidió (compatibilidad con showOutput)
-        const showOutput = actionsToRun.find(a => a.type === 'script' && a.script === script)?.showOutput;
-        if (showOutput) {
+        const actionDef = actionsToRun.find(a => a.type === 'script' && a.script === script);
+        const needsCapture = actionDef?.showOutput || actionDef?.captureToVar;
+        if (needsCapture) {
           try {
             const out = await api.launch.scriptCapture(script, shell);
-            if (out.output) showToast(out.output);
+            if (actionDef?.showOutput && out.output) showToast(out.output);
             return { ok: out.success, output: out.output, error: out.success ? undefined : 'El script terminó con error.' };
           } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
         }
@@ -176,14 +205,48 @@ export function MainB({
       for (const k of newKeys) update[k] = r.stateUpdate[k];
       onStateUpdate(update);
     }
+    setExecLog((prev) => [
+      { ts: Date.now(), label: btn.label || btn.action.type, actionType: btn.action.type, ok: r.ok, error: r.error },
+      ...prev.slice(0, 99),
+    ]);
     if (!r.ok && r.error) showToast(r.error);
-  }, [api, toggledIds, onToggle, showToast, config.state, onStateUpdate]);
+  }, [api, toggledIds, onToggle, showToast, config.state, onStateUpdate, config.buttons]);
+
+  const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
+    if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
+    const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles);
+    setExecLog((prev) => [
+      { ts: Date.now(), label: `⇓ ${btn.label || btn.longPressAction!.type}`, actionType: btn.longPressAction!.type, ok: r.ok, error: r.error },
+      ...prev.slice(0, 99),
+    ]);
+    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
+    if (!r.ok && r.error) showToast(r.error);
+  }, [api, config.state, config.rgb?.profiles, onStateUpdate, showToast]);
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
   const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridSize);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
   const isPlaying = nowPlaying?.status === 'Playing';
+
+  function extractExeName(appPath: string): string | null {
+    if (!appPath) return null;
+    const seg = appPath.split(/[/\\]/).pop() ?? appPath;
+    return seg.replace(/\s.*$/, '').replace(/\.(exe|lnk|bat|cmd)$/i, '').toLowerCase() || null;
+  }
+
+  function isButtonActive(btn: ButtonConfig): boolean {
+    const a = btn.action;
+    if (a.type === 'audio-device' && a.deviceId) return a.deviceId === activeAudioDeviceId;
+    if (a.type === 'app' && a.appPath) {
+      const name = extractExeName(a.appPath);
+      return !!name && runningProcesses.has(name);
+    }
+    if (a.type === 'kill-process' && a.processName) {
+      return runningProcesses.has(a.processName.replace(/\.exe$/i, '').toLowerCase());
+    }
+    return false;
+  }
 
   function confirmRename(id: string) {
     if (renameValue.trim()) onPageRename(id, renameValue.trim().toUpperCase());
@@ -395,10 +458,13 @@ export function MainB({
                 button={btn}
                 accent={config.accent}
                 toggled={toggledIds.has(btn.id)}
+                isActive={isButtonActive(btn)}
                 soundEnabled={soundOnPress}
                 soundProfile={soundProfile}
+                resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
                 onEdit={() => onEditButton(btn.id)}
                 onExecute={() => executeButton(btn)}
+                onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none' ? () => executeLongPressButton(btn) : undefined}
                 onDuplicate={() => onDuplicateButton(btn.id)}
                 onClear={() => onClearButton(btn.id)}
                 onDragStart={() => setDragSourceId(btn.id)}
@@ -461,6 +527,41 @@ export function MainB({
                   </div>
                   <span style={{ fontFamily: VD.mono, fontSize: 9, color: config.accent }}>→</span>
                 </div>
+              </div>
+
+              {/* Execution log */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showLog ? 6 : 0 }}>
+                  <DotLabel size={9} color={VD.textMuted} spacing={2}>LOG</DotLabel>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    {execLog.length > 0 && (
+                      <span
+                        onClick={() => setExecLog([])}
+                        title="Limpiar log"
+                        style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, cursor: 'pointer', letterSpacing: 0.5 }}
+                      >✕</span>
+                    )}
+                    <span
+                      onClick={() => setShowLog((v) => !v)}
+                      style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer', userSelect: 'none' }}
+                    >{showLog ? '▲' : '▼'}</span>
+                  </div>
+                </div>
+                {showLog && (
+                  <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {execLog.length === 0 ? (
+                      <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Sin actividad</div>
+                    ) : execLog.map((entry, i) => (
+                      <div key={i} title={entry.error} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ color: entry.ok ? VD.success : VD.danger, fontSize: 8, flexShrink: 0 }}>●</span>
+                        <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.label}</span>
+                        <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, flexShrink: 0 }}>
+                          {new Date(entry.ts).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Now Playing */}

@@ -29,7 +29,11 @@ export type ActionType =
   // 2.x — RGB (OpenRGB SDK)
   | 'rgb-color'
   | 'rgb-mode'
-  | 'rgb-profile';
+  | 'rgb-profile'
+  | 'rgb-preset'
+  // 3.x — Nuevas acciones
+  | 'window-snap'
+  | 'branch';
 
 export interface FolderButton {
   label: string;
@@ -70,6 +74,8 @@ export interface ButtonAction {
   webhookHeaders?: string; // JSON string
   webhookBody?: string;
   ttsText?: string;
+  /** Captura el stdout del script y lo almacena en esta variable global. */
+  captureToVar?: string;
   // 1.3 — Encadenado avanzado por paso
   delayMs?: number;
   onlyIfPrevOk?: boolean;
@@ -87,6 +93,24 @@ export interface ButtonAction {
   rgbBrightness?: number;
   /** Nombre del perfil RGB en DeckConfig.rgb.profiles para 'rgb-profile'. Para alternar, usa isToggle + actionToggleOff con otro perfil. */
   rgbProfileName?: string;
+  /** ID de preset inteligente para 'rgb-preset': 'off'|'gaming'|'cinema'|'work'|'rainbow'|'night-blue'|'alert-red' */
+  rgbPresetId?: string;
+  // 3.x — Window snapper
+  /** Posición destino para 'window-snap'. */
+  snapPosition?: 'left-half' | 'right-half' | 'top-half' | 'bottom-half' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'maximize' | 'center' | 'restore';
+  /** Nombre del proceso a snapear (ej. "chrome"). Vacío = ventana en foco al ejecutar. */
+  snapProcessName?: string;
+  // 3.x — Branch condicional
+  /** Nombre de variable a evaluar (branch). */
+  branchVar?: string;
+  /** Operador de comparación. */
+  branchOp?: '==' | '!=' | '>' | '<' | '>=' | '<=' | 'contains' | 'empty' | 'not-empty';
+  /** Valor a comparar (acepta {interpolación}). */
+  branchValue?: string;
+  /** Acciones a ejecutar si la condición es verdadera. */
+  branchThen?: ButtonAction[];
+  /** Acciones a ejecutar si la condición es falsa. */
+  branchElse?: ButtonAction[];
 }
 
 export interface ButtonConfig {
@@ -113,6 +137,10 @@ export interface ButtonConfig {
   globalHotkey?: string;
   /** 1.4 — Aparece en el menú del tray como acceso rápido. */
   inTrayMenu?: boolean;
+  /** 3.x — Acción al mantener presionado (~500 ms). */
+  longPressAction?: ButtonAction;
+  /** 3.x — Nombre del grupo radio. Solo un botón del grupo puede estar toggled ON a la vez. */
+  radioGroup?: string;
 }
 
 export interface PageConfig {
@@ -191,6 +219,8 @@ export interface RGBModeInfo {
   id: number;
   name: string;
   flags: number;
+  /** 0=none(autonomous) 1=per-LED(Direct) 2=per-mode(Static/Breathing) 3=random */
+  colorMode: number;
   brightnessMin?: number;
   brightnessMax?: number;
 }
@@ -286,6 +316,7 @@ export interface ElectronAPI {
     typeText: (text: string) => Promise<boolean>;
     killProcess: (name: string) => Promise<boolean>;
     setVolume: (percent: number) => Promise<boolean>;
+    snapWindow: (position: string, processName?: string) => Promise<boolean>;
   };
   dialog: {
     openFile: (opts?: object) => Promise<string | null>;
@@ -298,6 +329,10 @@ export interface ElectronAPI {
   app: {
     getAutostart: () => Promise<boolean>;
     setAutostart: (enabled: boolean) => Promise<void>;
+  };
+  state: {
+    /** Returns lowercase exe names (without .exe) of running processes. Polls every ~5 s from the UI. */
+    activeApps: () => Promise<string[]>;
   };
   rgb: {
     status: () => Promise<RGBStatus>;
@@ -312,6 +347,7 @@ export interface ElectronAPI {
     setMode: (deviceId: number, mode: string, color?: string, brightness?: number) => Promise<boolean>;
     resizeZone: (deviceId: number, zoneId: number, size: number) => Promise<boolean>;
     applyProfile: (profile: RGBProfile) => Promise<boolean>;
+    smartPreset: (presetId: string) => Promise<boolean>;
     pickFile: () => Promise<string | null>;
   };
   events: {

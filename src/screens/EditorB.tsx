@@ -59,6 +59,9 @@ const ACTION_TYPES: { type: ActionType; label: string; Icon: React.ComponentType
   { type: 'rgb-color',        label: 'RGB Color',    Icon: IconNotify,          desc: 'Pinta un color sólido en un dispositivo RGB' },
   { type: 'rgb-mode',         label: 'RGB Modo',     Icon: IconNotify,          desc: 'Cambia el modo/efecto RGB (Direct, Breathing, etc.)' },
   { type: 'rgb-profile',      label: 'RGB Perfil',   Icon: IconNotify,          desc: 'Aplica un perfil RGB guardado' },
+  // 3.x — Nuevas acciones
+  { type: 'window-snap',      label: 'Snap Ventana', Icon: IconScript,          desc: 'Mueve y redimensiona una ventana a un cuadrante' },
+  { type: 'branch',           label: 'Si / Si no',   Icon: IconNotify,          desc: 'Ejecuta acción A o B según el valor de una variable' },
 ];
 
 interface ButtonPreset {
@@ -139,15 +142,20 @@ const PRESETS: ButtonPreset[] = [
   { category: 'CREATIVO', label: 'PR Exportar', icon: '↗', bgColor: '#0a1a0a', fgColor: '#9999ff', action: { type: 'hotkey', hotkey: 'Ctrl+M' } },
   { category: 'CREATIVO', label: 'PR Marcador', icon: '◈', bgColor: '#0a1a0a', fgColor: '#9999ff', action: { type: 'hotkey', hotkey: 'M' } },
 
-  // RGB — requieren OpenRGB conectado
+  // RGB — colores estáticos (setDeviceColor, funciona con GPU y tiras)
   { category: 'RGB', label: 'RGB Apagar', icon: '○', bgColor: '#0a0a0a', fgColor: '#666666', action: { type: 'rgb-color', rgbColor: '#000000' } },
   { category: 'RGB', label: 'RGB Rojo',   icon: '●', bgColor: '#1a0000', fgColor: '#ff3030', action: { type: 'rgb-color', rgbColor: '#ff0000' } },
   { category: 'RGB', label: 'RGB Verde',  icon: '●', bgColor: '#001a00', fgColor: '#30ff30', action: { type: 'rgb-color', rgbColor: '#00ff00' } },
   { category: 'RGB', label: 'RGB Azul',   icon: '●', bgColor: '#00001a', fgColor: '#3030ff', action: { type: 'rgb-color', rgbColor: '#0000ff' } },
-  { category: 'RGB', label: 'RGB Cinema', icon: '◐', bgColor: '#0a0000', fgColor: '#aa2233', action: { type: 'rgb-color', rgbColor: '#400404' } },
   { category: 'RGB', label: 'RGB Blanco', icon: '○', bgColor: '#1a1a1a', fgColor: '#ffffff', action: { type: 'rgb-color', rgbColor: '#ffffff' } },
-  { category: 'RGB', label: 'RGB Direct', icon: '◆', bgColor: '#0a0a0a', fgColor: '#aaaaaa', action: { type: 'rgb-mode', rgbMode: 'Direct' } },
-  { category: 'RGB', label: 'RGB Rainbow',icon: '◈', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'rgb-mode', rgbMode: 'Rainbow' } },
+  // RGB — presets inteligentes (busca el modo correcto por dispositivo, funciona con GPU y tiras)
+  { category: 'RGB', label: 'RGB Off',        icon: '○', bgColor: '#050505', fgColor: '#444444', action: { type: 'rgb-preset', rgbPresetId: 'off' } },
+  { category: 'RGB', label: 'RGB Gaming',     icon: '◉', bgColor: '#1a0000', fgColor: '#ff3300', action: { type: 'rgb-preset', rgbPresetId: 'gaming' } },
+  { category: 'RGB', label: 'RGB Cinema',     icon: '◐', bgColor: '#0a0000', fgColor: '#aa2233', action: { type: 'rgb-preset', rgbPresetId: 'cinema' } },
+  { category: 'RGB', label: 'RGB Trabajo',    icon: '◯', bgColor: '#111116', fgColor: '#c8d8ff', action: { type: 'rgb-preset', rgbPresetId: 'work' } },
+  { category: 'RGB', label: 'RGB Arcoiris',   icon: '◈', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'rgb-preset', rgbPresetId: 'rainbow' } },
+  { category: 'RGB', label: 'RGB Noche Azul', icon: '◉', bgColor: '#000010', fgColor: '#0055ff', action: { type: 'rgb-preset', rgbPresetId: 'night-blue' } },
+  { category: 'RGB', label: 'RGB Alerta',     icon: '◉', bgColor: '#1a0000', fgColor: '#ff0000', action: { type: 'rgb-preset', rgbPresetId: 'alert-red' } },
 ];
 
 // Pre-filled folder button packs for Adobe apps
@@ -235,6 +243,11 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
   // 1.4 — Disparadores externos
   const [globalHotkey, setGlobalHotkey] = useState(button.globalHotkey ?? '');
   const [inTrayMenu, setInTrayMenu] = useState(button.inTrayMenu ?? false);
+  // 3.x — Long press + radio group
+  const [longPressAction, setLongPressAction] = useState<import('../types').ButtonAction>(
+    button.longPressAction ?? { type: 'none' }
+  );
+  const [radioGroup, setRadioGroup] = useState(button.radioGroup ?? '');
   // 2.1 — Glifo 5×7 personalizado (7 enteros bitmask)
   const [customGlyph57, setCustomGlyph57] = useState<number[] | undefined>(button.customGlyph57);
   const [showGlyphEditor, setShowGlyphEditor] = useState(false);
@@ -250,13 +263,18 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
   );
   const captureRef = useRef(false);
 
+  const loadAudioDevices = () => {
+    if (!api) return;
+    setLoadingDevices(true);
+    api.audio.list().then((devs) => {
+      setAudioDevices(devs);
+      setLoadingDevices(false);
+    }).catch(() => setLoadingDevices(false));
+  };
+
   useEffect(() => {
     if (action.type === 'audio-device' && audioDevices.length === 0 && api) {
-      setLoadingDevices(true);
-      api.audio.list().then((devs) => {
-        setAudioDevices(devs);
-        setLoadingDevices(false);
-      }).catch(() => setLoadingDevices(false));
+      loadAudioDevices();
     }
   }, [action.type, step]);
 
@@ -324,6 +342,8 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
       globalHotkey: globalHotkey.trim() || undefined,
       inTrayMenu: inTrayMenu || undefined,
       customGlyph57: customGlyph57 && customGlyph57.length === 7 ? customGlyph57 : undefined,
+      longPressAction: longPressAction.type !== 'none' ? longPressAction : undefined,
+      radioGroup: radioGroup.trim() || undefined,
     };
     onSave(updated);
   };
@@ -732,23 +752,68 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                       />
                       <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim }}>MOSTRAR SALIDA DEL SCRIPT EN PANTALLA</span>
                     </label>
+                    <Field label="GUARDAR SALIDA EN VARIABLE (opcional)">
+                      <input
+                        value={action.captureToVar ?? ''}
+                        onChange={(e) => setAction(a => ({ ...a, captureToVar: e.target.value || undefined }))}
+                        placeholder="ej: resultado_cpu"
+                        style={inputStyle}
+                      />
+                      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                        El stdout se guarda en la variable y se puede usar como {'{resultado_cpu}'} en otros pasos.
+                      </div>
+                    </Field>
                   </>
                 )}
 
                 {action.type === 'audio-device' && (
                   <Field label="DISPOSITIVO DE AUDIO">
-                    {loadingDevices && <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '8px 0' }}>Cargando dispositivos...</div>}
-                    {!loadingDevices && audioDevices.length === 0 && <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.danger, padding: '8px 0' }}>No se detectaron dispositivos.</div>}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      {action.deviceName && (
+                        <span style={{ fontFamily: VD.mono, fontSize: 10, color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                          ✓ {action.deviceName}
+                        </span>
+                      )}
+                      {!action.deviceName && <span />}
+                      <Btn onClick={loadAudioDevices}>{loadingDevices ? '...' : '⟳ RECARGAR'}</Btn>
+                    </div>
+                    {loadingDevices && <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '4px 0 8px' }}>Cargando dispositivos...</div>}
+                    {!loadingDevices && audioDevices.length === 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.danger, marginBottom: 8 }}>
+                          No se detectaron dispositivos automáticamente.
+                        </div>
+                        <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginBottom: 6 }}>
+                          Ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):
+                        </div>
+                        <input
+                          value={action.deviceName || ''}
+                          onChange={(e) => setAction((a) => ({ ...a, deviceId: undefined, deviceName: e.target.value }))}
+                          placeholder="Ej: Auriculares (Realtek HD Audio)"
+                          style={inputStyle}
+                        />
+                      </div>
+                    )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {audioDevices.map((dev) => (
-                        <div key={dev.id} onClick={() => setAction((a) => ({ ...a, deviceId: dev.id, deviceName: dev.name }))} style={{
-                          background: action.deviceId === dev.id ? VD.accentBg : VD.elevated,
-                          border: `1px solid ${action.deviceId === dev.id ? accent : VD.border}`,
-                          borderRadius: VD.radius.md, padding: '10px 12px',
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        }}>
+                        <div
+                          key={dev.id}
+                          onClick={() => {
+                            setAction((a) => ({ ...a, deviceId: dev.id, deviceName: dev.name }));
+                            if (!label) setLabel(dev.name);
+                          }}
+                          style={{
+                            background: action.deviceId === dev.id ? VD.accentBg : VD.elevated,
+                            border: `1px solid ${action.deviceId === dev.id ? accent : VD.border}`,
+                            borderRadius: VD.radius.md, padding: '10px 12px',
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          }}
+                        >
                           <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text }}>{dev.name}</span>
-                          {dev.isDefault && <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.success, letterSpacing: 1 }}>PREDETERMINADO</span>}
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {dev.isDefault && <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.success, letterSpacing: 1 }}>PREDETERMINADO</span>}
+                            {action.deviceId === dev.id && <span style={{ fontFamily: VD.mono, fontSize: 9, color: accent, letterSpacing: 1 }}>✓ SELECCIONADO</span>}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1137,6 +1202,97 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                   </div>
                 )}
 
+                {action.type === 'window-snap' && (
+                  <>
+                    <Field label="POSICIÓN / TAMAÑO">
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                        {([
+                          ['top-left','↖ Cuad. sup-izq'],['top-half','↑ Mitad superior'],['top-right','↗ Cuad. sup-der'],
+                          ['left-half','← Mitad izq'],['center','⊞ Centro 50%'],['right-half','→ Mitad der'],
+                          ['bottom-left','↙ Cuad. inf-izq'],['bottom-half','↓ Mitad inferior'],['bottom-right','↘ Cuad. inf-der'],
+                          ['maximize','⛶ Maximizar'],['restore','⊡ Restaurar'],
+                        ] as [string, string][]).map(([val, lbl]) => (
+                          <div
+                            key={val}
+                            onClick={() => setAction((a) => ({ ...a, snapPosition: val as any }))}
+                            style={{
+                              padding: '6px 8px', borderRadius: VD.radius.sm, cursor: 'pointer',
+                              background: action.snapPosition === val ? VD.accentBg : VD.elevated,
+                              border: `1px solid ${action.snapPosition === val ? accent : VD.border}`,
+                              fontFamily: VD.mono, fontSize: 8, color: action.snapPosition === val ? accent : VD.textDim,
+                              textAlign: 'center',
+                            }}
+                          >{lbl}</div>
+                        ))}
+                      </div>
+                    </Field>
+                    <Field label="PROCESO A SNAPEAR (opcional — vacío = ventana activa)">
+                      <input
+                        value={action.snapProcessName ?? ''}
+                        onChange={(e) => setAction((a) => ({ ...a, snapProcessName: e.target.value || undefined }))}
+                        placeholder="chrome, notepad, code..."
+                        style={inputStyle}
+                      />
+                      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                        Sin nombre de proceso, snapea la ventana en foco al momento de ejecutar.
+                        Funciona mejor con hotkeys globales (sin pasar por VirtualDeck).
+                      </div>
+                    </Field>
+                  </>
+                )}
+
+                {action.type === 'branch' && (
+                  <>
+                    <Field label="CONDICIÓN: SI {variable}">
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <input
+                          value={action.branchVar ?? ''}
+                          onChange={(e) => setAction((a) => ({ ...a, branchVar: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
+                          placeholder="nombre_variable"
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                        <select
+                          value={action.branchOp ?? '=='}
+                          onChange={(e) => setAction((a) => ({ ...a, branchOp: e.target.value as any }))}
+                          style={{ ...inputStyle, width: 120 }}
+                        >
+                          <option value="==">== igual a</option>
+                          <option value="!=">!= distinto de</option>
+                          <option value=">">{'>'} mayor que</option>
+                          <option value="<">{'<'} menor que</option>
+                          <option value=">=">{'>='} mayor o igual</option>
+                          <option value="<=">{'<='} menor o igual</option>
+                          <option value="contains">contiene</option>
+                          <option value="empty">está vacío</option>
+                          <option value="not-empty">no está vacío</option>
+                        </select>
+                        {!['empty','not-empty'].includes(action.branchOp ?? '==') && (
+                          <input
+                            value={action.branchValue ?? ''}
+                            onChange={(e) => setAction((a) => ({ ...a, branchValue: e.target.value }))}
+                            placeholder="valor o {variable}"
+                            style={{ ...inputStyle, flex: 1 }}
+                          />
+                        )}
+                      </div>
+                    </Field>
+                    <Field label="ENTONCES (acción si VERDADERO)">
+                      <BranchActionRow
+                        action={action.branchThen?.[0] ?? { type: 'none' }}
+                        onChange={(a) => setAction((prev) => ({ ...prev, branchThen: a.type !== 'none' ? [a] : [] }))}
+                        accent={accent}
+                      />
+                    </Field>
+                    <Field label="SI NO (acción si FALSO — opcional)">
+                      <BranchActionRow
+                        action={action.branchElse?.[0] ?? { type: 'none' }}
+                        onChange={(a) => setAction((prev) => ({ ...prev, branchElse: a.type !== 'none' ? [a] : [] }))}
+                        accent={accent}
+                      />
+                    </Field>
+                  </>
+                )}
+
                 {/* Toggle mode — for non-folder actions */}
                 {action.type !== 'none' && action.type !== 'folder' && (
                   <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
@@ -1163,6 +1319,37 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                         />
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* 3.x — Long press action */}
+                {action.type !== 'none' && action.type !== 'folder' && (
+                  <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
+                    <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
+                      ACCIÓN AL MANTENER PRESIONADO (~500 MS)
+                    </DotLabel>
+                    <ToggleOffActionPicker
+                      action={longPressAction}
+                      onChange={setLongPressAction}
+                      accent={accent}
+                    />
+                  </div>
+                )}
+
+                {/* 3.x — Radio group */}
+                {action.type !== 'none' && action.type !== 'folder' && isToggle && (
+                  <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
+                    <Field label="GRUPO RADIO (toggles mutuamente exclusivos)">
+                      <input
+                        value={radioGroup}
+                        onChange={(e) => setRadioGroup(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                        placeholder="ej: modo_audio, perfil_rgb..."
+                        style={inputStyle}
+                      />
+                      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                        Todos los toggles con el mismo grupo se desactivan cuando se activa este.
+                      </div>
+                    </Field>
                   </div>
                 )}
 
@@ -1491,6 +1678,92 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
             style={{ flex: 1, accentColor: accent }} />
           <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, minWidth: 36 }}>{action.brightnessLevel ?? 70}%</span>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Compact action picker for branch then/else — reuses ToggleOffActionPicker with an extended type list
+function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
+  const simpleTypes: ActionType[] = ['none', 'set-var', 'incr-var', 'hotkey', 'script', 'notify', 'webhook', 'clipboard', 'type-text', 'volume-set', 'brightness', 'rgb-preset', 'window-snap'];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <select value={action.type} onChange={(e) => onChange({ type: e.target.value as ActionType })} style={{ ...selectStyle }}>
+        {simpleTypes.map(t => (
+          <option key={t} value={t}>{ACTION_TYPES.find(at => at.type === t)?.label ?? t}</option>
+        ))}
+      </select>
+      {action.type === 'set-var' && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input value={action.varName ?? ''} onChange={e => onChange({ ...action, varName: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
+            placeholder="variable" style={{ ...inputStyle, flex: 1 }} />
+          <input value={action.varValue ?? ''} onChange={e => onChange({ ...action, varValue: e.target.value })}
+            placeholder="valor" style={{ ...inputStyle, flex: 1 }} />
+        </div>
+      )}
+      {action.type === 'incr-var' && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input value={action.varName ?? ''} onChange={e => onChange({ ...action, varName: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
+            placeholder="variable" style={{ ...inputStyle, flex: 1 }} />
+          <input type="number" value={action.varDelta ?? 1} onChange={e => onChange({ ...action, varDelta: parseInt(e.target.value) || 0 })}
+            style={{ ...inputStyle, width: 80 }} />
+        </div>
+      )}
+      {action.type === 'hotkey' && (
+        <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })}
+          placeholder="Ctrl+Shift+F9" style={{ ...inputStyle, fontSize: 11 }} />
+      )}
+      {action.type === 'script' && (
+        <textarea value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })}
+          placeholder="Script..." rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+      )}
+      {action.type === 'notify' && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input value={action.notifyTitle ?? ''} onChange={e => onChange({ ...action, notifyTitle: e.target.value })}
+            placeholder="Título" style={{ ...inputStyle, flex: 1 }} />
+          <input value={action.notifyBody ?? ''} onChange={e => onChange({ ...action, notifyBody: e.target.value })}
+            placeholder="Mensaje" style={{ ...inputStyle, flex: 2 }} />
+        </div>
+      )}
+      {action.type === 'webhook' && (
+        <input value={action.webhookUrl ?? ''} onChange={e => onChange({ ...action, webhookUrl: e.target.value, webhookMethod: action.webhookMethod ?? 'POST' })}
+          placeholder="https://..." style={inputStyle} />
+      )}
+      {action.type === 'clipboard' && (
+        <input value={action.clipboardText || ''} onChange={e => onChange({ ...action, clipboardText: e.target.value })}
+          placeholder="Texto al portapapeles" style={inputStyle} />
+      )}
+      {action.type === 'type-text' && (
+        <input value={action.typeText || ''} onChange={e => onChange({ ...action, typeText: e.target.value })}
+          placeholder="Texto a escribir" style={inputStyle} />
+      )}
+      {action.type === 'volume-set' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="range" min={0} max={100} step={5} value={action.volumePercent ?? 50}
+            onChange={e => onChange({ ...action, volumePercent: parseInt(e.target.value) })} style={{ flex: 1, accentColor: accent }} />
+          <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, minWidth: 36 }}>{action.volumePercent ?? 50}%</span>
+        </div>
+      )}
+      {action.type === 'brightness' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="range" min={0} max={100} step={5} value={action.brightnessLevel ?? 70}
+            onChange={e => onChange({ ...action, brightnessLevel: parseInt(e.target.value) })} style={{ flex: 1, accentColor: accent }} />
+          <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, minWidth: 36 }}>{action.brightnessLevel ?? 70}%</span>
+        </div>
+      )}
+      {action.type === 'rgb-preset' && (
+        <select value={action.rgbPresetId ?? ''} onChange={e => onChange({ ...action, rgbPresetId: e.target.value })} style={{ ...selectStyle }}>
+          {['off','gaming','cinema','work','rainbow','night-blue','alert-red'].map(p => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+      )}
+      {action.type === 'window-snap' && (
+        <select value={action.snapPosition ?? 'left-half'} onChange={e => onChange({ ...action, snapPosition: e.target.value as any })} style={{ ...selectStyle }}>
+          {['left-half','right-half','top-half','bottom-half','top-left','top-right','bottom-left','bottom-right','maximize','center','restore'].map(p => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
       )}
     </div>
   );

@@ -87,6 +87,20 @@ export async function typeTextKeys(text: string): Promise<boolean> {
   );
 }
 
+export async function getRunningProcesses(): Promise<string[]> {
+  return new Promise((resolve) => {
+    exec('tasklist /NH /FO CSV', { timeout: 5000 }, (err, stdout) => {
+      if (err) { resolve([]); return; }
+      const names: string[] = [];
+      for (const line of stdout.split('\n')) {
+        const m = /^"([^"]+)"/.exec(line.trim());
+        if (m) names.push(m[1].replace(/\.exe$/i, '').toLowerCase());
+      }
+      resolve(names);
+    });
+  });
+}
+
 export async function killProcess(name: string): Promise<boolean> {
   const safe = name.replace(/['"&|<>]/g, '').trim();
   if (!safe) return false;
@@ -119,6 +133,51 @@ public class AudioCtrl {
 }
 '@
 [AudioCtrl]::SetVol(${level}f)
+`;
+  return runPSScript(script);
+}
+
+export async function snapWindow(position: string, processName?: string): Promise<boolean> {
+  const pname = (processName ?? '').replace(/\.exe$/i, '').trim();
+  const script = `
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+public class WinSnap {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndAfter, int X, int Y, int cx, int cy, uint uFlags);
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int n);
+  [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
+}
+'@
+$pname = '${pname}'
+$pos   = '${position}'
+if ($pname -ne '') {
+  $p  = Get-Process -Name $pname -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+  $hw = if ($p) { $p.MainWindowHandle } else { [WinSnap]::GetForegroundWindow() }
+} else {
+  $hw = [WinSnap]::GetForegroundWindow()
+}
+if ($hw -eq [IntPtr]::Zero) { return }
+if ([WinSnap]::IsIconic($hw)) { [void][WinSnap]::ShowWindow($hw, 9) }
+$s  = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+$sw = $s.Width; $sh = $s.Height; $sx = $s.X; $sy = $s.Y
+$f  = [uint32]0x0004
+switch ($pos) {
+  'left-half'    { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy,[int]($sw/2),$sh,$f) }
+  'right-half'   { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/2),$sy,[int]($sw/2),$sh,$f) }
+  'top-half'     { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy,$sw,[int]($sh/2),$f) }
+  'bottom-half'  { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy+[int]($sh/2),$sw,[int]($sh/2),$f) }
+  'top-left'     { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy,[int]($sw/2),[int]($sh/2),$f) }
+  'top-right'    { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/2),$sy,[int]($sw/2),[int]($sh/2),$f) }
+  'bottom-left'  { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy+[int]($sh/2),[int]($sw/2),[int]($sh/2),$f) }
+  'bottom-right' { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/2),$sy+[int]($sh/2),[int]($sw/2),[int]($sh/2),$f) }
+  'maximize'     { [void][WinSnap]::ShowWindow($hw, 3) }
+  'restore'      { [void][WinSnap]::ShowWindow($hw, 9) }
+  'center'       { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/4),$sy+[int]($sh/4),[int]($sw/2),[int]($sh/2),$f) }
+}
 `;
   return runPSScript(script);
 }

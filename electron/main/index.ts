@@ -1,17 +1,20 @@
-import electron from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, protocol, net, Notification, globalShortcut } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readdirSync, unlinkSync, statSync } from 'fs';
 import { deflateSync } from 'zlib';
 import { listAudioDevices, setDefaultAudioDevice } from './audio';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness,
-  sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume,
+  sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume, getRunningProcesses, snapWindow,
 } from './launcher';
 import { getNowPlaying, controlMedia, diagnose as diagnoseMedia, type MediaCommand } from './media';
 import { getWeather } from './weather';
 import * as rgb from './rgb';
 
-const { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, protocol, net, Notification, globalShortcut } = electron;
+// DeskIn virtual display adapter and similar virtual/remote display drivers don't support
+// Chromium's GPU compositor — disabling hardware acceleration forces software rendering
+// which fixes black tiles and partial redraws on virtual monitors.
+app.disableHardwareAcceleration()
 
 // vd:// custom protocol for serving images from userData — must be registered before app ready
 protocol.registerSchemesAsPrivileged([
@@ -321,6 +324,8 @@ function registerIPC(win: Electron.BrowserWindow) {
   });
   ipcMain.handle('launch:killProcess', (_e: any, name: string) => killProcess(name));
   ipcMain.handle('launch:setVolume', (_e: any, percent: number) => setVolume(percent));
+  ipcMain.handle('launch:snapWindow', (_e: any, position: string, processName?: string) => snapWindow(position, processName));
+  ipcMain.handle('state:activeApps', () => getRunningProcesses());
 
   // Dialogs
   ipcMain.handle('dialog:openFile', (_e: any, opts: any) =>
@@ -395,6 +400,7 @@ function registerIPC(win: Electron.BrowserWindow) {
   ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number) => rgb.setMode(id, m, c, b));
   ipcMain.handle('rgb:resizeZone', (_e: any, id: number, z: number, size: number) => rgb.resizeZone(id, z, size));
   ipcMain.handle('rgb:applyProfile', (_e: any, profile: any) => rgb.applyProfile(profile));
+  ipcMain.handle('rgb:smartPreset', (_e: any, presetId: string) => rgb.applySmartPreset(presetId));
   ipcMain.handle('rgb:pickFile', async () => {
     const r = await dialog.showOpenDialog(win, {
       title: 'Selecciona OpenRGB.exe',
@@ -417,6 +423,20 @@ function createWindow() {
 
   win.on('close', (e) => {
     if (!isQuitting) { e.preventDefault(); win.hide(); }
+  });
+
+  // When moving between monitors with different DPI, Chromium may keep rendering at the
+  // old scale factor causing blurry text. A 1px size nudge forces a DPI re-evaluation.
+  let moveTimer: ReturnType<typeof setTimeout> | null = null;
+  win.on('moved', () => {
+    if (moveTimer) clearTimeout(moveTimer);
+    moveTimer = setTimeout(() => {
+      if (win.isDestroyed()) return;
+      const [w, h] = win.getSize();
+      win.setSize(w + 1, h, false);
+      win.setSize(w, h, false);
+      moveTimer = null;
+    }, 200);
   });
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
@@ -475,6 +495,7 @@ async function checkForUpdates() {
 app.whenReady().then(() => { setTimeout(checkForUpdates, 8000); });
 
 app.whenReady().then(() => {
+  // Serve userData files via vd:// — keeps imageData references small in config JSON
   // Serve userData files via vd:// — keeps imageData references small in config JSON
   protocol.handle('vd', (request) => {
     const path = request.url.slice('vd://'.length);

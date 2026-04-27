@@ -132,15 +132,23 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 
   const selected = devices.find((d) => d.id === selectedId) ?? null;
 
+  const [deviceColor, setDeviceColorState] = useState('#ffffff');
+
   const setColor = async (color: string) => {
     if (!api || !selected) return;
+    setDeviceColorState(color);
     await api.rgb.setDeviceColor(selected.id, color);
     await refresh();
   };
 
-  const setMode = async (modeName: string) => {
+  const setMode = async (modeName: string, currentColor?: string) => {
     if (!api || !selected) return;
-    await api.rgb.setMode(selected.id, modeName);
+    // Pass the current color for modes that accept user input (colorMode != 0/3)
+    const modeInfo = selected.modes.find((m) => m.name === modeName);
+    const colorToPass = (modeInfo && modeInfo.colorMode !== 0 && modeInfo.colorMode !== 3)
+      ? (currentColor ?? deviceColor)
+      : undefined;
+    await api.rgb.setMode(selected.id, modeName, colorToPass);
     await refresh();
   };
 
@@ -151,6 +159,11 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     const arr = new Array(Math.max(1, z.ledCount)).fill(color);
     await api.rgb.setZoneColors(selected.id, zoneId, arr);
     await refresh();
+  };
+
+  const setSingleLedHandler = async (globalIdx: number, hex: string) => {
+    if (!api || !selected) return;
+    await api.rgb.setSingleLed(selected.id, globalIdx, hex);
   };
 
   const allOff = async () => {
@@ -360,8 +373,9 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
               device={selected}
               accent={accent}
               onSetColor={setColor}
-              onSetMode={setMode}
+              onSetMode={(modeName, color) => setMode(modeName, color)}
               onSetZoneColor={setZoneColor}
+              onSetSingleLed={setSingleLedHandler}
             />
           )}
         </div>
@@ -426,19 +440,24 @@ function StatusBadge({ status, accent }: { status: RGBStatus; accent: string }) 
 }
 
 function DeviceDetail({
-  device, accent, onSetColor, onSetMode, onSetZoneColor,
+  device, accent, onSetColor, onSetMode, onSetZoneColor, onSetSingleLed,
 }: {
   device: RGBDeviceInfo;
   accent: string;
   onSetColor: (hex: string) => void;
-  onSetMode: (modeName: string) => void;
+  onSetMode: (modeName: string, color: string) => void;
   onSetZoneColor: (zoneId: number, hex: string) => void;
+  onSetSingleLed: (globalIdx: number, hex: string) => void;
 }) {
   const activeMode = device.modes.find((m) => m.id === device.activeMode);
   const [color, setColor] = useState(device.colors[0] ?? '#ffffff');
+  const [showLedPainter, setShowLedPainter] = useState(false);
+  // Optimistic local colors: updated immediately on LED paint without waiting for API refresh.
+  const [localColors, setLocalColors] = useState<string[] | null>(null);
+  const displayColors = localColors ?? device.colors;
 
   // Si cambia el device seleccionado, sincroniza el color local con el primer LED.
-  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); }, [device.id, device.colors[0]]);
+  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); }, [device.id]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -461,7 +480,7 @@ function DeviceDetail({
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>MODO</DotLabel>
             <select
               value={activeMode?.name ?? ''}
-              onChange={(e) => onSetMode(e.target.value)}
+              onChange={(e) => onSetMode(e.target.value, color)}
               style={selectStyle}
             >
               {device.modes.map((m) => (
@@ -474,7 +493,7 @@ function DeviceDetail({
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>ZONAS</DotLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {device.zones.map((z) => {
-                const firstColor = device.colors[zoneStartLed(device, z.id)] ?? '#000000';
+                const firstColor = displayColors[zoneStartLed(device, z.id)] ?? '#000000';
                 return (
                   <div key={z.id} style={{
                     display: 'flex', alignItems: 'center', gap: 8,
@@ -498,7 +517,105 @@ function DeviceDetail({
               })}
             </div>
           </div>
+
+          {/* LED Painter */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block' }}>PINTAR LEDs INDIVIDUALES</DotLabel>
+              <button
+                onClick={() => setShowLedPainter((v) => !v)}
+                style={{ background: 'none', border: `1px solid ${VD.border}`, borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 8, color: showLedPainter ? accent : VD.textDim, cursor: 'pointer', padding: '2px 8px', letterSpacing: 0.5 }}
+              >
+                {showLedPainter ? 'OCULTAR' : 'MOSTRAR'}
+              </button>
+            </div>
+            {showLedPainter && (
+              <LedPainter
+                device={device}
+                displayColors={displayColors}
+                color={color}
+                accent={accent}
+                onPaintLed={(globalIdx, hex) => {
+                  const next = [...displayColors];
+                  next[globalIdx] = hex;
+                  setLocalColors(next);
+                  onSetSingleLed(globalIdx, hex);
+                }}
+              />
+            )}
+          </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LedPainter({ device, displayColors, color, accent, onPaintLed }: {
+  device: RGBDeviceInfo;
+  displayColors: string[];
+  color: string;
+  accent: string;
+  onPaintLed: (globalIdx: number, hex: string) => void;
+}) {
+  const totalLeds = device.colors.length;
+  if (totalLeds === 0) {
+    return (
+      <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
+        No hay LEDs reportados para este dispositivo.
+      </div>
+    );
+  }
+
+  const activeMode = device.modes.find((m) => m.id === device.activeMode);
+  const isPerLed = activeMode && (activeMode.colorMode === 1 || /^(direct|custom)$/i.test(activeMode.name));
+
+  const dotSize = totalLeds > 80 ? 9 : totalLeds > 40 ? 12 : 16;
+  const gap = totalLeds > 80 ? 1 : 2;
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      {!isPerLed && (
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.warning, marginBottom: 6, letterSpacing: 0.5 }}>
+          ⚠ El modo actual ({activeMode?.name ?? '?'}) no es per-LED. Cambia a Direct o Custom para que los cambios sean visibles.
+        </div>
+      )}
+      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 0.5 }}>
+        {totalLeds} LEDs · Clic = pintar con color seleccionado
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap, maxHeight: 200, overflowY: 'auto' }}>
+        {device.zones.map((zone) => {
+          const start = zoneStartLed(device, zone.id);
+          return (
+            <React.Fragment key={zone.id}>
+              {Array.from({ length: zone.ledCount }, (_, i) => {
+                const globalIdx = start + i;
+                const ledColor = displayColors[globalIdx] ?? '#000000';
+                return (
+                  <div
+                    key={globalIdx}
+                    onClick={() => onPaintLed(globalIdx, color)}
+                    title={`${zone.name} LED ${i} (global ${globalIdx})${device.ledNames[globalIdx] ? ' · ' + device.ledNames[globalIdx] : ''}`}
+                    style={{
+                      width: dotSize, height: dotSize,
+                      background: ledColor,
+                      border: `1px solid rgba(255,255,255,0.12)`,
+                      borderRadius: 2,
+                      cursor: 'crosshair',
+                      flexShrink: 0,
+                    }}
+                  />
+                );
+              })}
+              {/* Zone separator */}
+              {zone.id !== device.zones[device.zones.length - 1]?.id && (
+                <div style={{ width: 1, height: dotSize, background: VD.borderStrong, flexShrink: 0 }} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4, letterSpacing: 0.5 }}>
+        {device.zones.map((z, i) => `${z.name}(${z.ledCount})`).join(' | ')}
       </div>
     </div>
   );
