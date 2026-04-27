@@ -383,6 +383,36 @@ function registerIPC(win: Electron.BrowserWindow) {
     app.setLoginItemSettings({ openAtLogin: enabled });
   });
 
+  // UI scale (zoom factor)
+  ipcMain.handle('app:setZoom', (_e: any, factor: number) => {
+    win.webContents.setZoomFactor(Math.max(0.75, Math.min(1.75, factor)));
+  });
+  ipcMain.handle('app:getZoom', () => win.webContents.getZoomFactor());
+
+  // Page export / import
+  ipcMain.handle('page:export', async (_e: any, pageData: object) => {
+    const result = await dialog.showSaveDialog(win, {
+      title: 'Exportar página',
+      defaultPath: 'pagina-virtualdeck.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    if (result.canceled || !result.filePath) return false;
+    writeFileSync(result.filePath, JSON.stringify(pageData, null, 2), 'utf-8');
+    return true;
+  });
+  ipcMain.handle('page:import', async () => {
+    const result = await dialog.showOpenDialog(win, {
+      title: 'Importar página',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      properties: ['openFile'],
+    });
+    if (result.canceled || !result.filePaths[0]) return null;
+    try {
+      const raw = readFileSync(result.filePaths[0], 'utf-8');
+      return JSON.parse(raw);
+    } catch { return null; }
+  });
+
   // RGB (OpenRGB SDK)
   // Notificar al renderer cuando cambia la lista de devices (resize, plug-in/unplug).
   rgb.setOnDeviceListUpdated(() => {

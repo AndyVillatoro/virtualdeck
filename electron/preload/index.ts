@@ -54,6 +54,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   app: {
     getAutostart: (): Promise<boolean> => ipcRenderer.invoke('app:autostart:get'),
     setAutostart: (enabled: boolean): Promise<void> => ipcRenderer.invoke('app:autostart:set', enabled),
+    setZoom: (factor: number): Promise<void> => ipcRenderer.invoke('app:setZoom', factor),
+    getZoom: (): Promise<number> => ipcRenderer.invoke('app:getZoom'),
+  },
+  page: {
+    export: (pageData: object): Promise<boolean> => ipcRenderer.invoke('page:export', pageData),
+    import: (): Promise<{ page: object; buttons: object[] } | null> => ipcRenderer.invoke('page:import'),
   },
   state: {
     activeApps: (): Promise<string[]> => ipcRenderer.invoke('state:activeApps'),

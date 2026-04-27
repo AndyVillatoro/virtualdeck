@@ -6,6 +6,7 @@ import { WallpaperB } from './screens/WallpaperB';
 import { RGBManagerB } from './screens/RGBManagerB';
 import { SearchOverlay } from './components/SearchOverlay';
 import { NowPlayingProvider } from './utils/nowPlaying';
+import { ThemeProvider } from './utils/theme';
 import { VD } from './design';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { runActionSequence, executeAction } from './utils/actions';
@@ -22,7 +23,10 @@ const PAGES_DEFAULT: PageConfig[] = [
 function makeDefaultButtons(pages: PageConfig[] = PAGES_DEFAULT): ButtonConfig[] {
   const btns: ButtonConfig[] = [];
   for (let page = 0; page < pages.length; page++) {
-    for (let slot = 0; slot < 16; slot++) {
+    const gs = pages[page]?.gridSize ?? 4;
+    const gr = pages[page]?.gridRows ?? gs;
+    const slots = gs * gr;
+    for (let slot = 0; slot < Math.max(16, slots); slot++) {
       btns.push({ id: `${page}-${slot}`, page, label: '', icon: '', action: { type: 'none' } });
     }
   }
@@ -63,6 +67,17 @@ export default function App() {
   useEffect(() => {
     document.documentElement.style.setProperty('--vd-accent', config.accent);
   }, [config.accent]);
+
+  // Apply UI scale via Electron zoom factor
+  useEffect(() => {
+    if (!api || config.uiScale === undefined) return;
+    api.app.setZoom(config.uiScale).catch(() => {});
+  }, [config.uiScale]);
+
+  // Apply theme class on documentElement for CSS variable overrides
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', config.theme ?? 'dark');
+  }, [config.theme]);
 
   // Clamp activePage when pages change
   useEffect(() => {
@@ -295,13 +310,63 @@ export default function App() {
     setActivePage(toIdx);
   }, [withHistory]);
 
-  // Set grid size for a page
-  const setPageGridSize = useCallback((pageId: string, gs: 3 | 4) => {
-    withHistory(`cambiar grilla a ${gs}×${gs}`, (prev) => ({
-      ...prev,
-      pages: prev.pages.map((p) => p.id === pageId ? { ...p, gridSize: gs } : p),
-    }));
+  // Set grid size for a page (extends to 5×5, 6×6, and rectangular gridRows)
+  const setPageGridSize = useCallback((pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => {
+    withHistory(`cambiar grilla a ${gs}×${gridRows ?? gs}`, (prev) => {
+      const pageIdx = prev.pages.findIndex((p) => p.id === pageId);
+      if (pageIdx < 0) return prev;
+      const needed = gs * (gridRows ?? gs);
+      const existing = prev.buttons.filter((b) => b.page === pageIdx);
+      const extra: ButtonConfig[] = [];
+      for (let slot = existing.length; slot < needed; slot++) {
+        extra.push({ id: `p${Date.now()}_${slot}`, page: pageIdx, label: '', icon: '', action: { type: 'none' as ActionType } });
+      }
+      return {
+        ...prev,
+        pages: prev.pages.map((p) => p.id === pageId ? { ...p, gridSize: gs, gridRows: gridRows ?? gs } : p),
+        buttons: extra.length > 0 ? [...prev.buttons, ...extra] : prev.buttons,
+      };
+    });
   }, [withHistory]);
+
+  // UI scale handler
+  const setUiScale = useCallback((scale: number) => {
+    const clamped = Math.max(0.75, Math.min(1.75, scale));
+    saveConfig({ ...config, uiScale: clamped });
+    api?.app.setZoom(clamped).catch(() => {});
+  }, [config, saveConfig, api]);
+
+  // Theme handler
+  const setTheme = useCallback((theme: 'dark' | 'light' | 'system') => {
+    saveConfig({ ...config, theme });
+  }, [config, saveConfig]);
+
+  // Page export
+  const handlePageExport = useCallback(async (pageIdx: number) => {
+    if (!api) return;
+    const page = config.pages[pageIdx];
+    const buttons = config.buttons.filter((b) => b.page === pageIdx);
+    await api.page.export({ page, buttons }).catch(() => {});
+  }, [api, config]);
+
+  // Page import
+  const handlePageImport = useCallback(async () => {
+    if (!api) return;
+    const raw = await api.page.import().catch(() => null);
+    if (!raw || typeof raw !== 'object') return;
+    const imported = raw as { page?: PageConfig; buttons?: ButtonConfig[] };
+    if (!imported.page || !Array.isArray(imported.buttons)) return;
+    withHistory('importar página', (prev) => {
+      const newIdx = prev.pages.length;
+      const newPage: PageConfig = { ...imported.page!, id: `page_${Date.now()}`, name: (imported.page!.name ?? 'IMPORTADA').toUpperCase() };
+      const newButtons: ButtonConfig[] = (imported.buttons ?? []).map((b, i) => ({
+        ...b,
+        id: `p${Date.now()}_${i}`,
+        page: newIdx,
+      }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+    });
+  }, [api, withHistory]);
 
   // Sound on press toggle
   const toggleSoundOnPress = useCallback(() => {
@@ -464,6 +529,7 @@ export default function App() {
   const editingButton = editingId ? config.buttons.find((b) => b.id === editingId) ?? null : null;
 
   return (
+    <ThemeProvider theme={config.theme ?? 'dark'} accent={config.accent}>
     <NowPlayingProvider>
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       {view === 'main' && (
@@ -500,6 +566,12 @@ export default function App() {
           onSoundToggle={toggleSoundOnPress}
           onSoundProfileChange={setSoundProfile}
           onStateUpdate={updateState}
+          uiScale={config.uiScale ?? 1}
+          onUiScaleChange={setUiScale}
+          theme={config.theme ?? 'dark'}
+          onThemeChange={setTheme}
+          onPageExport={handlePageExport}
+          onPageImport={handlePageImport}
         />
       )}
 
@@ -588,5 +660,6 @@ export default function App() {
 
     </div>
     </NowPlayingProvider>
+    </ThemeProvider>
   );
 }

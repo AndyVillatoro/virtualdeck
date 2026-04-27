@@ -33,6 +33,40 @@ export const VD = {
   dotIdle: 'rgba(220,220,220,0.04)',
 } as const;
 
+export type VDTokens = {
+  bg: string; surface: string; elevated: string; elevatedHover: string;
+  overlay: string; border: string; borderStrong: string;
+  text: string; textDim: string; textMuted: string;
+  accent: string; accentBg: string;
+  success: string; warning: string; danger: string; violet: string;
+  font: string; mono: string; dots: string;
+  radius: { readonly sm: number; readonly md: number; readonly lg: number };
+  shadow: { menu: string; modal: string };
+  space: { readonly xs: number; readonly sm: number; readonly md: number; readonly lg: number; readonly xl: number; readonly '2xl': number; readonly '3xl': number };
+  dotIdle: string;
+};
+
+// Paleta clara — mismos tokens semánticos, valores invertidos.
+export const VD_LIGHT: VDTokens = {
+  ...VD,
+  bg: '#f0f0f0',
+  surface: '#e8e8e8',
+  elevated: '#dcdcdc',
+  elevatedHover: '#d4d4d4',
+  overlay: '#cccccc',
+  border: '#c0c0c0',
+  borderStrong: '#aaaaaa',
+  text: '#1a1a1a',
+  textDim: '#444444',
+  textMuted: '#888888',
+  accentBg: 'rgba(74,142,240,0.15)',
+  shadow: {
+    menu: '0 8px 24px rgba(0,0,0,0.18)',
+    modal: '0 16px 48px rgba(0,0,0,0.28)',
+  },
+  dotIdle: 'rgba(0,0,0,0.05)',
+};
+
 // Presets del color de acento — todos referencian tokens semánticos del sistema.
 // Si el usuario quiere un color libre, sigue disponible vía <input type="color">.
 export const ACCENT_PRESETS: readonly string[] = [

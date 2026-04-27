@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward,
 } from '../components/VDIcon';
-import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 import { playSound } from '../utils/sound';
 import { executeAction, runActionSequence, interpolate } from '../utils/actions';
 import { DotLabel } from '../components/DotLabel';
@@ -10,7 +10,7 @@ import { DotText } from '../components/DotText';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
-import { WeatherWidget } from '../components/WeatherWidget';
+import { WeatherWidget, wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import type { ButtonConfig, DeckConfig, FolderButton, RGBStatus } from '../types';
 
@@ -42,7 +42,7 @@ interface MainBProps {
   onPageAdd: () => void;
   onPageDelete: (id: string) => void;
   onPageReorder: (fromIdx: number, toIdx: number) => void;
-  onPageSetGrid: (pageId: string, gs: 3 | 4) => void;
+  onPageSetGrid: (pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => void;
   onMoveButtonToPage: (buttonId: string, targetPage: number, copy: boolean) => boolean;
   onSaveProfile: (name: string) => void;
   onLoadProfile: (id: string) => void;
@@ -51,6 +51,12 @@ interface MainBProps {
   onSoundToggle: () => void;
   onSoundProfileChange: (id: import('../types').SoundProfileId) => void;
   onStateUpdate: (update: Record<string, string>) => void;
+  uiScale?: number;
+  onUiScaleChange?: (scale: number) => void;
+  theme?: 'dark' | 'light' | 'system';
+  onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  onPageExport?: (pageIdx: number) => Promise<void>;
+  onPageImport?: () => Promise<void>;
 }
 
 function getSourceName(src: string): string {
@@ -77,7 +83,9 @@ export function MainB({
   onConfigExport, onConfigImport, onConfigImportFromUrl, onSwapButtons,
   onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage,
   onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
+  uiScale, onUiScaleChange, theme, onThemeChange, onPageExport, onPageImport,
 }: MainBProps) {
+  const VD = useTheme();
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
@@ -96,7 +104,11 @@ export function MainB({
   const [runningProcesses, setRunningProcesses] = useState<Set<string>>(new Set());
   const [execLog, setExecLog] = useState<{ ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
   const [showLog, setShowLog] = useState(false);
+  const [runningButtons, setRunningButtons] = useState<Set<string>>(new Set());
+  const [widgetWeather, setWidgetWeather] = useState<{ temp: number; code: number; city: string; country: string } | null>(null);
   const toastTimer = useRef<number>();
+  const lastFiredMinuteRef = useRef<string | null>(null);
+  const touchStartXRef = useRef<number>(0);
 
   // Poll RGB status cada 5s y cuando OpenRGB notifica cambios.
   useEffect(() => {
@@ -139,6 +151,20 @@ export function MainB({
     return () => clearInterval(t);
   }, []);
 
+  // Poll weather for widget buttons (15 min TTL, same as WeatherWidget sidebar).
+  useEffect(() => {
+    if (!api) return;
+    const hasWeather = config.buttons.some((b) => b.widget === 'weather');
+    if (!hasWeather) return;
+    let cancelled = false;
+    const poll = async () => {
+      try { const d = await api.weather.get(); if (!cancelled && d) setWidgetWeather(d); } catch {}
+    };
+    poll();
+    const t = setInterval(poll, 15 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [api]);
+
   useEffect(() => {
     if (!pageContextMenu) return;
     const close = () => setPageContextMenu(null);
@@ -160,6 +186,9 @@ export function MainB({
       setOpenFolderBtn(btn);
       return;
     }
+
+    setRunningButtons((prev) => { const s = new Set(prev); s.add(btn.id); return s; });
+    try {
 
     // Toggle: decide qué rama ejecutar
     if (btn.isToggle) {
@@ -210,6 +239,9 @@ export function MainB({
       ...prev.slice(0, 99),
     ]);
     if (!r.ok && r.error) showToast(r.error);
+    } finally {
+      setRunningButtons((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
+    }
   }, [api, toggledIds, onToggle, showToast, config.state, onStateUpdate, config.buttons]);
 
   const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
@@ -225,8 +257,40 @@ export function MainB({
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
-  const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridSize);
+  const gridRows = currentPage?.gridRows ?? gridSize;
+  const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
+
+  const widgetDataMap = useMemo(() => {
+    const map: Record<string, { line1: string; line2?: string }> = {};
+    for (const btn of config.buttons) {
+      if (!btn.widget) continue;
+      if (btn.widget === 'clock') {
+        map[btn.id] = { line1: TIME_FMT.format(clock), line2: DATE_FMT.format(clock).toUpperCase() };
+      } else if (btn.widget === 'weather' && widgetWeather) {
+        const [emoji] = wxInfo(widgetWeather.code);
+        map[btn.id] = { line1: `${emoji} ${widgetWeather.temp}°`, line2: widgetWeather.city };
+      } else if (btn.widget === 'now-playing' && nowPlaying) {
+        map[btn.id] = { line1: nowPlaying.title || '—', line2: nowPlaying.artist || undefined };
+      }
+    }
+    return map;
+  }, [config.buttons, clock, widgetWeather, nowPlaying]);
+
+  // Scheduled triggers: check every 15s for buttons with timerTriggerAt matching current HH:MM.
+  useEffect(() => {
+    const t = setInterval(() => {
+      const nowStr = TIME_FMT.format(new Date());
+      if (nowStr === lastFiredMinuteRef.current) return;
+      const scheduled = config.buttons.filter((b) => b.timerTriggerAt === nowStr && b.page === activePage);
+      if (scheduled.length > 0) {
+        lastFiredMinuteRef.current = nowStr;
+        scheduled.forEach((btn) => executeButton(btn));
+      }
+    }, 15000);
+    return () => clearInterval(t);
+  }, [config.buttons, activePage, executeButton]);
+
   const isPlaying = nowPlaying?.status === 'Playing';
 
   function extractExeName(appPath: string): string | null {
@@ -246,6 +310,12 @@ export function MainB({
       return runningProcesses.has(a.processName.replace(/\.exe$/i, '').toLowerCase());
     }
     return false;
+  }
+
+  function isButtonVisible(btn: ButtonConfig): boolean {
+    if (!btn.visibleIf?.app) return true;
+    const name = btn.visibleIf.app.replace(/\.exe$/i, '').toLowerCase();
+    return runningProcesses.has(name);
   }
 
   function confirmRename(id: string) {
@@ -286,6 +356,10 @@ export function MainB({
           onSaveProfile={onSaveProfile}
           onLoadProfile={onLoadProfile}
           onDeleteProfile={onDeleteProfile}
+          uiScale={uiScale}
+          onUiScaleChange={onUiScaleChange}
+          theme={theme}
+          onThemeChange={onThemeChange}
         />
 
         {/* Page tabs */}
@@ -366,8 +440,8 @@ export function MainB({
                   style={{ cursor: 'pointer' }}
                 >
                   {p.name}
-                  {(p.gridSize ?? 4) === 3 && (
-                    <span style={{ fontSize: 7, marginLeft: 4, opacity: 0.5 }}>3×3</span>
+                  {(p.gridSize ?? 4) !== 4 && (
+                    <span style={{ fontSize: 7, marginLeft: 4, opacity: 0.5 }}>{p.gridSize ?? 4}×{p.gridRows ?? p.gridSize ?? 4}</span>
                   )}
                 </span>
               )}
@@ -386,6 +460,16 @@ export function MainB({
           )}
 
           <div style={{ flex: 1 }} />
+          {onPageExport && (
+            <div onClick={() => onPageExport(activePage)} title="Exportar página actual" style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
+              ↗
+            </div>
+          )}
+          {onPageImport && (
+            <div onClick={onPageImport} title="Importar página desde archivo" style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
+              ↙
+            </div>
+          )}
           <div
             onClick={() => setShowSidebar((v) => !v)}
             title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
@@ -416,7 +500,7 @@ export function MainB({
               <div style={{ padding: '8px 14px', borderBottom: `1px solid ${VD.border}` }}>
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 1 }}>GRILLA</div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {([3, 4] as const).map(gs => (
+                  {([3, 4, 5, 6] as const).map(gs => (
                     <button
                       key={gs}
                       onClick={() => { onPageSetGrid(pageContextMenu.id, gs); setPageContextMenu(null); }}
@@ -445,13 +529,23 @@ export function MainB({
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
           {/* Button grid */}
-          <div style={{
-            flex: 1, padding: 16,
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-            gridTemplateRows: `repeat(${gridSize}, 1fr)`,
-            gap: 8,
-          }}>
+          <div
+            style={{
+              flex: 1, padding: 16,
+              display: 'grid',
+              gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+              gridTemplateRows: `repeat(${gridRows}, 1fr)`,
+              gap: 8,
+            }}
+            onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => {
+              const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+              if (Math.abs(dx) > 50) {
+                if (dx < 0 && activePage < config.pages.length - 1) onPageChange(activePage + 1);
+                else if (dx > 0 && activePage > 0) onPageChange(activePage - 1);
+              }
+            }}
+          >
             {pageButtons.map((btn) => (
               <ButtonCell
                 key={btn.id}
@@ -459,6 +553,9 @@ export function MainB({
                 accent={config.accent}
                 toggled={toggledIds.has(btn.id)}
                 isActive={isButtonActive(btn)}
+                isHidden={!isButtonVisible(btn)}
+                isRunning={runningButtons.has(btn.id)}
+                widgetData={widgetDataMap[btn.id]}
                 soundEnabled={soundOnPress}
                 soundProfile={soundProfile}
                 resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
@@ -699,6 +796,7 @@ function FolderOverlay({ btn, accent, soundEnabled, soundProfile, onClose }: {
   soundProfile: import('../types').SoundProfileId;
   onClose: () => void;
 }) {
+  const VD = useTheme();
   const api = window.electronAPI;
   const [flash, setFlash] = useState<number | null>(null);
 
@@ -786,6 +884,7 @@ function FolderOverlay({ btn, accent, soundEnabled, soundProfile, onClose }: {
 
 // ── Helper components ─────────────────────────────────────────────────────
 function PageCtxItem({ label, onClick, danger }: { label: string; onClick: () => void; danger?: boolean }) {
+  const VD = useTheme();
   const [hov, setHov] = useState(false);
   return (
     <div

@@ -52,6 +52,20 @@ button {
   96%           { opacity: 1; }
 }
 
+/* 4.x — Indicador de botón ejecutándose (pulso de borde). */
+@keyframes vd-running-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.9; }
+}
+.vd-running-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1.5px solid var(--vd-accent);
+  animation: vd-running-pulse 900ms ease-in-out infinite;
+}
+
 /* 5.5 — Shake del modal de PIN al fallar. */
 @keyframes vd-pin-shake {
   0%, 100% { transform: translateX(0); }

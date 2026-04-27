@@ -35,7 +35,7 @@ const WX_CODES: Record<number, [string, string]> = {
   99: ['⛈', 'Tormenta fuerte'],
 };
 
-function wxInfo(code: number): [string, string] {
+export function wxInfo(code: number): [string, string] {
   // Round down to nearest known code bucket
   const found = WX_CODES[code];
   if (found) return found;

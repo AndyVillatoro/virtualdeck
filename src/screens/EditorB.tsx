@@ -62,6 +62,7 @@ const ACTION_TYPES: { type: ActionType; label: string; Icon: React.ComponentType
   // 3.x — Nuevas acciones
   { type: 'window-snap',      label: 'Snap Ventana', Icon: IconScript,          desc: 'Mueve y redimensiona una ventana a un cuadrante' },
   { type: 'branch',           label: 'Si / Si no',   Icon: IconNotify,          desc: 'Ejecuta acción A o B según el valor de una variable' },
+  { type: 'countdown',        label: 'Temporizador',  Icon: IconScript,          desc: 'Espera N ms y luego ejecuta una acción' },
 ];
 
 interface ButtonPreset {
@@ -248,6 +249,10 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
     button.longPressAction ?? { type: 'none' }
   );
   const [radioGroup, setRadioGroup] = useState(button.radioGroup ?? '');
+  // Widget / Visibility / Scheduled trigger
+  const [widget, setWidget] = useState<'clock' | 'weather' | 'now-playing' | undefined>(button.widget);
+  const [visibleIfApp, setVisibleIfApp] = useState(button.visibleIf?.app ?? '');
+  const [timerTriggerAt, setTimerTriggerAt] = useState(button.timerTriggerAt ?? '');
   // 2.1 — Glifo 5×7 personalizado (7 enteros bitmask)
   const [customGlyph57, setCustomGlyph57] = useState<number[] | undefined>(button.customGlyph57);
   const [showGlyphEditor, setShowGlyphEditor] = useState(false);
@@ -344,6 +349,9 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
       customGlyph57: customGlyph57 && customGlyph57.length === 7 ? customGlyph57 : undefined,
       longPressAction: longPressAction.type !== 'none' ? longPressAction : undefined,
       radioGroup: radioGroup.trim() || undefined,
+      widget: widget || undefined,
+      visibleIf: visibleIfApp.trim() ? { app: visibleIfApp.trim() } : undefined,
+      timerTriggerAt: timerTriggerAt.trim() || undefined,
     };
     onSave(updated);
   };
@@ -1293,6 +1301,28 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                   </>
                 )}
 
+                {action.type === 'countdown' && (
+                  <>
+                    <Field label="TIEMPO DE ESPERA (milisegundos)">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <input
+                          type="number"
+                          min={100} max={60000} step={100}
+                          value={action.timerDelay ?? 1000}
+                          onChange={(e) => setAction((a) => ({ ...a, timerDelay: Math.max(100, parseInt(e.target.value) || 1000) }))}
+                          style={inputStyle}
+                        />
+                        <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim, flexShrink: 0 }}>
+                          = {((action.timerDelay ?? 1000) / 1000).toFixed(1)}s
+                        </span>
+                      </div>
+                      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                        Pausa la secuencia este tiempo antes de continuar con la siguiente acción.
+                      </div>
+                    </Field>
+                  </>
+                )}
+
                 {/* Toggle mode — for non-folder actions */}
                 {action.type !== 'none' && action.type !== 'folder' && (
                   <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
@@ -1494,6 +1524,59 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                     </div>
                   </Field>
                 </div>
+
+                <div style={{ height: 1, background: VD.border }} />
+
+                {/* Widget — live data display on the button cell */}
+                <Field label="WIDGET (MUESTRA DATOS EN EL BOTÓN)">
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {([undefined, 'clock', 'weather', 'now-playing'] as const).map((w) => (
+                      <button
+                        key={w ?? 'none'}
+                        onClick={() => setWidget(w)}
+                        style={{
+                          flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                          background: widget === w ? VD.accentBg : VD.elevated,
+                          border: `1px solid ${widget === w ? accent : VD.border}`,
+                          fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
+                          color: widget === w ? accent : VD.textDim,
+                        }}
+                      >
+                        {w === undefined ? 'NINGUNO' : w === 'clock' ? 'RELOJ' : w === 'weather' ? 'CLIMA' : 'MÚSICA'}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                    Sustituye el ícono/etiqueta con datos en vivo. El botón sigue siendo ejecutable.
+                  </div>
+                </Field>
+
+                {/* Visibility condition */}
+                <Field label="VISIBLE SOLO SI ESTA APP ESTÁ ACTIVA (opcional)">
+                  <input
+                    value={visibleIfApp}
+                    onChange={(e) => setVisibleIfApp(e.target.value)}
+                    placeholder="spotify, chrome, obs64 ..."
+                    style={inputStyle}
+                  />
+                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                    Nombre del proceso sin .exe. Vacío = siempre visible.
+                  </div>
+                </Field>
+
+                {/* Scheduled trigger */}
+                <Field label="DISPARAR AUTOMÁTICAMENTE A LA HORA (HH:MM)">
+                  <input
+                    value={timerTriggerAt}
+                    onChange={(e) => setTimerTriggerAt(e.target.value)}
+                    placeholder="08:00"
+                    maxLength={5}
+                    style={inputStyle}
+                  />
+                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                    Formato 24h. Solo se dispara cuando la página del botón está activa.
+                  </div>
+                </Field>
               </div>
             )}
           </div>

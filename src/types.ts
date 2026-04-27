@@ -33,7 +33,9 @@ export type ActionType =
   | 'rgb-preset'
   // 3.x — Nuevas acciones
   | 'window-snap'
-  | 'branch';
+  | 'branch'
+  // 4.x — Temporizador
+  | 'countdown';
 
 export interface FolderButton {
   label: string;
@@ -111,6 +113,11 @@ export interface ButtonAction {
   branchThen?: ButtonAction[];
   /** Acciones a ejecutar si la condición es falsa. */
   branchElse?: ButtonAction[];
+  // 4.x — Countdown
+  /** Tiempo de espera en ms antes de ejecutar timerActions. */
+  timerDelay?: number;
+  /** Acciones a ejecutar después del delay (countdown). */
+  timerActions?: ButtonAction[];
 }
 
 export interface ButtonConfig {
@@ -141,12 +148,21 @@ export interface ButtonConfig {
   longPressAction?: ButtonAction;
   /** 3.x — Nombre del grupo radio. Solo un botón del grupo puede estar toggled ON a la vez. */
   radioGroup?: string;
+  // 4.x — Widget en vivo
+  /** Widget de datos en tiempo real que reemplaza el icono/etiqueta. */
+  widget?: 'clock' | 'weather' | 'now-playing';
+  /** Ocultar botón si el proceso indicado no está activo (ej. "chrome"). Sin .exe, lowercase. */
+  visibleIf?: { app: string };
+  /** Ejecutar automáticamente a esta hora (formato HH:MM). */
+  timerTriggerAt?: string;
 }
 
 export interface PageConfig {
   id: string;
   name: string;
-  gridSize?: 3 | 4;
+  gridSize?: 3 | 4 | 5 | 6;
+  /** Número de filas. Por defecto igual a gridSize (grilla cuadrada). */
+  gridRows?: number;
 }
 
 export interface Profile {
@@ -176,6 +192,10 @@ export interface DeckConfig {
   configVersion?: number;
   /** 2.x — Configuración del módulo RGB (OpenRGB). */
   rgb?: RGBSettings;
+  /** 4.x — Factor de escala de la interfaz (0.75 – 1.75). Default 1. */
+  uiScale?: number;
+  /** 4.x — Tema de color. */
+  theme?: 'dark' | 'light' | 'system';
 }
 
 export interface RGBSettings {
@@ -329,6 +349,12 @@ export interface ElectronAPI {
   app: {
     getAutostart: () => Promise<boolean>;
     setAutostart: (enabled: boolean) => Promise<void>;
+    setZoom: (factor: number) => Promise<void>;
+    getZoom: () => Promise<number>;
+  };
+  page: {
+    export: (pageData: object) => Promise<boolean>;
+    import: () => Promise<{ page: object; buttons: object[] } | null>;
   };
   state: {
     /** Returns lowercase exe names (without .exe) of running processes. Polls every ~5 s from the UI. */

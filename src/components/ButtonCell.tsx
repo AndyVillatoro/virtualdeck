@@ -1,6 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
 import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 import { playSound } from '../utils/sound';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { Glyph57View } from './Glyph57Editor';
@@ -11,6 +12,9 @@ interface ButtonCellProps {
   accent: string;
   toggled?: boolean;
   isActive?: boolean;
+  isHidden?: boolean;
+  isRunning?: boolean;
+  widgetData?: { line1: string; line2?: string };
   soundEnabled?: boolean;
   soundProfile?: SoundProfileId;
   /** Etiqueta con variables ya interpoladas (Feature 3). Sustituye al label del botón. */
@@ -27,9 +31,11 @@ interface ButtonCellProps {
 const ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION_ICONS;
 
 function ButtonCellInner({
-  button, accent, toggled = false, isActive = false, soundEnabled = false, soundProfile = 'click',
+  button, accent, toggled = false, isActive = false, isHidden = false, isRunning = false,
+  widgetData, soundEnabled = false, soundProfile = 'click',
   resolvedLabel, onEdit, onExecute, onLongPress, onDuplicate, onClear, onDragStart, onDrop,
 }: ButtonCellProps) {
+  const VD = useTheme();
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -50,6 +56,15 @@ function ButtonCellInner({
   soundEnabledRef.current = soundEnabled;
   soundProfileRef.current = soundProfile;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
+
+  if (isHidden) {
+    return (
+      <div style={{
+        background: VD.elevated, border: `1px solid ${VD.border}`,
+        borderRadius: VD.radius.lg, opacity: 0.2, pointerEvents: 'none',
+      }} />
+    );
+  }
 
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
   const hasCustomBg = !!button.bgColor;
@@ -269,6 +284,9 @@ function ButtonCellInner({
         {/* 5.3 — Pulso radial al ejecutar */}
         {flash && <span className="vd-flash-pulse" />}
 
+        {/* Ejecución en curso — anillo pulsante */}
+        {isRunning && <span className="vd-running-ring" />}
+
         {/* Brand icon as full-bleed animated background */}
         {button.brandIcon && !button.imageData && (
           <BrandIconDisplay
@@ -291,48 +309,64 @@ function ButtonCellInner({
         )}
 
         <div style={{ position: 'relative', textAlign: 'center', padding: '6px 4px' }}>
-          {/* 2.1 — Glifo 5×7 personalizado (prioridad sobre íconos por defecto) */}
-          {!button.imageData && !button.brandIcon && button.customGlyph57 && button.customGlyph57.length === 7 && (
-            <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
-              <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
-            </div>
-          )}
-          {/* Show center icon only when: no brand icon, no custom glyph (or has explicit emoji override) */}
-          {!button.imageData && !button.brandIcon && !button.customGlyph57 && (
-            button.icon ? (
-              <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1, marginBottom: displayLabel ? 6 : 0 }}>
-                {button.icon}
+          {widgetData ? (
+            /* Widget content — clock / weather / now-playing */
+            <>
+              <div style={{ fontFamily: VD.mono, fontSize: widgetData.line1.length > 8 ? 9 : 14, color: VD.text, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84 }}>
+                {widgetData.line1}
               </div>
-            ) : (
-              <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
-                <ActionIcon size={isEmpty ? 20 : 24} color={iconColor} />
-              </div>
-            )
-          )}
-          {/* When brand icon is set but user also typed an emoji, show emoji on top */}
-          {button.brandIcon && button.icon && (
-            <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, marginBottom: displayLabel ? 6 : 0, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
-              {button.icon}
-            </div>
-          )}
-          {displayLabel && (
-            <div style={{
-              fontFamily: VD.mono,
-              fontSize: 9,
-              letterSpacing: 1,
-              color: (button.imageData || button.brandIcon)
-                ? 'rgba(255,255,255,0.9)'
-                : (button.fgColor || (toggled ? accent : VD.textDim)),
-              textShadow: (button.imageData || button.brandIcon) ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-              textTransform: 'uppercase',
-              lineHeight: 1.2,
-              maxWidth: 80,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {displayLabel}
-            </div>
+              {widgetData.line2 && (
+                <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginTop: 3, letterSpacing: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84 }}>
+                  {widgetData.line2}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* 2.1 — Glifo 5×7 personalizado (prioridad sobre íconos por defecto) */}
+              {!button.imageData && !button.brandIcon && button.customGlyph57 && button.customGlyph57.length === 7 && (
+                <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
+                  <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
+                </div>
+              )}
+              {/* Show center icon only when: no brand icon, no custom glyph (or has explicit emoji override) */}
+              {!button.imageData && !button.brandIcon && !button.customGlyph57 && (
+                button.icon ? (
+                  <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1, marginBottom: displayLabel ? 6 : 0 }}>
+                    {button.icon}
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
+                    <ActionIcon size={isEmpty ? 20 : 24} color={iconColor} />
+                  </div>
+                )
+              )}
+              {/* When brand icon is set but user also typed an emoji, show emoji on top */}
+              {button.brandIcon && button.icon && (
+                <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, marginBottom: displayLabel ? 6 : 0, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                  {button.icon}
+                </div>
+              )}
+              {displayLabel && (
+                <div style={{
+                  fontFamily: VD.mono,
+                  fontSize: 9,
+                  letterSpacing: 1,
+                  color: (button.imageData || button.brandIcon)
+                    ? 'rgba(255,255,255,0.9)'
+                    : (button.fgColor || (toggled ? accent : VD.textDim)),
+                  textShadow: (button.imageData || button.brandIcon) ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
+                  textTransform: 'uppercase',
+                  lineHeight: 1.2,
+                  maxWidth: 80,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {displayLabel}
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -438,13 +472,18 @@ export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
   prev.button === next.button &&
   prev.toggled === next.toggled &&
   prev.isActive === next.isActive &&
+  prev.isHidden === next.isHidden &&
+  prev.isRunning === next.isRunning &&
   prev.accent === next.accent &&
   prev.soundEnabled === next.soundEnabled &&
   prev.soundProfile === next.soundProfile &&
-  prev.resolvedLabel === next.resolvedLabel,
+  prev.resolvedLabel === next.resolvedLabel &&
+  (prev.widgetData?.line1 ?? null) === (next.widgetData?.line1 ?? null) &&
+  (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null),
 );
 
 function ContextItem({ label, icon, onClick, danger }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
+  const VD = useTheme();
   const [hov, setHov] = useState(false);
   return (
     <div

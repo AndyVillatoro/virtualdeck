@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { VD, ACCENT_PRESETS } from '../design';
+import { useTheme } from '../utils/theme';
 import { SOUND_PROFILES, playSound } from '../utils/sound';
 import type { Profile, RGBSettings, RGBStatus, SoundProfileId } from '../types';
 
@@ -28,12 +29,17 @@ interface TitleBarProps {
   rgbStatus?: RGBStatus | null;
   rgbConfig?: RGBSettings;
   onRGBConfigChange?: (next: RGBSettings) => void;
+  // 4.x — UI scale + theme
+  uiScale?: number;
+  onUiScaleChange?: (scale: number) => void;
+  theme?: 'dark' | 'light' | 'system';
+  onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
 }
 
 export function TitleBar({
   showControls = true,
   pageName = '',
-  accent = VD.accent,
+  accent,
   autostart = false,
   soundOnPress = true,
   soundProfile = 'click',
@@ -54,7 +60,13 @@ export function TitleBar({
   rgbStatus,
   rgbConfig,
   onRGBConfigChange,
+  uiScale = 1,
+  onUiScaleChange,
+  theme = 'dark',
+  onThemeChange,
 }: TitleBarProps) {
+  const VD = useTheme();
+  const effectiveAccent = accent ?? VD.accent;
   const [showSettings, setShowSettings] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [galleryUrl, setGalleryUrl] = useState('');
@@ -84,7 +96,7 @@ export function TitleBar({
         } as React.CSSProperties}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent }} />
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: effectiveAccent }} />
           <span style={{ color: VD.text, letterSpacing: 2, fontSize: 10 }}>VIRTUALDECK</span>
         </div>
         {pageName && (
@@ -114,7 +126,7 @@ export function TitleBar({
             <button
               onClick={() => setShowSettings(v => !v)}
               title="Configuración"
-              style={{ ...iconBtnStyle, color: showSettings ? accent : VD.textDim }}
+              style={{ ...iconBtnStyle, color: showSettings ? effectiveAccent : VD.textDim }}
             >
               ⚙
             </button>
@@ -145,23 +157,74 @@ export function TitleBar({
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
               <input
                 type="color"
-                value={accent}
+                value={effectiveAccent}
                 onChange={(e) => onAccentChange?.(e.target.value)}
                 style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, cursor: 'pointer', padding: 2, background: 'none', borderRadius: VD.radius.sm }}
               />
-              <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim }}>{accent}</span>
+              <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim }}>{effectiveAccent}</span>
               <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
                 {ACCENT_PRESETS.map(c => (
-                  <div key={c} onClick={() => onAccentChange?.(c)} style={{ width: 14, height: 14, borderRadius: '50%', background: c, cursor: 'pointer', border: c === accent ? `2px solid ${VD.text}` : '2px solid transparent' }} />
+                  <div key={c} onClick={() => onAccentChange?.(c)} style={{ width: 14, height: 14, borderRadius: '50%', background: c, cursor: 'pointer', border: c === effectiveAccent ? `2px solid ${VD.text}` : '2px solid transparent' }} />
                 ))}
               </div>
             </div>
           </div>
 
+          {/* UI Scale */}
+          {onUiScaleChange && (
+            <div>
+              <SettingLabel>ESCALA DE INTERFAZ</SettingLabel>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+                <button
+                  onClick={() => onUiScaleChange(Math.max(0.75, uiScale - 0.25))}
+                  style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >−</button>
+                <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, flex: 1, textAlign: 'center', letterSpacing: 1 }}>
+                  {Math.round(uiScale * 100)}%
+                </span>
+                <button
+                  onClick={() => onUiScaleChange(Math.min(1.75, uiScale + 0.25))}
+                  style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >+</button>
+                {uiScale !== 1 && (
+                  <button
+                    onClick={() => onUiScaleChange(1)}
+                    style={{ padding: '0 8px', height: 28, background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 8, letterSpacing: 1 }}
+                  >RESET</button>
+                )}
+              </div>
+              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>Rango: 75% – 175%</div>
+            </div>
+          )}
+
+          {/* Theme */}
+          {onThemeChange && (
+            <div>
+              <SettingLabel>TEMA</SettingLabel>
+              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                {(['dark', 'light', 'system'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => onThemeChange(t)}
+                    style={{
+                      flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                      background: theme === t ? VD.accentBg : VD.elevated,
+                      border: `1px solid ${theme === t ? effectiveAccent : VD.border}`,
+                      fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+                      color: theme === t ? effectiveAccent : VD.textDim,
+                    }}
+                  >
+                    {t === 'dark' ? 'OSCURO' : t === 'light' ? 'CLARO' : 'SISTEMA'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ height: 1, background: VD.border }} />
 
-          <ToggleRow label="INICIAR CON WINDOWS" value={autostart} accent={accent} onClick={onAutostartToggle} />
-          <ToggleRow label="SONIDO AL PRESIONAR" value={soundOnPress} accent={accent} onClick={onSoundToggle} />
+          <ToggleRow label="INICIAR CON WINDOWS" value={autostart} accent={effectiveAccent} onClick={onAutostartToggle} />
+          <ToggleRow label="SONIDO AL PRESIONAR" value={soundOnPress} accent={effectiveAccent} onClick={onSoundToggle} />
 
           {soundOnPress && (
             <div>
@@ -177,8 +240,8 @@ export function TitleBar({
                         flex: '1 1 calc(50% - 2px)', padding: '5px 6px',
                         fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
                         background: isActive ? VD.accentBg : VD.elevated,
-                        border: `1px solid ${isActive ? accent : VD.border}`,
-                        color: isActive ? accent : VD.textDim,
+                        border: `1px solid ${isActive ? effectiveAccent : VD.border}`,
+                        color: isActive ? effectiveAccent : VD.textDim,
                         cursor: 'pointer', borderRadius: VD.radius.sm,
                       }}
                     >
@@ -216,8 +279,8 @@ export function TitleBar({
                 <button
                   onClick={() => { if (galleryUrl.trim()) { onConfigImportFromUrl(galleryUrl.trim()); setGalleryUrl(''); } }}
                   style={{
-                    padding: '5px 10px', background: VD.accentBg, border: `1px solid ${accent}`,
-                    fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
+                    padding: '5px 10px', background: VD.accentBg, border: `1px solid ${effectiveAccent}`,
+                    fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
                   }}
                 >IMPORTAR</button>
               </div>
@@ -228,7 +291,7 @@ export function TitleBar({
             <>
               <div style={{ height: 1, background: VD.border }} />
               <RGBSection
-                accent={accent}
+                accent={effectiveAccent}
                 config={rgbConfig}
                 status={rgbStatus ?? null}
                 onChange={onRGBConfigChange}
@@ -261,8 +324,8 @@ export function TitleBar({
               <button
                 onClick={() => { if (newProfileName.trim()) { onSaveProfile?.(newProfileName.trim()); setNewProfileName(''); } }}
                 style={{
-                  padding: '5px 10px', background: VD.accentBg, border: `1px solid ${accent}`,
-                  fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
+                  padding: '5px 10px', background: VD.accentBg, border: `1px solid ${effectiveAccent}`,
+                  fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
                 }}
               >
                 GUARDAR
@@ -273,7 +336,7 @@ export function TitleBar({
                 {profiles.map(p => (
                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
                     <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                    <button onClick={() => { onLoadProfile?.(p.id); setShowSettings(false); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>CARGAR</button>
+                    <button onClick={() => { onLoadProfile?.(p.id); setShowSettings(false); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>CARGAR</button>
                     <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
                   </div>
                 ))}

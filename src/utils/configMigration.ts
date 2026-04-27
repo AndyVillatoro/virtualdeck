@@ -5,7 +5,7 @@
 // porque la cadena de migrate(v1 → v2 → ...) se aplica en orden.
 import type { DeckConfig, ButtonAction, ButtonConfig, PageConfig } from '../types';
 
-export const CURRENT_CONFIG_VERSION = 2;
+export const CURRENT_CONFIG_VERSION = 3;
 
 export interface ValidationResult {
   ok: boolean;
@@ -20,6 +20,9 @@ const ACTION_TYPES = new Set([
   'volume-set', 'folder', 'notify',
   // 1.2 / 1.5 / 2.1
   'set-var', 'incr-var', 'webhook', 'tts', 'region-capture',
+  // 2.x / 3.x / 4.x
+  'rgb-color', 'rgb-mode', 'rgb-profile', 'rgb-preset',
+  'window-snap', 'branch', 'countdown',
 ]);
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -83,6 +86,14 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
       // v1 → v2: introducción del campo configVersion. No hay cambio estructural,
       // solo formaliza el shape para futuras migraciones.
       return { ...c, configVersion: 2 };
+    },
+  },
+  {
+    from: 2, to: 3,
+    apply: (c) => {
+      // v2 → v3: nuevos campos opcionales (widget, visibleIf, timerTriggerAt,
+      // gridRows, uiScale, theme). No hay cambio estructural — solo sube versión.
+      return { ...c, configVersion: 3 };
     },
   },
 ];

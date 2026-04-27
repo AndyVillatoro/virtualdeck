@@ -294,6 +294,16 @@ export async function runActionSequence(
             res = OK;
           }
         }
+      } else if (a.type === 'countdown') {
+        const delay = a.timerDelay ?? 1000;
+        await new Promise<void>((resolve) => setTimeout(resolve, delay));
+        if (a.timerActions && a.timerActions.length > 0) {
+          const sub = await runActionSequence(a.timerActions, api, { ...merged }, scriptHooks, rgbProfiles);
+          Object.assign(merged, sub.stateUpdate);
+          res = sub.ok ? OK : fail(sub.error ?? 'Countdown sub-acción falló.');
+        } else {
+          res = OK;
+        }
       } else if (a.type === 'folder') {
         res = OK;
       } else if (a.type === 'branch') {
