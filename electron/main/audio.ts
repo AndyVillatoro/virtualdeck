@@ -51,7 +51,11 @@ public struct PropVariant {
     [FieldOffset(0)] public short vt;
     [FieldOffset(8)] public IntPtr pointerValue;
 }
-[Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+// IID for the modern IPolicyConfig interface (Win 7+ / 10 / 11). The previous
+// value (870AF99C-...) is the *class* CLSID, not the interface IID — using it
+// here makes QueryInterface return E_NOINTERFACE on current Windows builds.
+// Method order/signature must match the undocumented vtable exactly.
+[Guid("F8679F50-850A-41CF-9C72-430F290290C8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 interface IPolicyConfig {
     [PreserveSig] int GetMixFormat(string s, IntPtr p);
     [PreserveSig] int GetDeviceFormat(string s, bool b, IntPtr p);
@@ -61,8 +65,8 @@ interface IPolicyConfig {
     [PreserveSig] int SetProcessingPeriod(string s, IntPtr p);
     [PreserveSig] int GetShareMode(string s, IntPtr p);
     [PreserveSig] int SetShareMode(string s, IntPtr p);
-    [PreserveSig] int GetPropertyValue(string s, bool b, IntPtr p1, IntPtr p2);
-    [PreserveSig] int SetPropertyValue(string s, bool b, IntPtr p1, IntPtr p2);
+    [PreserveSig] int GetPropertyValue(string s, IntPtr key, IntPtr p1);
+    [PreserveSig] int SetPropertyValue(string s, IntPtr key, IntPtr p1);
     [PreserveSig] int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string id, uint role);
     [PreserveSig] int SetEndpointVisibility(string s, bool b);
 }
@@ -70,8 +74,6 @@ interface IPolicyConfig {
 class MMDeviceEnumeratorCom {}
 [ComImport, Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9"), ClassInterface(ClassInterfaceType.None)]
 class PolicyConfigClientCom {}
-[ComImport, Guid("294935CE-F637-4E7C-A41B-AB255460B862"), ClassInterface(ClassInterfaceType.None)]
-class PolicyConfigVistaClientCom {}
 
 public class VDAudio {
     static PropertyKey FriendlyName = new PropertyKey {
@@ -102,20 +104,13 @@ public class VDAudio {
     public static string SetDefault(string deviceId) {
         try {
             var cfg = (IPolicyConfig)(object)new PolicyConfigClientCom();
+            // Roles: 0=Console (default for sound), 1=Multimedia, 2=Communications.
             cfg.SetDefaultEndpoint(deviceId, 0);
             cfg.SetDefaultEndpoint(deviceId, 1);
             cfg.SetDefaultEndpoint(deviceId, 2);
             return "OK";
-        } catch {
-            try {
-                var cfg2 = (IPolicyConfig)(object)new PolicyConfigVistaClientCom();
-                cfg2.SetDefaultEndpoint(deviceId, 0);
-                cfg2.SetDefaultEndpoint(deviceId, 1);
-                cfg2.SetDefaultEndpoint(deviceId, 2);
-                return "OK";
-            } catch (Exception ex2) {
-                return "ERROR:" + ex2.Message;
-            }
+        } catch (Exception ex) {
+            return "ERROR:" + ex.Message;
         }
     }
 }
@@ -124,8 +119,13 @@ public class VDAudio {
 function runPS(script: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const tmp = join(tmpdir(), `vd_ps_${Date.now()}.ps1`);
-    // BOM + UTF-8 header so PowerShell parses accents in the script and emits UTF-8 stdout.
-    const header = '﻿[Console]::OutputEncoding=[System.Text.Encoding]::UTF8\n';
+    // Force UTF-8 on stdout so device names with accents/ñ aren't mangled.
+    // Both $OutputEncoding (pipeline → native cmds) and [Console]::OutputEncoding
+    // (host writer) are set; chcp 65001 covers the underlying code page.
+    const header =
+      'chcp 65001 > $null\r\n' +
+      '$OutputEncoding = [System.Text.Encoding]::UTF8\r\n' +
+      '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n';
     writeFileSync(tmp, header + script, 'utf-8');
     exec(
       `powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "${tmp}"`,

@@ -25,8 +25,12 @@ export interface MediaDiagnostic {
 function runPS(script: string): Promise<{ stdout: string; stderr: string; ok: boolean }> {
   return new Promise((resolve) => {
     const tmp = join(tmpdir(), `vd_media_${Date.now()}_${Math.random().toString(36).slice(2)}.ps1`);
-    // BOM + UTF-8 header so PowerShell preserves accents/ñ/diéresis in stdout.
-    const header = '﻿[Console]::OutputEncoding=[System.Text.Encoding]::UTF8\n';
+    // Force UTF-8 stdout so SMTC titles/artists with accents/ñ/diéresis survive
+    // the trip through PowerShell → exec stdout.
+    const header =
+      'chcp 65001 > $null\r\n' +
+      '$OutputEncoding = [System.Text.Encoding]::UTF8\r\n' +
+      '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n';
     writeFileSync(tmp, header + script, 'utf-8');
     exec(
       `powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "${tmp}"`,
@@ -267,9 +271,18 @@ interface Parsed {
 
 function parseWindowTitle(proc: string, raw: string): Parsed | null {
   const procLower = proc.toLowerCase();
-  let title = raw;
-  title = title.replace(/\s+(?:—|-|and \d+ more pages?)\s+(?:Mozilla Firefox|Google Chrome|Microsoft.+Edge|Brave|Opera|Vivaldi).*$/i, '');
-  title = title.replace(/\s+(?:—|-)\s+(?:Mozilla Firefox|Google Chrome|Microsoft.+Edge|Brave|Opera|Vivaldi).*$/i, '');
+  // Normalize unicode whitespace variants (NBSP, ZWSP, etc.) that Edge/Chrome
+  // sometimes inject between "Microsoft" and "Edge".
+  let title = raw.replace(/[ ​‌‍﻿]/g, ' ');
+  // Browser suffixes — handle multilingual variants:
+  //   English: "and N more page(s)"   Spanish: "y N página(s) más"
+  //   Portuguese: "e mais N página(s)"   plus optional "Profile: Browser" tail.
+  const browser = '(?:Mozilla Firefox|Google Chrome|Microsoft\\s*Edge|Brave|Opera|Vivaldi)';
+  const more = '(?:and \\d+ more pages?|y \\d+ p[áa]ginas? m[áa]s|e mais \\d+ p[áa]ginas?)';
+  // 1) Strip "Profile: Browser" or "Browser" entirely.
+  title = title.replace(new RegExp(`\\s+[—\\-]\\s+(?:[^-—:]+:\\s*)?${browser}\\s*$`, 'i'), '');
+  // 2) Strip "and N more pages - Browser" or i18n equivalents.
+  title = title.replace(new RegExp(`\\s+${more}.*$`, 'i'), '');
 
   let m = title.match(/^(.+?)\s+-\s+YouTube Music$/);
   if (m) {
@@ -398,6 +411,18 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
     }
     _cache.data = null;
     return null;
+  }
+
+  // SMTC errored (e.g. Edge doesn't register): always re-query window titles
+  // so a switched tab/video shows up. The previous code only fell through here
+  // on first run, then returned the stale lastValid forever.
+  {
+    const fb = await fallbackFromWindows();
+    if (fb) {
+      _cache.data = fb;
+      _cache.lastValid = fb;
+      return fb;
+    }
   }
 
   if (_cache.lastValid) {

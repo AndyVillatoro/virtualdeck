@@ -265,6 +265,9 @@ export function MainB({
     const map: Record<string, { line1: string; line2?: string }> = {};
     for (const btn of config.buttons) {
       if (!btn.widget) continue;
+      // 'now-playing' on an audio-device button is an invalid combo: the cell
+      // would show the playing track instead of the configured device name.
+      if (btn.widget === 'now-playing' && btn.action.type === 'audio-device') continue;
       if (btn.widget === 'clock') {
         map[btn.id] = { line1: TIME_FMT.format(clock), line2: DATE_FMT.format(clock).toUpperCase() };
       } else if (btn.widget === 'weather' && widgetWeather) {
