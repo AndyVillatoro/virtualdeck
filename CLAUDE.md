@@ -22,7 +22,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 ## Scripts
 - `npm run dev` — desarrollo (electron-vite)
 - `npm run build` — compila renderer + main + preload
-- `npm run build:win` — empaquetar Windows (actualmente solo `--dir`, no instalador)
+- `npm run build:win` — empaquetar Windows (solo `--dir`, sin instalador)
+- `npm run build:installer` — compilar + generar NSIS installer (`dist/VirtualDeck-Setup-{version}.exe`)
 
 ## Convenciones
 - Estilos inline con tema desde `src/utils/theme.tsx` (`useTheme()` → `VD`)
@@ -30,7 +31,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - Persistencia de config en `userData` (Electron) como JSON UTF-8
 - Estilo: respuestas cortas y directas; preguntar si no se sabe; dar opciones cuando aplique
 
-## Issues conocidos / contexto reciente
-- PowerShell ejecutado desde `audio.ts` y `media.ts` no fuerza UTF-8 en stdout → nombres con tildes/ñ se corrompen (raíz del bug "?" en caracteres especiales).
-- Botones configurables: el título se renderiza centrado debajo del icono (line ~350 de `ButtonCell.tsx`).
-- Modo `audio-device` no debería usar el widget `now-playing`; verificar interpolación de label.
+## Notas técnicas
+- PowerShell scripts (audio.ts, media.ts) fuerzan UTF-8 con `chcp 65001` + `$OutputEncoding` + `[Console]::OutputEncoding`. No usar BOM — rompe el parsing de PS.
+- `IPolicyConfig` COM: IID correcto es `F8679F50-850A-41CF-9C72-430F290290C8` (no confundir con CLSID `870AF99C-...`). El orden de métodos en la interfaz debe coincidir con la vtable real.
+- Widget `now-playing` no se aplica a botones de tipo `audio-device` (filtro en `MainB.tsx`).
+- `media.ts` re-consulta ventanas activas en cada ciclo cuando SMTC falla, para reflejar cambios de pestaña/video.
