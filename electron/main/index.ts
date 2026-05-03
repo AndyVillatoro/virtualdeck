@@ -215,7 +215,8 @@ function applyTriggerableConfig(win: Electron.BrowserWindow, rawConfig: any) {
 
 function createTray(win: Electron.BrowserWindow) {
   try {
-    tray = new Tray(makeTrayIcon());
+    const trayIcon = nativeImage.createFromPath(join(__dirname, '../../build/icon.png')).resize({ width: 16, height: 16 });
+    tray = new Tray(trayIcon);
     tray.setToolTip('VirtualDeck');
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: 'Mostrar VirtualDeck', click: () => { win.show(); win.focus(); } },
@@ -230,7 +231,7 @@ function createTray(win: Electron.BrowserWindow) {
 
 function registerIPC(win: Electron.BrowserWindow) {
   // Window
-  ipcMain.on('window:minimize', () => win.minimize());
+  ipcMain.on('window:minimize', () => { win.hide(); });
   ipcMain.on('window:maximize', () => win.isMaximized() ? win.unmaximize() : win.maximize());
   ipcMain.on('window:close', () => win.hide());
   ipcMain.on('window:fullscreen', () => win.setFullScreen(!win.isFullScreen()));
