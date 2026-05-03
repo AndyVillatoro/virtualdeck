@@ -9,6 +9,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **openrgb-sdk** para integración RGB
 
 ## Estructura clave
+- `build/` — app icon (`icon.ico`, `icon.png`, `icon.svg`) generado por `scripts/generate-icon.js`
+- `scripts/generate-icon.js` — renderiza icono dot-matrix SVG → PNG → ICO (requiere `sharp`)
 - `src/screens/` — pantallas: `MainB`, `EditorB`, `FullscreenB`, `RGBManagerB`, `WallpaperB`
 - `src/components/ButtonCell.tsx` — celda de botón configurable (drag, long-press, render)
 - `src/utils/actions.ts` — ejecución de acciones (audio-device, app, url, webhook, tts, etc.)
@@ -23,6 +25,7 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `npm run dev` — desarrollo (electron-vite)
 - `npm run build` — compila renderer + main + preload
 - `npm run build:win` — empaquetar Windows (solo `--dir`, sin instalador)
+- `npm run build:icon` — regenerar `build/icon.{ico,png,svg}` desde `scripts/generate-icon.js`
 - `npm run build:installer` — compilar + generar NSIS installer (`dist/VirtualDeck-Setup-{version}.exe`)
 
 ## Convenciones

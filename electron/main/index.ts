@@ -445,6 +445,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1100, height: 720, minWidth: 900, minHeight: 600,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
+    icon: join(__dirname, '../../build/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false, contextIsolation: true, nodeIntegration: false,
