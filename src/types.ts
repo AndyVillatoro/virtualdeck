@@ -243,6 +243,8 @@ export interface RGBModeInfo {
   colorMode: number;
   brightnessMin?: number;
   brightnessMax?: number;
+  speedMin?: number;
+  speedMax?: number;
 }
 
 export interface RGBDeviceInfo {
@@ -370,7 +372,7 @@ export interface ElectronAPI {
     setDeviceColor: (deviceId: number, color: string) => Promise<boolean>;
     setZoneColors: (deviceId: number, zoneId: number, colors: string[]) => Promise<boolean>;
     setSingleLed: (deviceId: number, ledId: number, color: string) => Promise<boolean>;
-    setMode: (deviceId: number, mode: string, color?: string, brightness?: number) => Promise<boolean>;
+    setMode: (deviceId: number, mode: string, color?: string, brightness?: number, speed?: number) => Promise<boolean>;
     resizeZone: (deviceId: number, zoneId: number, size: number) => Promise<boolean>;
     applyProfile: (profile: RGBProfile) => Promise<boolean>;
     smartPreset: (presetId: string) => Promise<boolean>;

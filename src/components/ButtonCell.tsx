@@ -241,8 +241,21 @@ function ButtonCellInner({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); handleMouseUpOrLeave(); }}
         onDragStart={(e) => {
+          // Cancel pending long-press: HTML5 drag suppresses mouseup, so the
+          // 500 ms timer would otherwise fire mid-drag, run the action, and
+          // re-render the cell (via isRunning) — which breaks the drag.
+          if (longPressTimer.current !== null) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+          }
+          longPressTriggered.current = false;
+          setPressed(false);
           e.dataTransfer.effectAllowed = 'move';
           onDragStart?.();
+        }}
+        onDragEnd={() => {
+          setDragOver(false);
+          setPressed(false);
         }}
         onDragOver={(e) => {
           e.preventDefault();
@@ -308,7 +321,12 @@ function ButtonCellInner({
           />
         )}
 
-        <div style={{ position: 'relative', textAlign: 'center', padding: '6px 4px' }}>
+        {/* Center stack — icon or live widget. The label is rendered separately as a bottom banner. */}
+        <div style={{
+          position: 'relative', textAlign: 'center', padding: '6px 4px',
+          paddingBottom: displayLabel ? 22 : 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
           {widgetData ? (
             /* Widget content — clock / weather / now-playing */
             <>
@@ -325,50 +343,61 @@ function ButtonCellInner({
             <>
               {/* 2.1 — Glifo 5×7 personalizado (prioridad sobre íconos por defecto) */}
               {!button.imageData && !button.brandIcon && button.customGlyph57 && button.customGlyph57.length === 7 && (
-                <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
                 </div>
               )}
               {/* Show center icon only when: no brand icon, no custom glyph (or has explicit emoji override) */}
               {!button.imageData && !button.brandIcon && !button.customGlyph57 && (
                 button.icon ? (
-                  <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1, marginBottom: displayLabel ? 6 : 0 }}>
+                  <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1 }}>
                     {button.icon}
                   </div>
                 ) : (
-                  <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <ActionIcon size={isEmpty ? 20 : 24} color={iconColor} />
                   </div>
                 )
               )}
               {/* When brand icon is set but user also typed an emoji, show emoji on top */}
               {button.brandIcon && button.icon && (
-                <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, marginBottom: displayLabel ? 6 : 0, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
                   {button.icon}
-                </div>
-              )}
-              {displayLabel && (
-                <div style={{
-                  fontFamily: VD.mono,
-                  fontSize: 9,
-                  letterSpacing: 1,
-                  color: (button.imageData || button.brandIcon)
-                    ? 'rgba(255,255,255,0.9)'
-                    : (button.fgColor || (toggled ? accent : VD.textDim)),
-                  textShadow: (button.imageData || button.brandIcon) ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.2,
-                  maxWidth: 80,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {displayLabel}
                 </div>
               )}
             </>
           )}
         </div>
+
+        {/* Label banner — pinned at the bottom, always rendered when there's a label
+             (even when a widget is showing) so the user's button name remains visible. */}
+        {displayLabel && (
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            padding: '3px 6px 4px',
+            background: (button.imageData || button.brandIcon)
+              ? 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 60%)'
+              : 'rgba(0,0,0,0.35)',
+            fontFamily: VD.mono,
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: 0.4,
+            color: (button.imageData || button.brandIcon)
+              ? '#fff'
+              : (button.fgColor || (toggled ? accent : VD.text)),
+            textShadow: (button.imageData || button.brandIcon) ? '0 1px 2px rgba(0,0,0,0.9)' : 'none',
+            textTransform: 'uppercase',
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}>
+            {displayLabel}
+          </div>
+        )}
 
         {/* Edit icon on hover */}
         {!isEmpty && (hovered || isTouch) && (

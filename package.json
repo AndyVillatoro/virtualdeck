@@ -8,7 +8,8 @@
     "dev": "node scripts/dev.js",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "build:win": "electron-builder --win --dir"
+    "build:win": "electron-builder --win --dir",
+    "build:installer": "electron-vite build && electron-builder --win nsis"
   },
   "dependencies": {
     "lucide-react": "^1.8.0",
@@ -29,8 +30,29 @@
   "build": {
     "appId": "com.virtualdeck.app",
     "productName": "VirtualDeck",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
     "win": {
-      "target": "dir"
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "artifactName": "VirtualDeck-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VirtualDeck",
+      "uninstallDisplayName": "VirtualDeck ${version}",
+      "deleteAppDataOnUninstall": false
     }
   }
 }

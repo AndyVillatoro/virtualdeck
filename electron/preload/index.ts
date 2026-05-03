@@ -77,8 +77,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('rgb:setZoneColors', deviceId, zoneId, colors),
     setSingleLed: (deviceId: number, ledId: number, color: string) =>
       ipcRenderer.invoke('rgb:setSingleLed', deviceId, ledId, color),
-    setMode: (deviceId: number, mode: string, color?: string, brightness?: number) =>
-      ipcRenderer.invoke('rgb:setMode', deviceId, mode, color, brightness),
+    setMode: (deviceId: number, mode: string, color?: string, brightness?: number, speed?: number) =>
+      ipcRenderer.invoke('rgb:setMode', deviceId, mode, color, brightness, speed),
     resizeZone: (deviceId: number, zoneId: number, size: number) =>
       ipcRenderer.invoke('rgb:resizeZone', deviceId, zoneId, size),
     applyProfile: (profile: unknown) => ipcRenderer.invoke('rgb:applyProfile', profile),

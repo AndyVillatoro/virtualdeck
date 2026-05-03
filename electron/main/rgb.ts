@@ -25,6 +25,7 @@ export interface RGBZoneInfo {
 export interface RGBModeInfo {
   id: number; name: string; flags: number; colorMode: number;
   brightnessMin?: number; brightnessMax?: number;
+  speedMin?: number; speedMax?: number;
 }
 export interface RGBDeviceInfo {
   id: number; name: string; type: number; typeLabel: string;
@@ -116,6 +117,7 @@ function deviceToInfo(d: Device): RGBDeviceInfo {
     modes: d.modes.map((m) => ({
       id: m.id, name: m.name, flags: m.flags, colorMode: m.colorMode,
       brightnessMin: m.brightnessMin, brightnessMax: m.brightnessMax,
+      speedMin: (m as any).speedMin, speedMax: (m as any).speedMax,
     })),
     colors: d.colors.map(rgbToHex),
     ledNames: d.leds.map((l) => l.name),
@@ -332,12 +334,12 @@ export async function setSingleLed(deviceId: number, ledId: number, color: strin
 }
 
 export async function setMode(
-  deviceId: number, mode: string, color?: string, brightness?: number,
+  deviceId: number, mode: string, color?: string, brightness?: number, speed?: number,
 ): Promise<boolean> {
   if (!client?.isConnected) return false;
   try {
     if (deviceId < 0) {
-      for (const d of devicesCache) await setMode(d.id, mode, color, brightness);
+      for (const d of devicesCache) await setMode(d.id, mode, color, brightness, speed);
       return true;
     }
     const dev = devicesCache.find((d) => d.id === deviceId);
@@ -357,6 +359,16 @@ export async function setMode(
     if (brightness !== undefined && rawMode.brightnessMin !== undefined && rawMode.brightnessMax !== undefined) {
       const range = rawMode.brightnessMax - rawMode.brightnessMin;
       update.brightness = Math.round(rawMode.brightnessMin + (range * Math.max(0, Math.min(100, brightness)) / 100));
+    }
+
+    // Speed: 0..100 user-facing, mapped onto the mode's [speedMin, speedMax].
+    // Note: in OpenRGB the protocol value runs *backwards* — speedMin is the
+    // FASTEST end and speedMax the slowest. Invert so 100 = fastest.
+    const sMin = (rawMode as any).speedMin;
+    const sMax = (rawMode as any).speedMax;
+    if (speed !== undefined && sMin !== undefined && sMax !== undefined && sMax !== sMin) {
+      const pct = Math.max(0, Math.min(100, speed));
+      update.speed = Math.round(sMax - ((sMax - sMin) * pct / 100));
     }
 
     await client.updateMode(deviceId, update);

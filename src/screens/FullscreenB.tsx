@@ -333,23 +333,27 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         </div>
       )}
 
-      {/* Bottom: now playing + stats */}
+      {/* Bottom: now playing + page indicator. Compact + responsive — hides
+          the page block on narrow windows and the artwork on very narrow ones. */}
       <div style={{
-        height: 104, borderTop: `1px solid ${VD.border}`,
-        padding: '10px 18px', display: 'flex', gap: 10,
+        borderTop: `1px solid ${VD.border}`,
+        padding: '6px 10px', display: 'flex', gap: 6,
         background: VD.surface, flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
         {/* Now Playing */}
-        <div style={{ flex: 1, border: `1px solid ${VD.border}`, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'center', background: VD.elevated }}>
-          <div style={{
-            width: 52, height: 52, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.lg,
+        <div style={{
+          flex: 1, minWidth: 0, border: `1px solid ${VD.border}`,
+          padding: '5px 8px', display: 'flex', gap: 8, alignItems: 'center', background: VD.elevated,
+        }}>
+          <div className="vd-fs-thumb" style={{
+            width: 36, height: 36, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.md,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden', border: `1px solid ${VD.border}`, position: 'relative',
           }}>
             <div style={{ opacity: 0.35 }}>
               {isPlaying
-                ? <IconMediaPlay size={20} color={VD.textDim} />
-                : <IconMediaPause size={20} color={VD.textDim} />
+                ? <IconMediaPlay size={16} color={VD.textDim} />
+                : <IconMediaPause size={16} color={VD.textDim} />
               }
             </div>
             {nowPlaying?.thumbnail && (
@@ -362,22 +366,20 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <DotLabel size={8} color={VD.textMuted} spacing={2}>REPRODUCIENDO</DotLabel>
             {nowPlaying ? (
               <>
-                <div style={{ color: VD.text, fontSize: 13, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
+                <div style={{ color: VD.text, fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500, lineHeight: 1.2 }}>
                   {nowPlaying.title || '—'}
                 </div>
-                <div style={{ color: VD.textDim, fontSize: 10, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono }}>
+                <div style={{ color: VD.textDim, fontSize: 9, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono, lineHeight: 1.2 }}>
                   {nowPlaying.artist}{sourceName ? ` · ${sourceName}` : ''}
                 </div>
               </>
             ) : (
-              <div style={{ color: VD.textMuted, fontSize: 11, marginTop: 4 }}>Sin reproducción activa</div>
+              <div style={{ color: VD.textMuted, fontSize: 10, fontFamily: VD.mono, letterSpacing: 1 }}>SIN REPRODUCCIÓN</div>
             )}
           </div>
-          {/* Lucide media controls matching app design */}
-          <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
             {([
               { key: 'prev',       Icon: IconMediaSkipBack,                          title: 'Anterior'  },
               { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: 'Play/Pausa' },
@@ -391,26 +393,31 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
                   if (soundOnPress) playSound(soundProfile);
                 }}
                 style={{
-                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: VD.overlay, border: `1px solid ${VD.border}`,
-                  cursor: 'pointer', borderRadius: VD.radius.md, transition: 'border-color 0.1s',
+                  cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'border-color 0.1s',
+                  padding: 0,
                 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
               >
-                <Icon size={14} color={VD.textDim} />
+                <Icon size={12} color={VD.textDim} />
               </button>
             ))}
           </div>
         </div>
 
-        {/* Page indicator */}
-        <div style={{ width: 110, border: `1px solid ${VD.border}`, padding: '10px 12px', background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <DotLabel size={8} color={VD.textMuted} spacing={2}>PÁGINA</DotLabel>
-          <div style={{ fontFamily: VD.mono, fontSize: 22, color: VD.text }}>
+        {/* Page indicator — drops out on narrow windows via .vd-fs-page CSS rule. */}
+        <div className="vd-fs-page" style={{
+          width: 86, border: `1px solid ${VD.border}`, padding: '5px 8px',
+          background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column',
+          justifyContent: 'center', gap: 2,
+        }}>
+          <DotLabel size={7} color={VD.textMuted} spacing={2}>PÁGINA</DotLabel>
+          <div style={{ fontFamily: VD.mono, fontSize: 15, color: VD.text, lineHeight: 1 }}>
             {String(activePage + 1).padStart(2, '0')}/{config.pages.length}
           </div>
-          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {currentPage?.name}
           </div>
         </div>

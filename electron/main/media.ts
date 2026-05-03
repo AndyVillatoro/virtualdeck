@@ -25,10 +25,12 @@ export interface MediaDiagnostic {
 function runPS(script: string): Promise<{ stdout: string; stderr: string; ok: boolean }> {
   return new Promise((resolve) => {
     const tmp = join(tmpdir(), `vd_media_${Date.now()}_${Math.random().toString(36).slice(2)}.ps1`);
-    writeFileSync(tmp, script, 'utf-8');
+    // BOM + UTF-8 header so PowerShell preserves accents/ñ/diéresis in stdout.
+    const header = '﻿[Console]::OutputEncoding=[System.Text.Encoding]::UTF8\n';
+    writeFileSync(tmp, header + script, 'utf-8');
     exec(
       `powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "${tmp}"`,
-      { timeout: 10000, maxBuffer: 5 * 1024 * 1024 },
+      { timeout: 10000, maxBuffer: 5 * 1024 * 1024, encoding: 'utf8' },
       (err, stdout, stderr) => {
         try { unlinkSync(tmp); } catch {}
         resolve({

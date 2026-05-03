@@ -427,7 +427,7 @@ function registerIPC(win: Electron.BrowserWindow) {
   ipcMain.handle('rgb:setDeviceColor', (_e: any, id: number, c: string) => rgb.setDeviceColor(id, c));
   ipcMain.handle('rgb:setZoneColors', (_e: any, id: number, z: number, cs: string[]) => rgb.setZoneColors(id, z, cs));
   ipcMain.handle('rgb:setSingleLed', (_e: any, id: number, ledId: number, c: string) => rgb.setSingleLed(id, ledId, c));
-  ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number) => rgb.setMode(id, m, c, b));
+  ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number, s?: number) => rgb.setMode(id, m, c, b, s));
   ipcMain.handle('rgb:resizeZone', (_e: any, id: number, z: number, size: number) => rgb.resizeZone(id, z, size));
   ipcMain.handle('rgb:applyProfile', (_e: any, profile: any) => rgb.applyProfile(profile));
   ipcMain.handle('rgb:smartPreset', (_e: any, presetId: string) => rgb.applySmartPreset(presetId));

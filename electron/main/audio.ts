@@ -124,10 +124,12 @@ public class VDAudio {
 function runPS(script: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const tmp = join(tmpdir(), `vd_ps_${Date.now()}.ps1`);
-    writeFileSync(tmp, script, 'utf-8');
+    // BOM + UTF-8 header so PowerShell parses accents in the script and emits UTF-8 stdout.
+    const header = '﻿[Console]::OutputEncoding=[System.Text.Encoding]::UTF8\n';
+    writeFileSync(tmp, header + script, 'utf-8');
     exec(
       `powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "${tmp}"`,
-      { timeout: 15000 },
+      { timeout: 15000, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 },
       (err, stdout, stderr) => {
         try { unlinkSync(tmp); } catch {}
         if (err && !stdout) reject(new Error(stderr || err.message));
