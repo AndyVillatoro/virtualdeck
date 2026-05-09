@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VD, ACCENT_PRESETS } from '../design';
 import { useTheme } from '../utils/theme';
 import { SOUND_PROFILES, playSound } from '../utils/sound';
-import type { Profile, RGBSettings, RGBStatus, SoundProfileId } from '../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, SoundProfileId } from '../types';
 
 interface TitleBarProps {
   showControls?: boolean;
@@ -29,11 +29,17 @@ interface TitleBarProps {
   rgbStatus?: RGBStatus | null;
   rgbConfig?: RGBSettings;
   onRGBConfigChange?: (next: RGBSettings) => void;
+  // Sensors integration (LibreHardwareMonitor)
+  sensorsConfig?: SensorsSettings;
+  sensorsStatus?: SensorsStatus | null;
+  onSensorsConfigChange?: (next: SensorsSettings) => void;
   // 4.x — UI scale + theme
   uiScale?: number;
   onUiScaleChange?: (scale: number) => void;
   theme?: 'dark' | 'light' | 'system';
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  tileMode?: 'square' | 'fill';
+  onTileModeChange?: (mode: 'square' | 'fill') => void;
 }
 
 export function TitleBar({
@@ -60,10 +66,15 @@ export function TitleBar({
   rgbStatus,
   rgbConfig,
   onRGBConfigChange,
+  sensorsConfig,
+  sensorsStatus,
+  onSensorsConfigChange,
   uiScale = 1,
   onUiScaleChange,
   theme = 'dark',
   onThemeChange,
+  tileMode = 'square',
+  onTileModeChange,
 }: TitleBarProps) {
   const VD = useTheme();
   const effectiveAccent = accent ?? VD.accent;
@@ -149,6 +160,11 @@ export function TitleBar({
             borderRadius: `0 0 ${VD.radius.lg}px ${VD.radius.lg}px`, padding: 16, width: 260,
             boxShadow: VD.shadow.menu,
             display: 'flex', flexDirection: 'column', gap: 14,
+            // Cap height so the panel never spills past the viewport bottom and
+            // scroll for the rest. Required since RGB + Sensors + Profiles can
+            // exceed window height on small screens.
+            maxHeight: 'calc(100vh - 50px)',
+            overflowY: 'auto',
           }}
         >
           {/* Accent color */}
@@ -194,6 +210,33 @@ export function TitleBar({
                 )}
               </div>
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>Rango: 75% – 175%</div>
+            </div>
+          )}
+
+          {/* Tile mode — square keeps StreamDeck aesthetic, fill maximizes cell size */}
+          {onTileModeChange && (
+            <div>
+              <SettingLabel>FORMA DE LAS CELDAS</SettingLabel>
+              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                {(['square', 'fill'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => onTileModeChange(m)}
+                    style={{
+                      flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                      background: tileMode === m ? VD.accentBg : VD.elevated,
+                      border: `1px solid ${tileMode === m ? effectiveAccent : VD.border}`,
+                      color: tileMode === m ? effectiveAccent : VD.textDim,
+                      fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+                    }}
+                  >{m === 'square' ? 'CUADRADAS' : 'LLENAR ÁREA'}</button>
+                ))}
+              </div>
+              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4, lineHeight: 1.4 }}>
+                {tileMode === 'square'
+                  ? 'Celdas siempre cuadradas; deja margen si la ventana no es proporcional a la grilla.'
+                  : 'Celdas ocupan toda el área; pueden volverse ligeramente rectangulares.'}
+              </div>
             </div>
           )}
 
@@ -295,6 +338,18 @@ export function TitleBar({
                 config={rgbConfig}
                 status={rgbStatus ?? null}
                 onChange={onRGBConfigChange}
+              />
+            </>
+          )}
+
+          {onSensorsConfigChange && sensorsConfig && (
+            <>
+              <div style={{ height: 1, background: VD.border }} />
+              <SensorsSection
+                accent={effectiveAccent}
+                config={sensorsConfig}
+                status={sensorsStatus ?? null}
+                onChange={onSensorsConfigChange}
               />
             </>
           )}
@@ -463,6 +518,167 @@ const miniBtnRGB = (accent: string): React.CSSProperties => ({
   fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer',
   borderRadius: VD.radius.sm, letterSpacing: 1,
 });
+
+const SENSOR_CATEGORIES: Array<{ id: import('../types').SensorCategory; label: string }> = [
+  { id: 'cpu', label: 'CPU' },
+  { id: 'gpu', label: 'GPU' },
+  { id: 'mainboard', label: 'MAINBOARD' },
+  { id: 'memory', label: 'RAM' },
+  { id: 'storage', label: 'SSD/HDD' },
+  { id: 'other', label: 'OTROS' },
+];
+
+function SensorsSection({
+  accent, config, status, onChange,
+}: {
+  accent: string;
+  config: SensorsSettings;
+  status: SensorsStatus | null;
+  onChange: (next: SensorsSettings) => void;
+}) {
+  const api = window.electronAPI;
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [spawning, setSpawning] = useState(false);
+
+  const enabledCats = new Set(config.categories ?? ['cpu', 'gpu', 'mainboard', 'memory', 'storage']);
+  const setEnabled = () => onChange({ ...config, enabled: !config.enabled });
+  const setHost = (host: string) => onChange({ ...config, host });
+  const setPort = (port: number) => onChange({ ...config, port });
+  const setSpawn = () => onChange({ ...config, spawnOnStart: !config.spawnOnStart });
+  const toggleCategory = (cat: import('../types').SensorCategory) => {
+    const next = new Set(enabledCats);
+    if (next.has(cat)) next.delete(cat); else next.add(cat);
+    onChange({ ...config, categories: Array.from(next) as import('../types').SensorCategory[] });
+  };
+
+  const startLHM = async () => {
+    if (!api?.sensors) return;
+    setSpawning(true); setTestResult(null);
+    try {
+      const r = await api.sensors.spawnLHM(config.lhmPath?.trim() || undefined, !!config.spawnElevated);
+      if (!r.ok) { setTestResult(`Falló al iniciar LHM: ${r.error ?? 'desconocido'}`); return; }
+      // LHM's web server can take 3–8 s on a cold start (loads sensor drivers,
+      // reads config, binds HttpListener). Retry up to 12 times across ~12 s.
+      await api.sensors.configure({ host: config.host, port: config.port, enabled: true });
+      let probe = await api.sensors.probe();
+      for (let i = 0; i < 12 && !probe.ok; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        probe = await api.sensors.probe();
+      }
+      if (probe.ok) {
+        setTestResult(`OK · ${probe.count} sensores`);
+      } else {
+        setTestResult(`Web server no responde tras 12s: ${probe.error ?? '?'}. Intentá ejecutar VirtualDeck como administrador.`);
+      }
+    } finally { setSpawning(false); }
+  };
+
+  const stopLHM = async () => {
+    if (!api?.sensors) return;
+    await api.sensors.killLHM();
+    setTestResult(null);
+  };
+
+  const probe = async () => {
+    if (!api?.sensors) return;
+    setTesting(true); setTestResult(null);
+    try {
+      // Push current settings before probing so the test matches what the
+      // user sees in the inputs (not the value persisted from a previous save).
+      await api.sensors.configure({ host: config.host, port: config.port, enabled: true });
+      const r = await api.sensors.probe();
+      setTestResult(r.ok ? `OK · ${r.count} sensores` : `Falló: ${r.error ?? 'sin respuesta'}`);
+    } finally { setTesting(false); }
+  };
+
+  return (
+    <div>
+      <SettingLabel>SENSORES (LIBRE HARDWARE MONITOR)</SettingLabel>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <ToggleRow label="HABILITADO" value={config.enabled} accent={accent} onClick={setEnabled} />
+        <ToggleRow label="MOSTRAR WIDGET DE SENSORES" value={config.showWidget ?? true} accent={accent} onClick={() => onChange({ ...config, showWidget: !(config.showWidget ?? true) })} />
+        <ToggleRow label="INICIAR LHM CON VIRTUALDECK" value={!!config.spawnOnStart} accent={accent} onClick={setSpawn} />
+        <ToggleRow label="INICIAR LHM COMO ADMINISTRADOR (UAC)" value={!!config.spawnElevated} accent={accent} onClick={() => onChange({ ...config, spawnElevated: !config.spawnElevated })} />
+
+        <div>
+          <SettingLabel>RUTA LHM (vacío = bundled)</SettingLabel>
+          <input
+            value={config.lhmPath ?? ''}
+            onChange={(e) => onChange({ ...config, lhmPath: e.target.value })}
+            placeholder="C:\\…\\LibreHardwareMonitor.exe"
+            style={{ ...inputStyleRGB, marginTop: 4 }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ flex: 1 }}>
+            <SettingLabel>HOST</SettingLabel>
+            <input
+              value={config.host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder="127.0.0.1"
+              style={{ ...inputStyleRGB, marginTop: 4 }}
+            />
+          </div>
+          <div style={{ width: 70 }}>
+            <SettingLabel>PUERTO</SettingLabel>
+            <input
+              type="number"
+              value={config.port}
+              onChange={(e) => setPort(parseInt(e.target.value, 10) || 8085)}
+              style={{ ...inputStyleRGB, marginTop: 4 }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <SettingLabel>CATEGORÍAS VISIBLES</SettingLabel>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+            {SENSOR_CATEGORIES.map((c) => {
+              const on = enabledCats.has(c.id);
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => toggleCategory(c.id)}
+                  style={{
+                    padding: '3px 8px',
+                    background: on ? VD.accentBg : VD.elevated,
+                    border: `1px solid ${on ? accent : VD.border}`,
+                    color: on ? accent : VD.textMuted,
+                    fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+                    cursor: 'pointer', borderRadius: VD.radius.sm,
+                  }}
+                >{c.label}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <button onClick={startLHM} disabled={spawning || status?.bundledRunning} style={miniBtnRGB(accent)}>
+            {spawning ? 'INICIANDO...' : status?.bundledRunning ? 'LHM ACTIVO' : 'INICIAR LHM'}
+          </button>
+          {status?.bundledRunning && (
+            <button onClick={stopLHM} style={{ ...miniBtnRGB(accent), color: VD.danger, borderColor: VD.danger }}>
+              DETENER LHM
+            </button>
+          )}
+          <button onClick={probe} disabled={testing} style={miniBtnRGB(accent)}>
+            {testing ? 'PROBANDO...' : 'PROBAR'}
+          </button>
+        </div>
+        <div style={{ fontFamily: VD.mono, fontSize: 9, minHeight: 14, color: testResult?.startsWith('OK') ? VD.success : testResult ? VD.danger : VD.textMuted }}>
+          {testResult ?? (status?.connected ? `● ${status.count} sensores conectado` : status?.enabled ? '○ habilitado · sin conexión' : '○ deshabilitado')}
+        </div>
+
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
+          LHM viene <strong>bundled</strong> en VirtualDeck. Sensores como CPU/SMBus requieren admin — si faltan datos, lanzá VirtualDeck como administrador.
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ToggleRow({ label, value, accent, onClick }: { label: string; value: boolean; accent: string; onClick?: () => void }) {
   return (

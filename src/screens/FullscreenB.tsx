@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward } from '../components/VDIcon';
 import { VD } from '../design';
 import { DotText } from '../components/DotText';
@@ -8,10 +8,13 @@ import { ButtonCell } from '../components/ButtonCell';
 import { playSound } from '../utils/sound';
 import { executeAction, runActionSequence } from '../utils/actions';
 import { useNowPlaying } from '../utils/nowPlaying';
+import { useSensors } from '../utils/sensors';
+import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
 import type { ButtonConfig, DeckConfig } from '../types';
 
 const FS_DAY_FMT = new Intl.DateTimeFormat('es-HN', { weekday: 'short' });
 const FS_DATE_FMT = new Intl.DateTimeFormat('es-HN', { month: 'short', day: 'numeric' });
+
 
 interface FullscreenBProps {
   config: DeckConfig;
@@ -40,10 +43,13 @@ function getSourceName(src: string): string {
 export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetKioskPin, onStateUpdate }: FullscreenBProps) {
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
+  const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [activePage, setActivePage] = useState(0);
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const errorTimer = useRef<number>();
+  const gridWrapperRef = useRef<HTMLDivElement>(null);
+  const [gridBox, setGridBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   // 5.5 — Modo kiosko: oculta topbar, deshabilita context menu y pide PIN para salir.
   // Activación per-session (no persistida); el PIN sí se guarda para próximos turnos.
@@ -132,7 +138,25 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
 
     const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
     const baseState = config.state ?? {};
-    const r = await runActionSequence(actionsToRun, api, baseState, undefined, config.rgb?.profiles);
+    // Same scriptHooks shape as MainB so script actions with showOutput/captureToVar
+    // work in fullscreen — without this, capture/output were silently dropped.
+    const r = await runActionSequence(actionsToRun, api, baseState, {
+      runScript: async (script, shell) => {
+        const actionDef = actionsToRun.find(a => a.type === 'script' && a.script === script);
+        const needsCapture = actionDef?.showOutput || actionDef?.captureToVar;
+        if (needsCapture) {
+          try {
+            const out = await api.launch.scriptCapture(script, shell);
+            if (actionDef?.showOutput && out.output) setRuntimeError(out.output);
+            return { ok: out.success, output: out.output, error: out.success ? undefined : 'El script terminó con error.' };
+          } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
+        }
+        try {
+          const ok = await api.launch.script(script, shell);
+          return { ok, error: ok ? undefined : 'El script terminó con error.' };
+        } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
+      },
+    }, config.rgb?.profiles);
     const newKeys = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== baseState[k]);
     if (newKeys.length > 0) {
       const update: Record<string, string> = {};
@@ -140,7 +164,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
       onStateUpdate(update);
     }
     if (!r.ok && r.error) setRuntimeError(r.error);
-  }, [toggledIds, handleToggle, config.state, onStateUpdate]);
+  }, [toggledIds, handleToggle, config.state, config.rgb?.profiles, onStateUpdate]);
 
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -149,9 +173,35 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
-  const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridSize);
+  const gridRows = currentPage?.gridRows ?? gridSize;
+  const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
   const isPlaying = nowPlaying?.status === 'Playing';
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
+
+  // Group sensors by hardware piece (CPU / GPU / Mainboard / Storage…) and
+  // auto-pick the most representative reading per kind. This is the data that
+  // fills the left pane below the clock.
+  const sensorGroups = useMemo(() => groupSensorsByHardware(sensorList), [sensorList]);
+
+  // Same JS-driven grid sizing as MainB. FullscreenB uses gridSize × gridSize
+  // (it doesn't expose gridRows separately). Aspect = 1 in 'square' mode.
+  useEffect(() => {
+    const el = gridWrapperRef.current;
+    if (!el) return;
+    const compute = () => {
+      const W = el.clientWidth, H = el.clientHeight;
+      if (W === 0 || H === 0) return;
+      if (config.tileMode === 'fill') { setGridBox({ w: W, h: H }); return; }
+      const ratio = gridSize / gridRows;
+      let w = W, h = W / ratio;
+      if (h > H) { h = H; w = H * ratio; }
+      setGridBox({ w: Math.floor(w), h: Math.floor(h) });
+    };
+    compute();
+    const observer = new ResizeObserver(compute);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [gridSize, gridRows, config.tileMode]);
 
   return (
     <div
@@ -197,19 +247,48 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
 
       {/* Main area */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative', zIndex: 1 }}>
-        {/* Left: clock + metrics + page selector */}
+        {/* Left: compact clock + sensor cards + page selector. Compacted to
+            free vertical space for the sensor stack — the previous layout
+            wasted ~50% of this column on a giant clock. */}
         <div style={{
-          width: '34%', padding: '28px 36px',
+          width: '34%', padding: '20px 24px 16px',
           borderRight: `1px solid ${VD.border}`,
-          display: 'flex', flexDirection: 'column', flexShrink: 0,
+          display: 'flex', flexDirection: 'column', flexShrink: 0, gap: 12,
+          minHeight: 0,
         }}>
-          <DotLabel size={9} color={VD.textMuted} spacing={3} style={{ marginBottom: 12, display: 'block' }}>HORA LOCAL</DotLabel>
-          <DotText text={hours} dotSize={12} gap={3} color={VD.text} />
-          <div style={{ height: 10 }} />
-          <DotText text={minutes} dotSize={12} gap={3} color={VD.textDim} />
+          <div>
+            <DotLabel size={8} color={VD.textMuted} spacing={2} style={{ marginBottom: 8, display: 'block' }}>HORA LOCAL</DotLabel>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <DotText text={hours} dotSize={7} gap={2} color={VD.text} />
+              <DotText text={minutes} dotSize={7} gap={2} color={VD.textDim} />
+            </div>
+          </div>
+
+          {/* Sensor cards — fills the space between clock and page selector. */}
+          {(config.sensors?.showWidget ?? true) && (
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <DotLabel size={8} color={VD.textMuted} spacing={2}>SENSORES</DotLabel>
+              <span style={{
+                fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
+                color: sensorStatus?.connected ? VD.success : sensorStatus?.enabled ? VD.warning : VD.textMuted,
+              }}>
+                {sensorStatus?.connected ? '● LHM' : sensorStatus?.enabled ? '○ OFFLINE' : '○ DISABLED'}
+              </span>
+            </div>
+            {sensorGroups.length === 0 ? (
+              <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
+                {sensorStatus?.enabled ? 'Sin datos. Verifica que LibreHardwareMonitor esté corriendo.' : 'Sensores deshabilitados. Configura LHM en TitleBar.'}
+              </div>
+            ) : (
+              sensorGroups.map((g) => <SensorCard key={g.hardware} group={g} />)
+            )}
+          </div>
+          )}
+          {!(config.sensors?.showWidget ?? true) && <div style={{ flex: 1 }} />}
 
           {/* Page selector */}
-          <div style={{ marginTop: 'auto', display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
             {config.pages.map((p, i) => (
               <button key={p.id} onClick={() => setActivePage(i)} style={{
                 flex: 1, padding: '4px 0',
@@ -225,26 +304,33 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           </div>
         </div>
 
-        {/* Right: button grid — respects per-page gridSize */}
-        <div style={{
-          flex: 1, padding: 20,
-          display: 'grid',
-          gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-          gridTemplateRows: `repeat(${gridSize}, 1fr)`,
-          gap: 8,
+        {/* Right: button grid — same two-mode logic as MainB. */}
+        <div ref={gridWrapperRef} style={{
+          flex: 1, padding: 20, minWidth: 0, minHeight: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          overflow: 'hidden',
         }}>
-          {pageButtons.map((btn) => (
-            <ButtonCell
-              key={btn.id}
-              button={btn}
-              accent={config.accent}
-              toggled={toggledIds.has(btn.id)}
-              soundEnabled={soundOnPress}
-              soundProfile={soundProfile}
-              onEdit={() => {}}
-              onExecute={() => executeButton(btn)}
-            />
-          ))}
+          <div style={{
+            width: gridBox.w || '100%',
+            height: gridBox.h || '100%',
+            display: 'grid',
+            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
+            gap: 8,
+          }}>
+            {pageButtons.map((btn) => (
+              <ButtonCell
+                key={btn.id}
+                button={btn}
+                accent={config.accent}
+                toggled={toggledIds.has(btn.id)}
+                soundEnabled={soundOnPress}
+                soundProfile={soundProfile}
+                onEdit={() => {}}
+                onExecute={() => executeButton(btn)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -333,23 +419,27 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         </div>
       )}
 
-      {/* Bottom: now playing + stats */}
+      {/* Bottom: now playing + page indicator. Compact + responsive — hides
+          the page block on narrow windows and the artwork on very narrow ones. */}
       <div style={{
-        height: 104, borderTop: `1px solid ${VD.border}`,
-        padding: '10px 18px', display: 'flex', gap: 10,
+        borderTop: `1px solid ${VD.border}`,
+        padding: '6px 10px', display: 'flex', gap: 6,
         background: VD.surface, flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
         {/* Now Playing */}
-        <div style={{ flex: 1, border: `1px solid ${VD.border}`, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'center', background: VD.elevated }}>
-          <div style={{
-            width: 52, height: 52, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.lg,
+        <div style={{
+          flex: 1, minWidth: 0, border: `1px solid ${VD.border}`,
+          padding: '5px 8px', display: 'flex', gap: 8, alignItems: 'center', background: VD.elevated,
+        }}>
+          <div className="vd-fs-thumb" style={{
+            width: 36, height: 36, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.md,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden', border: `1px solid ${VD.border}`, position: 'relative',
           }}>
             <div style={{ opacity: 0.35 }}>
               {isPlaying
-                ? <IconMediaPlay size={20} color={VD.textDim} />
-                : <IconMediaPause size={20} color={VD.textDim} />
+                ? <IconMediaPlay size={16} color={VD.textDim} />
+                : <IconMediaPause size={16} color={VD.textDim} />
               }
             </div>
             {nowPlaying?.thumbnail && (
@@ -362,22 +452,20 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <DotLabel size={8} color={VD.textMuted} spacing={2}>REPRODUCIENDO</DotLabel>
             {nowPlaying ? (
               <>
-                <div style={{ color: VD.text, fontSize: 13, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
+                <div style={{ color: VD.text, fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500, lineHeight: 1.2 }}>
                   {nowPlaying.title || '—'}
                 </div>
-                <div style={{ color: VD.textDim, fontSize: 10, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono }}>
+                <div style={{ color: VD.textDim, fontSize: 9, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono, lineHeight: 1.2 }}>
                   {nowPlaying.artist}{sourceName ? ` · ${sourceName}` : ''}
                 </div>
               </>
             ) : (
-              <div style={{ color: VD.textMuted, fontSize: 11, marginTop: 4 }}>Sin reproducción activa</div>
+              <div style={{ color: VD.textMuted, fontSize: 10, fontFamily: VD.mono, letterSpacing: 1 }}>SIN REPRODUCCIÓN</div>
             )}
           </div>
-          {/* Lucide media controls matching app design */}
-          <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
             {([
               { key: 'prev',       Icon: IconMediaSkipBack,                          title: 'Anterior'  },
               { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: 'Play/Pausa' },
@@ -391,26 +479,31 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
                   if (soundOnPress) playSound(soundProfile);
                 }}
                 style={{
-                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: VD.overlay, border: `1px solid ${VD.border}`,
-                  cursor: 'pointer', borderRadius: VD.radius.md, transition: 'border-color 0.1s',
+                  cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'border-color 0.1s',
+                  padding: 0,
                 }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
               >
-                <Icon size={14} color={VD.textDim} />
+                <Icon size={12} color={VD.textDim} />
               </button>
             ))}
           </div>
         </div>
 
-        {/* Page indicator */}
-        <div style={{ width: 110, border: `1px solid ${VD.border}`, padding: '10px 12px', background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <DotLabel size={8} color={VD.textMuted} spacing={2}>PÁGINA</DotLabel>
-          <div style={{ fontFamily: VD.mono, fontSize: 22, color: VD.text }}>
+        {/* Page indicator — drops out on narrow windows via .vd-fs-page CSS rule. */}
+        <div className="vd-fs-page" style={{
+          width: 86, border: `1px solid ${VD.border}`, padding: '5px 8px',
+          background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column',
+          justifyContent: 'center', gap: 2,
+        }}>
+          <DotLabel size={7} color={VD.textMuted} spacing={2}>PÁGINA</DotLabel>
+          <div style={{ fontFamily: VD.mono, fontSize: 15, color: VD.text, lineHeight: 1 }}>
             {String(activePage + 1).padStart(2, '0')}/{config.pages.length}
           </div>
-          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {currentPage?.name}
           </div>
         </div>

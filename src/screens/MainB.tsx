@@ -12,6 +12,8 @@ import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
 import { WeatherWidget, wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
+import { useSensors, findSensor, evalCondition } from '../utils/sensors';
+import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
 import type { ButtonConfig, DeckConfig, FolderButton, RGBStatus } from '../types';
 
 // Formatters reutilizables — evita instanciar Intl.DateTimeFormat cada tick.
@@ -89,6 +91,7 @@ export function MainB({
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
+  const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [showSidebar, setShowSidebar] = useState(true);
   const [renamingPageId, setRenamingPageId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -102,45 +105,45 @@ export function MainB({
   const [rgbStatus, setRgbStatus] = useState<RGBStatus | null>(null);
   const [activeAudioDeviceId, setActiveAudioDeviceId] = useState<string | null>(null);
   const [runningProcesses, setRunningProcesses] = useState<Set<string>>(new Set());
-  const [execLog, setExecLog] = useState<{ ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
+  const [execLog, setExecLog] = useState<{ id: number; ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
+  const execLogIdRef = useRef(0);
   const [showLog, setShowLog] = useState(false);
   const [runningButtons, setRunningButtons] = useState<Set<string>>(new Set());
   const [widgetWeather, setWidgetWeather] = useState<{ temp: number; code: number; city: string; country: string } | null>(null);
   const toastTimer = useRef<number>();
   const lastFiredMinuteRef = useRef<string | null>(null);
   const touchStartXRef = useRef<number>(0);
+  const touchStartYRef = useRef<number>(0);
+  const lastSwipeAtRef = useRef<number>(0);
+  // Grid sizing — JS-driven because pure-CSS `aspect-ratio + max-width/height`
+  // collapses when children are 100%-sized (no intrinsic dimension). We measure
+  // the wrapper and compute exact px so the grid expands to the largest box
+  // that fits while keeping cells square.
+  const gridWrapperRef = useRef<HTMLDivElement>(null);
+  const [gridBox, setGridBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
-  // Poll RGB status cada 5s y cuando OpenRGB notifica cambios.
+  // Coalesced 5s tick: RGB status + audio default + running procs all share
+  // the same cadence. One interval + one Promise.all batch is cheaper than
+  // three separate ones — fewer IPC round-trips and a single render commit
+  // when state lands. RGB also retriggers immediately on device change events.
   useEffect(() => {
     if (!api) return;
     let cancelled = false;
     const tick = async () => {
-      const s = await api.rgb.status().catch(() => null);
-      if (!cancelled) setRgbStatus(s ?? null);
+      const [rgb, audioList, procs] = await Promise.all([
+        api.rgb.status().catch(() => null),
+        api.audio.list().catch(() => []),
+        api.state.activeApps().catch(() => [] as string[]),
+      ]);
+      if (cancelled) return;
+      setRgbStatus(rgb ?? null);
+      setActiveAudioDeviceId(audioList.find((d) => d.isDefault)?.id ?? null);
+      setRunningProcesses(new Set(procs));
     };
     tick();
     const t = setInterval(tick, 5000);
     const off = api.events.onRGBDevicesChanged?.(() => { tick(); });
     return () => { cancelled = true; clearInterval(t); off?.(); };
-  }, [api]);
-
-  // Poll active audio device and running processes every 5s to drive button state indicators.
-  useEffect(() => {
-    if (!api) return;
-    let cancelled = false;
-    const tick = async () => {
-      const [audioList, procs] = await Promise.all([
-        api.audio.list().catch(() => []),
-        api.state.activeApps().catch(() => [] as string[]),
-      ]);
-      if (cancelled) return;
-      const defDev = audioList.find((d) => d.isDefault);
-      setActiveAudioDeviceId(defDev?.id ?? null);
-      setRunningProcesses(new Set(procs));
-    };
-    tick();
-    const t = setInterval(tick, 5000);
-    return () => { cancelled = true; clearInterval(t); };
   }, [api]);
 
   // Pausar el polling de nowPlaying cuando la sidebar está oculta (no hay consumidor visible).
@@ -188,6 +191,15 @@ export function MainB({
     }
 
     setRunningButtons((prev) => { const s = new Set(prev); s.add(btn.id); return s; });
+    // Hard ceiling so a hung action (webhook with no response, script in
+    // infinite loop) doesn't leave the button stuck in "running" forever. The
+    // underlying PS/exec calls have their own shorter timeouts in main; this
+    // is the safety net for renderer-side action paths (e.g. webhook fetch).
+    const HUNG_TIMEOUT_MS = 60000;
+    const withTimeout = <T extends { ok: boolean; error?: string; stateUpdate?: Record<string, unknown> }>(
+      p: Promise<T>,
+      fallback: T,
+    ): Promise<T> => Promise.race([p, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), HUNG_TIMEOUT_MS))]);
     try {
 
     // Toggle: decide qué rama ejecutar
@@ -201,7 +213,10 @@ export function MainB({
           .forEach((b) => onToggle(b.id));
       }
       if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-        const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles);
+        const r = await withTimeout(
+          executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles),
+          { ok: false, error: 'Acción excedió 60s y se considera colgada.' },
+        );
         if (!r.ok && r.error) showToast(r.error);
         if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
         return;
@@ -210,7 +225,7 @@ export function MainB({
 
     const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
     const baseState = config.state ?? {};
-    const r = await runActionSequence(actionsToRun, api, baseState, {
+    const r = await withTimeout(runActionSequence(actionsToRun, api, baseState, {
       runScript: async (script, shell) => {
         const actionDef = actionsToRun.find(a => a.type === 'script' && a.script === script);
         const needsCapture = actionDef?.showOutput || actionDef?.captureToVar;
@@ -226,29 +241,29 @@ export function MainB({
           return { ok, error: ok ? undefined : 'El script terminó con error.' };
         } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
       },
-    }, config.rgb?.profiles);
+    }, config.rgb?.profiles), { ok: false, error: 'Acción excedió 60s y se considera colgada.', stateUpdate: {} });
     // Diff state update vs baseState para sólo persistir lo nuevo.
-    const newKeys = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== baseState[k]);
-    if (newKeys.length > 0) {
+    const newKeys = Object.keys(r.stateUpdate ?? {}).filter((k) => r.stateUpdate![k] !== baseState[k]);
+    if (newKeys.length > 0 && r.stateUpdate) {
       const update: Record<string, string> = {};
-      for (const k of newKeys) update[k] = r.stateUpdate[k];
+      for (const k of newKeys) update[k] = r.stateUpdate[k] as string;
       onStateUpdate(update);
     }
     setExecLog((prev) => [
-      { ts: Date.now(), label: btn.label || btn.action.type, actionType: btn.action.type, ok: r.ok, error: r.error },
+      { id: ++execLogIdRef.current, ts: Date.now(), label: btn.label || btn.action.type, actionType: btn.action.type, ok: r.ok, error: r.error },
       ...prev.slice(0, 99),
     ]);
     if (!r.ok && r.error) showToast(r.error);
     } finally {
       setRunningButtons((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }
-  }, [api, toggledIds, onToggle, showToast, config.state, onStateUpdate, config.buttons]);
+  }, [api, toggledIds, onToggle, showToast, config.state, config.rgb?.profiles, onStateUpdate, config.buttons]);
 
   const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
     if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
     const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles);
     setExecLog((prev) => [
-      { ts: Date.now(), label: `⇓ ${btn.label || btn.longPressAction!.type}`, actionType: btn.longPressAction!.type, ok: r.ok, error: r.error },
+      { id: ++execLogIdRef.current, ts: Date.now(), label: `⇓ ${btn.label || btn.longPressAction!.type}`, actionType: btn.longPressAction!.type, ok: r.ok, error: r.error },
       ...prev.slice(0, 99),
     ]);
     if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
@@ -261,10 +276,38 @@ export function MainB({
   const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
+  // Recompute the grid pixel box whenever the wrapper resizes or the grid
+  // shape changes. In 'square' mode we constrain to aspect-ratio = N/M; in
+  // 'fill' mode we just take the full wrapper area.
+  useEffect(() => {
+    const el = gridWrapperRef.current;
+    if (!el) return;
+    const compute = () => {
+      const W = el.clientWidth;
+      const H = el.clientHeight;
+      if (W === 0 || H === 0) return;
+      if (config.tileMode === 'fill') {
+        setGridBox({ w: W, h: H });
+        return;
+      }
+      const ratio = gridSize / gridRows;
+      let w = W, h = W / ratio;
+      if (h > H) { h = H; w = H * ratio; }
+      setGridBox({ w: Math.floor(w), h: Math.floor(h) });
+    };
+    compute();
+    const observer = new ResizeObserver(compute);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [gridSize, gridRows, config.tileMode, showSidebar]);
+
   const widgetDataMap = useMemo(() => {
-    const map: Record<string, { line1: string; line2?: string }> = {};
+    const map: Record<string, { line1: string; line2?: string; tone?: 'warn' | 'crit' }> = {};
     for (const btn of config.buttons) {
       if (!btn.widget) continue;
+      // 'now-playing' on an audio-device button is an invalid combo: the cell
+      // would show the playing track instead of the configured device name.
+      if (btn.widget === 'now-playing' && btn.action.type === 'audio-device') continue;
       if (btn.widget === 'clock') {
         map[btn.id] = { line1: TIME_FMT.format(clock), line2: DATE_FMT.format(clock).toUpperCase() };
       } else if (btn.widget === 'weather' && widgetWeather) {
@@ -272,10 +315,29 @@ export function MainB({
         map[btn.id] = { line1: `${emoji} ${widgetWeather.temp}°`, line2: widgetWeather.city };
       } else if (btn.widget === 'now-playing' && nowPlaying) {
         map[btn.id] = { line1: nowPlaying.title || '—', line2: nowPlaying.artist || undefined };
+      } else if (btn.widget === 'sensor' && btn.sensorWidget) {
+        const s = findSensor(btn.sensorWidget.sensorId, sensorList);
+        if (s) {
+          // Compact unit: ° instead of °C, RPM unchanged. Round whole numbers
+          // for everything except voltage (precision matters there).
+          const unit = s.unit.replace('°C', '°').replace('°F', '°');
+          const v = s.kind === 'Voltage' ? s.value.toFixed(2) : Math.round(s.value).toString();
+          const tone =
+            btn.sensorWidget.critAt !== undefined && s.value >= btn.sensorWidget.critAt ? 'crit' as const :
+            btn.sensorWidget.warnAt !== undefined && s.value >= btn.sensorWidget.warnAt ? 'warn' as const :
+            undefined;
+          map[btn.id] = {
+            line1: `${v}${unit}`,
+            line2: btn.sensorWidget.suffix || s.name,
+            tone,
+          };
+        } else {
+          map[btn.id] = { line1: '—', line2: btn.sensorWidget.suffix || 'sin datos' };
+        }
       }
     }
     return map;
-  }, [config.buttons, clock, widgetWeather, nowPlaying]);
+  }, [config.buttons, clock, widgetWeather, nowPlaying, sensorList]);
 
   // Scheduled triggers: check every 15s for buttons with timerTriggerAt matching current HH:MM.
   useEffect(() => {
@@ -290,6 +352,33 @@ export function MainB({
     }, 15000);
     return () => clearInterval(t);
   }, [config.buttons, activePage, executeButton]);
+
+  // Sensor triggers: level-triggered with cooldown. Re-runs on every sensor
+  // poll tick (the sensorList reference changes when new data lands). Cooldown
+  // default is 60 s so a hot CPU doesn't fire the action 12× per minute.
+  const sensorTriggerStateRef = useRef<Map<string, number>>(new Map());
+  useEffect(() => {
+    if (sensorList.length === 0) return;
+    const lastFired = sensorTriggerStateRef.current;
+    const now = Date.now();
+    for (const btn of config.buttons) {
+      const trig = btn.sensorTrigger;
+      if (!trig) continue;
+      const s = findSensor(trig.id, sensorList);
+      if (!s) continue;
+      const conditionTrue = evalCondition(trig, s.value);
+      const cooldown = trig.cooldownMs ?? 60000;
+      if (!conditionTrue) {
+        // Falling edge: reset so next true-edge fires immediately.
+        if ((lastFired.get(btn.id) ?? 0) > 0) lastFired.set(btn.id, 0);
+        continue;
+      }
+      const last = lastFired.get(btn.id) ?? 0;
+      if (now - last < cooldown) continue;
+      lastFired.set(btn.id, now);
+      executeButton(btn);
+    }
+  }, [sensorList, config.buttons, executeButton]);
 
   const isPlaying = nowPlaying?.status === 'Playing';
 
@@ -313,9 +402,20 @@ export function MainB({
   }
 
   function isButtonVisible(btn: ButtonConfig): boolean {
-    if (!btn.visibleIf?.app) return true;
-    const name = btn.visibleIf.app.replace(/\.exe$/i, '').toLowerCase();
-    return runningProcesses.has(name);
+    const v = btn.visibleIf;
+    if (!v) return true;
+    if (v.app) {
+      const name = v.app.replace(/\.exe$/i, '').toLowerCase();
+      if (!runningProcesses.has(name)) return false;
+    }
+    if (v.sensor) {
+      const s = findSensor(v.sensor.id, sensorList);
+      // No data yet → keep button hidden (matches "condition not met"). Better
+      // than briefly flashing the button on every reload.
+      if (!s) return false;
+      if (!evalCondition(v.sensor, s.value)) return false;
+    }
+    return true;
   }
 
   function confirmRename(id: string) {
@@ -345,6 +445,9 @@ export function MainB({
           rgbStatus={rgbStatus}
           rgbConfig={config.rgb}
           onRGBConfigChange={(rgb) => onConfigChange({ ...config, rgb })}
+          sensorsConfig={config.sensors ?? { enabled: false, host: '127.0.0.1', port: 8085 }}
+          sensorsStatus={sensorStatus}
+          onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
           onConfigExport={onConfigExport}
           onConfigImport={onConfigImport}
           onConfigImportFromUrl={onConfigImportFromUrl}
@@ -360,6 +463,8 @@ export function MainB({
           onUiScaleChange={onUiScaleChange}
           theme={theme}
           onThemeChange={onThemeChange}
+          tileMode={config.tileMode ?? 'square'}
+          onTileModeChange={(m) => onConfigChange({ ...config, tileMode: m })}
         />
 
         {/* Page tabs */}
@@ -496,27 +601,49 @@ export function MainB({
                 if (ctxPage) { setRenamingPageId(ctxPage.id); setRenameValue(ctxPage.name); }
                 setPageContextMenu(null);
               }} />
-              {/* Grid size */}
-              <div style={{ padding: '8px 14px', borderBottom: `1px solid ${VD.border}` }}>
-                <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 1 }}>GRILLA</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {([3, 4, 5, 6] as const).map(gs => (
-                    <button
-                      key={gs}
-                      onClick={() => { onPageSetGrid(pageContextMenu.id, gs); setPageContextMenu(null); }}
-                      style={{
-                        flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                        background: ctxGs === gs ? VD.accentBg : VD.elevated,
-                        border: `1px solid ${ctxGs === gs ? config.accent : VD.border}`,
-                        fontFamily: VD.mono, fontSize: 9,
-                        color: ctxGs === gs ? config.accent : VD.textDim,
-                      }}
-                    >
-                      {gs}×{gs}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Grid — columnas y filas independientes */}
+              {(() => {
+                const ctxRows = ctxPage?.gridRows ?? ctxGs;
+                return (
+                  <div style={{ padding: '8px 14px', borderBottom: `1px solid ${VD.border}` }}>
+                    <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 1 }}>
+                      GRILLA · {ctxGs}×{ctxRows}
+                    </div>
+                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>COLUMNAS</div>
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                      {([3, 4, 5, 6] as const).map(cols => (
+                        <button
+                          key={cols}
+                          onClick={() => { onPageSetGrid(pageContextMenu.id, cols, ctxRows); }}
+                          style={{
+                            flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                            background: ctxGs === cols ? VD.accentBg : VD.elevated,
+                            border: `1px solid ${ctxGs === cols ? config.accent : VD.border}`,
+                            fontFamily: VD.mono, fontSize: 9,
+                            color: ctxGs === cols ? config.accent : VD.textDim,
+                          }}
+                        >{cols}</button>
+                      ))}
+                    </div>
+                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>FILAS</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {([2, 3, 4, 5, 6] as const).map(rows => (
+                        <button
+                          key={rows}
+                          onClick={() => { onPageSetGrid(pageContextMenu.id, ctxGs as 3 | 4 | 5 | 6, rows); }}
+                          style={{
+                            flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                            background: ctxRows === rows ? VD.accentBg : VD.elevated,
+                            border: `1px solid ${ctxRows === rows ? config.accent : VD.border}`,
+                            fontFamily: VD.mono, fontSize: 9,
+                            color: ctxRows === rows ? config.accent : VD.textDim,
+                          }}
+                        >{rows}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               {config.pages.length > 1 && (
                 <PageCtxItem label="Eliminar página" danger onClick={() => {
                   onPageDelete(pageContextMenu.id);
@@ -528,24 +655,42 @@ export function MainB({
         })()}
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
-          {/* Button grid */}
+          {/* Button grid — two modes via config.tileMode:
+              'square' (default): N:M aspect locked, square cells, may leave margin
+              'fill':   cells fill the area (slightly rectangular when needed) */}
           <div
+            ref={gridWrapperRef}
             style={{
-              flex: 1, padding: 16,
-              display: 'grid',
-              gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-              gridTemplateRows: `repeat(${gridRows}, 1fr)`,
-              gap: 8,
+              flex: 1, padding: 16, minWidth: 0, minHeight: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
             }}
-            onTouchStart={(e) => { touchStartXRef.current = e.touches[0].clientX; }}
+            onTouchStart={(e) => {
+              touchStartXRef.current = e.touches[0].clientX;
+              touchStartYRef.current = e.touches[0].clientY;
+            }}
             onTouchEnd={(e) => {
               const dx = e.changedTouches[0].clientX - touchStartXRef.current;
-              if (Math.abs(dx) > 50) {
-                if (dx < 0 && activePage < config.pages.length - 1) onPageChange(activePage + 1);
-                else if (dx > 0 && activePage > 0) onPageChange(activePage - 1);
-              }
+              const dy = e.changedTouches[0].clientY - touchStartYRef.current;
+              const w = (e.currentTarget as HTMLDivElement).clientWidth || 600;
+              const threshold = Math.max(50, Math.min(120, w * 0.08));
+              const now = Date.now();
+              const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5;
+              const debounced = now - lastSwipeAtRef.current < 300;
+              if (!isHorizontal || debounced || Math.abs(dx) < threshold) return;
+              lastSwipeAtRef.current = now;
+              if (dx < 0 && activePage < config.pages.length - 1) onPageChange(activePage + 1);
+              else if (dx > 0 && activePage > 0) onPageChange(activePage - 1);
             }}
           >
+          <div style={{
+            width: gridBox.w || '100%',
+            height: gridBox.h || '100%',
+            display: 'grid',
+            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
+            gap: 8,
+          }}>
             {pageButtons.map((btn) => (
               <ButtonCell
                 key={btn.id}
@@ -571,6 +716,7 @@ export function MainB({
                 }}
               />
             ))}
+          </div>
           </div>
 
           {/* Sidebar */}
@@ -600,6 +746,26 @@ export function MainB({
                 <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>CLIMA</DotLabel>
                 <WeatherWidget />
               </div>
+
+              {/* Sensor cards — compact, below weather. Only shows when LHM has data. */}
+              {sensorList.length > 0 && (config.sensors?.showWidget ?? true) && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <DotLabel size={9} color={VD.textMuted} spacing={2}>SENSORES</DotLabel>
+                    <span style={{
+                      fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
+                      color: sensorStatus?.connected ? VD.success : VD.textMuted,
+                    }}>
+                      {sensorStatus?.connected ? '●' : '○'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {groupSensorsByHardware(sensorList).map((g) => (
+                      <SensorCard key={g.hardware} group={g} compact />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* RGB status */}
               <div>
@@ -648,8 +814,8 @@ export function MainB({
                   <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {execLog.length === 0 ? (
                       <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Sin actividad</div>
-                    ) : execLog.map((entry, i) => (
-                      <div key={i} title={entry.error} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    ) : execLog.map((entry) => (
+                      <div key={entry.id} title={entry.error} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <span style={{ color: entry.ok ? VD.success : VD.danger, fontSize: 8, flexShrink: 0 }}>●</span>
                         <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.label}</span>
                         <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, flexShrink: 0 }}>
@@ -781,7 +947,11 @@ export function MainB({
           accent={config.accent}
           soundEnabled={soundOnPress}
           soundProfile={soundProfile}
+          state={config.state}
+          rgbProfiles={config.rgb?.profiles}
           onClose={() => setOpenFolderBtn(null)}
+          onActionError={(msg) => showToast(msg)}
+          onStateUpdate={onStateUpdate}
         />
       )}
     </div>
@@ -789,12 +959,16 @@ export function MainB({
 }
 
 // ── Folder sub-deck overlay ────────────────────────────────────────────────
-function FolderOverlay({ btn, accent, soundEnabled, soundProfile, onClose }: {
+function FolderOverlay({ btn, accent, soundEnabled, soundProfile, state, rgbProfiles, onClose, onActionError, onStateUpdate }: {
   btn: ButtonConfig;
   accent: string;
   soundEnabled: boolean;
   soundProfile: import('../types').SoundProfileId;
+  state?: Record<string, string>;
+  rgbProfiles?: import('../types').RGBProfile[];
   onClose: () => void;
+  onActionError: (msg: string) => void;
+  onStateUpdate: (update: Record<string, string>) => void;
 }) {
   const VD = useTheme();
   const api = window.electronAPI;
@@ -811,7 +985,11 @@ function FolderOverlay({ btn, accent, soundEnabled, soundProfile, onClose }: {
     setFlash(idx);
     setTimeout(() => setFlash(null), 300);
     if (soundEnabled) playSound(soundProfile);
-    await executeAction(fb.action, api);
+    // Pass state + RGB profiles so folder actions can interpolate {var} and
+    // resolve RGB profile references (same context the parent grid uses).
+    const r = await executeAction(fb.action, api, state, rgbProfiles);
+    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
+    if (!r.ok && r.error) onActionError(r.error);
     onClose();
   }
 

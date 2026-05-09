@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, protocol, net, Notification, globalShortcut } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Tray, Menu, nativeImage, protocol, net, Notification, globalShortcut, screen } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readdirSync, unlinkSync, statSync } from 'fs';
 import { deflateSync } from 'zlib';
@@ -10,6 +10,7 @@ import {
 import { getNowPlaying, controlMedia, diagnose as diagnoseMedia, type MediaCommand } from './media';
 import { getWeather } from './weather';
 import * as rgb from './rgb';
+import * as sensors from './sensors';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -29,6 +30,47 @@ function getConfigPath() {
 
 function getBackupsDir() {
   return join(app.getPath('userData'), 'backups');
+}
+
+function getWindowStatePath() {
+  return join(app.getPath('userData'), 'window-state.json');
+}
+
+interface WindowBounds { x: number; y: number; width: number; height: number; maximized?: boolean }
+
+function loadWindowState(): WindowBounds | null {
+  try {
+    const p = getWindowStatePath();
+    if (!existsSync(p)) return null;
+    const data = JSON.parse(readFileSync(p, 'utf-8'));
+    if (typeof data?.x !== 'number' || typeof data?.y !== 'number') return null;
+    if (typeof data?.width !== 'number' || typeof data?.height !== 'number') return null;
+    return data as WindowBounds;
+  } catch { return null; }
+}
+
+function saveWindowState(b: WindowBounds) {
+  try { writeFileSync(getWindowStatePath(), JSON.stringify(b), 'utf-8'); } catch {}
+}
+
+// Returns bounds that are fully on at least one currently-connected display.
+// If the saved monitor was disconnected (laptop dock unplugged, second screen
+// off), centers the window on the primary display instead of restoring to a
+// position that would render off-screen.
+function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
+  const displays = screen.getAllDisplays();
+  const onScreen = displays.some((d) => {
+    const a = d.workArea;
+    return b.x + 80 < a.x + a.width && b.x + b.width > a.x + 80
+        && b.y + 40 < a.y + a.height && b.y + b.height > a.y + 20;
+  });
+  if (onScreen) return b;
+  const primary = screen.getPrimaryDisplay().workArea;
+  return {
+    x: Math.round(primary.x + (primary.width - b.width) / 2),
+    y: Math.round(primary.y + (primary.height - b.height) / 2),
+    width: b.width, height: b.height,
+  };
 }
 
 function loadConfig(): object {
@@ -215,7 +257,13 @@ function applyTriggerableConfig(win: Electron.BrowserWindow, rawConfig: any) {
 
 function createTray(win: Electron.BrowserWindow) {
   try {
-    tray = new Tray(makeTrayIcon());
+    // Use the multi-resolution .ico (16/24/32/48/64/128/256 frames embedded by
+    // scripts/generate-icon.js) so the Windows tray AND its overflow ("hidden
+    // icons") flyout both pick a crisp frame. Pre-resizing a single PNG to
+    // 16×16 makes the overflow show a blank/blurry icon when Windows asks for
+    // a larger size for the flyout.
+    const trayIcon = nativeImage.createFromPath(join(__dirname, '../../build/icon.ico'));
+    tray = new Tray(trayIcon);
     tray.setToolTip('VirtualDeck');
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: 'Mostrar VirtualDeck', click: () => { win.show(); win.focus(); } },
@@ -230,7 +278,7 @@ function createTray(win: Electron.BrowserWindow) {
 
 function registerIPC(win: Electron.BrowserWindow) {
   // Window
-  ipcMain.on('window:minimize', () => win.minimize());
+  ipcMain.on('window:minimize', () => { win.hide(); });
   ipcMain.on('window:maximize', () => win.isMaximized() ? win.unmaximize() : win.maximize());
   ipcMain.on('window:close', () => win.hide());
   ipcMain.on('window:fullscreen', () => win.setFullScreen(!win.isFullScreen()));
@@ -240,6 +288,10 @@ function registerIPC(win: Electron.BrowserWindow) {
   ipcMain.handle('config:save', (_e: any, data: object) => {
     saveConfig(data);
     applyTriggerableConfig(win, data);
+    const sCfg = (data as any)?.sensors;
+    if (sCfg) sensors.configure({
+      host: sCfg.host, port: sCfg.port, enabled: sCfg.enabled, categories: sCfg.categories,
+    });
     return true;
   });
   ipcMain.handle('config:listBackups', () => listBackups());
@@ -427,10 +479,23 @@ function registerIPC(win: Electron.BrowserWindow) {
   ipcMain.handle('rgb:setDeviceColor', (_e: any, id: number, c: string) => rgb.setDeviceColor(id, c));
   ipcMain.handle('rgb:setZoneColors', (_e: any, id: number, z: number, cs: string[]) => rgb.setZoneColors(id, z, cs));
   ipcMain.handle('rgb:setSingleLed', (_e: any, id: number, ledId: number, c: string) => rgb.setSingleLed(id, ledId, c));
-  ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number) => rgb.setMode(id, m, c, b));
+  ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number, s?: number) => rgb.setMode(id, m, c, b, s));
   ipcMain.handle('rgb:resizeZone', (_e: any, id: number, z: number, size: number) => rgb.resizeZone(id, z, size));
   ipcMain.handle('rgb:applyProfile', (_e: any, profile: any) => rgb.applyProfile(profile));
   ipcMain.handle('rgb:smartPreset', (_e: any, presetId: string) => rgb.applySmartPreset(presetId));
+  // Sensors (LibreHardwareMonitor via HTTP)
+  ipcMain.handle('sensors:list', (_e: any, force?: boolean) => sensors.list(!!force));
+  ipcMain.handle('sensors:get', (_e: any, id: string) => sensors.get(id));
+  ipcMain.handle('sensors:status', () => sensors.status());
+  ipcMain.handle('sensors:configure', (_e: any, opts: { host?: string; port?: number; enabled?: boolean; categories?: any[] }) => {
+    sensors.configure(opts || {});
+    return sensors.status();
+  });
+  ipcMain.handle('sensors:probe', () => sensors.probe());
+  ipcMain.handle('sensors:spawnLHM', (_e: any, customPath?: string, elevated?: boolean) => sensors.spawnLHM(customPath, !!elevated));
+  ipcMain.handle('sensors:killLHM', () => sensors.killLHM());
+  ipcMain.handle('sensors:bundledPath', () => sensors.bundledExePath());
+
   ipcMain.handle('rgb:pickFile', async () => {
     const r = await dialog.showOpenDialog(win, {
       title: 'Selecciona OpenRGB.exe',
@@ -442,14 +507,28 @@ function registerIPC(win: Electron.BrowserWindow) {
 }
 
 function createWindow() {
+  const savedRaw = loadWindowState();
+  const saved = savedRaw ? clampBoundsToDisplay(savedRaw) : null;
+
   const win = new BrowserWindow({
-    width: 1100, height: 720, minWidth: 900, minHeight: 600,
+    width: saved?.width ?? 1100, height: saved?.height ?? 720,
+    x: saved?.x, y: saved?.y,
+    minWidth: 900, minHeight: 600,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
+    icon: join(__dirname, '../../build/icon.png'),
+    // Hide from taskbar — VirtualDeck lives in the system tray. Alt+Tab still
+    // brings it to focus, and the tray "Mostrar" item un-hides it.
+    skipTaskbar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false, contextIsolation: true, nodeIntegration: false,
+      // sandbox is safe here: preload only uses contextBridge + ipcRenderer,
+      // never node:fs/path/etc. directly. Sandbox-on isolates the renderer
+      // from the OS — defense-in-depth even though we own all the code.
+      sandbox: true, contextIsolation: true, nodeIntegration: false,
     },
   });
+
+  if (savedRaw?.maximized) win.maximize();
 
   win.on('close', (e) => {
     if (!isQuitting) { e.preventDefault(); win.hide(); }
@@ -469,6 +548,37 @@ function createWindow() {
     }, 200);
   });
 
+  // Persist position/size — debounced so dragging and resizing don't write on
+  // every pixel. getNormalBounds() returns the unmaximized bounds, which is
+  // what we want to restore on next launch (maximized state is tracked separately).
+  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  const persistBounds = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (win.isDestroyed()) return;
+      const b = win.getNormalBounds();
+      saveWindowState({
+        x: b.x, y: b.y, width: b.width, height: b.height,
+        maximized: win.isMaximized(),
+      });
+      saveTimer = null;
+    }, 500);
+  };
+  win.on('moved', persistBounds);
+  win.on('resized', persistBounds);
+  win.on('maximize', persistBounds);
+  win.on('unmaximize', persistBounds);
+  win.on('close', () => {
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    if (!win.isDestroyed()) {
+      const b = win.getNormalBounds();
+      saveWindowState({
+        x: b.x, y: b.y, width: b.width, height: b.height,
+        maximized: win.isMaximized(),
+      });
+    }
+  });
+
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL']);
     win.webContents.openDevTools({ mode: 'detach' });
@@ -481,6 +591,25 @@ function createWindow() {
   // Aplicar hotkeys + tray a partir del config persistido al arrancar.
   const initialCfg = loadConfig();
   applyTriggerableConfig(win, initialCfg);
+
+  // Apply sensors endpoint from persisted config so the renderer picks up the
+  // user's configured host/port/enabled-state on first poll, not after a save.
+  const sensorsCfg = (initialCfg as any)?.sensors;
+  if (sensorsCfg) {
+    sensors.configure({
+      host: sensorsCfg.host,
+      port: sensorsCfg.port,
+      enabled: sensorsCfg.enabled,
+      categories: sensorsCfg.categories,
+    });
+    // Auto-spawn the bundled LHM if requested. Ships under resources/lhm with
+    // its config preset to runWebServerMenuItem=true and listenerPort=8085.
+    if (sensorsCfg.spawnOnStart) {
+      (async () => {
+        try { await sensors.spawnLHM(sensorsCfg.lhmPath, !!sensorsCfg.spawnElevated); } catch {}
+      })();
+    }
+  }
 
   // RGB autostart: spawn OpenRGB.exe + auto-connect según config persistido.
   // No bloqueante — el resto de la app sigue funcional aunque OpenRGB falle.
@@ -504,6 +633,7 @@ function createWindow() {
 app.on('before-quit', () => {
   isQuitting = true;
   try { rgb.killServer(); } catch {}
+  try { sensors.killLHM(); } catch {}
 });
 app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch {} });
 

@@ -150,11 +150,33 @@ export interface ButtonConfig {
   radioGroup?: string;
   // 4.x — Widget en vivo
   /** Widget de datos en tiempo real que reemplaza el icono/etiqueta. */
-  widget?: 'clock' | 'weather' | 'now-playing';
-  /** Ocultar botón si el proceso indicado no está activo (ej. "chrome"). Sin .exe, lowercase. */
-  visibleIf?: { app: string };
+  widget?: 'clock' | 'weather' | 'now-playing' | 'sensor';
+  /** Configuración del widget 'sensor': qué sensor mostrar y umbrales para colorear. */
+  sensorWidget?: {
+    sensorId: string;
+    /** Sufijo opcional para etiquetar (ej. "CPU", "GPU"). Vacío = nombre del sensor. */
+    suffix?: string;
+    /** Umbral de advertencia (color amarillo cuando value >= warnAt). */
+    warnAt?: number;
+    /** Umbral crítico (color rojo cuando value >= critAt). */
+    critAt?: number;
+  };
+  /** Ocultar botón según condiciones combinables (todas deben cumplirse). */
+  visibleIf?: {
+    app?: string;
+    sensor?: SensorCondition;
+  };
   /** Ejecutar automáticamente a esta hora (formato HH:MM). */
   timerTriggerAt?: string;
+  /** Disparar acción cuando un sensor cruza un umbral (edge-triggered con cooldown). */
+  sensorTrigger?: SensorCondition & { cooldownMs?: number };
+}
+
+export interface SensorCondition {
+  /** SensorId estable de LHM (p. ej. "/amdcpu/0/temperature/0"). */
+  id: string;
+  op: '>' | '<' | '>=' | '<=' | '==';
+  value: number;
 }
 
 export interface PageConfig {
@@ -196,6 +218,35 @@ export interface DeckConfig {
   uiScale?: number;
   /** 4.x — Tema de color. */
   theme?: 'dark' | 'light' | 'system';
+  /** 5.x — Sensores de hardware vía LibreHardwareMonitor HTTP. */
+  sensors?: SensorsSettings;
+  /**
+   * 5.x — Modo de las celdas en la grilla.
+   * - 'square' (default): cuadradas estrictas, deja margen si el área no
+   *   tiene la misma proporción que la grilla.
+   * - 'fill': llena el área completa, las celdas pueden volverse ligeramente
+   *   rectangulares pero quedan más grandes.
+   */
+  tileMode?: 'square' | 'fill';
+}
+
+export interface SensorsSettings {
+  enabled: boolean;
+  /** Host de LibreHardwareMonitor (default 127.0.0.1). */
+  host: string;
+  /** Puerto del web server de LHM (default 8085). */
+  port: number;
+  /** Categorías permitidas (filtra sensores irrelevantes). */
+  categories?: SensorCategory[];
+  /** Spawnear LHM bundled al arrancar VirtualDeck. */
+  spawnOnStart?: boolean;
+  /** Lanzar LHM con privilegios de administrador (UAC). Necesario para que
+   *  HttpListener bindee el puerto sin URL ACL preconfigurada. */
+  spawnElevated?: boolean;
+  /** Ruta custom a LibreHardwareMonitor.exe (vacío = usa el bundled). */
+  lhmPath?: string;
+  /** Mostrar el widget de sensores en el sidebar (MainB) y panel izquierdo (FullscreenB). */
+  showWidget?: boolean;
 }
 
 export interface RGBSettings {
@@ -243,6 +294,8 @@ export interface RGBModeInfo {
   colorMode: number;
   brightnessMin?: number;
   brightnessMax?: number;
+  speedMin?: number;
+  speedMax?: number;
 }
 
 export interface RGBDeviceInfo {
@@ -294,6 +347,39 @@ export interface NowPlaying {
   status: 'Playing' | 'Paused' | 'Stopped' | 'Unknown';
   source: string;
   thumbnail?: string;
+}
+
+export type SensorKind =
+  | 'Temperature' | 'Fan' | 'Voltage' | 'Load' | 'Clock' | 'Power'
+  | 'Data' | 'Throughput' | 'Level' | 'SmallData' | 'Other';
+
+export type SensorCategory = 'cpu' | 'gpu' | 'mainboard' | 'memory' | 'storage' | 'other';
+
+export interface Sensor {
+  /** SensorId estable de LHM (ej. "/amdcpu/0/temperature/0"). */
+  id: string;
+  name: string;
+  /** Hardware contenedor (CPU, GPU, Mainboard...) según LHM. */
+  hardware: string;
+  /** Categoría coarse-grained derivada del ImageURL del hardware. */
+  category: SensorCategory;
+  kind: SensorKind;
+  value: number;
+  unit: string;
+  min?: number;
+  max?: number;
+}
+
+export interface SensorsStatus {
+  enabled: boolean;
+  connected: boolean;
+  host: string;
+  port: number;
+  count: number;
+  error?: string;
+  lastFetchAt?: number;
+  /** True cuando el LHM bundled está corriendo (spawn-eado por nosotros). */
+  bundledRunning: boolean;
 }
 
 export interface ElectronAPI {
@@ -370,11 +456,21 @@ export interface ElectronAPI {
     setDeviceColor: (deviceId: number, color: string) => Promise<boolean>;
     setZoneColors: (deviceId: number, zoneId: number, colors: string[]) => Promise<boolean>;
     setSingleLed: (deviceId: number, ledId: number, color: string) => Promise<boolean>;
-    setMode: (deviceId: number, mode: string, color?: string, brightness?: number) => Promise<boolean>;
+    setMode: (deviceId: number, mode: string, color?: string, brightness?: number, speed?: number) => Promise<boolean>;
     resizeZone: (deviceId: number, zoneId: number, size: number) => Promise<boolean>;
     applyProfile: (profile: RGBProfile) => Promise<boolean>;
     smartPreset: (presetId: string) => Promise<boolean>;
     pickFile: () => Promise<string | null>;
+  };
+  sensors: {
+    list: (force?: boolean) => Promise<Sensor[]>;
+    get: (id: string) => Promise<Sensor | null>;
+    status: () => Promise<SensorsStatus>;
+    configure: (opts: { host?: string; port?: number; enabled?: boolean; categories?: SensorCategory[] }) => Promise<SensorsStatus>;
+    probe: () => Promise<{ ok: boolean; count: number; error?: string }>;
+    spawnLHM: (customPath?: string, elevated?: boolean) => Promise<{ ok: boolean; error?: string }>;
+    killLHM: () => Promise<void>;
+    bundledPath: () => Promise<string | null>;
   };
   events: {
     onButtonTrigger: (handler: (buttonId: string) => void) => () => void;
