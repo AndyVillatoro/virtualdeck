@@ -95,6 +95,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     spawnLHM: (customPath?: string, elevated?: boolean): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('sensors:spawnLHM', customPath, elevated),
     killLHM: (): Promise<void> => ipcRenderer.invoke('sensors:killLHM'),
     bundledPath: (): Promise<string | null> => ipcRenderer.invoke('sensors:bundledPath'),
+    registerUrlAcl: (port?: number): Promise<{ ok: boolean; error?: string; url: string }> => ipcRenderer.invoke('sensors:registerUrlAcl', port),
   },
   events: {
     // 1.4 — disparadores externos: globalShortcut + tray click. Devuelve unsub.

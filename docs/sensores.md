@@ -29,11 +29,12 @@ LHM expone su árbol de sensores en `http://127.0.0.1:8085/data.json` usando **`
 Tres alternativas:
 
 1. **Activar "INICIAR LHM COMO ADMINISTRADOR"** (más simple, prompt UAC en cada arranque).
-2. **Registrar URL ACL una sola vez** (cero UAC después). Abrí PowerShell como admin y ejecutá:
+2. **Registrar URL ACL una sola vez** (cero UAC después). Botón **REGISTRAR URL ACL** en TitleBar → SENSORES: dispara 1 prompt UAC y deja la reserva permanente. Después podés desactivar "INICIAR LHM COMO ADMINISTRADOR" y LHM arrancará sin pedir admin.
+
+   Equivalente manual (PowerShell como admin):
    ```powershell
    netsh http add urlacl url=http://+:8085/ user=Everyone
    ```
-   Después podés dejar "INICIAR LHM COMO ADMINISTRADOR" desactivado.
 3. **Ejecutar VirtualDeck como administrador** (LHM hereda los privilegios).
 
 ---

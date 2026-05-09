@@ -495,6 +495,7 @@ function registerIPC(win: Electron.BrowserWindow) {
   ipcMain.handle('sensors:spawnLHM', (_e: any, customPath?: string, elevated?: boolean) => sensors.spawnLHM(customPath, !!elevated));
   ipcMain.handle('sensors:killLHM', () => sensors.killLHM());
   ipcMain.handle('sensors:bundledPath', () => sensors.bundledExePath());
+  ipcMain.handle('sensors:registerUrlAcl', (_e: any, targetPort?: number) => sensors.registerUrlAcl(targetPort));
 
   ipcMain.handle('rgb:pickFile', async () => {
     const r = await dialog.showOpenDialog(win, {

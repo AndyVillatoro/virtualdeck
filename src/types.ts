@@ -471,6 +471,7 @@ export interface ElectronAPI {
     spawnLHM: (customPath?: string, elevated?: boolean) => Promise<{ ok: boolean; error?: string }>;
     killLHM: () => Promise<void>;
     bundledPath: () => Promise<string | null>;
+    registerUrlAcl: (port?: number) => Promise<{ ok: boolean; error?: string; url: string }>;
   };
   events: {
     onButtonTrigger: (handler: (buttonId: string) => void) => () => void;

@@ -255,6 +255,39 @@ export async function spawnLHM(customPath?: string, elevated = false): Promise<{
   }
 }
 
+// Registra una reserva URL ACL en Windows para el puerto/host configurados.
+// Una sola UAC y queda permanente — LHM podrá bindear el puerto sin admin
+// en arranques futuros. Equivalente a:
+//   netsh http add urlacl url=http://+:PORT/ user=Everyone
+// Si ya existía, primero la borra para evitar el error "Cannot create a file
+// when that file already exists." y luego la vuelve a crear.
+export async function registerUrlAcl(targetPort?: number): Promise<{ ok: boolean; error?: string; url: string }> {
+  const p = targetPort && targetPort > 0 ? targetPort : port;
+  const url = `http://+:${p}/`;
+  // PowerShell + Start-Process -Verb RunAs para UAC. Usamos -Wait para saber
+  // si el proceso terminó, y -PassThru + ExitCode para detectar fallos.
+  // El "delete" se ignora si no existe la reserva (devuelve error pero no
+  // afecta al "add" siguiente).
+  const psCmd =
+    `$ErrorActionPreference='SilentlyContinue';` +
+    `$p=Start-Process -FilePath netsh -ArgumentList 'http','delete','urlacl','url=${url}' -Verb RunAs -WindowStyle Hidden -Wait -PassThru;` +
+    `$ErrorActionPreference='Stop';` +
+    `$p=Start-Process -FilePath netsh -ArgumentList 'http','add','urlacl','url=${url}','user=Everyone' -Verb RunAs -WindowStyle Hidden -Wait -PassThru;` +
+    `exit $p.ExitCode`;
+  return await new Promise((resolve) => {
+    const ps = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCmd], {
+      stdio: 'ignore', windowsHide: true,
+    });
+    ps.on('error', (err) => resolve({ ok: false, error: err.message, url }));
+    ps.on('exit', (code) => {
+      if (code === 0) resolve({ ok: true, url });
+      // Code 1223 = usuario canceló UAC.
+      else if (code === 1223) resolve({ ok: false, error: 'UAC cancelado por el usuario', url });
+      else resolve({ ok: false, error: `netsh terminó con código ${code}`, url });
+    });
+  });
+}
+
 export async function killLHM(): Promise<void> {
   if (lhmProc && !lhmProc.killed) {
     try { lhmProc.kill(); } catch {}

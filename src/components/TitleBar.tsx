@@ -580,6 +580,17 @@ function SensorsSection({
     setTestResult(null);
   };
 
+  const [registeringAcl, setRegisteringAcl] = useState(false);
+  const registerAcl = async () => {
+    if (!api?.sensors) return;
+    setRegisteringAcl(true); setTestResult(null);
+    try {
+      const r = await api.sensors.registerUrlAcl(config.port);
+      if (r.ok) setTestResult(`URL ACL registrado: ${r.url} — LHM ya no necesita admin.`);
+      else setTestResult(`Falló registro URL ACL: ${r.error ?? '?'}`);
+    } finally { setRegisteringAcl(false); }
+  };
+
   const probe = async () => {
     if (!api?.sensors) return;
     setTesting(true); setTestResult(null);
@@ -666,6 +677,14 @@ function SensorsSection({
           )}
           <button onClick={probe} disabled={testing} style={miniBtnRGB(accent)}>
             {testing ? 'PROBANDO...' : 'PROBAR'}
+          </button>
+          <button
+            onClick={registerAcl}
+            disabled={registeringAcl}
+            title="Registra una reserva URL ACL en Windows (1 sola UAC). Después LHM puede correr sin admin."
+            style={miniBtnRGB(accent)}
+          >
+            {registeringAcl ? 'REGISTRANDO...' : 'REGISTRAR URL ACL'}
           </button>
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 9, minHeight: 14, color: testResult?.startsWith('OK') ? VD.success : testResult ? VD.danger : VD.textMuted }}>
