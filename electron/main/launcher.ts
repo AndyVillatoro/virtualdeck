@@ -1,8 +1,6 @@
 import { exec, spawn } from 'child_process';
 import { shell } from 'electron';
-import { writeFileSync, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { runPS, runPSBool } from './ps-helpers';
 
 export async function launchApp(appPath: string, args: string[] = []): Promise<boolean> {
   return new Promise((resolve) => {
@@ -25,41 +23,23 @@ export async function openShortcut(path: string): Promise<boolean> {
 }
 
 export async function runScript(script: string, shell_: string = 'powershell'): Promise<boolean> {
+  // PS branch goes through the shared helper (tmp .ps1 + UTF-8 + -File). Other
+  // shells fall back to direct exec — those are cmd one-liners from the user.
+  if (shell_ === 'powershell') {
+    return runPSBool(script, { timeoutMs: 30000 });
+  }
   return new Promise((resolve) => {
-    const cmd =
-      shell_ === 'powershell'
-        ? `powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/"/g, '\\"')}"`
-        : script;
-    exec(cmd, { timeout: 30000 }, (err) => resolve(!err));
-  });
-}
-
-// Writes script to a temp .ps1 file and runs it — handles complex multi-line scripts
-export async function runPSScript(script: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const tmp = join(tmpdir(), `vd_${Date.now()}.ps1`);
-    try {
-      writeFileSync(tmp, script, 'utf-8');
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${tmp}"`,
-        { timeout: 30000 },
-        (err) => {
-          try { unlinkSync(tmp); } catch {}
-          resolve(!err);
-        }
-      );
-    } catch {
-      resolve(false);
-    }
+    exec(script, { timeout: 30000 }, (err) => resolve(!err));
   });
 }
 
 export async function runScriptCapture(script: string, shell_: string = 'powershell'): Promise<{ success: boolean; output: string }> {
+  if (shell_ === 'powershell') {
+    const r = await runPS(script, { timeoutMs: 30000 });
+    return { success: r.ok, output: (r.stdout || r.stderr || '').trim() };
+  }
   return new Promise((resolve) => {
-    const cmd =
-      shell_ === 'powershell'
-        ? `powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/"/g, '\\"')}"`
-        : script;
-    exec(cmd, { timeout: 30000 }, (err, stdout, stderr) => {
+    exec(script, { timeout: 30000 }, (err, stdout, stderr) => {
       resolve({ success: !err, output: (stdout || stderr || '').trim() });
     });
   });
@@ -67,24 +47,32 @@ export async function runScriptCapture(script: string, shell_: string = 'powersh
 
 export async function setBrightness(level: number): Promise<boolean> {
   const pct = Math.min(100, Math.max(0, Math.round(level)));
-  const script = `try { $m = Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods; if ($m) { $m.WmiSetBrightness(1, ${pct}) } } catch {}`;
-  return runScript(script, 'powershell');
+  const script = `
+param([int]$Pct)
+try {
+  $m = Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods
+  if ($m) { $m.WmiSetBrightness(1, $Pct) }
+} catch {}
+`;
+  return runPSBool(script, { timeoutMs: 10000, args: [String(pct)] });
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {
-  const escaped = text.replace(/'/g, "''");
-  return runScript(`Set-Clipboard -Value '${escaped}'`, 'powershell');
+  // $Text arrives via param() — never interpolated, so PS string-escape rules
+  // and `$()` subshell expansion don't apply.
+  const script = `param([string]$Text)
+Set-Clipboard -Value $Text`;
+  return runPSBool(script, { timeoutMs: 10000, args: [text] });
 }
 
 export async function typeTextKeys(text: string): Promise<boolean> {
-  // Escape SendKeys special chars: + ^ % ~ ( ) { } [ ]
-  const escaped = text
-    .replace(/[+^%~(){}[\]]/g, (c) => `{${c}}`)
-    .replace(/'/g, "''");
-  return runScript(
-    `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${escaped}')`,
-    'powershell'
-  );
+  // SendKeys metachars (+ ^ % ~ ( ) { } [ ]) must be wrapped — that's a
+  // SendKeys-level concern, not a shell-level injection issue.
+  const escaped = text.replace(/[+^%~(){}[\]]/g, (c) => `{${c}}`);
+  const script = `param([string]$Keys)
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.SendKeys]::SendWait($Keys)`;
+  return runPSBool(script, { timeoutMs: 10000, args: [escaped] });
 }
 
 export async function getRunningProcesses(): Promise<string[]> {
@@ -110,8 +98,9 @@ export async function killProcess(name: string): Promise<boolean> {
 }
 
 export async function setVolume(percent: number): Promise<boolean> {
-  const level = Math.min(1.0, Math.max(0.0, percent / 100)).toFixed(4);
+  const level = Math.min(1.0, Math.max(0.0, percent / 100));
   const script = `
+param([float]$V)
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -132,14 +121,15 @@ public class AudioCtrl {
   }
 }
 '@
-[AudioCtrl]::SetVol(${level}f)
+[AudioCtrl]::SetVol($V)
 `;
-  return runPSScript(script);
+  return runPSBool(script, { timeoutMs: 15000, args: [level.toFixed(4)] });
 }
 
 export async function snapWindow(position: string, processName?: string): Promise<boolean> {
   const pname = (processName ?? '').replace(/\.exe$/i, '').trim();
   const script = `
+param([string]$Pname, [string]$Pos)
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @'
 using System;
@@ -152,10 +142,8 @@ public class WinSnap {
   [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr hWnd);
 }
 '@
-$pname = '${pname}'
-$pos   = '${position}'
-if ($pname -ne '') {
-  $p  = Get-Process -Name $pname -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+if ($Pname -ne '') {
+  $p  = Get-Process -Name $Pname -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
   $hw = if ($p) { $p.MainWindowHandle } else { [WinSnap]::GetForegroundWindow() }
 } else {
   $hw = [WinSnap]::GetForegroundWindow()
@@ -165,7 +153,7 @@ if ([WinSnap]::IsIconic($hw)) { [void][WinSnap]::ShowWindow($hw, 9) }
 $s  = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
 $sw = $s.Width; $sh = $s.Height; $sx = $s.X; $sy = $s.Y
 $f  = [uint32]0x0004
-switch ($pos) {
+switch ($Pos) {
   'left-half'    { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy,[int]($sw/2),$sh,$f) }
   'right-half'   { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/2),$sy,[int]($sw/2),$sh,$f) }
   'top-half'     { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy,$sw,[int]($sh/2),$f) }
@@ -179,7 +167,7 @@ switch ($pos) {
   'center'       { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/4),$sy+[int]($sh/4),[int]($sw/2),[int]($sh/2),$f) }
 }
 `;
-  return runPSScript(script);
+  return runPSBool(script, { timeoutMs: 15000, args: [pname, position] });
 }
 
 const HOTKEY_MAP: Record<string, string> = {
@@ -211,9 +199,8 @@ function buildSendKeys(combo: string): string {
 export async function sendHotkey(combo: string): Promise<boolean> {
   const keys = buildSendKeys(combo);
   if (!keys) return false;
-  const esc = keys.replace(/'/g, "''");
-  return runScript(
-    `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('${esc}')`,
-    'powershell'
-  );
+  const script = `param([string]$Keys)
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.SendKeys]::SendWait($Keys)`;
+  return runPSBool(script, { timeoutMs: 10000, args: [keys] });
 }

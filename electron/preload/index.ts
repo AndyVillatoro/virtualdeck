@@ -16,12 +16,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     restoreBackup: (filename: string): Promise<object | null> => ipcRenderer.invoke('config:restoreBackup', filename),
   },
   audio: {
-    list: (): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list'),
+    list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),
     setDefault: (deviceId: string): Promise<boolean> => ipcRenderer.invoke('audio:setDefault', deviceId),
   },
   media: {
     nowPlaying: (): Promise<NowPlayingResult | null> => ipcRenderer.invoke('media:nowPlaying'),
     control: (cmd: 'play-pause' | 'next' | 'prev' | 'stop'): Promise<boolean> => ipcRenderer.invoke('media:control', cmd),
+    shuffle: (): Promise<boolean> => ipcRenderer.invoke('media:shuffle'),
+    repeat: (): Promise<boolean> => ipcRenderer.invoke('media:repeat'),
     diagnose: (): Promise<MediaDiagnosticResult> => ipcRenderer.invoke('media:diagnose'),
   },
   weather: {
@@ -77,13 +79,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('rgb:setZoneColors', deviceId, zoneId, colors),
     setSingleLed: (deviceId: number, ledId: number, color: string) =>
       ipcRenderer.invoke('rgb:setSingleLed', deviceId, ledId, color),
-    setMode: (deviceId: number, mode: string, color?: string, brightness?: number) =>
-      ipcRenderer.invoke('rgb:setMode', deviceId, mode, color, brightness),
+    setMode: (deviceId: number, mode: string, color?: string, brightness?: number, speed?: number) =>
+      ipcRenderer.invoke('rgb:setMode', deviceId, mode, color, brightness, speed),
     resizeZone: (deviceId: number, zoneId: number, size: number) =>
       ipcRenderer.invoke('rgb:resizeZone', deviceId, zoneId, size),
     applyProfile: (profile: unknown) => ipcRenderer.invoke('rgb:applyProfile', profile),
     smartPreset: (presetId: string) => ipcRenderer.invoke('rgb:smartPreset', presetId),
     pickFile: () => ipcRenderer.invoke('rgb:pickFile'),
+  },
+  sensors: {
+    list: (force?: boolean): Promise<unknown[]> => ipcRenderer.invoke('sensors:list', force),
+    get: (id: string): Promise<unknown | null> => ipcRenderer.invoke('sensors:get', id),
+    status: (): Promise<unknown> => ipcRenderer.invoke('sensors:status'),
+    configure: (opts: { host?: string; port?: number; enabled?: boolean; categories?: string[] }): Promise<unknown> =>
+      ipcRenderer.invoke('sensors:configure', opts),
+    probe: (): Promise<{ ok: boolean; count: number; error?: string }> => ipcRenderer.invoke('sensors:probe'),
+    spawnLHM: (customPath?: string, elevated?: boolean): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('sensors:spawnLHM', customPath, elevated),
+    killLHM: (): Promise<void> => ipcRenderer.invoke('sensors:killLHM'),
+    bundledPath: (): Promise<string | null> => ipcRenderer.invoke('sensors:bundledPath'),
+    registerUrlAcl: (port?: number): Promise<{ ok: boolean; error?: string; url: string }> => ipcRenderer.invoke('sensors:registerUrlAcl', port),
+  },
+  macro: {
+    play: (steps: unknown[], repeat?: number) => ipcRenderer.invoke('macro:play', steps, repeat ?? 1),
+    startRecord: () => ipcRenderer.invoke('macro:startRecord'),
+    stopRecord: () => ipcRenderer.invoke('macro:stopRecord'),
+    isRecording: () => ipcRenderer.invoke('macro:isRecording'),
   },
   events: {
     // 1.4 — disparadores externos: globalShortcut + tray click. Devuelve unsub.

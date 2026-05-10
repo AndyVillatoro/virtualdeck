@@ -2,7 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { VD, ACCENT_PRESETS } from '../design';
 import { useTheme } from '../utils/theme';
 import { SOUND_PROFILES, playSound } from '../utils/sound';
-import type { Profile, RGBSettings, RGBStatus, SoundProfileId } from '../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, SoundProfileId } from '../types';
+import { RGBSection } from './settings/RGBSection';
+import { SensorsSection } from './settings/SensorsSection';
+import { ToggleRow, SettingLabel } from './settings/settingHelpers';
 
 interface TitleBarProps {
   showControls?: boolean;
@@ -29,11 +32,17 @@ interface TitleBarProps {
   rgbStatus?: RGBStatus | null;
   rgbConfig?: RGBSettings;
   onRGBConfigChange?: (next: RGBSettings) => void;
+  // Sensors integration (LibreHardwareMonitor)
+  sensorsConfig?: SensorsSettings;
+  sensorsStatus?: SensorsStatus | null;
+  onSensorsConfigChange?: (next: SensorsSettings) => void;
   // 4.x — UI scale + theme
   uiScale?: number;
   onUiScaleChange?: (scale: number) => void;
   theme?: 'dark' | 'light' | 'system';
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  tileMode?: 'square' | 'fill';
+  onTileModeChange?: (mode: 'square' | 'fill') => void;
 }
 
 export function TitleBar({
@@ -60,10 +69,15 @@ export function TitleBar({
   rgbStatus,
   rgbConfig,
   onRGBConfigChange,
+  sensorsConfig,
+  sensorsStatus,
+  onSensorsConfigChange,
   uiScale = 1,
   onUiScaleChange,
   theme = 'dark',
   onThemeChange,
+  tileMode = 'square',
+  onTileModeChange,
 }: TitleBarProps) {
   const VD = useTheme();
   const effectiveAccent = accent ?? VD.accent;
@@ -149,6 +163,11 @@ export function TitleBar({
             borderRadius: `0 0 ${VD.radius.lg}px ${VD.radius.lg}px`, padding: 16, width: 260,
             boxShadow: VD.shadow.menu,
             display: 'flex', flexDirection: 'column', gap: 14,
+            // Cap height so the panel never spills past the viewport bottom and
+            // scroll for the rest. Required since RGB + Sensors + Profiles can
+            // exceed window height on small screens.
+            maxHeight: 'calc(100vh - 50px)',
+            overflowY: 'auto',
           }}
         >
           {/* Accent color */}
@@ -194,6 +213,33 @@ export function TitleBar({
                 )}
               </div>
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>Rango: 75% – 175%</div>
+            </div>
+          )}
+
+          {/* Tile mode — square keeps StreamDeck aesthetic, fill maximizes cell size */}
+          {onTileModeChange && (
+            <div>
+              <SettingLabel>FORMA DE LAS CELDAS</SettingLabel>
+              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                {(['square', 'fill'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => onTileModeChange(m)}
+                    style={{
+                      flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                      background: tileMode === m ? VD.accentBg : VD.elevated,
+                      border: `1px solid ${tileMode === m ? effectiveAccent : VD.border}`,
+                      color: tileMode === m ? effectiveAccent : VD.textDim,
+                      fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+                    }}
+                  >{m === 'square' ? 'CUADRADAS' : 'LLENAR ÁREA'}</button>
+                ))}
+              </div>
+              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4, lineHeight: 1.4 }}>
+                {tileMode === 'square'
+                  ? 'Celdas siempre cuadradas; deja margen si la ventana no es proporcional a la grilla.'
+                  : 'Celdas ocupan toda el área; pueden volverse ligeramente rectangulares.'}
+              </div>
             </div>
           )}
 
@@ -299,6 +345,18 @@ export function TitleBar({
             </>
           )}
 
+          {onSensorsConfigChange && sensorsConfig && (
+            <>
+              <div style={{ height: 1, background: VD.border }} />
+              <SensorsSection
+                accent={effectiveAccent}
+                config={sensorsConfig}
+                status={sensorsStatus ?? null}
+                onChange={onSensorsConfigChange}
+              />
+            </>
+          )}
+
           <div style={{ height: 1, background: VD.border }} />
 
           {/* Profiles */}
@@ -354,144 +412,6 @@ export function TitleBar({
   );
 }
 
-function RGBSection({
-  accent, config, status, onChange,
-}: {
-  accent: string;
-  config: RGBSettings;
-  status: RGBStatus | null;
-  onChange: (next: RGBSettings) => void;
-}) {
-  const api = window.electronAPI;
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
-
-  const setEnabled = () => onChange({ ...config, enabled: !config.enabled });
-  const setSpawn = () => onChange({ ...config, spawnOnStart: !config.spawnOnStart });
-  const setAuto = () => onChange({ ...config, autoConnect: !config.autoConnect });
-  const setHost = (host: string) => onChange({ ...config, host });
-  const setPort = (port: number) => onChange({ ...config, port });
-
-  const pickPath = async () => {
-    const path = await api?.rgb.pickFile();
-    if (path) onChange({ ...config, openrgbPath: path });
-  };
-
-  const testConnect = async () => {
-    if (!api) return;
-    setTesting(true); setTestResult(null);
-    try {
-      if (config.spawnOnStart && config.openrgbPath && !status?.serverRunning) {
-        const r = await api.rgb.spawnServer(config.openrgbPath);
-        if (!r.ok) { setTestResult(`Spawn falló: ${r.error}`); return; }
-      }
-      const s = await api.rgb.connect(config.host, config.port);
-      setTestResult(s.connected ? `OK · ${s.deviceCount} dispositivos` : `Falló: ${s.error ?? 'sin server'}`);
-    } finally { setTesting(false); }
-  };
-
-  return (
-    <div>
-      <SettingLabel>RGB (OPENRGB)</SettingLabel>
-      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <ToggleRow label="HABILITADO" value={config.enabled} accent={accent} onClick={setEnabled} />
-        <ToggleRow label="LANZAR OPENRGB AL ARRANCAR" value={config.spawnOnStart} accent={accent} onClick={setSpawn} />
-        <ToggleRow label="AUTOCONECTAR" value={config.autoConnect} accent={accent} onClick={setAuto} />
-
-        <div>
-          <SettingLabel>RUTA OPENRGB.EXE</SettingLabel>
-          <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-            <input
-              value={config.openrgbPath ?? ''}
-              onChange={(e) => onChange({ ...config, openrgbPath: e.target.value })}
-              placeholder="C:\\Program Files\\OpenRGB\\OpenRGB.exe"
-              style={inputStyleRGB}
-            />
-            <button onClick={pickPath} style={miniBtnRGB(accent)}>...</button>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 6 }}>
-          <div style={{ flex: 1 }}>
-            <SettingLabel>HOST</SettingLabel>
-            <input
-              value={config.host}
-              onChange={(e) => setHost(e.target.value)}
-              placeholder="127.0.0.1"
-              style={{ ...inputStyleRGB, marginTop: 4 }}
-            />
-          </div>
-          <div style={{ width: 70 }}>
-            <SettingLabel>PUERTO</SettingLabel>
-            <input
-              type="number"
-              value={config.port}
-              onChange={(e) => setPort(parseInt(e.target.value, 10) || 6742)}
-              style={{ ...inputStyleRGB, marginTop: 4 }}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={testConnect} disabled={testing} style={miniBtnRGB(accent)}>
-            {testing ? 'PROBANDO...' : 'PROBAR CONEXIÓN'}
-          </button>
-          {testResult && (
-            <span style={{ fontFamily: VD.mono, fontSize: 9, color: testResult.startsWith('OK') ? VD.success : VD.danger }}>
-              {testResult}
-            </span>
-          )}
-          {!testResult && status && (
-            <span style={{ fontFamily: VD.mono, fontSize: 9, color: status.connected ? VD.success : VD.textMuted }}>
-              {status.connected ? `● ${status.deviceCount} dev` : '○ desconectado'}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const inputStyleRGB: React.CSSProperties = {
-  flex: 1, width: '100%', boxSizing: 'border-box',
-  background: VD.elevated, border: `1px solid ${VD.border}`,
-  padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
-  outline: 'none', borderRadius: VD.radius.sm,
-};
-const miniBtnRGB = (accent: string): React.CSSProperties => ({
-  padding: '5px 10px', background: VD.accentBg, border: `1px solid ${accent}`,
-  fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer',
-  borderRadius: VD.radius.sm, letterSpacing: 1,
-});
-
-function ToggleRow({ label, value, accent, onClick }: { label: string; value: boolean; accent: string; onClick?: () => void }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <SettingLabel>{label}</SettingLabel>
-      <div
-        onClick={onClick}
-        style={{
-          width: 36, height: 20, borderRadius: 10, cursor: 'pointer',
-          background: value ? accent : VD.elevated,
-          border: `1px solid ${value ? accent : VD.border}`,
-          position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-        }}
-      >
-        <div style={{
-          position: 'absolute', top: 2, left: value ? 17 : 2,
-          width: 14, height: 14, borderRadius: '50%', background: VD.text,
-          transition: 'left 0.2s',
-        }} />
-      </div>
-    </div>
-  );
-}
-
-function SettingLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontFamily: VD.mono, fontSize: 8, letterSpacing: 2, color: VD.textMuted }}>{children}</div>
-  );
-}
 
 const btnStyle: React.CSSProperties = {
   height: 22, padding: '0 8px',

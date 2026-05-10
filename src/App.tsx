@@ -13,11 +13,7 @@ import { runActionSequence, executeAction } from './utils/actions';
 import type { ActionType, ButtonConfig, DeckConfig, PageConfig, Profile, SoundProfileId } from './types';
 
 const PAGES_DEFAULT: PageConfig[] = [
-  { id: 'main', name: 'PRINCIPAL' },
-  { id: 'stream', name: 'STREAM' },
-  { id: 'trabajo', name: 'TRABAJO' },
-  { id: 'musica', name: 'MÚSICA' },
-  { id: 'macros', name: 'MACROS' },
+  { id: 'main', name: 'Main' },
 ];
 
 function makeDefaultButtons(pages: PageConfig[] = PAGES_DEFAULT): ButtonConfig[] {

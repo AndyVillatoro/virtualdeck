@@ -7,6 +7,17 @@ out/
 .env*
 .vscode/
 
+# Generated app icon (rebuilt by `npm run build:icon`)
+build/
+
+# Bundled LibreHardwareMonitor — 19MB de binarios, descarga aparte
+resources/lhm/
+
+# Local debugging scratch — keep out of git
+smtc_debug*.ps1
+window_test.ps1
+test-electron.js
+
 # Claude Code / agent tooling — local state, not part of the app
 .claude/
 .agents/

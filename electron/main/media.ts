@@ -1,7 +1,4 @@
-import { exec } from 'child_process';
-import { writeFileSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { runPS as runPSShared } from './ps-helpers';
 
 export interface NowPlaying {
   title: string;
@@ -23,22 +20,7 @@ export interface MediaDiagnostic {
 }
 
 function runPS(script: string): Promise<{ stdout: string; stderr: string; ok: boolean }> {
-  return new Promise((resolve) => {
-    const tmp = join(tmpdir(), `vd_media_${Date.now()}_${Math.random().toString(36).slice(2)}.ps1`);
-    writeFileSync(tmp, script, 'utf-8');
-    exec(
-      `powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "${tmp}"`,
-      { timeout: 10000, maxBuffer: 5 * 1024 * 1024 },
-      (err, stdout, stderr) => {
-        try { unlinkSync(tmp); } catch {}
-        resolve({
-          stdout: (stdout ?? '').trim(),
-          stderr: (stderr ?? '').trim(),
-          ok: !err,
-        });
-      }
-    );
-  });
+  return runPSShared(script, { timeoutMs: 10000, maxBufferBytes: 5 * 1024 * 1024 });
 }
 
 // Wait-AsyncOp por polling del campo Status. Mucho más robusto que el truco
@@ -246,7 +228,9 @@ let _cache: { data: NowPlaying | null; ts: number; lastValid: NowPlaying | null 
 };
 let _thumbTrack = '';
 let _thumbData = '';
-let _fetchingThumb = false;
+// Pending thumbnail fetches keyed by trackKey. Prevents duplicate PS spawns
+// for the same track when getNowPlaying is called repeatedly during a race.
+const _pendingThumbs = new Map<string, Promise<void>>();
 let _lastErrorLogged = '';
 
 function logErrorOnce(stage: string, error: string) {
@@ -265,9 +249,18 @@ interface Parsed {
 
 function parseWindowTitle(proc: string, raw: string): Parsed | null {
   const procLower = proc.toLowerCase();
-  let title = raw;
-  title = title.replace(/\s+(?:—|-|and \d+ more pages?)\s+(?:Mozilla Firefox|Google Chrome|Microsoft.+Edge|Brave|Opera|Vivaldi).*$/i, '');
-  title = title.replace(/\s+(?:—|-)\s+(?:Mozilla Firefox|Google Chrome|Microsoft.+Edge|Brave|Opera|Vivaldi).*$/i, '');
+  // Normalize unicode whitespace variants (NBSP, ZWSP, etc.) that Edge/Chrome
+  // sometimes inject between "Microsoft" and "Edge".
+  let title = raw.replace(/[ ​‌‍﻿]/g, ' ');
+  // Browser suffixes — handle multilingual variants:
+  //   English: "and N more page(s)"   Spanish: "y N página(s) más"
+  //   Portuguese: "e mais N página(s)"   plus optional "Profile: Browser" tail.
+  const browser = '(?:Mozilla Firefox|Google Chrome|Microsoft\\s*Edge|Brave|Opera|Vivaldi)';
+  const more = '(?:and \\d+ more pages?|y \\d+ p[áa]ginas? m[áa]s|e mais \\d+ p[áa]ginas?)';
+  // 1) Strip "Profile: Browser" or "Browser" entirely.
+  title = title.replace(new RegExp(`\\s+[—\\-]\\s+(?:[^-—:]+:\\s*)?${browser}\\s*$`, 'i'), '');
+  // 2) Strip "and N more pages - Browser" or i18n equivalents.
+  title = title.replace(new RegExp(`\\s+${more}.*$`, 'i'), '');
 
   let m = title.match(/^(.+?)\s+-\s+YouTube Music$/);
   if (m) {
@@ -351,16 +344,18 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
         if (trackKey !== _thumbTrack) {
           _thumbTrack = trackKey;
           _thumbData = '';
-          if (!_fetchingThumb) {
-            _fetchingThumb = true;
-            runPS(THUMB_SCRIPT).then((tr) => {
+          if (!_pendingThumbs.has(trackKey)) {
+            const fetchP = runPS(THUMB_SCRIPT).then((tr) => {
+              // Stale-result guard: only commit if the user is still on this track.
+              if (trackKey !== _thumbTrack) return;
               if (tr.ok && tr.stdout && tr.stdout.startsWith('data:')) {
                 _thumbData = tr.stdout;
                 if (_cache.data && `${_cache.data.title}|${_cache.data.artist}` === trackKey) {
                   _cache.data = { ..._cache.data, thumbnail: tr.stdout };
                 }
               }
-            }).finally(() => { _fetchingThumb = false; });
+            }).finally(() => { _pendingThumbs.delete(trackKey); });
+            _pendingThumbs.set(trackKey, fetchP);
           }
         }
         smtc = {
@@ -398,6 +393,18 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
     return null;
   }
 
+  // SMTC errored (e.g. Edge doesn't register): always re-query window titles
+  // so a switched tab/video shows up. The previous code only fell through here
+  // on first run, then returned the stale lastValid forever.
+  {
+    const fb = await fallbackFromWindows();
+    if (fb) {
+      _cache.data = fb;
+      _cache.lastValid = fb;
+      return fb;
+    }
+  }
+
   if (_cache.lastValid) {
     _cache.data = _cache.lastValid;
     return _cache.lastValid;
@@ -409,6 +416,31 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
   return fb;
 }
 
+// Shuffle toggle vía SMTC — invierte el estado actual de shuffle.
+const SHUFFLE_SCRIPT = `
+${PREAMBLE}
+if ($null -eq $mgr) { Write-Output 'NOMGR'; exit }
+$session = $mgr.GetCurrentSession()
+if ($null -eq $session) { Write-Output 'NOSESSION'; exit }
+$info = $session.GetPlaybackInfo()
+$newVal = -not $info.IsShuffleActive
+$result = Await-Op($session.TryChangeShuffleActiveAsync($newVal)) 3000
+if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
+`.trim();
+
+// Repeat cycling vía SMTC — cicla entre ninguno → lista → pista → ninguno.
+const REPEAT_SCRIPT = `
+${PREAMBLE}
+if ($null -eq $mgr) { Write-Output 'NOMGR'; exit }
+$session = $mgr.GetCurrentSession()
+if ($null -eq $session) { Write-Output 'NOSESSION'; exit }
+$info = $session.GetPlaybackInfo()
+$cur = [int]$info.AutoRepeatMode.Value  # 0=None 1=Track 2=List
+$next = ($cur + 1) % 3
+$result = Await-Op($session.TryChangeAutoRepeatModeAsync([Windows.Media.MediaPlaybackAutoRepeatMode]$next)) 3000
+if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
+`.trim();
+
 // Control de medios — usa SMTC nativo cuando hay sesión, sino cae a SendKeys.
 // El fallback SendKeys lo hace el caller (electron/main/index.ts) si esto devuelve false.
 export async function controlMedia(cmd: MediaCommand): Promise<boolean> {
@@ -418,6 +450,18 @@ export async function controlMedia(cmd: MediaCommand): Promise<boolean> {
     return false;
   }
   return r.stdout === 'OK';
+}
+
+export async function shuffleMedia(): Promise<boolean> {
+  const r = await runPS(SHUFFLE_SCRIPT);
+  if (!r.ok) { if (r.stderr) logErrorOnce('smtc-shuffle', r.stderr); return false; }
+  return r.stdout.trim() === 'OK';
+}
+
+export async function repeatMedia(): Promise<boolean> {
+  const r = await runPS(REPEAT_SCRIPT);
+  if (!r.ok) { if (r.stderr) logErrorOnce('smtc-repeat', r.stderr); return false; }
+  return r.stdout.trim() === 'OK';
 }
 
 // Diagnóstico — devuelve raw output para que el usuario entienda el estado.
