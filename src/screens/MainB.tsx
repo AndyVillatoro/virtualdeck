@@ -96,6 +96,8 @@ export function MainB({
   const [renamingPageId, setRenamingPageId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [pageContextMenu, setPageContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMoveTarget, setBulkMoveTarget] = useState<number | null>(null);
   const [dragSourceId, setDragSourceId] = useState<string | null>(null);
   const [dragPageIdx, setDragPageIdx] = useState<number | null>(null);
   const [dragOverPageIdx, setDragOverPageIdx] = useState<number | null>(null);
@@ -145,6 +147,9 @@ export function MainB({
     const off = api.events.onRGBDevicesChanged?.(() => { tick(); });
     return () => { cancelled = true; clearInterval(t); off?.(); };
   }, [api]);
+
+  // Clear selection when switching pages
+  useEffect(() => { setSelectedIds(new Set()); }, [activePage]);
 
   // Pausar el polling de nowPlaying cuando la sidebar está oculta (no hay consumidor visible).
   useEffect(() => { setNowPlayingActive(showSidebar); }, [showSidebar, setNowPlayingActive]);
@@ -697,6 +702,7 @@ export function MainB({
                 button={btn}
                 accent={config.accent}
                 toggled={toggledIds.has(btn.id)}
+                isSelected={selectedIds.has(btn.id)}
                 isActive={isButtonActive(btn)}
                 isHidden={!isButtonVisible(btn)}
                 isRunning={runningButtons.has(btn.id)}
@@ -707,6 +713,11 @@ export function MainB({
                 onEdit={() => onEditButton(btn.id)}
                 onExecute={() => executeButton(btn)}
                 onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none' ? () => executeLongPressButton(btn) : undefined}
+                onSelect={() => setSelectedIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(btn.id)) next.delete(btn.id); else next.add(btn.id);
+                  return next;
+                })}
                 onDuplicate={() => onDuplicateButton(btn.id)}
                 onClear={() => onClearButton(btn.id)}
                 onDragStart={() => setDragSourceId(btn.id)}
@@ -718,6 +729,69 @@ export function MainB({
             ))}
           </div>
           </div>
+
+          {/* Bulk-select toolbar — floats over grid when ≥1 button selected */}
+          {selectedIds.size > 0 && (
+            <div style={{
+              position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 50, display: 'flex', alignItems: 'center', gap: 8,
+              background: VD.surface, border: `1px solid ${VD.borderStrong}`,
+              borderRadius: VD.radius.lg, padding: '8px 14px',
+              boxShadow: VD.shadow.menu, fontFamily: VD.mono,
+            }}>
+              <span style={{ fontSize: 9, color: VD.textDim, letterSpacing: 1, marginRight: 4 }}>
+                {selectedIds.size} SELECCIONADOS
+              </span>
+
+              {/* Move-to-page picker */}
+              <select
+                value={bulkMoveTarget ?? ''}
+                onChange={(e) => setBulkMoveTarget(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                style={{
+                  background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text,
+                  fontFamily: VD.mono, fontSize: 8, padding: '3px 6px', borderRadius: VD.radius.sm,
+                  outline: 'none',
+                }}
+              >
+                <option value="">MOVER A...</option>
+                {config.pages.map((p, i) => i !== activePage && (
+                  <option key={p.id} value={i}>{p.name}</option>
+                ))}
+              </select>
+
+              {bulkMoveTarget !== null && (
+                <button
+                  onClick={() => {
+                    Array.from(selectedIds).forEach((id) => onMoveButtonToPage(id, bulkMoveTarget!, false));
+                    setSelectedIds(new Set()); setBulkMoveTarget(null);
+                  }}
+                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
+                >↗ MOVER</button>
+              )}
+              {bulkMoveTarget !== null && (
+                <button
+                  onClick={() => {
+                    Array.from(selectedIds).forEach((id) => onMoveButtonToPage(id, bulkMoveTarget!, true));
+                    setSelectedIds(new Set()); setBulkMoveTarget(null);
+                  }}
+                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
+                >⎘ COPIAR</button>
+              )}
+
+              <button
+                onClick={() => {
+                  Array.from(selectedIds).forEach((id) => onClearButton(id));
+                  setSelectedIds(new Set());
+                }}
+                style={{ padding: '4px 10px', background: 'none', border: `1px solid ${VD.danger}`, color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
+              >✕ LIMPIAR</button>
+
+              <button
+                onClick={() => { setSelectedIds(new Set()); setBulkMoveTarget(null); }}
+                style={{ padding: '4px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm }}
+              >×</button>
+            </div>
+          )}
 
           {/* Sidebar */}
           {showSidebar && (

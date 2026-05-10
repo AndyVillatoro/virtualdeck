@@ -41,9 +41,12 @@ function actionLabel(a: ButtonAction): string {
     case 'rgb-mode':    return a.rgbMode ? `RGB modo "${a.rgbMode}"` : 'RGB modo';
     case 'rgb-profile': return a.rgbProfileName ? `RGB perfil "${a.rgbProfileName}"` : 'RGB perfil';
     case 'rgb-preset':   return a.rgbPresetId ? `RGB preset "${a.rgbPresetId}"` : 'RGB preset';
-    case 'window-snap':  return a.snapPosition ? `Snap ${a.snapPosition}` : 'Window snap';
-    case 'branch':       return `If {${a.branchVar ?? '?'}} ${a.branchOp ?? '=='} "${a.branchValue ?? ''}"`;
-    default:             return a.type;
+    case 'window-snap':    return a.snapPosition ? `Snap ${a.snapPosition}` : 'Window snap';
+    case 'branch':         return `If {${a.branchVar ?? '?'}} ${a.branchOp ?? '=='} "${a.branchValue ?? ''}"`;
+    case 'media-shuffle':  return 'Toggle shuffle';
+    case 'media-repeat':   return 'Ciclar repetición';
+    case 'macro':          return `Macro (${a.macroSteps?.length ?? 0} pasos)`;
+    default:               return a.type;
   }
 }
 
@@ -134,6 +137,19 @@ export async function executeAction(
                   : 'prev';
         const ok = await api.media.control(cmd);
         return ok ? OK : fail(`No se pudo enviar el control de media (${cmd}).`);
+      }
+      case 'media-shuffle': {
+        const ok = await api.media.shuffle();
+        return ok ? OK : fail('No se pudo alternar shuffle (¿hay un reproductor activo?).');
+      }
+      case 'media-repeat': {
+        const ok = await api.media.repeat();
+        return ok ? OK : fail('No se pudo cambiar el modo de repetición.');
+      }
+      case 'macro': {
+        if (!action.macroSteps || action.macroSteps.length === 0) return fail('La macro no tiene pasos.');
+        const r = await api.macro.play(action.macroSteps, action.macroRepeat ?? 1);
+        return r.ok ? OK : fail(r.error ?? 'La macro falló.');
       }
       case 'volume-up':
       case 'volume-down':

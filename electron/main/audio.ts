@@ -1,7 +1,4 @@
-import { exec } from 'child_process';
-import { writeFileSync, unlinkSync } from 'fs';
-import { join } from 'path';
-import { tmpdir } from 'os';
+import { runPS } from './ps-helpers';
 
 export interface AudioDevice {
   id: string;
@@ -51,7 +48,14 @@ public struct PropVariant {
     [FieldOffset(0)] public short vt;
     [FieldOffset(8)] public IntPtr pointerValue;
 }
-[Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+// IID for the modern IPolicyConfig interface (Win 7+ / 10 / 11). The previous
+// value (870AF99C-...) is the *class* CLSID, not the interface IID — using it
+// here makes QueryInterface return E_NOINTERFACE on current Windows builds.
+// Method order/signature must match the undocumented vtable exactly.
+// IPolicyConfig (Windows 7+) — interfaz "moderna". El layout y orden de la
+// vtable debe coincidir 1:1 con la API no documentada de Windows. Si MSFT
+// rompe esto en una build futura habrá que revisar SoundSwitch / EarTrumpet.
+[Guid("F8679F50-850A-41CF-9C72-430F290290C8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 interface IPolicyConfig {
     [PreserveSig] int GetMixFormat(string s, IntPtr p);
     [PreserveSig] int GetDeviceFormat(string s, bool b, IntPtr p);
@@ -61,8 +65,25 @@ interface IPolicyConfig {
     [PreserveSig] int SetProcessingPeriod(string s, IntPtr p);
     [PreserveSig] int GetShareMode(string s, IntPtr p);
     [PreserveSig] int SetShareMode(string s, IntPtr p);
-    [PreserveSig] int GetPropertyValue(string s, bool b, IntPtr p1, IntPtr p2);
-    [PreserveSig] int SetPropertyValue(string s, bool b, IntPtr p1, IntPtr p2);
+    [PreserveSig] int GetPropertyValue(string s, IntPtr key, IntPtr p1);
+    [PreserveSig] int SetPropertyValue(string s, IntPtr key, IntPtr p1);
+    [PreserveSig] int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string id, uint role);
+    [PreserveSig] int SetEndpointVisibility(string s, bool b);
+}
+// IPolicyConfigVista — fallback usado por algunas builds Win10/11 donde el
+// QueryInterface por IPolicyConfig devuelve E_NOINTERFACE. Tiene el mismo
+// SetDefaultEndpoint pero sin SetEndpointVisibility al final.
+[Guid("568b9108-44bf-40b4-9006-86afe5b5a620"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IPolicyConfigVista {
+    [PreserveSig] int GetMixFormat(string s, IntPtr p);
+    [PreserveSig] int GetDeviceFormat(string s, bool b, IntPtr p);
+    [PreserveSig] int SetDeviceFormat(string s, IntPtr p1, IntPtr p2);
+    [PreserveSig] int GetProcessingPeriod(string s, bool b, IntPtr p1, IntPtr p2);
+    [PreserveSig] int SetProcessingPeriod(string s, IntPtr p);
+    [PreserveSig] int GetShareMode(string s, IntPtr p);
+    [PreserveSig] int SetShareMode(string s, IntPtr p);
+    [PreserveSig] int GetPropertyValue(string s, IntPtr key, IntPtr p1);
+    [PreserveSig] int SetPropertyValue(string s, IntPtr key, IntPtr p1);
     [PreserveSig] int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string id, uint role);
     [PreserveSig] int SetEndpointVisibility(string s, bool b);
 }
@@ -70,8 +91,6 @@ interface IPolicyConfig {
 class MMDeviceEnumeratorCom {}
 [ComImport, Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9"), ClassInterface(ClassInterfaceType.None)]
 class PolicyConfigClientCom {}
-[ComImport, Guid("294935CE-F637-4E7C-A41B-AB255460B862"), ClassInterface(ClassInterfaceType.None)]
-class PolicyConfigVistaClientCom {}
 
 public class VDAudio {
     static PropertyKey FriendlyName = new PropertyKey {
@@ -99,43 +118,66 @@ public class VDAudio {
         }
         return result;
     }
-    public static string SetDefault(string deviceId) {
+    static bool TrySet(IPolicyConfig cfg, string deviceId, out string err) {
+        int h0 = cfg.SetDefaultEndpoint(deviceId, 0);
+        int h1 = cfg.SetDefaultEndpoint(deviceId, 1);
+        int h2 = cfg.SetDefaultEndpoint(deviceId, 2);
+        if (h0 >= 0 && h1 >= 0 && h2 >= 0) { err = null; return true; }
+        err = "policy-hr=" + h0.ToString("X8") + "," + h1.ToString("X8") + "," + h2.ToString("X8");
+        return false;
+    }
+    static bool TrySetVista(IPolicyConfigVista cfg, string deviceId, out string err) {
+        int h0 = cfg.SetDefaultEndpoint(deviceId, 0);
+        int h1 = cfg.SetDefaultEndpoint(deviceId, 1);
+        int h2 = cfg.SetDefaultEndpoint(deviceId, 2);
+        if (h0 >= 0 && h1 >= 0 && h2 >= 0) { err = null; return true; }
+        err = "vista-hr=" + h0.ToString("X8") + "," + h1.ToString("X8") + "," + h2.ToString("X8");
+        return false;
+    }
+    static string GetDefaultId() {
         try {
-            var cfg = (IPolicyConfig)(object)new PolicyConfigClientCom();
-            cfg.SetDefaultEndpoint(deviceId, 0);
-            cfg.SetDefaultEndpoint(deviceId, 1);
-            cfg.SetDefaultEndpoint(deviceId, 2);
-            return "OK";
-        } catch {
-            try {
-                var cfg2 = (IPolicyConfig)(object)new PolicyConfigVistaClientCom();
-                cfg2.SetDefaultEndpoint(deviceId, 0);
-                cfg2.SetDefaultEndpoint(deviceId, 1);
-                cfg2.SetDefaultEndpoint(deviceId, 2);
-                return "OK";
-            } catch (Exception ex2) {
-                return "ERROR:" + ex2.Message;
+            var enumerator = (IMMDeviceEnumerator)(object)new MMDeviceEnumeratorCom();
+            IMMDevice def; enumerator.GetDefaultAudioEndpoint(0, 1, out def);
+            string id; def.GetId(out id);
+            return id;
+        } catch { return ""; }
+    }
+
+    public static string SetDefault(string deviceId) {
+        // Roles: 0=Console (default for sound), 1=Multimedia, 2=Communications.
+        // Win 7+ usa IPolicyConfig; algunas builds de Win10/11 sólo aceptan
+        // IPolicyConfigVista. [PreserveSig] = los HRESULT vuelven como int.
+        if (string.IsNullOrEmpty(deviceId)) return "ERROR:empty-deviceId";
+
+        object com = null;
+        try { com = new PolicyConfigClientCom(); }
+        catch (Exception ex) { return "ERROR:cocreate-failed:" + ex.Message; }
+
+        string err1 = null, err2 = null;
+        bool ok = false;
+        IPolicyConfig cfg = com as IPolicyConfig;
+        if (cfg != null) {
+            ok = TrySet(cfg, deviceId, out err1);
+        }
+        if (!ok) {
+            IPolicyConfigVista vista = com as IPolicyConfigVista;
+            if (vista != null) {
+                ok = TrySetVista(vista, deviceId, out err2);
             }
         }
+        if (!ok) {
+            string both = (err1 ?? "no-IPolicyConfig") + " | " + (err2 ?? "no-IPolicyConfigVista");
+            return "ERROR:" + both;
+        }
+
+        // Verificar que el default realmente cambió. Algunas combinaciones de
+        // driver/Windows aceptan el HRESULT sin aplicar el cambio.
+        string actualId = GetDefaultId();
+        if (string.Equals(actualId, deviceId, StringComparison.OrdinalIgnoreCase)) return "OK";
+        return "ERROR:not-applied (default sigue siendo " + (actualId ?? "<null>") + ")";
     }
 }
 `.trim();
-
-function runPS(script: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const tmp = join(tmpdir(), `vd_ps_${Date.now()}.ps1`);
-    writeFileSync(tmp, script, 'utf-8');
-    exec(
-      `powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "${tmp}"`,
-      { timeout: 15000 },
-      (err, stdout, stderr) => {
-        try { unlinkSync(tmp); } catch {}
-        if (err && !stdout) reject(new Error(stderr || err.message));
-        else resolve(stdout.trim());
-      }
-    );
-  });
-}
 
 export async function listAudioDevices(): Promise<AudioDevice[]> {
   const script = `
@@ -145,38 +187,41 @@ ${AUDIO_CS}
 $devices = [VDAudio]::ListDevices()
 foreach ($d in $devices) { Write-Output "$($d[0])|$($d[1])|$($d[2])" }
 `;
-  try {
-    const output = await runPS(script);
-    if (!output) return [];
-    return output.split('\n').filter(Boolean).map((line) => {
-      const parts = line.split('|');
-      return {
-        id: parts[0]?.trim() ?? '',
-        name: parts[1]?.trim() ?? 'Dispositivo',
-        isDefault: parts[2]?.trim() === 'true',
-      };
-    }).filter((d) => d.id !== '__ERROR__');
-  } catch (e) {
-    console.error('[audio] listAudioDevices failed:', e);
+  const r = await runPS(script, { timeoutMs: 15000, maxBufferBytes: 4 * 1024 * 1024 });
+  if (!r.ok && !r.stdout) {
+    if (r.stderr) console.error('[audio] listAudioDevices failed:', r.stderr);
     return [];
   }
+  if (!r.stdout) return [];
+  return r.stdout.split('\n').filter(Boolean).map((line) => {
+    const parts = line.split('|');
+    return {
+      id: parts[0]?.trim() ?? '',
+      name: parts[1]?.trim() ?? 'Dispositivo',
+      isDefault: parts[2]?.trim() === 'true',
+    };
+  }).filter((d) => d.id !== '__ERROR__');
 }
 
 export async function setDefaultAudioDevice(deviceId: string): Promise<boolean> {
-  const safeId = deviceId.replace(/"/g, '').replace(/`/g, '');
+  // deviceId arrives via param() — never interpolated into the script body —
+  // so PowerShell's $-expansion can't be abused to inject commands.
   const script = `
+param([string]$Id)
 Add-Type -TypeDefinition @"
 ${AUDIO_CS}
 "@ -IgnoreWarnings -ErrorAction SilentlyContinue
-$result = [VDAudio]::SetDefault("${safeId}")
+$result = [VDAudio]::SetDefault($Id)
 Write-Output $result
 `;
-  try {
-    const out = await runPS(script);
-    if (!out.startsWith('OK')) console.error('[audio] setDefault result:', out);
-    return out.startsWith('OK');
-  } catch (e) {
-    console.error('[audio] setDefaultAudioDevice failed:', e);
+  const r = await runPS(script, { timeoutMs: 15000, args: [deviceId] });
+  const out = (r.stdout || '').trim();
+  if (!out.startsWith('OK')) {
+    // Always log the diagnostic — useful when reporting the issue.
+    console.error('[audio] setDefault failed for deviceId=', deviceId);
+    console.error('[audio]   stdout:', out || '(empty)');
+    if (r.stderr) console.error('[audio]   stderr:', r.stderr.slice(0, 500));
     return false;
   }
+  return true;
 }

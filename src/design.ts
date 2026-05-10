@@ -67,10 +67,20 @@ export const VD_LIGHT: VDTokens = {
   dotIdle: 'rgba(0,0,0,0.05)',
 };
 
-// Presets del color de acento — todos referencian tokens semánticos del sistema.
-// Si el usuario quiere un color libre, sigue disponible vía <input type="color">.
+// Presets del color de acento — 10 colores que cubren el espectro sin chocar con
+// los tokens semánticos (success/warning/danger). El usuario puede usar el
+// <input type="color"> para cualquier color libre adicional.
 export const ACCENT_PRESETS: readonly string[] = [
-  VD.accent, VD.success, VD.warning, VD.violet, VD.danger,
+  VD.accent,   // azul sistema
+  VD.success,  // verde
+  VD.warning,  // amarillo/ámbar
+  VD.violet,   // violeta
+  VD.danger,   // rojo
+  '#2dd4bf',   // teal/cian
+  '#f472b6',   // rosa
+  '#fb923c',   // naranja
+  '#a3e635',   // lima
+  '#818cf8',   // índigo
 ];
 
 // 5×7 dot-matrix glyph table (hand-authored for digits + key letters)

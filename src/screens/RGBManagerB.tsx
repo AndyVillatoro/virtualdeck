@@ -141,14 +141,14 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     await refresh();
   };
 
-  const setMode = async (modeName: string, currentColor?: string) => {
+  const setMode = async (modeName: string, currentColor?: string, speed?: number) => {
     if (!api || !selected) return;
     // Pass the current color for modes that accept user input (colorMode != 0/3)
     const modeInfo = selected.modes.find((m) => m.name === modeName);
     const colorToPass = (modeInfo && modeInfo.colorMode !== 0 && modeInfo.colorMode !== 3)
       ? (currentColor ?? deviceColor)
       : undefined;
-    await api.rgb.setMode(selected.id, modeName, colorToPass);
+    await api.rgb.setMode(selected.id, modeName, colorToPass, undefined, speed);
     await refresh();
   };
 
@@ -373,7 +373,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
               device={selected}
               accent={accent}
               onSetColor={setColor}
-              onSetMode={(modeName, color) => setMode(modeName, color)}
+              onSetMode={(modeName, color, speed) => setMode(modeName, color, speed)}
               onSetZoneColor={setZoneColor}
               onSetSingleLed={setSingleLedHandler}
             />
@@ -445,7 +445,7 @@ function DeviceDetail({
   device: RGBDeviceInfo;
   accent: string;
   onSetColor: (hex: string) => void;
-  onSetMode: (modeName: string, color: string) => void;
+  onSetMode: (modeName: string, color: string, speed?: number) => void;
   onSetZoneColor: (zoneId: number, hex: string) => void;
   onSetSingleLed: (globalIdx: number, hex: string) => void;
 }) {
@@ -455,9 +455,16 @@ function DeviceDetail({
   // Optimistic local colors: updated immediately on LED paint without waiting for API refresh.
   const [localColors, setLocalColors] = useState<string[] | null>(null);
   const displayColors = localColors ?? device.colors;
+  // Speed slider state — 0..100 user-facing, applied via onSetMode on commit.
+  const [speed, setSpeed] = useState(50);
+  const hasSpeed = activeMode?.speedMin !== undefined
+    && activeMode.speedMax !== undefined
+    && activeMode.speedMin !== activeMode.speedMax;
 
   // Si cambia el device seleccionado, sincroniza el color local con el primer LED.
-  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); }, [device.id]);
+  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); setSpeed(50); }, [device.id]);
+  // Reset speed when the active mode changes (different speed range).
+  useEffect(() => { setSpeed(50); }, [activeMode?.id]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -488,6 +495,28 @@ function DeviceDetail({
               ))}
             </select>
           </div>
+
+          {/* Speed slider — only visible when the active mode reports a speed range.
+              Commit on `change` (mouse-up) so we don't flood the SDK while dragging. */}
+          {hasSpeed && activeMode && (
+            <div>
+              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
+                VELOCIDAD · {speed}%
+              </DotLabel>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={speed}
+                onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
+                onMouseUp={() => onSetMode(activeMode.name, color, speed)}
+                onTouchEnd={() => onSetMode(activeMode.name, color, speed)}
+                onKeyUp={() => onSetMode(activeMode.name, color, speed)}
+                style={{ width: '100%', accentColor: accent }}
+              />
+            </div>
+          )}
 
           <div>
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>ZONAS</DotLabel>

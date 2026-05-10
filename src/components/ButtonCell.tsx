@@ -14,13 +14,15 @@ interface ButtonCellProps {
   isActive?: boolean;
   isHidden?: boolean;
   isRunning?: boolean;
-  widgetData?: { line1: string; line2?: string };
+  isSelected?: boolean;
+  widgetData?: { line1: string; line2?: string; tone?: 'warn' | 'crit' };
   soundEnabled?: boolean;
   soundProfile?: SoundProfileId;
   /** Etiqueta con variables ya interpoladas (Feature 3). Sustituye al label del botón. */
   resolvedLabel?: string;
   onEdit: () => void;
   onExecute: () => void;
+  onSelect?: () => void;
   onLongPress?: () => void;
   onDuplicate?: () => void;
   onClear?: () => void;
@@ -32,8 +34,9 @@ const ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION
 
 function ButtonCellInner({
   button, accent, toggled = false, isActive = false, isHidden = false, isRunning = false,
+  isSelected = false,
   widgetData, soundEnabled = false, soundProfile = 'click',
-  resolvedLabel, onEdit, onExecute, onLongPress, onDuplicate, onClear, onDragStart, onDrop,
+  resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop,
 }: ButtonCellProps) {
   const VD = useTheme();
   const [pressed, setPressed] = useState(false);
@@ -125,8 +128,10 @@ function ButtonCellInner({
     }
   }
 
-  function handleClick() {
+  function handleClick(e: React.MouseEvent) {
     if (longPressTriggered.current) { longPressTriggered.current = false; return; }
+    // Ctrl/Cmd+click → toggle selection (multi-select mode)
+    if ((e.ctrlKey || e.metaKey) && onSelect) { onSelect(); return; }
     if (isEmpty) { onEdit(); return; }
     setFlash(true);
     setTimeout(() => setFlash(false), 300);
@@ -225,7 +230,7 @@ function ButtonCellInner({
       <div
         ref={cellRef}
         className="vd-btn"
-        title={isEmpty ? 'Clic para configurar · Clic derecho para más opciones' : `${displayLabel} — clic para ejecutar`}
+        title={isEmpty ? 'Clic para configurar · Clic derecho para más opciones' : `${displayLabel} — clic para ejecutar · Ctrl+clic para seleccionar`}
         draggable={!isEmpty}
         onClick={handleClick}
         onDoubleClick={() => {
@@ -241,8 +246,21 @@ function ButtonCellInner({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); handleMouseUpOrLeave(); }}
         onDragStart={(e) => {
+          // Cancel pending long-press: HTML5 drag suppresses mouseup, so the
+          // 500 ms timer would otherwise fire mid-drag, run the action, and
+          // re-render the cell (via isRunning) — which breaks the drag.
+          if (longPressTimer.current !== null) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+          }
+          longPressTriggered.current = false;
+          setPressed(false);
           e.dataTransfer.effectAllowed = 'move';
           onDragStart?.();
+        }}
+        onDragEnd={() => {
+          setDragOver(false);
+          setPressed(false);
         }}
         onDragOver={(e) => {
           e.preventDefault();
@@ -269,7 +287,12 @@ function ButtonCellInner({
           overflow: 'hidden',
           transition: 'background 0.1s, border-color 0.1s',
           minHeight: 0,
+          minWidth: 0,
           gap: 6,
+          // Cells fill their grid track. The grid container itself is sized
+          // (by parent) to keep tracks square — see MainB / FullscreenB.
+          width: '100%',
+          height: '100%',
         }}
       >
         {/* Active state: thin green bar at top when external state matches (process running, device is default, etc.) */}
@@ -279,6 +302,16 @@ function ButtonCellInner({
             height: 2, background: '#4caf50',
             borderRadius: `${VD.radius.lg} ${VD.radius.lg} 0 0`,
           }} />
+        )}
+
+        {/* Multi-select checkmark */}
+        {isSelected && (
+          <div style={{
+            position: 'absolute', top: 4, left: 4, width: 16, height: 16,
+            borderRadius: '50%', background: accent, zIndex: 3,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 10, color: '#fff', fontWeight: 700, lineHeight: 1,
+          }}>✓</div>
         )}
 
         {/* 5.3 — Pulso radial al ejecutar */}
@@ -308,11 +341,21 @@ function ButtonCellInner({
           />
         )}
 
-        <div style={{ position: 'relative', textAlign: 'center', padding: '6px 4px' }}>
+        {/* Center stack — icon or live widget. The label is rendered separately as a bottom banner. */}
+        <div style={{
+          position: 'relative', textAlign: 'center', padding: '6px 4px',
+          paddingBottom: displayLabel ? 22 : 6,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        }}>
           {widgetData ? (
-            /* Widget content — clock / weather / now-playing */
+            /* Widget content — clock / weather / now-playing / sensor */
             <>
-              <div style={{ fontFamily: VD.mono, fontSize: widgetData.line1.length > 8 ? 9 : 14, color: VD.text, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84 }}>
+              <div style={{
+                fontFamily: VD.mono,
+                fontSize: widgetData.line1.length > 8 ? 9 : 14,
+                color: widgetData.tone === 'crit' ? VD.danger : widgetData.tone === 'warn' ? VD.warning : VD.text,
+                lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84,
+              }}>
                 {widgetData.line1}
               </div>
               {widgetData.line2 && (
@@ -325,50 +368,61 @@ function ButtonCellInner({
             <>
               {/* 2.1 — Glifo 5×7 personalizado (prioridad sobre íconos por defecto) */}
               {!button.imageData && !button.brandIcon && button.customGlyph57 && button.customGlyph57.length === 7 && (
-                <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
                   <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
                 </div>
               )}
               {/* Show center icon only when: no brand icon, no custom glyph (or has explicit emoji override) */}
               {!button.imageData && !button.brandIcon && !button.customGlyph57 && (
                 button.icon ? (
-                  <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1, marginBottom: displayLabel ? 6 : 0 }}>
+                  <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1 }}>
                     {button.icon}
                   </div>
                 ) : (
-                  <div style={{ marginBottom: displayLabel ? 6 : 0, display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <ActionIcon size={isEmpty ? 20 : 24} color={iconColor} />
                   </div>
                 )
               )}
               {/* When brand icon is set but user also typed an emoji, show emoji on top */}
               {button.brandIcon && button.icon && (
-                <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, marginBottom: displayLabel ? 6 : 0, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
                   {button.icon}
-                </div>
-              )}
-              {displayLabel && (
-                <div style={{
-                  fontFamily: VD.mono,
-                  fontSize: 9,
-                  letterSpacing: 1,
-                  color: (button.imageData || button.brandIcon)
-                    ? 'rgba(255,255,255,0.9)'
-                    : (button.fgColor || (toggled ? accent : VD.textDim)),
-                  textShadow: (button.imageData || button.brandIcon) ? '0 1px 3px rgba(0,0,0,0.8)' : 'none',
-                  textTransform: 'uppercase',
-                  lineHeight: 1.2,
-                  maxWidth: 80,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {displayLabel}
                 </div>
               )}
             </>
           )}
         </div>
+
+        {/* Label banner — pinned at the bottom, always rendered when there's a label
+             (even when a widget is showing) so the user's button name remains visible. */}
+        {displayLabel && (
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            padding: '3px 6px 4px',
+            background: (button.imageData || button.brandIcon)
+              ? 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 60%)'
+              : 'rgba(0,0,0,0.35)',
+            fontFamily: VD.mono,
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: 0.4,
+            color: (button.imageData || button.brandIcon)
+              ? '#fff'
+              : (button.fgColor || (toggled ? accent : VD.text)),
+            textShadow: (button.imageData || button.brandIcon) ? '0 1px 2px rgba(0,0,0,0.9)' : 'none',
+            textTransform: 'uppercase',
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}>
+            {displayLabel}
+          </div>
+        )}
 
         {/* Edit icon on hover */}
         {!isEmpty && (hovered || isTouch) && (
@@ -474,12 +528,14 @@ export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
   prev.isActive === next.isActive &&
   prev.isHidden === next.isHidden &&
   prev.isRunning === next.isRunning &&
+  prev.isSelected === next.isSelected &&
   prev.accent === next.accent &&
   prev.soundEnabled === next.soundEnabled &&
   prev.soundProfile === next.soundProfile &&
   prev.resolvedLabel === next.resolvedLabel &&
   (prev.widgetData?.line1 ?? null) === (next.widgetData?.line1 ?? null) &&
-  (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null),
+  (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null) &&
+  (prev.widgetData?.tone ?? null) === (next.widgetData?.tone ?? null),
 );
 
 function ContextItem({ label, icon, onClick, danger }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {

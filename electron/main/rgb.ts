@@ -25,6 +25,7 @@ export interface RGBZoneInfo {
 export interface RGBModeInfo {
   id: number; name: string; flags: number; colorMode: number;
   brightnessMin?: number; brightnessMax?: number;
+  speedMin?: number; speedMax?: number;
 }
 export interface RGBDeviceInfo {
   id: number; name: string; type: number; typeLabel: string;
@@ -60,19 +61,38 @@ function stopReconnect() {
   shouldAutoReconnect = false;
 }
 
+// Tear down a Client so listeners we attached don't fire again on the dead
+// instance (which used to leak callbacks each reconnect cycle). EventEmitter
+// API on the SDK Client — removeAllListeners is safe even if not all of our
+// events are registered.
+function teardownClient(c: Client | null) {
+  if (!c) return;
+  try { (c as any).removeAllListeners?.(); } catch {}
+  try { c.disconnect(); } catch {}
+}
+
+function attachClientListeners(c: Client) {
+  c.on('error', (err: Error) => { lastError = err.message; });
+  c.on('disconnect', () => { devicesCache = []; devicesRaw = []; scheduleReconnect(); });
+  c.on('deviceListUpdated', () => {
+    refreshDevices().then(() => { onDeviceListUpdated?.(); }).catch(() => {});
+  });
+}
+
 function scheduleReconnect() {
-  if (!shouldAutoReconnect || reconnectTimer || client?.isConnected) return;
+  // Order matters: check the timer first so concurrent calls (e.g. a
+  // disconnect event firing while another scheduleReconnect is in-flight)
+  // don't queue duplicate timers.
+  if (reconnectTimer) return;
+  if (!shouldAutoReconnect || client?.isConnected) return;
   reconnectTimer = setTimeout(async () => {
     reconnectTimer = null;
     if (!shouldAutoReconnect || client?.isConnected) return;
     try {
-      if (client) { try { client.disconnect(); } catch {} client = null; }
+      teardownClient(client);
+      client = null;
       const c = new Client('VirtualDeck', port, host);
-      c.on('error', (err: Error) => { lastError = err.message; });
-      c.on('disconnect', () => { devicesCache = []; devicesRaw = []; scheduleReconnect(); });
-      c.on('deviceListUpdated', () => {
-        refreshDevices().then(() => { onDeviceListUpdated?.(); }).catch(() => {});
-      });
+      attachClientListeners(c);
       await c.connect(3000);
       client = c;
       await refreshDevices();
@@ -116,6 +136,7 @@ function deviceToInfo(d: Device): RGBDeviceInfo {
     modes: d.modes.map((m) => ({
       id: m.id, name: m.name, flags: m.flags, colorMode: m.colorMode,
       brightnessMin: m.brightnessMin, brightnessMax: m.brightnessMax,
+      speedMin: (m as any).speedMin, speedMax: (m as any).speedMax,
     })),
     colors: d.colors.map(rgbToHex),
     ledNames: d.leds.map((l) => l.name),
@@ -162,13 +183,10 @@ export async function connect(h?: string, p?: number): Promise<RGBStatus> {
     return status();
   }
   try {
-    if (client) { try { client.disconnect(); } catch {} client = null; }
+    teardownClient(client);
+    client = null;
     const c = new Client('VirtualDeck', port, host);
-    c.on('error', (err: Error) => { lastError = err.message; });
-    c.on('disconnect', () => { devicesCache = []; devicesRaw = []; scheduleReconnect(); });
-    c.on('deviceListUpdated', () => {
-      refreshDevices().then(() => { onDeviceListUpdated?.(); }).catch(() => {});
-    });
+    attachClientListeners(c);
     await c.connect(3000);
     client = c;
     shouldAutoReconnect = true;
@@ -183,7 +201,7 @@ export async function connect(h?: string, p?: number): Promise<RGBStatus> {
 
 export async function disconnect(): Promise<void> {
   stopReconnect();
-  try { client?.disconnect(); } catch {}
+  teardownClient(client);
   client = null;
   devicesCache = [];
   devicesRaw = [];
@@ -332,12 +350,12 @@ export async function setSingleLed(deviceId: number, ledId: number, color: strin
 }
 
 export async function setMode(
-  deviceId: number, mode: string, color?: string, brightness?: number,
+  deviceId: number, mode: string, color?: string, brightness?: number, speed?: number,
 ): Promise<boolean> {
   if (!client?.isConnected) return false;
   try {
     if (deviceId < 0) {
-      for (const d of devicesCache) await setMode(d.id, mode, color, brightness);
+      for (const d of devicesCache) await setMode(d.id, mode, color, brightness, speed);
       return true;
     }
     const dev = devicesCache.find((d) => d.id === deviceId);
@@ -357,6 +375,16 @@ export async function setMode(
     if (brightness !== undefined && rawMode.brightnessMin !== undefined && rawMode.brightnessMax !== undefined) {
       const range = rawMode.brightnessMax - rawMode.brightnessMin;
       update.brightness = Math.round(rawMode.brightnessMin + (range * Math.max(0, Math.min(100, brightness)) / 100));
+    }
+
+    // Speed: 0..100 user-facing, mapped onto the mode's [speedMin, speedMax].
+    // Note: in OpenRGB the protocol value runs *backwards* — speedMin is the
+    // FASTEST end and speedMax the slowest. Invert so 100 = fastest.
+    const sMin = (rawMode as any).speedMin;
+    const sMax = (rawMode as any).speedMax;
+    if (speed !== undefined && sMin !== undefined && sMax !== undefined && sMax !== sMin) {
+      const pct = Math.max(0, Math.min(100, speed));
+      update.speed = Math.round(sMax - ((sMax - sMin) * pct / 100));
     }
 
     await client.updateMode(deviceId, update);

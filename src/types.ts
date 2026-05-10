@@ -35,7 +35,12 @@ export type ActionType =
   | 'window-snap'
   | 'branch'
   // 4.x — Temporizador
-  | 'countdown';
+  | 'countdown'
+  // 5.x — Media extendido
+  | 'media-shuffle'
+  | 'media-repeat'
+  // 5.x — Macro teclado/ratón
+  | 'macro';
 
 export interface FolderButton {
   label: string;
@@ -118,6 +123,11 @@ export interface ButtonAction {
   timerDelay?: number;
   /** Acciones a ejecutar después del delay (countdown). */
   timerActions?: ButtonAction[];
+  // 5.x — Macro
+  /** Pasos de la macro (tipo 'macro'). */
+  macroSteps?: MacroStep[];
+  /** Veces a repetir la macro. 0 = no repetir. Default 1. */
+  macroRepeat?: number;
 }
 
 export interface ButtonConfig {
@@ -170,6 +180,25 @@ export interface ButtonConfig {
   timerTriggerAt?: string;
   /** Disparar acción cuando un sensor cruza un umbral (edge-triggered con cooldown). */
   sensorTrigger?: SensorCondition & { cooldownMs?: number };
+}
+
+// 5.x — Macro teclado/ratón
+export type MacroStepType = 'key' | 'hotkey' | 'text' | 'click' | 'move' | 'delay' | 'scroll';
+
+export interface MacroStep {
+  type: MacroStepType;
+  /** Tecla o texto (para key/hotkey/text) */
+  value?: string;
+  /** Coordenada X de pantalla (para click/move) */
+  x?: number;
+  /** Coordenada Y de pantalla (para click/move) */
+  y?: number;
+  /** Botón del ratón: 0=izquierdo, 1=derecho, 2=central */
+  button?: 0 | 1 | 2;
+  /** Desplazamiento vertical del scroll (unidades, positivo=arriba) */
+  scrollY?: number;
+  /** Pausa antes de ejecutar este paso (ms) */
+  delayMs?: number;
 }
 
 export interface SensorCondition {
@@ -404,6 +433,8 @@ export interface ElectronAPI {
   media: {
     nowPlaying: () => Promise<NowPlaying | null>;
     control: (cmd: 'play-pause' | 'next' | 'prev' | 'stop') => Promise<boolean>;
+    shuffle: () => Promise<boolean>;
+    repeat: () => Promise<boolean>;
     diagnose: () => Promise<{ ok: boolean; stage: string; stdout: string; stderr: string }>;
   };
   weather: {
@@ -472,6 +503,12 @@ export interface ElectronAPI {
     killLHM: () => Promise<void>;
     bundledPath: () => Promise<string | null>;
     registerUrlAcl: (port?: number) => Promise<{ ok: boolean; error?: string; url: string }>;
+  };
+  macro: {
+    play: (steps: MacroStep[], repeat?: number) => Promise<{ ok: boolean; error?: string }>;
+    startRecord: () => Promise<void>;
+    stopRecord: () => Promise<MacroStep[]>;
+    isRecording: () => Promise<boolean>;
   };
   events: {
     onButtonTrigger: (handler: (buttonId: string) => void) => () => void;

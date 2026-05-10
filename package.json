@@ -8,13 +8,16 @@
     "dev": "node scripts/dev.js",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "build:win": "electron-builder --win --dir"
+    "build:win": "electron-builder --win --dir",
+    "build:icon": "node scripts/generate-icon.js",
+    "build:installer": "electron-vite build && electron-builder --win nsis"
   },
   "dependencies": {
     "lucide-react": "^1.8.0",
     "openrgb-sdk": "^0.6.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "uiohook-napi": "^1.5.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",
@@ -23,14 +26,54 @@
     "electron": "^33.4.11",
     "electron-builder": "^24.9.0",
     "electron-vite": "^5.0.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.5.3",
     "vite": "^5.3.1"
   },
   "build": {
     "appId": "com.virtualdeck.app",
     "productName": "VirtualDeck",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/lhm",
+        "to": "lhm",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "win": {
-      "target": "dir"
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "VirtualDeck-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VirtualDeck",
+      "uninstallDisplayName": "VirtualDeck ${version}",
+      "deleteAppDataOnUninstall": false
     }
   }
 }
