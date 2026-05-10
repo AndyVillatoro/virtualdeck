@@ -2,6 +2,15 @@
 
 Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 
+## 📚 Documentos relacionados (leer antes de empezar)
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Workflow de desarrollo: branches, commits, PRs, convenciones técnicas, notas para LLMs.
+- **[RELEASE.md](RELEASE.md)** — Pasos exactos para sacar versión nueva (bump, CHANGELOG, tag, build, GitHub release).
+- **[CHANGELOG.md](CHANGELOG.md)** — Historial cronológico de versiones (Keep a Changelog).
+- **package.json** → campo `version`: source of truth de la versión actual.
+
+**Antes de cualquier cambio**: corré `npx tsc --noEmit`. Cero errores antes y después.
+
 ## Stack
 - **Electron 33** (main: `electron/main/index.ts`, preload: `electron/preload/index.ts`)
 - **React 18 + Vite 5** (renderer en `src/`)
@@ -54,3 +63,38 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **Tema claro/oscuro/sistema**: ya soportado desde `ThemeProvider` en `src/utils/theme.tsx`. Selector en TitleBar → ⚙ → TEMA.
 - **PowerShell `param()`**: `runPS` (en `ps-helpers.ts`) detecta si el script empieza con `param(...)` y, en ese caso, inserta el prefix UTF-8 DESPUÉS del bloque param. PowerShell exige que `param()` sea la primera sentencia del script — meterle `chcp 65001` arriba lo rompe silenciosamente. Si modificás `runPS`, mantené ese parser.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
+
+## ⚡ Workflow rápido (cheatsheet)
+
+### Verificar antes de cualquier cambio
+```bash
+git status           # debe estar limpio o tener cambios coherentes
+npx tsc --noEmit     # cero errores
+```
+
+### Ciclo de feature
+```bash
+git checkout -b feat/algo
+# ...editar...
+npx tsc --noEmit
+git add <files-específicos>      # nunca git add -A sin revisar
+git commit -m "feat: descripción corta en imperativo"
+git push -u origin feat/algo
+gh pr create                     # con --title y --body apropiados
+```
+
+### Release nuevo
+Ver **[RELEASE.md](RELEASE.md)**. Resumen:
+1. Editar `package.json` → bump version (semver: feat=MINOR, fix=PATCH, breaking=MAJOR).
+2. `npm install --package-lock-only`.
+3. Agregar entrada al **inicio** de `CHANGELOG.md` con fecha ISO.
+4. Commit `chore(release): bump X -> Y`.
+5. Tag `vX.Y.Z` y push.
+6. `npm run build:installer`.
+7. `gh release create vX.Y.Z dist/VirtualDeck-Setup-X.Y.Z.exe`.
+
+### Si algo se rompe en runtime
+- Audio: console.error con prefix `[audio]` (DevTools del main process).
+- Media SMTC: `media:diagnose` IPC devuelve estado paso por paso.
+- Sensores: el botón "?" en el sidebar muestra el HTTP probe de LHM.
+- PowerShell scripts: si `param()` no se reconoce, el prefix UTF-8 está mal ubicado — `injectUtf8Prefix` en `ps-helpers.ts`.
