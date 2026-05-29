@@ -45,7 +45,7 @@ La infraestructura (`utils/i18n.tsx`) y el chrome ya están. Falta la config pro
 | # | Apartado | Objetivo | Estado |
 |---|----------|----------|--------|
 | 1 | `WallpaperB` | Traducir 100% (UI + nombres de fondos). | ✅ 2026-05-29 |
-| 2 | `EditorB` — pasos y chrome | Pasos, botones, encabezados de sección. | ⬜ |
+| 2 | `EditorB` — pasos y chrome | Pasos, botones, encabezados de sección. | ✅ 2026-05-29 |
 | 3 | `editor/actionData.ts` | Etiquetas/descripciones de tipos de acción (~147 strings). | ⬜ |
 | 4 | `EditorB` — config por acción | Campos/placeholders de cada tipo. | ⬜ |
 | 5 | `EditorB` — estilo e íconos | Sección de estilo, colores, picker de íconos. | ⬜ |

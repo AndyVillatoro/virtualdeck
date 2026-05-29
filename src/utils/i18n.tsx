@@ -111,6 +111,18 @@ const ES: Dict = {
   'wp.name.mesh': 'Mesh técnico',
   'wp.name.photo': 'Neón',
   'wp.name.grid-blue': 'Grid Azul',
+  // — Editor de botón (chrome: pasos y navegación) —
+  'ed.title': 'CONFIGURAR BOTÓN',
+  'ed.preview': 'VISTA PREVIA',
+  'ed.step.action': 'ACCIÓN',
+  'ed.step.config': 'CONFIGURAR',
+  'ed.step.style': 'ESTILO',
+  'ed.back': '← ATRÁS',
+  'ed.cancel': 'CANCELAR',
+  'ed.next': 'SIGUIENTE →',
+  'ed.save': 'GUARDAR ✓',
+  'ed.stepN': 'PASO {n} / {total}',
+  'ed.toggleMode': 'MODO TOGGLE',
 };
 
 const EN: Dict = {
@@ -199,6 +211,17 @@ const EN: Dict = {
   'wp.name.mesh': 'Tech Mesh',
   'wp.name.photo': 'Neon',
   'wp.name.grid-blue': 'Blue Grid',
+  'ed.title': 'CONFIGURE BUTTON',
+  'ed.preview': 'PREVIEW',
+  'ed.step.action': 'ACTION',
+  'ed.step.config': 'CONFIGURE',
+  'ed.step.style': 'STYLE',
+  'ed.back': '← BACK',
+  'ed.cancel': 'CANCEL',
+  'ed.next': 'NEXT →',
+  'ed.save': 'SAVE ✓',
+  'ed.stepN': 'STEP {n} / {total}',
+  'ed.toggleMode': 'TOGGLE MODE',
 };
 
 const DICTS: Record<Lang, Dict> = { es: ES, en: EN };

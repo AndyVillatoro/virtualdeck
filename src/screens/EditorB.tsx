@@ -12,6 +12,7 @@ const BrandIconEditor = lazy(() => import('../components/BrandIconEditor').then(
 import { ButtonCell } from '../components/ButtonCell';
 import { Glyph57Editor, Glyph57View as Glyph57Inline } from '../components/Glyph57Editor';
 import { BRAND_ICONS_MAP } from '../data/brandIcons';
+import { useT } from '../utils/i18n';
 import type { ActionType, AudioDevice, ButtonAction, ButtonConfig, FolderButton, RGBDeviceInfo, RGBProfile } from '../types';
 
 interface EditorBProps {
@@ -23,10 +24,12 @@ interface EditorBProps {
   onSave: (updated: ButtonConfig) => void;
 }
 
-const STEPS = ['ACCIÓN', 'CONFIGURAR', 'ESTILO'];
+// Claves i18n de los pasos (el texto se resuelve con t() en render).
+const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
 
 
 export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
+  const t = useT();
   const api = window.electronAPI;
   const [step, setStep] = useState(0);
   const [action, setAction] = useState<ButtonAction>({ ...button.action });
@@ -343,7 +346,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
           display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0,
         }}>
           <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: accent }} />
-          <DotLabel size={11} color={VD.text} spacing={2}>CONFIGURAR BOTÓN</DotLabel>
+          <DotLabel size={11} color={VD.text} spacing={2}>{t('ed.title')}</DotLabel>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>· {button.id.toUpperCase()}</span>
           <div style={{ flex: 1 }} />
           <button onClick={onClose} style={{ color: VD.textDim, fontSize: 18, background: 'transparent', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
@@ -355,7 +358,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
             <div key={s} style={{ flex: 1, cursor: 'pointer' }} onClick={() => setStep(i)}>
               <div style={{ height: 2, background: i <= step ? accent : VD.border, transition: 'background 0.2s' }} />
               <div style={{ marginTop: 8, fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: i === step ? VD.text : i < step ? VD.textDim : VD.textMuted }}>
-                {String(i + 1).padStart(2, '0')} · {s}
+                {String(i + 1).padStart(2, '0')} · {t(s)}
               </div>
             </div>
           ))}
@@ -369,7 +372,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             background: VD.bg, flexShrink: 0, gap: 14,
           }}>
-            <DotLabel size={9} color={VD.textMuted} spacing={2}>VISTA PREVIA</DotLabel>
+            <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('ed.preview')}</DotLabel>
             {/* Celda viva — el mismo ButtonCell de la grilla, refleja cada cambio en tiempo real */}
             <div style={{
               width: 120, height: 120, display: 'grid',
@@ -401,7 +404,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
             </div>
             {isToggle && (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: accent, textAlign: 'center' }}>
-                MODO TOGGLE
+                {t('ed.toggleMode')}
               </div>
             )}
             {extraActions.length > 0 && (
@@ -1652,13 +1655,13 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
         {/* Footer */}
         <div style={{ height: 54, borderTop: `1px solid ${VD.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, flexShrink: 0 }}>
           <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: step === 0 ? VD.textMuted : VD.textDim, cursor: step === 0 ? 'default' : 'pointer' }}>
-            ← ATRÁS
+            {t('ed.back')}
           </button>
           <div style={{ flex: 1 }} />
-          <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, letterSpacing: 1 }}>PASO {step + 1} / {STEPS.length}</span>
-          <button onClick={onClose} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.textDim, cursor: 'pointer' }}>CANCELAR</button>
+          <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, letterSpacing: 1 }}>{t('ed.stepN', { n: step + 1, total: STEPS.length })}</span>
+          <button onClick={onClose} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.textDim, cursor: 'pointer' }}>{t('ed.cancel')}</button>
           <button onClick={() => { if (step < STEPS.length - 1) setStep(step + 1); else handleSave(); }} style={{ padding: '8px 20px', background: accent, border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm }}>
-            {step < STEPS.length - 1 ? 'SIGUIENTE →' : 'GUARDAR ✓'}
+            {step < STEPS.length - 1 ? t('ed.next') : t('ed.save')}
           </button>
         </div>
       </div>
