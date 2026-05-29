@@ -15,7 +15,6 @@ export const CREDITS: CreditEntry[] = [
   { name: 'OpenRGB', license: 'GPL-2.0', url: 'https://openrgb.org/', bundled: false },
   { name: 'Electron', license: 'MIT', url: 'https://www.electronjs.org/' },
   { name: 'React', license: 'MIT', url: 'https://react.dev/' },
-  { name: 'lucide-react', license: 'ISC', url: 'https://lucide.dev/' },
   { name: 'uiohook-napi', license: 'MIT', url: 'https://github.com/SnosMe/uiohook-napi' },
   { name: 'openrgb-sdk', license: 'MIT', url: 'https://github.com/vlakreeh/openrgb-sdk' },
 ];

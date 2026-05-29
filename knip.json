@@ -7,5 +7,6 @@
     "scripts/*.js"
   ],
   "project": ["src/**/*.{ts,tsx}", "electron/**/*.ts"],
-  "ignore": ["out/**", "dist/**", "build/**", "resources/**"]
+  "ignore": ["out/**", "dist/**", "build/**", "resources/**"],
+  "ignoreDependencies": ["electron-updater"]
 }

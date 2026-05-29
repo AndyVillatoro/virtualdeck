@@ -65,6 +65,14 @@ La infraestructura (`utils/i18n.tsx`) y el chrome ya están. Falta la config pro
 | 14 | `RGBManagerB` | Separar lista de dispositivos / editor de perfil / presets. | ⬜ |
 | 15 | `utils/actions.ts` | Evaluar dividir el dispatcher por familia de acción. | ⬜ |
 
+### Limpieza continua de código muerto (knip)
+
+Correr `npm run lint:dead` y eliminar lo confirmado, de a poco. (`electron-updater` figura como falso positivo por su import dinámico → ignorado en `knip.json`.)
+
+- ✅ 2026-05-29 — `electron/main/bootstrap.ts` (entry point alternativo huérfano, con no-op roto) eliminado.
+- ✅ 2026-05-29 — `lucide-react` (dependencia muerta: `VDIcon` migró a SVG inline) desinstalada + atribución quitada de `credits.ts`.
+- ⬜ ~88 *unused exports* reportados por knip (helpers exportados sin uso externo): revisar por módulo y volver `export`→privado o eliminar. Verificar caso por caso (algunos pueden ser API intencional).
+
 ## Bloque C — Documentación (wiki bilingüe)
 
 El botón "Documentación" apunta al wiki. Lo llenamos desde [docs/wiki/](wiki/README.md).
