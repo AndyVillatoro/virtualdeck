@@ -5,6 +5,7 @@ import {
 import { useTheme } from '../utils/theme';
 import { playSound } from '../utils/sound';
 import { executeAction, runActionSequence, interpolate } from '../utils/actions';
+import { logError } from '../utils/logger';
 import { DotLabel } from '../components/DotLabel';
 import { DotText } from '../components/DotText';
 import { TitleBar } from '../components/TitleBar';
@@ -59,6 +60,7 @@ interface MainBProps {
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
   onPageExport?: (pageIdx: number) => Promise<void>;
   onPageImport?: () => Promise<void>;
+  onReplayOnboarding?: () => void;
 }
 
 function getSourceName(src: string): string {
@@ -85,7 +87,7 @@ export function MainB({
   onConfigExport, onConfigImport, onConfigImportFromUrl, onSwapButtons,
   onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage,
   onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
-  uiScale, onUiScaleChange, theme, onThemeChange, onPageExport, onPageImport,
+  uiScale, onUiScaleChange, theme, onThemeChange, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
   const VD = useTheme();
   const api = window.electronAPI;
@@ -258,7 +260,7 @@ export function MainB({
       { id: ++execLogIdRef.current, ts: Date.now(), label: btn.label || btn.action.type, actionType: btn.action.type, ok: r.ok, error: r.error },
       ...prev.slice(0, 99),
     ]);
-    if (!r.ok && r.error) showToast(r.error);
+    if (!r.ok && r.error) { showToast(r.error); logError(`action:${btn.action.type}`, r.error, { label: btn.label }); }
     } finally {
       setRunningButtons((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }
@@ -470,6 +472,7 @@ export function MainB({
           onThemeChange={onThemeChange}
           tileMode={config.tileMode ?? 'square'}
           onTileModeChange={(m) => onConfigChange({ ...config, tileMode: m })}
+          onReplayOnboarding={onReplayOnboarding}
         />
 
         {/* Page tabs */}

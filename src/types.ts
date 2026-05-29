@@ -257,6 +257,12 @@ export interface DeckConfig {
    *   rectangulares pero quedan más grandes.
    */
   tileMode?: 'square' | 'fill';
+  /** 6.x — Idioma de la interfaz. 'system' detecta el locale del SO. Default 'system'. */
+  language?: 'es' | 'en' | 'system';
+  /** 6.x — True cuando el usuario completó (o saltó) el onboarding inicial. */
+  onboardingCompleted?: boolean;
+  /** 6.x — Keys de hints contextuales que el usuario ya descartó. */
+  hintsDismissed?: string[];
 }
 
 export interface SensorsSettings {
@@ -411,6 +417,22 @@ export interface SensorsStatus {
   bundledRunning: boolean;
 }
 
+export interface PlatformInfo {
+  appVersion: string;
+  electron: string;
+  chrome: string;
+  os: string;
+  locale: string;
+}
+
+export interface LogEntry {
+  ts: number;
+  level: 'error' | 'warn' | 'info';
+  scope: string;
+  message: string;
+  meta?: unknown;
+}
+
 export interface ElectronAPI {
   window: {
     minimize: () => void;
@@ -468,6 +490,19 @@ export interface ElectronAPI {
     setAutostart: (enabled: boolean) => Promise<void>;
     setZoom: (factor: number) => Promise<void>;
     getZoom: () => Promise<number>;
+    getVersion: () => Promise<string>;
+    platformInfo: () => Promise<PlatformInfo>;
+  };
+  log: {
+    write: (entry: { level: 'error' | 'warn' | 'info'; scope: string; message: string; meta?: unknown }) => Promise<void>;
+    readRecent: (maxBytes?: number) => Promise<string>;
+    open: () => Promise<void>;
+    export: () => Promise<boolean>;
+  };
+  update: {
+    check: () => Promise<{ status: 'checking' | 'available' | 'not-available' | 'disabled' | 'error'; version?: string; error?: string }>;
+    quitAndInstall: () => Promise<void>;
+    onStatus: (handler: (s: { status: 'available' | 'downloaded' | 'error'; version?: string; error?: string }) => void) => () => void;
   };
   page: {
     export: (pageData: object) => Promise<boolean>;

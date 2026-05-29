@@ -6,6 +6,7 @@ import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, S
 import { RGBSection } from './settings/RGBSection';
 import { SensorsSection } from './settings/SensorsSection';
 import { ToggleRow, SettingLabel } from './settings/settingHelpers';
+import { HelpAboutPanel } from './help/HelpAboutPanel';
 
 interface TitleBarProps {
   showControls?: boolean;
@@ -43,6 +44,7 @@ interface TitleBarProps {
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
   tileMode?: 'square' | 'fill';
   onTileModeChange?: (mode: 'square' | 'fill') => void;
+  onReplayOnboarding?: () => void;
 }
 
 export function TitleBar({
@@ -78,6 +80,7 @@ export function TitleBar({
   onThemeChange,
   tileMode = 'square',
   onTileModeChange,
+  onReplayOnboarding,
 }: TitleBarProps) {
   const VD = useTheme();
   const effectiveAccent = accent ?? VD.accent;
@@ -406,6 +409,10 @@ export function TitleBar({
               </div>
             )}
           </div>
+
+          <div style={{ height: 1, background: VD.border }} />
+
+          <HelpAboutPanel accent={effectiveAccent} onReplayOnboarding={onReplayOnboarding} />
         </div>
       )}
     </div>
