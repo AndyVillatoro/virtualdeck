@@ -12,7 +12,7 @@ const BrandIconEditor = lazy(() => import('../components/BrandIconEditor').then(
 import { ButtonCell } from '../components/ButtonCell';
 import { Glyph57Editor, Glyph57View as Glyph57Inline } from '../components/Glyph57Editor';
 import { BRAND_ICONS_MAP } from '../data/brandIcons';
-import { useT } from '../utils/i18n';
+import { useT, useFieldText } from '../utils/i18n';
 import type { ActionType, AudioDevice, ButtonAction, ButtonConfig, FolderButton, RGBDeviceInfo, RGBProfile } from '../types';
 
 interface EditorBProps {
@@ -30,6 +30,7 @@ const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
 
 export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
   const t = useT();
+  const tf = useFieldText();
   const api = window.electronAPI;
   const [step, setStep] = useState(0);
   const [action, setAction] = useState<ButtonAction>({ ...button.action });
@@ -430,7 +431,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     <input
                       value={presetSearch}
                       onChange={(e) => setPresetSearch(e.target.value)}
-                      placeholder="Buscar preset..."
+                      placeholder={tf("Buscar preset...")}
                       style={{
                         background: VD.elevated, border: `1px solid ${VD.border}`,
                         padding: '3px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
@@ -599,28 +600,28 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'app' && (
                   <>
-                    <Field label="RUTA DE LA APLICACIÓN">
+                    <Field label={tf("RUTA DE LA APLICACIÓN")}>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <input value={action.appPath || ''} onChange={(e) => setAction((a) => ({ ...a, appPath: e.target.value }))} placeholder="C:\Program Files\App\app.exe" style={inputStyle} />
+                        <input value={action.appPath || ''} onChange={(e) => setAction((a) => ({ ...a, appPath: e.target.value }))} placeholder={tf("C:\\Program Files\\App\\app.exe")} style={inputStyle} />
                         <Btn onClick={pickFile}>Buscar</Btn>
                       </div>
                     </Field>
-                    <Field label="ARGUMENTOS (OPCIONAL)">
-                      <input value={action.appArgs || ''} onChange={(e) => setAction((a) => ({ ...a, appArgs: e.target.value }))} placeholder="--flag valor" style={inputStyle} />
+                    <Field label={tf("ARGUMENTOS (OPCIONAL)")}>
+                      <input value={action.appArgs || ''} onChange={(e) => setAction((a) => ({ ...a, appArgs: e.target.value }))} placeholder={tf("--flag valor")} style={inputStyle} />
                     </Field>
                   </>
                 )}
 
                 {action.type === 'web' && (
-                  <Field label="URL">
-                    <input value={action.url || ''} onChange={(e) => setAction((a) => ({ ...a, url: e.target.value }))} placeholder="https://ejemplo.com" style={inputStyle} />
+                  <Field label={tf("URL")}>
+                    <input value={action.url || ''} onChange={(e) => setAction((a) => ({ ...a, url: e.target.value }))} placeholder={tf("https://ejemplo.com")} style={inputStyle} />
                   </Field>
                 )}
 
                 {action.type === 'shortcut' && (
-                  <Field label="RUTA DEL ARCHIVO O CARPETA">
+                  <Field label={tf("RUTA DEL ARCHIVO O CARPETA")}>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <input value={action.shortcutPath || ''} onChange={(e) => setAction((a) => ({ ...a, shortcutPath: e.target.value }))} placeholder="C:\Users\...\archivo.lnk" style={inputStyle} />
+                      <input value={action.shortcutPath || ''} onChange={(e) => setAction((a) => ({ ...a, shortcutPath: e.target.value }))} placeholder={tf("C:\\Users\\...\\archivo.lnk")} style={inputStyle} />
                       <Btn onClick={pickShortcut}>Buscar</Btn>
                     </div>
                   </Field>
@@ -628,14 +629,14 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'script' && (
                   <>
-                    <Field label="INTÉRPRETE">
+                    <Field label={tf("INTÉRPRETE")}>
                       <select value={action.scriptShell || 'powershell'} onChange={(e) => setAction((a) => ({ ...a, scriptShell: e.target.value as any }))} style={{ ...inputStyle, cursor: 'pointer' }}>
                         <option value="powershell">PowerShell</option>
                         <option value="cmd">CMD (Símbolo del sistema)</option>
                       </select>
                     </Field>
-                    <Field label="SCRIPT">
-                      <textarea value={action.script || ''} onChange={(e) => setAction((a) => ({ ...a, script: e.target.value }))} placeholder="Get-Process | Sort CPU -Descending" rows={5} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} />
+                    <Field label={tf("SCRIPT")}>
+                      <textarea value={action.script || ''} onChange={(e) => setAction((a) => ({ ...a, script: e.target.value }))} placeholder={tf("Get-Process | Sort CPU -Descending")} rows={5} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} />
                     </Field>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                       <input
@@ -646,11 +647,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       />
                       <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim }}>MOSTRAR SALIDA DEL SCRIPT EN PANTALLA</span>
                     </label>
-                    <Field label="GUARDAR SALIDA EN VARIABLE (opcional)">
+                    <Field label={tf("GUARDAR SALIDA EN VARIABLE (opcional)")}>
                       <input
                         value={action.captureToVar ?? ''}
                         onChange={(e) => setAction(a => ({ ...a, captureToVar: e.target.value || undefined }))}
-                        placeholder="ej: resultado_cpu"
+                        placeholder={tf("ej: resultado_cpu")}
                         style={inputStyle}
                       />
                       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
@@ -661,7 +662,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'audio-device' && (
-                  <Field label="DISPOSITIVO DE AUDIO">
+                  <Field label={tf("DISPOSITIVO DE AUDIO")}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                       {action.deviceName && (
                         <span style={{ fontFamily: VD.mono, fontSize: 10, color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
@@ -684,7 +685,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <input
                           value={action.deviceName || ''}
                           onChange={(e) => setAction((a) => ({ ...a, deviceId: undefined, deviceName: e.target.value }))}
-                          placeholder="Ej: Auriculares (Realtek HD Audio)"
+                          placeholder={tf("Ej: Auriculares (Realtek HD Audio)")}
                           style={inputStyle}
                         />
                       </div>
@@ -700,7 +701,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <input
                           value={action.deviceName || ''}
                           onChange={(e) => setAction((a) => ({ ...a, deviceId: undefined, deviceName: e.target.value }))}
-                          placeholder="Ej: Auriculares (Realtek HD Audio)"
+                          placeholder={tf("Ej: Auriculares (Realtek HD Audio)")}
                           style={inputStyle}
                         />
                       </div>
@@ -732,12 +733,12 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'hotkey' && (
-                  <Field label="COMBINACIÓN DE TECLAS">
+                  <Field label={tf("COMBINACIÓN DE TECLAS")}>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <input
                         value={action.hotkey || ''}
                         onChange={(e) => setAction((a) => ({ ...a, hotkey: e.target.value }))}
-                        placeholder="Ctrl+Shift+F9"
+                        placeholder={tf("Ctrl+Shift+F9")}
                         readOnly={capturing}
                         style={{ ...inputStyle, flex: 1, outline: capturing ? `2px solid ${accent}` : undefined }}
                       />
@@ -757,11 +758,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'clipboard' && (
-                  <Field label="TEXTO A COPIAR AL PORTAPAPELES">
+                  <Field label={tf("TEXTO A COPIAR AL PORTAPAPELES")}>
                     <textarea
                       value={action.clipboardText || ''}
                       onChange={(e) => setAction((a) => ({ ...a, clipboardText: e.target.value }))}
-                      placeholder="Texto, URL, código, etc."
+                      placeholder={tf("Texto, URL, código, etc.")}
                       rows={4}
                       style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
                     />
@@ -770,11 +771,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'type-text' && (
                   <>
-                    <Field label="TEXTO A ESCRIBIR AUTOMÁTICAMENTE">
+                    <Field label={tf("TEXTO A ESCRIBIR AUTOMÁTICAMENTE")}>
                       <textarea
                         value={action.typeText || ''}
                         onChange={(e) => setAction((a) => ({ ...a, typeText: e.target.value }))}
-                        placeholder="Texto que se escribirá con SendKeys..."
+                        placeholder={tf("Texto que se escribirá con SendKeys...")}
                         rows={4}
                         style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }}
                       />
@@ -787,11 +788,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'kill-process' && (
                   <>
-                    <Field label="NOMBRE DEL PROCESO">
+                    <Field label={tf("NOMBRE DEL PROCESO")}>
                       <input
                         value={action.processName || ''}
                         onChange={(e) => setAction((a) => ({ ...a, processName: e.target.value }))}
-                        placeholder="spotify.exe · chrome.exe · notepad.exe"
+                        placeholder={tf("spotify.exe · chrome.exe · notepad.exe")}
                         style={inputStyle}
                       />
                     </Field>
@@ -802,7 +803,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'volume-set' && (
-                  <Field label="NIVEL DE VOLUMEN">
+                  <Field label={tf("NIVEL DE VOLUMEN")}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <input
                         type="range" min={0} max={100} step={5}
@@ -821,7 +822,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'brightness' && (
-                  <Field label="NIVEL DE BRILLO">
+                  <Field label={tf("NIVEL DE BRILLO")}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <input type="range" min={0} max={100} step={5} value={action.brightnessLevel ?? 70} onChange={(e) => setAction((a) => ({ ...a, brightnessLevel: parseInt(e.target.value) }))} style={{ flex: 1, accentColor: accent }} />
                       <span style={{ fontFamily: VD.mono, fontSize: 14, color: VD.text, minWidth: 40, textAlign: 'right' }}>{action.brightnessLevel ?? 70}%</span>
@@ -832,19 +833,19 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'notify' && (
                   <>
-                    <Field label="TÍTULO">
+                    <Field label={tf("TÍTULO")}>
                       <input
                         value={action.notifyTitle ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, notifyTitle: e.target.value }))}
-                        placeholder="VirtualDeck"
+                        placeholder={tf("VirtualDeck")}
                         style={inputStyle}
                       />
                     </Field>
-                    <Field label="MENSAJE">
+                    <Field label={tf("MENSAJE")}>
                       <textarea
                         value={action.notifyBody ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, notifyBody: e.target.value }))}
-                        placeholder="Texto de la notificación..."
+                        placeholder={tf("Texto de la notificación...")}
                         rows={3}
                         style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
                       />
@@ -854,19 +855,19 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'set-var' && (
                   <>
-                    <Field label="NOMBRE DE VARIABLE">
+                    <Field label={tf("NOMBRE DE VARIABLE")}>
                       <input
                         value={action.varName ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, varName: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
-                        placeholder="contador, lastApp, etc."
+                        placeholder={tf("contador, lastApp, etc.")}
                         style={inputStyle}
                       />
                     </Field>
-                    <Field label="VALOR (acepta {otraVariable})">
+                    <Field label={tf("VALOR (acepta {otraVariable})")}>
                       <input
                         value={action.varValue ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, varValue: e.target.value }))}
-                        placeholder="0, true, {lastApp}"
+                        placeholder={tf("0, true, {lastApp}")}
                         style={inputStyle}
                       />
                     </Field>
@@ -875,15 +876,15 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'incr-var' && (
                   <>
-                    <Field label="NOMBRE DE VARIABLE">
+                    <Field label={tf("NOMBRE DE VARIABLE")}>
                       <input
                         value={action.varName ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, varName: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
-                        placeholder="contador"
+                        placeholder={tf("contador")}
                         style={inputStyle}
                       />
                     </Field>
-                    <Field label="DELTA (entero — usa negativo para restar)">
+                    <Field label={tf("DELTA (entero — usa negativo para restar)")}>
                       <input
                         type="number"
                         value={action.varDelta ?? 1}
@@ -896,15 +897,15 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'webhook' && (
                   <>
-                    <Field label="URL">
+                    <Field label={tf("URL")}>
                       <input
                         value={action.webhookUrl ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, webhookUrl: e.target.value }))}
-                        placeholder="https://..."
+                        placeholder={tf("https://...")}
                         style={inputStyle}
                       />
                     </Field>
-                    <Field label="MÉTODO">
+                    <Field label={tf("MÉTODO")}>
                       <select
                         value={action.webhookMethod ?? 'POST'}
                         onChange={(e) => setAction((a) => ({ ...a, webhookMethod: e.target.value as 'GET' | 'POST' | 'PUT' | 'DELETE' }))}
@@ -916,7 +917,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <option value="DELETE">DELETE</option>
                       </select>
                     </Field>
-                    <Field label="HEADERS (JSON, opcional)">
+                    <Field label={tf("HEADERS (JSON, opcional)")}>
                       <textarea
                         value={action.webhookHeaders ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, webhookHeaders: e.target.value }))}
@@ -925,7 +926,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
                       />
                     </Field>
-                    <Field label="BODY (acepta {variables})">
+                    <Field label={tf("BODY (acepta {variables})")}>
                       <textarea
                         value={action.webhookBody ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, webhookBody: e.target.value }))}
@@ -938,11 +939,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'tts' && (
-                  <Field label="TEXTO A LEER (acepta {variables})">
+                  <Field label={tf("TEXTO A LEER (acepta {variables})")}>
                     <textarea
                       value={action.ttsText ?? ''}
                       onChange={(e) => setAction((a) => ({ ...a, ttsText: e.target.value }))}
-                      placeholder="Hola, son las {hora}"
+                      placeholder={tf("Hola, son las {hora}")}
                       rows={3}
                       style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5 }}
                     />
@@ -963,7 +964,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         OpenRGB no conectado. Conecta desde la pantalla RGB para listar dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.
                       </div>
                     )}
-                    <Field label="DISPOSITIVO RGB">
+                    <Field label={tf("DISPOSITIVO RGB")}>
                       <select
                         value={action.rgbDeviceId ?? -1}
                         onChange={(e) => setAction((a) => ({ ...a, rgbDeviceId: parseInt(e.target.value, 10) }))}
@@ -979,7 +980,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'rgb-color' && (
-                  <Field label="COLOR (HEX)">
+                  <Field label={tf("COLOR (HEX)")}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input
                         type="color"
@@ -1001,11 +1002,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'rgb-mode' && (
                   <>
-                    <Field label="MODO / EFECTO">
+                    <Field label={tf("MODO / EFECTO")}>
                       <input
                         value={action.rgbMode ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, rgbMode: e.target.value }))}
-                        placeholder="Direct, Static, Breathing, Rainbow, Spectrum Cycle..."
+                        placeholder={tf("Direct, Static, Breathing, Rainbow, Spectrum Cycle...")}
                         list="rgb-modes-list"
                         style={inputStyle}
                       />
@@ -1019,7 +1020,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         })()}
                       </datalist>
                     </Field>
-                    <Field label="COLOR (OPCIONAL — SOLO PARA MODOS QUE LO USAN)">
+                    <Field label={tf("COLOR (OPCIONAL — SOLO PARA MODOS QUE LO USAN)")}>
                       <input
                         type="color"
                         value={action.rgbColor ?? '#ffffff'}
@@ -1027,7 +1028,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         style={{ width: 60, height: 28, padding: 2, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', borderRadius: VD.radius.sm }}
                       />
                     </Field>
-                    <Field label="BRILLO 0-100 (OPCIONAL)">
+                    <Field label={tf("BRILLO 0-100 (OPCIONAL)")}>
                       <input
                         type="number"
                         min={0} max={100}
@@ -1040,7 +1041,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'rgb-profile' && (
-                  <Field label="PERFIL RGB">
+                  <Field label={tf("PERFIL RGB")}>
                     {rgbProfiles.length === 0 ? (
                       <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, lineHeight: 1.6 }}>
                         No hay perfiles RGB guardados. Abre la pantalla RGB y guarda un perfil con el estado actual de tus dispositivos.
@@ -1115,7 +1116,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'window-snap' && (
                   <>
-                    <Field label="POSICIÓN / TAMAÑO">
+                    <Field label={tf("POSICIÓN / TAMAÑO")}>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                         {([
                           ['top-left','↖ Cuad. sup-izq'],['top-half','↑ Mitad superior'],['top-right','↗ Cuad. sup-der'],
@@ -1137,11 +1138,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         ))}
                       </div>
                     </Field>
-                    <Field label="PROCESO A SNAPEAR (opcional — vacío = ventana activa)">
+                    <Field label={tf("PROCESO A SNAPEAR (opcional — vacío = ventana activa)")}>
                       <input
                         value={action.snapProcessName ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, snapProcessName: e.target.value || undefined }))}
-                        placeholder="chrome, notepad, code..."
+                        placeholder={tf("chrome, notepad, code...")}
                         style={inputStyle}
                       />
                       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
@@ -1154,12 +1155,12 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'branch' && (
                   <>
-                    <Field label="CONDICIÓN: SI {variable}">
+                    <Field label={tf("CONDICIÓN: SI {variable}")}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <input
                           value={action.branchVar ?? ''}
                           onChange={(e) => setAction((a) => ({ ...a, branchVar: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
-                          placeholder="nombre_variable"
+                          placeholder={tf("nombre_variable")}
                           style={{ ...inputStyle, flex: 1 }}
                         />
                         <select
@@ -1181,20 +1182,20 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           <input
                             value={action.branchValue ?? ''}
                             onChange={(e) => setAction((a) => ({ ...a, branchValue: e.target.value }))}
-                            placeholder="valor o {variable}"
+                            placeholder={tf("valor o {variable}")}
                             style={{ ...inputStyle, flex: 1 }}
                           />
                         )}
                       </div>
                     </Field>
-                    <Field label="ENTONCES (acción si VERDADERO)">
+                    <Field label={tf("ENTONCES (acción si VERDADERO)")}>
                       <BranchActionRow
                         action={action.branchThen?.[0] ?? { type: 'none' }}
                         onChange={(a) => setAction((prev) => ({ ...prev, branchThen: a.type !== 'none' ? [a] : [] }))}
                         accent={accent}
                       />
                     </Field>
-                    <Field label="SI NO (acción si FALSO — opcional)">
+                    <Field label={tf("SI NO (acción si FALSO — opcional)")}>
                       <BranchActionRow
                         action={action.branchElse?.[0] ?? { type: 'none' }}
                         onChange={(a) => setAction((prev) => ({ ...prev, branchElse: a.type !== 'none' ? [a] : [] }))}
@@ -1206,7 +1207,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'countdown' && (
                   <>
-                    <Field label="TIEMPO DE ESPERA (milisegundos)">
+                    <Field label={tf("TIEMPO DE ESPERA (milisegundos)")}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <input
                           type="number"
@@ -1227,7 +1228,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 )}
 
                 {action.type === 'macro' && (
-                  <Field label="PASOS DE LA MACRO">
+                  <Field label={tf("PASOS DE LA MACRO")}>
                     <MacroEditor
                       steps={action.macroSteps ?? []}
                       repeat={action.macroRepeat ?? 1}
@@ -1283,11 +1284,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 {/* 3.x — Radio group */}
                 {action.type !== 'none' && action.type !== 'folder' && isToggle && (
                   <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
-                    <Field label="GRUPO RADIO (toggles mutuamente exclusivos)">
+                    <Field label={tf("GRUPO RADIO (toggles mutuamente exclusivos)")}>
                       <input
                         value={radioGroup}
                         onChange={(e) => setRadioGroup(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
-                        placeholder="ej: modo_audio, perfil_rgb..."
+                        placeholder={tf("ej: modo_audio, perfil_rgb...")}
                         style={inputStyle}
                       />
                       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
@@ -1303,11 +1304,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 10 }}>
                       DISPARADORES EXTERNOS
                     </DotLabel>
-                    <Field label="HOTKEY GLOBAL DEL SO (ej. Ctrl+Alt+1)">
+                    <Field label={tf("HOTKEY GLOBAL DEL SO (ej. Ctrl+Alt+1)")}>
                       <input
                         value={globalHotkey}
                         onChange={(e) => setGlobalHotkey(e.target.value)}
-                        placeholder="vacío = sin atajo global"
+                        placeholder={tf("vacío = sin atajo global")}
                         style={inputStyle}
                       />
                     </Field>
@@ -1330,16 +1331,16 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
             {/* STEP 2: Style */}
             {step === 2 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <Field label="ETIQUETA DEL BOTÓN">
-                  <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Mi Botón" maxLength={20} style={inputStyle} />
+                <Field label={tf("ETIQUETA DEL BOTÓN")}>
+                  <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={tf("Mi Botón")} maxLength={20} style={inputStyle} />
                 </Field>
-                <Field label="SUB-ETIQUETA (OPCIONAL)">
-                  <input value={sublabel} onChange={(e) => setSublabel(e.target.value)} placeholder="Descripción corta" maxLength={30} style={inputStyle} />
+                <Field label={tf("SUB-ETIQUETA (OPCIONAL)")}>
+                  <input value={sublabel} onChange={(e) => setSublabel(e.target.value)} placeholder={tf("Descripción corta")} maxLength={30} style={inputStyle} />
                 </Field>
-                <Field label="ICONO (EMOJI O SÍMBOLO — VACÍO = ÍCONO DEL TIPO)">
-                  <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="▶ ◉ 🎵 💻 🌐 ★" maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
+                <Field label={tf("ICONO (EMOJI O SÍMBOLO — VACÍO = ÍCONO DEL TIPO)")}>
+                  <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder={tf("▶ ◉ 🎵 💻 🌐 ★")} maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
                 </Field>
-                <Field label="IMAGEN PERSONALIZADA (PNG / JPG / GIF)">
+                <Field label={tf("IMAGEN PERSONALIZADA (PNG / JPG / GIF)")}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <Btn onClick={pickImage}>Elegir imagen</Btn>
                     {imageData && (
@@ -1351,7 +1352,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   </div>
                 </Field>
 
-                <Field label="ICONO DE MARCA ANIMADO (DOT-MATRIX)">
+                <Field label={tf("ICONO DE MARCA ANIMADO (DOT-MATRIX)")}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     {brandIcon ? (
                       <>
@@ -1401,7 +1402,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 </Field>
 
                 {/* 2.1 — Glifo 5×7 personal del usuario */}
-                <Field label="GLIFO PERSONAL 5×7 (DOT-MATRIX)">
+                <Field label={tf("GLIFO PERSONAL 5×7 (DOT-MATRIX)")}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     {customGlyph57 && customGlyph57.length === 7 && customGlyph57.some((r) => r > 0) ? (
                       <>
@@ -1423,17 +1424,17 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   </div>
                 </Field>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <Field label="COLOR DE FONDO">
+                  <Field label={tf("COLOR DE FONDO")}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input type="color" value={bgColor || '#222222'} onChange={(e) => setBgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
-                      <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder="#222222" style={{ ...inputStyle, flex: 1 }} />
+                      <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder={tf("#222222")} style={{ ...inputStyle, flex: 1 }} />
                       {bgColor && <Btn onClick={() => setBgColor('')}>✕</Btn>}
                     </div>
                   </Field>
-                  <Field label="COLOR DE TEXTO / ÍCONO">
+                  <Field label={tf("COLOR DE TEXTO / ÍCONO")}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input type="color" value={fgColor || '#dcdcdc'} onChange={(e) => setFgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
-                      <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder="#dcdcdc" style={{ ...inputStyle, flex: 1 }} />
+                      <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder={tf("#dcdcdc")} style={{ ...inputStyle, flex: 1 }} />
                       {fgColor && <Btn onClick={() => setFgColor('')}>✕</Btn>}
                     </div>
                   </Field>
@@ -1442,7 +1443,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 <div style={{ height: 1, background: VD.border }} />
 
                 {/* Widget — live data display on the button cell */}
-                <Field label="WIDGET (MUESTRA DATOS EN EL BOTÓN)">
+                <Field label={tf("WIDGET (MUESTRA DATOS EN EL BOTÓN)")}>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable'] as const).map((w) => {
                       // now-playing on an audio-device button hides the device
@@ -1485,19 +1486,19 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <input
                           value={sensorWidgetSuffix}
                           onChange={(e) => setSensorWidgetSuffix(e.target.value)}
-                          placeholder="Etiqueta (ej. CPU)"
+                          placeholder={tf("Etiqueta (ej. CPU)")}
                           style={{ ...inputStyle, flex: 1 }}
                         />
                         <input
                           value={sensorWidgetWarn}
                           onChange={(e) => setSensorWidgetWarn(e.target.value)}
-                          placeholder="Warn ≥"
+                          placeholder={tf("Warn ≥")}
                           style={{ ...inputStyle, width: 80 }}
                         />
                         <input
                           value={sensorWidgetCrit}
                           onChange={(e) => setSensorWidgetCrit(e.target.value)}
-                          placeholder="Crit ≥"
+                          placeholder={tf("Crit ≥")}
                           style={{ ...inputStyle, width: 80 }}
                         />
                       </div>
@@ -1511,7 +1512,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={varWidgetName}
                         onChange={(e) => setVarWidgetName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                        placeholder="Nombre de variable (ej. tomas)"
+                        placeholder={tf("Nombre de variable (ej. tomas)")}
                         list="vd-known-vars"
                         style={{ ...inputStyle }}
                       />
@@ -1522,13 +1523,13 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <input
                           value={varWidgetPrefix}
                           onChange={(e) => setVarWidgetPrefix(e.target.value)}
-                          placeholder="Prefijo (ej. 🎬 )"
+                          placeholder={tf("Prefijo (ej. 🎬 )")}
                           style={{ ...inputStyle, flex: 1 }}
                         />
                         <input
                           value={varWidgetSuffix}
                           onChange={(e) => setVarWidgetSuffix(e.target.value)}
-                          placeholder="Etiqueta debajo"
+                          placeholder={tf("Etiqueta debajo")}
                           style={{ ...inputStyle, flex: 1 }}
                         />
                       </div>
@@ -1540,11 +1541,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 </Field>
 
                 {/* Visibility condition */}
-                <Field label="VISIBLE SOLO SI ESTA APP ESTÁ ACTIVA (opcional)">
+                <Field label={tf("VISIBLE SOLO SI ESTA APP ESTÁ ACTIVA (opcional)")}>
                   <input
                     value={visibleIfApp}
                     onChange={(e) => setVisibleIfApp(e.target.value)}
-                    placeholder="spotify, chrome, obs64 ..."
+                    placeholder={tf("spotify, chrome, obs64 ...")}
                     style={inputStyle}
                   />
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
@@ -1553,11 +1554,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 </Field>
 
                 {/* Scheduled trigger */}
-                <Field label="DISPARAR AUTOMÁTICAMENTE A LA HORA (HH:MM)">
+                <Field label={tf("DISPARAR AUTOMÁTICAMENTE A LA HORA (HH:MM)")}>
                   <input
                     value={timerTriggerAt}
                     onChange={(e) => setTimerTriggerAt(e.target.value)}
-                    placeholder="08:00"
+                    placeholder={tf("08:00")}
                     maxLength={5}
                     style={inputStyle}
                   />
@@ -1567,7 +1568,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 </Field>
 
                 {/* Visibility by sensor */}
-                <Field label="VISIBLE SOLO SI SENSOR (opcional)">
+                <Field label={tf("VISIBLE SOLO SI SENSOR (opcional)")}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <SensorPicker
                       sensors={sensorList}
@@ -1592,7 +1593,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <input
                           value={visibleIfSensorVal}
                           onChange={(e) => setVisibleIfSensorVal(e.target.value)}
-                          placeholder="Valor (ej. 80)"
+                          placeholder={tf("Valor (ej. 80)")}
                           style={{ ...inputStyle, flex: 1 }}
                         />
                       </div>
@@ -1604,7 +1605,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 </Field>
 
                 {/* Sensor-triggered automatic execution */}
-                <Field label="DISPARAR CUANDO SENSOR (opcional)">
+                <Field label={tf("DISPARAR CUANDO SENSOR (opcional)")}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <SensorPicker
                       sensors={sensorList}
@@ -1630,13 +1631,13 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           <input
                             value={sensorTriggerVal}
                             onChange={(e) => setSensorTriggerVal(e.target.value)}
-                            placeholder="Valor (ej. 85)"
+                            placeholder={tf("Valor (ej. 85)")}
                             style={{ ...inputStyle, flex: 1 }}
                           />
                           <input
                             value={sensorTriggerCooldown}
                             onChange={(e) => setSensorTriggerCooldown(e.target.value)}
-                            placeholder="Cooldown s"
+                            placeholder={tf("Cooldown s")}
                             style={{ ...inputStyle, width: 100 }}
                           />
                         </div>
@@ -1716,6 +1717,7 @@ function FolderButtonSlot({ button, accent, onChange }: {
   accent: string;
   onChange: (b: FolderButton | null) => void;
 }) {
+  const tf = useFieldText();
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(button?.label ?? '');
   const [icon, setIcon] = useState(button?.icon ?? '');
@@ -1742,12 +1744,12 @@ function FolderButtonSlot({ button, accent, onChange }: {
     return (
       <div style={{ background: VD.bg, border: `1px solid ${accent}`, borderRadius: VD.radius.md, padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder="⌘" maxLength={2}
+          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder={tf("⌘")} maxLength={2}
             style={{ width: 28, background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 4px', color: VD.text, fontFamily: VD.mono, fontSize: 13, outline: 'none', borderRadius: VD.radius.sm, textAlign: 'center' }} />
-          <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Nombre" maxLength={12}
+          <input value={label} onChange={e => setLabel(e.target.value)} placeholder={tf("Nombre")} maxLength={12}
             style={{ flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 6px', color: VD.text, fontFamily: VD.mono, fontSize: 9, outline: 'none', borderRadius: VD.radius.sm }} />
         </div>
-        <input value={hotkey} onChange={e => setHotkey(e.target.value)} placeholder="Ctrl+Z"
+        <input value={hotkey} onChange={e => setHotkey(e.target.value)} placeholder={tf("Ctrl+Z")}
           style={{ width: '100%', background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 6px', color: VD.text, fontFamily: VD.mono, fontSize: 9, outline: 'none', borderRadius: VD.radius.sm, boxSizing: 'border-box' }} />
         <div style={{ display: 'flex', gap: 4 }}>
           <button onClick={() => {
@@ -1789,6 +1791,7 @@ function FolderButtonSlot({ button, accent, onChange }: {
 // Compact toggle-off action picker
 function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
   const tr = useT();
+  const tf = useFieldText();
   const simpleTypes: ActionType[] = ['hotkey', 'script', 'app', 'media-play-pause', 'mute', 'kill-process', 'volume-set', 'brightness', 'none'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1803,19 +1806,19 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
       </select>
       {action.type === 'hotkey' && (
         <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })}
-          placeholder="Ctrl+Shift+F9" style={{ ...inputStyle, fontSize: 11 }} />
+          placeholder={tf("Ctrl+Shift+F9")} style={{ ...inputStyle, fontSize: 11 }} />
       )}
       {action.type === 'script' && (
         <textarea value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })}
-          placeholder="Script de desactivación..." rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+          placeholder={tf("Script de desactivación...")} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
       )}
       {action.type === 'app' && (
         <input value={action.appPath || ''} onChange={e => onChange({ ...action, appPath: e.target.value })}
-          placeholder="ruta o comando" style={{ ...inputStyle, fontSize: 11 }} />
+          placeholder={tf("ruta o comando")} style={{ ...inputStyle, fontSize: 11 }} />
       )}
       {action.type === 'kill-process' && (
         <input value={action.processName || ''} onChange={e => onChange({ ...action, processName: e.target.value })}
-          placeholder="proceso.exe" style={{ ...inputStyle, fontSize: 11 }} />
+          placeholder={tf("proceso.exe")} style={{ ...inputStyle, fontSize: 11 }} />
       )}
       {action.type === 'volume-set' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1840,6 +1843,7 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
 // Compact action picker for branch then/else — reuses ToggleOffActionPicker with an extended type list
 function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
   const tr = useT();
+  const tf = useFieldText();
   const simpleTypes: ActionType[] = ['none', 'set-var', 'incr-var', 'hotkey', 'script', 'notify', 'webhook', 'clipboard', 'type-text', 'volume-set', 'brightness', 'rgb-preset', 'window-snap'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1851,46 +1855,46 @@ function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; o
       {action.type === 'set-var' && (
         <div style={{ display: 'flex', gap: 6 }}>
           <input value={action.varName ?? ''} onChange={e => onChange({ ...action, varName: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
-            placeholder="variable" style={{ ...inputStyle, flex: 1 }} />
+            placeholder={tf("variable")} style={{ ...inputStyle, flex: 1 }} />
           <input value={action.varValue ?? ''} onChange={e => onChange({ ...action, varValue: e.target.value })}
-            placeholder="valor" style={{ ...inputStyle, flex: 1 }} />
+            placeholder={tf("valor")} style={{ ...inputStyle, flex: 1 }} />
         </div>
       )}
       {action.type === 'incr-var' && (
         <div style={{ display: 'flex', gap: 6 }}>
           <input value={action.varName ?? ''} onChange={e => onChange({ ...action, varName: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') })}
-            placeholder="variable" style={{ ...inputStyle, flex: 1 }} />
+            placeholder={tf("variable")} style={{ ...inputStyle, flex: 1 }} />
           <input type="number" value={action.varDelta ?? 1} onChange={e => onChange({ ...action, varDelta: parseInt(e.target.value) || 0 })}
             style={{ ...inputStyle, width: 80 }} />
         </div>
       )}
       {action.type === 'hotkey' && (
         <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })}
-          placeholder="Ctrl+Shift+F9" style={{ ...inputStyle, fontSize: 11 }} />
+          placeholder={tf("Ctrl+Shift+F9")} style={{ ...inputStyle, fontSize: 11 }} />
       )}
       {action.type === 'script' && (
         <textarea value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })}
-          placeholder="Script..." rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+          placeholder={tf("Script...")} rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
       )}
       {action.type === 'notify' && (
         <div style={{ display: 'flex', gap: 6 }}>
           <input value={action.notifyTitle ?? ''} onChange={e => onChange({ ...action, notifyTitle: e.target.value })}
-            placeholder="Título" style={{ ...inputStyle, flex: 1 }} />
+            placeholder={tf("Título")} style={{ ...inputStyle, flex: 1 }} />
           <input value={action.notifyBody ?? ''} onChange={e => onChange({ ...action, notifyBody: e.target.value })}
-            placeholder="Mensaje" style={{ ...inputStyle, flex: 2 }} />
+            placeholder={tf("Mensaje")} style={{ ...inputStyle, flex: 2 }} />
         </div>
       )}
       {action.type === 'webhook' && (
         <input value={action.webhookUrl ?? ''} onChange={e => onChange({ ...action, webhookUrl: e.target.value, webhookMethod: action.webhookMethod ?? 'POST' })}
-          placeholder="https://..." style={inputStyle} />
+          placeholder={tf("https://...")} style={inputStyle} />
       )}
       {action.type === 'clipboard' && (
         <input value={action.clipboardText || ''} onChange={e => onChange({ ...action, clipboardText: e.target.value })}
-          placeholder="Texto al portapapeles" style={inputStyle} />
+          placeholder={tf("Texto al portapapeles")} style={inputStyle} />
       )}
       {action.type === 'type-text' && (
         <input value={action.typeText || ''} onChange={e => onChange({ ...action, typeText: e.target.value })}
-          placeholder="Texto a escribir" style={inputStyle} />
+          placeholder={tf("Texto a escribir")} style={inputStyle} />
       )}
       {action.type === 'volume-set' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1926,6 +1930,7 @@ function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; o
 
 function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; onChange: (a: ButtonAction) => void; onRemove: () => void }) {
   const tr = useT();
+  const tf = useFieldText();
   const meta = ACTION_TYPES.find(a => a.type === action.type);
   const Icon = meta?.Icon ?? IconNone;
   return (
@@ -1933,28 +1938,28 @@ function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; 
       <Icon size={14} color={VD.textDim} strokeWidth={1.5} />
       <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, minWidth: 64 }}>{meta ? tr(meta.label) : ''}</span>
       {action.type === 'app' && (
-        <input value={action.appPath || ''} onChange={e => onChange({ ...action, appPath: e.target.value })} placeholder="ruta o comando" style={miniInputStyle} />
+        <input value={action.appPath || ''} onChange={e => onChange({ ...action, appPath: e.target.value })} placeholder={tf("ruta o comando")} style={miniInputStyle} />
       )}
       {action.type === 'web' && (
-        <input value={action.url || ''} onChange={e => onChange({ ...action, url: e.target.value })} placeholder="https://..." style={miniInputStyle} />
+        <input value={action.url || ''} onChange={e => onChange({ ...action, url: e.target.value })} placeholder={tf("https://...")} style={miniInputStyle} />
       )}
       {action.type === 'script' && (
-        <input value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })} placeholder="script" style={miniInputStyle} />
+        <input value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })} placeholder={tf("script")} style={miniInputStyle} />
       )}
       {action.type === 'hotkey' && (
-        <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })} placeholder="Ctrl+Shift+F9" style={miniInputStyle} />
+        <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })} placeholder={tf("Ctrl+Shift+F9")} style={miniInputStyle} />
       )}
       {action.type === 'shortcut' && (
-        <input value={action.shortcutPath || ''} onChange={e => onChange({ ...action, shortcutPath: e.target.value })} placeholder="ruta" style={miniInputStyle} />
+        <input value={action.shortcutPath || ''} onChange={e => onChange({ ...action, shortcutPath: e.target.value })} placeholder={tf("ruta")} style={miniInputStyle} />
       )}
       {action.type === 'clipboard' && (
-        <input value={action.clipboardText || ''} onChange={e => onChange({ ...action, clipboardText: e.target.value })} placeholder="texto al portapapeles" style={miniInputStyle} />
+        <input value={action.clipboardText || ''} onChange={e => onChange({ ...action, clipboardText: e.target.value })} placeholder={tf("texto al portapapeles")} style={miniInputStyle} />
       )}
       {action.type === 'type-text' && (
-        <input value={action.typeText || ''} onChange={e => onChange({ ...action, typeText: e.target.value })} placeholder="texto a escribir" style={miniInputStyle} />
+        <input value={action.typeText || ''} onChange={e => onChange({ ...action, typeText: e.target.value })} placeholder={tf("texto a escribir")} style={miniInputStyle} />
       )}
       {action.type === 'kill-process' && (
-        <input value={action.processName || ''} onChange={e => onChange({ ...action, processName: e.target.value })} placeholder="proceso.exe" style={miniInputStyle} />
+        <input value={action.processName || ''} onChange={e => onChange({ ...action, processName: e.target.value })} placeholder={tf("proceso.exe")} style={miniInputStyle} />
       )}
       {action.type === 'brightness' && (
         <>

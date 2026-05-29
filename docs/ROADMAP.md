@@ -47,8 +47,8 @@ La infraestructura (`utils/i18n.tsx`) y el chrome ya están. Falta la config pro
 | 1 | `WallpaperB` | Traducir 100% (UI + nombres de fondos). | ✅ 2026-05-29 |
 | 2 | `EditorB` — pasos y chrome | Pasos, botones, encabezados de sección. | ✅ 2026-05-29 |
 | 3 | `editor/actionData.ts` | Etiquetas/descripciones de los 34 tipos de acción (label→clave i18n). | ✅ 2026-05-29 |
-| 4 | `EditorB` — config por acción | Campos/placeholders de cada tipo. | ⬜ |
-| 5 | `EditorB` — estilo e íconos | Sección de estilo, colores, picker de íconos. | ⬜ |
+| 4 | `EditorB` — config por acción | Campos/placeholders de cada tipo (120 strings vía `useFieldText`). | ✅ 2026-05-29 |
+| 5 | `EditorB` — estilo e íconos | Labels/placeholders de estilo ✅; faltan textos de botones/hints (children) y `BrandIcon*` (#10). | 🚧 parcial |
 | 6 | `RGBManagerB` | Traducir 100% (~760 líneas). | ⬜ |
 | 7 | `FullscreenB` | Strings visibles (reloj, salida, PIN kiosko). | ⬜ |
 | 8 | `MainB` | Restantes (menú contextual, feedback de ejecución). | ⬜ |
