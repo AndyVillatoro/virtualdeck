@@ -1,25 +1,50 @@
-# CODING AGENTS: READ THIS FIRST
+# VirtualDeck
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+**Tu Stream Deck por software para Windows.** Una grilla de botones configurables que
+disparan acciones: abrir apps, webs y carpetas, cambiar el dispositivo de audio,
+controlar la música, ejecutar atajos, scripts y macros, y más — todo con una identidad
+visual retro de matriz de puntos. 100% local, gratis y sin cuentas.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+> Electron 33 · React 18 · TypeScript · Vite 5 · Windows 10/11
 
-## What you should do — IMPORTANT
+---
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+## Características
 
-**Read `project/wireframes/VirtualDeck Wireframes.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+- **Botones de acción** — apps, URLs, carpetas, atajos de teclado, scripts, audio, media, brillo, TTS, webhooks, macros y más.
+- **Páginas y grilla** configurables, con drag & drop dentro y entre páginas.
+- **Widgets en vivo** en los botones — reloj, clima, sensores del PC, música actual y variables.
+- **Variables y plantillas** — contadores e interpolación `{var}` en cualquier acción.
+- **Macros** de teclado/ratón con grabador global.
+- **RGB** (OpenRGB) y **sensores** (LibreHardwareMonitor embebido).
+- **Pantalla completa / kiosko**, multi-idioma (ES/EN), temas claro/oscuro, auto-update.
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+## Instalación
 
-## About the design files
+Descargá el instalador desde [Releases](https://github.com/AndyVillatoro/virtualdeck/releases)
+(`VirtualDeck-Setup-X.Y.Z.exe`). Si Windows muestra SmartScreen: "Más información →
+Ejecutar de todas formas" (el binario aún no está firmado).
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+## Documentación
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+- **Guía de usuario (wiki, ES/EN):** https://github.com/AndyVillatoro/virtualdeck/wiki
+- **Para desarrollar:** [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, commits, release, firma.
+- **Arquitectura (mapa SRP):** [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
+- **Roadmap (qué sigue, una mejora por sesión):** [docs/ROADMAP.md](docs/ROADMAP.md)
+- **Historial de cambios:** [CHANGELOG.md](CHANGELOG.md)
 
-## Bundle contents
+## Desarrollo rápido
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `VirtualDeck` project files (HTML prototypes, assets, components)
+```bash
+npm install
+npm run dev              # desarrollo con hot reload
+npx tsc --noEmit         # typecheck
+npm run build            # compila renderer + main + preload
+npm run build:installer  # genera dist/VirtualDeck-Setup-{version}.exe
+```
+
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo completo.
+
+## Licencia
+
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) y los créditos en la app (Ayuda → Acerca de).

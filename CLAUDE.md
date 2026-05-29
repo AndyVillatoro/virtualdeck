@@ -4,11 +4,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 
 ## 📚 Documentos relacionados (leer antes de empezar)
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Workflow de desarrollo: branches, commits, PRs, convenciones técnicas, notas para LLMs.
-- **[RELEASE.md](RELEASE.md)** — Pasos exactos para sacar versión nueva (bump, CHANGELOG, tag, build, GitHub release).
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Workflow de desarrollo: branches, commits, PRs, release, firma/distribución, recetas y notas para LLMs. (Absorbió RELEASE/desarrollo/firma-y-distribución.)
 - **[CHANGELOG.md](CHANGELOG.md)** — Historial cronológico de versiones (Keep a Changelog).
 - **[docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)** — Mapa SRP: cada módulo/clase/feature con su responsabilidad única. Índice maestro del trabajo.
-- **[docs/ROADMAP-MEJORAS.md](docs/ROADMAP-MEJORAS.md)** — Secuencia 1/N: mejoramos **un apartado por sesión**, con ritual de verificar→mejorar→documentar→marcar. Empezar cada sesión eligiendo el próximo ítem ⬜.
+- **[docs/ROADMAP.md](docs/ROADMAP.md)** — Secuencia 1/N (+ catálogo de ideas, ex-SUGERENCIAS): mejoramos **un apartado por sesión**, con ritual de verificar→mejorar→documentar→marcar. Empezar cada sesión eligiendo el próximo ítem ⬜.
 - **[docs/wiki/](docs/wiki/)** — Staging del wiki público (bilingüe ES/EN) al que apunta el botón Documentación. Ver `docs/wiki/README.md` para publicar.
 - **package.json** → campo `version`: source of truth de la versión actual.
 
@@ -90,7 +89,7 @@ gh pr create                     # con --title y --body apropiados
 ```
 
 ### Release nuevo
-Ver **[RELEASE.md](RELEASE.md)**. Resumen:
+Ver **[CONTRIBUTING.md](CONTRIBUTING.md)** (sección Release). Resumen:
 1. Editar `package.json` → bump version (semver: feat=MINOR, fix=PATCH, breaking=MAJOR).
 2. `npm install --package-lock-only`.
 3. Agregar entrada al **inicio** de `CHANGELOG.md` con fecha ISO.

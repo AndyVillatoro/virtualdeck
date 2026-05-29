@@ -397,6 +397,75 @@ Si sos un agente AI retomando este proyecto, este es el contexto mínimo que nec
 
 ---
 
+## 🧩 Recetas
+
+### Agregar un tipo de acción nuevo
+1. Agregá el literal a `ActionType` en `src/types.ts`.
+2. Agregá los campos opcionales que necesites a `ButtonAction`.
+3. Implementá el `case` en `executeAction` (`src/utils/actions.ts`) devolviendo `ActionResult` con `ok` y `error?` legible.
+4. Registrá el tipo en `src/screens/editor/actionData.ts` (label/icono/desc) y agregá su bloque de inputs en el paso CONFIGURAR de `EditorB.tsx`.
+5. Sumá el literal al `Set` `ACTION_TYPES` de `src/utils/configMigration.ts` (si no, la validación de import lo rechaza).
+6. Si querés que el valor sea visible en un botón, considerá un `widget`.
+
+### Agregar un canal IPC nuevo
+1. Handler en el módulo de dominio correspondiente bajo `electron/main/ipc/<dominio>Ipc.ts`.
+2. Wrapper tipado en `electron/preload/index.ts` (`window.electronAPI.<dominio>`).
+3. Tipo en `ElectronAPI` (`src/types.ts`).
+
+> El mapa completo de módulos y su responsabilidad está en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+
+---
+
+## ✍️ Firma y distribución
+
+Hoy el instalador NSIS (`npm run build:installer`) **no está firmado** → Windows muestra SmartScreen.
+
+### Self-signed (equipo/amigos)
+```powershell
+$cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=VirtualDeck Dev" -CertStoreLocation Cert:\CurrentUser\My
+$pwd = ConvertTo-SecureString -String "tupasswd" -Force -AsPlainText
+Export-PfxCertificate -Cert $cert -FilePath .\virtualdeck-codesign.pfx -Password $pwd
+```
+En `package.json → build.win`: `"certificateFile": "./virtualdeck-codesign.pfx"`, `"certificatePassword": "tupasswd"`. Cada usuario debe importar el `.cer` en *Trusted Publishers* la primera vez.
+
+### Certificado real (producción)
+Comprar un cert EV/estándar (DigiCert, Sectigo) y apuntar `certificateFile` al `.pfx` real. EV → SmartScreen confía de inmediato; estándar → requiere reputación acumulada.
+
+### Distribución sin firma
+Documentar el "Más información → Ejecutar de todas formas" del SmartScreen. WinGet/Scoop reducen fricción aunque no eliminan el warning.
+
+> El auto-update (`electron-updater` + GitHub Releases) ya está activo desde v0.4.0.
+
+---
+
+## 🔁 Release — pre-flight, hotfix y rollback
+
+**Pre-flight checklist** (antes de un release):
+- [ ] En `main` con `git pull` reciente · `npx tsc --noEmit` sin errores · `npm run build:installer` limpio.
+- [ ] Build probado en perfil/máquina limpia (al menos lo tocado). Sin PRs pendientes que deban entrar.
+
+**Hotfix** (bug crítico post-release):
+```bash
+git checkout -b fix/desc v0.X.Y      # branch desde el tag
+# fix mínimo + commit; bump PATCH en package.json + CHANGELOG
+git checkout main && git merge --no-ff fix/desc && git push
+git tag -a v0.X.(Y+1) -m "VirtualDeck v0.X.(Y+1) hotfix" && git push origin v0.X.(Y+1)
+npm run build:installer   # luego gh release create
+```
+
+**Rollback** (release roto):
+```bash
+gh release delete v0.X.Y --yes
+git tag -d v0.X.Y && git push origin :refs/tags/v0.X.Y
+git revert <SHA-del-bump> && git push   # y quitar la sección del CHANGELOG
+```
+
+**Troubleshooting build:**
+- `build:installer` falla con "rebuilding native deps" → confirmá `uiohook-napi` en `dependencies` y en `build.asarUnpack`.
+- `.exe` > 100MB → revisá `build.files` (que no meta `node_modules` entero) y `dist/builder-debug.yml`.
+
+---
+
 ## 🔗 Referencias
 
 - [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)

@@ -54,4 +54,13 @@ Si tras 12 s seguís sin respuesta, el mensaje sugiere ejecutar como admin.
 
 ## Ocultar el widget
 
-Si no querés ver los cards de sensores en la UI (pero sí querés tenerlos disponibles para [acciones de sensor](acciones.md)), apagá **MOSTRAR WIDGET DE SENSORES**. Los cards desaparecen del sidebar y del panel izquierdo de pantalla completa, pero las lecturas siguen disponibles para botones que las usen.
+Si no querés ver los cards de sensores en la UI (pero sí querés tenerlos disponibles para [acciones de sensor](Referencia-de-Acciones)), apagá **MOSTRAR WIDGET DE SENSORES**. Los cards desaparecen del sidebar y del panel izquierdo de pantalla completa, pero las lecturas siguen disponibles para botones que las usen.
+
+---
+
+## RGB (OpenRGB)
+
+La configuración RGB vive en su propia pantalla (botón **RGB** en la barra superior),
+no acá. VirtualDeck se conecta al SDK de **OpenRGB** para aplicar colores, modos y
+perfiles a dispositivos compatibles. Asegurate de tener OpenRGB corriendo con su
+servidor SDK habilitado.

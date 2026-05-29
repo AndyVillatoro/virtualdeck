@@ -11,6 +11,7 @@ ejecutar atajos, macros y más. 100% local, gratis y sin cuentas.
 ## 📖 Documentación (Español)
 
 - [Primeros pasos](Primeros-Pasos) — instalar, crear tu primer botón, páginas.
+- [Guía de uso](Guia-de-Uso) — guía completa: atajos, drag&drop, kiosko, backups, sonido.
 - [Referencia de acciones](Referencia-de-Acciones) — qué hace cada tipo de acción.
 - [Widgets y variables](Widgets-y-Variables) — reloj, clima, sensores, música, contadores.
 - [Sensores y RGB](Sensores-y-RGB) — LibreHardwareMonitor y OpenRGB.
@@ -23,4 +24,4 @@ ejecutar atajos, macros y más. 100% local, gratis y sin cuentas.
 ---
 
 *Documentación en construcción — se va llenando apartado por apartado. Ver el
-progreso en el [roadmap de mejoras](https://github.com/AndyVillatoro/virtualdeck/blob/main/docs/ROADMAP-MEJORAS.md).*
+progreso en el [roadmap](https://github.com/AndyVillatoro/virtualdeck/blob/main/docs/ROADMAP.md).*

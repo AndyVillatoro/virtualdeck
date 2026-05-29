@@ -23,4 +23,4 @@ macros and more. 100% local, free, no accounts.
 ---
 
 *Documentation in progress — filled in section by section. Track progress in the
-[improvement roadmap](https://github.com/AndyVillatoro/virtualdeck/blob/main/docs/ROADMAP-MEJORAS.md).*
+[roadmap](https://github.com/AndyVillatoro/virtualdeck/blob/main/docs/ROADMAP.md).*

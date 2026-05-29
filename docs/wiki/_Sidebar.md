@@ -3,6 +3,7 @@
 **Español**
 - [Inicio](Home)
 - [Primeros pasos](Primeros-Pasos)
+- [Guía de uso](Guia-de-Uso)
 - [Acciones](Referencia-de-Acciones)
 - [Widgets y variables](Widgets-y-Variables)
 - [Sensores y RGB](Sensores-y-RGB)

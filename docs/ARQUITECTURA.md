@@ -5,7 +5,7 @@
 > Si un archivo necesita más de una frase, es candidato a dividirse.
 >
 > Este documento es el **índice maestro** para el roadmap de mejoras: cada apartado
-> de [ROADMAP-MEJORAS.md](ROADMAP-MEJORAS.md) referencia una entrada de acá.
+> de [ROADMAP.md](ROADMAP.md) referencia una entrada de acá.
 >
 > Mantener al día: al agregar/mover un módulo, actualizar su fila. Convención de
 > estado SRP: ✅ responsabilidad clara · 🟡 hace de más (dividir) · 🔴 acoplado.

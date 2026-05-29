@@ -13,11 +13,13 @@ Páginas bilingües. Convención: página en español sin sufijo o con `-ES`,
 inglés con `-EN`. `Home` y `_Sidebar` son especiales (landing y navegación).
 
 ```
-Home.md            ← landing bilingüe (selector de idioma)
-_Sidebar.md        ← navegación lateral (ambos idiomas)
-Primeros-Pasos.md  ← ES
-Getting-Started.md ← EN
-... (se van agregando, ver ROADMAP-MEJORAS.md bloque C)
+Home.md / Home-EN.md      ← landing bilingüe (selector de idioma)
+_Sidebar.md               ← navegación lateral (ambos idiomas)
+Primeros-Pasos.md         ← ES (quick start)   · Getting-Started.md ← EN
+Guia-de-Uso.md            ← ES (guía completa)
+Referencia-de-Acciones.md ← ES (catálogo de acciones)
+Sensores-y-RGB.md         ← ES (LHM + OpenRGB)
+... (se van agregando, ver ROADMAP.md bloque C)
 ```
 
 ## Cómo publicar al wiki
@@ -34,5 +36,5 @@ Getting-Started.md ← EN
    `[[Primeros-Pasos]]` o `[Texto](Primeros-Pasos)`.
 
 > Mantener el contenido sincronizado con la versión actual de la app. Cuando una
-> mejora del [ROADMAP-MEJORAS.md](../ROADMAP-MEJORAS.md) cambie el comportamiento,
+> mejora del [ROADMAP.md](../ROADMAP.md) cambie el comportamiento,
 > actualizar la página correspondiente acá y republicar.
