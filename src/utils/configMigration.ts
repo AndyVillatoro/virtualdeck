@@ -5,7 +5,7 @@
 // porque la cadena de migrate(v1 → v2 → ...) se aplica en orden.
 import type { DeckConfig, ButtonAction, ButtonConfig, PageConfig } from '../types';
 
-export const CURRENT_CONFIG_VERSION = 3;
+export const CURRENT_CONFIG_VERSION = 4;
 
 export interface ValidationResult {
   ok: boolean;
@@ -23,6 +23,8 @@ const ACTION_TYPES = new Set([
   // 2.x / 3.x / 4.x
   'rgb-color', 'rgb-mode', 'rgb-profile', 'rgb-preset',
   'window-snap', 'branch', 'countdown',
+  // 5.x — media extendido + macros
+  'media-shuffle', 'media-repeat', 'macro',
 ]);
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -94,6 +96,21 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
       // v2 → v3: nuevos campos opcionales (widget, visibleIf, timerTriggerAt,
       // gridRows, uiScale, theme). No hay cambio estructural — solo sube versión.
       return { ...c, configVersion: 3 };
+    },
+  },
+  {
+    from: 3, to: 4,
+    apply: (c) => {
+      // v3 → v4: i18n + onboarding. Los usuarios EXISTENTES no deben ver el
+      // onboarding (ya conocen la app), por eso onboardingCompleted: true aquí.
+      // Solo una instalación nueva (DEFAULT_CONFIG sin onboardingCompleted)
+      // dispara el tutorial. Idioma por defecto = detectar del sistema.
+      return {
+        ...c,
+        configVersion: 4,
+        language: c.language ?? 'system',
+        onboardingCompleted: c.onboardingCompleted ?? true,
+      };
     },
   },
 ];

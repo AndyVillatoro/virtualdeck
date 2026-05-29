@@ -10,6 +10,8 @@ import { registerPageIpc } from './pageIpc';
 import { registerRgbIpc } from './rgbIpc';
 import { registerSensorsIpc } from './sensorsIpc';
 import { registerMacroIpc } from './macroIpc';
+import { registerLogIpc } from './logIpc';
+import { registerUpdateIpc } from './updateIpc';
 
 export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerWindowIpc(win);
@@ -23,4 +25,6 @@ export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerRgbIpc(win);
   registerSensorsIpc();
   registerMacroIpc();
+  registerLogIpc();
+  registerUpdateIpc(win);
 }

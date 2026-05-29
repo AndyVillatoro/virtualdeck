@@ -10,6 +10,7 @@ import { ThemeProvider } from './utils/theme';
 import { VD } from './design';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { runActionSequence, executeAction } from './utils/actions';
+import { installGlobalErrorHandlers, logError } from './utils/logger';
 import type { ActionType, ButtonConfig, DeckConfig, PageConfig, Profile, SoundProfileId } from './types';
 
 const PAGES_DEFAULT: PageConfig[] = [
@@ -36,6 +37,10 @@ const DEFAULT_CONFIG: DeckConfig = {
   wallpaper: 'solid',
   profiles: [],
   configVersion: CURRENT_CONFIG_VERSION,
+  language: 'system',
+  // onboardingCompleted intencionalmente SIN setear: una instalación nueva
+  // (sin config en disco) dispara el onboarding. La migración v3→v4 lo marca
+  // como true para usuarios existentes.
 };
 
 type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb';
@@ -52,6 +57,7 @@ export default function App() {
   const historyRef = useRef<{ config: DeckConfig; label: string }[]>([]);
   const [undoToast, setUndoToast] = useState<string | null>(null);
   const undoToastTimer = useRef<number>();
+  const [updateReady, setUpdateReady] = useState<string | null>(null);
   const api = window.electronAPI;
 
   const showUndoToast = useCallback((text: string) => {
@@ -80,11 +86,22 @@ export default function App() {
     if (activePage >= config.pages.length) setActivePage(config.pages.length - 1);
   }, [config.pages.length]);
 
+  // Install global error handlers once (forwards to main-process log file).
+  useEffect(() => { installGlobalErrorHandlers(); }, []);
+
+  // Listen for auto-update events (downloaded → offer restart).
+  useEffect(() => {
+    if (!api?.update?.onStatus) return;
+    return api.update.onStatus((s: { status: string; version?: string }) => {
+      if (s.status === 'downloaded') setUpdateReady(s.version ?? '');
+    });
+  }, [api]);
+
   // Load config + autostart on mount
   useEffect(() => {
     if (!api) { setLoaded(true); return; }
     Promise.all([
-      api.config.load().catch(() => ({})),
+      api.config.load().catch((e) => { logError('config.load', e); return {}; }),
       api.app.getAutostart().catch(() => false),
     ]).then(([saved, as]) => {
       const migrated = migrateConfig(saved);
@@ -631,6 +648,28 @@ export default function App() {
           boxShadow: VD.shadow.menu,
         }}>
           {undoToast}
+        </div>
+      )}
+
+      {/* Update ready — bottom-center, offers restart */}
+      {updateReady !== null && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 320,
+          background: VD.surface, border: `1px solid ${VD.accent}`,
+          borderRadius: VD.radius.md, padding: '10px 16px',
+          fontFamily: VD.mono, fontSize: 11, color: VD.text,
+          boxShadow: VD.shadow.menu, display: 'flex', gap: 12, alignItems: 'center',
+        }}>
+          <span>Actualización {updateReady} lista.</span>
+          <button
+            onClick={() => api?.update.quitAndInstall()}
+            style={{ padding: '5px 12px', background: VD.accent, border: 'none', color: '#fff', fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
+          >REINICIAR</button>
+          <button
+            onClick={() => setUpdateReady(null)}
+            style={{ padding: '5px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm }}
+          >DESPUÉS</button>
         </div>
       )}
 

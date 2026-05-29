@@ -58,6 +58,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setAutostart: (enabled: boolean): Promise<void> => ipcRenderer.invoke('app:autostart:set', enabled),
     setZoom: (factor: number): Promise<void> => ipcRenderer.invoke('app:setZoom', factor),
     getZoom: (): Promise<number> => ipcRenderer.invoke('app:getZoom'),
+    getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
+    platformInfo: (): Promise<unknown> => ipcRenderer.invoke('app:platformInfo'),
+  },
+  log: {
+    write: (entry: object): Promise<void> => ipcRenderer.invoke('log:write', entry),
+    readRecent: (maxBytes?: number): Promise<string> => ipcRenderer.invoke('log:readRecent', maxBytes),
+    open: (): Promise<void> => ipcRenderer.invoke('log:open'),
+    export: (): Promise<boolean> => ipcRenderer.invoke('log:export'),
+  },
+  update: {
+    check: (): Promise<unknown> => ipcRenderer.invoke('update:check'),
+    quitAndInstall: (): Promise<void> => ipcRenderer.invoke('update:quitAndInstall'),
+    onStatus: (handler: (s: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, s: unknown) => handler(s);
+      ipcRenderer.on('update:status', listener);
+      return () => ipcRenderer.removeListener('update:status', listener);
+    },
   },
   page: {
     export: (pageData: object): Promise<boolean> => ipcRenderer.invoke('page:export', pageData),

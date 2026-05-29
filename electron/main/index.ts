@@ -4,6 +4,7 @@ import { loadConfig } from './configManager';
 import { createMainWindow } from './windowManager';
 import { createTray, applyTriggerableConfig } from './trayManager';
 import { registerAllIpc } from './ipc';
+import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
 
@@ -62,18 +63,6 @@ function setupWindow() {
   return win;
 }
 
-// 6.2 — Auto-update opt-in. Activar con `npm install electron-updater`.
-async function checkForUpdates() {
-  if (process.env.NODE_ENV === 'development') return;
-  try {
-    const moduleName = 'electron-updater';
-    const mod: any = await (Function('m', 'return import(m)') as (m: string) => Promise<any>)(moduleName).catch(() => null);
-    if (!mod?.autoUpdater) return;
-    mod.autoUpdater.autoDownload = true;
-    mod.autoUpdater.checkForUpdatesAndNotify().catch(() => {});
-  } catch {}
-}
-
 app.whenReady().then(() => {
   // Serve userData files via vd:// — keeps imageData references small in config JSON
   protocol.handle('vd', (request) => {
@@ -82,8 +71,8 @@ app.whenReady().then(() => {
     return net.fetch(`file:///${filePath.replace(/\\/g, '/')}`);
   });
 
-  setupWindow();
-  setTimeout(checkForUpdates, 8000);
+  const win = setupWindow();
+  setTimeout(() => autoCheckOnStartup(win), 8000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) setupWindow();

@@ -4,6 +4,23 @@ Todos los cambios notables de VirtualDeck se documentan acá.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.4.0] — 2026-05-28
+
+Primer milestone del roadmap "store-ready": el dev ya puede publicar actualizaciones y el usuario tiene ayuda integrada + reporte de errores.
+
+### Added
+- **Auto-actualizaciones**: integración de `electron-updater` con GitHub Releases. La app busca updates al arrancar (8s) y, cuando descarga una versión nueva, muestra un banner "Actualización lista → Reiniciar". También hay botón manual "Buscar update" en Ayuda → Acerca de.
+- **Panel Ayuda y Acerca de**: nueva sección colapsable en el flyout de configuración (⚙). Muestra versión de la app, documentación, reportar error, apoyar el proyecto, abrir/exportar registro, repetir tutorial (cuando exista), y créditos/licencias.
+- **Reporte de bugs**: botón "Reportar error" que abre un issue de GitHub pre-llenado con versión, OS, Electron/Chrome y las últimas líneas del registro. Plantillas de issue (`bug_report`, `feature_request`).
+- **Donaciones (no intrusivo)**: botón discreto "♥ Apoyar" con Ko-fi, GitHub Sponsors y PayPal. App 100% gratis; cero banners ni nags.
+- **Registro de errores persistente**: log rotativo en `userData/logs/virtualdeck.log` (512KB, 1 backup). Captura errores antes silenciados (`window.onerror`, promesas sin catch, fallos de acción). Exportable y adjuntable a reportes.
+- **IPC de versión/metadata**: `app:version` + `app:platformInfo` (OS, Electron, Chrome, locale) accesibles desde el renderer.
+
+### Changed
+- **Metadata de package.json**: agregados `author`, `license`, `homepage`, `repository` (resuelve el warning de electron-builder) + `build.publish` apuntando a GitHub Releases.
+- **Config schema v3 → v4**: nuevos campos opcionales `language`, `onboardingCompleted`, `hintsDismissed`. La migración marca a usuarios existentes como `onboardingCompleted: true` (solo instalaciones nuevas verán el futuro onboarding).
+- **Validación de import**: el set de tipos de acción válidos ahora incluye `macro`, `media-shuffle`, `media-repeat` (faltaban desde 0.3.0).
+
 ## [0.3.0] — 2026-05-10
 
 ### Added

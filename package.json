@@ -1,9 +1,16 @@
 {
   "name": "virtualdeck",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "VirtualDeck – Stream Deck alternativo para Windows",
   "main": "out/main/index.js",
   "private": true,
+  "author": "Andy Villatoro <noc@metronethn.com>",
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/AndyVillatoro/virtualdeck",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndyVillatoro/virtualdeck.git"
+  },
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "electron-vite build",
@@ -13,6 +20,7 @@
     "build:installer": "electron-vite build && electron-builder --win nsis"
   },
   "dependencies": {
+    "electron-updater": "^6.8.3",
     "lucide-react": "^1.8.0",
     "openrgb-sdk": "^0.6.0",
     "react": "^18.3.1",
@@ -36,6 +44,13 @@
     "directories": {
       "output": "dist"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "AndyVillatoro",
+        "repo": "virtualdeck"
+      }
+    ],
     "files": [
       "out/**/*",
       "package.json"
