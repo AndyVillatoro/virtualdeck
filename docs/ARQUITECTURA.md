@@ -13,6 +13,10 @@
 Stack: **Electron 33 + React 18 + Vite 5 + TypeScript**. Dos procesos:
 `electron/` (main, Node) y `src/` (renderer, navegador). Puente: `electron/preload`.
 
+> 🔒 **Las capas de este mapa se verifican automáticamente** con `npm run lint:arch`
+> (dependency-cruiser, config en `.dependency-cruiser.cjs`). Romper un límite (un ciclo,
+> main importando renderer, un componente importando una pantalla, etc.) es **error**.
+
 ---
 
 ## 1. Proceso principal (`electron/main/`)

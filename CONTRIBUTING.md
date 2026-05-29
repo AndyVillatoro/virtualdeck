@@ -397,6 +397,21 @@ Si sos un agente AI retomando este proyecto, este es el contexto mínimo que nec
 
 ---
 
+## 🧱 Tooling de calidad y arquitectura (SRP/SOLID)
+
+El gate único es **`npm run check`** (`tsc --noEmit` + `dependency-cruiser` + `eslint`). Corré antes y después de cada cambio; cero **errores**.
+
+| Comando | Qué verifica |
+|---|---|
+| `npm run typecheck` | TypeScript estricto (`tsc --noEmit`). |
+| `npm run lint:arch` | **dependency-cruiser**: hace cumplir las capas de [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) — sin ciclos, main no importa renderer, renderer no importa main, `components`→no `screens`, `utils`/`data` no importan UI. Config: `.dependency-cruiser.cjs`. |
+| `npm run lint` | **eslint** + typescript-eslint + react-hooks. Los *warnings* de `complexity`/`max-lines`/`max-depth` son **señal de deuda SRP**: marcan qué módulo/función dividir (Bloque B del roadmap). No bloquean. Config: `eslint.config.mjs`. |
+| `npm run lint:dead` | **knip**: archivos/exports/deps sin usar (código muerto). Informativo. Config: `knip.json`. |
+
+**Regla:** una violación de `lint:arch` es **error** (rompe una capa SRP) → hay que arreglarla o, si es intencional, justificarla en `.dependency-cruiser.cjs`. Un *warning* de eslint no bloquea, pero si tu cambio agrega complejidad/líneas, considerá dividir antes de crecer.
+
+---
+
 ## 🧩 Recetas
 
 ### Agregar un tipo de acción nuevo

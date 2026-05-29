@@ -9,8 +9,14 @@
 > Cada ítem referencia su módulo en [ARQUITECTURA.md](ARQUITECTURA.md).
 >
 > **Ritual por ítem:** 1) leer la fila + el módulo en el mapa · 2) verificar estado
-> actual · 3) aplicar la mejora (código + i18n) · 4) `npx tsc --noEmit` + `npm run build`
-> en verde · 5) documentar en CHANGELOG y wiki si cambió el comportamiento · 6) marcar ✅.
+> actual · 3) aplicar la mejora (código + i18n) · 4) **`npm run check`** (tsc + arquitectura
+> + eslint) + `npm run build` en verde · 5) documentar en CHANGELOG y wiki si cambió el
+> comportamiento · 6) marcar ✅.
+>
+> **Tooling SRP/SOLID verificable** (ver [CONTRIBUTING.md](../CONTRIBUTING.md)): `npm run lint:arch`
+> (dependency-cruiser — hace cumplir las capas de ARQUITECTURA.md), `npm run lint` (eslint —
+> los *warnings* de `complexity`/`max-lines` señalan qué dividir en el Bloque B), `npm run lint:dead`
+> (knip — código muerto).
 >
 > Estados: ⬜ pendiente · 🚧 en curso · ✅ hecho · ⏸ pausado
 

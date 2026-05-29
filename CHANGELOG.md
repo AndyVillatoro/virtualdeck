@@ -7,6 +7,7 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 ## [No publicado]
 
 ### Added
+- **Tooling SRP/SOLID verificable**: `dependency-cruiser` (hace cumplir las capas de `docs/ARQUITECTURA.md` — sin ciclos, main↔renderer aislados, components/utils/data sin importar "hacia arriba"), `eslint` + `typescript-eslint` + `react-hooks` (con `complexity`/`max-lines`/`max-depth` como señal de deuda SRP) y `knip` (código muerto). Nuevo gate único **`npm run check`** (tsc + arquitectura + eslint). Arquitectura: 0 violaciones en 75 módulos.
 - **Marco de mejoras + documentación**: nuevo `docs/ARQUITECTURA.md` (mapa SRP de cada módulo/clase/feature con su responsabilidad única), `docs/ROADMAP.md` (secuencia "1/N" para mejorar un apartado por sesión con ritual de verificar→mejorar→documentar) y `docs/wiki/` (staging bilingüe ES/EN del wiki público al que apunta el botón Documentación: Home, Sidebar, Primeros pasos / Getting Started, e instrucciones de publicación).
 - **Más hints y tooltips**: hint de búsqueda (Ctrl+K) cuando el deck ya tiene botones, hint de Configuración anclado al engranaje ⚙, y traducción ES/EN de todos los tooltips nativos de la barra superior.
 - **i18n: WallpaperB 100% traducido** (ítem #1 del roadmap de i18n profundo): UI y nombres de fondos.
@@ -20,6 +21,7 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Limpieza de recursos muertos**: eliminadas `chats/`, `project/` (wireframes/mockups), `.interface-design/` y `docs/legacy/` — recursos de diseño/guía ya usados, sin referencias de código.
 
 ### Fixed
+- **Rules of Hooks en `ButtonCell`**: el `return` temprano por `isHidden` ocurría **antes** de dos `useEffect`, así que al alternar visibilidad de un botón cambiaba el orden de hooks (bug latente de React). Detectado por el nuevo `eslint` (`react-hooks/rules-of-hooks`); el early-return se movió a después de todos los hooks.
 - **🔥 Widget de música no detectaba nada (regresión)**: el `Await-Op` de `media.ts` hacía polling de `$op.Status` del `IAsyncOperation` de WinRT, pero en PowerShell 5.1 stock esa propiedad no se proyecta (queda vacía), así que el await devolvía siempre `$null`, el `SessionManager` salía `null` y el widget `now-playing` (sidebar, fullscreen y celdas) quedaba en blanco. Fix: volver al mecanismo `AsTask` (`System.Runtime.WindowsRuntime` + reflection) con tipo de resultado explícito. Alias de tipo (`$TMgr`/`$TProps`/`$TStream`) cargados con el loader WinRT completo. Soporte de `IAsyncOperationWithProgress` para el thumbnail (`OpenReadAsync`). Verificado en vivo: manager resuelve OK donde antes salía null.
 
 ## [0.4.0] — 2026-05-28

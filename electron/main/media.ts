@@ -237,7 +237,7 @@ foreach ($r in $results) {
 }
 `.trim();
 
-let _cache: { data: NowPlaying | null; ts: number; lastValid: NowPlaying | null } = {
+const _cache: { data: NowPlaying | null; ts: number; lastValid: NowPlaying | null } = {
   data: null, ts: 0, lastValid: null,
 };
 let _thumbTrack = '';

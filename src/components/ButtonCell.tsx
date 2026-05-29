@@ -60,15 +60,6 @@ function ButtonCellInner({
   soundProfileRef.current = soundProfile;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
-  if (isHidden) {
-    return (
-      <div style={{
-        background: VD.elevated, border: `1px solid ${VD.border}`,
-        borderRadius: VD.radius.lg, opacity: 0.2, pointerEvents: 'none',
-      }} />
-    );
-  }
-
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
   const hasCustomBg = !!button.bgColor;
   const hasLongPress = !isEmpty && !!onLongPress;
@@ -224,6 +215,17 @@ function ButtonCellInner({
       if (timer !== null) clearTimeout(timer);
     };
   }, [hasLongPress]);
+
+  // Botón oculto por visibilidad condicional: placeholder inerte. Va DESPUÉS de
+  // todos los hooks (Rules of Hooks: no se pueden llamar tras un return temprano).
+  if (isHidden) {
+    return (
+      <div style={{
+        background: VD.elevated, border: `1px solid ${VD.border}`,
+        borderRadius: VD.radius.lg, opacity: 0.2, pointerEvents: 'none',
+      }} />
+    );
+  }
 
   return (
     <>
