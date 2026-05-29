@@ -517,8 +517,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         >
                           <Icon size={16} color={active ? accent : VD.textMuted} strokeWidth={1.5} />
                           <div>
-                            <div style={{ fontFamily: VD.mono, fontSize: 9, color: active ? VD.text : VD.textDim, letterSpacing: 0.5 }}>{at.label}</div>
-                            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 1 }}>{at.desc}</div>
+                            <div style={{ fontFamily: VD.mono, fontSize: 9, color: active ? VD.text : VD.textDim, letterSpacing: 0.5 }}>{t(at.label)}</div>
+                            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 1 }}>{t(at.desc)}</div>
                           </div>
                         </div>
                       );
@@ -570,7 +570,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                               onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
                             >
                               <Icon size={12} color={VD.textMuted} strokeWidth={1.5} />
-                              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim }}>{at.label}</span>
+                              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim }}>{t(at.label)}</span>
                             </div>
                           );
                         })}
@@ -1788,6 +1788,7 @@ function FolderButtonSlot({ button, accent, onChange }: {
 
 // Compact toggle-off action picker
 function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
+  const tr = useT();
   const simpleTypes: ActionType[] = ['hotkey', 'script', 'app', 'media-play-pause', 'mute', 'kill-process', 'volume-set', 'brightness', 'none'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1796,8 +1797,8 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
         onChange={(e) => onChange({ type: e.target.value as ActionType })}
         style={{ ...selectStyle }}
       >
-        {simpleTypes.map(t => (
-          <option key={t} value={t}>{ACTION_TYPES.find(at => at.type === t)?.label ?? t}</option>
+        {simpleTypes.map(ty => (
+          <option key={ty} value={ty}>{tr(ACTION_TYPES.find(at => at.type === ty)?.label ?? '') || ty}</option>
         ))}
       </select>
       {action.type === 'hotkey' && (
@@ -1838,12 +1839,13 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
 
 // Compact action picker for branch then/else — reuses ToggleOffActionPicker with an extended type list
 function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
+  const tr = useT();
   const simpleTypes: ActionType[] = ['none', 'set-var', 'incr-var', 'hotkey', 'script', 'notify', 'webhook', 'clipboard', 'type-text', 'volume-set', 'brightness', 'rgb-preset', 'window-snap'];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <select value={action.type} onChange={(e) => onChange({ type: e.target.value as ActionType })} style={{ ...selectStyle }}>
-        {simpleTypes.map(t => (
-          <option key={t} value={t}>{ACTION_TYPES.find(at => at.type === t)?.label ?? t}</option>
+        {simpleTypes.map(ty => (
+          <option key={ty} value={ty}>{tr(ACTION_TYPES.find(at => at.type === ty)?.label ?? '') || ty}</option>
         ))}
       </select>
       {action.type === 'set-var' && (
@@ -1923,12 +1925,13 @@ function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; o
 }
 
 function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; onChange: (a: ButtonAction) => void; onRemove: () => void }) {
+  const tr = useT();
   const meta = ACTION_TYPES.find(a => a.type === action.type);
   const Icon = meta?.Icon ?? IconNone;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '6px 10px' }}>
       <Icon size={14} color={VD.textDim} strokeWidth={1.5} />
-      <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, minWidth: 64 }}>{meta?.label}</span>
+      <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, minWidth: 64 }}>{meta ? tr(meta.label) : ''}</span>
       {action.type === 'app' && (
         <input value={action.appPath || ''} onChange={e => onChange({ ...action, appPath: e.target.value })} placeholder="ruta o comando" style={miniInputStyle} />
       )}
