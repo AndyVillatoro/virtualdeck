@@ -5,8 +5,10 @@ import { EditorB } from './screens/EditorB';
 import { WallpaperB } from './screens/WallpaperB';
 import { RGBManagerB } from './screens/RGBManagerB';
 import { SearchOverlay } from './components/SearchOverlay';
+import { Onboarding } from './components/Onboarding';
 import { NowPlayingProvider } from './utils/nowPlaying';
 import { ThemeProvider } from './utils/theme';
+import { LanguageProvider, useT } from './utils/i18n';
 import { VD } from './design';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { runActionSequence, executeAction } from './utils/actions';
@@ -45,6 +47,33 @@ const DEFAULT_CONFIG: DeckConfig = {
 
 type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb';
 
+// Banner de actualización lista. Extraído como componente para que pueda usar
+// useT() (App renderiza el LanguageProvider, así que su cuerpo queda fuera del
+// contexto i18n; sus hijos sí lo tienen).
+function UpdateBanner({ version, onRestart, onLater }: { version: string; onRestart: () => void; onLater: () => void }) {
+  const t = useT();
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 320,
+      background: VD.surface, border: `1px solid ${VD.accent}`,
+      borderRadius: VD.radius.md, padding: '10px 16px',
+      fontFamily: VD.mono, fontSize: 11, color: VD.text,
+      boxShadow: VD.shadow.menu, display: 'flex', gap: 12, alignItems: 'center',
+    }}>
+      <span>{t('update.ready', { version })}</span>
+      <button
+        onClick={onRestart}
+        style={{ padding: '5px 12px', background: VD.accent, border: 'none', color: '#fff', fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
+      >{t('update.restart')}</button>
+      <button
+        onClick={onLater}
+        style={{ padding: '5px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm }}
+      >{t('update.later')}</button>
+    </div>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState<View>('main');
   const [config, setConfig] = useState<DeckConfig>(DEFAULT_CONFIG);
@@ -53,6 +82,7 @@ export default function App() {
   const [activePage, setActivePage] = useState(0);
   const [autostart, setAutostart] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const historyRef = useRef<{ config: DeckConfig; label: string }[]>([]);
   const [undoToast, setUndoToast] = useState<string | null>(null);
@@ -114,9 +144,23 @@ export default function App() {
         setConfig({ ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION });
       }
       setAutostart(as as boolean);
+      // Primera ejecución: instalación virgen (sin config en disco) → s no trae
+      // onboardingCompleted. La migración v3→v4 lo marca true para usuarios
+      // existentes, así que solo los nuevos ven el tutorial.
+      if (s.onboardingCompleted !== true) setShowOnboarding(true);
       setLoaded(true);
     });
   }, []);
+
+  // Marca el onboarding como completado (o saltado) y persiste el flag.
+  const finishOnboarding = useCallback(() => {
+    setShowOnboarding(false);
+    setConfig((prev) => {
+      const next = { ...prev, onboardingCompleted: true };
+      api?.config.save(next).catch(() => {});
+      return next;
+    });
+  }, [api]);
 
   // Push current state to history then apply next
   const withHistory = useCallback((label: string, updater: (prev: DeckConfig) => DeckConfig) => {
@@ -354,6 +398,21 @@ export default function App() {
     saveConfig({ ...config, theme });
   }, [config, saveConfig]);
 
+  // Language handler
+  const setLanguage = useCallback((language: 'system' | 'es' | 'en') => {
+    saveConfig({ ...config, language });
+  }, [config, saveConfig]);
+
+  // Hints contextuales: marcar uno como descartado (persistente, sin historial).
+  const dismissHint = useCallback((id: string) => {
+    setConfig((prev) => {
+      if (prev.hintsDismissed?.includes(id)) return prev;
+      const next = { ...prev, hintsDismissed: [...(prev.hintsDismissed ?? []), id] };
+      api?.config.save(next).catch(() => {});
+      return next;
+    });
+  }, [api]);
+
   // Page export
   const handlePageExport = useCallback(async (pageIdx: number) => {
     if (!api) return;
@@ -542,6 +601,7 @@ export default function App() {
   const editingButton = editingId ? config.buttons.find((b) => b.id === editingId) ?? null : null;
 
   return (
+    <LanguageProvider pref={config.language}>
     <ThemeProvider theme={config.theme ?? 'dark'} accent={config.accent}>
     <NowPlayingProvider>
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -583,8 +643,13 @@ export default function App() {
           onUiScaleChange={setUiScale}
           theme={config.theme ?? 'dark'}
           onThemeChange={setTheme}
+          language={config.language ?? 'system'}
+          onLanguageChange={setLanguage}
+          hintsDismissed={config.hintsDismissed ?? []}
+          onDismissHint={dismissHint}
           onPageExport={handlePageExport}
           onPageImport={handlePageImport}
+          onReplayOnboarding={() => setShowOnboarding(true)}
         />
       )}
 
@@ -619,9 +684,14 @@ export default function App() {
         <EditorB
           button={editingButton}
           rgbProfiles={config.rgb?.profiles ?? []}
+          deckState={config.state ?? {}}
           onClose={() => setEditingId(null)}
           onSave={(updated) => { updateButton(updated); setEditingId(null); }}
         />
+      )}
+
+      {showOnboarding && (
+        <Onboarding accent={config.accent} onClose={finishOnboarding} />
       )}
 
       {searchOpen && view === 'main' && (
@@ -653,24 +723,11 @@ export default function App() {
 
       {/* Update ready — bottom-center, offers restart */}
       {updateReady !== null && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 320,
-          background: VD.surface, border: `1px solid ${VD.accent}`,
-          borderRadius: VD.radius.md, padding: '10px 16px',
-          fontFamily: VD.mono, fontSize: 11, color: VD.text,
-          boxShadow: VD.shadow.menu, display: 'flex', gap: 12, alignItems: 'center',
-        }}>
-          <span>Actualización {updateReady} lista.</span>
-          <button
-            onClick={() => api?.update.quitAndInstall()}
-            style={{ padding: '5px 12px', background: VD.accent, border: 'none', color: '#fff', fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-          >REINICIAR</button>
-          <button
-            onClick={() => setUpdateReady(null)}
-            style={{ padding: '5px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm }}
-          >DESPUÉS</button>
-        </div>
+        <UpdateBanner
+          version={updateReady}
+          onRestart={() => api?.update.quitAndInstall()}
+          onLater={() => setUpdateReady(null)}
+        />
       )}
 
       {/* Import error — bottom-center, dismissible */}
@@ -696,5 +753,6 @@ export default function App() {
     </div>
     </NowPlayingProvider>
     </ThemeProvider>
+    </LanguageProvider>
   );
 }

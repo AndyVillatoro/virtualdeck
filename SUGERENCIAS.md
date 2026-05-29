@@ -6,7 +6,13 @@ Documento generado tras la pasada de convergencia de UI y la eliminación del mo
 
 ## 1. Funcionalidades nuevas — alto impacto
 
-### 1.2 Variables y estado entre botones ★★ · M
+### 1.2 Variables y estado entre botones ★★ · M — ✅ HECHO (no publicado)
+Implementado: capa `state: Record<string,string>` en `DeckConfig`, interpolación
+`{var}` en app/url/script/clipboard/type-text/webhook/tts (`interpolate` en
+`utils/actions.ts`), acciones `set-var`/`incr-var`, `branch` condicional, y el
+**widget `variable`** que muestra el contador en vivo en un botón. Descripción
+original abajo.
+
 Hoy cada botón es independiente. Una capa de variables persistentes (`{vol}`, `{lastApp}`, contadores) permite hacer flujos: un botón incrementa, otro lo lee. Implementación: añadir `state: Record<string, any>` al `DeckConfig` y soportar interpolación `{var}` en `appArgs`, `url`, `script`, `clipboardText`, `typeText`. Habilita usos como contador de tomas de stream, contador pomodoro, recordar el último audio device.
 
 ### 1.3 Acciones condicionales / encadenadas ★★ · M
@@ -128,12 +134,35 @@ Una guía de usuario (`docs/guia.md`), guía de desarrollo (`docs/desarrollo.md`
 
 ## Priorización sugerida (próximas 4 iteraciones)
 
-| Iteración | Foco | Items |
-|-----------|------|-------|
-| **1 — limpieza** | Cerrar la convergencia visual | 4.6, 4.5, 5.1, 4.2 |
-| **2 — UX core** | Quitar fricción de uso diario | 2.2 (búsqueda), 2.5 (drag entre páginas), 3.1 (backups), 3.3 (toasts de error) |
-| **3 — diferencial** | Lo que ningún competidor pequeño tiene | 1.1 (mando móvil) o 1.2 (variables) — elegir uno |
-| **4 — comunidad** | Empezar a generar tracción externa | 6.4 (docs), 6.1 (galería), 6.2 (auto-update) |
+> **Estado al 2026-05-29**: las iteraciones 1 y 2 están **completas**, y buena parte
+> de la 4 también. Auditoría hecha sobre el código (no solo el doc):
+>
+> - **Iter 1 ✅** — 4.2 `memo(ButtonCell)` en `ButtonCell.tsx`; 4.4 formatters
+>   `TIME_FMT`/`DATE_FMT` reutilizados en `MainB`; 4.5 huérfanos movidos a
+>   `docs/legacy/`; 4.6 radios 100% tokenizados (los `boxShadow` restantes en
+>   `BrandIconEditor` son anillos de contorno, no elevación); 5.1 reloj en
+>   `DotText` en sidebar (`MainB`) y fullscreen (`FullscreenB`).
+> - **Iter 2 ✅** — 2.2 `SearchOverlay` (Ctrl+K); 2.4 pegar imagen (Ctrl+V) en
+>   `EditorB`; 2.5 drag de botón a pestaña de otra página (`MainB` tabs onDrop);
+>   2.6 toast de undo (`undoToast` en `App`); 2.8 celda viva de preview en
+>   `EditorB`; 3.1 backups; 3.3 toasts de error de acción en `MainB`.
+> - **Iter 4 🟡** — 6.2 auto-update ✅ (v0.4.0), 6.4 docs ✅, 6.3 firma ✅ (doc),
+>   onboarding ✅ (no publicado); falta **6.1 galería de perfiles**.
+> - **i18n ES/EN ✅** (no publicado) — `LanguageProvider`/`useT` + selector de idioma.
+>   Traducidas las superficies clave; EditorB/RGB/Wallpaper pendientes (incremental).
+> - **Hints contextuales ✅** (no publicado) — componente `Hint` descartable
+>   (`hintsDismissed`); primer hint: "crear tu primer botón" en deck vacío.
+> - **Regresión corregida** (no publicado): widget `now-playing` — ver CHANGELOG.
+>
+> **Próximo foco real → Iteración 3 (diferencial).** Elegir entre 1.1 (mando
+> móvil) o 1.2 (variables y estado entre botones). Después, 6.1 (galería).
+
+| Iteración | Foco | Items | Estado |
+|-----------|------|-------|--------|
+| **1 — limpieza** | Cerrar la convergencia visual | 4.6, 4.5, 5.1, 4.2 | ✅ completa |
+| **2 — UX core** | Quitar fricción de uso diario | 2.2, 2.5, 3.1, 3.3 (+2.4, 2.6, 2.8) | ✅ completa |
+| **3 — diferencial** | Lo que ningún competidor pequeño tiene | 1.2 (variables) ✅, 1.1 (mando móvil) ⬜ | ✅ 1.2 hecho |
+| **4 — comunidad** | Empezar a generar tracción externa | 6.4 (docs) ✅, 6.2 (auto-update) ✅, 6.1 (galería) ⬜ | 🟡 parcial |
 
 ---
 

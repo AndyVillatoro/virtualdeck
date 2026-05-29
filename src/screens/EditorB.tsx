@@ -17,6 +17,8 @@ import type { ActionType, AudioDevice, ButtonAction, ButtonConfig, FolderButton,
 interface EditorBProps {
   button: ButtonConfig;
   rgbProfiles?: RGBProfile[];
+  /** Variables de estado actuales — para autocompletar el nombre en el widget 'variable'. */
+  deckState?: Record<string, string>;
   onClose: () => void;
   onSave: (updated: ButtonConfig) => void;
 }
@@ -24,7 +26,7 @@ interface EditorBProps {
 const STEPS = ['ACCIÓN', 'CONFIGURAR', 'ESTILO'];
 
 
-export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBProps) {
+export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
   const api = window.electronAPI;
   const [step, setStep] = useState(0);
   const [action, setAction] = useState<ButtonAction>({ ...button.action });
@@ -58,11 +60,14 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
   );
   const [radioGroup, setRadioGroup] = useState(button.radioGroup ?? '');
   // Widget / Visibility / Scheduled trigger
-  const [widget, setWidget] = useState<'clock' | 'weather' | 'now-playing' | 'sensor' | undefined>(button.widget);
+  const [widget, setWidget] = useState<'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | undefined>(button.widget);
   const [sensorWidgetId, setSensorWidgetId] = useState(button.sensorWidget?.sensorId ?? '');
   const [sensorWidgetSuffix, setSensorWidgetSuffix] = useState(button.sensorWidget?.suffix ?? '');
   const [sensorWidgetWarn, setSensorWidgetWarn] = useState(button.sensorWidget?.warnAt?.toString() ?? '');
   const [sensorWidgetCrit, setSensorWidgetCrit] = useState(button.sensorWidget?.critAt?.toString() ?? '');
+  const [varWidgetName, setVarWidgetName] = useState(button.varWidget?.varName ?? '');
+  const [varWidgetPrefix, setVarWidgetPrefix] = useState(button.varWidget?.prefix ?? '');
+  const [varWidgetSuffix, setVarWidgetSuffix] = useState(button.varWidget?.suffix ?? '');
   const [visibleIfApp, setVisibleIfApp] = useState(button.visibleIf?.app ?? '');
   const [visibleIfSensorId, setVisibleIfSensorId] = useState(button.visibleIf?.sensor?.id ?? '');
   const [visibleIfSensorOp, setVisibleIfSensorOp] = useState<'>'|'<'|'>='|'<='|'=='>(button.visibleIf?.sensor?.op ?? '>');
@@ -197,6 +202,13 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
             suffix: sensorWidgetSuffix.trim() || undefined,
             warnAt: sensorWidgetWarn.trim() ? parseFloat(sensorWidgetWarn) : undefined,
             critAt: sensorWidgetCrit.trim() ? parseFloat(sensorWidgetCrit) : undefined,
+          }
+        : undefined,
+      varWidget: widget === 'variable' && varWidgetName.trim()
+        ? {
+            varName: varWidgetName.trim(),
+            prefix: varWidgetPrefix || undefined,
+            suffix: varWidgetSuffix.trim() || undefined,
           }
         : undefined,
       visibleIf: (() => {
@@ -1429,7 +1441,7 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                 {/* Widget — live data display on the button cell */}
                 <Field label="WIDGET (MUESTRA DATOS EN EL BOTÓN)">
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {([undefined, 'clock', 'weather', 'now-playing', 'sensor'] as const).map((w) => {
+                    {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable'] as const).map((w) => {
                       // now-playing on an audio-device button hides the device
                       // name in favor of the playing track — useless combo, so
                       // we lock it out here instead of silently dropping the
@@ -1450,7 +1462,7 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                             opacity: conflicts ? 0.4 : 1,
                           }}
                         >
-                          {w === undefined ? 'NINGUNO' : w === 'clock' ? 'RELOJ' : w === 'weather' ? 'CLIMA' : w === 'now-playing' ? 'MÚSICA' : 'SENSOR'}
+                          {w === undefined ? 'NINGUNO' : w === 'clock' ? 'RELOJ' : w === 'weather' ? 'CLIMA' : w === 'now-playing' ? 'MÚSICA' : w === 'sensor' ? 'SENSOR' : 'VARIABLE'}
                         </button>
                       );
                     })}
@@ -1488,6 +1500,37 @@ export function EditorB({ button, rgbProfiles = [], onClose, onSave }: EditorBPr
                       </div>
                       <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
                         Warn pinta el valor en amarillo, Crit en rojo. Mismas unidades que el sensor.
+                      </div>
+                    </div>
+                  )}
+                  {widget === 'variable' && (
+                    <div style={{ marginTop: 8, padding: 10, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <input
+                        value={varWidgetName}
+                        onChange={(e) => setVarWidgetName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                        placeholder="Nombre de variable (ej. tomas)"
+                        list="vd-known-vars"
+                        style={{ ...inputStyle }}
+                      />
+                      <datalist id="vd-known-vars">
+                        {Object.keys(deckState).map((k) => <option key={k} value={k} />)}
+                      </datalist>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          value={varWidgetPrefix}
+                          onChange={(e) => setVarWidgetPrefix(e.target.value)}
+                          placeholder="Prefijo (ej. 🎬 )"
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                        <input
+                          value={varWidgetSuffix}
+                          onChange={(e) => setVarWidgetSuffix(e.target.value)}
+                          placeholder="Etiqueta debajo"
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                      </div>
+                      <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
+                        Muestra el valor en vivo de una variable. Combínalo con acciones "Incrementar variable" / "Asignar variable" para hacer contadores. Las variables sin valor se muestran como 0.
                       </div>
                     </div>
                   )}

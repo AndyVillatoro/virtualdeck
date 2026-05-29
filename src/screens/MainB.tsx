@@ -11,6 +11,7 @@ import { DotText } from '../components/DotText';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
+import { Hint } from '../components/Hint';
 import { WeatherWidget, wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors, findSensor, evalCondition } from '../utils/sensors';
@@ -58,6 +59,10 @@ interface MainBProps {
   onUiScaleChange?: (scale: number) => void;
   theme?: 'dark' | 'light' | 'system';
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  language?: 'system' | 'es' | 'en';
+  onLanguageChange?: (language: 'system' | 'es' | 'en') => void;
+  hintsDismissed?: string[];
+  onDismissHint?: (id: string) => void;
   onPageExport?: (pageIdx: number) => Promise<void>;
   onPageImport?: () => Promise<void>;
   onReplayOnboarding?: () => void;
@@ -87,7 +92,7 @@ export function MainB({
   onConfigExport, onConfigImport, onConfigImportFromUrl, onSwapButtons,
   onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage,
   onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
-  uiScale, onUiScaleChange, theme, onThemeChange, onPageExport, onPageImport, onReplayOnboarding,
+  uiScale, onUiScaleChange, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
   const VD = useTheme();
   const api = window.electronAPI;
@@ -322,6 +327,12 @@ export function MainB({
         map[btn.id] = { line1: `${emoji} ${widgetWeather.temp}°`, line2: widgetWeather.city };
       } else if (btn.widget === 'now-playing' && nowPlaying) {
         map[btn.id] = { line1: nowPlaying.title || '—', line2: nowPlaying.artist || undefined };
+      } else if (btn.widget === 'variable' && btn.varWidget?.varName) {
+        const raw = config.state?.[btn.varWidget.varName] ?? '0';
+        map[btn.id] = {
+          line1: `${btn.varWidget.prefix ?? ''}${raw}`,
+          line2: btn.varWidget.suffix || btn.varWidget.varName,
+        };
       } else if (btn.widget === 'sensor' && btn.sensorWidget) {
         const s = findSensor(btn.sensorWidget.sensorId, sensorList);
         if (s) {
@@ -344,7 +355,7 @@ export function MainB({
       }
     }
     return map;
-  }, [config.buttons, clock, widgetWeather, nowPlaying, sensorList]);
+  }, [config.buttons, config.state, clock, widgetWeather, nowPlaying, sensorList]);
 
   // Scheduled triggers: check every 15s for buttons with timerTriggerAt matching current HH:MM.
   useEffect(() => {
@@ -388,6 +399,10 @@ export function MainB({
   }, [sensorList, config.buttons, executeButton]);
 
   const isPlaying = nowPlaying?.status === 'Playing';
+  // Para hints contextuales: ¿el deck ya tiene al menos un botón configurado?
+  const hasConfiguredButtons = config.buttons.some(
+    (b) => b.action.type !== 'none' || b.label || b.icon || b.imageData || b.brandIcon
+  );
 
   function extractExeName(appPath: string): string | null {
     if (!appPath) return null;
@@ -470,6 +485,10 @@ export function MainB({
           onUiScaleChange={onUiScaleChange}
           theme={theme}
           onThemeChange={onThemeChange}
+          language={language}
+          onLanguageChange={onLanguageChange}
+          hintsDismissed={hintsDismissed}
+          onDismissHint={onDismissHint}
           tileMode={config.tileMode ?? 'square'}
           onTileModeChange={(m) => onConfigChange({ ...config, tileMode: m })}
           onReplayOnboarding={onReplayOnboarding}
@@ -663,6 +682,28 @@ export function MainB({
         })()}
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
+          {/* Hints contextuales (uno a la vez): deck vacío → "creá tu primer
+              botón"; deck con botones → tip de búsqueda Ctrl+K. Descartables. */}
+          {onDismissHint && !hasConfiguredButtons && (
+            <Hint
+              id="firstButton"
+              textKey="hint.firstButton"
+              dismissed={hintsDismissed}
+              onDismiss={onDismissHint}
+              accent={config.accent}
+              style={{ top: 12, left: '50%', transform: 'translateX(-50%)' }}
+            />
+          )}
+          {onDismissHint && hasConfiguredButtons && (
+            <Hint
+              id="search"
+              textKey="hint.search"
+              dismissed={hintsDismissed}
+              onDismiss={onDismissHint}
+              accent={config.accent}
+              style={{ bottom: 12, left: '50%', transform: 'translateX(-50%)' }}
+            />
+          )}
           {/* Button grid — two modes via config.tileMode:
               'square' (default): N:M aspect locked, square cells, may leave margin
               'fill':   cells fill the area (slightly rectangular when needed) */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VD } from '../design';
 import { DotLabel } from '../components/DotLabel';
+import { useT } from '../utils/i18n';
 import type { DeckConfig } from '../types';
 
 interface WallpaperBProps {
@@ -23,6 +24,7 @@ const WALLPAPERS: { id: string; label: string; preview: string }[] = [
 const PREVIEW_GRID = Array.from({ length: 12 });
 
 export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
+  const t = useT();
   const [selected, setSelected] = useState(config.wallpaper || 'solid');
   const [applied, setApplied] = useState(false);
 
@@ -56,9 +58,9 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
               border: `1px solid ${VD.border}`, fontFamily: VD.mono,
               fontSize: 10, color: VD.text, letterSpacing: 1, cursor: 'pointer',
             }}>
-              ← VOLVER
+              {t('wp.back')}
             </button>
-            <DotLabel size={10} color={VD.text} spacing={2}>VISTA PREVIA</DotLabel>
+            <DotLabel size={10} color={VD.text} spacing={2}>{t('wp.preview')}</DotLabel>
           </div>
         </div>
 
@@ -88,13 +90,13 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
       }}>
         {/* Cabecera + botón aplicar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <DotLabel size={10} color={VD.textMuted} spacing={2}>SELECCIONAR FONDO</DotLabel>
+          <DotLabel size={10} color={VD.textMuted} spacing={2}>{t('wp.select')}</DotLabel>
           <button onClick={handleApply} style={{
             padding: '8px 20px', background: applied ? VD.success : VD.accent,
             border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2,
             color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'background 0.3s',
           }}>
-            {applied ? '✓ APLICADO' : 'APLICAR →'}
+            {applied ? t('wp.applied') : t('wp.apply')}
           </button>
         </div>
 
@@ -119,7 +121,7 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
                   fontFamily: VD.mono, fontSize: 8, color: '#fff', letterSpacing: 1,
                   textShadow: '0 1px 3px rgba(0,0,0,0.9)',
                 }}>
-                  ● SELECCIONADO
+                  {t('wp.selected')}
                 </div>
               )}
               <div style={{
@@ -127,14 +129,14 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
                 textAlign: 'center', fontFamily: VD.mono, fontSize: 9, color: 'rgba(255,255,255,0.7)',
                 textShadow: '0 1px 3px rgba(0,0,0,0.9)',
               }}>
-                {w.label}
+                {t(`wp.name.${w.id}`)}
               </div>
             </button>
           ))}
         </div>
 
         <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>
-          Los cambios se guardan automáticamente al presionar Aplicar.
+          {t('wp.autosave')}
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ import { RGBSection } from './settings/RGBSection';
 import { SensorsSection } from './settings/SensorsSection';
 import { ToggleRow, SettingLabel } from './settings/settingHelpers';
 import { HelpAboutPanel } from './help/HelpAboutPanel';
+import { Hint } from './Hint';
+import { useT } from '../utils/i18n';
 
 interface TitleBarProps {
   showControls?: boolean;
@@ -42,9 +44,13 @@ interface TitleBarProps {
   onUiScaleChange?: (scale: number) => void;
   theme?: 'dark' | 'light' | 'system';
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  language?: 'system' | 'es' | 'en';
+  onLanguageChange?: (language: 'system' | 'es' | 'en') => void;
   tileMode?: 'square' | 'fill';
   onTileModeChange?: (mode: 'square' | 'fill') => void;
   onReplayOnboarding?: () => void;
+  hintsDismissed?: string[];
+  onDismissHint?: (id: string) => void;
 }
 
 export function TitleBar({
@@ -78,11 +84,16 @@ export function TitleBar({
   onUiScaleChange,
   theme = 'dark',
   onThemeChange,
+  language = 'system',
+  onLanguageChange,
   tileMode = 'square',
   onTileModeChange,
   onReplayOnboarding,
+  hintsDismissed,
+  onDismissHint,
 }: TitleBarProps) {
   const VD = useTheme();
+  const t = useT();
   const effectiveAccent = accent ?? VD.accent;
   const [showSettings, setShowSettings] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
@@ -127,31 +138,43 @@ export function TitleBar({
         {showControls && (
           <div style={{ display: 'flex', gap: 4, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             {onConfigExport && (
-              <button onClick={onConfigExport} style={btnStyle} title="Exportar configuración">↗ EXP</button>
+              <button onClick={onConfigExport} style={btnStyle} title={t('tip.export')}>↗ EXP</button>
             )}
             {onConfigImport && (
-              <button onClick={onConfigImport} style={btnStyle} title="Importar configuración">↙ IMP</button>
+              <button onClick={onConfigImport} style={btnStyle} title={t('tip.import')}>↙ IMP</button>
             )}
             {onWallpaper && (
               <button onClick={onWallpaper} style={btnStyle}>FONDO</button>
             )}
             {onRGB && (
-              <button onClick={onRGB} title="Gestor RGB" style={{ ...btnStyle, borderColor: rgbStatus?.connected ? VD.success : VD.border }}>
+              <button onClick={onRGB} title={t('tip.rgb')} style={{ ...btnStyle, borderColor: rgbStatus?.connected ? VD.success : VD.border }}>
                 <span style={{ marginRight: 4, color: rgbStatus?.connected ? VD.success : VD.textMuted }}>●</span>RGB
               </button>
             )}
-            <button
-              onClick={() => setShowSettings(v => !v)}
-              title="Configuración"
-              style={{ ...iconBtnStyle, color: showSettings ? effectiveAccent : VD.textDim }}
-            >
-              ⚙
-            </button>
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <button
+                onClick={() => setShowSettings(v => !v)}
+                title={t('tip.settings')}
+                style={{ ...iconBtnStyle, color: showSettings ? effectiveAccent : VD.textDim }}
+              >
+                ⚙
+              </button>
+              {onDismissHint && !showSettings && (
+                <Hint
+                  id="settings"
+                  textKey="hint.settings"
+                  dismissed={hintsDismissed}
+                  onDismiss={onDismissHint}
+                  accent={effectiveAccent}
+                  style={{ top: '100%', right: 0, marginTop: 8 }}
+                />
+              )}
+            </span>
             {onFullscreen && (
-              <button onClick={onFullscreen} title="Modo pantalla completa" style={iconBtnStyle}>⤢</button>
+              <button onClick={onFullscreen} title={t('tip.fullscreen')} style={iconBtnStyle}>⤢</button>
             )}
-            <button onClick={() => window.electronAPI?.window.minimize()} title="Minimizar" style={iconBtnStyle}>—</button>
-            <button onClick={() => window.electronAPI?.window.close()} title="Cerrar (minimiza a bandeja)" style={{ ...iconBtnStyle, color: VD.danger }}>×</button>
+            <button onClick={() => window.electronAPI?.window.minimize()} title={t('tip.minimize')} style={iconBtnStyle}>—</button>
+            <button onClick={() => window.electronAPI?.window.close()} title={t('tip.close')} style={{ ...iconBtnStyle, color: VD.danger }}>×</button>
           </div>
         )}
       </div>
@@ -249,21 +272,45 @@ export function TitleBar({
           {/* Theme */}
           {onThemeChange && (
             <div>
-              <SettingLabel>TEMA</SettingLabel>
+              <SettingLabel>{t('settings.theme')}</SettingLabel>
               <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                {(['dark', 'light', 'system'] as const).map((t) => (
+                {(['dark', 'light', 'system'] as const).map((opt) => (
                   <button
-                    key={t}
-                    onClick={() => onThemeChange(t)}
+                    key={opt}
+                    onClick={() => onThemeChange(opt)}
                     style={{
                       flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                      background: theme === t ? VD.accentBg : VD.elevated,
-                      border: `1px solid ${theme === t ? effectiveAccent : VD.border}`,
+                      background: theme === opt ? VD.accentBg : VD.elevated,
+                      border: `1px solid ${theme === opt ? effectiveAccent : VD.border}`,
                       fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                      color: theme === t ? effectiveAccent : VD.textDim,
+                      color: theme === opt ? effectiveAccent : VD.textDim,
                     }}
                   >
-                    {t === 'dark' ? 'OSCURO' : t === 'light' ? 'CLARO' : 'SISTEMA'}
+                    {opt === 'dark' ? t('settings.theme.dark') : opt === 'light' ? t('settings.theme.light') : t('settings.theme.system')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Language */}
+          {onLanguageChange && (
+            <div>
+              <SettingLabel>{t('settings.language')}</SettingLabel>
+              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                {(['system', 'es', 'en'] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => onLanguageChange(opt)}
+                    style={{
+                      flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                      background: language === opt ? VD.accentBg : VD.elevated,
+                      border: `1px solid ${language === opt ? effectiveAccent : VD.border}`,
+                      fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+                      color: language === opt ? effectiveAccent : VD.textDim,
+                    }}
+                  >
+                    {opt === 'system' ? t('settings.language.system') : opt === 'es' ? 'ESPAÑOL' : 'ENGLISH'}
                   </button>
                 ))}
               </div>
@@ -272,7 +319,7 @@ export function TitleBar({
 
           <div style={{ height: 1, background: VD.border }} />
 
-          <ToggleRow label="INICIAR CON WINDOWS" value={autostart} accent={effectiveAccent} onClick={onAutostartToggle} />
+          <ToggleRow label={t('settings.autostart')} value={autostart} accent={effectiveAccent} onClick={onAutostartToggle} />
           <ToggleRow label="SONIDO AL PRESIONAR" value={soundOnPress} accent={effectiveAccent} onClick={onSoundToggle} />
 
           {soundOnPress && (

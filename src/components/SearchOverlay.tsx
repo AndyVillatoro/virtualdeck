@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { VD } from '../design';
 import { DotLabel } from './DotLabel';
+import { useT } from '../utils/i18n';
 import type { ButtonConfig, DeckConfig } from '../types';
 
 interface SearchOverlayProps {
@@ -36,6 +37,7 @@ function buildHaystack(b: ButtonConfig): string {
 }
 
 export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlayProps) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,12 +112,12 @@ export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlay
           padding: '12px 14px', borderBottom: `1px solid ${VD.border}`,
         }}>
           <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: accent }} />
-          <DotLabel size={10} color={VD.text} spacing={2}>BUSCAR BOTÓN</DotLabel>
+          <DotLabel size={10} color={VD.text} spacing={2}>{t('main.search.title')}</DotLabel>
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Etiqueta, app, URL, atajo..."
+            placeholder={t('main.search.placeholder')}
             style={{
               flex: 1, background: 'transparent', border: 'none',
               outline: 'none', color: VD.text, fontFamily: VD.mono,
@@ -134,7 +136,7 @@ export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlay
               padding: '40px 20px', textAlign: 'center',
               fontFamily: VD.mono, fontSize: 11, color: VD.textMuted,
             }}>
-              {query ? 'Sin coincidencias' : 'No hay botones configurados'}
+              {query ? t('main.search.nomatch') : t('main.search.empty')}
             </div>
           ) : filtered.map((hit, i) => {
             const active = i === activeIdx;
@@ -194,9 +196,9 @@ export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlay
           fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1,
           display: 'flex', gap: 14,
         }}>
-          <span>↑↓ NAVEGAR</span>
-          <span>↵ EDITAR</span>
-          <span>ESC SALIR</span>
+          <span>{t('main.search.nav')}</span>
+          <span>{t('main.search.edit')}</span>
+          <span>{t('main.search.exit')}</span>
         </div>
       </div>
     </div>

@@ -23,23 +23,37 @@ function runPS(script: string): Promise<{ stdout: string; stderr: string; ok: bo
   return runPSShared(script, { timeoutMs: 10000, maxBufferBytes: 5 * 1024 * 1024 });
 }
 
-// Wait-AsyncOp por polling del campo Status. Mucho más robusto que el truco
-// reflection de AsTask: no depende de System.Runtime.WindowsRuntime ni de
-// versiones específicas de .NET Framework. Funciona en PowerShell 5.1 stock.
+// Await de WinRT en PowerShell 5.1: hay que convertir el IAsyncOperation a un
+// Task de .NET vía System.Runtime.WindowsRuntime + reflection (AsTask). El truco
+// anterior de hacer polling de $op.Status NO funciona en PS 5.1 stock: la
+// propiedad AsyncStatus no se proyecta y queda vacía ('' -ne 0 y '' -ne 1), por
+// lo que Await-Op devolvía siempre $null → el manager salía null → el widget de
+// música no mostraba nada. Verificado en vivo: polling = manager null, AsTask = OK.
+// Await-Op recibe el tipo de resultado explícito (la introspección de la interfaz
+// del op no es fiable sobre el RCW proyectado). Para ops con progreso (OpenReadAsync
+// del thumbnail) se pasa además el $progressType.
 const PREAMBLE = `
 $ErrorActionPreference = 'Continue'
-function Await-Op {
-  param($op, [int]$timeoutMs = 5000)
-  $sw = [System.Diagnostics.Stopwatch]::StartNew()
-  # AsyncStatus: 0=Started, 1=Completed, 2=Canceled, 3=Error
-  while ($op.Status -eq 0 -and $sw.ElapsedMilliseconds -lt $timeoutMs) {
-    [System.Threading.Thread]::Sleep(15)
-  }
-  if ($op.Status -eq 1) { return $op.GetResults() }
-  return $null
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation\`1' })[0]
+$asTaskProgress = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperationWithProgress\`2' })[0]
+function Await-Op($op, $resultType, [int]$timeoutMs = 5000, $progressType = $null) {
+  if ($null -eq $op) { return $null }
+  try {
+    if ($null -ne $progressType) { $m = $asTaskProgress.MakeGenericMethod(@($resultType, $progressType)) }
+    else { $m = $asTaskGeneric.MakeGenericMethod($resultType) }
+    $netTask = $m.Invoke($null, @($op))
+    if (-not $netTask.Wait($timeoutMs)) { return $null }
+    return $netTask.Result
+  } catch { return $null }
 }
-$smtcType = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
-$mgr = Await-Op($smtcType::RequestAsync()) 5000
+# Alias de tipo con el loader WinRT completo (,Namespace,ContentType=WindowsRuntime)
+# para que resuelvan sin depender del orden de carga del winmd.
+$TMgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager,Windows.Media.Control,ContentType=WindowsRuntime]
+$TProps = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties,Windows.Media.Control,ContentType=WindowsRuntime]
+$TStream = [Windows.Storage.Streams.IRandomAccessStreamWithContentType,Windows.Storage.Streams,ContentType=WindowsRuntime]
+$smtcType = $TMgr
+$mgr = Await-Op ($smtcType::RequestAsync()) $TMgr 5000
 `.trim();
 
 const QUICK_SCRIPT = `
@@ -50,7 +64,7 @@ $best = $null
 $bestRank = -1
 foreach ($s in $sessions) {
   try {
-    $props = Await-Op($s.TryGetMediaPropertiesAsync()) 3000
+    $props = Await-Op ($s.TryGetMediaPropertiesAsync()) $TProps 3000
     if ($null -eq $props) { continue }
     $st = $s.GetPlaybackInfo().PlaybackStatus.ToString()
     $hasTitle = $props.Title -and $props.Title.Length -gt 0
@@ -69,7 +83,7 @@ if ($null -eq $best) {
   $cur = $mgr.GetCurrentSession()
   if ($null -ne $cur) {
     try {
-      $props = Await-Op($cur.TryGetMediaPropertiesAsync()) 3000
+      $props = Await-Op ($cur.TryGetMediaPropertiesAsync()) $TProps 3000
       if ($null -ne $props) {
         $best = @{ S=$cur; P=$props; St=$cur.GetPlaybackInfo().PlaybackStatus.ToString() }
       }
@@ -90,7 +104,7 @@ $sessions = $mgr.GetSessions()
 $pick = $null
 foreach ($s in $sessions) {
   try {
-    $props = Await-Op($s.TryGetMediaPropertiesAsync()) 3000
+    $props = Await-Op ($s.TryGetMediaPropertiesAsync()) $TProps 3000
     if ($null -ne $props -and $props.Title -and $props.Title.Length -gt 0) {
       $st = $s.GetPlaybackInfo().PlaybackStatus.ToString()
       if (-not $pick -or $st -eq 'Playing') { $pick = @{ P=$props } }
@@ -100,14 +114,14 @@ foreach ($s in $sessions) {
 if (-not $pick) {
   $cur = $mgr.GetCurrentSession()
   if ($null -ne $cur) {
-    try { $p = Await-Op($cur.TryGetMediaPropertiesAsync()) 3000; if ($p) { $pick = @{ P=$p } } } catch {}
+    try { $p = Await-Op ($cur.TryGetMediaPropertiesAsync()) $TProps 3000; if ($p) { $pick = @{ P=$p } } } catch {}
   }
 }
 if (-not $pick) { Write-Output ''; exit }
 $dataUrl = ''
 try {
   if ($null -ne $pick.P.Thumbnail) {
-    $rawStream = Await-Op($pick.P.Thumbnail.OpenReadAsync()) 3000
+    $rawStream = Await-Op ($pick.P.Thumbnail.OpenReadAsync()) $TStream 3000 ([UInt64])
     if ($null -ne $rawStream -and $rawStream.Size -gt 0 -and $rawStream.Size -lt 2097152) {
       $mime = if ($rawStream.ContentType -and $rawStream.ContentType.Length -gt 0) { $rawStream.ContentType } else { 'image/jpeg' }
       $netStream = [System.IO.WindowsRuntimeStreamExtensions]::AsStreamForRead($rawStream)
@@ -140,7 +154,7 @@ if ($null -eq $session) {
   if ($null -eq $session) { $session = $sessions | Select-Object -First 1 }
 }
 if ($null -eq $session) { Write-Output 'NOSESSION'; exit }
-$result = Await-Op($session.${op}()) 3000
+$result = Await-Op ($session.${op}()) ([bool]) 3000
 if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
 `.trim();
 }
@@ -164,7 +178,7 @@ foreach ($s in $sessions) {
     $st = $s.GetPlaybackInfo().PlaybackStatus.ToString()
     Write-Output "INFO|session-$idx-source=$src"
     Write-Output "INFO|session-$idx-status=$st"
-    $props = Await-Op($s.TryGetMediaPropertiesAsync()) 3000
+    $props = Await-Op ($s.TryGetMediaPropertiesAsync()) $TProps 3000
     if ($null -eq $props) {
       Write-Output "INFO|session-$idx-props=NULL"
     } else {
@@ -424,7 +438,7 @@ $session = $mgr.GetCurrentSession()
 if ($null -eq $session) { Write-Output 'NOSESSION'; exit }
 $info = $session.GetPlaybackInfo()
 $newVal = -not $info.IsShuffleActive
-$result = Await-Op($session.TryChangeShuffleActiveAsync($newVal)) 3000
+$result = Await-Op ($session.TryChangeShuffleActiveAsync($newVal)) ([bool]) 3000
 if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
 `.trim();
 
@@ -437,7 +451,7 @@ if ($null -eq $session) { Write-Output 'NOSESSION'; exit }
 $info = $session.GetPlaybackInfo()
 $cur = [int]$info.AutoRepeatMode.Value  # 0=None 1=Track 2=List
 $next = ($cur + 1) % 3
-$result = Await-Op($session.TryChangeAutoRepeatModeAsync([Windows.Media.MediaPlaybackAutoRepeatMode]$next)) 3000
+$result = Await-Op ($session.TryChangeAutoRepeatModeAsync([Windows.Media.MediaPlaybackAutoRepeatMode]$next)) ([bool]) 3000
 if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
 `.trim();
 

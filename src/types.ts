@@ -160,7 +160,16 @@ export interface ButtonConfig {
   radioGroup?: string;
   // 4.x — Widget en vivo
   /** Widget de datos en tiempo real que reemplaza el icono/etiqueta. */
-  widget?: 'clock' | 'weather' | 'now-playing' | 'sensor';
+  widget?: 'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable';
+  /** Configuración del widget 'variable': muestra el valor de una variable de `DeckConfig.state`. */
+  varWidget?: {
+    /** Nombre de la variable de estado a mostrar (ej. "tomas", "pomodoro"). */
+    varName: string;
+    /** Texto opcional antes del valor (ej. "🎬 "). */
+    prefix?: string;
+    /** Texto opcional debajo (ej. "TOMAS"). Vacío = nombre de la variable. */
+    suffix?: string;
+  };
   /** Configuración del widget 'sensor': qué sensor mostrar y umbrales para colorear. */
   sensorWidget?: {
     sensorId: string;

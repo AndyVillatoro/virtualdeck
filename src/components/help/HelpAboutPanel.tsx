@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
+import { useT } from '../../utils/i18n';
 import { SettingLabel } from '../settings/settingHelpers';
 import { LINKS, DONATION_LINKS } from '../../data/links';
 import { CREDITS } from './credits';
@@ -14,6 +15,7 @@ export function HelpAboutPanel({
   onReplayOnboarding?: () => void;
 }) {
   const VD = useTheme();
+  const t = useT();
   const api = window.electronAPI;
   const [expanded, setExpanded] = useState(false);
   const [version, setVersion] = useState('');
@@ -33,11 +35,11 @@ export function HelpAboutPanel({
   useEffect(() => {
     if (!api?.update?.onStatus) return;
     return api.update.onStatus((s: any) => {
-      if (s.status === 'downloaded') setUpdateMsg(`Actualización ${s.version ?? ''} lista — reiniciá para aplicar.`);
-      else if (s.status === 'available') setUpdateMsg(`Descargando actualización ${s.version ?? ''}…`);
-      else if (s.status === 'error') setUpdateMsg('No se pudo buscar actualizaciones.');
+      if (s.status === 'downloaded') setUpdateMsg(t('help.upd.ready', { version: s.version ?? '' }));
+      else if (s.status === 'available') setUpdateMsg(t('help.upd.downloading', { version: s.version ?? '' }));
+      else if (s.status === 'error') setUpdateMsg(t('help.upd.error'));
     });
-  }, [api]);
+  }, [api, t]);
 
   const open = (url: string) => api?.launch.url(url);
 
@@ -46,9 +48,9 @@ export function HelpAboutPanel({
     setChecking(true); setUpdateMsg(null);
     try {
       const r: any = await api.update.check();
-      if (r.status === 'disabled') setUpdateMsg('Auto-update no disponible en este build (modo desarrollo).');
-      else if (r.status === 'error') setUpdateMsg('Error al buscar actualizaciones.');
-      else setUpdateMsg('Buscando actualizaciones…');
+      if (r.status === 'disabled') setUpdateMsg(t('help.upd.disabled'));
+      else if (r.status === 'error') setUpdateMsg(t('help.upd.checkError'));
+      else setUpdateMsg(t('help.upd.checking'));
     } finally { setChecking(false); }
   };
 
@@ -70,7 +72,7 @@ export function HelpAboutPanel({
         onClick={() => setExpanded((v) => !v)}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
       >
-        <SettingLabel>AYUDA Y ACERCA DE</SettingLabel>
+        <SettingLabel>{t('help.title')}</SettingLabel>
         <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{expanded ? '▲' : '▼'}</span>
       </div>
 
@@ -85,13 +87,13 @@ export function HelpAboutPanel({
 
           {/* Acciones rápidas */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-            <button style={linkBtn} onClick={() => open(LINKS.docs)}>📖 DOCUMENTACIÓN</button>
-            <button style={linkBtn} onClick={reportBug}>🐞 REPORTAR ERROR</button>
+            <button style={linkBtn} onClick={() => open(LINKS.docs)}>{t('help.docs')}</button>
+            <button style={linkBtn} onClick={reportBug}>{t('help.report')}</button>
             <button style={linkBtn} onClick={checkUpdates} disabled={checking}>
-              {checking ? 'BUSCANDO…' : '⟳ BUSCAR UPDATE'}
+              {checking ? t('help.checking') : t('help.check')}
             </button>
             <button style={{ ...linkBtn, borderColor: accent, color: accent }} onClick={() => setShowDonate((v) => !v)}>
-              ♥ APOYAR
+              {t('help.support')}
             </button>
           </div>
 
@@ -103,7 +105,7 @@ export function HelpAboutPanel({
           {showDonate && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, background: VD.elevated, borderRadius: VD.radius.sm, border: `1px solid ${VD.border}` }}>
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.4 }}>
-                VirtualDeck es gratis. Si te sirve, podés apoyar su desarrollo:
+                {t('help.donateIntro')}
               </div>
               {DONATION_LINKS.map((d) => (
                 <button key={d.id} style={{ ...linkBtn, textAlign: 'left' }} onClick={() => open(d.url)}>
@@ -115,13 +117,13 @@ export function HelpAboutPanel({
 
           {/* Log */}
           <div style={{ display: 'flex', gap: 4 }}>
-            <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.open()}>ABRIR REGISTRO</button>
-            <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.export()}>EXPORTAR REGISTRO</button>
+            <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.open()}>{t('help.openLog')}</button>
+            <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.export()}>{t('help.exportLog')}</button>
           </div>
 
           {/* Repetir tutorial */}
           {onReplayOnboarding && (
-            <button style={linkBtn} onClick={onReplayOnboarding}>🎓 REPETIR TUTORIAL</button>
+            <button style={linkBtn} onClick={onReplayOnboarding}>{t('help.replay')}</button>
           )}
 
           {/* Créditos / licencias */}
@@ -130,7 +132,7 @@ export function HelpAboutPanel({
               onClick={() => setShowCredits((v) => !v)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
             >
-              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>CRÉDITOS Y LICENCIAS</span>
+              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>{t('help.credits')}</span>
               <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{showCredits ? '▲' : '▼'}</span>
             </div>
             {showCredits && (
@@ -138,7 +140,7 @@ export function HelpAboutPanel({
                 {CREDITS.map((c) => (
                   <div key={c.name} onClick={() => open(c.url)} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                     <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.name}{c.bundled ? ' (incluido)' : ''}
+                      {c.name}{c.bundled ? t('help.bundled') : ''}
                     </span>
                     <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>{c.license}</span>
                   </div>
