@@ -57,9 +57,30 @@ function makeTrayIcon(): Electron.NativeImage {
   return nativeImage.createFromBuffer(png);
 }
 
+// Carga el ícono del tray con fallback robusto. El bug histórico: en el build
+// empaquetado, build/icon.ico NO está dentro del asar (solo out/** se empaqueta),
+// así que createFromPath devolvía una imagen vacía → tray en blanco. Probamos
+// varias rutas (recurso empaquetado + rutas de dev) y, si todas fallan, usamos
+// el PNG generado por código (makeTrayIcon), que nunca falla.
+function loadTrayIcon(): Electron.NativeImage {
+  const candidates = [
+    join(process.resourcesPath || '', 'icon.png'),  // empaquetado (extraResources)
+    join(process.resourcesPath || '', 'icon.ico'),
+    join(__dirname, '../../build/icon.png'),         // dev
+    join(__dirname, '../../build/icon.ico'),
+  ];
+  for (const p of candidates) {
+    try {
+      const img = nativeImage.createFromPath(p);
+      if (!img.isEmpty()) return img;
+    } catch { /* probar siguiente */ }
+  }
+  return makeTrayIcon();
+}
+
 export function createTray(win: BrowserWindow, onQuit: () => void) {
   try {
-    const trayIcon = nativeImage.createFromPath(join(__dirname, '../../build/icon.ico'));
+    const trayIcon = loadTrayIcon();
     tray = new Tray(trayIcon);
     tray.setToolTip('VirtualDeck');
     tray.setContextMenu(Menu.buildFromTemplate([

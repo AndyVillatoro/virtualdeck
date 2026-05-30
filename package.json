@@ -17,7 +17,7 @@
     "preview": "electron-vite preview",
     "build:win": "electron-builder --win --dir",
     "build:icon": "node scripts/generate-icon.js",
-    "build:installer": "electron-vite build && electron-builder --win nsis",
+    "build:installer": "npm run build:icon && electron-vite build && electron-builder --win nsis",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:arch": "depcruise src electron",
@@ -75,6 +75,14 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      },
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
       }
     ],
     "win": {
