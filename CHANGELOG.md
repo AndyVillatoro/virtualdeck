@@ -4,6 +4,11 @@ Todos los cambios notables de VirtualDeck se documentan acá.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.5.1] — 2026-05-29
+
+### Fixed
+- **Ícono de bandeja (tray) vacío en el instalador**: `createTray` cargaba `build/icon.ico` con una ruta relativa a `__dirname`, pero ese archivo no se empaqueta dentro del asar (solo `out/**`), así que en la app instalada el `nativeImage` quedaba vacío y el ícono de la bandeja no aparecía (en dev sí funcionaba). Ahora `loadTrayIcon()` prueba el ícono empaquetado (`process.resourcesPath`) y las rutas de dev, y cae a un ícono PNG generado por código (`makeTrayIcon`, que existía sin usar) si todo falla. Además `build/icon.{png,ico}` se incluyen en `extraResources` y `build:installer` regenera el ícono primero.
+
 ## [0.5.0] — 2026-05-29
 
 Milestone de internacionalización, onboarding y calidad: la app pasa a ser bilingüe (ES/EN), recibe a usuarios nuevos con tutorial + hints, gana un widget de variable, y suma un marco de mejoras (mapa SRP + roadmap 1/N) con tooling que hace cumplir SOLID. Incluye la corrección de una regresión del widget de música.

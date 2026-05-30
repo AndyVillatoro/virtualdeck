@@ -33,8 +33,11 @@ Auditoría sobre el código (no solo el doc):
   `incr-var`, persistencia, `branch`, widget `variable`).
 - **Iteración 4 (comunidad): 🟡** — auto-update ✅, docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
-- **Cerrado reciente (no publicado):** regresión widget de música, onboarding,
-  i18n base + hints + tooltips, Wallpaper i18n. Ver CHANGELOG.
+- **Publicado:** **v0.5.0** (i18n base + onboarding + hints + widget variable + marco de
+  mejoras + fix widget música) y **v0.5.1** (fix ícono de bandeja vacío en el instalador).
+- **i18n profundo (Bloque A):** ✅ #1 Wallpaper · #2 chrome editor · #3 tipos de acción ·
+  #4 campos del editor. 🚧 #5 estilo (labels/placeholders ya). ⬜ #6 RGB · #7 Fullscreen ·
+  #8 MainB · #9 settings · #10 BrandIcon.
 
 ---
 
