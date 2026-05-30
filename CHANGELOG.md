@@ -4,7 +4,9 @@ Todos los cambios notables de VirtualDeck se documentan acá.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
-## [No publicado]
+## [0.5.0] — 2026-05-29
+
+Milestone de internacionalización, onboarding y calidad: la app pasa a ser bilingüe (ES/EN), recibe a usuarios nuevos con tutorial + hints, gana un widget de variable, y suma un marco de mejoras (mapa SRP + roadmap 1/N) con tooling que hace cumplir SOLID. Incluye la corrección de una regresión del widget de música.
 
 ### Added
 - **Tooling SRP/SOLID verificable**: `dependency-cruiser` (hace cumplir las capas de `docs/ARQUITECTURA.md` — sin ciclos, main↔renderer aislados, components/utils/data sin importar "hacia arriba"), `eslint` + `typescript-eslint` + `react-hooks` (con `complexity`/`max-lines`/`max-depth` como señal de deuda SRP) y `knip` (código muerto). Nuevo gate único **`npm run check`** (tsc + arquitectura + eslint). Arquitectura: 0 violaciones en 75 módulos.
