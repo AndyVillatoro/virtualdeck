@@ -27,6 +27,12 @@ fn main() -> Result<()> {
         ["media", cmd] => cmd_media_control(cmd),
         ["rgb"] | ["rgb", "scan"] => cmd_rgb_scan(),
         ["rgb", "probe"] => cmd_rgb_probe(),
+        ["rgb", "set", color] => cmd_rgb_set(color),
+        ["rgb", "release"] => {
+            vd_core::rgb::AuraController::open()?.release()?;
+            println!("Controlador devuelto a su modo de efectos propio.");
+            Ok(())
+        }
         ["brillo"] => {
             match vd_core::launcher::brightness() {
                 Some(v) => println!("Brillo actual: {v}%"),
@@ -394,6 +400,33 @@ fn cmd_rgb_probe() -> Result<()> {
             println!("  {:02X}: {}", i * 16, hex.join(" "));
         }
     }
+    Ok(())
+}
+
+/// Pinta toda la iluminacion Aura de un color.
+///
+/// Sobrescribe el efecto que estuviera activo. Es volatil: no se guarda en la
+/// memoria del controlador, asi que un reinicio devuelve el perfil de ASUS.
+fn cmd_rgb_set(color: &str) -> Result<()> {
+    use vd_core::rgb::{AuraController, Rgb};
+
+    let c = Rgb::parse(color).ok_or_else(|| {
+        anyhow::anyhow!(
+            "color invalido: {color:?}. Use #RRGGBB o: negro, blanco, rojo, verde, azul"
+        )
+    })?;
+
+    let ctrl = AuraController::open()?;
+    ctrl.set_all(c)?;
+
+    println!(
+        "Aplicado #{:02X}{:02X}{:02X} a {} canal(es).",
+        c.r,
+        c.g,
+        c.b,
+        AuraController::CHANNELS
+    );
+    println!("(volatil: al reiniciar vuelve tu perfil de ASUS)");
     Ok(())
 }
 

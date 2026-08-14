@@ -424,7 +424,7 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.4 — `media` | ✅ **Completa** — SMTC nativo, verificado leyendo y controlando reproducción real |
 | 1.5 — `macro` | ✅ **Completa** — hooks + SendInput, verificado grabando y reproduciendo |
 | 1.6 — `launcher` | ✅ **Completa** — los 14 comandos, brillo incluido |
-| 1.7 — `rgb` | 🔜 **Siguiente** — protocolo Aura USB (hardware ya identificado) |
+| 1.7 — `rgb` | 🟡 **Lectura sí, escritura no** — ver abajo |
 | 1.8 `sensors` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
@@ -489,13 +489,47 @@ cargo run -p vd-cli -- macro play macro.json 3   # reproduce tras 3 s de espera
 > Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
 > o abrí una terminal nueva.
 
-**Próximo paso concreto**: **1.7 `rgb`** — implementar el **protocolo Aura USB**
-sobre el controlador ya identificado (`0B05:19AF`). Con eso queda cubierto el RGB de
-placa y de las tres cabeceras ARGB, que en este equipo es todo salvo la GPU.
-Después, la GPU por `NvAPI_I2CWrite`.
+### 🟡 Aura USB: se lee, no se escribe (y por qué)
 
-Recordatorio legal: reimplementar el protocolo es legal, copiar código de OpenRGB
-(GPLv2) no. La referencia es su wiki.
+**Lo que funciona.** Comunicación establecida con el controlador `0B05:19AF` de la
+Z690 ROG Strix: responde firmware `AULA3-AR32-0215` y entrega su tabla de
+configuración de 60 bytes. Tres cosas hicieron falta para llegar:
+
+1. **El report ID es `0xEC`, no `0x00`.** En las tablas del wiki el offset `0x00`
+   vale `0xEC`: ese byte *es* el report ID. Leerlo como relleno corre el paquete un
+   byte y Windows rechaza con `ERROR_INVALID_PARAMETER`.
+2. Este controlador **no soporta feature reports** (los declara con longitud 0).
+   Va por `write` + `read_timeout`.
+3. Hay que enumerar **todas** las colecciones HID, no filtrar por interfaz, y
+   consultar las longitudes reales con `HidP_GetCaps` en vez de asumirlas.
+
+**Lo que NO funciona: escribir colores.** El controlador acepta los paquetes y
+entra en modo directo — se nota porque deja de mostrar su efecto — pero los colores
+no llegan al búfer y **la iluminación queda apagada**. Se probaron dos variantes de
+cabecera (la literal del wiki `EC 36 <canal> FF 00`, y una con desplazamiento y
+cantidad en los bytes 3 y 4). Ninguna sirvió.
+
+**Causa raíz: falta documentación.** El wiki de OpenRGB cubre los controladores por
+**SMBus** y dice explícitamente que los de **USB no están cubiertos**. Lo poco
+documentado del lado USB alcanzó para leer, no para escribir.
+
+#### Cómo cerrarlo cuando se retome
+
+La vía correcta es **capturar el tráfico USB real** de Armoury Crate con USBPcap +
+Wireshark mientras cambia las luces, y leer de ahí la secuencia. Es legítimo y es
+como se documentan estos protocolos. Lo que **no** se puede es copiar código de
+OpenRGB (GPLv2); reimplementar a partir de una captura propia, sí.
+
+#### Lección de método
+
+Se probó a ciegas sobre hardware del usuario y el costo fue dejarle el RGB apagado
+(se recupera reiniciando: el controlador recarga su perfil desde flash). **Para la
+próxima: capturar primero, escribir después.** Ensayo y error contra un dispositivo
+sin documentación no es un método aceptable cuando hay un usuario mirando.
+
+**Próximo paso concreto**: pasar a **1.8 `sensors`**, que está bien entendido, no
+tiene riesgo para el hardware y aporta valor inmediato (`sysinfo` + NVML para la
+RTX 4080). Volver a Aura cuando haya una captura USB que analizar.
 
 ### ✅ Brillo: mejor que el original
 

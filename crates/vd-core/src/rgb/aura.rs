@@ -42,6 +42,52 @@ const CMD: u8 = 0xEC;
 const OP_FIRMWARE: u8 = 0x82;
 /// Pedir la tabla de configuracion.
 const OP_CONFIG: u8 = 0xB0;
+/// Iniciar secuencia de actualizacion (modo directo).
+const OP_BEGIN: u8 = 0x35;
+/// Enviar colores.
+const OP_COLORS: u8 = 0x36;
+
+/// Un color RGB de 8 bits por canal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Rgb {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl Rgb {
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+
+    pub const NEGRO: Self = Self::new(0, 0, 0);
+    pub const BLANCO: Self = Self::new(255, 255, 255);
+    pub const ROJO: Self = Self::new(255, 0, 0);
+    pub const VERDE: Self = Self::new(0, 255, 0);
+    pub const AZUL: Self = Self::new(0, 0, 255);
+
+    /// Parsea `#RRGGBB` o `RRGGBB`, y tambien algunos nombres en espaniol.
+    pub fn parse(s: &str) -> Option<Self> {
+        let s = s.trim();
+        match s.to_lowercase().as_str() {
+            "negro" | "apagado" | "off" => return Some(Self::NEGRO),
+            "blanco" | "white" => return Some(Self::BLANCO),
+            "rojo" | "red" => return Some(Self::ROJO),
+            "verde" | "green" => return Some(Self::VERDE),
+            "azul" | "blue" => return Some(Self::AZUL),
+            _ => {}
+        }
+        let hex = s.strip_prefix('#').unwrap_or(s);
+        if hex.len() != 6 {
+            return None;
+        }
+        Some(Self::new(
+            u8::from_str_radix(&hex[0..2], 16).ok()?,
+            u8::from_str_radix(&hex[2..4], 16).ok()?,
+            u8::from_str_radix(&hex[4..6], 16).ok()?,
+        ))
+    }
+}
 
 /// Un controlador Aura abierto.
 pub struct AuraController {
@@ -269,6 +315,126 @@ impl AuraController {
         }
 
         None
+    }
+
+    /// Cantidad de canales que expone el controlador.
+    ///
+    /// Una Z690 ROG Strix tiene tres cabeceras ARGB mas la iluminacion de placa.
+    /// Se usa un valor fijo conservador porque la interpretacion de la tabla de
+    /// configuracion varia entre generaciones y escribir a un canal inexistente
+    /// simplemente no hace nada.
+    pub const CHANNELS: u8 = 4;
+
+    /// LED por canal que se direccionan.
+    ///
+    /// La tabla de configuracion de esta placa reporta `0x78` (120) como maximo
+    /// por canal. Mandar de mas es inofensivo: el controlador ignora lo que
+    /// sobra.
+    pub const LEDS_PER_CHANNEL: usize = 120;
+
+    /// Cuantos colores entran en un solo mensaje.
+    ///
+    /// Cabecera de 5 bytes (report ID + 4) y 3 bytes por LED en los 65 totales.
+    const LEDS_PER_MSG: usize = (MSG_LEN - 5) / 3;
+
+    /// Envia un mensaje crudo al controlador.
+    fn send(&self, buf: &[u8; MSG_LEN]) -> Result<(), RgbError> {
+        self.device.write(buf).map(|_| ()).map_err(RgbError::Hid)
+    }
+
+    /// Inicia el modo directo en un canal.
+    ///
+    /// Es **volatil**: no escribe la memoria flash del controlador. Se evita a
+    /// proposito el comando de guardado permanente, que desgastaria la flash si
+    /// se llamara en cada cambio de color.
+    pub fn begin_direct(&self, channel: u8) -> Result<(), RgbError> {
+        let mut buf = [0u8; MSG_LEN];
+        buf[0] = CMD;
+        buf[1] = OP_BEGIN;
+        buf[2] = channel;
+        buf[5] = 0x01; // modo directo
+        self.send(&buf)
+    }
+
+    /// Escribe colores en un canal, troceando en tantos mensajes como haga falta.
+    ///
+    /// # ⚠️ NO FUNCIONA TODAVIA
+    ///
+    /// Verificado contra una Z690 ROG Strix (PID 19AF): el controlador **acepta**
+    /// los paquetes y entra en modo directo — se nota porque la iluminacion deja
+    /// de mostrar su efecto — pero **los colores no llegan al bufer** y todo
+    /// queda apagado. Ni esta cabecera ni la variante con desplazamiento y
+    /// cantidad en los bytes 3 y 4 lo resuelven.
+    ///
+    /// Falta informacion: el wiki de OpenRGB documenta los controladores por
+    /// **SMBus**, y dice explicitamente que los de **USB** no estan cubiertos.
+    /// Lo que hay documentado del lado USB alcanzo para leer (firmware y tabla
+    /// de configuracion) pero no para escribir.
+    ///
+    /// Para cerrarlo hace falta capturar el trafico USB real de Armoury Crate
+    /// (USBPcap + Wireshark) y observar la secuencia correcta. Es legitimo y es
+    /// como se documentan estos protocolos; lo que no se puede es copiar codigo
+    /// de OpenRGB, que es GPLv2.
+    ///
+    /// Ver `docs/MIGRACION-RUST.md`, seccion de RGB.
+    pub fn set_channel_colors(&self, channel: u8, colors: &[Rgb]) -> Result<(), RgbError> {
+        for trozo in colors.chunks(Self::LEDS_PER_MSG) {
+            let mut buf = [0u8; MSG_LEN];
+            buf[0] = CMD;
+            buf[1] = OP_COLORS;
+            buf[2] = channel;
+            buf[3] = 0xFF;
+            buf[4] = 0x00;
+
+            for (j, c) in trozo.iter().enumerate() {
+                let base = 5 + j * 3;
+                buf[base] = c.r;
+                buf[base + 1] = c.g;
+                buf[base + 2] = c.b;
+            }
+            self.send(&buf)?;
+        }
+        Ok(())
+    }
+
+    /// Devuelve un canal al modo de efectos propio del controlador.
+    ///
+    /// Es la contraparte de [`Self::begin_direct`]: mientras el controlador esta
+    /// en modo directo muestra un bufer que gobierna el software, y si ese bufer
+    /// esta vacio la iluminacion se ve apagada. Volviendo a modo efecto, el
+    /// controlador retoma el patron que tiene guardado.
+    pub fn end_direct(&self, channel: u8) -> Result<(), RgbError> {
+        let mut buf = [0u8; MSG_LEN];
+        buf[0] = CMD;
+        buf[1] = OP_BEGIN;
+        buf[2] = channel;
+        buf[5] = 0x00; // 0 = efecto propio del controlador
+        self.send(&buf)
+    }
+
+    /// Saca todos los canales del modo directo.
+    pub fn release(&self) -> Result<(), RgbError> {
+        for canal in 0..Self::CHANNELS {
+            self.end_direct(canal)?;
+        }
+        Ok(())
+    }
+
+    /// Pinta todos los canales de un solo color.
+    ///
+    /// # ⚠️ NO FUNCIONA TODAVIA
+    ///
+    /// Ver [`Self::set_channel_colors`]. Hoy el efecto observable es que la
+    /// iluminacion **se apaga**: el controlador entra en modo directo pero no
+    /// recibe los colores. Usar [`Self::release`] para devolverle el control, o
+    /// reiniciar el equipo, que recarga el perfil desde la flash del controlador.
+    pub fn set_all(&self, color: Rgb) -> Result<(), RgbError> {
+        let colores = vec![color; Self::LEDS_PER_CHANNEL];
+        for canal in 0..Self::CHANNELS {
+            self.begin_direct(canal)?;
+            self.set_channel_colors(canal, &colores)?;
+        }
+        Ok(())
     }
 
     /// Reconocimiento con diagnostico: devuelve la bitacora de cada intento.

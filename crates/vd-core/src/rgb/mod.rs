@@ -15,7 +15,7 @@
 pub mod aura;
 mod scan;
 
-pub use aura::{AuraController, AuraInfo, Transport};
+pub use aura::{AuraController, AuraInfo, Rgb, Transport};
 pub use scan::{scan, DeviceKind, HidDeviceInfo, RgbVendor};
 
 /// Errores del modulo RGB.
