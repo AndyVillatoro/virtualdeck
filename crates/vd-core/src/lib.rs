@@ -12,6 +12,8 @@
 //!
 //! Se van habilitando por fase. Ver el estado en `docs/MIGRACION-RUST.md`.
 
+#[cfg(windows)]
+pub mod audio;
 pub mod config;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui
@@ -20,6 +22,10 @@ pub mod config;
 pub enum CoreError {
     #[error("error de configuracion: {0}")]
     Config(#[from] config::ConfigError),
+
+    #[cfg(windows)]
+    #[error("error de audio: {0}")]
+    Audio(#[from] audio::AudioError),
 }
 
 /// Resultado estandar del nucleo.

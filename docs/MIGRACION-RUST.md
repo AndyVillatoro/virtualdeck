@@ -312,21 +312,40 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 |---|---|
 | 0 — Preparación (toolchain) | ✅ **Completa** — Rust 1.97.1 + MSVC Build Tools 14.44 |
 | 1.1 — Scaffold workspace | ✅ Completa |
-| 1.2 — `config` | ✅ **Completa** — modelo, migraciones v1→v4, backups, 12 tests |
-| 1.3 — `audio` | 🔜 **Siguiente** |
-| 1.4 `media` … 1.10 `actions` | ⬜ No iniciadas |
+| 1.2 — `config` | ✅ **Completa** — modelo, migraciones v1→v4, backups |
+| 1.3 — `audio` | ✅ **Completa** — COM nativo, verificado cambiando el dispositivo real |
+| 1.4 — `media` | 🔜 **Siguiente** |
+| 1.5 `macro` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
 ### Lo verificado hasta ahora
 
 - `cargo check` / `clippy -D warnings` / `cargo fmt --check` / `cargo test`: **todo en verde**.
-- **12 tests**, incluido el que más importa:
+- **16 tests**, incluido el que más importa:
   `crates/vd-core/tests/round_trip_config_real.rs` carga el `deck-config.json`
   **real** de la máquina, lo migra, lo vuelve a serializar y verifica campo por
   campo que no se perdió nada. Es el contrato con los usuarios de 0.5.x.
   Si no hay instalación previa, el test se salta en vez de fallar.
 - `vd-cli config` lee el deck real y lo resume (páginas, grillas, acciones en uso).
+- **`vd-cli audio set` cambió el dispositivo real y la verificación post-set lo
+  confirmó** — el riesgo 🔴 #1 del plan (`IPolicyConfig` no documentado) está
+  despejado. Sin PowerShell de por medio.
+
+### 🎉 El riesgo más grande de la migración quedó despejado
+
+`IPolicyConfig` era el ítem que podía hundir el proyecto y por eso se puso primero.
+Resultado: **funciona**, y con mejor diagnóstico que la versión Electron.
+
+- El vtable declarado en `audio/policy_config.rs` coincide con el del crate
+  `com-policy-config` (validación cruzada independiente) y con el de `audio.ts`.
+- Solo se tipa `SetDefaultEndpoint`; los demás slots son punteros opacos. Menos
+  superficie para equivocarse y el layout igual queda correcto.
+- Los tres errores históricos están corregidos de forma explícita: se chequea el
+  `HRESULT` de **cada rol**, hay fallback automático a `IPolicyConfigVista`, y se
+  **verifica** con `GetDefaultAudioEndpoint` que el cambio se haya aplicado.
+- Hay un test que fija los tres GUID: si alguien los toca sin querer, falla el
+  test en vez de romperse en silencio.
 
 ### Comandos de trabajo
 
@@ -334,18 +353,23 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 cargo check --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo run -p vd-cli -- config     # resumen del deck real
-cargo run -p vd-cli -- paths      # rutas de datos
-cargo run -p vd-cli -- backups    # backups existentes
+cargo run -p vd-cli -- config              # resumen del deck real
+cargo run -p vd-cli -- paths               # rutas de datos
+cargo run -p vd-cli -- backups             # backups existentes
+cargo run -p vd-cli -- audio list          # dispositivos de salida
+cargo run -p vd-cli -- audio set "Arctis"  # cambia el predeterminado (id o nombre parcial)
 ```
 
 > Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
 > o abrí una terminal nueva.
 
-**Próximo paso concreto**: **1.3 `audio`** — portar `electron/main/audio.ts` a COM
-nativo (`IMMDeviceEnumerator` + `IPolicyConfig` con fallback a `IPolicyConfigVista`),
-conservando la verificación post-set. Es el módulo de mayor riesgo de toda la
-migración y por eso va primero. Objetivo: `vd-cli audio list` y `vd-cli audio set <id>`
-cambian el dispositivo real.
+**Próximo paso concreto**: **1.4 `media`** — portar `electron/main/media.ts` a WinRT
+nativo (`windows::Media::Control`). Hoy la versión Electron necesita un preámbulo de
+PowerShell con reflexión sobre `WindowsRuntimeSystemExtensions.AsTask` para poder
+esperar operaciones asíncronas de WinRT; en Rust eso es un `.get()` y toda esa clase
+de bug desaparece. Incluye: `nowPlaying` (título/artista/estado/fuente + carátula),
+control (play-pause/next/prev/stop), shuffle, repeat, y el fallback por títulos de
+ventana (`parseWindowTitle`, portar literal con tests).
+Objetivo: `vd-cli media now` muestra lo que está sonando.
 
 Mientras tanto `main` sigue en 0.5.1 y puede recibir hotfixes.
