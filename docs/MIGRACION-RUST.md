@@ -310,20 +310,42 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 
 | Fase | Estado |
 |---|---|
-| 0 — Preparación (toolchain) | 🟡 Rust ✅ instalado · **falta MSVC Build Tools** (bloqueante) |
-| 1.1 — Scaffold workspace | ✅ Hecho (sin verificar por falta de linker) |
-| 1.2 — `config` | 🟡 Rutas de datos hechas · faltan `DeckConfig`, migraciones v1→v4, backups |
-| 1.3 — `audio` … 1.10 — `actions` | ⬜ No iniciadas |
+| 0 — Preparación (toolchain) | ✅ **Completa** — Rust 1.97.1 + MSVC Build Tools 14.44 |
+| 1.1 — Scaffold workspace | ✅ Completa |
+| 1.2 — `config` | ✅ **Completa** — modelo, migraciones v1→v4, backups, 12 tests |
+| 1.3 — `audio` | 🔜 **Siguiente** |
+| 1.4 `media` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
-**Bloqueante actual**: sin el `link.exe` de MSVC no se puede compilar ni testear nada.
-Todo lo commiteado hasta ahora está validado solo con `cargo fmt --check`.
+### Lo verificado hasta ahora
 
-**Próximo paso concreto** (una vez desbloqueado): correr `cargo check --workspace` +
-`clippy` + `test` para validar el scaffold, y luego terminar **1.2 `config`** portando
-`DeckConfig` desde `src/types.ts` y la cadena de migraciones desde
-`src/utils/configMigration.ts` (v1→v4), con tests que carguen un `deck-config.json`
-real de 0.5.x.
+- `cargo check` / `clippy -D warnings` / `cargo fmt --check` / `cargo test`: **todo en verde**.
+- **12 tests**, incluido el que más importa:
+  `crates/vd-core/tests/round_trip_config_real.rs` carga el `deck-config.json`
+  **real** de la máquina, lo migra, lo vuelve a serializar y verifica campo por
+  campo que no se perdió nada. Es el contrato con los usuarios de 0.5.x.
+  Si no hay instalación previa, el test se salta en vez de fallar.
+- `vd-cli config` lee el deck real y lo resume (páginas, grillas, acciones en uso).
+
+### Comandos de trabajo
+
+```bash
+cargo check --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+cargo run -p vd-cli -- config     # resumen del deck real
+cargo run -p vd-cli -- paths      # rutas de datos
+cargo run -p vd-cli -- backups    # backups existentes
+```
+
+> Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
+> o abrí una terminal nueva.
+
+**Próximo paso concreto**: **1.3 `audio`** — portar `electron/main/audio.ts` a COM
+nativo (`IMMDeviceEnumerator` + `IPolicyConfig` con fallback a `IPolicyConfigVista`),
+conservando la verificación post-set. Es el módulo de mayor riesgo de toda la
+migración y por eso va primero. Objetivo: `vd-cli audio list` y `vd-cli audio set <id>`
+cambian el dispositivo real.
 
 Mientras tanto `main` sigue en 0.5.1 y puede recibir hotfixes.
