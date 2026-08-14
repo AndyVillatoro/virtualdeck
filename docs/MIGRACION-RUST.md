@@ -314,15 +314,16 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.1 — Scaffold workspace | ✅ Completa |
 | 1.2 — `config` | ✅ **Completa** — modelo, migraciones v1→v4, backups |
 | 1.3 — `audio` | ✅ **Completa** — COM nativo, verificado cambiando el dispositivo real |
-| 1.4 — `media` | 🔜 **Siguiente** |
-| 1.5 `macro` … 1.10 `actions` | ⬜ No iniciadas |
+| 1.4 — `media` | ✅ **Completa** — SMTC nativo, verificado leyendo y controlando reproducción real |
+| 1.5 — `macro` | 🔜 **Siguiente** |
+| 1.6 `launcher` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
 ### Lo verificado hasta ahora
 
 - `cargo check` / `clippy -D warnings` / `cargo fmt --check` / `cargo test`: **todo en verde**.
-- **16 tests**, incluido el que más importa:
+- **30 tests**, incluido el que más importa:
   `crates/vd-core/tests/round_trip_config_real.rs` carga el `deck-config.json`
   **real** de la máquina, lo migra, lo vuelve a serializar y verifica campo por
   campo que no se perdió nada. Es el contrato con los usuarios de 0.5.x.
@@ -331,6 +332,8 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 - **`vd-cli audio set` cambió el dispositivo real y la verificación post-set lo
   confirmó** — el riesgo 🔴 #1 del plan (`IPolicyConfig` no documentado) está
   despejado. Sin PowerShell de por medio.
+- **`vd-cli media now` leyó la reproducción real** (título, artista, estado,
+  origen y carátula PNG) y `media play-pause` pausó y reanudó de verdad.
 
 ### 🎉 El riesgo más grande de la migración quedó despejado
 
@@ -358,18 +361,27 @@ cargo run -p vd-cli -- paths               # rutas de datos
 cargo run -p vd-cli -- backups             # backups existentes
 cargo run -p vd-cli -- audio list          # dispositivos de salida
 cargo run -p vd-cli -- audio set "Arctis"  # cambia el predeterminado (id o nombre parcial)
+cargo run -p vd-cli -- media now           # que se esta reproduciendo
+cargo run -p vd-cli -- media play-pause    # tambien: next, prev, stop, shuffle, repeat
+cargo run -p vd-cli -- media diagnose      # estado de SMTC sesion por sesion
 ```
 
 > Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
 > o abrí una terminal nueva.
 
-**Próximo paso concreto**: **1.4 `media`** — portar `electron/main/media.ts` a WinRT
-nativo (`windows::Media::Control`). Hoy la versión Electron necesita un preámbulo de
-PowerShell con reflexión sobre `WindowsRuntimeSystemExtensions.AsTask` para poder
-esperar operaciones asíncronas de WinRT; en Rust eso es un `.get()` y toda esa clase
-de bug desaparece. Incluye: `nowPlaying` (título/artista/estado/fuente + carátula),
-control (play-pause/next/prev/stop), shuffle, repeat, y el fallback por títulos de
-ventana (`parseWindowTitle`, portar literal con tests).
-Objetivo: `vd-cli media now` muestra lo que está sonando.
+**Próximo paso concreto**: **1.5 `macro`** — portar `electron/main/macro.ts`.
+Grabación de teclado/ratón con `rdev` (reemplaza `uiohook-napi`) y reproducción con
+`SendInput` nativo (reemplaza el script de PowerShell que se generaba en cada
+ejecución con `SendKeys` + `user32.dll mouse_event`).
+Ojo con el hack de robo de foco: hoy se hace `win.blur()` + 80 ms antes de enviar
+teclas para que lleguen a la app anterior. Hay que reproducirlo.
+Objetivo: `vd-cli macro record` y `vd-cli macro play <archivo>`.
+
+### Nota de diseño: la carátula ya no es un data-URL
+
+La versión Electron devolvía la portada como `data:image/png;base64,...` porque tenía
+que meterla en un `<img>` del WebView. En Rust se devuelven **bytes crudos + mime**:
+egui consume bytes directamente, así que se ahorra codificar y decodificar base64 en
+cada tick de refresco. Es parte del "limpiar deuda técnica" acordado.
 
 Mientras tanto `main` sigue en 0.5.1 y puede recibir hotfixes.

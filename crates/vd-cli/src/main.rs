@@ -19,6 +19,12 @@ fn main() -> Result<()> {
         ["backups"] => cmd_backups(),
         ["audio"] | ["audio", "list"] => cmd_audio_list(),
         ["audio", "set", id] => cmd_audio_set(id),
+        ["media"] | ["media", "now"] => cmd_media_now(),
+        ["media", "diagnose"] => {
+            println!("{}", vd_core::media::diagnose());
+            Ok(())
+        }
+        ["media", cmd] => cmd_media_control(cmd),
         [] | ["help"] | ["--help"] | ["-h"] => {
             print_help();
             Ok(())
@@ -44,9 +50,14 @@ fn print_help() {
          \x20   audio list Lista los dispositivos de salida de audio\n\
          \x20   audio set <id|nombre>\n\
          \x20              Cambia el dispositivo predeterminado (acepta id o nombre parcial)\n\
+         \x20   media now  Muestra que se esta reproduciendo\n\
+         \x20   media play-pause|next|prev|stop|shuffle|repeat\n\
+         \x20              Controla la reproduccion\n\
+         \x20   media diagnose\n\
+         \x20              Estado de SMTC sesion por sesion\n\
          \x20   help       Muestra esta ayuda\n\
          \n\
-         Se iran agregando comandos por modulo: media, macro, rgb, sensors."
+         Se iran agregando comandos por modulo: macro, rgb, sensors."
     );
 }
 
@@ -186,6 +197,69 @@ fn cmd_audio_set(needle: &str) -> Result<()> {
         "OK — verificado: el predeterminado ahora es \"{}\".",
         device.name
     );
+    Ok(())
+}
+
+/// Muestra que se esta reproduciendo.
+fn cmd_media_now() -> Result<()> {
+    use vd_core::media;
+
+    let Some(np) = media::now_playing() else {
+        println!("No hay nada reproduciendose (ni por SMTC ni por titulos de ventana).");
+        return Ok(());
+    };
+
+    println!("Titulo   : {}", np.title);
+    if !np.artist.is_empty() {
+        println!("Artista  : {}", np.artist);
+    }
+    println!("Estado   : {:?}", np.status);
+    println!(
+        "Fuente   : {}",
+        if np.source.is_empty() {
+            "(desconocida)"
+        } else {
+            &np.source
+        }
+    );
+    match &np.thumbnail {
+        Some(t) => println!("Caratula : {} ({} bytes)", t.mime, t.bytes.len()),
+        None => println!("Caratula : (sin caratula)"),
+    }
+    Ok(())
+}
+
+/// Envia un comando de control de reproduccion.
+fn cmd_media_control(cmd: &str) -> Result<()> {
+    use vd_core::media::{self, MediaCommand};
+
+    match cmd {
+        "shuffle" => {
+            let activo = media::toggle_shuffle()?;
+            println!(
+                "Aleatorio: {}",
+                if activo { "activado" } else { "desactivado" }
+            );
+        }
+        "repeat" => {
+            let modo = media::cycle_repeat()?;
+            println!("Repeticion: {modo:?}");
+        }
+        otro => {
+            let comando = match otro {
+                "play-pause" => MediaCommand::PlayPause,
+                "next" => MediaCommand::Next,
+                "prev" => MediaCommand::Prev,
+                "stop" => MediaCommand::Stop,
+                _ => anyhow::bail!(
+                    "comando de media desconocido: {otro}. \
+                     Validos: now, play-pause, next, prev, stop, shuffle, repeat, diagnose"
+                ),
+            };
+            media::control(comando)?;
+            println!("OK — {otro}");
+        }
+    }
     Ok(())
 }
 

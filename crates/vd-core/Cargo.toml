@@ -12,6 +12,7 @@ repository.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+regex = "1"
 
 # NOTA: las dependencias nativas se agregan por modulo a medida que se
 # implementan, no todas de golpe. Ver docs/MIGRACION-RUST.md seccion 4 (Fases).
@@ -28,4 +29,12 @@ features = [
     "Win32_System_Variant",               # VARENUM — requerido por GetValue
     "Win32_UI_Shell_PropertiesSystem",    # IPropertyStore, PROPERTYKEY
     "Win32_Devices_FunctionDiscovery",    # PKEY_Device_FriendlyName
+    # --- media ---
+    "Media",                              # MediaPlaybackAutoRepeatMode
+    "Media_Control",                      # SMTC (GlobalSystemMediaTransportControls*)
+    "Storage_Streams",                    # caratula: IRandomAccessStream, DataReader
+    "Foundation",                         # IAsyncOperation::get()
+    "Foundation_Collections",             # IVectorView de sesiones
+    "Win32_UI_WindowsAndMessaging",       # EnumWindows — fallback por titulo
+    "Win32_System_Threading",             # OpenProcess / QueryFullProcessImageNameW
 ]

@@ -15,6 +15,8 @@
 #[cfg(windows)]
 pub mod audio;
 pub mod config;
+#[cfg(windows)]
+pub mod media;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui
 /// se agregan como variantes, para que `vd-cli` y la UI manejen un solo tipo.
@@ -26,6 +28,10 @@ pub enum CoreError {
     #[cfg(windows)]
     #[error("error de audio: {0}")]
     Audio(#[from] audio::AudioError),
+
+    #[cfg(windows)]
+    #[error("error de medios: {0}")]
+    Media(#[from] media::MediaError),
 }
 
 /// Resultado estandar del nucleo.
