@@ -2,6 +2,13 @@
 
 Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 
+> ## 🦀 Migración a Rust en curso
+> Existe una rama larga **`rewrite/rust`** que reescribe el proyecto completo en Rust nativo
+> (core + UI con egui/winit, sin Electron ni PowerShell). **Si trabajás en esa rama, la fuente
+> de verdad es [docs/MIGRACION-RUST.md](docs/MIGRACION-RUST.md)** — leelo antes que nada.
+> Este archivo (CLAUDE.md) describe la arquitectura **Electron actual de `main`**, que sigue
+> siendo la versión publicada (0.5.x) hasta que la migración alcance paridad y salga como v1.0.0.
+
 ## 📚 Documentos relacionados (leer antes de empezar)
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — Workflow de desarrollo: branches, commits, PRs, release, firma/distribución, recetas y notas para LLMs. (Absorbió RELEASE/desarrollo/firma-y-distribución.)

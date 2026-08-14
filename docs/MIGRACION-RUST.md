@@ -1,0 +1,308 @@
+# Migración a Rust nativo — Plan maestro
+
+> **Documento vivo.** Es la fuente de verdad de la migración. Si retomás el proyecto
+> (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
+> [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
+>
+> Estado: **Fase 0 — preparación**. Rama: `rewrite/rust`. Última actualización: 2026-08-14.
+
+---
+
+## 1. Por qué migrar
+
+VirtualDeck 0.5.1 funciona, pero su arquitectura tiene un costo estructural:
+
+| Problema hoy | Causa raíz |
+|---|---|
+| Instalador de ~90 MB, ~200 MB de RAM en reposo | Runtime de Electron + Chromium + Node |
+| Latencia de 150–400 ms en cada operación de audio/media | Cada llamada **spawnea un `powershell.exe`** nuevo |
+| Los bugs más caros del proyecto (audio silencioso, SMTC nulo, `param()` roto) | Toda la capa nativa pasa por **PowerShell + C# embebido en strings** |
+| Cachés artificiales (audio 30 s, media 4 s, sensores 1.5 s) | Existen solo para **esconder la latencia de PowerShell** |
+| Bugs de encoding con tildes/ñ | `chcp 65001` + parser de `param()` hecho a mano |
+
+En Rust nativo, **toda esa capa desaparece**: COM y WinRT se llaman en proceso, con
+tipos verificados en compilación, en microsegundos en vez de cientos de milisegundos.
+
+### Qué se elimina por completo
+
+- ✂️ **PowerShell** — 100% de los scripts (`ps-helpers.ts` y sus 12 consumidores)
+- ✂️ **Node.js + Electron + Chromium** — no hay runtime embebido
+- ✂️ **WebView** — y con él: el hack `disableHardwareAcceleration()` (monitores virtuales),
+  el "DPI nudge" de ±1px, y el protocolo custom `vd://` para imágenes
+- ✂️ **Encoder PNG hecho a mano** para el ícono de bandeja (`trayManager.makeTrayIcon`)
+- ✂️ **`uiohook-napi`** (módulo nativo N-API) y **`electron-updater`**
+
+**Objetivo medible**: instalador < 20 MB, RAM en reposo < 60 MB, latencia de acciones < 10 ms.
+
+---
+
+## 2. Decisiones tomadas
+
+| Decisión | Elección | Motivo |
+|---|---|---|
+| **Alcance** | Rust nativo total (backend **y** UI) | Decisión del usuario. Elimina WebView por completo. |
+| **Framework UI** | **egui + winit directo** (no `eframe`) | La estética dot-matrix son rectángulos dibujados → el `Painter` de egui es ideal. Modo inmediato hace triviales drag&drop, multi-select y menús contextuales. **winit directo** porque `eframe` no permite integrar bien `tray-icon` + `global-hotkey` (necesitan control del event loop) y VirtualDeck vive en la bandeja. Licencia MIT/Apache, sin condiciones. |
+| **Repo** | Rama larga `rewrite/rust` en el mismo repo | Conserva historial, issues, releases y continuidad del auto-updater. `main` sigue recibiendo hotfixes 0.5.x hasta que la rama alcance paridad → sale como **v1.0.0**. |
+| **Features** | Paridad + limpiar deuda técnica | Portar lo que existe, aprovechando para eliminar código muerto y rarezas. **Nada de features nuevas hasta alcanzar paridad.** |
+| **Secuencia** | Core primero, UI después | El core no depende de la UI → se valida con tests + CLI antes de dibujar un píxel. Aísla el riesgo técnico real (COM/WinRT/hooks) al principio. |
+
+### Alternativas descartadas
+
+- **Tauri** (backend Rust + UI React): más rápido (3-5 semanas) y conserva los 14k LOC de UI,
+  pero mantiene el WebView. Descartado por decisión explícita del usuario.
+- **Slint**: licencia royalty-free válida para apps propietarias *con atribución visible*,
+  DSL declarativo más cercano a React. Descartado: el render píxel-art custom es más incómodo
+  y suma un DSL nuevo que aprender.
+- **iced**: arquitectura Elm limpia, pero documentación con huecos y más ceremonia para
+  dibujo custom e integración de tray/hotkeys.
+
+---
+
+## 3. Arquitectura destino
+
+Workspace Cargo con separación estricta core/UI. **El core no conoce la UI.**
+
+```
+virtualdeck/
+├── Cargo.toml                    # workspace
+├── crates/
+│   ├── vd-core/                  # ── FASE 1 — sin dependencias de UI ──
+│   │   ├── src/
+│   │   │   ├── lib.rs
+│   │   │   ├── config/           # DeckConfig, migraciones v1→v4, backups
+│   │   │   ├── audio/            # IPolicyConfig / IMMDeviceEnumerator (COM)
+│   │   │   ├── media/            # SMTC (WinRT) + fallback por títulos de ventana
+│   │   │   ├── macro/            # grabación (hooks) + reproducción (SendInput)
+│   │   │   ├── rgb/              # cliente OpenRGB (TCP)
+│   │   │   ├── sensors/          # LHM vía HTTP
+│   │   │   ├── launcher/         # apps, scripts, hotkeys, brillo, volumen, snap
+│   │   │   ├── weather/          # geo-IP + Open-Meteo
+│   │   │   ├── actions/          # motor de ejecución (runActionSequence, branch, interpolate)
+│   │   │   └── log/              # log rotativo
+│   │   └── tests/                # tests de integración por módulo
+│   ├── vd-cli/                   # ── FASE 1 — binario de validación ──
+│   │   └── src/main.rs           # `vd-cli audio list`, `vd-cli media now`, etc.
+│   └── vd-app/                   # ── FASE 2 — UI egui + winit ──
+│       ├── src/
+│       │   ├── main.rs           # event loop winit + tray + hotkeys globales
+│       │   ├── ui/               # screens: deck, editor, rgb, fullscreen, wallpaper
+│       │   ├── widgets/          # ButtonCell, DotText, Glyph57, BrandIcon
+│       │   ├── theme.rs          # tokens VD (port de design.ts)
+│       │   └── i18n/             # ES/EN (port de i18n.tsx)
+│       └── assets/               # iconos, fuentes
+├── docs/                         # se conserva
+└── electron/  src/               # ⚠️ se eliminan al alcanzar paridad
+```
+
+### Mapa de equivalencias
+
+| Hoy (Electron/TS) | Destino (Rust) |
+|---|---|
+| PowerShell + C# `IPolicyConfig` | `windows` crate + [`com-policy-config`](https://crates.io/crates/com-policy-config) |
+| PowerShell + WinRT reflection (SMTC) | `windows::Media::Control` (nativo, `.get()` en vez del hack `AsTask`) |
+| `uiohook-napi` (grabar macros) | [`rdev`](https://crates.io/crates/rdev) (`listen`) o `SetWindowsHookEx` directo |
+| PowerShell `SendKeys` + `mouse_event` | `rdev::simulate` / `enigo` / `SendInput` nativo |
+| `openrgb-sdk` (npm) | [`openrgb2`](https://crates.io/crates/openrgb2) (protocolo v4/v5) |
+| `fetch` → LHM `data.json` | `reqwest` + `serde_json` |
+| Electron `Tray` + `Menu` | [`tray-icon`](https://crates.io/crates/tray-icon) (equipo Tauri) |
+| Electron `globalShortcut` | [`global-hotkey`](https://crates.io/crates/global-hotkey) (equipo Tauri) |
+| Electron `dialog` | [`rfd`](https://crates.io/crates/rfd) (Rusty File Dialogs) |
+| Electron `Notification` | `notify-rust` o `windows::UI::Notifications` |
+| `electron-updater` | [`self_update`](https://crates.io/crates/self_update) contra GitHub Releases |
+| `BrowserWindow` frameless | `winit` con `with_decorations(false)` |
+| Protocolo `vd://` para imágenes | ❌ innecesario — se leen del disco directo |
+| React + inline styles | egui (modo inmediato) + `theme.rs` |
+| `i18n.tsx` | `vd-app/src/i18n/` (mismo esquema de claves) |
+
+---
+
+## 4. Fases
+
+Cada fase termina en un entregable verificable. **No se avanza sin la anterior verde.**
+
+### Fase 0 — Preparación (prerrequisito del usuario)
+
+- [ ] Instalar **Rust** (`rustup`) → https://rustup.rs
+- [ ] Instalar **Visual Studio Build Tools** con el workload "Desarrollo para escritorio con C++"
+      (provee `link.exe` del MSVC, requerido por el target `x86_64-pc-windows-msvc`)
+- [ ] ⚠️ **Cuidado**: `C:\Program Files\Git\usr\bin\link.exe` puede tapar al `link.exe` de MSVC
+      en el PATH y romper el build. Si `cargo build` falla con errores de linker, asegurate de
+      que el de MSVC aparezca primero (o usá la "Developer Command Prompt for VS").
+- [ ] Verificar: `cargo --version` y `rustc --version` responden.
+
+### Fase 1 — `vd-core` (el corazón, ~4-6 semanas)
+
+Orden deliberado: **primero lo más riesgoso**, para que un fracaso aparezca temprano.
+
+| # | Módulo | Por qué en esta posición | Verificación |
+|---|---|---|---|
+| 1.1 | **Scaffold** workspace + CI | Base | `cargo build` y `cargo test` verdes |
+| 1.2 | **`config`** | Todo lo demás lo consume | Tests: carga los `deck-config.json` reales de v0.5.1 y migra v1→v4 sin pérdida |
+| 1.3 | **`audio`** | 🔴 **Máximo riesgo** — COM `IPolicyConfig` no documentado | `vd-cli audio list` / `set <id>` cambia el dispositivo real |
+| 1.4 | **`media`** | 🔴 Alto riesgo — WinRT async | `vd-cli media now` muestra la canción y la carátula |
+| 1.5 | **`macro`** | 🟡 Hooks globales | Grabar y reproducir una macro idéntica a la de v0.5.1 |
+| 1.6 | **`launcher`** | 🟡 user32 + WMI | Apps, hotkeys, brillo, volumen, snap, procesos |
+| 1.7 | **`rgb`** | 🟡 Protocolo binario | Conecta a OpenRGB y aplica color/modo/perfil |
+| 1.8 | **`sensors`** | 🟢 HTTP simple | Lee LHM y devuelve la lista |
+| 1.9 | **`weather`** + **`log`** | 🟢 Trivial | — |
+| 1.10 | **`actions`** | Motor que orquesta todo | Tests de `interpolate`, `branch`, secuencias, toggle |
+
+**Entregable de fase**: `vd-cli` puede ejecutar **cualquier acción** del `deck-config.json`
+real sin abrir una sola ventana. Ese es el criterio de "el core está listo".
+
+### Fase 2 — `vd-app` UI nativa (~6-10 semanas)
+
+| # | Componente | Notas |
+|---|---|---|
+| 2.1 | Event loop `winit` + ventana frameless + bandeja + hotkeys globales | Valida la integración que descartó `eframe` |
+| 2.2 | `theme.rs` + primitivas dot-matrix (`DotText`, `Glyph57`, `BrandIcon`) | La firma visual; el `Painter` de egui |
+| 2.3 | Pantalla **Deck** (grilla, drag&drop, multi-select, menú contextual, long-press) | El grueso del uso diario |
+| 2.4 | **Editor** de botones | El más grande (2.007 LOC hoy) — dividir en sub-módulos desde el inicio |
+| 2.5 | **Fullscreen** / kiosko | |
+| 2.6 | **RGB Manager** | 819 LOC hoy |
+| 2.7 | **Wallpaper**, ajustes, Ayuda/Acerca de, onboarding, hints | |
+| 2.8 | **i18n** ES/EN | Portar claves existentes tal cual |
+
+### Fase 3 — Paridad, empaquetado y v1.0.0
+
+- [ ] Checklist de paridad funcional contra v0.5.1 (una fila por acción y pantalla)
+- [ ] Instalador (WiX/MSI o NSIS) + auto-update contra GitHub Releases
+- [ ] Migración de config: la v1.0 debe leer el `deck-config.json` de un usuario 0.5.x **sin tocar nada**
+- [ ] Eliminar `electron/`, `src/`, `package.json` y dependencias de Node
+- [ ] Actualizar CLAUDE.md, ARQUITECTURA.md, CONTRIBUTING.md, RELEASE.md
+- [ ] Merge a `main` → **v1.0.0**
+
+---
+
+## 5. Superficie a portar
+
+**74 comandos IPC + 4 eventos fire-and-forget + 3 push events.** Detalle por módulo:
+
+| Módulo | Comandos | Push events |
+|---|---|---|
+| `config` | 7 (incluye `weather:get`) | — |
+| `audio` | 2 | — |
+| `media` | 5 | — |
+| `launcher` | 14 | — |
+| `dialog` | 4 | — |
+| `app` | 6 | — |
+| `page` | 2 | — |
+| `rgb` | 15 | `rgb:devicesChanged` |
+| `sensors` | 9 | — |
+| `macro` | 4 | — |
+| `log` | 4 | — |
+| `update` | 2 | `update:status` |
+| `window` | 4 (`.on`) | `button:trigger` |
+
+En Rust nativo **no hay IPC**: estos comandos se vuelven funciones públicas de `vd-core`,
+y los push events se vuelven canales (`crossbeam` / `tokio::sync::broadcast`) que la UI
+consume en su loop.
+
+---
+
+## 6. Riesgos y mitigaciones
+
+Ordenados por severidad. Los números entre paréntesis son del inventario del backend.
+
+### 🔴 Críticos
+
+1. **`IPolicyConfig` es una interfaz COM no documentada** (3).
+   El orden de la vtable debe coincidir byte a byte. El código actual carga **dos**
+   definiciones (`IPolicyConfig` + `IPolicyConfigVista`) porque confundir el IID con el
+   CLSID causaba `E_NOINTERFACE`, y **verifica** que el cambio se aplicó porque algunos
+   drivers devuelven `S_OK` sin aplicarlo.
+   → *Mitigación*: usar `com-policy-config` (ya resuelto por terceros) pero **conservar la
+   verificación post-set y el fallback a Vista**. Portar los IIDs desde `audio.ts` tal cual.
+   Es el ítem 1.3 de la Fase 1 precisamente para descubrir problemas temprano.
+
+2. **Calidad de entrada de texto en egui** (riesgo nuevo, no está en el inventario).
+   El editor tiene decenas de campos de texto y la app es en español (tildes, ñ, IME).
+   egui es más débil que un WebView acá.
+   → *Mitigación*: **spike obligatorio en Fase 2.1** — probar acentos, ñ, portapapeles,
+   selección y undo en un `TextEdit` antes de portar el editor. Si falla, evaluar Slint
+   solo para el editor o widgets custom.
+
+3. **Volumen de trabajo**: ~17k LOC, 3-6 meses en solitario.
+   → *Mitigación*: la separación core/UI permite **parar en cualquier fase** con algo útil;
+   `main` sigue vivo en 0.5.x mientras tanto.
+
+### 🟡 Medios
+
+4. **WinRT async en SMTC** (4). En Rust es `.get()` — el hack de reflexión de PS desaparece.
+   *El riesgo se reduce, no aumenta.*
+5. **Hack de robo de foco** (5): `win.blur()` + 80 ms antes de `SendKeys` para que la tecla
+   llegue a la app anterior. Hay que reproducirlo con `winit` (probablemente
+   `set_focus`/`ShowWindow` + delay equivalente).
+6. **UAC** (7): `spawnLHM(elevated)` y `registerUrlAcl` lanzan `Start-Process -Verb RunAs`.
+   En Rust: `ShellExecuteW` con verbo `runas`. Conservar el caso especial **exit code 1223
+   = usuario canceló**.
+7. **Esperas por sleep** (8): LHM 2000/3500 ms, OpenRGB 1200 ms, update 8000 ms.
+   → Oportunidad de limpieza: reemplazar por *polling con backoff* real.
+8. **Rarezas de OpenRGB** (16): `speedMin` es el **más rápido** (valor invertido),
+   ramas por `colorMode`, cadena Direct→Static→Custom, `deviceId < 0` = todos.
+   → Portar con tests; es fácil romperlo en silencio.
+9. **Scraping de títulos de ventana** (6): regex multi-idioma para Spotify/YouTube/VLC,
+   normaliza NBSP/ZWSP. → **Portar literal**, con tests de las cadenas conocidas.
+   Usar variantes `W` de user32 para no reintroducir bugs de encoding.
+
+### 🟢 Bajos / desaparecen solos
+
+10. `disableHardwareAcceleration` (10), DPI nudge (11), protocolo `vd://` (13),
+    encoder PNG del tray (9), truco `Function('m', …)` del updater (14)
+    → **todos innecesarios sin Chromium.**
+11. `config:save` tiene efectos colaterales (20): re-registra hotkeys, reconstruye el tray
+    y reconfigura sensores. → En Rust, modelarlo explícito (evento `ConfigChanged`) en vez
+    de escondido dentro del setter.
+
+### Decisión pendiente: LibreHardwareMonitor
+
+Hoy se empaqueta LHM (~19 MB, .NET) como binario externo y se habla con él por HTTP.
+Con un instalador objetivo de < 20 MB, **LHM solo pesa más que toda la app nueva**.
+
+Opciones para evaluar en Fase 1.8:
+- **A)** Seguir empaquetándolo (paridad garantizada, +19 MB, sigue necesitando UAC)
+- **B)** Leer sensores nativamente en Rust (`sysinfo` + WMI/LibreHardwareMonitorLib vía FFI) —
+  menos peso y sin UAC, pero **menos sensores** (temperaturas de CPU/GPU requieren driver kernel)
+- **C)** Híbrido: nativo por defecto, LHM opcional como descarga aparte para sensores avanzados
+
+*Recomendación preliminar*: **C**, alineado con cómo ya se trata OpenRGB (descarga aparte).
+
+---
+
+## 7. Convenciones del código Rust
+
+- **Edición 2021**, `rustfmt` por defecto, `clippy` sin warnings (`-D warnings` en CI).
+- `vd-core` **no depende de egui/winit** — se compila y testea sin UI.
+- Errores con `thiserror` en el core y `anyhow` en los binarios.
+- Nada de `unwrap()` en rutas de producción; todo lo que sea COM va en módulos
+  `unsafe` acotados y documentados.
+- Todo COM/WinRT se encapsula tras una API segura y `Send`-safe.
+- El texto de UI **nunca** se escribe literal: siempre clave i18n (mismo esquema que hoy).
+- Comentarios en español, como el resto del proyecto.
+
+---
+
+## 8. Verificación
+
+**Por módulo (Fase 1)**: cada módulo entra con tests. `vd-cli` ejerce el módulo contra
+hardware real (audio cambia de verdad, la macro se reproduce de verdad).
+
+**De paridad (Fase 3)**: checklist con una fila por cada acción de `ActionType` y por
+cada pantalla, verificada lado a lado contra un VirtualDeck 0.5.1 instalado.
+
+**De regresión de config**: tomar un `deck-config.json` real de 0.5.x, abrirlo con v1.0
+y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios existentes.
+
+---
+
+## 9. Estado actual
+
+| Fase | Estado |
+|---|---|
+| 0 — Preparación (toolchain) | ⏳ **Bloqueado**: falta instalar Rust + MSVC Build Tools |
+| 1 — `vd-core` | ⬜ No iniciada |
+| 2 — `vd-app` (UI) | ⬜ No iniciada |
+| 3 — Paridad + v1.0.0 | ⬜ No iniciada |
+
+**Próximo paso concreto**: instalar el toolchain (Fase 0) y crear el scaffold del
+workspace (1.1). Mientras tanto `main` sigue en 0.5.1 y puede recibir hotfixes.
