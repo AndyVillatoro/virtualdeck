@@ -4,7 +4,51 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 0 — preparación**. Rama: `rewrite/rust`. Última actualización: 2026-08-14.
+> Estado: **Fase 1 — núcleo, 6 de 9 módulos**. Rama: `rewrite/rust`.
+> Última actualización: 2026-08-14.
+
+---
+
+## 0. Retomar acá (resumen de 30 segundos)
+
+```bash
+git checkout rewrite/rust
+export PATH="$HOME/.cargo/bin:$PATH"        # o abrir una terminal nueva
+cargo test --workspace -- --test-threads=1  # 70 tests, deben dar todos verde
+cargo run -p vd-cli -- help                 # ver qué se puede ejercitar ya
+```
+
+**Dónde quedó**: el núcleo (`vd-core`) tiene 6 módulos funcionando y verificados
+contra hardware real. No existe UI todavía — eso es la Fase 2.
+
+| Módulo | Estado | Verificado con |
+|---|---|---|
+| `config` | ✅ | Round-trip del `deck-config.json` real, sin perder campos |
+| `audio` | ✅ | Cambió el dispositivo predeterminado de verdad |
+| `media` | ✅ | Leyó y controló la reproducción real (SMTC) |
+| `macro` | ✅ | Grabó y reprodujo, test automático que se inyecta a sí mismo |
+| `launcher` | ✅ | 14/14 comandos; brillo aplicado a 2 pantallas |
+| `rgb` | 🟡 | Lee el controlador Aura; **escribir colores NO funciona** |
+| `sensors` | ⬜ | **← empezar por acá** |
+| `weather` + `log` | ⬜ | |
+| `actions` | ⬜ | Motor que orquesta todo; va último |
+
+**Lo próximo, concreto**: implementar `sensors` con `sysinfo` (CPU/RAM/disco/red) +
+`nvml-wrapper` (RTX 4080 completa). Está bien entendido, no toca hardware de forma
+riesgosa y cierra la decisión de sacarse LHM de encima. Ver §"backends por niveles".
+
+**Lo que quedó abierto y por qué**:
+- **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
+  USBPcap + Wireshark. No seguir por ensayo y error — ya costó dejar el RGB del
+  usuario apagado una vez. Detalle en la sección de RGB.
+- **GPU RGB**: `NvAPI_I2CWrite`, ni empezado.
+
+**Cosas que NO hay que romper** (todas con tests que las fijan):
+- El report ID de Aura es `0xEC`, no `0x00`.
+- Los IIDs COM de `IPolicyConfig` — cambiarlos rompe el audio en silencio.
+- El round-trip de config: cualquier campo nuevo necesita su sitio en el modelo
+  o el `extra` con `serde(flatten)` que lo preserva.
+- Los regex del parser de títulos de ventana: parecen simplificables y no lo son.
 
 ---
 
@@ -425,7 +469,19 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.5 — `macro` | ✅ **Completa** — hooks + SendInput, verificado grabando y reproduciendo |
 | 1.6 — `launcher` | ✅ **Completa** — los 14 comandos, brillo incluido |
 | 1.7 — `rgb` | 🟡 **Lectura sí, escritura no** — ver abajo |
-| 1.8 `sensors` … 1.10 `actions` | ⬜ No iniciadas |
+| 1.8 — `sensors` | ⬜ **← siguiente** |
+| 1.9 `weather`+`log` · 1.10 `actions` | ⬜ No iniciadas |
+| 2 — `vd-app` (UI egui) | ⬜ No iniciada |
+| 3 — Paridad + v1.0.0 | ⬜ No iniciada |
+
+### Deuda técnica anotada
+
+| Qué | Dónde | Por qué importa |
+|---|---|---|
+| Robo de foco antes de macros/hotkeys | `macros`, a resolver en `vd-app` | Sin esto, una macro se escribe a sí misma |
+| Escritura Aura USB | `rgb::aura` | Necesita captura USB, no más ensayo y error |
+| GPU RGB (`NvAPI_I2CWrite`) | sin empezar | Único RGB del equipo que no pasa por Aura |
+| Decidir LHM: quitar o dejar opcional | `sensors` | Ver §"backends por niveles" |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
