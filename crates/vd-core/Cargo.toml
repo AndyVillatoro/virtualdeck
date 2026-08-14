@@ -13,6 +13,7 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 regex = "1"
+hidapi = { version = "2.6.6", default-features = false, features = ["windows-native"] }
 
 # NOTA: las dependencias nativas se agregan por modulo a medida que se
 # implementan, no todas de golpe. Ver docs/MIGRACION-RUST.md seccion 4 (Fases).

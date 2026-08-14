@@ -325,8 +325,46 @@ polling).
 
 **Decisión**: mismo esquema de dos niveles. Nivel 1 = HID directo para un conjunto
 acotado de dispositivos; Nivel 2 = cliente OpenRGB opcional para quien ya lo use y
-quiera cobertura total. **Antes de elegir qué dispositivos soportar en Nivel 1 hay
-que saber qué RGB tiene el usuario realmente** — preguntar al llegar a la Fase 1.7.
+quiera cobertura total.
+
+#### ✅ Verificado contra el hardware real del usuario
+
+En vez de suponer, se escribió `vd-cli rgb scan` (enumera HID filtrando por
+fabricantes RGB conocidos) y se corrió en la máquina. Resultado:
+
+```
+ASUS — AURA LED Controller     VID:PID 0B05:19AF   interfaz 2
+SteelSeries — Arctis Nova Pro Wireless  1038:12E0
+Logitech — USB Receiver        046D:C548
+```
+
+**El `0B05:19AF` es el controlador Aura por USB**, no por SMBus. Desde la generación
+X570, ASUS unificó en un solo controlador USB el RGB de placa, las cabeceras 12V RGB
+y **las cabeceras ARGB**. Es un dispositivo conocido y soportado por OpenRGB.
+
+Consecuencia para este equipo (Z690 ROG Strix + AIO DeepCool de 3 ventiladores con
+bomba iluminada + set de 3 ventiladores + 3 frontales de gabinete + RTX 4080 Zotac):
+
+| Hardware | Vía | ¿Nativo sin driver? |
+|---|---|---|
+| RGB de la placa | Aura USB (HID) | ✅ sí |
+| AIO DeepCool, set de ventiladores, frontales del gabinete | cabeceras ARGB → mismo Aura USB | ✅ sí |
+| RTX 4080 Zotac (Spectra) | I2C del GPU vía **NvAPI_I2CWrite** | ✅ sí — NVAPI es una DLL de usuario que trae el driver NVIDIA |
+| Arctis Nova Pro | HID propio | ✅ sí |
+
+**No apareció ningún VID de DeepCool (0x3633)**, lo que confirma que la iluminación
+del AIO va por las cabeceras ARGB de la placa y no por un controlador USB propio.
+
+**Conclusión**: para este equipo el Nivel 1 nativo cubriría *todo*, sin driver de
+kernel, sin UAC y sin instalar OpenRGB. Es un resultado mucho mejor de lo previsto.
+El Nivel 2 (OpenRGB opcional) queda solo para usuarios con hardware que sí dependa
+de SMBus (placas viejas, RAM iluminada).
+
+> ⚠️ Ojo: implementar el protocolo Aura USB es trabajo real (paquetes HID de 65
+> bytes, modos directo/efecto, mapeo de zonas). Se puede **reimplementar
+> legalmente** — los protocolos no son copyrightables — pero **no se puede copiar
+> código de OpenRGB**, que es GPLv2. La referencia a usar es la documentación del
+> wiki de OpenRGB, no su código fuente.
 
 #### Consecuencia para el plan
 

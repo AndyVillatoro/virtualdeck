@@ -25,6 +25,7 @@ fn main() -> Result<()> {
             Ok(())
         }
         ["media", cmd] => cmd_media_control(cmd),
+        ["rgb"] | ["rgb", "scan"] => cmd_rgb_scan(),
         ["macro", "record"] => cmd_macro_record(5),
         ["macro", "record", secs] => cmd_macro_record(secs.parse().unwrap_or(5)),
         ["macro", "play", archivo] => cmd_macro_play(archivo, 3),
@@ -269,6 +270,56 @@ fn cmd_media_control(cmd: &str) -> Result<()> {
             println!("OK — {otro}");
         }
     }
+    Ok(())
+}
+
+/// Enumera los dispositivos HID que podrian controlarse de forma nativa.
+fn cmd_rgb_scan() -> Result<()> {
+    use vd_core::rgb::{self, DeviceKind};
+
+    let dispositivos = rgb::scan()?;
+    if dispositivos.is_empty() {
+        println!("No se encontraron dispositivos HID de fabricantes RGB conocidos.");
+        println!("Eso NO significa que no tengas RGB: puede estar todo detras del");
+        println!("SMBus de la placa, que no aparece como HID.");
+        return Ok(());
+    }
+
+    println!("{} dispositivo(s) HID relevantes:\n", dispositivos.len());
+    for d in &dispositivos {
+        let etiqueta = match d.kind {
+            DeviceKind::AuraUsb => "  <-- CONTROLADOR AURA USB (¡se puede sin driver!)",
+            DeviceKind::Cooler => "  (refrigeracion)",
+            DeviceKind::Peripheral => "  (periferico)",
+            DeviceKind::Other => "",
+        };
+        println!(
+            "  {} — {}{}",
+            d.vendor.name(),
+            if d.product.is_empty() {
+                "(sin nombre)"
+            } else {
+                &d.product
+            },
+            etiqueta
+        );
+        println!(
+            "    VID:PID {:04X}:{:04X}  interfaz {}",
+            d.vendor_id, d.product_id, d.interface
+        );
+    }
+
+    let hay_aura = dispositivos.iter().any(|d| d.kind == DeviceKind::AuraUsb);
+    println!(
+        "\n{}",
+        if hay_aura {
+            "Hay un controlador Aura USB: los headers ARGB de la placa se pueden\n\
+             manejar por HID, sin driver de kernel ni permisos de administrador."
+        } else {
+            "No se detecto un controlador Aura USB. El RGB de la placa\n\
+             probablemente va por SMBus, que si necesita driver de kernel."
+        }
+    );
     Ok(())
 }
 

@@ -21,6 +21,7 @@ pub mod launcher;
 pub mod macros;
 #[cfg(windows)]
 pub mod media;
+pub mod rgb;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui
 /// se agregan como variantes, para que `vd-cli` y la UI manejen un solo tipo.
