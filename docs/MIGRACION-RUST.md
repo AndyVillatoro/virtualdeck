@@ -122,13 +122,24 @@ Cada fase termina en un entregable verificable. **No se avanza sin la anterior v
 
 ### Fase 0 — Preparación (prerrequisito del usuario)
 
-- [ ] Instalar **Rust** (`rustup`) → https://rustup.rs
-- [ ] Instalar **Visual Studio Build Tools** con el workload "Desarrollo para escritorio con C++"
-      (provee `link.exe` del MSVC, requerido por el target `x86_64-pc-windows-msvc`)
+- [x] Instalar **Rust** (`rustup`) → ✅ **rustc/cargo 1.97.1**, toolchain
+      `stable-x86_64-pc-windows-msvc`, en `C:\Users\andyf\.cargo\bin`
+- [ ] 🔴 Instalar **Visual Studio Build Tools** con el workload "Desarrollo para escritorio con C++"
+      — **es lo único que falta**. Provee el `link.exe` de MSVC que exige el target
+      `x86_64-pc-windows-msvc`. Sin él **no compila absolutamente nada**: hasta los build
+      scripts de `serde`/`thiserror` necesitan linkear.
+      ```
+      winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+      ```
 - [ ] ⚠️ **Cuidado**: `C:\Program Files\Git\usr\bin\link.exe` puede tapar al `link.exe` de MSVC
       en el PATH y romper el build. Si `cargo build` falla con errores de linker, asegurate de
       que el de MSVC aparezca primero (o usá la "Developer Command Prompt for VS").
-- [ ] Verificar: `cargo --version` y `rustc --version` responden.
+- [ ] Verificar de punta a punta: `cargo check --workspace`, `cargo clippy --workspace
+      --all-targets -- -D warnings` y `cargo test --workspace` en verde.
+
+> **Nota sobre el PATH**: si instalás algo mientras hay una terminal abierta, esa terminal
+> no ve el PATH nuevo. Rust quedó invisible por eso hasta que se agregó
+> `%USERPROFILE%\.cargo\bin` manualmente. Abrí una terminal nueva después de instalar.
 
 ### Fase 1 — `vd-core` (el corazón, ~4-6 semanas)
 
@@ -299,10 +310,20 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 
 | Fase | Estado |
 |---|---|
-| 0 — Preparación (toolchain) | ⏳ **Bloqueado**: falta instalar Rust + MSVC Build Tools |
-| 1 — `vd-core` | ⬜ No iniciada |
+| 0 — Preparación (toolchain) | 🟡 Rust ✅ instalado · **falta MSVC Build Tools** (bloqueante) |
+| 1.1 — Scaffold workspace | ✅ Hecho (sin verificar por falta de linker) |
+| 1.2 — `config` | 🟡 Rutas de datos hechas · faltan `DeckConfig`, migraciones v1→v4, backups |
+| 1.3 — `audio` … 1.10 — `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
-**Próximo paso concreto**: instalar el toolchain (Fase 0) y crear el scaffold del
-workspace (1.1). Mientras tanto `main` sigue en 0.5.1 y puede recibir hotfixes.
+**Bloqueante actual**: sin el `link.exe` de MSVC no se puede compilar ni testear nada.
+Todo lo commiteado hasta ahora está validado solo con `cargo fmt --check`.
+
+**Próximo paso concreto** (una vez desbloqueado): correr `cargo check --workspace` +
+`clippy` + `test` para validar el scaffold, y luego terminar **1.2 `config`** portando
+`DeckConfig` desde `src/types.ts` y la cadena de migraciones desde
+`src/utils/configMigration.ts` (v1→v4), con tests que carguen un `deck-config.json`
+real de 0.5.x.
+
+Mientras tanto `main` sigue en 0.5.1 y puede recibir hotfixes.
