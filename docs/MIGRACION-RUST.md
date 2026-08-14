@@ -423,8 +423,8 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.3 — `audio` | ✅ **Completa** — COM nativo, verificado cambiando el dispositivo real |
 | 1.4 — `media` | ✅ **Completa** — SMTC nativo, verificado leyendo y controlando reproducción real |
 | 1.5 — `macro` | ✅ **Completa** — hooks + SendInput, verificado grabando y reproduciendo |
-| 1.6 — `launcher` | 🟡 **Casi** — 13 de 14 comandos. Falta **brillo** (WMI) |
-| 1.7 — `rgb` | 🔜 **Siguiente** — ver la investigación de arriba; hay que preguntar qué RGB tiene el usuario |
+| 1.6 — `launcher` | ✅ **Completa** — los 14 comandos, brillo incluido |
+| 1.7 — `rgb` | 🔜 **Siguiente** — protocolo Aura USB (hardware ya identificado) |
 | 1.8 `sensors` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
@@ -489,20 +489,28 @@ cargo run -p vd-cli -- macro play macro.json 3   # reproduce tras 3 s de espera
 > Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
 > o abrí una terminal nueva.
 
-**Próximo paso concreto**: **1.7 `rgb`**, siguiendo la decisión de dos niveles de la
-sección de investigación. **Antes de escribir código hay que preguntarle al usuario
-qué dispositivos RGB tiene** (marca y modelo de teclado, ratón, headset, placa,
-RAM, tiras): el Nivel 1 nativo solo puede cubrir un subconjunto y no tiene sentido
-elegirlo a ciegas.
+**Próximo paso concreto**: **1.7 `rgb`** — implementar el **protocolo Aura USB**
+sobre el controlador ya identificado (`0B05:19AF`). Con eso queda cubierto el RGB de
+placa y de las tres cabeceras ARGB, que en este equipo es todo salvo la GPU.
+Después, la GPU por `NvAPI_I2CWrite`.
 
-### Pendiente de `launcher`: brillo de pantalla
+Recordatorio legal: reimplementar el protocolo es legal, copiar código de OpenRGB
+(GPLv2) no. La referencia es su wiki.
 
-Es el único de los 14 comandos que quedó sin portar. Necesita WMI
-(`WmiMonitorBrightnessMethods.WmiSetBrightness` en `root/WMI`), que en Rust implica
-o bien el crate `wmi` o bien COM crudo con `IWbemLocator`. Se dejó para no sumar una
-dependencia apurado al final de una sesión larga. Nota: ese método solo funciona en
-paneles con soporte DDC/CI — en muchos monitores de escritorio no hace nada, cosa
-que ya pasaba con la versión Electron.
+### ✅ Brillo: mejor que el original
+
+Se completó, y **de paso se arregló una limitación de la versión Electron**. Windows
+expone el brillo por dos APIs distintas y ninguna sirve para los dos casos:
+
+| Tipo de pantalla | API |
+|---|---|
+| Panel interno (portátiles) | WMI `WmiMonitorBrightnessMethods` |
+| Monitor externo (escritorio) | **DDC/CI** por `dxva2.dll` |
+
+La versión Electron implementaba **solo WMI**, así que la acción de brillo
+sencillamente no hacía nada en un equipo de escritorio. Ahora se intentan los dos.
+Verificado en la máquina del usuario: leyó 49 %, aplicó 65 % a **2 pantallas** y
+restauró — todo por DDC/CI, que antes no existía.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

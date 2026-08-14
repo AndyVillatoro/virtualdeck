@@ -26,6 +26,22 @@ fn main() -> Result<()> {
         }
         ["media", cmd] => cmd_media_control(cmd),
         ["rgb"] | ["rgb", "scan"] => cmd_rgb_scan(),
+        ["brillo"] => {
+            match vd_core::launcher::brightness() {
+                Some(v) => println!("Brillo actual: {v}%"),
+                None => println!("Ninguna pantalla informa su brillo."),
+            }
+            Ok(())
+        }
+        ["brillo", nivel] => {
+            let n: i64 = nivel.parse().unwrap_or(50);
+            let aplicadas = vd_core::launcher::set_brightness(n)?;
+            println!("Brillo {n}% aplicado a {aplicadas} pantalla(s).");
+            if aplicadas == 0 {
+                println!("(ninguna pantalla acepto el cambio: puede no soportar DDC/CI)");
+            }
+            Ok(())
+        }
         ["macro", "record"] => cmd_macro_record(5),
         ["macro", "record", secs] => cmd_macro_record(secs.parse().unwrap_or(5)),
         ["macro", "play", archivo] => cmd_macro_play(archivo, 3),

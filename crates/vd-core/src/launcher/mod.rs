@@ -9,10 +9,12 @@
 //!   [`crate::macros`].
 //! - El volumen maestro usa el mismo enumerador COM que [`crate::audio`].
 
+mod brillo;
 mod procesos;
 mod ventanas;
 
-pub use procesos::{kill_process, running_processes};
+pub use brillo::{brightness, set_brightness};
+pub use procesos::{kill_process, running_processes, ProcessInfo};
 pub use ventanas::{snap_window, SnapPosition};
 
 use std::os::windows::process::CommandExt;
