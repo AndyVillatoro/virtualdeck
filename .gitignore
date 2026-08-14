@@ -22,3 +22,6 @@ test-electron.js
 .claude/
 .agents/
 skills-lock.json
+
+# Rust (rama rewrite/rust) — artefactos de compilación
+target/

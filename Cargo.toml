@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/vd-core",
+    "crates/vd-cli",
+    # "crates/vd-app",  # Fase 2 — UI egui + winit
+]
+
+# Metadatos y dependencias compartidas por todo el workspace. Los crates
+# individuales las referencian con `foo.workspace = true` para que la version
+# se defina en un solo lugar.
+[workspace.package]
+version = "1.0.0-alpha.1"
+edition = "2021"
+rust-version = "1.90"
+authors = ["Andy Villatoro <noc@metronethn.com>"]
+license = "UNLICENSED"
+repository = "https://github.com/AndyVillatoro/virtualdeck"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+
+# Los binarios de release priorizan tamaño: uno de los objetivos de la
+# migracion es un instalador < 20 MB (hoy Electron pesa ~90 MB).
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

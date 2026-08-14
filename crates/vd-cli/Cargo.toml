@@ -1,0 +1,13 @@
+[package]
+name = "vd-cli"
+description = "Banco de pruebas de vd-core: ejerce el nucleo contra hardware real sin abrir una ventana."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+vd-core = { path = "../vd-core" }
+anyhow.workspace = true

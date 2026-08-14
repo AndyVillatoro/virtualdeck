@@ -1,0 +1,18 @@
+[package]
+name = "vd-core"
+description = "Nucleo de VirtualDeck: config, acciones, audio, media, macros, RGB, sensores. Sin dependencias de UI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+# NOTA: las dependencias nativas (windows, com-policy-config, openrgb2, rdev,
+# reqwest) se agregan por modulo a medida que se implementan, no todas de golpe.
+# Ver docs/MIGRACION-RUST.md seccion 4 (Fases).
