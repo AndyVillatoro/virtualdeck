@@ -265,6 +265,75 @@ Ordenados por severidad. Los números entre paréntesis son del inventario del b
     y reconfigura sensores. → En Rust, modelarlo explícito (evento `ConfigChanged`) en vez
     de escondido dentro del setter.
 
+### 🔬 Investigado: quitar la dependencia de LHM y OpenRGB
+
+> Pedido explícito del usuario: que sensores y RGB funcionen **sin descargar nada
+> aparte**, porque hoy eso limita el uso, consume más recursos y da problemas al
+> iniciar con Windows. Investigado en agosto 2026; esto define las Fases 1.7 y 1.8.
+
+#### El límite duro: temperaturas y RGB de placa necesitan driver de kernel
+
+No es pereza de LHM: leer la temperatura del **paquete de CPU**, los **voltajes** y
+los **headers de ventiladores** exige leer registros MSR y del chipset, y Windows
+reserva eso a código en anillo 0. Por eso LHM instala `LibreHardwareMonitor.sys`
+(basado en **WinRing0**) y pide UAC. El mismo driver lo usan MSI Afterburner,
+FanControl y **el propio OpenRGB**.
+
+**🚩 Hallazgo crítico para la tienda**: Microsoft Defender ya marca a **WinRing0
+como driver vulnerable** (tiene CVEs conocidos). Empaquetar LHM en una app que
+aspira a Microsoft Store es un riesgo concreto de certificación y de que Defender
+la señale. **Esto refuerza mucho la decisión de no depender de LHM.**
+
+#### Lo que SÍ se puede hacer nativo, sin instalar nada y sin admin
+
+| Dato | Cómo | Requiere |
+|---|---|---|
+| Uso de CPU, RAM, disco, red | [`sysinfo`](https://crates.io/crates/sysinfo) | nada |
+| Lista y uso por proceso | `sysinfo` | nada |
+| **GPU NVIDIA completa** (temp, uso, ventilador, VRAM, potencia, reloj) | [`nvml-wrapper`](https://crates.io/crates/nvml-wrapper) | nada — **NVML viene con el driver NVIDIA** y se carga dinámicamente, así que degrada solo si no hay GPU NVIDIA |
+| Uso de GPU (cualquier fabricante) | Contadores de rendimiento de Windows (`GPU Engine`) | nada |
+| Temperatura de SSD/HDD | SMART por `DeviceIoControl` | a veces admin |
+| Temp. de CPU, voltajes, ventiladores de placa | ❌ | driver de kernel |
+
+#### Decisión: backends por niveles (Fase 1.8)
+
+```
+Nivel 1 — NATIVO (por defecto, sin instalar nada, sin UAC, arranca siempre)
+          sysinfo + NVML + contadores de Windows
+Nivel 2 — AVANZADO (opcional, el usuario lo elige)
+          LHM externo, si ya lo tiene o lo quiere instalar
+```
+
+El widget de sensores muestra lo que haya. Si no hay Nivel 2, no aparecen temperatura
+de CPU ni ventiladores — **se pierden features, que es exactamente el intercambio que
+el usuario aceptó**. A cambio: cero descargas, cero UAC, cero problemas al arrancar
+con Windows, y muchísimo menos consumo (hoy LHM es un proceso .NET entero haciendo
+polling).
+
+#### RGB (Fase 1.7): mismo esquema, pero con más matices
+
+- Muchos periféricos (teclados, ratones, headsets) son **HID puro** y se pueden
+  manejar con [`hidapi`](https://crates.io/crates/hidapi) sin app externa y sin admin.
+  El problema es que **cada fabricante tiene su protocolo propio**: OpenRGB es
+  básicamente un repositorio de cientos de drivers de dispositivo. Reimplementar
+  todo es inviable; un subconjunto de los más comunes, sí.
+- El RGB de **placa madre y RAM** va por SMBus → vuelve a necesitar driver de kernel.
+  Ahí no hay salida nativa.
+- **Legal**: OpenRGB es GPLv2, así que no se puede enlazar dentro de una app
+  propietaria. Los *protocolos* no son copyrightables (reimplementarlos es legal),
+  pero copiar su código no.
+
+**Decisión**: mismo esquema de dos niveles. Nivel 1 = HID directo para un conjunto
+acotado de dispositivos; Nivel 2 = cliente OpenRGB opcional para quien ya lo use y
+quiera cobertura total. **Antes de elegir qué dispositivos soportar en Nivel 1 hay
+que saber qué RGB tiene el usuario realmente** — preguntar al llegar a la Fase 1.7.
+
+#### Consecuencia para el plan
+
+La opción **C** que estaba planteada abajo queda **confirmada como decisión**, y con
+un argumento nuevo y más fuerte del que se tenía: no es solo tamaño del instalador,
+es que el driver que exige LHM está marcado como vulnerable por Defender.
+
 ### Decisión pendiente: LibreHardwareMonitor
 
 Hoy se empaqueta LHM (~19 MB, .NET) como binario externo y se habla con él por HTTP.
@@ -316,15 +385,16 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.3 — `audio` | ✅ **Completa** — COM nativo, verificado cambiando el dispositivo real |
 | 1.4 — `media` | ✅ **Completa** — SMTC nativo, verificado leyendo y controlando reproducción real |
 | 1.5 — `macro` | ✅ **Completa** — hooks + SendInput, verificado grabando y reproduciendo |
-| 1.6 — `launcher` | 🔜 **Siguiente** |
-| 1.7 `rgb` … 1.10 `actions` | ⬜ No iniciadas |
+| 1.6 — `launcher` | 🟡 **Casi** — 13 de 14 comandos. Falta **brillo** (WMI) |
+| 1.7 — `rgb` | 🔜 **Siguiente** — ver la investigación de arriba; hay que preguntar qué RGB tiene el usuario |
+| 1.8 `sensors` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
 ### Lo verificado hasta ahora
 
 - `cargo check` / `clippy -D warnings` / `cargo fmt --check` / `cargo test`: **todo en verde**.
-- **47 tests**, incluido el que más importa:
+- **63 tests**, incluido el que más importa:
   `crates/vd-core/tests/round_trip_config_real.rs` carga el `deck-config.json`
   **real** de la máquina, lo migra, lo vuelve a serializar y verifica campo por
   campo que no se perdió nada. Es el contrato con los usuarios de 0.5.x.
@@ -381,14 +451,20 @@ cargo run -p vd-cli -- macro play macro.json 3   # reproduce tras 3 s de espera
 > Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
 > o abrí una terminal nueva.
 
-**Próximo paso concreto**: **1.6 `launcher`** — portar `electron/main/launcher.ts`,
-que es el módulo con más superficie (14 comandos IPC): abrir apps y URLs, ejecutar
-scripts, atajos de teclado, brillo (WMI), volumen maestro
-(`IAudioEndpointVolume`), snap de ventanas (`SetWindowPos`), portapapeles,
-enumerar y matar procesos.
-Casi todo hoy pasa por PowerShell con C# embebido; en Rust son llamadas directas y
-varias piezas ya están resueltas (`SendInput` de macros sirve para hotkeys y
-type-text; el enumerador COM de audio sirve para el volumen).
+**Próximo paso concreto**: **1.7 `rgb`**, siguiendo la decisión de dos niveles de la
+sección de investigación. **Antes de escribir código hay que preguntarle al usuario
+qué dispositivos RGB tiene** (marca y modelo de teclado, ratón, headset, placa,
+RAM, tiras): el Nivel 1 nativo solo puede cubrir un subconjunto y no tiene sentido
+elegirlo a ciegas.
+
+### Pendiente de `launcher`: brillo de pantalla
+
+Es el único de los 14 comandos que quedó sin portar. Necesita WMI
+(`WmiMonitorBrightnessMethods.WmiSetBrightness` en `root/WMI`), que en Rust implica
+o bien el crate `wmi` o bien COM crudo con `IWbemLocator`. Se dejó para no sumar una
+dependencia apurado al final de una sesión larga. Nota: ese método solo funciona en
+paneles con soporte DDC/CI — en muchos monitores de escritorio no hace nada, cosa
+que ya pasaba con la versión Electron.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

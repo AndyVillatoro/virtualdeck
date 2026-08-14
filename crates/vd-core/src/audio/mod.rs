@@ -100,7 +100,7 @@ impl fmt::Display for AudioDevice {
 /// Es idempotente: si el hilo ya estaba inicializado, Windows devuelve `S_FALSE`
 /// o `RPC_E_CHANGED_MODE` y en ambos casos se puede seguir trabajando, asi que
 /// se ignora el resultado a proposito.
-fn ensure_com() {
+pub(crate) fn ensure_com() {
     // SAFETY: llamada estandar de inicializacion; su fallo no es fatal.
     unsafe {
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);

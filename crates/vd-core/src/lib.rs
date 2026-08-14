@@ -16,6 +16,8 @@
 pub mod audio;
 pub mod config;
 #[cfg(windows)]
+pub mod launcher;
+#[cfg(windows)]
 pub mod macros;
 #[cfg(windows)]
 pub mod media;
@@ -38,6 +40,10 @@ pub enum CoreError {
     #[cfg(windows)]
     #[error("error de macro: {0}")]
     Macro(#[from] macros::MacroError),
+
+    #[cfg(windows)]
+    #[error("error de lanzamiento: {0}")]
+    Launcher(#[from] launcher::LauncherError),
 }
 
 /// Resultado estandar del nucleo.

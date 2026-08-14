@@ -40,4 +40,10 @@ features = [
     # --- macros ---
     "Win32_UI_Input_KeyboardAndMouse",    # SendInput, hooks de teclado/raton
     "Win32_System_LibraryLoader",         # GetModuleHandleW (para instalar el hook)
+    # --- launcher ---
+    "Win32_UI_Shell",                     # ShellExecuteW
+    "Win32_System_Diagnostics_ToolHelp",  # enumerar procesos
+    "Win32_System_DataExchange",          # portapapeles
+    "Win32_System_Memory",                # GlobalAlloc para el portapapeles
+    "Win32_Media_Audio_Endpoints",        # IAudioEndpointVolume (volumen maestro)
 ]

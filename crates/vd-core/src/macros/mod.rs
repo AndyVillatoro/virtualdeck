@@ -154,6 +154,14 @@ fn press(spec: &str) -> Result<(), MacroError> {
     send(&inputs)
 }
 
+/// Pulsa y suelta una tecla por su codigo virtual.
+///
+/// Existe para las teclas que no tienen nombre en el formato de macros — las
+/// multimedia (`VK_VOLUME_UP` y companiia), que usa [`crate::launcher`].
+pub fn press_virtual_key(vk: VIRTUAL_KEY) -> Result<(), MacroError> {
+    send(&[key_input(vk, false), key_input(vk, true)])
+}
+
 /// Escribe texto literal.
 fn type_text(text: &str) -> Result<(), MacroError> {
     let mut inputs = Vec::with_capacity(text.len() * 2);
