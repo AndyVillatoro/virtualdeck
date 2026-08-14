@@ -25,6 +25,10 @@ fn main() -> Result<()> {
             Ok(())
         }
         ["media", cmd] => cmd_media_control(cmd),
+        ["macro", "record"] => cmd_macro_record(5),
+        ["macro", "record", secs] => cmd_macro_record(secs.parse().unwrap_or(5)),
+        ["macro", "play", archivo] => cmd_macro_play(archivo, 3),
+        ["macro", "play", archivo, espera] => cmd_macro_play(archivo, espera.parse().unwrap_or(3)),
         [] | ["help"] | ["--help"] | ["-h"] => {
             print_help();
             Ok(())
@@ -55,9 +59,14 @@ fn print_help() {
          \x20              Controla la reproduccion\n\
          \x20   media diagnose\n\
          \x20              Estado de SMTC sesion por sesion\n\
+         \x20   macro record [segundos]\n\
+         \x20              Graba teclado y raton (5 s por defecto) a macro.json\n\
+         \x20   macro play <archivo> [espera]\n\
+         \x20              Reproduce una macro tras N segundos (3 por defecto,\n\
+         \x20              para que puedas enfocar la ventana destino)\n\
          \x20   help       Muestra esta ayuda\n\
          \n\
-         Se iran agregando comandos por modulo: macro, rgb, sensors."
+         Se iran agregando comandos por modulo: launcher, rgb, sensors."
     );
 }
 
@@ -260,6 +269,78 @@ fn cmd_media_control(cmd: &str) -> Result<()> {
             println!("OK — {otro}");
         }
     }
+    Ok(())
+}
+
+/// Graba una macro durante N segundos y la guarda en macro.json.
+fn cmd_macro_record(segundos: u64) -> Result<()> {
+    use std::io::Write;
+    use vd_core::macros;
+
+    println!("Grabando teclado y raton durante {segundos} s...");
+    println!("(todo lo que teclees y cliquees en CUALQUIER ventana queda registrado)\n");
+
+    macros::start_recording()?;
+    for restante in (1..=segundos).rev() {
+        print!("\r  {restante} s ");
+        let _ = std::io::stdout().flush();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+    let pasos = macros::stop_recording()?;
+    println!("\r            \r");
+
+    if pasos.is_empty() {
+        println!("No se capturo ningun evento.");
+        return Ok(());
+    }
+
+    println!("{} paso(s) capturados:", pasos.len());
+    for (i, p) in pasos.iter().enumerate().take(20) {
+        let detalle = match (&p.value, p.x, p.y) {
+            (Some(v), _, _) => v.clone(),
+            (None, Some(x), Some(y)) => format!("clic en ({x}, {y})"),
+            _ => String::new(),
+        };
+        println!(
+            "  {:>2}. {:?} {detalle} (+{} ms)",
+            i + 1,
+            p.step_type,
+            p.delay_ms.unwrap_or(0)
+        );
+    }
+    if pasos.len() > 20 {
+        println!("  ... y {} mas", pasos.len() - 20);
+    }
+
+    std::fs::write("macro.json", serde_json::to_string_pretty(&pasos)?)?;
+    println!("\nGuardado en macro.json — reproducilo con: vd-cli macro play macro.json");
+    Ok(())
+}
+
+/// Reproduce una macro desde un archivo JSON, tras una cuenta regresiva.
+///
+/// La espera existe porque una macro le escribe a la ventana enfocada: hay que
+/// darle tiempo al usuario para poner el foco donde corresponde. En la app real
+/// ese rol lo cumple el hack de blur de la ventana antes de ejecutar.
+fn cmd_macro_play(archivo: &str, espera: u64) -> Result<()> {
+    use std::io::Write;
+    use vd_core::config::model::MacroStep;
+    use vd_core::macros;
+
+    let texto = std::fs::read_to_string(archivo)
+        .map_err(|e| anyhow::anyhow!("no se pudo leer {archivo}: {e}"))?;
+    let pasos: Vec<MacroStep> = serde_json::from_str(&texto)?;
+
+    println!("{} paso(s). Enfoca la ventana destino...", pasos.len());
+    for restante in (1..=espera).rev() {
+        print!("\r  reproduciendo en {restante} s ");
+        let _ = std::io::stdout().flush();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
+    println!("\r                          \r");
+
+    macros::play(&pasos, 1)?;
+    println!("OK — macro reproducida.");
     Ok(())
 }
 

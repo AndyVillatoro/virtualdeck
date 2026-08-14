@@ -172,6 +172,7 @@ name = "vd-cli"
 version = "1.0.0-alpha.1"
 dependencies = [
  "anyhow",
+ "serde_json",
  "vd-core",
 ]
 

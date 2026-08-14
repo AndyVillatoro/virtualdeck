@@ -37,4 +37,7 @@ features = [
     "Foundation_Collections",             # IVectorView de sesiones
     "Win32_UI_WindowsAndMessaging",       # EnumWindows — fallback por titulo
     "Win32_System_Threading",             # OpenProcess / QueryFullProcessImageNameW
+    # --- macros ---
+    "Win32_UI_Input_KeyboardAndMouse",    # SendInput, hooks de teclado/raton
+    "Win32_System_LibraryLoader",         # GetModuleHandleW (para instalar el hook)
 ]

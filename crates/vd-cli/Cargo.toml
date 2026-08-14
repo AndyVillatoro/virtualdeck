@@ -11,3 +11,4 @@ repository.workspace = true
 [dependencies]
 vd-core = { path = "../vd-core" }
 anyhow.workspace = true
+serde_json.workspace = true

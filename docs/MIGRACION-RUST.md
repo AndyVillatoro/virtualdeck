@@ -315,15 +315,16 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.2 — `config` | ✅ **Completa** — modelo, migraciones v1→v4, backups |
 | 1.3 — `audio` | ✅ **Completa** — COM nativo, verificado cambiando el dispositivo real |
 | 1.4 — `media` | ✅ **Completa** — SMTC nativo, verificado leyendo y controlando reproducción real |
-| 1.5 — `macro` | 🔜 **Siguiente** |
-| 1.6 `launcher` … 1.10 `actions` | ⬜ No iniciadas |
+| 1.5 — `macro` | ✅ **Completa** — hooks + SendInput, verificado grabando y reproduciendo |
+| 1.6 — `launcher` | 🔜 **Siguiente** |
+| 1.7 `rgb` … 1.10 `actions` | ⬜ No iniciadas |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
 ### Lo verificado hasta ahora
 
 - `cargo check` / `clippy -D warnings` / `cargo fmt --check` / `cargo test`: **todo en verde**.
-- **30 tests**, incluido el que más importa:
+- **47 tests**, incluido el que más importa:
   `crates/vd-core/tests/round_trip_config_real.rs` carga el `deck-config.json`
   **real** de la máquina, lo migra, lo vuelve a serializar y verifica campo por
   campo que no se perdió nada. Es el contrato con los usuarios de 0.5.x.
@@ -334,6 +335,12 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
   despejado. Sin PowerShell de por medio.
 - **`vd-cli media now` leyó la reproducción real** (título, artista, estado,
   origen y carátula PNG) y `media play-pause` pausó y reanudó de verdad.
+- **Macros validadas de punta a punta sin intervención humana**: el test
+  `macro_ida_y_vuelta.rs` arranca el grabador, **inyecta** una tecla con
+  `SendInput` y verifica que el hook global la capturó. Ejercita grabación y
+  reproducción a la vez. Usa **F13–F24**, teclas que Windows entiende pero que
+  ninguna aplicación escucha, así no interfiere con lo que el usuario tenga
+  abierto.
 
 ### 🎉 El riesgo más grande de la migración quedó despejado
 
@@ -364,18 +371,33 @@ cargo run -p vd-cli -- audio set "Arctis"  # cambia el predeterminado (id o nomb
 cargo run -p vd-cli -- media now           # que se esta reproduciendo
 cargo run -p vd-cli -- media play-pause    # tambien: next, prev, stop, shuffle, repeat
 cargo run -p vd-cli -- media diagnose      # estado de SMTC sesion por sesion
+cargo run -p vd-cli -- macro record 5      # graba 5 s a macro.json
+cargo run -p vd-cli -- macro play macro.json 3   # reproduce tras 3 s de espera
 ```
+
+> Los tests de macro instalan hooks globales, que son un recurso de todo el
+> sistema. Corré la suite con `--test-threads=1` si ves resultados raros.
 
 > Si `cargo` no aparece en la terminal, agregá `%USERPROFILE%\.cargo\bin` al PATH
 > o abrí una terminal nueva.
 
-**Próximo paso concreto**: **1.5 `macro`** — portar `electron/main/macro.ts`.
-Grabación de teclado/ratón con `rdev` (reemplaza `uiohook-napi`) y reproducción con
-`SendInput` nativo (reemplaza el script de PowerShell que se generaba en cada
-ejecución con `SendKeys` + `user32.dll mouse_event`).
-Ojo con el hack de robo de foco: hoy se hace `win.blur()` + 80 ms antes de enviar
-teclas para que lleguen a la app anterior. Hay que reproducirlo.
-Objetivo: `vd-cli macro record` y `vd-cli macro play <archivo>`.
+**Próximo paso concreto**: **1.6 `launcher`** — portar `electron/main/launcher.ts`,
+que es el módulo con más superficie (14 comandos IPC): abrir apps y URLs, ejecutar
+scripts, atajos de teclado, brillo (WMI), volumen maestro
+(`IAudioEndpointVolume`), snap de ventanas (`SetWindowPos`), portapapeles,
+enumerar y matar procesos.
+Casi todo hoy pasa por PowerShell con C# embebido; en Rust son llamadas directas y
+varias piezas ya están resueltas (`SendInput` de macros sirve para hotkeys y
+type-text; el enumerador COM de audio sirve para el volumen).
+
+### ⚠️ Deuda pendiente: el robo de foco
+
+Una macro (y un hotkey, y type-text) le escribe a **la ventana enfocada**. Si
+VirtualDeck tiene el foco, se escribe a sí mismo. Hoy Electron hace `win.blur()` +
+80 ms antes de enviar. `vd-core` **no puede resolverlo solo** porque no conoce la
+ventana: queda como responsabilidad explícita de `vd-app` (Fase 2.1) llamar a algo
+tipo `ceder_foco()` antes de invocar `macros::play`. Está documentado en el módulo
+para que no se pase por alto al construir la UI.
 
 ### Nota de diseño: la carátula ya no es un data-URL
 

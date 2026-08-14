@@ -16,6 +16,8 @@
 pub mod audio;
 pub mod config;
 #[cfg(windows)]
+pub mod macros;
+#[cfg(windows)]
 pub mod media;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui
@@ -32,6 +34,10 @@ pub enum CoreError {
     #[cfg(windows)]
     #[error("error de medios: {0}")]
     Media(#[from] media::MediaError),
+
+    #[cfg(windows)]
+    #[error("error de macro: {0}")]
+    Macro(#[from] macros::MacroError),
 }
 
 /// Resultado estandar del nucleo.

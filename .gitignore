@@ -25,3 +25,6 @@ skills-lock.json
 
 # Rust (rama rewrite/rust) — artefactos de compilación
 target/
+
+# Macros de prueba generadas por vd-cli
+macro.json
