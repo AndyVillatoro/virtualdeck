@@ -26,6 +26,7 @@ fn main() -> Result<()> {
         }
         ["media", cmd] => cmd_media_control(cmd),
         ["rgb"] | ["rgb", "scan"] => cmd_rgb_scan(),
+        ["rgb", "probe"] => cmd_rgb_probe(),
         ["brillo"] => {
             match vd_core::launcher::brightness() {
                 Some(v) => println!("Brillo actual: {v}%"),
@@ -336,6 +337,63 @@ fn cmd_rgb_scan() -> Result<()> {
              probablemente va por SMBus, que si necesita driver de kernel."
         }
     );
+    Ok(())
+}
+
+/// Interroga al controlador Aura. Operacion de SOLO LECTURA: no toca las luces.
+fn cmd_rgb_probe() -> Result<()> {
+    use vd_core::rgb::AuraController;
+
+    println!("Colecciones HID del controlador Aura:\n");
+    for e in vd_core::rgb::aura::endpoints()? {
+        println!(
+            "  PID {:04X}  interfaz {}  usage_page {:#06X}  usage {:#06X}",
+            e.product_id, e.interface, e.usage_page, e.usage
+        );
+        println!(
+            "    reports -> entrada {}  salida {}  feature {}",
+            e.input_len, e.output_len, e.feature_len
+        );
+    }
+
+    println!("\nInterrogando (solo lectura)...\n");
+    let ctrl = AuraController::open()?;
+    let (quizas, log) = ctrl.probe_verbose();
+
+    println!("Bitacora de intentos:");
+    for linea in &log {
+        println!("  {linea}");
+    }
+    println!();
+
+    let Some(info) = quizas else {
+        println!("El controlador no respondio. La bitacora de arriba indica por que.");
+        return Ok(());
+    };
+
+    println!("Product ID : {:04X}", info.product_id);
+    println!(
+        "Firmware   : {}",
+        if info.firmware.is_empty() {
+            "(sin respuesta legible)"
+        } else {
+            &info.firmware
+        }
+    );
+    println!("Transporte : {:?}", info.transport);
+
+    if info.config_table.is_empty() {
+        println!("Tabla de configuracion: sin respuesta.");
+    } else {
+        println!(
+            "\nTabla de configuracion ({} bytes):",
+            info.config_table.len()
+        );
+        for (i, trozo) in info.config_table.chunks(16).enumerate() {
+            let hex: Vec<String> = trozo.iter().map(|b| format!("{b:02X}")).collect();
+            println!("  {:02X}: {}", i * 16, hex.join(" "));
+        }
+    }
     Ok(())
 }
 

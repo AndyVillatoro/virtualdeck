@@ -12,8 +12,10 @@
 //! Este modulo arranca por el reconocimiento: antes de escribir drivers hay que
 //! saber que hay conectado y por que via se llega a cada cosa.
 
+pub mod aura;
 mod scan;
 
+pub use aura::{AuraController, AuraInfo, Transport};
 pub use scan::{scan, DeviceKind, HidDeviceInfo, RgbVendor};
 
 /// Errores del modulo RGB.
@@ -21,4 +23,10 @@ pub use scan::{scan, DeviceKind, HidDeviceInfo, RgbVendor};
 pub enum RgbError {
     #[error("no se pudo acceder a los dispositivos HID: {0}")]
     Hid(#[from] hidapi::HidError),
+
+    #[error("no se encontro ningun controlador Aura USB")]
+    NoAuraController,
+
+    #[error("el controlador no respondio a la consulta")]
+    NoResponse,
 }
