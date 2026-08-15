@@ -4,8 +4,8 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 COMPLETA** — el núcleo ejecuta cualquier acción de un
-> `deck-config.json` real. Lo siguiente es la Fase 2 (interfaz con egui + winit).
+> Estado: **Fase 1 completa. Fase 2 arrancada** — el spike de entrada de texto
+> pasa, así que la elección de egui + winit se sostiene.
 > Rama: `rewrite/rust`. Última actualización: 2026-08-15.
 
 ---
@@ -36,13 +36,13 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: **Fase 2 — la interfaz** (egui + winit). Antes de nada,
-hacer el *spike* de entrada de texto: comprobar que egui acepta acentos, ñ e IME
-en español. Si eso falla, toda la elección de framework se tambalea, así que se
-prueba primero y no al final.
+**Lo próximo, concreto**: **Fase 2 — la interfaz**. El spike de entrada de texto
+ya pasó (`cargo run -p vd-app --bin spike_texto`), así que el riesgo de framework
+está descartado. Sigue: elegir renderer (wgpu o glow, midiendo tamaño de binario
+contra el objetivo de < 20 MB) y dibujar la primera rejilla de botones.
 
-También hay que resolver ahí el **robo de foco** antes de macros y hotkeys: es
-deuda anotada que el núcleo no puede arreglar solo.
+Queda pendiente pasar el spike **a mano** para cubrir el IME de verdad:
+`cargo run -p vd-app --bin spike_texto -- manual`.
 
 **Lo que quedó abierto y por qué**:
 - **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
@@ -64,6 +64,8 @@ deuda anotada que el núcleo no puede arreglar solo.
 - En `net`, las cadenas anchas atadas a variables antes de pasarlas como `PCWSTR`:
   escribirlas en línea funciona hoy por las reglas de vida de los temporales, pero
   cualquier refactor las convierte en punteros colgantes.
+- La feature `clipboard` de `egui-winit`: sin ella egui **ignora Ctrl+V en
+  silencio** y no se puede pegar en ningún campo de la aplicación.
 
 ---
 
@@ -713,6 +715,43 @@ escrito antes de ver el fallo, no después.
 **`run dry`** muestra qué haría un botón sin ejecutarlo. No es un adorno: la
 configuración del usuario tiene un botón que apaga el equipo a los 30 segundos, y
 hace falta poder inspeccionarlo sin dispararlo.
+
+### ✅ Fase 2 — spike de entrada de texto: superado
+
+Era el riesgo declarado de la Fase 2: si egui no manejara bien el español, toda la
+elección de framework se caía. Se probó **antes** de portar ninguna pantalla.
+
+El spike abre una ventana, se trae el primer plano y se inyecta el texto con el
+mismo `SendInput` del módulo de macros, así que recorre la cadena real: Windows →
+winit → egui-winit → `TextEdit`.
+
+| Caso | Resultado |
+|---|---|
+| `áéíóú ñÑ ¿¡ üÜ €` por teclado | ✅ llega intacto |
+| Emoji (par suplente UTF-16) pegado con Ctrl+V | ✅ llega intacto |
+| Emoji tecleado carácter a carácter | ❌ winit entrega `text: None` |
+| IME real (chino/japonés, panel de emoji) | ⬜ pendiente de probar a mano |
+
+**Tres cosas se aprendieron por el camino**, y ninguna se habría visto leyendo
+documentación:
+
+1. **`egui-winit` necesita la feature `clipboard`.** Se había puesto
+   `default-features = false` por reflejo, y eso hace que egui **ignore Ctrl+V en
+   silencio**. Sin el spike, esto habría aparecido como un bug de usuario meses
+   después.
+2. **Los pares suplentes no sobreviven al teclado.** `SendInput` manda un emoji
+   como dos mitades UTF-16 y winit las entrega con `text: None`, porque ninguna
+   mitad es un carácter por sí sola. No importa en la práctica —los emojis se
+   pegan, no se teclean— pero conviene saberlo antes de perseguirlo como bug.
+3. **Ganar el primer plano necesita dos intentos.** El primero, justo tras crear
+   la ventana, siempre falla porque el sistema aún no la considera lista. Eso
+   costó varias iteraciones de diagnóstico y parecía la restricción de foco de
+   Windows cuando era simple impaciencia.
+
+De paso salió `launcher::force_foreground`, que hace la maniobra de
+`AttachThreadInput` necesaria para que Windows acepte el cambio de primer plano.
+Es la otra cara de la deuda del robo de foco: las dos necesitan las mismas
+primitivas.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

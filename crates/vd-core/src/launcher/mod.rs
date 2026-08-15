@@ -15,7 +15,7 @@ mod ventanas;
 
 pub use brillo::{brightness, set_brightness};
 pub use procesos::{kill_process, running_processes, ProcessInfo};
-pub use ventanas::{snap_window, SnapPosition};
+pub use ventanas::{force_foreground, snap_window, SnapPosition};
 
 use std::os::windows::process::CommandExt;
 use std::process::{Command, Stdio};

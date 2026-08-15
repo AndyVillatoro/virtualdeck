@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "crates/vd-core",
     "crates/vd-cli",
-    # "crates/vd-app",  # Fase 2 — UI egui + winit
+    "crates/vd-app",
 ]
 
 # Metadatos y dependencias compartidas por todo el workspace. Los crates

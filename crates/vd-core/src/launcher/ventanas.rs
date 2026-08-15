@@ -200,6 +200,68 @@ pub fn snap_window(
     Ok(())
 }
 
+/// Trae una ventana al frente y le da el foco de teclado.
+///
+/// # Por que hace falta esta maniobra
+///
+/// Windows no deja que un proceso que no esta en primer plano robe el foco:
+/// `SetForegroundWindow` a secas falla silenciosamente y la ventana solo parpadea
+/// en la barra de tareas. La regla existe para que ningun programa te interrumpa
+/// mientras escribis, y es correcta.
+///
+/// El rodeo aceptado es adjuntar temporalmente la cola de entrada del hilo que
+/// **si** tiene el primer plano a la del nuestro: mientras estan unidas, Windows
+/// nos considera parte de la misma sesion de entrada y acepta el cambio.
+///
+/// Esto es lo contrario de la deuda del robo de foco anotada en
+/// `docs/MIGRACION-RUST.md`: alli el problema es **devolver** el foco a la ventana
+/// del usuario antes de reproducir una macro. Las dos caras necesitan las mismas
+/// primitivas.
+///
+/// Devuelve `true` si la ventana quedo en primer plano.
+pub fn force_foreground(hwnd: isize) -> bool {
+    use windows::Win32::System::Threading::GetCurrentThreadId;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{SetActiveWindow, SetFocus};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowThreadProcessId, SetForegroundWindow, ShowWindow, SW_SHOW,
+    };
+    // AttachThreadInput vive en Threading, no en WindowsAndMessaging.
+    use windows::Win32::System::Threading::AttachThreadInput;
+
+    let destino = HWND(hwnd as *mut core::ffi::c_void);
+
+    unsafe {
+        let _ = ShowWindow(destino, SW_SHOW);
+
+        let primer_plano = GetForegroundWindow();
+        // Si ya somos la ventana activa no hay nada que hacer, y adjuntar un hilo
+        // a si mismo es un error.
+        if primer_plano == destino {
+            return true;
+        }
+
+        let hilo_ajeno = GetWindowThreadProcessId(primer_plano, None);
+        let hilo_propio = GetCurrentThreadId();
+        let hay_que_adjuntar = hilo_ajeno != 0 && hilo_ajeno != hilo_propio;
+
+        if hay_que_adjuntar {
+            let _ = AttachThreadInput(hilo_ajeno, hilo_propio, true);
+        }
+
+        let ok = SetForegroundWindow(destino).as_bool();
+        let _ = SetActiveWindow(destino);
+        let _ = SetFocus(Some(destino));
+
+        // Desadjuntar siempre, incluso si fallo: dejar las colas unidas hace que
+        // los dos procesos compartan estado de entrada y se bloqueen entre si.
+        if hay_que_adjuntar {
+            let _ = AttachThreadInput(hilo_ajeno, hilo_propio, false);
+        }
+
+        ok || GetForegroundWindow() == destino
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

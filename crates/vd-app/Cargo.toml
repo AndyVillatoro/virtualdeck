@@ -1,0 +1,27 @@
+[package]
+name = "vd-app"
+description = "Interfaz de VirtualDeck: egui sobre winit, sin WebView."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+vd-core = { path = "../vd-core" }
+anyhow.workspace = true
+
+# winit directo, no eframe: VirtualDeck vive en la bandeja del sistema y
+# necesita control del bucle de eventos para integrar `tray-icon` y
+# `global-hotkey`. Ver docs/MIGRACION-RUST.md, seccion 2 (Decisiones).
+winit = "0.30"
+egui = "0.32"
+# `clipboard` es imprescindible: sin esa feature, egui ignora Ctrl+V en silencio
+# y el usuario no puede pegar en ningún campo. Verificado por el spike de texto.
+# `links` abre URLs del sistema; `wayland`/`x11` son de Linux y aquí sobran.
+egui-winit = { version = "0.32", default-features = false, features = [
+    "clipboard",
+    "links",
+] }
+
