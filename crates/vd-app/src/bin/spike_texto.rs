@@ -53,7 +53,13 @@ const TEXTO_ESPANOL: &str = "áéíóú ñÑ ¿¡ üÜ €";
 /// práctica: nadie lo teclea carácter a carácter.
 const EMOJI: &str = "🎛";
 
-/// Margen antes de rendirse en el modo automático.
+/// Caso 3: la secuencia de tecla muerta. En un teclado espanol, el acento y la
+/// vocal se pulsan por separado y el driver los compone en un solo caracter. Es
+/// un camino **distinto** del de los otros casos, donde el texto se inyecta ya
+/// compuesto, y por eso hay que probarlo aparte.
+const TECLA_MUERTA: (char, char, char) = ('\u{00B4}', 'a', '\u{00E1}');
+
+/// Margen antes de rendirse en el modo automatico.
 const LIMITE: Duration = Duration::from_secs(15);
 
 fn main() -> anyhow::Result<()> {
@@ -102,6 +108,11 @@ enum Fase {
     Tecleado,
     /// Se pegó el emoji; falta comprobarlo.
     Pegado,
+    /// El campo recupero el foco; se espera a que el IME quede activo antes de
+    /// pulsar la tecla muerta.
+    AntesDeMuerta,
+    /// Se pulsó la secuencia de tecla muerta; falta comprobarla.
+    TeclaMuerta,
 }
 
 struct Spike {
@@ -118,6 +129,34 @@ struct Spike {
     al_frente: bool,
     inicio: Instant,
     resultado: Option<bool>,
+}
+
+/// Pulsa la tecla **fisica** que produce un caracter en la distribucion actual.
+///
+/// No sirve `type_text`, que inyecta el caracter ya formado con
+/// `KEYEVENTF_UNICODE`: eso salta por encima del driver de teclado y por tanto no
+/// reproduce la composicion de una tecla muerta, que es justo lo que hay que
+/// probar. `VkKeyScanW` traduce el caracter a la tecla real de esta distribucion.
+fn bloq_mayus_activo() -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CAPITAL};
+    // El bit bajo indica si el estado de conmutacion esta activo.
+    unsafe { GetKeyState(VK_CAPITAL.0 as i32) & 1 != 0 }
+}
+
+fn pulsar_tecla_fisica(c: char) -> bool {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{VkKeyScanW, VIRTUAL_KEY};
+
+    let escaneo = unsafe { VkKeyScanW(c as u16) };
+    if escaneo == -1 {
+        return false; // el caracter no se puede escribir con esta distribucion
+    }
+    // El byte alto lleva los modificadores. Si hiciera falta Shift o AltGr habria
+    // que pulsarlos tambien; este spike solo cubre el caso sin modificadores.
+    if (escaneo >> 8) & 0xFF != 0 {
+        return false;
+    }
+    let vk = VIRTUAL_KEY((escaneo & 0xFF) as u16);
+    vd_core::macros::press_virtual_key(vk).is_ok()
 }
 
 /// Saca el `HWND` de una ventana de winit.
@@ -173,6 +212,19 @@ impl ApplicationHandler for Spike {
             return;
         };
         lienzo.evento(&event);
+
+        // Diagnostico opcional: sin esto, un fallo no dice en que eslabon de la
+        // cadena se perdio o se transformo el texto.
+        if std::env::var_os("VD_SPIKE_DIAG").is_some() {
+            match &event {
+                WindowEvent::KeyboardInput { event: ke, .. } if ke.state.is_pressed() => println!(
+                    "[diag] tecla: logica={:?} texto={:?}",
+                    ke.logical_key, ke.text
+                ),
+                WindowEvent::Ime(ime) => println!("[diag] IME: {ime:?}"),
+                _ => {}
+            }
+        }
 
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
@@ -261,7 +313,74 @@ impl ApplicationHandler for Spike {
                 if self.pegado.trim().is_empty() && self.inicio.elapsed() < Duration::from_secs(3) {
                     return;
                 }
-                let ok = comparar("emoji pegado (par suplente)", EMOJI, self.pegado.trim());
+                if !comparar("emoji pegado (par suplente)", EMOJI, self.pegado.trim()) {
+                    self.resultado = Some(false);
+                    event_loop.exit();
+                    return;
+                }
+
+                println!(
+                    "
+[3/3] Tecla muerta, con el campo enfocado y el IME ya activo..."
+                );
+                self.buffer.clear();
+                self.fase = Fase::AntesDeMuerta;
+                self.inicio = Instant::now();
+            }
+            Fase::AntesDeMuerta => {
+                // Se deja pasar tiempo real antes de pulsar. egui pide el IME a
+                // traves de `handle_platform_output`, es decir **despues** de
+                // dibujar un fotograma con el campo enfocado. Pulsando en el
+                // mismo fotograma en que se recupera el foco, las teclas irian
+                // por el camino sin IME y la prueba mediria otra cosa que la que
+                // vive un usuario escribiendo.
+                if self.inicio.elapsed() < Duration::from_millis(600) {
+                    return;
+                }
+                let (muerta, vocal, _) = TECLA_MUERTA;
+                println!("  pulsando {muerta:?} y luego {vocal:?}");
+                self.fase = Fase::TeclaMuerta;
+                self.inicio = Instant::now();
+
+                if !pulsar_tecla_fisica(muerta) {
+                    println!("  (esta distribucion no permite automatizarlo; usa el modo manual)");
+                    self.resultado = Some(true);
+                    event_loop.exit();
+                    return;
+                }
+                // Una pausa entre las dos pulsaciones, como al escribir a mano.
+                std::thread::sleep(Duration::from_millis(120));
+                if !pulsar_tecla_fisica(vocal) {
+                    self.resultado = Some(true);
+                    event_loop.exit();
+                }
+            }
+            Fase::TeclaMuerta => {
+                if self.buffer.is_empty() && self.inicio.elapsed() < Duration::from_secs(3) {
+                    return;
+                }
+                let (_, _, esperado) = TECLA_MUERTA;
+                let esperado = esperado.to_string();
+                let obtenido = self.buffer.trim().to_string();
+
+                // Este caso pulsa teclas **fisicas**, asi que le afecta Bloq Mayus
+                // (a diferencia del caso 1, que inyecta Unicode y lo ignora). Lo
+                // que se prueba aqui es que el driver **componga** el acento con
+                // la vocal; la caja del resultado no dice nada del asunto.
+                let mayus = bloq_mayus_activo();
+                let ok = obtenido == esperado || (mayus && obtenido.to_lowercase() == esperado);
+
+                println!("  caso     : tecla muerta compuesta por el driver");
+                println!("  esperado : {esperado:?}");
+                println!("  obtenido : {obtenido:?}");
+                if mayus {
+                    println!("  nota     : Bloq Mayus esta activo, por eso cambia la caja");
+                }
+                println!("  veredicto: {}", if ok { "correcto" } else { "FALLO" });
+                if !ok {
+                    println!("    El acento y la vocal llegaron por separado:");
+                    println!("    el driver no compuso el caracter.");
+                }
                 self.resultado = Some(ok);
                 event_loop.exit();
             }
@@ -282,6 +401,8 @@ impl Spike {
         // El guion automático pega en el segundo campo, así que hay que moverle
         // el foco cuando llega ese turno.
         let foco_en_pegado = !self.manual && self.fase == Fase::Pegado;
+        let foco_en_tecleado =
+            !self.manual && matches!(self.fase, Fase::AntesDeMuerta | Fase::TeclaMuerta);
 
         let buffer = &mut self.buffer;
         let pegado = &mut self.pegado;
@@ -299,7 +420,7 @@ impl Spike {
                         .desired_width(f32::INFINITY)
                         .hint_text("escribí aquí"),
                 );
-                if pedir_foco && !foco_en_pegado {
+                if (pedir_foco && !foco_en_pegado) || foco_en_tecleado {
                     campo.request_focus();
                 }
                 ui.label(

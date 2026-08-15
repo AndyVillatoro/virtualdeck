@@ -2740,6 +2740,7 @@ dependencies = [
  "raw-window-handle",
  "vd-core",
  "wgpu",
+ "windows 0.62.2",
  "winit",
 ]
 

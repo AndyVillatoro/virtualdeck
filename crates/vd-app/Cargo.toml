@@ -59,6 +59,12 @@ glutin-winit = { version = "0.5", optional = true, default-features = false, fea
 ] }
 raw-window-handle = { version = "0.6", optional = true }
 
+# El spike de texto necesita pulsar teclas **fisicas** (no inyectar Unicode)
+# para reproducir el camino de las teclas muertas del driver de teclado.
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62"
+features = ["Win32_UI_Input_KeyboardAndMouse"]
+
 [features]
 # wgpu por defecto: es la decision tomada.
 default = ["render-wgpu"]
