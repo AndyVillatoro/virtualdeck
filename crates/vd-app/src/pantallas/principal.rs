@@ -4,7 +4,7 @@
 //! los iconos y las imágenes de fondo son un paso aparte porque necesitan cargar
 //! y cachear texturas.
 
-use egui::{Align2, Color32, CornerRadius, FontId, Sense, Stroke, Vec2};
+use egui::{Align2, Color32, CornerRadius, FontId, Rect, Sense, Stroke, Vec2};
 
 use crate::app::{color_hex, App};
 
@@ -240,6 +240,33 @@ fn celda(
     // de equilibrada con 3 columnas que con 8.
     let cuerpo = (lado * 0.16).clamp(9.0, 16.0);
 
+    // El icono ocupa la parte de arriba y la etiqueta baja a su sitio. Sin icono,
+    // la etiqueta se queda centrada, que es como se ve mejor un boton de solo
+    // texto.
+    let hay_icono = boton
+        .brand_icon
+        .as_deref()
+        .and_then(crate::iconos::buscar)
+        .map(|icono| {
+            let area = Rect::from_min_size(
+                rect.min + Vec2::new(0.0, lado * 0.06),
+                Vec2::new(lado, lado * 0.56),
+            );
+            // Si el boton fija color de texto, el icono lo respeta: manda la
+            // eleccion del usuario sobre los colores de la marca.
+            let forzado = boton.fg_color.as_deref().and_then(color_hex);
+            icono.dibujar(pintor, area, forzado);
+        })
+        .is_some();
+
+    let desplazamiento = if hay_icono {
+        lado * 0.31
+    } else if boton.sublabel.is_some() {
+        -cuerpo * 0.6
+    } else {
+        0.0
+    };
+
     if !boton.label.is_empty() {
         pintor.text(
             rect.center()
@@ -260,7 +287,7 @@ fn celda(
 
     if let Some(sub) = boton.sublabel.as_deref().filter(|s| !s.is_empty()) {
         pintor.text(
-            rect.center() + Vec2::new(0.0, cuerpo * 0.9),
+            rect.center() + Vec2::new(0.0, desplazamiento + cuerpo * 1.5),
             Align2::CENTER_CENTER,
             recortar(sub, lado, cuerpo * 0.8),
             FontId::proportional(cuerpo * 0.8),

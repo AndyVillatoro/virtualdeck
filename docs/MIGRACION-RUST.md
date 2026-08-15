@@ -36,14 +36,12 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: seguir portando la pantalla principal. Lo que falta ahí,
-por orden de valor: **iconos e imágenes** de botón (hay que cargar y cachear
-texturas), **pulsación larga** (`long_press_action`), **toggle** y **arrastrar para
-reordenar**. Después vienen la bandeja del sistema y los atajos globales, que son
-la razón de usar winit directo.
+**Lo próximo, concreto**: **pulsación larga** (`long_press_action`), **toggle** y
+**arrastrar para reordenar**. Después, la bandeja del sistema y los atajos
+globales, que son la razón de usar winit directo.
 
-Ya funciona: `cargo run -p vd-app` abre la rejilla con la configuración real y
-ejecuta acciones al hacer clic.
+Ya funciona: `cargo run` abre la rejilla con la configuración real, con los
+iconos de marca dibujados, y ejecuta acciones al hacer clic.
 
 El spike de texto está cerrado: acentos, ñ, teclas muertas, IME y pegado, todo
 verificado. Se puede volver a pasar cuando se actualice egui o winit:
@@ -877,8 +875,27 @@ El bucle usa `ControlFlow::Poll` y no `Wait` justamente por esto: hay trabajo qu
 llega de fuera del bucle de eventos, y con `Wait` la ventana no se redibujaría
 hasta que el usuario la tocara.
 
-Lo que **aún no** hace la pantalla: iconos e imágenes de botón (necesitan cargar y
-cachear texturas), pulsación larga, toggle y arrastrar para reordenar.
+**Los iconos de marca ya se dibujan.** Se priorizaron mirando la configuración
+real en vez de por intuición: 6 de los 8 botones usan `brandIcon`, así que era lo
+que más cambiaba lo que se ve.
+
+Resultó mucho más barato de lo previsto. Se había anotado como "hay que cargar y
+cachear texturas", pero **no son imágenes**: la versión Electron los define como
+mapas de 17×17 caracteres y los renderiza a SVG. Aquí son 289 círculos por icono
+dibujados con el `Painter`, sin archivos, sin decodificar PNG y sin texturas de
+GPU. Los datos se extrajeron ejecutando el propio `brandIcons.ts` con Node, no
+reescribiéndolos a mano, y se empotran en el binario (31 KB).
+
+**Un test destapó un fallo que ya existía en la versión publicada**: tres iconos
+—`docker`, `asana` y `crunchyroll`— tenían filas de ancho equivocado (19, 18 y 16
+caracteres en vez de 17). En Electron eso desplaza el dibujo sin dar ningún error,
+y `docker` es uno de los botones del deck del desarrollador. Se corrigieron
+respetando la intención visible del autor: recortar por el centro conserva la
+simetría, rellenar por la derecha añade solo apagados. **Sigue estando mal en
+`main`.**
+
+Lo que **aún no** hace la pantalla: los iconos de lucide (`icon`, 1 botón),
+imágenes de fondo, pulsación larga, toggle y arrastrar para reordenar.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

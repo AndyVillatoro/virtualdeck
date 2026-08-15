@@ -2738,6 +2738,8 @@ dependencies = [
  "glutin-winit",
  "pollster",
  "raw-window-handle",
+ "serde",
+ "serde_json",
  "vd-core",
  "wgpu",
  "windows 0.62.2",

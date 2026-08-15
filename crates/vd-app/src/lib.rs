@@ -5,6 +5,7 @@
 
 pub mod app;
 pub mod demo;
+pub mod iconos;
 pub mod pantallas;
 #[cfg(feature = "render-wgpu")]
 pub mod render;
