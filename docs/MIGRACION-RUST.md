@@ -37,14 +37,14 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: el **editor** de botones, que es la pieza grande que
-falta para paridad —sin él no se puede configurar nada desde la aplicación—, y
-las funciones sueltas de la rejilla: pulsación larga, toggle y arrastrar para
-reordenar.
+**Lo próximo, concreto**: ampliar el editor a lo que aún no cubre —macros,
+secuencias de varias acciones, ramas y widgets— y las funciones sueltas de la
+rejilla: pulsación larga, toggle y arrastrar para reordenar. Después: páginas y
+perfiles, ajustes, y el instalador.
 
 Ya funciona: `cargo run` abre la rejilla con la configuración real y los iconos
-de marca, ejecuta acciones al hacer clic, vive en la bandeja del sistema y
-responde a atajos globales.
+de marca, ejecuta acciones al hacer clic, **permite editar y guardar botones**,
+vive en la bandeja del sistema y responde a atajos globales.
 
 El spike de texto está cerrado: acentos, ñ, teclas muertas, IME y pegado, todo
 verificado. Se puede volver a pasar cuando se actualice egui o winit:
@@ -934,6 +934,40 @@ Electron (`CommandOrControl+Shift+P`) y la biblioteca de Rust espera los suyos.
 La traducción tiene un test que **no compara cadenas**, sino que comprueba que lo
 traducido lo parsee de verdad `global-hotkey`; y otro que registra un atajo real
 en Windows y lo libera, porque el parseo puede estar bien y el registro fallar.
+
+### ✅ Fase 2 — editor de botones
+
+El botón **Editar** de la cabecera cambia lo que hace un clic en la rejilla: en
+vez de ejecutar el botón, lo abre en un panel lateral. Los huecos vacíos también
+se vuelven pulsables y marcados con un `+`, que es como se crea un botón nuevo.
+
+Se edita apariencia (etiqueta, segunda línea, icono de entre los 68 del paquete,
+colores de fondo y texto) y acción: 21 tipos, cada uno mostrando **solo sus
+campos**. Enseñarlos todos a la vez fue lo que hizo ilegible el editor de la
+versión Electron.
+
+**Antes de escribir nada se arregló cómo se guarda.** `config::save` usaba
+`fs::write` directo sobre el archivo que contiene toda la configuración del
+usuario: si el proceso muriera a mitad —corte de luz, cierre forzado, disco
+lleno— quedaría truncado y con él se irían todos sus botones. Ahora escribe a un
+temporal en la misma carpeta y renombra encima, que es atómico para quien lea el
+archivo: o ve la versión vieja entera, o la nueva entera, nunca media.
+
+Otras dos decisiones que importan:
+
+- **El editor trabaja sobre una copia**, y solo la vuelca a la configuración al
+  guardar. Salirse del editor no deja cambios a medias.
+- **Aplicar en memoria y escribir en disco están separados** (`aplicar_borrador` /
+  `guardar_borrador`). No es un capricho de diseño: así la lógica de
+  reemplazar-o-añadir se puede probar sin que un test le machaque la
+  configuración real a quien compile el proyecto.
+- Si el guardado en disco falla, **se dice**. El cambio sigue en memoria pero no
+  en disco, y alguien podría cerrar creyendo que quedó guardado.
+
+Lo que el editor **aún no** cubre: macros, secuencias de varias acciones, ramas y
+widgets. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
+que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

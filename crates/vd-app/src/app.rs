@@ -46,6 +46,13 @@ pub struct App {
     /// Error de carga de la configuración, si lo hubo.
     pub error_carga: Option<String>,
 
+    /// En modo edición, pulsar un botón lo selecciona en vez de ejecutarlo.
+    pub modo_edicion: bool,
+    /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
+    /// vuelca a la configuración al guardar, para que salirse del editor no deje
+    /// cambios a medias.
+    pub borrador: Option<ButtonConfig>,
+
     emisor: Sender<Terminada>,
     receptor: Receiver<Terminada>,
 }
@@ -74,6 +81,8 @@ impl App {
             en_curso: Vec::new(),
             aviso: None,
             error_carga,
+            modo_edicion: false,
+            borrador: None,
             emisor,
             receptor,
         }
@@ -144,6 +153,60 @@ impl App {
                 boton: id,
                 resultado,
             });
+        });
+    }
+
+    /// Abre el editor sobre un botón.
+    pub fn editar(&mut self, boton: &ButtonConfig) {
+        self.borrador = Some(boton.clone());
+    }
+
+    /// Vuelca el borrador a la configuración **en memoria**.
+    ///
+    /// Separado del guardado en disco para poder probarlo: un test que escribiera
+    /// la configuración real le machacaría los botones a quien compile el
+    /// proyecto.
+    ///
+    /// Devuelve `false` si no había nada que aplicar.
+    pub fn aplicar_borrador(&mut self) -> bool {
+        let Some(borrador) = self.borrador.take() else {
+            return false;
+        };
+        let Some(cfg) = self.config.as_mut() else {
+            return false;
+        };
+
+        match cfg.buttons.iter_mut().find(|b| b.id == borrador.id) {
+            Some(destino) => *destino = borrador,
+            // Un hueco de la rejilla no existe como botón en el JSON hasta que
+            // se configura; al guardarlo por primera vez hay que crearlo.
+            None => cfg.buttons.push(borrador),
+        }
+        true
+    }
+
+    /// Aplica el borrador y escribe la configuración en disco.
+    pub fn guardar_borrador(&mut self) {
+        if !self.aplicar_borrador() {
+            return;
+        }
+        let Some(cfg) = self.config.as_ref() else {
+            return;
+        };
+
+        self.aviso = Some(match vd_core::config::save(cfg) {
+            Ok(()) => Aviso {
+                texto: "Guardado".into(),
+                error: false,
+                desde: Instant::now(),
+            },
+            // Si el guardado falla, el cambio sigue en memoria pero no en disco.
+            // Decirlo importa: el usuario podria cerrar creyendo que se guardo.
+            Err(e) => Aviso {
+                texto: format!("No se pudo guardar: {e}"),
+                error: true,
+                desde: Instant::now(),
+            },
         });
     }
 
@@ -240,6 +303,59 @@ mod tests {
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
         app.recoger_resultados();
+    }
+
+    #[test]
+    fn editar_un_boton_existente_lo_reemplaza_sin_duplicarlo() {
+        let mut app = App::nueva();
+        let Some(cfg) = app.config.as_mut() else {
+            return; // sin configuracion en esta maquina, nada que comprobar
+        };
+        let antes = cfg.buttons.len();
+        let Some(primero) = cfg.buttons.first().cloned() else {
+            return;
+        };
+
+        let mut editado = primero.clone();
+        editado.label = "etiqueta nueva".into();
+        app.borrador = Some(editado);
+
+        assert!(app.aplicar_borrador());
+        let cfg = app.config.as_ref().unwrap();
+        assert_eq!(
+            cfg.buttons.len(),
+            antes,
+            "no deberia haber añadido un boton"
+        );
+        assert_eq!(
+            cfg.button(&primero.id).map(|b| b.label.as_str()),
+            Some("etiqueta nueva")
+        );
+    }
+
+    #[test]
+    fn configurar_un_hueco_crea_el_boton() {
+        // Un hueco de la rejilla no existe en el JSON hasta que se configura.
+        let mut app = App::nueva();
+        if app.config.is_none() {
+            return;
+        }
+        let antes = app.config.as_ref().unwrap().buttons.len();
+
+        let mut nuevo = ButtonConfig::empty("pagina-inventada-99", 0);
+        nuevo.label = "recien creado".into();
+        app.borrador = Some(nuevo);
+
+        assert!(app.aplicar_borrador());
+        let cfg = app.config.as_ref().unwrap();
+        assert_eq!(cfg.buttons.len(), antes + 1);
+        assert!(cfg.button("pagina-inventada-99").is_some());
+    }
+
+    #[test]
+    fn sin_borrador_no_se_toca_nada() {
+        let mut app = App::nueva();
+        assert!(!app.aplicar_borrador());
     }
 
     #[test]

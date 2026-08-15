@@ -72,7 +72,25 @@ pub fn save(config: &DeckConfig) -> Result<(), ConfigError> {
         path: path.display().to_string(),
         source,
     })?;
-    fs::write(&path, text).map_err(|e| io_err(&path, e))
+
+    // Se escribe a un archivo temporal y se renombra encima, en vez de escribir
+    // directamente sobre el destino. Este archivo tiene **toda** la configuracion
+    // del usuario: si el proceso muriera a mitad de un `fs::write` —un corte de
+    // luz, un cierre forzado, disco lleno— quedaria truncado y con el se irian
+    // todos sus botones. Renombrar es atomico para quien lea el archivo: o ve la
+    // version vieja entera, o la nueva entera, nunca media.
+    //
+    // El temporal va en la **misma carpeta** a proposito: renombrar entre
+    // unidades distintas no es atomico y ademas puede fallar.
+    let temporal = path.with_extension("json.tmp");
+    fs::write(&temporal, text).map_err(|e| io_err(&temporal, e))?;
+
+    fs::rename(&temporal, &path).map_err(|e| {
+        // Si el renombrado falla, el temporal quedaria como basura al lado de la
+        // configuracion buena.
+        let _ = fs::remove_file(&temporal);
+        io_err(&path, e)
+    })
 }
 
 /// Copia la config actual a `backups/` si paso el cooldown, y poda las viejas.

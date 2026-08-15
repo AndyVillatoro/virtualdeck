@@ -25,6 +25,8 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
         .frame(egui::Frame::NONE.fill(FONDO).inner_margin(8.0))
         .show(ctx, |ui| pie(app, ui));
 
+    super::editor::panel(app, ctx);
+
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE.fill(FONDO).inner_margin(8.0))
         .show(ctx, |ui| {
@@ -73,6 +75,32 @@ fn cabecera(app: &mut App, ui: &mut egui::Ui) {
         }
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let etiqueta = if app.modo_edicion { "Listo" } else { "Editar" };
+            let boton =
+                egui::Button::new(egui::RichText::new(etiqueta).color(if app.modo_edicion {
+                    Color32::BLACK
+                } else {
+                    Color32::from_gray(180)
+                }));
+            let boton = if app.modo_edicion {
+                boton.fill(acento)
+            } else {
+                boton
+            };
+            if ui
+                .add(boton)
+                .on_hover_text("En modo edicion, pulsar un boton lo configura en vez de ejecutarlo")
+                .clicked()
+            {
+                app.modo_edicion = !app.modo_edicion;
+                // Salir de edicion cierra el editor: dejarlo abierto sobre una
+                // rejilla que ya ejecuta acciones seria confuso.
+                if !app.modo_edicion {
+                    app.borrador = None;
+                }
+            }
+            ui.add_space(8.0);
+
             if !app.en_curso.is_empty() {
                 ui.add(egui::Spinner::new().size(14.0));
                 ui.label(
@@ -165,6 +193,9 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
             .collect();
 
     let acento = app.acento();
+    let editando = app.modo_edicion;
+    let seleccionado = app.borrador.as_ref().map(|b| b.id.clone());
+    let pagina = app.pagina;
     let mut pulsado: Option<vd_core::config::model::ButtonConfig> = None;
 
     for fila in 0..filas {
@@ -175,11 +206,27 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
                 match por_indice.get(&indice) {
                     Some(b) if !b.is_empty() => {
                         let corriendo = app.en_curso.iter().any(|id| id == &b.id);
-                        if celda(ui, b, lado, acento, corriendo) {
+                        let activo = seleccionado.as_deref() == Some(b.id.as_str());
+                        if celda(ui, b, lado, acento, corriendo, activo) {
                             pulsado = Some(b.clone());
                         }
                     }
-                    _ => hueco(ui, lado),
+                    otro => {
+                        // En modo edicion los huecos tambien se pueden pulsar:
+                        // es como se configura un boton nuevo. El id se toma del
+                        // hueco si ya existia en el JSON, y si no se inventa por
+                        // posicion, igual que hacia la version Electron.
+                        let vacio = otro.cloned().unwrap_or_else(|| {
+                            vd_core::config::model::ButtonConfig::empty(
+                                format!("{pagina}-{indice}"),
+                                pagina,
+                            )
+                        });
+                        let activo = seleccionado.as_deref() == Some(vacio.id.as_str());
+                        if hueco(ui, lado, editando, activo, acento) {
+                            pulsado = Some(vacio);
+                        }
+                    }
                 }
             }
         });
@@ -189,7 +236,11 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
     // La pulsación se aplica fuera del bucle: dentro, `app` está prestado por
     // `botones_de_pagina` y no se puede modificar.
     if let Some(b) = pulsado {
-        app.pulsar(&b);
+        if editando {
+            app.editar(&b);
+        } else {
+            app.pulsar(&b);
+        }
     }
 }
 
@@ -200,6 +251,7 @@ fn celda(
     lado: f32,
     acento: Color32,
     corriendo: bool,
+    seleccionado: bool,
 ) -> bool {
     let (rect, respuesta) = ui.allocate_exact_size(Vec2::splat(lado), Sense::click());
 
@@ -213,7 +265,7 @@ fn celda(
             CELDA
         });
 
-    let borde = if corriendo {
+    let borde = if corriendo || seleccionado {
         acento
     } else if respuesta.hovered() {
         Color32::from_gray(70)
@@ -226,7 +278,14 @@ fn celda(
     pintor.rect_stroke(
         rect,
         CornerRadius::same(6),
-        Stroke::new(if corriendo { 2.0_f32 } else { 1.0_f32 }, borde),
+        Stroke::new(
+            if corriendo || seleccionado {
+                2.0_f32
+            } else {
+                1.0_f32
+            },
+            borde,
+        ),
         egui::StrokeKind::Inside,
     );
 
@@ -298,9 +357,51 @@ fn celda(
     respuesta.clicked()
 }
 
-fn hueco(ui: &mut egui::Ui, lado: f32) {
-    let (rect, _) = ui.allocate_exact_size(Vec2::splat(lado), Sense::hover());
-    ui.painter().rect_filled(rect, CornerRadius::same(6), VACIA);
+/// Dibuja una posición vacía. Devuelve `true` si se pulsó, que solo puede pasar
+/// en modo edición.
+fn hueco(
+    ui: &mut egui::Ui,
+    lado: f32,
+    editando: bool,
+    seleccionado: bool,
+    acento: Color32,
+) -> bool {
+    let sentido = if editando {
+        Sense::click()
+    } else {
+        Sense::hover()
+    };
+    let (rect, respuesta) = ui.allocate_exact_size(Vec2::splat(lado), sentido);
+
+    let pintor = ui.painter();
+    pintor.rect_filled(rect, CornerRadius::same(6), VACIA);
+
+    if editando {
+        // En edición los huecos se marcan con un borde punteado y un `+`, para
+        // que se vea que son sitios donde se puede crear un botón.
+        let borde = if seleccionado {
+            acento
+        } else if respuesta.hovered() {
+            Color32::from_gray(70)
+        } else {
+            Color32::from_gray(34)
+        };
+        pintor.rect_stroke(
+            rect,
+            CornerRadius::same(6),
+            Stroke::new(1.0_f32, borde),
+            egui::StrokeKind::Inside,
+        );
+        pintor.text(
+            rect.center(),
+            Align2::CENTER_CENTER,
+            "+",
+            FontId::proportional((lado * 0.25).clamp(12.0, 26.0)),
+            borde,
+        );
+    }
+
+    respuesta.clicked()
 }
 
 /// Recorta una etiqueta que no cabe, añadiendo puntos suspensivos.
