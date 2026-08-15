@@ -18,7 +18,7 @@ cargo test --workspace -- --test-threads=1  # 70 tests, deben dar todos verde
 cargo run -p vd-cli -- help                 # ver qué se puede ejercitar ya
 ```
 
-**Dónde quedó**: el núcleo (`vd-core`) tiene 6 módulos funcionando y verificados
+**Dónde quedó**: el núcleo (`vd-core`) tiene 7 módulos funcionando y verificados
 contra hardware real. No existe UI todavía — eso es la Fase 2.
 
 | Módulo | Estado | Verificado con |
@@ -29,13 +29,13 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `macro` | ✅ | Grabó y reprodujo, test automático que se inyecta a sí mismo |
 | `launcher` | ✅ | 14/14 comandos; brillo aplicado a 2 pantallas |
 | `rgb` | 🟡 | Lee el controlador Aura; **escribir colores NO funciona** |
-| `sensors` | ⬜ | **← empezar por acá** |
-| `weather` + `log` | ⬜ | |
+| `sensors` | ✅ | 38 sensores reales: i5-13600KF (20 hilos) + RTX 4080 completa |
+| `weather` + `log` | ⬜ | **← empezar por acá** |
 | `actions` | ⬜ | Motor que orquesta todo; va último |
 
-**Lo próximo, concreto**: implementar `sensors` con `sysinfo` (CPU/RAM/disco/red) +
-`nvml-wrapper` (RTX 4080 completa). Está bien entendido, no toca hardware de forma
-riesgosa y cierra la decisión de sacarse LHM de encima. Ver §"backends por niveles".
+**Lo próximo, concreto**: `weather` (geo-IP + Open-Meteo) y `log` (log rotativo).
+Los dos son triviales y sin riesgo. Después queda `actions`, que es el motor que
+orquesta todo y cierra la Fase 1.
 
 **Lo que quedó abierto y por qué**:
 - **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
@@ -49,6 +49,11 @@ riesgosa y cierra la decisión de sacarse LHM de encima. Ver §"backends por niv
 - El round-trip de config: cualquier campo nuevo necesita su sitio en el modelo
   o el `extra` con `serde(flatten)` que lo preserva.
 - Los regex del parser de títulos de ventana: parecen simplificables y no lo son.
+- Los prefijos de ID de sensor (`/native/…`, `/nvml/…`): los botones guardan el ID
+  del sensor en la config. Si un ID nativo pudiera coincidir con uno de LHM, un
+  widget ya configurado pasaría a mostrar otra magnitud sin avisar.
+- La espera de reintento de LHM: sin ella, tener el nivel 2 activado y LHM cerrado
+  cuesta 2,6 s por refresco y deja la interfaz a tirones.
 
 ---
 
@@ -198,7 +203,7 @@ Orden deliberado: **primero lo más riesgoso**, para que un fracaso aparezca tem
 | 1.5 | **`macro`** | 🟡 Hooks globales | Grabar y reproducir una macro idéntica a la de v0.5.1 |
 | 1.6 | **`launcher`** | 🟡 user32 + WMI | Apps, hotkeys, brillo, volumen, snap, procesos |
 | 1.7 | **`rgb`** | 🟡 Protocolo binario | Conecta a OpenRGB y aplica color/modo/perfil |
-| 1.8 | **`sensors`** | 🟢 HTTP simple | Lee LHM y devuelve la lista |
+| 1.8 | **`sensors`** | 🟢 Dos niveles | Lee CPU/RAM/disco/red y GPU sin nada instalado; LHM opcional |
 | 1.9 | **`weather`** + **`log`** | 🟢 Trivial | — |
 | 1.10 | **`actions`** | Motor que orquesta todo | Tests de `interpolate`, `branch`, secuencias, toggle |
 
@@ -416,18 +421,31 @@ La opción **C** que estaba planteada abajo queda **confirmada como decisión**,
 un argumento nuevo y más fuerte del que se tenía: no es solo tamaño del instalador,
 es que el driver que exige LHM está marcado como vulnerable por Defender.
 
-### Decisión pendiente: LibreHardwareMonitor
+### Decisión tomada: LibreHardwareMonitor deja de empaquetarse
 
-Hoy se empaqueta LHM (~19 MB, .NET) como binario externo y se habla con él por HTTP.
-Con un instalador objetivo de < 20 MB, **LHM solo pesa más que toda la app nueva**.
+> **Resuelto en la Fase 1.8** (opción C). Antes se empaquetaba LHM (~19 MB de .NET)
+> y la app lo lanzaba sola, a veces pidiendo UAC. Con un instalador objetivo de
+> < 20 MB, LHM solo pesaba más que toda la aplicación nueva.
 
-Opciones para evaluar en Fase 1.8:
-- **A)** Seguir empaquetándolo (paridad garantizada, +19 MB, sigue necesitando UAC)
-- **B)** Leer sensores nativamente en Rust (`sysinfo` + WMI/LibreHardwareMonitorLib vía FFI) —
-  menos peso y sin UAC, pero **menos sensores** (temperaturas de CPU/GPU requieren driver kernel)
-- **C)** Híbrido: nativo por defecto, LHM opcional como descarga aparte para sensores avanzados
+Lo implementado:
 
-*Recomendación preliminar*: **C**, alineado con cómo ya se trata OpenRGB (descarga aparte).
+- **Nivel 1, siempre activo**: `sysinfo` (CPU, memoria, discos, red) + NVML (GPU
+  NVIDIA). Sin instalar nada, sin UAC, sin procesos externos.
+- **Nivel 2, desactivado por defecto**: LHM externo, solo si el usuario ya lo tiene
+  y lo activa a mano. No se empaqueta, no se lanza el proceso y no se registran
+  reservas de URL con `netsh` — todo eso existía para sostener el empaquetado.
+
+**La sorpresa fue cuánto cubre el nivel 1.** Se esperaba perder toda la telemetría
+térmica, pero NVML da temperatura, ventiladores, consumo y relojes de la GPU sin
+driver de kernel. Verificado en la RTX 4080: 42 °C, 32 W, 2505 MHz. Funciona porque
+`nvml.dll` ya viene con el driver de NVIDIA y se carga dinámicamente en runtime.
+
+**Lo que se pierde sin nivel 2**, y no hay forma de evitarlo: temperatura del
+paquete de CPU, voltajes y ventiladores de la placa. Se leen por MSR y SMBus, que
+exigen anillo 0. Es el intercambio que se aceptó explícitamente.
+
+Para GPU AMD/Intel no hay equivalente igual de cómodo a NVML; ahí el nivel 2 sigue
+aportando bastante más.
 
 ---
 
@@ -469,8 +487,9 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.5 — `macro` | ✅ **Completa** — hooks + SendInput, verificado grabando y reproduciendo |
 | 1.6 — `launcher` | ✅ **Completa** — los 14 comandos, brillo incluido |
 | 1.7 — `rgb` | 🟡 **Lectura sí, escritura no** — ver abajo |
-| 1.8 — `sensors` | ⬜ **← siguiente** |
-| 1.9 `weather`+`log` · 1.10 `actions` | ⬜ No iniciadas |
+| 1.8 — `sensors` | ✅ **Completa** — nivel 1 nativo + LHM opcional; LHM ya no se empaqueta |
+| 1.9 `weather`+`log` | ⬜ **← siguiente** |
+| 1.10 `actions` | ⬜ No iniciada |
 | 2 — `vd-app` (UI egui) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
@@ -481,7 +500,7 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | Robo de foco antes de macros/hotkeys | `macros`, a resolver en `vd-app` | Sin esto, una macro se escribe a sí misma |
 | Escritura Aura USB | `rgb::aura` | Necesita captura USB, no más ensayo y error |
 | GPU RGB (`NvAPI_I2CWrite`) | sin empezar | Único RGB del equipo que no pasa por Aura |
-| Decidir LHM: quitar o dejar opcional | `sensors` | Ver §"backends por niveles" |
+| Sensores de placa (temp. de CPU, voltajes, ventiladores) | `sensors`, solo con nivel 2 | Sin LHM no hay forma: exigen anillo 0. Decisión tomada y asumida |
 | 2 — `vd-app` (UI) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
@@ -601,6 +620,31 @@ La versión Electron implementaba **solo WMI**, así que la acción de brillo
 sencillamente no hacía nada en un equipo de escritorio. Ahora se intentan los dos.
 Verificado en la máquina del usuario: leyó 49 %, aplicó 65 % a **2 pantallas** y
 restauró — todo por DDC/CI, que antes no existía.
+
+### ✅ Sensores: se cae la dependencia de LibreHardwareMonitor
+
+38 sensores leídos en el equipo del usuario **sin instalar nada**: i5-13600KF con
+sus 20 hilos, 32 GB de RAM, disco C:, red, y la RTX 4080 entera — temperatura,
+ventiladores, consumo, VRAM y relojes.
+
+Lo que había que averiguar era cuánto se perdía al soltar LHM. La respuesta fue
+"mucho menos de lo esperado": **NVML cubre la GPU completa sin driver de kernel**,
+porque `nvml.dll` ya viene con el driver de NVIDIA. Lo único que queda del otro
+lado de la línea es lo que se lee por MSR/SMBus —temperatura del paquete de CPU,
+voltajes, ventiladores de placa—, que sigue exigiendo anillo 0 y ahora es un
+añadido opcional en vez de un requisito.
+
+**Bug encontrado de paso.** Con el nivel 2 activado pero LHM cerrado —el estado por
+defecto de cualquiera que lo desinstale— cada refresco pagaba un intento de conexión
+fallido: 2,6 s medidos, con el widget pidiendo uno por segundo. La interfaz habría
+ido a tirones por un servicio opcional que ni siquiera está instalado. La versión
+Electron tenía el mismo problema, tapado por su caché de 1,5 s. Resuelto con una
+espera de reintento de 15 s, fijada por un test que mide el tiempo real de 20
+refrescos seguidos.
+
+Detalle que importa para la compatibilidad: los botones ya configurados guardan el
+ID del sensor. Los IDs de LHM se respetan tal cual y los nativos usan prefijos
+propios (`/native/…`, `/nvml/…`), con un test que verifica que no puedan chocar.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

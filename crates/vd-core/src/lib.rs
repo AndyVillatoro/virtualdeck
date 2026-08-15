@@ -22,6 +22,7 @@ pub mod macros;
 #[cfg(windows)]
 pub mod media;
 pub mod rgb;
+pub mod sensors;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui
 /// se agregan como variantes, para que `vd-cli` y la UI manejen un solo tipo.

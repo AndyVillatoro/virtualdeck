@@ -53,6 +53,12 @@ fn main() -> Result<()> {
         ["macro", "record", secs] => cmd_macro_record(secs.parse().unwrap_or(5)),
         ["macro", "play", archivo] => cmd_macro_play(archivo, 3),
         ["macro", "play", archivo, espera] => cmd_macro_play(archivo, espera.parse().unwrap_or(3)),
+        ["sensors"] | ["sensors", "list"] => cmd_sensors_list(None),
+        ["sensors", "list", filtro] => cmd_sensors_list(Some(filtro)),
+        ["sensors", "get", id] => cmd_sensors_get(id),
+        ["sensors", "status"] => cmd_sensors_status(),
+        ["sensors", "watch"] => cmd_sensors_watch(10),
+        ["sensors", "watch", secs] => cmd_sensors_watch(secs.parse().unwrap_or(10)),
         [] | ["help"] | ["--help"] | ["-h"] => {
             print_help();
             Ok(())
@@ -88,9 +94,17 @@ fn print_help() {
          \x20   macro play <archivo> [espera]\n\
          \x20              Reproduce una macro tras N segundos (3 por defecto,\n\
          \x20              para que puedas enfocar la ventana destino)\n\
+         \x20   sensors list [filtro]\n\
+         \x20              Lista los sensores (filtro: texto libre sobre id/nombre)\n\
+         \x20   sensors get <id>\n\
+         \x20              Lee un sensor concreto por su id\n\
+         \x20   sensors status\n\
+         \x20              Estado de los dos niveles (nativo y LHM opcional)\n\
+         \x20   sensors watch [segundos]\n\
+         \x20              Refresca en vivo CPU/GPU (10 s por defecto)\n\
          \x20   help       Muestra esta ayuda\n\
          \n\
-         Se iran agregando comandos por modulo: launcher, rgb, sensors."
+         Se iran agregando comandos por modulo: weather, log, actions."
     );
 }
 
@@ -518,6 +532,171 @@ fn cmd_backups() -> Result<()> {
     );
     for b in &backups {
         println!("  {:<44} {:>7} bytes", b.filename, b.size_bytes);
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// sensors
+// ---------------------------------------------------------------------------
+
+/// Construye el lector aplicando los ajustes del `deck-config.json` real, para
+/// que el nivel 2 (LHM) se active exactamente igual que lo hara la aplicacion.
+fn sensores_configurados() -> vd_core::sensors::Sensors {
+    let mut s = vd_core::sensors::Sensors::new();
+    if let Ok(Some(cfg)) = vd_core::config::load() {
+        if let Some(ajustes) = cfg.sensors.as_ref() {
+            s.configure(ajustes);
+        }
+    }
+    s
+}
+
+fn etiqueta_fuente(f: vd_core::sensors::SensorSource) -> &'static str {
+    use vd_core::sensors::SensorSource::*;
+    match f {
+        Native => "nativo",
+        Nvml => "nvml",
+        Lhm => "lhm",
+    }
+}
+
+fn cmd_sensors_list(filtro: Option<&str>) -> Result<()> {
+    let mut s = sensores_configurados();
+    let filtro_bajo = filtro.map(str::to_lowercase);
+
+    // Dos muestras: el trafico de red y la carga por nucleo son tasas, y una
+    // tasa necesita dos puntos en el tiempo. Con una sola lectura la red no
+    // aparece y la CPU sale con el promedio desde el arranque del proceso.
+    // La aplicacion no necesita esto porque consulta de forma continua; un
+    // comando de una sola pasada, si.
+    s.list(true);
+    std::thread::sleep(std::time::Duration::from_millis(600));
+
+    let lista: Vec<_> = s
+        .list(true)
+        .iter()
+        .filter(|x| match &filtro_bajo {
+            None => true,
+            Some(f) => {
+                x.id.to_lowercase().contains(f)
+                    || x.name.to_lowercase().contains(f)
+                    || x.hardware.to_lowercase().contains(f)
+            }
+        })
+        .cloned()
+        .collect();
+
+    if lista.is_empty() {
+        println!("Sin sensores que coincidan.");
+        return Ok(());
+    }
+
+    let mut hardware_actual = String::new();
+    for x in &lista {
+        if x.hardware != hardware_actual {
+            hardware_actual = x.hardware.clone();
+            println!("\n{hardware_actual}  [{:?}]", x.category);
+        }
+        println!(
+            "  {:<28} {:>10.1} {:<5} {:<7} {}",
+            x.name,
+            x.value,
+            x.unit,
+            etiqueta_fuente(x.source),
+            x.id
+        );
+    }
+    println!("\n{} sensores.", lista.len());
+    Ok(())
+}
+
+fn cmd_sensors_get(id: &str) -> Result<()> {
+    let mut s = sensores_configurados();
+    match s.get(id) {
+        Some(x) => {
+            println!("{} = {} {}", x.name, x.value, x.unit);
+            println!("  hardware : {}", x.hardware);
+            println!("  categoria: {:?}", x.category);
+            println!("  tipo     : {:?}", x.kind);
+            println!("  fuente   : {}", etiqueta_fuente(x.source));
+            if let (Some(mn), Some(mx)) = (x.min, x.max) {
+                println!("  rango    : {mn} .. {mx}");
+            }
+        }
+        None => println!("No existe ningun sensor con id '{id}'."),
+    }
+    Ok(())
+}
+
+fn cmd_sensors_status() -> Result<()> {
+    let mut s = sensores_configurados();
+    let st = s.status();
+
+    println!("NIVEL 1 — nativo (siempre disponible)");
+    println!("  sensores de sistema: {}", st.native_count);
+    if st.nvml_devices.is_empty() {
+        println!(
+            "  GPU NVIDIA         : no disponible{}",
+            st.nvml_error
+                .as_deref()
+                .map(|e| format!(" ({e})"))
+                .unwrap_or_default()
+        );
+    } else {
+        for (i, d) in st.nvml_devices.iter().enumerate() {
+            println!("  GPU NVIDIA {i}       : {d}");
+        }
+    }
+
+    println!("\nNIVEL 2 — LibreHardwareMonitor (opcional)");
+    println!(
+        "  habilitado : {}",
+        if st.lhm_enabled { "si" } else { "no" }
+    );
+    println!(
+        "  conectado  : {}",
+        if st.lhm_connected { "si" } else { "no" }
+    );
+    println!("  sensores   : {}", st.lhm_count);
+    if let Some(e) = &st.lhm_error {
+        println!("  error      : {e}");
+    }
+    if !st.lhm_enabled {
+        println!(
+            "\n  Nota: sin nivel 2 no hay temperatura de CPU, voltajes ni\n\
+             \x20 ventiladores de placa — requieren driver de kernel."
+        );
+    }
+    Ok(())
+}
+
+/// Refresca en vivo. Sirve para comprobar que los valores **se mueven**: una
+/// lectura suelta puede parecer correcta y estar congelada.
+fn cmd_sensors_watch(segundos: u64) -> Result<()> {
+    use std::time::{Duration, Instant};
+
+    let mut s = sensores_configurados();
+    let interesantes = [
+        "/native/cpu/load",
+        "/native/memory/load",
+        "/nvml/0/temperature",
+        "/nvml/0/load",
+        "/nvml/0/power",
+        "/nvml/0/fan/0",
+    ];
+
+    println!("Observando {segundos} s (Ctrl+C para cortar)\n");
+    let inicio = Instant::now();
+    while inicio.elapsed().as_secs() < segundos {
+        let mut linea = String::new();
+        for id in &interesantes {
+            if let Some(x) = s.get(id) {
+                linea.push_str(&format!("{}={:.0}{}  ", x.name, x.value, x.unit));
+            }
+        }
+        println!("{linea}");
+        std::thread::sleep(Duration::from_millis(1100));
     }
     Ok(())
 }

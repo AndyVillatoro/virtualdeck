@@ -16,6 +16,23 @@ regex = "1"
 hidapi = { version = "2.6.6", default-features = false, features = ["windows-native"] }
 wmi = "0.18.4"
 
+# --- sensores (Fase 1.8) ---
+# Nivel 1 (nativo, sin instalar nada): CPU/RAM/disco/red + GPU NVIDIA.
+# Solo las features que se usan: sin "multithread" (rayon) ni backends de otros SO.
+sysinfo = { version = "0.38.4", default-features = false, features = [
+    "system",
+    "disk",
+    "network",
+] }
+# NVML se carga dinamicamente en runtime desde nvml.dll (viene con el driver
+# NVIDIA). Si no hay GPU NVIDIA, la carga falla y se degrada a "sin sensores de
+# GPU" — no es un error fatal ni una dependencia de compilacion.
+nvml-wrapper = "0.12.1"
+# Nivel 2 (opcional): cliente HTTP para LibreHardwareMonitor.
+# Sin TLS a proposito: LHM sirve HTTP plano en localhost. Evita arrastrar
+# rustls/native-tls, que solos pesarian mas que todo el resto del binario.
+ureq = { version = "3.4.0", default-features = false }
+
 # NOTA: las dependencias nativas se agregan por modulo a medida que se
 # implementan, no todas de golpe. Ver docs/MIGRACION-RUST.md seccion 4 (Fases).
 [target.'cfg(windows)'.dependencies]

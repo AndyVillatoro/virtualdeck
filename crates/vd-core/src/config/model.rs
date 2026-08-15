@@ -709,8 +709,11 @@ pub enum TileMode {
     Fill,
 }
 
-/// Categoria de sensor de LibreHardwareMonitor.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+/// Categoria de hardware a la que pertenece un sensor.
+///
+/// `Hash` esta para poder filtrar por categoria con un `HashSet` en
+/// [`crate::sensors`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SensorCategory {
     Cpu,
@@ -750,6 +753,26 @@ pub struct SensorsSettings {
     pub show_widget: Option<bool>,
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Extra,
+}
+
+impl Default for SensorsSettings {
+    /// El nivel 2 arranca **desactivado**: los sensores nativos funcionan sin el,
+    /// y activarlo por defecto haria que toda instalacion limpia intentara
+    /// conectarse a un LibreHardwareMonitor que probablemente no existe.
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            host: "127.0.0.1".into(),
+            // Puerto por defecto del servidor web de LHM.
+            port: 8085,
+            categories: None,
+            spawn_on_start: None,
+            spawn_elevated: None,
+            lhm_path: None,
+            show_widget: None,
+            extra: Extra::new(),
+        }
+    }
 }
 
 /// Estado guardado de un dispositivo RGB dentro de un perfil.
