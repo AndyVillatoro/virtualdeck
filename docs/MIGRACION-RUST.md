@@ -4,7 +4,8 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 — núcleo, 9 de 10 módulos**. Solo falta `actions`.
+> Estado: **Fase 1 COMPLETA** — el núcleo ejecuta cualquier acción de un
+> `deck-config.json` real. Lo siguiente es la Fase 2 (interfaz con egui + winit).
 > Rama: `rewrite/rust`. Última actualización: 2026-08-15.
 
 ---
@@ -14,7 +15,8 @@
 ```bash
 git checkout rewrite/rust
 export PATH="$HOME/.cargo/bin:$PATH"        # o abrir una terminal nueva
-cargo test --workspace -- --test-threads=1  # 106 tests, deben dar todos verde
+cargo test --workspace -- --test-threads=1  # 132 tests, deben dar todos verde
+cargo run -p vd-cli -- run list             # botones ejecutables de tu config real
 cargo run -p vd-cli -- help                 # ver qué se puede ejercitar ya
 ```
 
@@ -32,12 +34,15 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `sensors` | ✅ | 38 sensores reales: i5-13600KF (20 hilos) + RTX 4080 completa |
 | `net` | ✅ | HTTP/HTTPS sobre WinHTTP; test con servidor local |
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
-| `actions` | ⬜ | **← empezar por acá.** Motor que orquesta todo; cierra la Fase 1 |
+| `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: `actions`, el motor de ejecución. Es lo único que falta
-para el criterio de "Fase 1 terminada": que `vd-cli` pueda ejecutar cualquier
-acción de un `deck-config.json` real sin abrir una ventana. Necesita `interpolate`,
-`branch`, secuencias y toggle, y todos sus módulos dependientes ya están listos.
+**Lo próximo, concreto**: **Fase 2 — la interfaz** (egui + winit). Antes de nada,
+hacer el *spike* de entrada de texto: comprobar que egui acepta acentos, ñ e IME
+en español. Si eso falla, toda la elección de framework se tambalea, así que se
+prueba primero y no al final.
+
+También hay que resolver ahí el **robo de foco** antes de macros y hotkeys: es
+deuda anotada que el núcleo no puede arreglar solo.
 
 **Lo que quedó abierto y por qué**:
 - **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
@@ -211,7 +216,7 @@ Orden deliberado: **primero lo más riesgoso**, para que un fracaso aparezca tem
 | 1.7 | **`rgb`** | 🟡 Protocolo binario | Conecta a OpenRGB y aplica color/modo/perfil |
 | 1.8 | **`sensors`** | 🟢 Dos niveles | Lee CPU/RAM/disco/red y GPU sin nada instalado; LHM opcional |
 | 1.9 | **`weather`** + **`log`** | 🟢 Trivial | Clima real por geo-IP; log releído con acentos intactos |
-| 1.10 | **`actions`** | Motor que orquesta todo | Tests de `interpolate`, `branch`, secuencias, toggle |
+| 1.10 | **`actions`** | Motor que orquesta todo | `vd-cli run <id>` ejecuta un botón real del deck-config |
 
 **Entregable de fase**: `vd-cli` puede ejecutar **cualquier acción** del `deck-config.json`
 real sin abrir una sola ventana. Ese es el criterio de "el core está listo".
@@ -495,7 +500,8 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.7 — `rgb` | 🟡 **Lectura sí, escritura no** — ver abajo |
 | 1.8 — `sensors` | ✅ **Completa** — nivel 1 nativo + LHM opcional; LHM ya no se empaqueta |
 | 1.9 — `weather` + `log` | ✅ **Completa** — incluye `net`, cliente HTTP sobre WinHTTP |
-| 1.10 — `actions` | ⬜ **← siguiente** |
+| 1.10 — `actions` | ✅ **Completa** — verificado ejecutando un botón real |
+| **Fase 1** | ✅ **COMPLETA** |
 | 2 — `vd-app` (UI egui) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
@@ -679,6 +685,34 @@ nombre el código.
 
 Verificado en vivo: clima real por geo-IP en 966 ms, y el registro releído con
 acentos y ñ intactos, que es exactamente lo que la versión con PowerShell rompía.
+
+### ✅ Motor de acciones: Fase 1 cerrada
+
+El criterio de "Fase 1 terminada" era que el núcleo pudiera ejecutar cualquier
+acción de un `deck-config.json` real sin abrir una ventana. Cumplido: `vd-cli run
+0-1` leyó la configuración del usuario, ejecutó el botón de cambio de dispositivo
+de audio y **cambió la salida del sistema en 21 ms** — frente a los 150–400 ms que
+costaba la misma operación lanzando un `powershell.exe`.
+
+**Acciones que el núcleo no ejecuta, a propósito.** Abrir una carpeta de botones,
+mostrar una notificación, capturar una región o leer texto en voz alta tienen su
+efecto *en la interfaz*. El motor las reconoce y devuelve `Outcome::ForUi` en vez
+de fingir que las ejecutó o de tratarlas como error. La distinción importa: una
+acción de interfaz **no interrumpe** una secuencia, un fallo real sí.
+
+**Tope de anidamiento.** Una configuración puede tener ramas que se llaman entre
+sí en ciclo. Sin límite, eso desbordaría la pila y tumbaría la aplicación entera;
+ahora corta a los 10 niveles con un mensaje que explica la causa probable.
+
+**Bug encontrado por un test.** El sustituidor de variables se comía la llave de
+apertura de un JSON de forma golosa: en `{"saludo": "{nombre}"}` saltaba hasta el
+primer `}` y la variable de dentro nunca se sustituía. Los webhooks con cuerpo JSON
+—que es el caso normal— habrían enviado la plantilla sin rellenar. El test estaba
+escrito antes de ver el fallo, no después.
+
+**`run dry`** muestra qué haría un botón sin ejecutarlo. No es un adorno: la
+configuración del usuario tiene un botón que apaga el equipo a los 30 segundos, y
+hace falta poder inspeccionarlo sin dispararlo.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

@@ -13,6 +13,8 @@
 //! Se van habilitando por fase. Ver el estado en `docs/MIGRACION-RUST.md`.
 
 #[cfg(windows)]
+pub mod actions;
+#[cfg(windows)]
 pub mod audio;
 pub mod config;
 #[cfg(windows)]

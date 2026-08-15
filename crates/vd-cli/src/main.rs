@@ -59,6 +59,9 @@ fn main() -> Result<()> {
         ["sensors", "status"] => cmd_sensors_status(),
         ["sensors", "watch"] => cmd_sensors_watch(10),
         ["sensors", "watch", secs] => cmd_sensors_watch(secs.parse().unwrap_or(10)),
+        ["run"] | ["run", "list"] => cmd_run_list(),
+        ["run", "dry", id] => cmd_run(id, true),
+        ["run", id] => cmd_run(id, false),
         ["clima"] => cmd_clima(false),
         ["clima", "force"] => cmd_clima(true),
         ["log"] | ["log", "show"] => cmd_log_show(),
@@ -111,13 +114,17 @@ fn print_help() {
          \x20              Estado de los dos niveles (nativo y LHM opcional)\n\
          \x20   sensors watch [segundos]\n\
          \x20              Refresca en vivo CPU/GPU (10 s por defecto)\n\
+         \x20   run list   Lista los botones con accion del deck-config real\n\
+         \x20   run <id>   Ejecuta ese boton de verdad (acepta id parcial)\n\
+         \x20   run dry <id>\n\
+         \x20              Muestra que haria, sin ejecutar nada\n\
          \x20   clima [force]\n\
          \x20              Consulta el clima actual (force ignora la cache)\n\
          \x20   log show|test|clear\n\
          \x20              Muestra, prueba o vacia el registro\n\
          \x20   help       Muestra esta ayuda\n\
          \n\
-         Falta el motor de acciones (actions), que orquesta todo lo anterior."
+         Fase 1 completa: `run` ejecuta cualquier accion del deck-config real."
     );
 }
 
@@ -793,6 +800,117 @@ fn cmd_log_test() -> Result<()> {
         .rev()
     {
         println!("  {linea}");
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// motor de acciones
+// ---------------------------------------------------------------------------
+
+/// Convierte el estado guardado en la config al que usa el motor.
+fn estado_de(cfg: &vd_core::config::model::DeckConfig) -> vd_core::actions::State {
+    cfg.state
+        .clone()
+        .map(|m| m.into_iter().collect())
+        .unwrap_or_default()
+}
+
+/// Lista los botones que tienen algo que ejecutar, con su id.
+fn cmd_run_list() -> Result<()> {
+    let Some(cfg) = vd_core::config::load()? else {
+        println!("No hay configuracion en esta maquina.");
+        return Ok(());
+    };
+
+    let mut n = 0;
+    for b in &cfg.buttons {
+        if b.action.action_type.is_none() && b.actions.is_none() {
+            continue;
+        }
+        let pasos = b.actions.as_ref().map_or(1, Vec::len);
+        println!(
+            "  {:<38} pag {}  {:<22} {}",
+            b.id,
+            b.page,
+            format!("{:?}", b.action.action_type),
+            if pasos > 1 {
+                format!("{} — secuencia de {pasos} pasos", b.label)
+            } else {
+                b.label.clone()
+            }
+        );
+        n += 1;
+    }
+    println!("\n{n} botones con accion. Ejecutar con: vd-cli run <id>");
+    Ok(())
+}
+
+/// Ejecuta el botón indicado del `deck-config.json` real.
+///
+/// Este comando **es** el criterio de "Fase 1 terminada": el núcleo puede
+/// ejecutar cualquier acción de una configuración de verdad sin abrir una
+/// ventana.
+fn cmd_run(id: &str, seco: bool) -> Result<()> {
+    let Some(cfg) = vd_core::config::load()? else {
+        println!("No hay configuracion en esta maquina.");
+        return Ok(());
+    };
+
+    // Se acepta un id parcial: los ids reales son largos y escribirlos enteros
+    // a mano es incomodo.
+    let Some(b) = cfg.buttons.iter().find(|b| b.id == id || b.id.contains(id)) else {
+        println!("No hay ningun boton cuyo id contenga '{id}'.");
+        println!("Usa 'vd-cli run list' para verlos.");
+        return Ok(());
+    };
+
+    let secuencia: Vec<_> = match &b.actions {
+        Some(v) if !v.is_empty() => v.clone(),
+        _ => vec![b.action.clone()],
+    };
+
+    println!("Boton  : {} ({})", b.label, b.id);
+    println!("Pasos  : {}", secuencia.len());
+    for (i, a) in secuencia.iter().enumerate() {
+        println!("  {}. {:?}", i + 1, a.action_type);
+    }
+
+    if seco {
+        println!("\n(simulacion: no se ejecuto nada)");
+        return Ok(());
+    }
+
+    println!("\nEjecutando...\n");
+    let t = std::time::Instant::now();
+    let r = vd_core::actions::run_sequence(&secuencia, &estado_de(&cfg));
+
+    println!(
+        "Resultado : {}",
+        if r.ok { "correcto" } else { "con errores" }
+    );
+    println!("Duracion  : {:.0} ms", t.elapsed().as_secs_f64() * 1000.0);
+    if let Some(e) = &r.error {
+        println!("Error     : {e}");
+    }
+    if !r.for_ui.is_empty() {
+        println!("Para la UI: {}", r.for_ui.join(", "));
+    }
+
+    // Solo se muestran las variables que cambiaron: el estado completo puede ser
+    // largo y lo interesante es el efecto de esta ejecucion.
+    let previo = estado_de(&cfg);
+    let cambios: Vec<_> = r
+        .state
+        .iter()
+        .filter(|(k, v)| previo.get(*k) != Some(*v))
+        .collect();
+    if !cambios.is_empty() {
+        println!("\nVariables modificadas:");
+        for (k, v) in cambios {
+            println!("  {k} = {v}");
+        }
+        println!("\n(no se guardaron en disco: el motor no escribe la configuracion)");
     }
     Ok(())
 }

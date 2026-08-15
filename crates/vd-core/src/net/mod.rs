@@ -161,6 +161,21 @@ pub fn get_text(url: &str, timeout: Duration) -> Result<String, HttpError> {
 
 /// Hace un GET y devuelve el cuerpo crudo.
 pub fn get_bytes(url: &str, timeout: Duration) -> Result<Vec<u8>, HttpError> {
+    request("GET", url, &[], None, timeout)
+}
+
+/// Peticion generica: la usan los webhooks, que pueden ser POST o PUT con
+/// cabeceras y cuerpo propios.
+///
+/// `headers` son pares nombre/valor; se ensamblan en el formato `Nombre: valor`
+/// separado por CRLF que espera WinHTTP.
+pub fn request(
+    metodo: &str,
+    url: &str,
+    headers: &[(String, String)],
+    body: Option<&[u8]>,
+    timeout: Duration,
+) -> Result<Vec<u8>, HttpError> {
     let partes = partir_url(url)?;
     let ms = timeout.as_millis().min(i32::MAX as u128) as i32;
 
@@ -171,8 +186,23 @@ pub fn get_bytes(url: &str, timeout: Duration) -> Result<Vec<u8>, HttpError> {
     // inocente lo convierte en un puntero colgante.
     let agente = a_utf16("VirtualDeck");
     let host = a_utf16(&partes.host);
-    let verbo = a_utf16("GET");
+    let verbo = a_utf16(metodo);
     let recurso = a_utf16(&partes.recurso);
+
+    // WinHTTP espera todas las cabeceras en un unico bloque separado por CRLF.
+    // Los saltos de linea dentro de un nombre o un valor permitirian inyectar
+    // cabeceras arbitrarias (CRLF injection), asi que se eliminan.
+    let cabeceras: Vec<u16> = if headers.is_empty() {
+        Vec::new()
+    } else {
+        let limpiar = |s: &str| s.replace(['\r', '\n'], "");
+        let bloque = headers
+            .iter()
+            .map(|(n, v)| format!("{}: {}", limpiar(n), limpiar(v)))
+            .collect::<Vec<_>>()
+            .join("\r\n");
+        bloque.encode_utf16().collect()
+    };
 
     unsafe {
         let sesion = Handle::nuevo(
@@ -213,8 +243,29 @@ pub fn get_bytes(url: &str, timeout: Duration) -> Result<Vec<u8>, HttpError> {
             "no se pudo preparar la peticion",
         )?;
 
-        WinHttpSendRequest(peticion.0, None, None, 0, 0, 0)
-            .map_err(|_| HttpError::Connect(std::io::Error::last_os_error().to_string()))?;
+        let cabeceras_arg = if cabeceras.is_empty() {
+            None
+        } else {
+            Some(cabeceras.as_slice())
+        };
+        let (cuerpo_ptr, cuerpo_len) = match body {
+            Some(b) if !b.is_empty() => (b.as_ptr().cast::<core::ffi::c_void>(), b.len() as u32),
+            _ => (std::ptr::null(), 0),
+        };
+
+        WinHttpSendRequest(
+            peticion.0,
+            cabeceras_arg,
+            if cuerpo_ptr.is_null() {
+                None
+            } else {
+                Some(cuerpo_ptr)
+            },
+            cuerpo_len,
+            cuerpo_len,
+            0,
+        )
+        .map_err(|_| HttpError::Connect(std::io::Error::last_os_error().to_string()))?;
 
         WinHttpReceiveResponse(peticion.0, std::ptr::null_mut())
             .map_err(|_| HttpError::Connect(std::io::Error::last_os_error().to_string()))?;
