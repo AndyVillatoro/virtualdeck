@@ -41,8 +41,9 @@ botones desde el `deck-config.json`, con clic que dispara `actions::run_sequence
 Los dos riesgos de la Fase 2 ya están descartados: la entrada de texto funciona y
 el renderer está elegido (**wgpu**, decidido midiendo).
 
-Queda pendiente pasar el spike de texto **a mano** para cubrir el IME de verdad:
-`cargo run -p vd-app --bin spike_texto -- manual`.
+El spike de texto está cerrado: acentos, ñ, teclas muertas, IME y pegado, todo
+verificado. Se puede volver a pasar cuando se actualice egui o winit:
+`cargo run -p vd-app --bin spike_texto`.
 
 **Lo que quedó abierto y por qué**:
 - **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
@@ -731,7 +732,9 @@ winit → egui-winit → `TextEdit`.
 | Emoji (par suplente UTF-16) pegado con Ctrl+V | ✅ llega intacto |
 | Emoji tecleado carácter a carácter | ❌ winit entrega `text: None` |
 | Panel de emoji de Windows (IME) | ✅ llega como un solo punto de código |
-| Teclas muertas (`´` + `a` → `á`) | ⬜ pendiente de probar a mano |
+| Teclas muertas (`´` + `a` → `á`) | ✅ el driver compone; llega `U+00E1` |
+
+**El spike está cerrado: todos los casos pasan.**
 
 **El IME funciona, y era la incógnita real.** Probado a mano con el panel de emoji
 de Windows (`Win + .`): el carácter llega como **un solo punto de código**
@@ -739,9 +742,23 @@ de Windows (`Win + .`): el carácter llega como **un solo punto de código**
 mismo emoji viaja por teclado. Es decir, la composición por IME se maneja por una
 ruta distinta y correcta. La ñ también se confirmó a mano (`U+00F1`).
 
-Queda por comprobar un único caso: las **teclas muertas** (`´` seguido de `a`),
-que el driver de teclado compone en dos pulsaciones. No es lo mismo que el camino
-ya verificado en automático, donde las vocales se inyectan ya compuestas.
+**Las teclas muertas también componen.** `´` seguido de `a` llega como `U+00E1`,
+un solo carácter. winit reporta `Dead(Some('´'))` sin texto y después
+`Character("á")`, que es exactamente el comportamiento correcto.
+
+Ese caso está automatizado: pulsa teclas **físicas** con `VkKeyScanW` +
+`SendInput`, no `KEYEVENTF_UNICODE`. Inyectar el carácter ya formado salta por
+encima del driver de teclado y no probaría la composición, que es justo el punto.
+
+Una primera prueba manual dio el acento y la vocal por separado y no se pudo
+reproducir después, ni a mano ni en automático. Se deja anotado por si reaparece,
+pero el comportamiento verificado —dos vías independientes— es que compone.
+
+Detalle útil para futuras pruebas: **Bloq Mayús afecta al caso de teclas físicas
+pero no a la inyección Unicode**, así que el resultado puede salir en mayúscula sin
+que eso signifique nada. El spike lo detecta y juzga la composición, no la caja.
+Con `VD_SPIKE_DIAG=1` imprime los eventos de teclado e IME que recibe winit, que es
+lo que distingue "no llegó" de "llegó transformado".
 
 **Tres cosas más se aprendieron por el camino**, y ninguna se habría visto leyendo
 documentación:
