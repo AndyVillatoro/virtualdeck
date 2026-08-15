@@ -730,9 +730,20 @@ winit → egui-winit → `TextEdit`.
 | `áéíóú ñÑ ¿¡ üÜ €` por teclado | ✅ llega intacto |
 | Emoji (par suplente UTF-16) pegado con Ctrl+V | ✅ llega intacto |
 | Emoji tecleado carácter a carácter | ❌ winit entrega `text: None` |
-| IME real (chino/japonés, panel de emoji) | ⬜ pendiente de probar a mano |
+| Panel de emoji de Windows (IME) | ✅ llega como un solo punto de código |
+| Teclas muertas (`´` + `a` → `á`) | ⬜ pendiente de probar a mano |
 
-**Tres cosas se aprendieron por el camino**, y ninguna se habría visto leyendo
+**El IME funciona, y era la incógnita real.** Probado a mano con el panel de emoji
+de Windows (`Win + .`): el carácter llega como **un solo punto de código**
+(`U+1F602`), no como las dos mitades sueltas que winit sí entrega mal cuando el
+mismo emoji viaja por teclado. Es decir, la composición por IME se maneja por una
+ruta distinta y correcta. La ñ también se confirmó a mano (`U+00F1`).
+
+Queda por comprobar un único caso: las **teclas muertas** (`´` seguido de `a`),
+que el driver de teclado compone en dos pulsaciones. No es lo mismo que el camino
+ya verificado en automático, donde las vocales se inyectan ya compuestas.
+
+**Tres cosas más se aprendieron por el camino**, y ninguna se habría visto leyendo
 documentación:
 
 1. **`egui-winit` necesita la feature `clipboard`.** Se había puesto
