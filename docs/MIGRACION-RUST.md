@@ -36,12 +36,12 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: **Fase 2 — la interfaz**. El spike de entrada de texto
-ya pasó (`cargo run -p vd-app --bin spike_texto`), así que el riesgo de framework
-está descartado. Sigue: elegir renderer (wgpu o glow, midiendo tamaño de binario
-contra el objetivo de < 20 MB) y dibujar la primera rejilla de botones.
+**Lo próximo, concreto**: portar la primera pantalla real (`MainB`: rejilla de
+botones desde el `deck-config.json`, con clic que dispara `actions::run_sequence`).
+Los dos riesgos de la Fase 2 ya están descartados: la entrada de texto funciona y
+el renderer está elegido (**wgpu**, decidido midiendo).
 
-Queda pendiente pasar el spike **a mano** para cubrir el IME de verdad:
+Queda pendiente pasar el spike de texto **a mano** para cubrir el IME de verdad:
 `cargo run -p vd-app --bin spike_texto -- manual`.
 
 **Lo que quedó abierto y por qué**:
@@ -752,6 +752,44 @@ De paso salió `launcher::force_foreground`, que hace la maniobra de
 `AttachThreadInput` necesaria para que Windows acepte el cambio de primer plano.
 Es la otra cara de la deuda del robo de foco: las dos necesitan las mismas
 primitivas.
+
+### ✅ Fase 2 — renderer: wgpu, decidido midiendo
+
+La duda era wgpu contra glow, y la premisa de partida era que wgpu sería
+demasiado pesado para un instalador por debajo de 20 MB. **La premisa era falsa.**
+
+Se montaron los dos backends dibujando **la misma escena** —una rejilla de 5×3
+botones con glifos dot-matrix, 525 círculos por fotograma— y se midió:
+
+| Backend | Binario en release | Ritmo |
+|---|---|---|
+| glow (OpenGL / WGL) | 2,56 MB | 144 fps |
+| wgpu (Direct3D 12) | 4,77 MB | 144 fps |
+
+Empate en rendimiento (los dos limitados por vsync) y 2,2 MB de diferencia sobre
+un presupuesto de 20 MB. El tamaño, que parecía el factor decisivo, resultó no
+serlo. **Decide la robustez**: con D3D12 hay respaldo por software —verificado,
+`Microsoft Basic Render Driver`— cuando no hay GPU utilizable: sesión remota,
+máquina virtual o driver roto. OpenGL en Windows no tiene equivalente fiable;
+sin drivers del fabricante cae a una implementación 1.1 que no sirve. Ese riesgo
+es real para este proyecto: la versión Electron ya arrastraba un
+`disableHardwareAcceleration()` por problemas con monitores virtuales.
+
+Como argumento secundario, el código de wgpu es bastante más simple: comparar
+`spike_render_wgpu.rs` con `spike_render_glow.rs` lo deja claro, y glutin obliga
+a elegir el formato de píxel antes de que la ventana exista del todo.
+
+Los dos backends quedan en el repositorio tras features de cargo, para poder
+repetir la medición si cambia alguna premisa.
+
+**Dos tropiezos que valen como aviso:**
+
+- `egui-wgpu 0.32` exige **wgpu 25**, no la última. Fijar la 27 arrastra un
+  `naga` incompatible y el error que sale —`String: WriteColor no satisfecho`,
+  dentro de `naga`— no se parece en nada a la causa.
+- `wgpu::Limits::downlevel_defaults()` topa las texturas en **2048 px**. Cualquier
+  pantalla moderna con escalado ya pide más, y la superficie falla al
+  configurarse. Hay que usar los límites del adaptador real.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

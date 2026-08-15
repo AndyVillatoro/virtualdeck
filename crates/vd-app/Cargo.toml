@@ -25,3 +25,62 @@ egui-winit = { version = "0.32", default-features = false, features = [
     "links",
 ] }
 
+
+# --- renderer: wgpu (decidido midiendo, ver docs/MIGRACION-RUST.md) ---
+#
+# Los dos backends siguen aqui tras features para que la medicion se pueda
+# repetir si cambia alguna premisa. Resultado en release, misma escena:
+#
+#   glow (OpenGL) : 2,56 MB   144 fps
+#   wgpu (D3D12)  : 4,77 MB   144 fps
+#
+# La hipotesis era que wgpu seria demasiado pesado, y resulto falsa: 2,2 MB de
+# diferencia sobre un presupuesto de 20 MB se pagan sin problema. Decide la
+# robustez: D3D12 tiene respaldo por software (WARP) cuando no hay GPU
+# utilizable —sesion remota, maquina virtual, driver roto— y OpenGL en Windows
+# no tiene equivalente fiable. El codigo de wgpu ademas es bastante mas simple:
+# comparar los dos spikes lo deja claro.
+egui-wgpu = { version = "0.32", optional = true }
+# La version la manda `egui-wgpu`, no el gusto propio: fijar una mas nueva
+# arrastra un `naga` incompatible y el error que aparece es indescifrable.
+wgpu = { version = "25", optional = true, default-features = false, features = [
+    "dx12",
+    "wgsl",
+] }
+pollster = { version = "0.4", optional = true }
+
+egui_glow = { version = "0.32", optional = true, default-features = false }
+glow = { version = "0.16", optional = true }
+glutin = { version = "0.32", optional = true, default-features = false, features = [
+    "wgl",
+] }
+glutin-winit = { version = "0.5", optional = true, default-features = false, features = [
+    "wgl",
+] }
+raw-window-handle = { version = "0.6", optional = true }
+
+[features]
+# wgpu por defecto: es la decision tomada.
+default = ["render-wgpu"]
+render-wgpu = ["dep:egui-wgpu", "dep:wgpu", "dep:pollster"]
+render-glow = [
+    "dep:egui_glow",
+    "dep:glow",
+    "dep:glutin",
+    "dep:glutin-winit",
+    "dep:raw-window-handle",
+]
+
+[[bin]]
+name = "spike_texto"
+path = "src/bin/spike_texto.rs"
+
+[[bin]]
+name = "spike_render_wgpu"
+path = "src/bin/spike_render_wgpu.rs"
+required-features = ["render-wgpu"]
+
+[[bin]]
+name = "spike_render_glow"
+path = "src/bin/spike_render_glow.rs"
+required-features = ["render-glow"]
