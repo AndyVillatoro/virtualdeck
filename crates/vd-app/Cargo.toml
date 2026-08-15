@@ -1,5 +1,8 @@
 [package]
 name = "vd-app"
+# Sin esto, `cargo run -p vd-app` falla: el paquete tiene tambien los binarios
+# de los spikes y cargo no sabe cual lanzar.
+default-run = "vd-app"
 description = "Interfaz de VirtualDeck: egui sobre winit, sin WebView."
 version.workspace = true
 edition.workspace = true

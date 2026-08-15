@@ -469,6 +469,29 @@ aportando bastante más.
 
 ## 7. Convenciones del código Rust
 
+### Los tests no le cambian el equipo a quien compila
+
+Regla dura, aprendida por las malas: **`cargo test` no puede dejar la máquina
+distinta de como la encontró.** Un test del módulo de brillo llamaba a
+`set_brightness(500)` —que se recorta a 100— sin restaurar nada, así que cada
+compilación le ponía los monitores al máximo a quien estuviera trabajando. Otro
+sobrescribía el portapapeles y borraba lo que el usuario tuviera copiado.
+
+Cómo se escriben en su lugar:
+
+1. **Extraer la parte pura y probar esa.** El test del brillo comprobaba el
+   recorte al rango; eso ahora es una función sin efectos y el test no toca
+   ninguna pantalla.
+2. **Si hace falta tocar el hardware**: guardar el estado, actuar, restaurar, y
+   marcar el test `#[ignore]` con el motivo. Se ejecuta a propósito, no de paso.
+3. **Leer de vuelta lo que se escribió.** El test del portapapeles guarda lo que
+   hubiera, escribe, **verifica leyendo** y restaura. Salió más fuerte que antes:
+   ahora comprueba el camino UTF-16 completo y no solo que la llamada no falle.
+
+Excepción consciente: el test de macros inyecta **F13**, una tecla que existe en
+el teclado extendido pero que ningún programa usa. Es entrada real, pero no
+cambia nada ni interfiere con lo que estés haciendo.
+
 - **Edición 2021**, `rustfmt` por defecto, `clippy` sin warnings (`-D warnings` en CI).
 - `vd-core` **no depende de egui/winit** — se compila y testea sin UI.
 - Errores con `thiserror` en el core y `anyhow` en los binarios.

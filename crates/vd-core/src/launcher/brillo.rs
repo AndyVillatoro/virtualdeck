@@ -22,12 +22,21 @@ use super::LauncherError;
 /// Devuelve cuantas pantallas aceptaron el cambio. Cero no es un error: hay
 /// monitores que directamente no soportan control por software.
 pub fn set_brightness(percent: i64) -> Result<usize, LauncherError> {
-    let nivel = percent.clamp(0, 100) as u32;
+    let nivel = nivel_valido(percent);
 
     let mut aplicadas = wmi_set(nivel).unwrap_or(0);
     aplicadas += ddc_set(nivel);
 
     Ok(aplicadas)
+}
+
+/// Lleva un porcentaje al rango que aceptan las dos APIs.
+///
+/// Esta separado de [`set_brightness`] para poder probarlo **sin tocar el
+/// hardware**. Un test que aplique brillo de verdad le cambia la pantalla a quien
+/// compile el proyecto, y ademas no la deja como estaba.
+fn nivel_valido(percent: i64) -> u32 {
+    percent.clamp(0, 100) as u32
 }
 
 /// Lee el brillo actual de la primera pantalla que sepa informarlo.
@@ -218,10 +227,45 @@ mod tests {
 
     #[test]
     fn el_nivel_se_recorta_al_rango_valido() {
-        // No se afirma que haya cambiado nada (depende del monitor), solo que
-        // valores fuera de rango no rompen.
-        assert!(set_brightness(-50).is_ok());
-        assert!(set_brightness(500).is_ok());
+        assert_eq!(nivel_valido(-50), 0);
+        assert_eq!(nivel_valido(500), 100);
+        assert_eq!(nivel_valido(0), 0);
+        assert_eq!(nivel_valido(100), 100);
+        assert_eq!(nivel_valido(65), 65);
+    }
+
+    /// Prueba el camino real contra el hardware, **devolviendo el brillo a como
+    /// estaba**.
+    ///
+    /// Marcado `ignore` a proposito. La version anterior de este test llamaba a
+    /// `set_brightness(500)` sin restaurar nada, asi que cada `cargo test` le
+    /// dejaba las pantallas al maximo a quien compilara el proyecto. Un test no
+    /// puede cambiarle el equipo a quien lo ejecuta, y menos sin devolverlo a su
+    /// estado. Para ejercitarlo a proposito:
+    ///
+    /// ```text
+    /// cargo test -p vd-core aplica_y_restaura_el_brillo -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[ignore = "cambia el brillo real de las pantallas"]
+    fn aplica_y_restaura_el_brillo() {
+        let Some(original) = brightness() else {
+            println!("ninguna pantalla informa su brillo; nada que probar");
+            return;
+        };
+        println!("brillo original: {original}%");
+
+        let objetivo = if original > 50 { 40 } else { 60 };
+        let aplicadas = set_brightness(objetivo).expect("aplicar brillo");
+        println!("aplicado {objetivo}% a {aplicadas} pantalla(s)");
+
+        // Se restaura pase lo que pase con la comprobacion.
+        let restaurado = set_brightness(i64::from(original));
+        assert!(
+            restaurado.is_ok(),
+            "no se pudo restaurar el brillo original"
+        );
+        println!("restaurado a {original}%");
     }
 
     #[test]

@@ -327,6 +327,44 @@ pub fn master_volume() -> Result<i64, LauncherError> {
 // ---------------------------------------------------------------------------
 
 /// Copia texto al portapapeles.
+/// Lee el texto del portapapeles.
+///
+/// Devuelve `None` si el portapapeles esta vacio o contiene algo que no es
+/// texto (una imagen, por ejemplo), que no es un error.
+pub fn clipboard() -> Option<String> {
+    use windows::Win32::Foundation::HGLOBAL;
+    use windows::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, OpenClipboard};
+    use windows::Win32::System::Memory::{GlobalLock, GlobalUnlock};
+
+    const CF_UNICODETEXT: u32 = 13;
+
+    // SAFETY: el handle que devuelve GetClipboardData pertenece a Windows y no
+    // se libera; solo se bloquea para leerlo y se desbloquea enseguida.
+    unsafe {
+        OpenClipboard(None).ok()?;
+
+        let texto = (|| {
+            let handle = GetClipboardData(CF_UNICODETEXT).ok()?;
+            let global = HGLOBAL(handle.0);
+            let ptr = GlobalLock(global) as *const u16;
+            if ptr.is_null() {
+                return None;
+            }
+            // La cadena termina en cero; se busca su largo antes de copiarla.
+            let mut largo = 0;
+            while *ptr.add(largo) != 0 {
+                largo += 1;
+            }
+            let s = String::from_utf16_lossy(std::slice::from_raw_parts(ptr, largo));
+            let _ = GlobalUnlock(global);
+            Some(s)
+        })();
+
+        let _ = CloseClipboard();
+        texto
+    }
+}
+
 pub fn set_clipboard(text: &str) -> Result<(), LauncherError> {
     use windows::Win32::Foundation::{HANDLE, HGLOBAL};
     use windows::Win32::System::DataExchange::{
@@ -413,8 +451,19 @@ mod tests {
     }
 
     #[test]
-    fn el_portapapeles_acepta_texto_con_acentos() {
-        // Verifica el camino completo incluyendo UTF-16.
-        assert!(set_clipboard("año — prueba ñÁÉ").is_ok());
+    fn el_portapapeles_conserva_los_acentos_de_ida_y_vuelta() {
+        // Se guarda lo que hubiera y se devuelve al terminar: un test no puede
+        // borrarle el portapapeles a quien compila el proyecto.
+        let previo = clipboard();
+
+        let prueba = "año — prueba ñÁÉ";
+        assert!(set_clipboard(prueba).is_ok());
+        // Leerlo de vuelta prueba el camino UTF-16 completo, no solo que la
+        // llamada no falle.
+        assert_eq!(clipboard().as_deref(), Some(prueba));
+
+        if let Some(p) = previo {
+            let _ = set_clipboard(&p);
+        }
     }
 }
