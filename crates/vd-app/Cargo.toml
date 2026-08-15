@@ -78,6 +78,11 @@ render-glow = [
 ]
 
 [[bin]]
+name = "vd-app"
+path = "src/main.rs"
+required-features = ["render-wgpu"]
+
+[[bin]]
 name = "spike_texto"
 path = "src/bin/spike_texto.rs"
 required-features = ["render-wgpu"]

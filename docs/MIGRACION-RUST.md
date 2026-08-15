@@ -4,8 +4,8 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 completa. Fase 2 arrancada** — el spike de entrada de texto
-> pasa, así que la elección de egui + winit se sostiene.
+> Estado: **Fase 1 completa. Fase 2 en marcha** — la rejilla ya se dibuja y
+> ejecuta acciones desde la configuración real.
 > Rama: `rewrite/rust`. Última actualización: 2026-08-15.
 
 ---
@@ -36,10 +36,14 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: portar la primera pantalla real (`MainB`: rejilla de
-botones desde el `deck-config.json`, con clic que dispara `actions::run_sequence`).
-Los dos riesgos de la Fase 2 ya están descartados: la entrada de texto funciona y
-el renderer está elegido (**wgpu**, decidido midiendo).
+**Lo próximo, concreto**: seguir portando la pantalla principal. Lo que falta ahí,
+por orden de valor: **iconos e imágenes** de botón (hay que cargar y cachear
+texturas), **pulsación larga** (`long_press_action`), **toggle** y **arrastrar para
+reordenar**. Después vienen la bandeja del sistema y los atajos globales, que son
+la razón de usar winit directo.
+
+Ya funciona: `cargo run -p vd-app` abre la rejilla con la configuración real y
+ejecuta acciones al hacer clic.
 
 El spike de texto está cerrado: acentos, ñ, teclas muertas, IME y pegado, todo
 verificado. Se puede volver a pasar cuando se actualice egui o winit:
@@ -828,6 +832,30 @@ falla la composición o el par suplente.
 - `wgpu::Limits::downlevel_defaults()` topa las texturas en **2048 px**. Cualquier
   pantalla moderna con escalado ya pide más, y la superficie falla al
   configurarse. Hay que usar los límites del adaptador real.
+
+### ✅ Fase 2 — primera pantalla: la rejilla ejecuta acciones
+
+`cargo run -p vd-app` abre la ventana, lee el `deck-config.json` real y al pulsar
+un botón ejecuta su acción. Verificado con la configuración del usuario: 2
+páginas, 8 botones.
+
+**Lo único de riesgo real en esta capa era el hilo.** Una acción puede tardar —un
+script, un webhook con un servidor lento, una cuenta atrás de treinta segundos— y
+ejecutarla en el hilo de la interfaz congelaría la ventana entera: el usuario no
+podría ni cambiar de página ni cerrar la aplicación. Cada pulsación se manda a un
+hilo aparte y el resultado vuelve por un canal, que es el **único** punto donde el
+estado se toca desde fuera del hilo de la interfaz.
+
+Eso está cubierto por tests que no necesitan ventana: que el resultado vuelva del
+hilo de fondo, que un botón no se dispare dos veces si se pulsa rápido —sin esa
+guarda serían dos webhooks— y que un botón sin configurar no lance nada.
+
+El bucle usa `ControlFlow::Poll` y no `Wait` justamente por esto: hay trabajo que
+llega de fuera del bucle de eventos, y con `Wait` la ventana no se redibujaría
+hasta que el usuario la tocara.
+
+Lo que **aún no** hace la pantalla: iconos e imágenes de botón (necesitan cargar y
+cachear texturas), pulsación larga, toggle y arrastrar para reordenar.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 
