@@ -17,12 +17,17 @@ pub mod audio;
 pub mod config;
 #[cfg(windows)]
 pub mod launcher;
+pub mod log;
 #[cfg(windows)]
 pub mod macros;
 #[cfg(windows)]
 pub mod media;
+#[cfg(windows)]
+pub mod net;
 pub mod rgb;
 pub mod sensors;
+#[cfg(windows)]
+pub mod weather;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui
 /// se agregan como variantes, para que `vd-cli` y la UI manejen un solo tipo.

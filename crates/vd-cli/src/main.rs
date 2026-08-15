@@ -59,6 +59,15 @@ fn main() -> Result<()> {
         ["sensors", "status"] => cmd_sensors_status(),
         ["sensors", "watch"] => cmd_sensors_watch(10),
         ["sensors", "watch", secs] => cmd_sensors_watch(secs.parse().unwrap_or(10)),
+        ["clima"] => cmd_clima(false),
+        ["clima", "force"] => cmd_clima(true),
+        ["log"] | ["log", "show"] => cmd_log_show(),
+        ["log", "test"] => cmd_log_test(),
+        ["log", "clear"] => {
+            vd_core::log::clear();
+            println!("Registro vaciado.");
+            Ok(())
+        }
         [] | ["help"] | ["--help"] | ["-h"] => {
             print_help();
             Ok(())
@@ -102,9 +111,13 @@ fn print_help() {
          \x20              Estado de los dos niveles (nativo y LHM opcional)\n\
          \x20   sensors watch [segundos]\n\
          \x20              Refresca en vivo CPU/GPU (10 s por defecto)\n\
+         \x20   clima [force]\n\
+         \x20              Consulta el clima actual (force ignora la cache)\n\
+         \x20   log show|test|clear\n\
+         \x20              Muestra, prueba o vacia el registro\n\
          \x20   help       Muestra esta ayuda\n\
          \n\
-         Se iran agregando comandos por modulo: weather, log, actions."
+         Falta el motor de acciones (actions), que orquesta todo lo anterior."
     );
 }
 
@@ -697,6 +710,89 @@ fn cmd_sensors_watch(segundos: u64) -> Result<()> {
         }
         println!("{linea}");
         std::thread::sleep(Duration::from_millis(1100));
+    }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// clima y registro
+// ---------------------------------------------------------------------------
+
+fn cmd_clima(force: bool) -> Result<()> {
+    let mut w = vd_core::weather::Weather::new();
+    let t = std::time::Instant::now();
+    match w.get(force) {
+        Some(d) => {
+            let lugar = if d.city.is_empty() {
+                d.country.clone()
+            } else {
+                format!("{}, {}", d.city, d.country)
+            };
+            println!("{lugar}");
+            println!("  temperatura : {} C", d.temp);
+            println!("  condicion   : codigo WMO {}", d.code);
+            println!(
+                "  consulta    : {:.0} ms",
+                t.elapsed().as_secs_f64() * 1000.0
+            );
+        }
+        None => {
+            println!("No se pudo obtener el clima.");
+            println!("Puede ser falta de red, o que los tres proveedores de geo-IP");
+            println!("esten rechazando peticiones ahora mismo.");
+        }
+    }
+    Ok(())
+}
+
+fn cmd_log_show() -> Result<()> {
+    match vd_core::log::log_path() {
+        Some(p) => println!("Archivo: {}\n", p.display()),
+        None => println!("No se pudo determinar la ruta del registro.\n"),
+    }
+    let texto = vd_core::log::read_recent(16 * 1024);
+    if texto.trim().is_empty() {
+        println!("(vacio)");
+    } else {
+        print!("{texto}");
+    }
+    Ok(())
+}
+
+/// Escribe una entrada de cada nivel y la vuelve a leer. Comprueba de punta a
+/// punta que el registro escribe donde dice y que lo escrito se recupera intacto
+/// —acentos incluidos, que es donde fallaba la version con PowerShell—.
+fn cmd_log_test() -> Result<()> {
+    use vd_core::log::{self, Level};
+
+    log::info("cli", "prueba de registro: nivel informativo");
+    log::warn("cli", "prueba de registro: advertencia");
+    log::write_meta(
+        Level::Error,
+        "cli",
+        "prueba con acentos y ñ, y un dato adjunto",
+        Some(&serde_json::json!({ "modulo": "log", "ok": true })),
+    );
+
+    let texto = log::read_recent(4096);
+    let escribio = texto.contains("prueba con acentos y ñ");
+    println!(
+        "{}",
+        if escribio {
+            "OK: las tres entradas se escribieron y se pudieron releer."
+        } else {
+            "FALLO: no se encontro lo que se acaba de escribir."
+        }
+    );
+    for linea in texto
+        .lines()
+        .rev()
+        .take(3)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+    {
+        println!("  {linea}");
     }
     Ok(())
 }

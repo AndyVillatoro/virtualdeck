@@ -29,10 +29,6 @@ use super::{Sensor, SensorCategory, SensorKind, SensorSource};
 /// prefiere devolver la ultima lectura conocida antes que bloquear la UI.
 const TIMEOUT: Duration = Duration::from_secs(4);
 
-/// Un servicio en localhost contesta en milisegundos o no esta. Esperar mas solo
-/// alarga el bloqueo cuando LHM no esta corriendo.
-const TIMEOUT_CONEXION: Duration = Duration::from_millis(600);
-
 /// Tras un fallo, cuanto esperar antes de volver a intentarlo.
 ///
 /// Sin esto, tener LHM activado en los ajustes pero **no** corriendo — que es el
@@ -55,9 +51,6 @@ pub struct LhmClient {
     cache: Vec<Sensor>,
     /// Cuando fallo el ultimo intento, para aplicar [`REINTENTO_TRAS_FALLO`].
     ultimo_fallo: Option<Instant>,
-    /// Se construye una sola vez: crear un `Agent` por peticion tira el pool de
-    /// conexiones y obliga a reabrir el socket en cada lectura.
-    agente: ureq::Agent,
 }
 
 impl LhmClient {
@@ -71,11 +64,6 @@ impl LhmClient {
             error: None,
             cache: Vec::new(),
             ultimo_fallo: None,
-            agente: ureq::Agent::config_builder()
-                .timeout_global(Some(TIMEOUT))
-                .timeout_connect(Some(TIMEOUT_CONEXION))
-                .build()
-                .new_agent(),
         }
     }
 
@@ -172,24 +160,8 @@ impl LhmClient {
     }
 
     fn fetch(&self) -> Result<Value, String> {
-        let mut resp = self
-            .agente
-            .get(self.url())
-            .call()
-            .map_err(|e| format!("no se pudo conectar con LibreHardwareMonitor: {e}"))?;
-
-        if !resp.status().is_success() {
-            return Err(format!(
-                "LibreHardwareMonitor respondio HTTP {}",
-                resp.status()
-            ));
-        }
-
-        let cuerpo = resp
-            .body_mut()
-            .read_to_string()
-            .map_err(|e| format!("respuesta ilegible: {e}"))?;
-
+        let cuerpo = crate::net::get_text(&self.url(), TIMEOUT)
+            .map_err(|e| format!("LibreHardwareMonitor: {e}"))?;
         serde_json::from_str(&cuerpo).map_err(|e| format!("JSON invalido: {e}"))
     }
 }

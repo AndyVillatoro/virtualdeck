@@ -4,8 +4,8 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 — núcleo, 6 de 9 módulos**. Rama: `rewrite/rust`.
-> Última actualización: 2026-08-14.
+> Estado: **Fase 1 — núcleo, 9 de 10 módulos**. Solo falta `actions`.
+> Rama: `rewrite/rust`. Última actualización: 2026-08-15.
 
 ---
 
@@ -14,11 +14,11 @@
 ```bash
 git checkout rewrite/rust
 export PATH="$HOME/.cargo/bin:$PATH"        # o abrir una terminal nueva
-cargo test --workspace -- --test-threads=1  # 70 tests, deben dar todos verde
+cargo test --workspace -- --test-threads=1  # 106 tests, deben dar todos verde
 cargo run -p vd-cli -- help                 # ver qué se puede ejercitar ya
 ```
 
-**Dónde quedó**: el núcleo (`vd-core`) tiene 7 módulos funcionando y verificados
+**Dónde quedó**: el núcleo (`vd-core`) tiene 9 módulos funcionando y verificados
 contra hardware real. No existe UI todavía — eso es la Fase 2.
 
 | Módulo | Estado | Verificado con |
@@ -30,12 +30,14 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `launcher` | ✅ | 14/14 comandos; brillo aplicado a 2 pantallas |
 | `rgb` | 🟡 | Lee el controlador Aura; **escribir colores NO funciona** |
 | `sensors` | ✅ | 38 sensores reales: i5-13600KF (20 hilos) + RTX 4080 completa |
-| `weather` + `log` | ⬜ | **← empezar por acá** |
-| `actions` | ⬜ | Motor que orquesta todo; va último |
+| `net` | ✅ | HTTP/HTTPS sobre WinHTTP; test con servidor local |
+| `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
+| `actions` | ⬜ | **← empezar por acá.** Motor que orquesta todo; cierra la Fase 1 |
 
-**Lo próximo, concreto**: `weather` (geo-IP + Open-Meteo) y `log` (log rotativo).
-Los dos son triviales y sin riesgo. Después queda `actions`, que es el motor que
-orquesta todo y cierra la Fase 1.
+**Lo próximo, concreto**: `actions`, el motor de ejecución. Es lo único que falta
+para el criterio de "Fase 1 terminada": que `vd-cli` pueda ejecutar cualquier
+acción de un `deck-config.json` real sin abrir una ventana. Necesita `interpolate`,
+`branch`, secuencias y toggle, y todos sus módulos dependientes ya están listos.
 
 **Lo que quedó abierto y por qué**:
 - **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
@@ -54,6 +56,9 @@ orquesta todo y cierra la Fase 1.
   widget ya configurado pasaría a mostrar otra magnitud sin avisar.
 - La espera de reintento de LHM: sin ella, tener el nivel 2 activado y LHM cerrado
   cuesta 2,6 s por refresco y deja la interfaz a tirones.
+- En `net`, las cadenas anchas atadas a variables antes de pasarlas como `PCWSTR`:
+  escribirlas en línea funciona hoy por las reglas de vida de los temporales, pero
+  cualquier refactor las convierte en punteros colgantes.
 
 ---
 
@@ -123,7 +128,8 @@ virtualdeck/
 │   │   │   ├── media/            # SMTC (WinRT) + fallback por títulos de ventana
 │   │   │   ├── macro/            # grabación (hooks) + reproducción (SendInput)
 │   │   │   ├── rgb/              # cliente OpenRGB (TCP)
-│   │   │   ├── sensors/          # LHM vía HTTP
+│   │   │   ├── sensors/          # nativo (sysinfo + NVML) + LHM opcional
+│   │   │   ├── net/              # cliente HTTP/HTTPS sobre WinHTTP
 │   │   │   ├── launcher/         # apps, scripts, hotkeys, brillo, volumen, snap
 │   │   │   ├── weather/          # geo-IP + Open-Meteo
 │   │   │   ├── actions/          # motor de ejecución (runActionSequence, branch, interpolate)
@@ -204,7 +210,7 @@ Orden deliberado: **primero lo más riesgoso**, para que un fracaso aparezca tem
 | 1.6 | **`launcher`** | 🟡 user32 + WMI | Apps, hotkeys, brillo, volumen, snap, procesos |
 | 1.7 | **`rgb`** | 🟡 Protocolo binario | Conecta a OpenRGB y aplica color/modo/perfil |
 | 1.8 | **`sensors`** | 🟢 Dos niveles | Lee CPU/RAM/disco/red y GPU sin nada instalado; LHM opcional |
-| 1.9 | **`weather`** + **`log`** | 🟢 Trivial | — |
+| 1.9 | **`weather`** + **`log`** | 🟢 Trivial | Clima real por geo-IP; log releído con acentos intactos |
 | 1.10 | **`actions`** | Motor que orquesta todo | Tests de `interpolate`, `branch`, secuencias, toggle |
 
 **Entregable de fase**: `vd-cli` puede ejecutar **cualquier acción** del `deck-config.json`
@@ -488,8 +494,8 @@ y confirmar que se ve y se comporta idéntico. Es el contrato con los usuarios e
 | 1.6 — `launcher` | ✅ **Completa** — los 14 comandos, brillo incluido |
 | 1.7 — `rgb` | 🟡 **Lectura sí, escritura no** — ver abajo |
 | 1.8 — `sensors` | ✅ **Completa** — nivel 1 nativo + LHM opcional; LHM ya no se empaqueta |
-| 1.9 `weather`+`log` | ⬜ **← siguiente** |
-| 1.10 `actions` | ⬜ No iniciada |
+| 1.9 — `weather` + `log` | ✅ **Completa** — incluye `net`, cliente HTTP sobre WinHTTP |
+| 1.10 — `actions` | ⬜ **← siguiente** |
 | 2 — `vd-app` (UI egui) | ⬜ No iniciada |
 | 3 — Paridad + v1.0.0 | ⬜ No iniciada |
 
@@ -645,6 +651,34 @@ refrescos seguidos.
 Detalle que importa para la compatibilidad: los botones ya configurados guardan el
 ID del sensor. Los IDs de LHM se respetan tal cual y los nativos usan prefijos
 propios (`/native/…`, `/nvml/…`), con un test que verifica que no puedan chocar.
+
+### ✅ Clima y registro: HTTPS sin pila TLS
+
+`weather` y `log` eran los dos módulos triviales de la fase, pero el clima trajo
+una decisión que no lo era: **necesita HTTPS**, y en Rust eso normalmente significa
+arrastrar `rustls` con su proveedor criptográfico y un paquete de certificados
+raíz, o `native-tls`. Cualquiera de los dos pesa más que varios módulos del núcleo
+juntos, con un objetivo de instalador por debajo de 20 MB.
+
+La salida fue **WinHTTP**, que ya venía declarada en el crate `windows` del que el
+proyecto depende. Cero bytes añadidos, cero dependencias nuevas, y dos ventajas que
+no se buscaban: usa el almacén de certificados de Windows —así que funciona detrás
+de proxies corporativos que inspeccionan tráfico, donde un paquete de raíces
+embebido fallaría— y respeta la configuración de proxy del sistema sin código extra.
+
+De paso, el cliente de LHM se migró a WinHTTP y **`ureq` salió del proyecto**: ocho
+dependencias menos y una sola pila HTTP en vez de dos.
+
+Esa migración destapó un hueco: el camino de éxito del cliente de LHM **no tenía
+ningún test**. Solo se probaban el parseo y el fallo de conexión, así que cambiar de
+pila HTTP se estaba haciendo a ciegas. Ahora hay un test que levanta un servidor en
+un puerto efímero y sirve un `/data.json` real. El primer intento de ese test pasó
+*por la razón equivocada* —el caso del HTTP 500 daba verde porque la conexión
+fallaba, no porque el 500 se detectara—, así que ahora exige que el mensaje de error
+nombre el código.
+
+Verificado en vivo: clima real por geo-IP en 966 ms, y el registro releído con
+acentos y ñ intactos, que es exactamente lo que la versión con PowerShell rompía.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 
