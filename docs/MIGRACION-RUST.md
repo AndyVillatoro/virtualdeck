@@ -4,8 +4,8 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 completa. Fase 2 en marcha** — la rejilla ya se dibuja y
-> ejecuta acciones desde la configuración real.
+> Estado: **Fase 1 completa. Fase 2 en marcha** — la aplicación abre, ejecuta
+> acciones, vive en la bandeja y responde a atajos globales. Falta el editor.
 > Rama: `rewrite/rust`. Última actualización: 2026-08-15.
 
 ---
@@ -15,13 +15,14 @@
 ```bash
 git checkout rewrite/rust
 export PATH="$HOME/.cargo/bin:$PATH"        # o abrir una terminal nueva
-cargo test --workspace -- --test-threads=1  # 132 tests, deben dar todos verde
+cargo test --workspace -- --test-threads=1  # 149 tests, deben dar todos verde
+cargo run                                   # abre la aplicacion
 cargo run -p vd-cli -- run list             # botones ejecutables de tu config real
 cargo run -p vd-cli -- help                 # ver qué se puede ejercitar ya
 ```
 
-**Dónde quedó**: el núcleo (`vd-core`) tiene 9 módulos funcionando y verificados
-contra hardware real. No existe UI todavía — eso es la Fase 2.
+**Dónde quedó**: el núcleo (`vd-core`) está completo y verificado contra hardware
+real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 
 | Módulo | Estado | Verificado con |
 |---|---|---|
@@ -36,12 +37,14 @@ contra hardware real. No existe UI todavía — eso es la Fase 2.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: **pulsación larga** (`long_press_action`), **toggle** y
-**arrastrar para reordenar**. Después, la bandeja del sistema y los atajos
-globales, que son la razón de usar winit directo.
+**Lo próximo, concreto**: el **editor** de botones, que es la pieza grande que
+falta para paridad —sin él no se puede configurar nada desde la aplicación—, y
+las funciones sueltas de la rejilla: pulsación larga, toggle y arrastrar para
+reordenar.
 
-Ya funciona: `cargo run` abre la rejilla con la configuración real, con los
-iconos de marca dibujados, y ejecuta acciones al hacer clic.
+Ya funciona: `cargo run` abre la rejilla con la configuración real y los iconos
+de marca, ejecuta acciones al hacer clic, vive en la bandeja del sistema y
+responde a atajos globales.
 
 El spike de texto está cerrado: acentos, ñ, teclas muertas, IME y pegado, todo
 verificado. Se puede volver a pasar cuando se actualice egui o winit:
@@ -896,6 +899,41 @@ simetría, rellenar por la derecha añade solo apagados. **Sigue estando mal en
 
 Lo que **aún no** hace la pantalla: los iconos de lucide (`icon`, 1 botón),
 imágenes de fondo, pulsación larga, toggle y arrastrar para reordenar.
+
+### ✅ Fase 2 — bandeja y atajos globales: la decisión de winit se confirma
+
+Se portó antes que funciones más vistosas por un motivo concreto: **era el
+riesgo de arquitectura que quedaba**. La elección de winit directo en vez de
+`eframe` se justificó diciendo que `tray-icon` y `global-hotkey` necesitan que su
+cola de eventos se bombee desde el bucle principal, algo que `eframe` no permite.
+Si eso no hubiera encajado, la decisión habría estado mal y cuanto antes se supiera,
+mejor.
+
+Encajó. Las dos bibliotecas publican en canales globales propios y se sondean en
+`about_to_wait`, una vez por vuelta del bucle. Son cuatro líneas.
+
+Lo que hay ahora:
+
+- **Icono de bandeja** con menú (Mostrar / Ocultar / Salir). Clic izquierdo
+  alterna la ventana; el derecho abre el menú. El icono se **dibuja en código**
+  como una rejilla de puntos con antialiasing, en vez de empotrar un PNG: no hay
+  decodificador ni archivo que pueda faltar, y encaja con la estética del
+  proyecto.
+- **Cerrar la ventana ya no cierra la aplicación**, que es como se comporta un
+  deck. Con una salvedad: si la bandeja no se pudo crear, cerrar sí sale —
+  esconder una ventana sin forma de recuperarla sería perder la aplicación.
+- **Atajos globales** leídos de la configuración. Un atajo que ya tenga otra
+  aplicación falla al registrarse; eso **no** impide que los demás funcionen, y el
+  motivo se guarda para poder decirlo. Un atajo mudo sin explicación es de lo más
+  desconcertante que le puede pasar a un usuario.
+- Escondida, la ventana **deja de pedir fotogramas**: seguir dibujando a 144 fps
+  para nadie gastaría GPU sin motivo.
+
+Detalle del formato: la configuración guarda los atajos con los nombres de
+Electron (`CommandOrControl+Shift+P`) y la biblioteca de Rust espera los suyos.
+La traducción tiene un test que **no compara cadenas**, sino que comprueba que lo
+traducido lo parsee de verdad `global-hotkey`; y otro que registra un atajo real
+en Windows y lo libera, porque el parseo puede estar bien y el registro fallar.
 
 ### ⚠️ Deuda pendiente: el robo de foco
 

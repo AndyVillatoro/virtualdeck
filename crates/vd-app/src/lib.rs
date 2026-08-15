@@ -4,6 +4,8 @@
 //! validan las decisiones técnicas antes de portar pantallas.
 
 pub mod app;
+pub mod atajos;
+pub mod bandeja;
 pub mod demo;
 pub mod iconos;
 pub mod pantallas;
