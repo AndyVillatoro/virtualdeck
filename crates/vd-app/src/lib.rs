@@ -4,3 +4,5 @@
 //! validan las decisiones técnicas antes de portar pantallas.
 
 pub mod demo;
+#[cfg(feature = "render-wgpu")]
+pub mod render;

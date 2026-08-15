@@ -5,22 +5,16 @@
 //! entrada de texto no maneja acentos, ñ o IME, esa elección se cae y conviene
 //! descubrirlo ahora y no después de portar catorce pantallas.
 //!
-//! La versión Electron heredaba el manejo de texto del navegador y ahí esto no
-//! era una pregunta. Aquí sí: winit entrega los caracteres y egui los acumula, y
-//! entre medias hay teclas muertas, composición e IME.
+//! # Los dos modos
 //!
-//! # Qué comprueba, y cómo
+//! **Automático** (por defecto): abre la ventana, se trae el primer plano y le
+//! inyecta el texto con el mismo `SendInput` del módulo de macros. Recorre la
+//! cadena real —Windows → winit → egui-winit → `TextEdit`— sin depender de que
+//! una persona teclee, y compara lo recibido con lo esperado.
 //!
-//! Se abre una ventana y se le envían los caracteres con `WM_CHAR`, que es
-//! exactamente el mensaje que Windows genera al traducir una pulsación de tecla.
-//! El recorrido probado es `WM_CHAR` → winit → egui-winit → `TextEdit`, que es
-//! donde vive el riesgo real: la conversión de UTF-16 a UTF-8, los pares
-//! suplentes y el manejo de caracteres fuera de ASCII.
-//!
-//! **Por qué no `SendInput`**, que sería más realista: `SendInput` va a la
-//! ventana con el foco del sistema, y Windows no deja que un proceso que no está
-//! en primer plano se lo quede. Un spike que depende de ganar el foco falla por
-//! una razón que no tiene nada que ver con lo que quiere medir.
+//! **Manual**: para lo que no se puede automatizar, que es el IME de verdad
+//! (teclado chino/japonés, panel de emoji de Windows con `Win + .`) y las teclas
+//! muertas del driver de teclado.
 //!
 //! # Lo que se aprendió
 //!
@@ -28,25 +22,22 @@
 //!    compuesto en `KeyEvent::text` y egui lo inserta tal cual.
 //! 2. **Los pares suplentes NO llegan por teclado.** Un emoji enviado con
 //!    `SendInput` viaja como dos mitades UTF-16 y winit las entrega con
-//!    `text: None`, porque ninguna mitad es un carácter válida por separado y
+//!    `text: None`, porque ninguna mitad es un carácter válido por separado y
 //!    winit no las recombina. En la práctica no importa: nadie teclea un emoji
 //!    carácter a carácter, se pega.
 //! 3. **La feature `clipboard` de `egui-winit` es imprescindible.** Sin ella,
 //!    egui ignora Ctrl+V en silencio y no se puede pegar en ningún campo. Se
 //!    descubrió aquí, no en producción.
 //!
-//! Lo que **no** cubre: el IME de verdad (teclado chino/japonés, panel de emoji
-//! de Windows) y las teclas muertas del driver de teclado. Eso necesita una
-//! persona, y para eso está el modo manual.
-//!
 //! ```text
 //! cargo run -p vd-app --bin spike_texto            # automático
 //! cargo run -p vd-app --bin spike_texto -- manual  # para probar el IME a mano
 //! ```
 
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use egui::ViewportId;
+use vd_app::render::Lienzo;
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
@@ -63,7 +54,7 @@ const TEXTO_ESPANOL: &str = "áéíóú ñÑ ¿¡ üÜ €";
 const EMOJI: &str = "🎛";
 
 /// Margen antes de rendirse en el modo automático.
-const LIMITE: Duration = Duration::from_secs(10);
+const LIMITE: Duration = Duration::from_secs(15);
 
 fn main() -> anyhow::Result<()> {
     let manual = std::env::args().any(|a| a == "manual");
@@ -72,10 +63,9 @@ fn main() -> anyhow::Result<()> {
     event_loop.set_control_flow(ControlFlow::Poll);
 
     let mut app = Spike {
-        window: None,
-        egui_ctx: egui::Context::default(),
-        egui_state: None,
+        lienzo: None,
         buffer: String::new(),
+        pegado: String::new(),
         manual,
         fase: Fase::Esperando,
         enfocado: false,
@@ -83,30 +73,23 @@ fn main() -> anyhow::Result<()> {
         inicio: Instant::now(),
         resultado: None,
     };
-
     event_loop.run_app(&mut app)?;
 
     match app.resultado {
         Some(true) => {
-            println!("\nRESULTADO: egui recibe correctamente acentos, ñ y símbolos.");
-            println!("La elección de egui + winit se sostiene; se puede seguir con la Fase 2.");
+            println!("\nRESULTADO: la entrada de texto de egui + winit sirve para el proyecto.");
+            println!("Acentos y ñ por teclado; caracteres fuera del plano básico por pegado.");
+            println!("\nFalta comprobar el IME a mano:");
+            println!("  cargo run -p vd-app --bin spike_texto -- manual");
             Ok(())
         }
         Some(false) => {
-            anyhow::bail!("la entrada de texto NO llegó intacta — ver el detalle de arriba")
+            anyhow::bail!("la entrada de texto NO llegó intacta — ver el detalle arriba")
         }
         None if manual => Ok(()),
         None => {
             anyhow::bail!("el spike terminó sin veredicto (¿se cerró la ventana antes de tiempo?)")
         }
-    }
-}
-
-/// Saca el `HWND` de una ventana de winit.
-fn hwnd_de(window: &Window) -> Option<isize> {
-    match window.window_handle().ok()?.as_raw() {
-        RawWindowHandle::Win32(h) => Some(h.hwnd.get()),
-        _ => None,
     }
 }
 
@@ -122,10 +105,11 @@ enum Fase {
 }
 
 struct Spike {
-    window: Option<Window>,
-    egui_ctx: egui::Context,
-    egui_state: Option<egui_winit::State>,
+    lienzo: Option<Lienzo>,
     buffer: String,
+    /// Campo aparte para el pegado, para que en modo manual se vean los dos
+    /// casos a la vez sin que uno pise al otro.
+    pegado: String,
     manual: bool,
     fase: Fase,
     /// Si ya se le pidió el foco al campo de texto.
@@ -136,100 +120,92 @@ struct Spike {
     resultado: Option<bool>,
 }
 
+/// Saca el `HWND` de una ventana de winit.
+fn hwnd_de(window: &Window) -> Option<isize> {
+    match window.window_handle().ok()?.as_raw() {
+        RawWindowHandle::Win32(h) => Some(h.hwnd.get()),
+        _ => None,
+    }
+}
+
 impl ApplicationHandler for Spike {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_some() {
+        if self.lienzo.is_some() {
             return;
         }
         let atributos = Window::default_attributes()
             .with_title("VirtualDeck — spike de entrada de texto")
-            .with_inner_size(winit::dpi::LogicalSize::new(560.0, 220.0));
+            .with_inner_size(winit::dpi::LogicalSize::new(620.0, 340.0));
 
-        let window = event_loop.create_window(atributos).expect("crear ventana");
+        let window = match event_loop.create_window(atributos) {
+            Ok(w) => Arc::new(w),
+            Err(e) => {
+                eprintln!("No se pudo crear la ventana: {e}");
+                event_loop.exit();
+                return;
+            }
+        };
 
-        self.egui_state = Some(egui_winit::State::new(
-            self.egui_ctx.clone(),
-            ViewportId::ROOT,
-            &window,
-            None,
-            None,
-            None,
-        ));
-        // Sin foco del sistema, `SendInput` escribiría en la ventana que
-        // estuviera activa — casi seguro la terminal desde la que se lanzó esto.
-        // `focus_window()` de winit no basta: Windows impide que un proceso que
-        // no está en primer plano robe el foco, así que hace falta la maniobra
-        // de `force_foreground`.
-        window.focus_window();
-        self.window = Some(window);
+        match Lienzo::nuevo(window) {
+            Ok(l) => self.lienzo = Some(l),
+            Err(e) => {
+                eprintln!("No se pudo inicializar el renderizado: {e}");
+                event_loop.exit();
+                return;
+            }
+        }
+        self.inicio = Instant::now();
 
-        println!("Ventana abierta.");
         if self.manual {
-            println!("Modo manual: escribí en el campo. Probá acentos, ñ y el IME.");
-            println!("Cerrá la ventana para terminar.");
+            println!("Modo manual. En la ventana:");
+            println!("  1. Escribí acentos y ñ en el primer campo.");
+            println!("  2. Probá el panel de emoji de Windows (Win + .) en el segundo.");
+            println!("  3. Probá pegar con Ctrl+V.");
+            println!("Debajo de cada campo se ven los puntos de código recibidos.");
+            println!("Cerrá la ventana cuando termines.");
         } else {
             println!("Modo automático: dos casos, teclado y pegado.");
         }
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
-        let (Some(window), Some(state)) = (self.window.as_ref(), self.egui_state.as_mut()) else {
+        let Some(lienzo) = self.lienzo.as_mut() else {
             return;
         };
+        lienzo.evento(&event);
 
-        // egui necesita ver **todos** los eventos de ventana: es quien decide qué
-        // es entrada de texto y qué no.
-        let respuesta = state.on_window_event(window, &event);
-
-        // Diagnóstico opcional: sin esto, un fallo del spike no dice en qué
-        // eslabón de la cadena se perdió el texto.
-        if std::env::var_os("VD_SPIKE_DIAG").is_some() {
-            match &event {
-                WindowEvent::KeyboardInput { event: ke, .. } => println!(
-                    "[diag] tecla: estado={:?} texto={:?} consumido={}",
-                    ke.state, ke.text, respuesta.consumed
-                ),
-                WindowEvent::Ime(ime) => println!("[diag] IME: {ime:?}"),
-                WindowEvent::Focused(f) => println!("[diag] foco de ventana: {f}"),
-                _ => {}
-            }
+        match event {
+            WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::Resized(tam) => lienzo.redimensionar(tam.width, tam.height),
+            WindowEvent::RedrawRequested => self.pintar(),
+            _ => {}
         }
-
-        if matches!(event, WindowEvent::CloseRequested) {
-            event_loop.exit();
-            return;
-        }
-
-        self.dibujar();
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        if self.window.is_none() {
+        if self.lienzo.is_none() {
             return;
         }
-        self.dibujar();
+        self.pintar();
 
         if self.manual || self.resultado.is_some() {
             return;
         }
 
         if self.inicio.elapsed() > LIMITE {
-            println!(
-                "
-Se agotó el tiempo de espera esperando el primer plano."
-            );
+            println!("\nSe agotó el tiempo de espera esperando el primer plano.");
             self.resultado = Some(false);
             event_loop.exit();
             return;
         }
 
-        let Some(hwnd) = self.window.as_ref().and_then(hwnd_de) else {
+        let Some(hwnd) = self.lienzo.as_ref().and_then(|l| hwnd_de(l.window())) else {
             return;
         };
 
-        // Se reintenta el primer plano en cada fotograma: justo despues de crear
-        // la ventana el sistema aun no la considera lista, y el primer intento
-        // falla por eso, no por la restriccion de foco de Windows.
+        // Se reintenta el primer plano en cada fotograma: justo después de crear
+        // la ventana el sistema aún no la considera lista y el primer intento
+        // falla por eso, no por la restricción de foco de Windows.
         if !self.al_frente {
             self.al_frente = vd_core::launcher::force_foreground(hwnd);
             if !self.al_frente {
@@ -239,10 +215,7 @@ Se agotó el tiempo de espera esperando el primer plano."
 
         match self.fase {
             Fase::Esperando => {
-                println!(
-                    "
-[1/2] Tecleando texto en español..."
-                );
+                println!("\n[1/2] Tecleando texto en español...");
                 if let Err(e) = vd_core::launcher::type_text(TEXTO_ESPANOL) {
                     eprintln!("No se pudo teclear: {e}");
                     self.resultado = Some(false);
@@ -252,47 +225,43 @@ Se agotó el tiempo de espera esperando el primer plano."
                 self.fase = Fase::Tecleado;
             }
             Fase::Tecleado => {
-                // Se espera a que hayan llegado todos los caracteres.
                 if self.buffer.chars().count() < TEXTO_ESPANOL.chars().count() {
                     return;
                 }
-                let ok = comparar(
+                if !comparar(
                     "texto en español tecleado",
                     TEXTO_ESPANOL,
                     self.buffer.trim(),
-                );
-                if !ok {
+                ) {
                     self.resultado = Some(false);
                     event_loop.exit();
                     return;
                 }
 
-                println!(
-                    "
-[2/2] Pegando un emoji desde el portapapeles..."
-                );
-                self.buffer.clear();
+                println!("\n[2/2] Pegando un emoji desde el portapapeles...");
                 if let Err(e) = vd_core::launcher::set_clipboard(EMOJI) {
                     eprintln!("No se pudo escribir en el portapapeles: {e}");
                     self.resultado = Some(false);
                     event_loop.exit();
                     return;
                 }
+                // El foco tiene que estar ya en el segundo campo antes de pegar,
+                // y eso lo decide el fotograma siguiente.
+                self.fase = Fase::Pegado;
+                self.inicio = Instant::now();
+                self.pintar();
                 if let Err(e) = vd_core::launcher::send_hotkey("Ctrl+V") {
                     eprintln!("No se pudo enviar Ctrl+V: {e}");
                     self.resultado = Some(false);
                     event_loop.exit();
-                    return;
                 }
-                self.fase = Fase::Pegado;
-                self.inicio = Instant::now();
             }
             Fase::Pegado => {
                 // El pegado no es instantáneo; se le da un margen antes de juzgar.
-                if self.buffer.trim().is_empty() && self.inicio.elapsed() < Duration::from_secs(3) {
+                if self.pegado.trim().is_empty() && self.inicio.elapsed() < Duration::from_secs(3) {
                     return;
                 }
-                let ok = comparar("emoji pegado (par suplente)", EMOJI, self.buffer.trim());
+                let ok = comparar("emoji pegado (par suplente)", EMOJI, self.pegado.trim());
                 self.resultado = Some(ok);
                 event_loop.exit();
             }
@@ -301,33 +270,83 @@ Se agotó el tiempo de espera esperando el primer plano."
 }
 
 impl Spike {
-    /// Corre un fotograma de egui.
-    ///
-    /// No se dibuja nada en pantalla: este spike prueba la **entrada**, y montar
-    /// un renderer (wgpu o glow) para responder a la pregunta sería trabajo que
-    /// no cambia la respuesta. La ventana se ve en blanco y es correcto.
-    fn dibujar(&mut self) {
-        let (Some(window), Some(state)) = (self.window.as_ref(), self.egui_state.as_mut()) else {
+    fn pintar(&mut self) {
+        let Some(lienzo) = self.lienzo.as_mut() else {
             return;
         };
 
-        let entrada = state.take_egui_input(window);
+        // El foco de teclado en egui es explícito: un `TextEdit` recién creado no
+        // lo tiene, y sin foco descarta la entrada en silencio. No basta con que
+        // la ventana esté activa.
         let pedir_foco = !self.enfocado;
-        let salida = self.egui_ctx.run(entrada, |ctx| {
+        // El guion automático pega en el segundo campo, así que hay que moverle
+        // el foco cuando llega ese turno.
+        let foco_en_pegado = !self.manual && self.fase == Fase::Pegado;
+
+        let buffer = &mut self.buffer;
+        let pegado = &mut self.pegado;
+
+        lienzo.dibujar(|ctx| {
             egui::CentralPanel::default().show(ctx, |ui| {
-                ui.label("Escribí texto con acentos, ñ e IME:");
-                let campo = ui.text_edit_singleline(&mut self.buffer);
-                // En egui el foco de teclado es explícito: un `TextEdit` recién
-                // creado no lo tiene, y sin foco descarta la entrada en silencio.
-                // Hay que pedirlo, no basta con que la ventana esté activa.
-                if pedir_foco {
+                ui.add_space(6.0);
+                ui.heading("Entrada de texto");
+                ui.separator();
+
+                ui.add_space(6.0);
+                ui.label("1 · Tecleado — acentos, ñ, ¿¡ y teclas muertas:");
+                let campo = ui.add(
+                    egui::TextEdit::singleline(buffer)
+                        .desired_width(f32::INFINITY)
+                        .hint_text("escribí aquí"),
+                );
+                if pedir_foco && !foco_en_pegado {
                     campo.request_focus();
                 }
+                ui.label(
+                    egui::RichText::new(puntos_de_codigo(buffer))
+                        .small()
+                        .monospace()
+                        .weak(),
+                );
+
+                ui.add_space(12.0);
+                ui.label("2 · Pegado e IME — Ctrl+V y el panel de emoji (Win + .):");
+                let campo2 = ui.add(
+                    egui::TextEdit::singleline(pegado)
+                        .desired_width(f32::INFINITY)
+                        .hint_text("pegá aquí"),
+                );
+                if foco_en_pegado {
+                    campo2.request_focus();
+                }
+                // Ver los puntos de código es lo que distingue "se ve raro" de
+                // saber si el problema es la composición o los pares suplentes.
+                ui.label(
+                    egui::RichText::new(puntos_de_codigo(pegado))
+                        .small()
+                        .monospace()
+                        .weak(),
+                );
             });
         });
         self.enfocado = true;
-        state.handle_platform_output(window, salida.platform_output);
     }
+}
+
+/// Muestra los puntos de código de un texto, recortando si es largo.
+fn puntos_de_codigo(s: &str) -> String {
+    if s.is_empty() {
+        return "(vacío)".into();
+    }
+    let mut salida: Vec<String> = s
+        .chars()
+        .take(10)
+        .map(|c| format!("U+{:04X}", c as u32))
+        .collect();
+    if s.chars().count() > 10 {
+        salida.push("…".into());
+    }
+    format!("{} caracteres · {}", s.chars().count(), salida.join(" "))
 }
 
 /// Compara lo recibido con lo esperado y explica la diferencia si la hay.

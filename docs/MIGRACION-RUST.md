@@ -780,9 +780,19 @@ Como argumento secundario, el código de wgpu es bastante más simple: comparar
 a elegir el formato de píxel antes de que la ventana exista del todo.
 
 Los dos backends quedan en el repositorio tras features de cargo, para poder
-repetir la medición si cambia alguna premisa.
+repetir la medición si cambia alguna premisa. El montaje ganador vive en
+`vd-app/src/render.rs` (`Lienzo`), que es ya código de la aplicación: las
+pantallas solo escriben su interfaz y no repiten la ceremonia de wgpu.
 
-**Dos tropiezos que valen como aviso:**
+**Un fallo de bulto en el spike de texto.** Lo entregué **sin renderer**, con el
+argumento de que probaba la entrada y no el dibujo. En modo automático daba igual
+—compara los buffers por dentro— pero el modo manual, que es justo el que se le
+pide a una persona, mostraba una ventana en blanco donde no se veía nada de lo
+que se escribía. Inservible. Ya usa el `Lienzo` de wgpu y enseña además los puntos
+de código de cada campo, que es lo que permite distinguir "se ve raro" de saber si
+falla la composición o el par suplente.
+
+**Dos tropiezos más, que valen como aviso:**
 
 - `egui-wgpu 0.32` exige **wgpu 25**, no la última. Fijar la 27 arrastra un
   `naga` incompatible y el error que sale —`String: WriteColor no satisfecho`,

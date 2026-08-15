@@ -74,6 +74,7 @@ render-glow = [
 [[bin]]
 name = "spike_texto"
 path = "src/bin/spike_texto.rs"
+required-features = ["render-wgpu"]
 
 [[bin]]
 name = "spike_render_wgpu"
