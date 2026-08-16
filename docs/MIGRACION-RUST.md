@@ -37,10 +37,9 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: poder configurar los widgets **desde el editor** (hoy
-se dibujan pero solo se activan editando el JSON a mano), ampliar el editor a
-macros y secuencias, y después gestión de páginas y perfiles, ajustes, y el
-instalador.
+**Lo próximo, concreto**: ampliar el editor a **macros y secuencias de varias
+acciones**, que es lo último que obliga a tocar el JSON a mano. Después: gestión
+de páginas y perfiles, ajustes, y el instalador.
 
 La rejilla ya está completa como interacción: clic, pulsación larga, interruptores
 y arrastrar para reordenar.
@@ -1075,8 +1074,17 @@ viene de otro equipo o porque es de LHM y el nivel 2 está apagado.
 que un botón que solo tiene un reloj —sin etiqueta ni acción— se consideraba vacío
 y la rejilla lo dibujaba como un hueco. Corregido en el núcleo.
 
-Lo que el editor **aún no** cubre: macros, secuencias de varias acciones, ramas y
-la configuración de los propios widgets. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+**Los widgets ya se configuran desde el editor.** El selector de sensor ofrece
+los que **están dando lecturas ahora mismo**, con su hardware delante
+(«NVIDIA GeForce RTX 4080 · Temperatura»), en vez de pedir un identificador que
+nadie se sabe de memoria. Si el botón tiene guardado un sensor que aquí no
+existe —porque viene de otro equipo o es de LHM con el nivel 2 apagado— se
+muestra su id y se dice que no está disponible, en vez de aparecer vacío.
+
+Los umbrales son opcionales de verdad: una casilla decide si existen, porque
+«sin umbral» y «umbral en cero» son cosas distintas.
+
+Lo que el editor **aún no** cubre: macros, secuencias de varias acciones y ramas. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 

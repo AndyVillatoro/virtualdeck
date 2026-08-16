@@ -239,13 +239,14 @@ fn variable(
         // hasta que alguna acción la escriba.
         .unwrap_or_else(|| "—".into());
 
+    let prefijo = cfg.prefix.clone().unwrap_or_default();
     let sufijo = cfg.suffix.clone().unwrap_or_default();
     dos_lineas(
         pintor,
         rect,
         color,
         cuerpo,
-        &format!("{valor}{sufijo}"),
+        &format!("{prefijo}{valor}{sufijo}"),
         &recortar(&cfg.var_name, rect.width(), cuerpo * 0.85),
     );
 }

@@ -5,7 +5,7 @@
 //! deje cambios a medias.
 
 use egui::{Color32, RichText};
-use vd_core::config::model::{ActionType, ButtonConfig};
+use vd_core::config::model::{ActionType, ButtonConfig, SensorWidget, VarWidget, WidgetKind};
 
 use crate::app::App;
 
@@ -56,6 +56,14 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
     };
 
     let acento = app.acento();
+    // Se copia la lista de sensores porque `app` queda prestado mientras se
+    // dibuja el panel, y el selector la necesita para ofrecer los disponibles.
+    let sensores: Vec<(String, String, String)> = app
+        .datos
+        .sensores
+        .iter()
+        .map(|s| (s.id.clone(), s.name.clone(), s.hardware.clone()))
+        .collect();
     let mut guardar = false;
     let mut descartar = false;
 
@@ -82,6 +90,8 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
 
             egui::ScrollArea::vertical().show(ui, |ui| {
                 apariencia(ui, &mut borrador, acento);
+                ui.add_space(10.0);
+                widget(ui, &mut borrador, &sensores, acento);
                 ui.add_space(10.0);
                 accion(ui, &mut borrador);
             });
@@ -178,6 +188,178 @@ fn apariencia(ui: &mut egui::Ui, b: &mut ButtonConfig, acento: Color32) {
         color_opcional(ui, "Fondo", &mut b.bg_color);
         ui.add_space(12.0);
         color_opcional(ui, "Texto", &mut b.fg_color);
+    });
+}
+
+/// Tipos de widget, con su nombre para la lista.
+const WIDGETS: &[(WidgetKind, &str)] = &[
+    (WidgetKind::Clock, "Reloj"),
+    (WidgetKind::Weather, "Clima"),
+    (WidgetKind::NowPlaying, "Reproduccion"),
+    (WidgetKind::Sensor, "Sensor"),
+    (WidgetKind::Variable, "Variable"),
+];
+
+fn nombre_widget(k: Option<WidgetKind>) -> &'static str {
+    match k {
+        None => "Ninguno",
+        Some(kind) => WIDGETS
+            .iter()
+            .find(|(w, _)| *w == kind)
+            .map_or("Ninguno", |(_, n)| *n),
+    }
+}
+
+fn widget(
+    ui: &mut egui::Ui,
+    b: &mut ButtonConfig,
+    sensores: &[(String, String, String)],
+    acento: Color32,
+) {
+    ui.label(RichText::new("Widget").color(acento).small().strong());
+    ui.label(
+        RichText::new("Sustituye a la etiqueta por algo vivo. El boton sigue siendo pulsable.")
+            .small()
+            .color(Color32::from_gray(110)),
+    );
+    ui.add_space(4.0);
+
+    egui::ComboBox::from_id_salt("widget")
+        .selected_text(nombre_widget(b.widget))
+        .width(ui.available_width())
+        .show_ui(ui, |ui| {
+            if ui.selectable_label(b.widget.is_none(), "Ninguno").clicked() {
+                b.widget = None;
+            }
+            for (kind, nombre) in WIDGETS {
+                if ui
+                    .selectable_label(b.widget == Some(*kind), *nombre)
+                    .clicked()
+                {
+                    b.widget = Some(*kind);
+                }
+            }
+        });
+
+    match b.widget {
+        Some(WidgetKind::Sensor) => {
+            ui.add_space(6.0);
+            widget_sensor(ui, b, sensores);
+        }
+        Some(WidgetKind::Variable) => {
+            ui.add_space(6.0);
+            widget_variable(ui, b);
+        }
+        // Reloj, clima y reproduccion no tienen nada que configurar.
+        _ => {}
+    }
+}
+
+fn widget_sensor(ui: &mut egui::Ui, b: &mut ButtonConfig, sensores: &[(String, String, String)]) {
+    // Se crea la configuracion al vuelo: elegir el tipo de widget no deberia
+    // obligar a rellenar nada antes de ver el selector.
+    let cfg = b.sensor_widget.get_or_insert_with(|| SensorWidget {
+        sensor_id: String::new(),
+        suffix: None,
+        warn_at: None,
+        crit_at: None,
+    });
+
+    let actual = sensores
+        .iter()
+        .find(|(id, _, _)| *id == cfg.sensor_id)
+        .map(|(_, nombre, hw)| format!("{hw} · {nombre}"))
+        .unwrap_or_else(|| {
+            if cfg.sensor_id.is_empty() {
+                "Elegir sensor".to_string()
+            } else {
+                // El sensor guardado puede no existir aqui: viene de otro equipo,
+                // o es de LHM y el nivel 2 esta apagado. Se muestra su id para que
+                // se entienda por que el boton no ensena nada.
+                format!("{} (no disponible ahora)", cfg.sensor_id)
+            }
+        });
+
+    ui.label(RichText::new("Sensor").small());
+    egui::ComboBox::from_id_salt("sensor")
+        .selected_text(actual)
+        .width(ui.available_width())
+        .show_ui(ui, |ui| {
+            if sensores.is_empty() {
+                ui.label(
+                    RichText::new("Todavia no hay lecturas")
+                        .small()
+                        .color(Color32::from_gray(110)),
+                );
+            }
+            for (id, nombre, hw) in sensores {
+                if ui
+                    .selectable_label(cfg.sensor_id == *id, format!("{hw} · {nombre}"))
+                    .clicked()
+                {
+                    cfg.sensor_id = id.clone();
+                }
+            }
+        });
+
+    ui.add_space(6.0);
+    ui.label(RichText::new("Unidad (vacio = la del sensor)").small());
+    let mut sufijo = cfg.suffix.clone().unwrap_or_default();
+    if ui
+        .add(egui::TextEdit::singleline(&mut sufijo).desired_width(f32::INFINITY))
+        .changed()
+    {
+        cfg.suffix = (!sufijo.is_empty()).then_some(sufijo);
+    }
+
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new("Umbrales: el valor cambia de color al pasarlos")
+            .small()
+            .color(Color32::from_gray(110)),
+    );
+    umbral(ui, "Advertencia", &mut cfg.warn_at);
+    umbral(ui, "Critico", &mut cfg.crit_at);
+}
+
+/// Umbral opcional: se puede dejar sin definir, que no es lo mismo que cero.
+fn umbral(ui: &mut egui::Ui, etiqueta: &str, campo: &mut Option<f64>) {
+    ui.horizontal(|ui| {
+        let mut activo = campo.is_some();
+        if ui.checkbox(&mut activo, etiqueta).changed() {
+            *campo = activo.then_some(0.0);
+        }
+        if let Some(v) = campo.as_mut() {
+            ui.add(egui::DragValue::new(v).speed(1.0));
+        }
+    });
+}
+
+fn widget_variable(ui: &mut egui::Ui, b: &mut ButtonConfig) {
+    let cfg = b.var_widget.get_or_insert_with(|| VarWidget {
+        var_name: String::new(),
+        prefix: None,
+        suffix: None,
+    });
+
+    ui.label(RichText::new("Variable").small());
+    ui.add(egui::TextEdit::singleline(&mut cfg.var_name).desired_width(f32::INFINITY));
+
+    ui.add_space(6.0);
+    ui.horizontal(|ui| {
+        // Prefijo y sufijo envuelven al valor: "CPU " + "78" + " %".
+        for (etiqueta, campo) in [("Prefijo", &mut cfg.prefix), ("Sufijo", &mut cfg.suffix)] {
+            ui.vertical(|ui| {
+                ui.label(RichText::new(etiqueta).small());
+                let mut texto = campo.clone().unwrap_or_default();
+                if ui
+                    .add(egui::TextEdit::singleline(&mut texto).desired_width(90.0))
+                    .changed()
+                {
+                    *campo = (!texto.is_empty()).then_some(texto);
+                }
+            });
+        }
     });
 }
 
@@ -327,6 +509,35 @@ fn numero(ui: &mut egui::Ui, etiqueta: &str, valor: &mut Option<i64>, min: i64, 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn todos_los_widgets_tienen_nombre() {
+        for (kind, _) in WIDGETS {
+            assert_ne!(
+                nombre_widget(Some(*kind)),
+                "Ninguno",
+                "{kind:?} esta en la lista pero se muestra como Ninguno"
+            );
+        }
+        assert_eq!(nombre_widget(None), "Ninguno");
+    }
+
+    #[test]
+    fn la_lista_de_widgets_cubre_todos_los_tipos() {
+        // Si se agrega un tipo al modelo y no aqui, dejaria de poder elegirse sin
+        // que nada fallara.
+        let cubiertos: std::collections::HashSet<_> =
+            WIDGETS.iter().map(|(k, _)| format!("{k:?}")).collect();
+        for k in [
+            WidgetKind::Clock,
+            WidgetKind::Weather,
+            WidgetKind::NowPlaying,
+            WidgetKind::Sensor,
+            WidgetKind::Variable,
+        ] {
+            assert!(cubiertos.contains(&format!("{k:?}")), "falta {k:?}");
+        }
+    }
 
     #[test]
     fn todos_los_tipos_de_la_lista_tienen_nombre() {
