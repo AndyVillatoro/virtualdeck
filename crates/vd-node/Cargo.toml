@@ -9,12 +9,14 @@ license.workspace = true
 repository.workspace = true
 
 [lib]
-# `cdylib` porque Node carga una biblioteca dinamica. La extension del archivo
-# la cambia el empaquetador a `.node`.
-crate-type = ["cdylib"]
+# `cdylib` porque Node carga una biblioteca dinamica; la extension del archivo
+# la cambia el empaquetador a `.node`. `rlib` ademas, porque sin ella `cargo
+# test` no puede enlazar el arnes de pruebas y este crate se quedaria sin tests.
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 vd-core = { path = "../vd-core" }
+serde_json.workspace = true
 
 # N-API y **no** las cabeceras de V8: la ABI de N-API es estable entre versiones
 # de Node y de Electron, asi que el binario compilado una vez sirve para todas.

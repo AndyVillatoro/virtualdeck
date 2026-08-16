@@ -1,10 +1,16 @@
 /**
- * Macro engine — recording via uiohook-napi (global hook) and
- * playback via a single PowerShell script generated from MacroStep[].
+ * Motor de macros — grabación con uiohook-napi (hook global) y reproducción
+ * con el núcleo nativo.
  *
- * uiohook-napi uses a stable N-API binary — no Electron-specific rebuild needed.
+ * La grabación ya era nativa desde el principio: uiohook-napi usa un binario
+ * N-API estable, sin recompilar por versión de Electron. Lo que sí pasaba por
+ * PowerShell era la **reproducción**, con un script generado al vuelo que
+ * mezclaba SendKeys y `mouse_event` de user32.dll — con todo el escapado de
+ * metacaracteres que eso arrastraba. Ahora lo hace `vd-core` con SendInput, y
+ * el script se conserva solo como respaldo.
  */
 
+import { intentarNativo } from './native';
 import { runPS } from './ps-helpers';
 import type { MacroStep } from '../../src/types';
 
@@ -78,15 +84,29 @@ export function stopRecording(): MacroStep[] {
 export function isRecording(): boolean { return _recording; }
 
 // ---------------------------------------------------------------------------
-// Playback via PowerShell
+// Reproduccion: nativa, con PowerShell de respaldo
 // ---------------------------------------------------------------------------
 
-/** Generate and run a PowerShell script that executes the macro steps. */
+/** Reproduce los pasos. Nativo si esta disponible; si no, el script de siempre. */
 export async function playMacro(
   steps: MacroStep[],
   repeat = 1,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!steps || steps.length === 0) return { ok: false, error: 'Sin pasos en la macro.' };
+
+  // Camino nativo: SendInput directo, sin generar ni ejecutar ningún script.
+  // Los pasos viajan como JSON y los lee el mismo modelo que lee la
+  // configuración del disco, así que no hay forma de que las dos formas del
+  // paso se desvíen entre sí.
+  const nativo = intentarNativo('playMacro', (n) =>
+    n.playMacro(JSON.stringify(steps), Math.max(1, repeat)),
+  );
+  if (nativo !== undefined) {
+    return nativo
+      ? { ok: true }
+      : { ok: false, error: 'La reproducción nativa falló; mirá el log del proceso principal.' };
+  }
+
   const script = buildPlaybackScript(steps, Math.max(1, repeat));
   const r = await runPS(script, { timeoutMs: 120_000 });
   if (!r.ok && r.stderr) console.error('[macro] playback error:', r.stderr.slice(0, 500));

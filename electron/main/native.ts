@@ -62,6 +62,32 @@ export interface NucleoNativo {
   isMuted: () => boolean | null;
   setMuted: (muted: boolean) => boolean;
   snapWindow: (position: string, processName?: string) => boolean;
+
+  // --- media (SMTC) ---
+  getNowPlaying: () => NowPlayingNativo | null;
+  controlMedia: (cmd: string) => boolean;
+  shuffleMedia: () => boolean;
+  repeatMedia: () => boolean;
+  diagnoseMedia: () => string;
+
+  // --- macros ---
+  /** Los pasos van como JSON: el nucleo los lee con el modelo de la config. */
+  playMacro: (stepsJson: string, repeat?: number) => boolean;
+}
+
+/** Lo que devuelve el núcleo. Coincide con `NowPlaying` de `src/types.ts`. */
+export interface NowPlayingNativo {
+  title: string;
+  artist: string;
+  status: 'Playing' | 'Paused' | 'Stopped' | 'Unknown';
+  source: string;
+  /**
+   * Carátula ya como data-URL, lista para un `<img>`.
+   *
+   * El núcleo la entrega como bytes crudos —una interfaz nativa los consume
+   * tal cual— y el puente la codifica, porque aquí manda un WebView.
+   */
+  thumbnail?: string;
 }
 
 /** Rutas donde puede estar el `.node`, en orden de preferencia. */

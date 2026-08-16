@@ -1,3 +1,4 @@
+import { intentarNativo } from './native';
 import { runPS as runPSShared } from './ps-helpers';
 
 export interface NowPlaying {
@@ -339,6 +340,27 @@ async function fallbackFromWindows(): Promise<NowPlaying | null> {
 }
 
 export async function getNowPlaying(): Promise<NowPlaying | null> {
+  // Camino nativo: SMTC por WinRT, en proceso y con tipos verificados. Aqui
+  // desaparece el bloque marcado «NO tocar» de mas arriba — la reflexion para
+  // convertir el IAsyncOperation en un Task de .NET existia porque PowerShell
+  // 5.1 no proyecta la propiedad Status, no porque WinRT lo exija.
+  //
+  // La cache de 4 s se respeta igual: la llamada nativa es rapida pero la
+  // caratula pesa decenas de KB y el widget la pide en cada tick.
+  if (Date.now() - _cache.ts < 4000) return _cache.data;
+  {
+    const nativo = intentarNativo('getNowPlaying', (n) => n.getNowPlaying());
+    if (nativo !== undefined) {
+      _cache.ts = Date.now();
+      _cache.data = nativo;
+      // `lastValid` conserva lo último que sí tenía contenido: al pasar de una
+      // pista a otra hay un hueco de milisegundos en que SMTC no devuelve nada,
+      // y sin esto el widget parpadea a vacío en cada cambio de canción.
+      if (nativo) _cache.lastValid = nativo;
+      return nativo ?? _cache.lastValid;
+    }
+  }
+
   if (Date.now() - _cache.ts < 4000) return _cache.data;
   _cache.ts = Date.now();
 
@@ -458,6 +480,9 @@ if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
 // Control de medios — usa SMTC nativo cuando hay sesión, sino cae a SendKeys.
 // El fallback SendKeys lo hace el caller (electron/main/index.ts) si esto devuelve false.
 export async function controlMedia(cmd: MediaCommand): Promise<boolean> {
+  const nativo = intentarNativo('controlMedia', (n) => n.controlMedia(cmd));
+  if (nativo !== undefined) return nativo;
+
   const r = await runPS(controlScript(cmd));
   if (!r.ok) {
     if (r.stderr) logErrorOnce(`smtc-control-${cmd}`, r.stderr);
@@ -467,12 +492,18 @@ export async function controlMedia(cmd: MediaCommand): Promise<boolean> {
 }
 
 export async function shuffleMedia(): Promise<boolean> {
+  const nativo = intentarNativo('shuffleMedia', (n) => n.shuffleMedia());
+  if (nativo !== undefined) return nativo;
+
   const r = await runPS(SHUFFLE_SCRIPT);
   if (!r.ok) { if (r.stderr) logErrorOnce('smtc-shuffle', r.stderr); return false; }
   return r.stdout.trim() === 'OK';
 }
 
 export async function repeatMedia(): Promise<boolean> {
+  const nativo = intentarNativo('repeatMedia', (n) => n.repeatMedia());
+  if (nativo !== undefined) return nativo;
+
   const r = await runPS(REPEAT_SCRIPT);
   if (!r.ok) { if (r.stderr) logErrorOnce('smtc-repeat', r.stderr); return false; }
   return r.stdout.trim() === 'OK';
@@ -480,6 +511,11 @@ export async function repeatMedia(): Promise<boolean> {
 
 // Diagnóstico — devuelve raw output para que el usuario entienda el estado.
 export async function diagnose(): Promise<MediaDiagnostic> {
+  const nativo = intentarNativo('diagnose', (n) => n.diagnoseMedia());
+  if (nativo !== undefined) {
+    return { ok: true, stage: 'nativo', stdout: nativo, stderr: '' };
+  }
+
   const r = await runPS(DIAGNOSE_SCRIPT);
   return {
     ok: r.ok,
