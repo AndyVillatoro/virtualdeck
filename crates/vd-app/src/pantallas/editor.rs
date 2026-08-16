@@ -7,17 +7,17 @@
 use crate::i18n::{t, tf};
 use egui::{Color32, RichText};
 use vd_core::config::model::{
-    ActionType, BranchOp, ButtonAction, ButtonConfig, SensorWidget, VarWidget, WidgetKind,
+    ActionType, BranchOp, ButtonAction, ButtonConfig, SensorWidget, SnapPosition, VarWidget,
+    WidgetKind,
 };
 
 use crate::app::App;
 
 /// Tipos de acción que el editor sabe configurar, con su nombre para la lista.
 ///
-/// No están todos los del modelo a propósito: los que necesitan una interfaz
-/// propia que aún no existe —RGB, notificaciones, texto a voz, captura de
-/// región— se dejan fuera, porque ofrecerlos sin su editor dejaría botones a
-/// medio configurar. Sí se **muestran** cuando un botón ya los tiene.
+/// Cubre todo lo que el motor ejecuta. Los que quedan fuera —`Other`, y los que
+/// se editan desde otro sitio— siguen **mostrándose** si un botón ya los tiene,
+/// para no hacer creer que el botón no tiene acción.
 const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::None, "Sin acción"),
     (ActionType::App, "Abrir aplicación"),
@@ -36,6 +36,8 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::MediaPlayPause, "Reproducir / pausar"),
     (ActionType::MediaNext, "Pista siguiente"),
     (ActionType::MediaPrev, "Pista anterior"),
+    (ActionType::MediaShuffle, "Aleatorio"),
+    (ActionType::MediaRepeat, "Repetición"),
     (ActionType::KillProcess, "Cerrar proceso"),
     (ActionType::Webhook, "Llamar a un webhook"),
     (ActionType::SetVar, "Fijar variable"),
@@ -43,7 +45,13 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::Macro, "Macro grabada"),
     (ActionType::Folder, "Carpeta de botones"),
     (ActionType::Tts, "Leer en voz alta"),
+    (ActionType::Notify, "Mostrar notificación"),
+    (ActionType::RegionCapture, "Capturar región"),
+    (ActionType::WindowSnap, "Acomodar ventana"),
     (ActionType::RgbColor, "Color RGB"),
+    (ActionType::RgbMode, "Modo RGB"),
+    (ActionType::RgbPreset, "Preset RGB"),
+    (ActionType::RgbProfile, "Perfil de OpenRGB"),
     (ActionType::Branch, "Ramificación"),
     (ActionType::Countdown, "Cuenta atrás"),
 ];
@@ -451,7 +459,7 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
         .show_ui(ui, |ui| {
             for (tipo, nombre) in TIPOS {
                 if ui
-                    .selectable_label(b.action_type == *tipo, *nombre)
+                    .selectable_label(b.action_type == *tipo, t(nombre))
                     .clicked()
                 {
                     b.action_type = tipo.clone();
@@ -511,13 +519,88 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
             campo(ui, t("Variable"), &mut b.var_name);
             numero(ui, t("Incremento"), &mut b.var_delta, -1000, 1000);
         }
+        ActionType::Notify => {
+            campo(ui, t("Título"), &mut b.notify_title);
+            multilinea(ui, t("Mensaje"), &mut b.notify_body);
+            nota(ui, t("Aparece aunque VirtualDeck esté en la bandeja."));
+        }
+        ActionType::RegionCapture => {
+            nota(
+                ui,
+                t("Abre la herramienta de recorte de Windows, la misma de Win+Mayús+S."),
+            );
+        }
+        ActionType::WindowSnap => {
+            let actual = b.snap_position.unwrap_or(SnapPosition::Maximize);
+            ui.label(RichText::new(t("Posición")).small());
+            egui::ComboBox::from_id_salt("snap")
+                .selected_text(nombre_posicion(actual))
+                .width(ui.available_width())
+                .show_ui(ui, |ui| {
+                    for p in POSICIONES {
+                        if ui
+                            .selectable_label(actual == *p, nombre_posicion(*p))
+                            .clicked()
+                        {
+                            b.snap_position = Some(*p);
+                        }
+                    }
+                });
+            ui.add_space(6.0);
+            campo(ui, t("Proceso"), &mut b.snap_process_name);
+            nota(
+                ui,
+                t("Sin proceso se acomoda la ventana que esté al frente."),
+            );
+        }
         ActionType::RgbColor => {
             campo(ui, "Color (#RRGGBB)", &mut b.rgb_color);
-            ui.label(
-                RichText::new(t("Requiere OpenRGB abierto con su servidor activo."))
-                    .small()
-                    .color(Color32::from_gray(110)),
+            dispositivo_rgb(ui, b);
+            nota(ui, AVISO_OPENRGB);
+        }
+        ActionType::RgbMode => {
+            campo(ui, t("Nombre del modo"), &mut b.rgb_mode);
+            nota(
+                ui,
+                t("Como lo llame OpenRGB: «Breathing», «Rainbow Wave»… Basta con parte del nombre."),
             );
+            ui.add_space(6.0);
+            campo(ui, "Color (#RRGGBB)", &mut b.rgb_color);
+            numero(ui, t("Brillo (%)"), &mut b.rgb_brightness, 0, 100);
+            nota(
+                ui,
+                t("El color y el brillo se aplican solo si el modo los admite."),
+            );
+            dispositivo_rgb(ui, b);
+            nota(ui, AVISO_OPENRGB);
+        }
+        ActionType::RgbPreset => {
+            let actual = b.rgb_preset_id.clone().unwrap_or_default();
+            ui.label(RichText::new(t("Preset")).small());
+            egui::ComboBox::from_id_salt("preset_rgb")
+                .selected_text(nombre_preset(&actual))
+                .width(ui.available_width())
+                .show_ui(ui, |ui| {
+                    for (id, nombre) in PRESETS {
+                        if ui.selectable_label(actual == *id, *nombre).clicked() {
+                            b.rgb_preset_id = Some((*id).to_string());
+                        }
+                    }
+                });
+            nota(
+                ui,
+                t("Cada preset prueba varios nombres de efecto, para funcionar con cualquier marca."),
+            );
+            dispositivo_rgb(ui, b);
+            nota(ui, AVISO_OPENRGB);
+        }
+        ActionType::RgbProfile => {
+            campo(ui, t("Nombre del perfil"), &mut b.rgb_profile_name);
+            nota(
+                ui,
+                t("Tiene que existir ya en OpenRGB, con el mismo nombre exacto."),
+            );
+            nota(ui, AVISO_OPENRGB);
         }
         ActionType::Tts => {
             multilinea(ui, "Texto", &mut b.tts_text);
@@ -687,6 +770,98 @@ const OPERADORES: &[BranchOp] = &[
 /// Nombre legible de un operador.
 ///
 /// Los simbolos se dejan tal cual —`==` se entiende en cualquier idioma— y solo
+/// Aviso repetido en todas las acciones RGB.
+const AVISO_OPENRGB: &str = "Requiere OpenRGB abierto con su servidor activo.";
+
+/// Los presets del núcleo, con su nombre para la lista.
+///
+/// Los identificadores tienen que coincidir con `PRESETS_RGB` de `vd-core`; un
+/// test lo comprueba, porque un id mal escrito aquí deja el botón sin efecto y
+/// sin explicación.
+const PRESETS: &[(&str, &str)] = &[
+    ("off", "Apagado"),
+    ("gaming", "Juego"),
+    ("cinema", "Cine"),
+    ("work", "Trabajo"),
+    ("rainbow", "Arcoíris"),
+    ("night-blue", "Azul nocturno"),
+    ("alert-red", "Alerta roja"),
+];
+
+const POSICIONES: &[SnapPosition] = &[
+    SnapPosition::LeftHalf,
+    SnapPosition::RightHalf,
+    SnapPosition::TopHalf,
+    SnapPosition::BottomHalf,
+    SnapPosition::TopLeft,
+    SnapPosition::TopRight,
+    SnapPosition::BottomLeft,
+    SnapPosition::BottomRight,
+    SnapPosition::Maximize,
+    SnapPosition::Center,
+    SnapPosition::Restore,
+];
+
+fn nombre_posicion(p: SnapPosition) -> &'static str {
+    match p {
+        SnapPosition::LeftHalf => t("Mitad izquierda"),
+        SnapPosition::RightHalf => t("Mitad derecha"),
+        SnapPosition::TopHalf => t("Mitad superior"),
+        SnapPosition::BottomHalf => t("Mitad inferior"),
+        SnapPosition::TopLeft => t("Esquina superior izquierda"),
+        SnapPosition::TopRight => t("Esquina superior derecha"),
+        SnapPosition::BottomLeft => t("Esquina inferior izquierda"),
+        SnapPosition::BottomRight => t("Esquina inferior derecha"),
+        SnapPosition::Maximize => t("Maximizar"),
+        SnapPosition::Center => t("Centrar"),
+        SnapPosition::Restore => t("Restaurar"),
+    }
+}
+
+fn nombre_preset(id: &str) -> &'static str {
+    PRESETS
+        .iter()
+        .find(|(p, _)| *p == id)
+        .map(|(_, nombre)| t(nombre))
+        .unwrap_or_else(|| t("Elegir preset"))
+}
+
+/// Texto de ayuda bajo un campo.
+fn nota(ui: &mut egui::Ui, texto: &str) {
+    ui.label(RichText::new(texto).small().color(Color32::from_gray(110)));
+}
+
+/// Selector de a qué dispositivo RGB va la acción.
+///
+/// Vacío significa **todos**, que es lo que espera quien pone un botón de "todo
+/// en rojo" y es también lo que hacía la versión Electron.
+fn dispositivo_rgb(ui: &mut egui::Ui, b: &mut ButtonAction) {
+    ui.add_space(6.0);
+    ui.label(RichText::new(t("Dispositivo")).small());
+    ui.horizontal(|ui| {
+        let mut texto = b
+            .rgb_device_id
+            .filter(|id| *id >= 0)
+            .map(|id| id.to_string())
+            .unwrap_or_default();
+        if ui
+            .add(
+                egui::TextEdit::singleline(&mut texto)
+                    .desired_width(60.0)
+                    .hint_text(t("Todos")),
+            )
+            .changed()
+        {
+            b.rgb_device_id = texto.trim().parse::<i64>().ok().filter(|id| *id >= 0);
+        }
+        ui.label(
+            RichText::new(t("Número que le da OpenRGB. Vacío = todos."))
+                .small()
+                .color(Color32::from_gray(110)),
+        );
+    });
+}
+
 /// se traducen los que son palabras.
 fn nombre_operador(op: BranchOp) -> &'static str {
     match op {
@@ -839,30 +1014,126 @@ mod tests {
 
     #[test]
     fn un_tipo_fuera_de_la_lista_se_avisa() {
-        // Este test se rompio cuatro veces porque nombraba un tipo concreto y
-        // ese tipo acababa volviendose editable. Ahora comprueba la *propiedad*:
-        // cualquier tipo que no este en la lista tiene que avisar de que no se
-        // puede editar aqui, en vez de parecer que el boton no tiene accion.
-        let candidatos = [
+        // Este test se rompio cuatro veces porque nombraba tipos concretos y esos
+        // tipos acababan volviendose editables — la quinta fue al implementar
+        // notificaciones y RGB. Ahora usa `Other`, que **nunca** sera editable
+        // por definicion: es el cajon de los tipos que este binario no conoce.
+        let desconocido = ActionType::Other("de-una-version-mas-nueva".into());
+        assert!(
+            !TIPOS.iter().any(|(t, _)| *t == desconocido),
+            "Other no puede estar en la lista"
+        );
+
+        let n = nombre_tipo(&desconocido);
+        assert!(n.contains("no editable"), "salio como {n:?}");
+    }
+
+    /// El editor tiene que ofrecer **todo** lo que el motor sabe ejecutar.
+    ///
+    /// Un tipo implementado y ausente de la lista es invisible: no hay forma de
+    /// elegirlo, y quien quiera usarlo tiene que editar el JSON a mano. Paso con
+    /// ocho tipos a la vez (notificaciones, captura, acomodar ventana, aleatorio,
+    /// repeticion y los tres de RGB) sin que nada fallara.
+    #[test]
+    fn la_lista_cubre_todos_los_tipos_que_el_motor_ejecuta() {
+        let todos = [
+            ActionType::None,
+            ActionType::App,
+            ActionType::Web,
+            ActionType::Shortcut,
+            ActionType::Script,
+            ActionType::AudioDevice,
+            ActionType::Hotkey,
+            ActionType::MediaPlayPause,
+            ActionType::MediaNext,
+            ActionType::MediaPrev,
+            ActionType::MediaShuffle,
+            ActionType::MediaRepeat,
+            ActionType::VolumeUp,
+            ActionType::VolumeDown,
+            ActionType::Mute,
+            ActionType::VolumeSet,
+            ActionType::Brightness,
+            ActionType::Clipboard,
+            ActionType::TypeText,
+            ActionType::KillProcess,
+            ActionType::Folder,
             ActionType::Notify,
+            ActionType::SetVar,
+            ActionType::IncrVar,
+            ActionType::Webhook,
+            ActionType::Tts,
             ActionType::RegionCapture,
+            ActionType::RgbColor,
             ActionType::RgbMode,
             ActionType::RgbProfile,
             ActionType::RgbPreset,
+            ActionType::WindowSnap,
+            ActionType::Branch,
+            ActionType::Countdown,
+            ActionType::Macro,
         ];
-        let fuera: Vec<_> = candidatos
+
+        let faltan: Vec<_> = todos
             .iter()
             .filter(|c| !TIPOS.iter().any(|(t, _)| t == *c))
+            .map(|t| format!("{t:?}"))
             .collect();
 
         assert!(
-            !fuera.is_empty(),
-            "si el editor cubriera todos estos tipos, este test ya no prueba nada              y hay que darle candidatos nuevos"
+            faltan.is_empty(),
+            "el motor ejecuta estos tipos pero el editor no los ofrece: {}",
+            faltan.join(", ")
         );
-        for tipo in fuera {
-            let n = nombre_tipo(tipo);
-            assert!(n.contains("no editable"), "{tipo:?} salio como {n:?}");
+    }
+
+    #[test]
+    fn los_presets_de_la_lista_existen_en_el_motor() {
+        // Un id mal escrito aqui deja el boton sin efecto y sin explicacion.
+        let del_motor = vd_core::actions::presets_rgb();
+        for (id, nombre) in PRESETS {
+            assert!(
+                del_motor.contains(id),
+                "el preset \"{id}\" ({nombre}) no existe en el motor; hay: {del_motor:?}"
+            );
         }
+        assert_eq!(
+            PRESETS.len(),
+            del_motor.len(),
+            "el motor tiene presets que el editor no ofrece: {del_motor:?}"
+        );
+    }
+
+    /// Los nombres que viven en tablas de constantes también se traducen.
+    ///
+    /// El auditor de `i18n` busca llamadas a `t` con la cadena escrita en el
+    /// sitio, y por eso **no ve** estas tablas: sus textos llegan a través de una
+    /// variable. (El auditor tampoco distingue código de comentarios: escribir
+    /// aquí una llamada de ejemplo la haría buscar esa cadena.) Sin este
+    /// test, añadir un tipo de acción lo dejaría en español para quien tenga la
+    /// aplicación en inglés, y nada fallaría.
+    #[test]
+    fn los_nombres_de_las_tablas_estan_traducidos() {
+        let mut faltan = Vec::new();
+        for (_, nombre) in TIPOS {
+            if !crate::i18n::hay_traduccion(nombre) {
+                faltan.push(*nombre);
+            }
+        }
+        for (_, nombre) in PRESETS {
+            if !crate::i18n::hay_traduccion(nombre) {
+                faltan.push(*nombre);
+            }
+        }
+        assert!(faltan.is_empty(), "sin traduccion: {faltan:?}");
+    }
+
+    #[test]
+    fn todas_las_posiciones_de_ventana_tienen_nombre() {
+        for p in POSICIONES {
+            assert!(!nombre_posicion(*p).is_empty(), "{p:?} sin nombre");
+        }
+        assert_eq!(POSICIONES.len(), 11, "faltan posiciones del modelo");
     }
 
     #[test]

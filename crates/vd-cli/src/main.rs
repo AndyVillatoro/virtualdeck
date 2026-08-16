@@ -65,6 +65,63 @@ Abri OpenRGB y activa su servidor SDK (Settings -> Enable Server)."
             }
             Ok(())
         }
+        ["rgb", "modos"] => {
+            use vd_core::rgb::{openrgb::PUERTO, OpenRgb};
+            let mut c = OpenRgb::conectar("127.0.0.1", PUERTO)?;
+            for d in c.listar()? {
+                println!("{:>2}  {} ({} LEDs)", d.indice, d.nombre, d.leds);
+                for m in &d.modos {
+                    let activo = if m.indice == d.modo_activo { "*" } else { " " };
+                    println!("      {activo} {:>2}  {}", m.indice, m.nombre);
+                }
+            }
+            println!("\n(* = modo activo)");
+            Ok(())
+        }
+        ["rgb", "modo", nombre] => cmd_rgb_modo(nombre, None),
+        ["rgb", "modo", nombre, color] => cmd_rgb_modo(nombre, Some(color)),
+        ["rgb", "perfiles"] => {
+            use vd_core::rgb::{openrgb::PUERTO, OpenRgb};
+            let mut c = OpenRgb::conectar("127.0.0.1", PUERTO)?;
+            let lista = c.perfiles()?;
+            if lista.is_empty() {
+                println!("OpenRGB no tiene ningun perfil guardado.");
+            }
+            for p in lista {
+                println!("  {p}");
+            }
+            Ok(())
+        }
+        ["rgb", "perfil", nombre] => {
+            use vd_core::rgb::{openrgb::PUERTO, OpenRgb};
+            let mut c = OpenRgb::conectar("127.0.0.1", PUERTO)?;
+            c.cargar_perfil(nombre)?;
+            println!("Perfil \"{nombre}\" cargado.");
+            Ok(())
+        }
+        ["notify"] => {
+            avisar_del_acceso_directo();
+            vd_core::notify::notificar("VirtualDeck", "Prueba de notificacion")?;
+            println!("Notificacion enviada.");
+            Ok(())
+        }
+        ["notify", titulo] => {
+            avisar_del_acceso_directo();
+            vd_core::notify::notificar(titulo, "")?;
+            println!("Notificacion enviada.");
+            Ok(())
+        }
+        ["notify", titulo, cuerpo] => {
+            avisar_del_acceso_directo();
+            vd_core::notify::notificar(titulo, cuerpo)?;
+            println!("Notificacion enviada.");
+            Ok(())
+        }
+        ["captura"] => {
+            vd_core::launcher::open_path("ms-screenclip:")?;
+            println!("Herramienta de recorte de Windows abierta.");
+            Ok(())
+        }
         ["rgb", "release"] => {
             vd_core::rgb::AuraController::open()?.release()?;
             println!("Controlador devuelto a su modo de efectos propio.");
@@ -164,6 +221,19 @@ fn print_help() {
          \x20   macro play <archivo> [espera]\n\
          \x20              Reproduce una macro tras N segundos (3 por defecto,\n\
          \x20              para que puedas enfocar la ventana destino)\n\
+         \x20   rgb scan   Lista los dispositivos RGB que se ven por USB HID\n\
+         \x20   rgb openrgb [#RRGGBB]\n\
+         \x20              Lista via OpenRGB, o pinta todo de ese color\n\
+         \x20   rgb modos  Lista los modos de cada dispositivo (* = el activo)\n\
+         \x20   rgb modo <nombre> [#RRGGBB]\n\
+         \x20              Aplica un modo por nombre (basta con parte)\n\
+         \x20   rgb perfiles / rgb perfil <nombre>\n\
+         \x20              Lista o carga un perfil guardado en OpenRGB\n\
+         \x20   notify [titulo] [cuerpo]\n\
+         \x20              Muestra una notificacion del sistema\n\
+         \x20   captura    Abre la herramienta de recorte de Windows\n\
+         \x20   brillo [nivel]\n\
+         \x20              Lee o fija el brillo de las pantallas (DDC/CI)\n\
          \x20   sensors list [filtro]\n\
          \x20              Lista los sensores (filtro: texto libre sobre id/nombre)\n\
          \x20   sensors get <id>\n\
@@ -184,6 +254,46 @@ fn print_help() {
          \n\
          Fase 1 completa: `run` ejecuta cualquier accion del deck-config real."
     );
+}
+
+/// Aplica un modo a todos los dispositivos que OpenRGB vea.
+fn cmd_rgb_modo(nombre: &str, color: Option<&str>) -> Result<()> {
+    use vd_core::rgb::{openrgb::PUERTO, OpenRgb};
+
+    let rgb = match color {
+        Some(c) => {
+            let h = c.trim_start_matches('#');
+            Some((
+                u8::from_str_radix(&h[0..2], 16)?,
+                u8::from_str_radix(&h[2..4], 16)?,
+                u8::from_str_radix(&h[4..6], 16)?,
+            ))
+        }
+        None => None,
+    };
+
+    let mut c = OpenRgb::conectar("127.0.0.1", PUERTO)?;
+    for d in c.listar()? {
+        match c.aplicar_modo(d.indice, nombre, rgb, None) {
+            Ok(aplicado) => println!("  {:<40} modo \"{aplicado}\"", d.nombre),
+            Err(e) => println!("  {:<40} {e}", d.nombre),
+        }
+    }
+    Ok(())
+}
+
+/// Avisa antes de notificar, porque la primera vez deja un acceso directo.
+fn avisar_del_acceso_directo() {
+    if let Some(ruta) = vd_core::notify::ruta_registro() {
+        if !ruta.exists() {
+            println!(
+                "Nota: para poder notificar, Windows exige un acceso directo con el\n\
+                 identificador de la aplicacion. Se va a crear en:\n  {}\n\
+                 Se puede borrar despues sin romper nada.\n",
+                ruta.display()
+            );
+        }
+    }
 }
 
 fn cmd_paths() -> Result<()> {

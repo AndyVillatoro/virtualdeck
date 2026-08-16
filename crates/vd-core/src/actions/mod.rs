@@ -6,11 +6,13 @@
 //!
 //! # Que queda fuera a proposito
 //!
-//! Algunas acciones no son ejecutables desde el nucleo porque su efecto *es* la
-//! interfaz: abrir una carpeta de botones, mostrar una notificacion, capturar una
-//! region de pantalla. El motor las reconoce y devuelve [`Outcome::ForUi`] en vez
-//! de fingir que las ejecuto o de tratarlas como error. Cuando exista `vd-app`
-//! (Fase 2), sera quien las atienda.
+//! Una accion no es ejecutable desde el nucleo cuando su efecto *es* la interfaz:
+//! hoy, abrir una carpeta de botones. El motor la reconoce y devuelve
+//! [`Outcome::ForUi`] en vez de fingir que la ejecuto o de tratarla como error;
+//! `vd-app` es quien la atiende.
+//!
+//! Notificar y capturar una region estuvieron aqui y ya no: las dos las hace
+//! Windows, no la interfaz, asi que el nucleo puede con ellas.
 //!
 //! Esa distincion importa: una accion "para la UI" **no interrumpe** una
 //! secuencia, mientras que un fallo real si puede hacerlo.
@@ -303,20 +305,35 @@ impl Ctx {
 
             // --- de la interfaz ---
             T::Folder => Outcome::ForUi("abrir carpeta de botones"),
-            T::Notify => Outcome::ForUi("mostrar notificacion"),
-            T::RegionCapture => Outcome::ForUi("capturar region de pantalla"),
+            T::Notify => self.notificar(a),
+            // La captura de region no la hace VirtualDeck: abre la herramienta
+            // de Windows (la misma de Win+Shift+S), que ya sabe recortar,
+            // anotar y dejar el resultado en el portapapeles.
+            T::RegionCapture => envolver(crate::launcher::open_path("ms-screenclip:")),
             T::Tts => envolver(crate::voz::hablar(&self.texto(&a.tts_text))),
             T::RgbColor => self.rgb_color(a),
-            T::RgbMode | T::RgbProfile | T::RgbPreset => {
-                // Modos, perfiles y presets necesitan mas del SDK de OpenRGB que
-                // el color plano; se atenderan cuando exista su editor.
-                Outcome::ForUi("modo/perfil RGB (aun no soportado)")
-            }
+            T::RgbMode => self.rgb_modo(a),
+            T::RgbProfile => self.rgb_perfil(a),
+            T::RgbPreset => self.rgb_preset(a),
 
             T::Other(nombre) => Outcome::Failed(format!(
                 "Tipo de accion desconocido: \"{nombre}\". Puede venir de una version mas nueva."
             )),
         }
+    }
+
+    /// Muestra una notificación del sistema.
+    fn notificar(&mut self, a: &ButtonAction) -> Outcome {
+        // Sin titulo se usa el nombre de la aplicacion, como hacia la version
+        // Electron: una notificacion sin encabezado se ve rota.
+        let titulo = match self.texto(&a.notify_title) {
+            t if t.is_empty() => "VirtualDeck".to_string(),
+            t => t,
+        };
+        envolver(crate::notify::notificar(
+            &titulo,
+            &self.texto(&a.notify_body),
+        ))
     }
 
     /// Aplica un color plano a un dispositivo via OpenRGB.
@@ -328,37 +345,121 @@ impl Ctx {
             ));
         };
 
-        let mut cliente =
-            match crate::rgb::OpenRgb::conectar("127.0.0.1", crate::rgb::openrgb::PUERTO) {
-                Ok(c) => c,
-                // El mensaje dice que hace falta OpenRGB: sin eso, un boton que no
-                // hace nada no da ninguna pista de por que.
-                Err(e) => return Outcome::Failed(e.to_string()),
-            };
+        self.en_dispositivos_rgb(a, |cliente, indice| {
+            cliente.pintar(indice, color).map(|_| ())
+        })
+    }
 
-        // Sin dispositivo indicado se pintan todos, que es lo que espera quien
-        // pone un boton de "todo en rojo".
-        match a.rgb_device_id {
-            Some(id) if id >= 0 => envolver(cliente.pintar(id as u32, color).map(|_| ())),
-            _ => match cliente.listar() {
-                Ok(lista) if lista.is_empty() => {
-                    Outcome::Failed("OpenRGB no ve ningun dispositivo RGB.".into())
+    /// Pone los dispositivos en uno de sus modos de efecto.
+    fn rgb_modo(&mut self, a: &ButtonAction) -> Outcome {
+        let modo = self.texto(&a.rgb_mode);
+        if modo.is_empty() {
+            return Outcome::Failed("La accion no tiene ningun modo RGB configurado.".into());
+        }
+        // El color y el brillo son opcionales: cada modo decide si le sirven.
+        let color = parsear_color(&self.texto(&a.rgb_color));
+        let brillo = a.rgb_brightness.map(|b| b.clamp(0, 100) as u8);
+
+        self.en_dispositivos_rgb(a, |cliente, indice| {
+            cliente
+                .aplicar_modo(indice, &modo, color, brillo)
+                .map(|_| ())
+        })
+    }
+
+    /// Carga un perfil guardado en OpenRGB.
+    ///
+    /// Un perfil es global, no de un dispositivo: se manda una sola vez.
+    fn rgb_perfil(&mut self, a: &ButtonAction) -> Outcome {
+        let perfil = self.texto(&a.rgb_profile_name);
+        if perfil.is_empty() {
+            return Outcome::Failed("La accion no tiene ningun perfil RGB configurado.".into());
+        }
+        match conectar_openrgb() {
+            Ok(mut cliente) => envolver(cliente.cargar_perfil(&perfil)),
+            Err(e) => Outcome::Failed(e),
+        }
+    }
+
+    /// Aplica un preset: un efecto con su color, sin depender del hardware.
+    ///
+    /// Cada preset lleva una lista de nombres de modo en orden de preferencia,
+    /// porque el mismo efecto se llama distinto en cada fabricante. Si ninguno
+    /// existe se cae al color plano, que funciona en todas partes.
+    fn rgb_preset(&mut self, a: &ButtonAction) -> Outcome {
+        let id = self.texto(&a.rgb_preset_id);
+        let Some(preset) = PRESETS_RGB.iter().find(|p| p.id == id) else {
+            return Outcome::Failed(format!(
+                "El preset RGB \"{id}\" no existe. Hay: {}",
+                PRESETS_RGB
+                    .iter()
+                    .map(|p| p.id)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        };
+        let color = preset.color.and_then(parsear_color);
+
+        self.en_dispositivos_rgb(a, |cliente, indice| {
+            for nombre in preset.modos {
+                if cliente.aplicar_modo(indice, nombre, color, None).is_ok() {
+                    return Ok(());
                 }
-                Ok(lista) => {
-                    let mut fallos = Vec::new();
-                    for d in &lista {
-                        if let Err(e) = cliente.pintar(d.indice, color) {
-                            fallos.push(format!("{}: {e}", d.nombre));
-                        }
-                    }
-                    if fallos.is_empty() {
-                        Outcome::Ok
-                    } else {
-                        Outcome::Failed(fallos.join("; "))
-                    }
-                }
-                Err(e) => Outcome::Failed(e.to_string()),
-            },
+            }
+            // Ningun modo del preset existe en este dispositivo. Con color se
+            // deja al menos el color; sin el (un arcoiris) no hay equivalente.
+            match color {
+                Some(c) => cliente.pintar(indice, c).map(|_| ()),
+                None => Err(crate::rgb::OpenRgbError::Protocolo(format!(
+                    "ningun modo de \"{}\" existe en este dispositivo",
+                    preset.id
+                ))),
+            }
+        })
+    }
+
+    /// Corre una operación de OpenRGB sobre el dispositivo indicado, o sobre
+    /// todos si la acción no nombra ninguno.
+    ///
+    /// Sin dispositivo indicado se actúa sobre todos, que es lo que espera quien
+    /// pone un botón de "todo en rojo". Un fallo en uno **no** detiene a los
+    /// demás: que la placa no admita un efecto no es razón para dejar los
+    /// ventiladores como estaban.
+    fn en_dispositivos_rgb(
+        &mut self,
+        a: &ButtonAction,
+        mut operacion: impl FnMut(&mut crate::rgb::OpenRgb, u32) -> Result<(), crate::rgb::OpenRgbError>,
+    ) -> Outcome {
+        let mut cliente = match conectar_openrgb() {
+            Ok(c) => c,
+            Err(e) => return Outcome::Failed(e),
+        };
+
+        if let Some(id) = a.rgb_device_id.filter(|id| *id >= 0) {
+            return envolver(operacion(&mut cliente, id as u32));
+        }
+
+        let lista = match cliente.listar() {
+            Ok(l) if l.is_empty() => {
+                return Outcome::Failed("OpenRGB no ve ningun dispositivo RGB.".into())
+            }
+            Ok(l) => l,
+            Err(e) => return Outcome::Failed(e.to_string()),
+        };
+
+        let mut fallos = Vec::new();
+        for d in &lista {
+            if let Err(e) = operacion(&mut cliente, d.indice) {
+                fallos.push(format!("{}: {e}", d.nombre));
+            }
+        }
+        // Un fallo parcial se cuenta como fallo y se nombra el dispositivo: que
+        // la mitad de las luces cambie y la otra no es justo el caso en que hace
+        // falta saber cuál se quedó fuera.
+        if fallos.is_empty() {
+            Outcome::Ok
+        } else {
+            Outcome::Failed(fallos.join("; "))
         }
     }
 
@@ -545,6 +646,78 @@ fn a_snap(p: CfgSnap) -> crate::launcher::SnapPosition {
     }
 }
 
+/// Un efecto con nombre, independiente del fabricante.
+struct PresetRgb {
+    id: &'static str,
+    /// Color principal. `None` en los efectos que eligen sus propios colores.
+    color: Option<&'static str>,
+    /// Nombres de modo a probar, en orden de preferencia.
+    modos: &'static [&'static str],
+}
+
+/// Los presets que ya traía la versión Electron, con los mismos identificadores.
+///
+/// **Los ids no se cambian**: están guardados en la configuración de quien ya los
+/// use, y renombrar uno deja su botón sin hacer nada.
+const PRESETS_RGB: &[PresetRgb] = &[
+    PresetRgb {
+        id: "off",
+        color: Some("#000000"),
+        modos: &["off", "black", "static", "direct", "custom"],
+    },
+    PresetRgb {
+        id: "gaming",
+        color: Some("#ff1800"),
+        modos: &["breathing", "breath", "pulse", "blink", "static"],
+    },
+    PresetRgb {
+        id: "cinema",
+        color: Some("#200400"),
+        modos: &["static", "direct", "custom", "breathing"],
+    },
+    PresetRgb {
+        id: "work",
+        color: Some("#ffffff"),
+        modos: &["static", "direct", "custom"],
+    },
+    PresetRgb {
+        id: "rainbow",
+        color: None,
+        modos: &[
+            "spectrum cycle",
+            "rainbow wave",
+            "rainbow",
+            "spectrum",
+            "cycle",
+        ],
+    },
+    PresetRgb {
+        id: "night-blue",
+        color: Some("#000880"),
+        modos: &["breathing", "breath", "pulse", "static"],
+    },
+    PresetRgb {
+        id: "alert-red",
+        color: Some("#ff0000"),
+        modos: &["flicker", "flash", "blink", "breathing", "static"],
+    },
+];
+
+/// Los identificadores de preset que el motor reconoce.
+///
+/// La interfaz los necesita para armar su lista sin volver a escribirlos.
+pub fn presets_rgb() -> Vec<&'static str> {
+    PRESETS_RGB.iter().map(|p| p.id).collect()
+}
+
+/// Abre una conexión con OpenRGB, con un error que se entienda si no está.
+fn conectar_openrgb() -> Result<crate::rgb::OpenRgb, String> {
+    // El mensaje dice que hace falta OpenRGB: sin eso, un boton que no hace nada
+    // no da ninguna pista de por que.
+    crate::rgb::OpenRgb::conectar("127.0.0.1", crate::rgb::openrgb::PUERTO)
+        .map_err(|e| e.to_string())
+}
+
 /// Interpreta un color `#RRGGBB` o `RRGGBB`.
 fn parsear_color(s: &str) -> Option<(u8, u8, u8)> {
     let h = s.trim().trim_start_matches('#');
@@ -625,9 +798,110 @@ fn parsear_cabeceras(texto: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// Acciones que salen del proceso y **ningún test puede ejecutar**.
+///
+/// Cada una hace algo visible en el equipo de quien compila: suena, escribe,
+/// abre una ventana, cambia el volumen o las luces. Ver la regla en
+/// `docs/MIGRACION-RUST.md`: un `cargo test` no puede dejar la máquina distinta
+/// de como la encontró.
+///
+/// La lista vive fuera del módulo de tests a propósito: el auditor de más abajo
+/// busca estos nombres **dentro** de los tests, y tenerla aquí evita que se
+/// encuentre a sí misma.
+#[cfg(test)]
+const ACCIONES_CON_EFECTOS: &[&str] = &[
+    "App",
+    "AudioDevice",
+    "Brightness",
+    "Clipboard",
+    "Hotkey",
+    "KillProcess",
+    "Macro",
+    "MediaNext",
+    "MediaPlayPause",
+    "MediaPrev",
+    "Mute",
+    "Notify",
+    "RegionCapture",
+    "RgbColor",
+    "RgbMode",
+    "RgbPreset",
+    "RgbProfile",
+    "Script",
+    "Shortcut",
+    "Tts",
+    "TypeText",
+    "VolumeSet",
+    "Web",
+    "Webhook",
+    "WindowSnap",
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Ningún test de este archivo puede nombrar una acción con efectos fuera
+    /// del proceso.
+    ///
+    /// Existe porque ya pasó tres veces —el brillo al máximo, el portapapeles
+    /// borrado, el sistema silenciado— y una cuarta: un test usaba `Notify` como
+    /// ejemplo "inofensivo" y, en cuanto `Notify` se implementó de verdad,
+    /// empezó a lanzar notificaciones en cada compilación.
+    ///
+    /// El patrón siempre es el mismo: la acción era inocua **cuando se escribió
+    /// el test**. Por eso el auditor mira el código y no la intención.
+    ///
+    /// Si hace falta probar una de estas de verdad, va en su propio test
+    /// `#[ignore]` que guarde el estado y lo restaure.
+    #[test]
+    fn ningun_test_ejecuta_acciones_con_efectos() {
+        let fuente = include_str!("mod.rs");
+        let inicio = fuente
+            .find("mod tests {")
+            .expect("este archivo tiene un modulo de tests");
+        let region = &fuente[inicio..];
+
+        let culpables: Vec<&str> = ACCIONES_CON_EFECTOS
+            .iter()
+            .copied()
+            .filter(|nombre| region.contains(&format!("ActionType::{nombre}")))
+            .collect();
+
+        assert!(
+            culpables.is_empty(),
+            "estos tests ejecutarian acciones con efectos en el equipo: {}. \
+             Usa un tipo inocuo (SetVar, IncrVar, Branch) o marca el test #[ignore] \
+             guardando y restaurando el estado.",
+            culpables.join(", ")
+        );
+    }
+
+    /// Comprueba que el auditor de arriba sirve para algo.
+    ///
+    /// Un auditor que nunca ha visto un caso malo no prueba nada: el de las
+    /// traducciones estuvo en verde meses con dos puntos ciegos.
+    #[test]
+    fn el_auditor_de_efectos_reconoce_un_caso_malo() {
+        // Los ejemplos se arman en tiempo de ejecucion: escritos como literales,
+        // el auditor de arriba se encontraria a si mismo y fallaria siempre.
+        let como_si =
+            |tipo: &str| format!("mod tests {{ let a = accion(Action{}::{tipo}); }}", "Type");
+
+        let malo = como_si("Tts");
+        let pillados: Vec<&str> = ACCIONES_CON_EFECTOS
+            .iter()
+            .copied()
+            .filter(|n| malo.contains(&format!("ActionType::{n}")))
+            .collect();
+        assert_eq!(pillados, vec!["Tts"]);
+
+        // Y que no se dispara con lo inocuo.
+        let bueno = como_si("SetVar");
+        assert!(!ACCIONES_CON_EFECTOS
+            .iter()
+            .any(|n| bueno.contains(&format!("ActionType::{n}"))));
+    }
 
     fn accion(t: ActionType) -> ButtonAction {
         ButtonAction {
@@ -738,6 +1012,13 @@ mod tests {
         );
     }
 
+    /// Ojo al elegir la accion de este test.
+    ///
+    /// Antes usaba `Notify` como ejemplo inofensivo. Cuando `Notify` paso a estar
+    /// implementada de verdad, el test se puso a **mostrar notificaciones en el
+    /// equipo de quien compila**. Aqui solo valen tipos que la interfaz atiende y
+    /// el nucleo no ejecuta: hoy, `Folder`. Si algun dia se queda sin candidatos,
+    /// hay que replantear el test, no buscarle otra accion con efectos.
     #[test]
     fn las_acciones_de_interfaz_no_fallan_ni_cortan_la_secuencia() {
         let mut despues = accion(ActionType::SetVar);
@@ -745,10 +1026,10 @@ mod tests {
         despues.var_value = Some("si".into());
         despues.only_if_prev_ok = Some(true);
 
-        let r = run_sequence(&[accion(ActionType::Notify), despues], &State::new());
+        let r = run_sequence(&[accion(ActionType::Folder), despues], &State::new());
 
         assert!(r.ok, "una accion de interfaz no es un fallo");
-        assert_eq!(r.for_ui, vec!["mostrar notificacion"]);
+        assert_eq!(r.for_ui, vec!["abrir carpeta de botones"]);
         assert_eq!(
             r.state.get("llegue").map(String::as_str),
             Some("si"),
@@ -758,8 +1039,10 @@ mod tests {
 
     #[test]
     fn only_if_prev_ok_salta_el_paso_tras_un_fallo() {
-        // Accion sin configurar: falla con un mensaje claro.
-        let roto = accion(ActionType::App);
+        // Un tipo desconocido siempre falla y **nunca** hace nada, pase lo que
+        // pase con el motor. Una accion real sin configurar tambien fallaria
+        // hoy, pero solo mientras nadie le ponga un valor por defecto.
+        let roto = accion(ActionType::Other("inexistente".into()));
 
         let mut condicional = accion(ActionType::SetVar);
         condicional.var_name = Some("no_deberia".into());
@@ -782,13 +1065,13 @@ mod tests {
     #[test]
     fn se_reporta_el_primer_error_no_el_ultimo() {
         // El primero es el que explica por que empezo a ir mal.
-        let mut primero = accion(ActionType::App);
-        primero.app_path = None;
-        let mut segundo = accion(ActionType::Web);
-        segundo.url = None;
+        let primero = accion(ActionType::Other("el-primero".into()));
+        let segundo = accion(ActionType::Other("el-segundo".into()));
 
         let r = run_sequence(&[primero, segundo], &State::new());
-        assert!(r.error.unwrap().contains("aplicacion"));
+        let error = r.error.expect("los dos fallan");
+        assert!(error.contains("el-primero"), "{error}");
+        assert!(!error.contains("el-segundo"), "{error}");
     }
 
     #[test]

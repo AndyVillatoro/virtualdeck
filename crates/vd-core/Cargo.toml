@@ -69,4 +69,7 @@ features = [
     "Win32_System_Registry",              # arranque con Windows (clave Run)
     # --- red ---
     "Win32_Networking_WinHttp",           # cliente HTTP/HTTPS con TLS del sistema
+    # --- notificaciones ---
+    "UI_Notifications",                   # las "tostadas" del sistema
+    "Data_Xml_Dom",                       # su plantilla va como XML
 ]

@@ -73,6 +73,15 @@ pub fn t(es: &'static str) -> &'static str {
 /// Los marcadores llevan nombre —`{e}`, `{n}`— y no posicion, porque el orden de
 /// las palabras cambia entre idiomas y `{}` posicional se prestaria a barajarlos
 /// sin darse cuenta.
+/// Si una cadena tiene entrada en la tabla.
+///
+/// El auditor de traducciones lee los `t("…")` del código fuente, así que no ve
+/// los textos que viven en tablas de constantes (los nombres de los tipos de
+/// acción, los presets). Esos se comprueban con esto desde su propio test.
+pub fn hay_traduccion(es: &str) -> bool {
+    TABLA.contains_key(es)
+}
+
 pub fn tf(es: &'static str, args: &[(&str, &str)]) -> String {
     let mut salida = t(es).to_string();
     for (marcador, valor) in args {
@@ -276,6 +285,77 @@ const PARES: &[(&str, &str)] = &[
     ("Color (#RRGGBB)", "Colour (#RRGGBB)"),
     ("Requiere OpenRGB abierto con su servidor activo.", "Requires OpenRGB running with its server enabled."),
     ("Usa las voces que tengas instaladas en Windows.", "Uses the voices installed in Windows."),
+    // --- notificaciones y captura ---
+    ("Mostrar notificación", "Show notification"),
+    ("Título", "Title"),
+    ("Mensaje", "Message"),
+    (
+        "Aparece aunque VirtualDeck esté en la bandeja.",
+        "Shows up even when VirtualDeck is in the tray.",
+    ),
+    ("Capturar región", "Capture region"),
+    (
+        "Abre la herramienta de recorte de Windows, la misma de Win+Mayús+S.",
+        "Opens the Windows snipping tool, the same one as Win+Shift+S.",
+    ),
+    // --- acomodar ventana ---
+    ("Acomodar ventana", "Snap window"),
+    ("Posición", "Position"),
+    ("Proceso", "Process"),
+    (
+        "Sin proceso se acomoda la ventana que esté al frente.",
+        "With no process, the frontmost window is snapped.",
+    ),
+    ("Mitad izquierda", "Left half"),
+    ("Mitad derecha", "Right half"),
+    ("Mitad superior", "Top half"),
+    ("Mitad inferior", "Bottom half"),
+    ("Esquina superior izquierda", "Top left"),
+    ("Esquina superior derecha", "Top right"),
+    ("Esquina inferior izquierda", "Bottom left"),
+    ("Esquina inferior derecha", "Bottom right"),
+    ("Maximizar", "Maximise"),
+    ("Centrar", "Centre"),
+    ("Restaurar", "Restore"),
+    // --- media ---
+    ("Aleatorio", "Shuffle"),
+    ("Repetición", "Repeat"),
+    // --- RGB: modos, presets y perfiles ---
+    ("Modo RGB", "RGB mode"),
+    ("Nombre del modo", "Mode name"),
+    (
+        "Como lo llame OpenRGB: «Breathing», «Rainbow Wave»… Basta con parte del nombre.",
+        "Whatever OpenRGB calls it: \"Breathing\", \"Rainbow Wave\"… part of the name is enough.",
+    ),
+    (
+        "El color y el brillo se aplican solo si el modo los admite.",
+        "Colour and brightness apply only if the mode supports them.",
+    ),
+    ("Preset RGB", "RGB preset"),
+    ("Preset", "Preset"),
+    ("Elegir preset", "Choose a preset"),
+    (
+        "Cada preset prueba varios nombres de efecto, para funcionar con cualquier marca.",
+        "Each preset tries several effect names, so it works with any brand.",
+    ),
+    ("Apagado", "Off"),
+    ("Juego", "Gaming"),
+    ("Cine", "Cinema"),
+    ("Trabajo", "Work"),
+    ("Arcoíris", "Rainbow"),
+    ("Azul nocturno", "Night blue"),
+    ("Alerta roja", "Red alert"),
+    ("Perfil de OpenRGB", "OpenRGB profile"),
+    (
+        "Tiene que existir ya en OpenRGB, con el mismo nombre exacto.",
+        "It has to exist in OpenRGB already, with exactly the same name.",
+    ),
+    ("Dispositivo", "Device"),
+    ("Todos", "All"),
+    (
+        "Número que le da OpenRGB. Vacío = todos.",
+        "The number OpenRGB gives it. Empty = all of them.",
+    ),
     // --- perfiles ---
     ("Perfiles", "Profiles"),
     (

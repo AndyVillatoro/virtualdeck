@@ -28,6 +28,8 @@ pub mod macros;
 pub mod media;
 #[cfg(windows)]
 pub mod net;
+#[cfg(windows)]
+pub mod notify;
 pub mod rgb;
 pub mod sensors;
 #[cfg(windows)]

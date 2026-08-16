@@ -17,7 +17,9 @@ pub mod openrgb;
 mod scan;
 
 pub use aura::{AuraController, AuraInfo, Rgb, Transport};
-pub use openrgb::{Cliente as OpenRgb, Dispositivo as DispositivoRgb, OpenRgbError};
+pub use openrgb::{
+    Cliente as OpenRgb, Dispositivo as DispositivoRgb, Modo as ModoRgb, OpenRgbError,
+};
 pub use scan::{scan, DeviceKind, HidDeviceInfo, RgbVendor};
 
 /// Errores del modulo RGB.
