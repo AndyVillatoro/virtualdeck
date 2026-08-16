@@ -6,16 +6,18 @@
 
 use crate::i18n::{t, tf};
 use egui::{Color32, RichText};
-use vd_core::config::model::{ActionType, ButtonConfig, SensorWidget, VarWidget, WidgetKind};
+use vd_core::config::model::{
+    ActionType, BranchOp, ButtonAction, ButtonConfig, SensorWidget, VarWidget, WidgetKind,
+};
 
 use crate::app::App;
 
 /// Tipos de acción que el editor sabe configurar, con su nombre para la lista.
 ///
 /// No están todos los del modelo a propósito: los que necesitan una interfaz
-/// propia que aún no existe —ramas, cuentas atrás, carpetas, RGB— se dejan fuera,
-/// porque ofrecerlos sin su editor dejaría botones a medio configurar. Sí se
-/// **muestran** cuando un botón ya los tiene.
+/// propia que aún no existe —RGB, notificaciones, texto a voz, captura de
+/// región— se dejan fuera, porque ofrecerlos sin su editor dejaría botones a
+/// medio configurar. Sí se **muestran** cuando un botón ya los tiene.
 const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::None, "Sin acción"),
     (ActionType::App, "Abrir aplicación"),
@@ -40,6 +42,8 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::IncrVar, "Incrementar variable"),
     (ActionType::Macro, "Macro grabada"),
     (ActionType::Folder, "Carpeta de botones"),
+    (ActionType::Branch, "Ramificación"),
+    (ActionType::Countdown, "Cuenta atrás"),
 ];
 
 fn nombre_tipo(tipo_actual: &ActionType) -> String {
@@ -505,6 +509,60 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
             campo(ui, t("Variable"), &mut b.var_name);
             numero(ui, t("Incremento"), &mut b.var_delta, -1000, 1000);
         }
+        ActionType::Branch => {
+            ui.label(RichText::new(t("Si la variable")).small());
+            campo(ui, "Variable", &mut b.branch_var);
+
+            ui.horizontal(|ui| {
+                let op = b.branch_op.unwrap_or(BranchOp::Eq);
+                egui::ComboBox::from_id_salt("branch_op")
+                    .selected_text(nombre_operador(op))
+                    .width(130.0)
+                    .show_ui(ui, |ui| {
+                        for o in OPERADORES {
+                            if ui.selectable_label(op == *o, nombre_operador(*o)).clicked() {
+                                b.branch_op = Some(*o);
+                            }
+                        }
+                    });
+                // Los operadores de vacio no comparan con nada, asi que pedir un
+                // valor solo confundiria.
+                if !matches!(op, BranchOp::Empty | BranchOp::NotEmpty) {
+                    let mut v = b.branch_value.clone().unwrap_or_default();
+                    if ui
+                        .add(
+                            egui::TextEdit::singleline(&mut v)
+                                .desired_width(120.0)
+                                .hint_text(t("Comparar con")),
+                        )
+                        .changed()
+                    {
+                        b.branch_value = (!v.is_empty()).then_some(v);
+                    }
+                }
+            });
+
+            ui.add_space(6.0);
+            sub_acciones(ui, t("Entonces"), &mut b.branch_then);
+            ui.add_space(6.0);
+            sub_acciones(ui, t("Si no"), &mut b.branch_else);
+        }
+        ActionType::Countdown => {
+            ui.label(RichText::new(t("Espera (ms)")).small());
+            let mut ms = b.timer_delay.unwrap_or(1000);
+            if ui
+                .add(
+                    egui::DragValue::new(&mut ms)
+                        .speed(100.0)
+                        .range(0..=600_000),
+                )
+                .changed()
+            {
+                b.timer_delay = Some(ms);
+            }
+            ui.add_space(6.0);
+            sub_acciones(ui, t("Acciones tras la espera"), &mut b.timer_actions);
+        }
         ActionType::Folder => {
             // Los botones de dentro se editan aqui mismo: son pocos campos y
             // abrir otro nivel de panel por cada uno seria peor.
@@ -595,6 +653,92 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
     }
 }
 
+/// Operadores de comparacion, en el orden en que se piensan.
+const OPERADORES: &[BranchOp] = &[
+    BranchOp::Eq,
+    BranchOp::Ne,
+    BranchOp::Gt,
+    BranchOp::Lt,
+    BranchOp::Ge,
+    BranchOp::Le,
+    BranchOp::Contains,
+    BranchOp::Empty,
+    BranchOp::NotEmpty,
+];
+
+/// Nombre legible de un operador.
+///
+/// Los simbolos se dejan tal cual —`==` se entiende en cualquier idioma— y solo
+/// se traducen los que son palabras.
+fn nombre_operador(op: BranchOp) -> &'static str {
+    match op {
+        BranchOp::Eq => "==",
+        BranchOp::Ne => "!=",
+        BranchOp::Gt => ">",
+        BranchOp::Lt => "<",
+        BranchOp::Ge => ">=",
+        BranchOp::Le => "<=",
+        BranchOp::Contains => t("contiene"),
+        BranchOp::Empty => t("está vacía"),
+        BranchOp::NotEmpty => t("no está vacía"),
+    }
+}
+
+/// Lista de acciones anidadas, para las ramas y la cuenta atras.
+///
+/// Se dibuja plana y sin recursion: una rama dentro de otra se puede configurar,
+/// pero el editor no anida paneles indefinidamente porque a partir del segundo
+/// nivel nadie entiende que esta viendo.
+fn sub_acciones(ui: &mut egui::Ui, titulo: &str, lista: &mut Option<Vec<ButtonAction>>) {
+    ui.label(RichText::new(titulo).small().strong());
+    let acciones = lista.get_or_insert_with(Vec::new);
+
+    let mut quitar = None;
+    for (i, a) in acciones.iter_mut().enumerate() {
+        ui.push_id(i, |ui| {
+            egui::Frame::NONE
+                .fill(Color32::from_rgb(0x1B, 0x1F, 0x26))
+                .inner_margin(6.0)
+                .corner_radius(4.0)
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        egui::ComboBox::from_id_salt("sub_tipo")
+                            .selected_text(nombre_tipo(&a.action_type))
+                            .width(170.0)
+                            .show_ui(ui, |ui| {
+                                for (tipo, nombre) in TIPOS {
+                                    if ui
+                                        .selectable_label(a.action_type == *tipo, t(nombre))
+                                        .clicked()
+                                    {
+                                        a.action_type = tipo.clone();
+                                    }
+                                }
+                            });
+                        if ui.small_button("✕").on_hover_text(t("Quitar")).clicked() {
+                            quitar = Some(i);
+                        }
+                    });
+                    accion(ui, a);
+                });
+        });
+        ui.add_space(4.0);
+    }
+    if let Some(i) = quitar {
+        acciones.remove(i);
+    }
+    if ui.button(t("+ Añadir acción")).clicked() {
+        acciones.push(ButtonAction {
+            action_type: ActionType::None,
+            ..ButtonAction::default()
+        });
+    }
+    // Una lista vacia se guarda como ausente, para no ensuciar el JSON.
+    if acciones.is_empty() {
+        *lista = None;
+    }
+}
+
 fn campo(ui: &mut egui::Ui, etiqueta: &str, valor: &mut Option<String>) {
     ui.label(RichText::new(etiqueta).small());
     let mut texto = valor.clone().unwrap_or_default();
@@ -677,9 +821,9 @@ mod tests {
 
     #[test]
     fn un_tipo_fuera_de_la_lista_se_avisa() {
-        // El editor no cubre las ramas, y el usuario tiene que verlo en vez de
+        // El editor no cubre el RGB, y el usuario tiene que verlo en vez de
         // creer que el boton no tiene accion.
-        let n = nombre_tipo(&ActionType::Branch);
+        let n = nombre_tipo(&ActionType::RgbColor);
         assert!(n.contains("no editable"), "salio: {n}");
     }
 

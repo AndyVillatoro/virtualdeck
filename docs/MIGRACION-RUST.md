@@ -37,9 +37,9 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: perfiles, y las acciones que el editor aún no cubre
-(ramas, cuentas atrás, RGB). El **instalador** queda para el final, por decisión
-del usuario.
+**Lo próximo, concreto**: el **instalador**, que ya es lo último que falta para
+poder distribuir esto. Queda pendiente también el RGB en el editor, que depende
+de que la escritura Aura funcione.
 
 El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
 cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
@@ -1219,7 +1219,35 @@ ejecutar dos veces a la vez» se les deriva uno de su etiqueta.
 Se editan desde el mismo panel, sin abrir otro nivel: son pocos campos y
 anidar paneles sería peor.
 
-Lo que el editor **aún no** cubre: ramas, cuentas atrás y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+### ✅ Fase 2 — perfiles, ramas y cuentas atrás
+
+**Perfiles**: cada uno guarda páginas, botones y acento enteros.
+
+Lo único delicado es no perder trabajo al cambiar. Como el deck se guarda en
+disco a cada cambio pero **no** dentro de ningún perfil, cargar otro perfil
+borraría en silencio lo que se acabara de editar. Por eso se recuerda cuál está
+activo y, antes de cargar otro, **los cambios se devuelven al que estaba**. Al
+cargar también se limpia el estado de interfaz que apuntaba al deck anterior
+—página, editor abierto, interruptores encendidos—, porque esos ids pueden no
+existir en el nuevo.
+
+**Ramas y cuentas atrás** ya se configuran desde el editor. Dos detalles:
+
+- Los operadores `está vacía` y `no está vacía` **esconden el campo de
+  comparación**: no comparan con nada, y pedir un valor solo confundiría.
+- Los símbolos (`==`, `>=`) no se traducen; solo las palabras. `==` se entiende
+  igual en cualquier idioma y traducirlo sería ruido.
+
+Las sub-acciones se dibujan **planas, sin anidar paneles**. Una rama dentro de
+otra se puede configurar, pero a partir del segundo nivel de anidamiento visual
+nadie entiende qué está viendo.
+
+Por tercera vez, el test de «tipo no editable» falló al ampliar la lista: usaba
+`Branch` como ejemplo y `Branch` acababa de volverse editable. Falló por el
+motivo correcto.
+
+Lo que el editor **aún no** cubre: RGB, notificaciones, texto a voz y captura de
+región. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 

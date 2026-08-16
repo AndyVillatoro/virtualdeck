@@ -66,6 +66,13 @@ pub struct App {
     pub ajustes_abiertos: bool,
     /// Sub-deck abierto, si hay alguno.
     pub carpeta: Option<crate::pantallas::carpeta::Abierta>,
+    /// Perfil cargado ahora mismo.
+    ///
+    /// Saberlo es lo que permite que cambiar de perfil no pierda trabajo: antes
+    /// de cargar otro, los cambios se devuelven al que estaba activo.
+    pub perfil_activo: Option<String>,
+    /// Texto del campo "nuevo perfil" de la pantalla de ajustes.
+    pub nombre_perfil_nuevo: String,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
     /// vuelca a la configuración al guardar, para que salirse del editor no deje
     /// cambios a medias.
@@ -116,6 +123,8 @@ impl App {
             grabacion: None,
             ajustes_abiertos: false,
             carpeta: None,
+            perfil_activo: None,
+            nombre_perfil_nuevo: String::new(),
             borrador: None,
             emisor,
             receptor,
@@ -453,6 +462,94 @@ impl App {
         if vencida {
             self.detener_macro();
         }
+    }
+
+    /// Guarda el deck actual como un perfil nuevo.
+    pub fn guardar_perfil(&mut self, nombre: &str) {
+        let Some(cfg) = self.config.as_mut() else {
+            return;
+        };
+        let id = format!("perfil-{}", cfg.profiles.as_ref().map_or(0, Vec::len));
+        let perfil = vd_core::config::model::Profile {
+            id: id.clone(),
+            name: nombre.to_string(),
+            pages: cfg.pages.clone(),
+            buttons: cfg.buttons.clone(),
+            accent: cfg.accent.clone(),
+        };
+        cfg.profiles.get_or_insert_with(Vec::new).push(perfil);
+        self.perfil_activo = Some(id);
+        self.guardar();
+    }
+
+    /// Carga un perfil, reemplazando paginas, botones y acento.
+    ///
+    /// Antes de cargarlo, **devuelve los cambios actuales al perfil que estaba
+    /// activo**. Sin eso, editar un boton y cambiar de perfil perderia el cambio
+    /// en silencio, que es la peor forma de perder trabajo.
+    pub fn cargar_perfil(&mut self, id: &str) {
+        self.volcar_en_perfil_activo();
+
+        let Some(cfg) = self.config.as_mut() else {
+            return;
+        };
+        let Some(perfil) = cfg
+            .profiles
+            .as_ref()
+            .and_then(|ps| ps.iter().find(|p| p.id == id))
+            .cloned()
+        else {
+            return;
+        };
+
+        cfg.pages = perfil.pages;
+        cfg.buttons = perfil.buttons;
+        cfg.accent = perfil.accent;
+        self.perfil_activo = Some(perfil.id);
+
+        // El estado de interfaz que apuntaba al deck anterior deja de tener
+        // sentido: los ids pueden no existir en el nuevo.
+        self.pagina = 0;
+        self.borrador = None;
+        self.carpeta = None;
+        self.encendidos.clear();
+
+        self.guardar();
+    }
+
+    /// Copia el deck actual sobre el perfil activo, si hay alguno.
+    fn volcar_en_perfil_activo(&mut self) {
+        let Some(activo) = self.perfil_activo.clone() else {
+            return;
+        };
+        let Some(cfg) = self.config.as_mut() else {
+            return;
+        };
+        let (paginas, botones, acento) =
+            (cfg.pages.clone(), cfg.buttons.clone(), cfg.accent.clone());
+        if let Some(p) = cfg
+            .profiles
+            .as_mut()
+            .and_then(|ps| ps.iter_mut().find(|p| p.id == activo))
+        {
+            p.pages = paginas;
+            p.buttons = botones;
+            p.accent = acento;
+        }
+    }
+
+    /// Borra un perfil. El deck en uso no se toca.
+    pub fn borrar_perfil(&mut self, id: &str) {
+        let Some(cfg) = self.config.as_mut() else {
+            return;
+        };
+        if let Some(ps) = cfg.profiles.as_mut() {
+            ps.retain(|p| p.id != id);
+        }
+        if self.perfil_activo.as_deref() == Some(id) {
+            self.perfil_activo = None;
+        }
+        self.guardar();
     }
 
     /// Muestra un error en el pie de la ventana.

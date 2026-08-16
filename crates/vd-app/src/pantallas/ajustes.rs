@@ -45,6 +45,8 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 cambio |= apariencia(app, ui, acento);
                 ui.add_space(12.0);
+                perfiles(app, ui, acento);
+                ui.add_space(12.0);
                 cambio |= sensores(app, ui, acento);
                 ui.add_space(12.0);
                 sistema(app, ui, acento);
@@ -140,6 +142,86 @@ fn apariencia(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
     });
 
     cambio
+}
+
+fn perfiles(app: &mut App, ui: &mut egui::Ui, acento: Color32) {
+    ui.label(RichText::new(t("Perfiles")).color(acento).small().strong());
+    ui.label(
+        RichText::new(t(
+            "Un perfil guarda las páginas, los botones y el acento. Al cambiar de perfil, los cambios del actual se guardan en él.",
+        ))
+        .small()
+        .color(Color32::from_gray(120)),
+    );
+    ui.add_space(4.0);
+
+    let activo = app.perfil_activo.clone();
+    let lista: Vec<(String, String)> = app
+        .config
+        .as_ref()
+        .and_then(|c| c.profiles.clone())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|p| (p.id, p.name))
+        .collect();
+
+    let mut cargar = None;
+    let mut borrar = None;
+    for (id, nombre) in &lista {
+        ui.horizontal(|ui| {
+            let es_activo = activo.as_deref() == Some(id.as_str());
+            if ui
+                .selectable_label(es_activo, nombre)
+                .on_hover_text(t("Cargar este perfil"))
+                .clicked()
+                && !es_activo
+            {
+                cargar = Some(id.clone());
+            }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if ui
+                    .small_button("✕")
+                    .on_hover_text(t("Borrar perfil"))
+                    .clicked()
+                {
+                    borrar = Some(id.clone());
+                }
+            });
+        });
+    }
+
+    if lista.is_empty() {
+        ui.label(
+            RichText::new(t("Todavía no hay perfiles guardados"))
+                .small()
+                .color(Color32::from_gray(110)),
+        );
+    }
+
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        ui.add(
+            egui::TextEdit::singleline(&mut app.nombre_perfil_nuevo)
+                .desired_width(150.0)
+                .hint_text(t("Nombre del perfil")),
+        );
+        let hay_nombre = !app.nombre_perfil_nuevo.trim().is_empty();
+        if ui
+            .add_enabled(hay_nombre, egui::Button::new(t("Guardar deck actual")))
+            .clicked()
+        {
+            let nombre = app.nombre_perfil_nuevo.trim().to_string();
+            app.guardar_perfil(&nombre);
+            app.nombre_perfil_nuevo.clear();
+        }
+    });
+
+    if let Some(id) = cargar {
+        app.cargar_perfil(&id);
+    }
+    if let Some(id) = borrar {
+        app.borrar_perfil(&id);
+    }
 }
 
 fn sensores(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
