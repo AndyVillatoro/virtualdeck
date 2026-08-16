@@ -4,9 +4,9 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 completa. Fase 2 en marcha** — la aplicación abre, ejecuta
-> acciones, vive en la bandeja y responde a atajos globales. Falta el editor.
-> Rama: `rewrite/rust`. Última actualización: 2026-08-15.
+> Estado: **Fase 1 completa. Fase 2 casi completa** — la aplicación hace todo lo
+> que se usa a diario. Falta el instalador.
+> Rama: `rewrite/rust`. Última actualización: 2026-08-16.
 
 ---
 
@@ -14,71 +14,92 @@
 
 ```bash
 git checkout rewrite/rust
-export PATH="$HOME/.cargo/bin:$PATH"        # o abrir una terminal nueva
-cargo test --workspace -- --test-threads=1  # 149 tests, deben dar todos verde
-cargo run                                   # abre la aplicacion
-cargo run -p vd-cli -- run list             # botones ejecutables de tu config real
-cargo run -p vd-cli -- help                 # ver qué se puede ejercitar ya
+cargo test --workspace          # 204 tests, todos deben dar verde
+cargo run                       # abre la aplicación
+cargo run -p vd-cli -- help     # banco de pruebas del núcleo contra hardware real
 ```
 
-**Dónde quedó**: el núcleo (`vd-core`) está completo y verificado contra hardware
-real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
+**Dónde quedó**: **Fase 1 completa y Fase 2 casi completa.** La aplicación
+funciona y hace todo lo que se usa a diario. Falta el **instalador** —aplazado a
+propósito por el usuario— y tres acciones menores.
 
-| Módulo | Estado | Verificado con |
+### Qué funciona
+
+| Área | Estado |
+|---|---|
+| Núcleo (config, audio, media, macros, launcher, sensores, red, clima, log, acciones) | ✅ verificado contra hardware real |
+| Rejilla: iconos, clic, pulsación larga, interruptores, arrastrar para reordenar | ✅ |
+| Widgets: reloj, clima, sensor, reproducción, variable | ✅ |
+| Editor: acciones, secuencias, macros, carpetas, ramas, cuentas atrás, widgets | ✅ |
+| Páginas y perfiles | ✅ |
+| Bandeja del sistema y atajos globales | ✅ |
+| Ajustes, arranque con Windows, español/inglés | ✅ |
+| RGB por OpenRGB | 🟡 implementado y probado con servidor de prueba; **falta confirmar en vivo** |
+| RGB nativo (Aura USB) | ❌ bloqueado: necesita captura del protocolo |
+| Instalador | ⬜ **← lo siguiente** |
+
+### Los objetivos, medidos
+
+| Objetivo | Meta | Real |
 |---|---|---|
-| `config` | ✅ | Round-trip del `deck-config.json` real, sin perder campos |
-| `audio` | ✅ | Cambió el dispositivo predeterminado de verdad |
-| `media` | ✅ | Leyó y controló la reproducción real (SMTC) |
-| `macro` | ✅ | Grabó y reprodujo, test automático que se inyecta a sí mismo |
-| `launcher` | ✅ | 14/14 comandos; brillo aplicado a 2 pantallas |
-| `rgb` | 🟡 | Lee el controlador Aura; **escribir colores NO funciona** |
-| `sensors` | ✅ | 38 sensores reales: i5-13600KF (20 hilos) + RTX 4080 completa |
-| `net` | ✅ | HTTP/HTTPS sobre WinHTTP; test con servidor local |
-| `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
-| `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
+| Binario | — | **3,18 MB** |
+| RAM en reposo | < 140 MB | **128 MB** (era 60 MB; se corrigió al medir, ver §renderer) |
+| Latencia de una acción | < 10 ms | **21 ms** (eran 150–400 ms con PowerShell) |
 
-**Lo próximo, concreto**: el **instalador**, que ya es lo último que falta para
-poder distribuir esto. Queda pendiente también el RGB en el editor, que depende
-de que la escritura Aura funcione.
+### Lo siguiente, concreto
 
-El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
-cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
+1. **Instalador** (NSIS o WiX). Cierra el objetivo de < 20 MB y permite
+   distribuir. Las notificaciones nativas dependen de él: necesitan un
+   identificador de aplicación registrado en el menú Inicio.
+2. **Confirmar el RGB en vivo**: abrir OpenRGB con su servidor activo y probar
+   `cargo run -p vd-cli -- rgb openrgb #FF0000`.
+3. **Captura USB del Aura**, para el control nativo sin OpenRGB. Hace falta
+   USBPcap + Wireshark y una captura mientras Armoury Crate cambia un color.
+4. Menores: modos y perfiles RGB, captura de región.
 
-La rejilla ya está completa como interacción: clic, pulsación larga, interruptores
-y arrastrar para reordenar.
+### Cosas que NO hay que romper
 
-Ya funciona: `cargo run` abre la rejilla con la configuración real y los iconos
-de marca, ejecuta acciones al hacer clic, **permite editar y guardar botones**,
-vive en la bandeja del sistema y responde a atajos globales.
+Todas tienen un test que las fija. Si uno de estos falla, **no es ruido**:
 
-El spike de texto está cerrado: acentos, ñ, teclas muertas, IME y pegado, todo
-verificado. Se puede volver a pasar cuando se actualice egui o winit:
-`cargo run -p vd-app --bin spike_texto`.
-
-**Lo que quedó abierto y por qué**:
-- **Aura USB (escritura)**: falta capturar tráfico USB de Armoury Crate con
-  USBPcap + Wireshark. No seguir por ensayo y error — ya costó dejar el RGB del
-  usuario apagado una vez. Detalle en la sección de RGB.
-- **GPU RGB**: `NvAPI_I2CWrite`, ni empezado.
-
-**Cosas que NO hay que romper** (todas con tests que las fijan):
-- El report ID de Aura es `0xEC`, no `0x00`.
-- Los IIDs COM de `IPolicyConfig` — cambiarlos rompe el audio en silencio.
-- El round-trip de config: cualquier campo nuevo necesita su sitio en el modelo
-  o el `extra` con `serde(flatten)` que lo preserva.
-- Los regex del parser de títulos de ventana: parecen simplificables y no lo son.
-- Los prefijos de ID de sensor (`/native/…`, `/nvml/…`): los botones guardan el ID
-  del sensor en la config. Si un ID nativo pudiera coincidir con uno de LHM, un
-  widget ya configurado pasaría a mostrar otra magnitud sin avisar.
-- La espera de reintento de LHM: sin ella, tener el nivel 2 activado y LHM cerrado
-  cuesta 2,6 s por refresco y deja la interfaz a tirones.
-- En `net`, las cadenas anchas atadas a variables antes de pasarlas como `PCWSTR`:
-  escribirlas en línea funciona hoy por las reglas de vida de los temporales, pero
+- El **report ID de Aura es `0xEC`**, no `0x00`.
+- Los **IIDs COM de `IPolicyConfig`**: cambiarlos rompe el audio en silencio.
+- El **round-trip de la configuración**: cualquier campo nuevo necesita su sitio
+  en el modelo, o el `extra` con `serde(flatten)` que lo preserva.
+- Los **regex del parser de títulos de ventana**: parecen simplificables y no lo son.
+- Los **prefijos de ID de sensor** (`/native/…`, `/nvml/…`): si un ID nativo
+  coincidiera con uno de LHM, un widget ya configurado mostraría otra magnitud.
+- La **espera de reintento de LHM**: sin ella, tener el nivel 2 activado y LHM
+  cerrado cuesta 2,6 s por refresco.
+- En `net`, las **cadenas anchas atadas a variables** antes de pasarlas como
+  `PCWSTR`: en línea funcionan hoy por las reglas de vida de los temporales, pero
   cualquier refactor las convierte en punteros colgantes.
-- La feature `clipboard` de `egui-winit`: sin ella egui **ignora Ctrl+V en
-  silencio** y no se puede pegar en ningún campo de la aplicación.
+- La feature **`clipboard` de `egui-winit`**: sin ella egui ignora Ctrl+V en
+  silencio.
+- El **id de botón codifica su posición** (`3-7`). Reordenar intercambia
+  contenido, no ids; borrar una página renumera `page` **y** el id.
+- La **negociación de versión de OpenRGB**: los campos de brillo solo existen
+  desde la 3 y leerlos de más desalinea todo el bloque.
 
----
+### Tres lecciones que costaron caro
+
+1. **Un test no puede cambiarle el equipo a quien lo ejecuta.** Pasó tres veces
+   —brillo al máximo, portapapeles borrado, sistema silenciado— y las tres las
+   reportó el usuario, no los tests. El patrón común: elegir una llamada real por
+   parecer barata **sin mirar qué hace fuera del proceso**. Si necesita tocar
+   hardware: guardar estado, restaurar, y `#[ignore]`.
+2. **Una herramienta de auditoría en verde no prueba que audite.** El detector de
+   traducciones tenía dos puntos ciegos y dejó pasar texto real. Hay que romperla
+   *en la forma en que fallaría de verdad*, no en el caso fácil.
+3. **Medir todos los criterios antes de decidir, no dos de tres.** El renderer se
+   eligió por tamaño y fps sin medir memoria —que era un objetivo declarado— y
+   hubo que darle la vuelta a la decisión. Y una primera medición de memoria salió
+   mal por mirar el proceso demasiado pronto.
+
+### Y una de método
+
+Nunca más ensayo y error contra hardware sin documentación: probar el protocolo
+Aura a ciegas dejó el RGB del usuario apagado. **Capturar primero, escribir
+después.**
 
 ## 1. Por qué migrar
 

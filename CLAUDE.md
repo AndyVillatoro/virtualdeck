@@ -2,12 +2,18 @@
 
 Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 
-> ## 🦀 Migración a Rust en curso
-> Existe una rama larga **`rewrite/rust`** que reescribe el proyecto completo en Rust nativo
-> (core + UI con egui/winit, sin Electron ni PowerShell). **Si trabajás en esa rama, la fuente
-> de verdad es [docs/MIGRACION-RUST.md](docs/MIGRACION-RUST.md)** — leelo antes que nada.
-> Este archivo (CLAUDE.md) describe la arquitectura **Electron actual de `main`**, que sigue
-> siendo la versión publicada (0.5.x) hasta que la migración alcance paridad y salga como v1.0.0.
+> ## 🦀 Migración a Rust — casi en paridad
+> La rama **`rewrite/rust`** reescribe el proyecto completo en Rust nativo (core + UI con
+> egui/winit, sin Electron ni PowerShell). **Si trabajás en esa rama, la fuente de verdad es
+> [docs/MIGRACION-RUST.md](docs/MIGRACION-RUST.md)** — leelo antes que nada; empieza con un
+> punto de retomada de 30 segundos.
+>
+> Estado: la aplicación ya hace todo lo que se usa a diario (rejilla, widgets, editor completo,
+> páginas, perfiles, bandeja, atajos globales, ajustes, dos idiomas, RGB por OpenRGB).
+> **Falta el instalador.** Binario 3,18 MB · 128 MB de RAM · 21 ms por acción.
+>
+> Este archivo (CLAUDE.md) describe la arquitectura **Electron de `main`**, que sigue siendo la
+> versión publicada (0.5.x) hasta que la migración salga como v1.0.0.
 
 ## 📚 Documentos relacionados (leer antes de empezar)
 
