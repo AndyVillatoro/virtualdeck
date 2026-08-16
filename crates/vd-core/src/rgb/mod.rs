@@ -13,9 +13,11 @@
 //! saber que hay conectado y por que via se llega a cada cosa.
 
 pub mod aura;
+pub mod openrgb;
 mod scan;
 
 pub use aura::{AuraController, AuraInfo, Rgb, Transport};
+pub use openrgb::{Cliente as OpenRgb, Dispositivo as DispositivoRgb, OpenRgbError};
 pub use scan::{scan, DeviceKind, HidDeviceInfo, RgbVendor};
 
 /// Errores del modulo RGB.

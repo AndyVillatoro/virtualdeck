@@ -43,6 +43,7 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::Macro, "Macro grabada"),
     (ActionType::Folder, "Carpeta de botones"),
     (ActionType::Tts, "Leer en voz alta"),
+    (ActionType::RgbColor, "Color RGB"),
     (ActionType::Branch, "Ramificación"),
     (ActionType::Countdown, "Cuenta atrás"),
 ];
@@ -510,6 +511,14 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
             campo(ui, t("Variable"), &mut b.var_name);
             numero(ui, t("Incremento"), &mut b.var_delta, -1000, 1000);
         }
+        ActionType::RgbColor => {
+            campo(ui, "Color (#RRGGBB)", &mut b.rgb_color);
+            ui.label(
+                RichText::new(t("Requiere OpenRGB abierto con su servidor activo."))
+                    .small()
+                    .color(Color32::from_gray(110)),
+            );
+        }
         ActionType::Tts => {
             multilinea(ui, "Texto", &mut b.tts_text);
             ui.label(
@@ -830,10 +839,30 @@ mod tests {
 
     #[test]
     fn un_tipo_fuera_de_la_lista_se_avisa() {
-        // El editor no cubre el RGB, y el usuario tiene que verlo en vez de
-        // creer que el boton no tiene accion.
-        let n = nombre_tipo(&ActionType::RgbColor);
-        assert!(n.contains("no editable"), "salio: {n}");
+        // Este test se rompio cuatro veces porque nombraba un tipo concreto y
+        // ese tipo acababa volviendose editable. Ahora comprueba la *propiedad*:
+        // cualquier tipo que no este en la lista tiene que avisar de que no se
+        // puede editar aqui, en vez de parecer que el boton no tiene accion.
+        let candidatos = [
+            ActionType::Notify,
+            ActionType::RegionCapture,
+            ActionType::RgbMode,
+            ActionType::RgbProfile,
+            ActionType::RgbPreset,
+        ];
+        let fuera: Vec<_> = candidatos
+            .iter()
+            .filter(|c| !TIPOS.iter().any(|(t, _)| t == *c))
+            .collect();
+
+        assert!(
+            !fuera.is_empty(),
+            "si el editor cubriera todos estos tipos, este test ya no prueba nada              y hay que darle candidatos nuevos"
+        );
+        for tipo in fuera {
+            let n = nombre_tipo(tipo);
+            assert!(n.contains("no editable"), "{tipo:?} salio como {n:?}");
+        }
     }
 
     #[test]

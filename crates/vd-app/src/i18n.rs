@@ -272,6 +272,9 @@ const PARES: &[(&str, &str)] = &[
         "{backups} configuration backup(s)",
     ),
     ("Leer en voz alta", "Read aloud"),
+    ("Color RGB", "RGB colour"),
+    ("Color (#RRGGBB)", "Colour (#RRGGBB)"),
+    ("Requiere OpenRGB abierto con su servidor activo.", "Requires OpenRGB running with its server enabled."),
     ("Usa las voces que tengas instaladas en Windows.", "Uses the voices installed in Windows."),
     // --- perfiles ---
     ("Perfiles", "Profiles"),

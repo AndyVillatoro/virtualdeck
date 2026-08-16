@@ -306,16 +306,59 @@ impl Ctx {
             T::Notify => Outcome::ForUi("mostrar notificacion"),
             T::RegionCapture => Outcome::ForUi("capturar region de pantalla"),
             T::Tts => envolver(crate::voz::hablar(&self.texto(&a.tts_text))),
-            T::RgbColor | T::RgbMode | T::RgbProfile | T::RgbPreset => {
-                // La escritura RGB no funciona todavia: falta analizar una
-                // captura del protocolo USB de Aura. Ver docs/MIGRACION-RUST.md.
-                // Decirlo es mejor que aparentar exito y dejar las luces igual.
-                Outcome::ForUi("control RGB (escritura aun no soportada)")
+            T::RgbColor => self.rgb_color(a),
+            T::RgbMode | T::RgbProfile | T::RgbPreset => {
+                // Modos, perfiles y presets necesitan mas del SDK de OpenRGB que
+                // el color plano; se atenderan cuando exista su editor.
+                Outcome::ForUi("modo/perfil RGB (aun no soportado)")
             }
 
             T::Other(nombre) => Outcome::Failed(format!(
                 "Tipo de accion desconocido: \"{nombre}\". Puede venir de una version mas nueva."
             )),
+        }
+    }
+
+    /// Aplica un color plano a un dispositivo via OpenRGB.
+    fn rgb_color(&mut self, a: &ButtonAction) -> Outcome {
+        let texto = self.texto(&a.rgb_color);
+        let Some(color) = parsear_color(&texto) else {
+            return Outcome::Failed(format!(
+                "El color \"{texto}\" no se entiende; se espera #RRGGBB."
+            ));
+        };
+
+        let mut cliente =
+            match crate::rgb::OpenRgb::conectar("127.0.0.1", crate::rgb::openrgb::PUERTO) {
+                Ok(c) => c,
+                // El mensaje dice que hace falta OpenRGB: sin eso, un boton que no
+                // hace nada no da ninguna pista de por que.
+                Err(e) => return Outcome::Failed(e.to_string()),
+            };
+
+        // Sin dispositivo indicado se pintan todos, que es lo que espera quien
+        // pone un boton de "todo en rojo".
+        match a.rgb_device_id {
+            Some(id) if id >= 0 => envolver(cliente.pintar(id as u32, color).map(|_| ())),
+            _ => match cliente.listar() {
+                Ok(lista) if lista.is_empty() => {
+                    Outcome::Failed("OpenRGB no ve ningun dispositivo RGB.".into())
+                }
+                Ok(lista) => {
+                    let mut fallos = Vec::new();
+                    for d in &lista {
+                        if let Err(e) = cliente.pintar(d.indice, color) {
+                            fallos.push(format!("{}: {e}", d.nombre));
+                        }
+                    }
+                    if fallos.is_empty() {
+                        Outcome::Ok
+                    } else {
+                        Outcome::Failed(fallos.join("; "))
+                    }
+                }
+                Err(e) => Outcome::Failed(e.to_string()),
+            },
         }
     }
 
@@ -500,6 +543,16 @@ fn a_snap(p: CfgSnap) -> crate::launcher::SnapPosition {
         CfgSnap::Center => L::Center,
         CfgSnap::Restore => L::Restore,
     }
+}
+
+/// Interpreta un color `#RRGGBB` o `RRGGBB`.
+fn parsear_color(s: &str) -> Option<(u8, u8, u8)> {
+    let h = s.trim().trim_start_matches('#');
+    if h.len() != 6 {
+        return None;
+    }
+    let leer = |i: usize| u8::from_str_radix(&h[i..i + 2], 16).ok();
+    Some((leer(0)?, leer(2)?, leer(4)?))
 }
 
 fn envolver<E: std::fmt::Display>(r: Result<(), E>) -> Outcome {
@@ -760,6 +813,22 @@ mod tests {
         );
         assert!(!r.ok);
         assert!(r.error.unwrap().contains("teletransporte"));
+    }
+
+    #[test]
+    fn lee_colores_rgb() {
+        assert_eq!(parsear_color("#FF8000"), Some((255, 128, 0)));
+        assert_eq!(parsear_color("ff8000"), Some((255, 128, 0)));
+        assert_eq!(parsear_color("  #000000 "), Some((0, 0, 0)));
+    }
+
+    #[test]
+    fn rechaza_lo_que_no_es_un_color() {
+        // Un color mal escrito tiene que decirlo, no pintar algo aleatorio.
+        assert_eq!(parsear_color("#FFF"), None);
+        assert_eq!(parsear_color("rojo"), None);
+        assert_eq!(parsear_color(""), None);
+        assert_eq!(parsear_color("#GGGGGG"), None);
     }
 
     #[test]

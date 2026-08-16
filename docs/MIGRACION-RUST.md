@@ -1268,7 +1268,41 @@ de suponerlo por el nombre del campo, y eso convirtió lo que parecía «hay que
 portar los iconos de lucide» en dibujar texto. El icono de marca manda si hay
 los dos.
 
-Lo que el editor **aún no** cubre: RGB, notificaciones y captura de región. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+### ✅ Fase 2 — RGB por OpenRGB
+
+El control **nativo** del Aura sigue bloqueado —falta la captura del protocolo
+USB— así que se implementó la otra vía, que es la que ya usaba la versión
+Electron: hablar con **OpenRGB** por TCP. OpenRGB se entiende con cada
+dispositivo por su protocolo (placa, ventiladores, AIO, GPU) y aquí solo se le
+piden colores. **Cero riesgo para el hardware**, que es el punto.
+
+Lo incómodo del protocolo es la descripción de un controlador: llega como un
+bloque con nombre, modos, zonas y LEDs encadenados **sin índice**, así que para
+saber cuántos LEDs tiene hay que recorrer modos y zonas enteros aunque no se
+usen. Y los campos de brillo solo existen desde la versión 3 del protocolo:
+leerlos contra un servidor viejo desalinea todo lo demás. Por eso la versión se
+**negocia** y se usa la menor de las dos. Hay un test que fija justo eso: parsear
+un bloque de versión 1 como si fuera 3 tiene que dar basura.
+
+Antes de pintar se pasa el dispositivo a **modo personalizado**. Si se queda en
+un efecto propio —arcoíris, respiración—, el efecto sobrescribe los colores al
+instante y parece que la orden no hizo nada.
+
+Verificado con un **servidor de prueba que habla el protocolo**, igual que se
+hizo con LibreHardwareMonitor: comprueba que el cliente manda bien la cabecera,
+negocia la versión, lee la lista y envía un color por LED. Sin eso, el cliente
+solo se podría probar teniendo OpenRGB instalado.
+
+Falta la confirmación en vivo con OpenRGB abierto: `vd-cli rgb openrgb #FF0000`.
+
+**El test de «tipo no editable» se reescribió.** Se había roto cuatro veces
+porque nombraba un tipo concreto que acababa volviéndose editable. Ahora
+comprueba la *propiedad* —cualquier tipo fuera de la lista avisa— y además falla
+si algún día todos sus candidatos pasan a ser editables, para no quedarse en
+verde sin probar nada.
+
+Lo que el editor **aún no** cubre: modos y perfiles RGB, notificaciones y captura
+de región. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 

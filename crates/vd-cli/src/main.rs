@@ -28,6 +28,43 @@ fn main() -> Result<()> {
         ["rgb"] | ["rgb", "scan"] => cmd_rgb_scan(),
         ["rgb", "probe"] => cmd_rgb_probe(),
         ["rgb", "set", color] => cmd_rgb_set(color),
+        ["rgb", "openrgb"] => {
+            use vd_core::rgb::{openrgb::PUERTO, OpenRgb};
+            match OpenRgb::conectar("127.0.0.1", PUERTO) {
+                Ok(mut c) => {
+                    let lista = c.listar()?;
+                    println!("{} dispositivo(s) via OpenRGB:", lista.len());
+                    for d in &lista {
+                        println!("  {:>2}  {:<40} {} LED(s)", d.indice, d.nombre, d.leds);
+                    }
+                }
+                Err(e) => {
+                    println!("{e}");
+                    println!(
+                        "
+Abri OpenRGB y activa su servidor SDK (Settings -> Enable Server)."
+                    );
+                }
+            }
+            Ok(())
+        }
+        ["rgb", "openrgb", color] => {
+            use vd_core::rgb::{openrgb::PUERTO, OpenRgb};
+            let mut c = OpenRgb::conectar("127.0.0.1", PUERTO)?;
+            let h = color.trim_start_matches('#');
+            let rgb = (
+                u8::from_str_radix(&h[0..2], 16)?,
+                u8::from_str_radix(&h[2..4], 16)?,
+                u8::from_str_radix(&h[4..6], 16)?,
+            );
+            for d in c.listar()? {
+                match c.pintar(d.indice, rgb) {
+                    Ok(n) => println!("  {:<40} {n} LED(s) pintados", d.nombre),
+                    Err(e) => println!("  {:<40} fallo: {e}", d.nombre),
+                }
+            }
+            Ok(())
+        }
         ["rgb", "release"] => {
             vd_core::rgb::AuraController::open()?.release()?;
             println!("Controlador devuelto a su modo de efectos propio.");
