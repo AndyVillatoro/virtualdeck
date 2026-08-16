@@ -12,6 +12,7 @@
 //! pueda faltar— y encaja con la estética del proyecto, que es justamente una
 //! matriz de puntos.
 
+use crate::i18n::t;
 use tray_icon::menu::{Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem};
 use tray_icon::{Icon, TrayIcon, TrayIconBuilder, TrayIconEvent};
 
@@ -38,9 +39,9 @@ pub struct Bandeja {
 impl Bandeja {
     pub fn nueva(acento: egui::Color32) -> anyhow::Result<Self> {
         let menu = Menu::new();
-        let mostrar = MenuItem::new("Mostrar VirtualDeck", true, None);
-        let ocultar = MenuItem::new("Ocultar", true, None);
-        let salir = MenuItem::new("Salir", true, None);
+        let mostrar = MenuItem::new(t("Mostrar VirtualDeck"), true, None);
+        let ocultar = MenuItem::new(t("Ocultar"), true, None);
+        let salir = MenuItem::new(t("Salir"), true, None);
 
         menu.append(&mostrar)?;
         menu.append(&ocultar)?;

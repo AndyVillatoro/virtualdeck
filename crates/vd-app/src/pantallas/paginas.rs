@@ -3,6 +3,7 @@
 //! Se dibuja en modo edición, debajo de la rejilla, para que los cambios de
 //! tamaño se vean al momento sobre los botones reales.
 
+use crate::i18n::{t, tf};
 use egui::{Color32, RichText};
 use vd_core::config::model::{ButtonConfig, DeckConfig, PageConfig};
 
@@ -36,7 +37,7 @@ pub fn ui(app: &mut App, ui: &mut egui::Ui) {
     let mut borrar = false;
 
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Página").color(acento).small().strong());
+        ui.label(RichText::new(t("Página")).color(acento).small().strong());
 
         if ui
             .add(egui::TextEdit::singleline(&mut pagina.name).desired_width(140.0))
@@ -46,7 +47,7 @@ pub fn ui(app: &mut App, ui: &mut egui::Ui) {
         }
 
         ui.add_space(10.0);
-        ui.label(RichText::new("Rejilla").small());
+        ui.label(RichText::new(t("Rejilla")).small());
 
         let mut columnas = pagina.columns();
         let mut filas = pagina.rows();
@@ -77,11 +78,12 @@ pub fn ui(app: &mut App, ui: &mut egui::Ui) {
             // La última página no se puede borrar: quedarse sin ninguna dejaría la
             // aplicación sin nada que mostrar y sin forma de crear la primera.
             let puede_borrar = total > 1;
-            let boton = egui::Button::new(RichText::new("Borrar página").color(if puede_borrar {
-                Color32::from_rgb(0xE5, 0x73, 0x73)
-            } else {
-                Color32::from_gray(70)
-            }));
+            let boton =
+                egui::Button::new(RichText::new(t("Borrar página")).color(if puede_borrar {
+                    Color32::from_rgb(0xE5, 0x73, 0x73)
+                } else {
+                    Color32::from_gray(70)
+                }));
             let r = ui.add_enabled(puede_borrar, boton);
             if r.clicked() {
                 borrar = true;
@@ -90,7 +92,7 @@ pub fn ui(app: &mut App, ui: &mut egui::Ui) {
                 r.on_hover_text("Tiene que quedar al menos una página");
             }
 
-            if ui.button("+ Nueva página").clicked() {
+            if ui.button(t("+ Nueva página")).clicked() {
                 nueva = true;
             }
         });
@@ -124,7 +126,7 @@ fn crear_pagina(cfg: &mut DeckConfig) {
     let numero = cfg.pages.len();
     let pagina = PageConfig {
         id: format!("p{numero}"),
-        name: format!("Página {}", numero + 1),
+        name: tf("Página {}", &[("{}", &(numero + 1).to_string())]),
         grid_size: Some(4),
         grid_rows: Some(4),
         extra: Default::default(),

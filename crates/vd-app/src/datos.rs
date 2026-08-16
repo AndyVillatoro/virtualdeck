@@ -15,6 +15,7 @@
 //! los servicios que lo dan son gratuitos y castigarlos con tráfico innecesario
 //! es la vía más rápida a que empiecen a rechazar peticiones—.
 
+use crate::i18n::t;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::{Duration, Instant};
 
@@ -122,17 +123,17 @@ fn sondear(
 /// 51-67 llovizna y lluvia, 71-77 nieve, 80-82 chubascos, 95-99 tormenta.
 pub fn descripcion_clima(codigo: i32) -> &'static str {
     match codigo {
-        0 => "Despejado",
-        1 => "Casi despejado",
-        2 => "Parcialmente nublado",
-        3 => "Nublado",
-        45 | 48 => "Niebla",
-        51..=57 => "Llovizna",
-        61..=67 => "Lluvia",
-        71..=77 => "Nieve",
-        80..=82 => "Chubascos",
-        85 | 86 => "Chubascos de nieve",
-        95..=99 => "Tormenta",
+        0 => t("Despejado"),
+        1 => t("Casi despejado"),
+        2 => t("Parcialmente nublado"),
+        3 => t("Nublado"),
+        45 | 48 => t("Niebla"),
+        51..=57 => t("Llovizna"),
+        61..=67 => t("Lluvia"),
+        71..=77 => t("Nieve"),
+        80..=82 => t("Chubascos"),
+        85 | 86 => t("Chubascos de nieve"),
+        95..=99 => t("Tormenta"),
         _ => "—",
     }
 }

@@ -14,6 +14,7 @@
 //! canal. La versión Electron resolvía esto con promesas; aquí es explícito, que
 //! además hace evidente el único punto donde el estado se modifica desde fuera.
 
+use crate::i18n::{t, tf};
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Instant;
 
@@ -95,6 +96,9 @@ impl App {
             .unwrap_or_default();
 
         let ajustes_sensores = config.as_ref().and_then(|c| c.sensors.clone());
+        // El idioma se fija antes de dibujar nada: si no, el primer fotograma
+        // saldria en español aunque el usuario tenga ingles configurado.
+        crate::i18n::configurar(config.as_ref().and_then(|c| c.language));
 
         Self {
             config,
@@ -123,30 +127,30 @@ impl App {
         self.datos.recoger();
         self.vigilar_grabacion();
 
-        while let Ok(t) = self.receptor.try_recv() {
-            self.en_curso.retain(|id| *id != t.boton);
+        while let Ok(fin) = self.receptor.try_recv() {
+            self.en_curso.retain(|id| *id != fin.boton);
 
             // Las variables que la acción modificó pasan al estado global. Es el
             // único punto donde el estado se toca desde fuera del hilo de la
             // interfaz.
-            self.estado = t.resultado.state;
+            self.estado = fin.resultado.state;
 
-            self.aviso = Some(match &t.resultado.error {
+            self.aviso = Some(match &fin.resultado.error {
                 Some(e) => Aviso {
                     texto: e.clone(),
                     error: true,
                     desde: Instant::now(),
                 },
-                None if !t.resultado.for_ui.is_empty() => Aviso {
-                    texto: format!(
+                None if !fin.resultado.for_ui.is_empty() => Aviso {
+                    texto: tf(
                         "Pendiente de la interfaz: {}",
-                        t.resultado.for_ui.join(", ")
+                        &[("{}", &fin.resultado.for_ui.join(", "))],
                     ),
                     error: false,
                     desde: Instant::now(),
                 },
                 None => Aviso {
-                    texto: "Listo".into(),
+                    texto: t("Listo").into(),
                     error: false,
                     desde: Instant::now(),
                 },
@@ -318,14 +322,14 @@ impl App {
         };
         self.aviso = Some(match vd_core::config::save(cfg) {
             Ok(()) => Aviso {
-                texto: "Guardado".into(),
+                texto: t("Guardado").into(),
                 error: false,
                 desde: Instant::now(),
             },
             // Si el guardado falla, el cambio sigue en memoria pero no en disco.
             // Decirlo importa: el usuario podria cerrar creyendo que se guardo.
             Err(e) => Aviso {
-                texto: format!("No se pudo guardar: {e}"),
+                texto: tf("No se pudo guardar: {e}", &[("{e}", &e.to_string())]),
                 error: true,
                 desde: Instant::now(),
             },
@@ -344,14 +348,17 @@ impl App {
                     boton: boton.to_string(),
                 });
                 self.aviso = Some(Aviso {
-                    texto: "Grabando: usa el teclado y el raton, luego pulsa Detener".into(),
+                    texto: t("Grabando: usa el teclado y el raton, luego pulsa Detener").into(),
                     error: false,
                     desde: Instant::now(),
                 });
             }
             Err(e) => {
                 self.aviso = Some(Aviso {
-                    texto: format!("No se pudo empezar a grabar: {e}"),
+                    texto: tf(
+                        "No se pudo empezar a grabar: {e}",
+                        &[("{e}", &e.to_string())],
+                    ),
                     error: true,
                     desde: Instant::now(),
                 });
@@ -371,7 +378,10 @@ impl App {
             Ok(p) => p,
             Err(e) => {
                 self.aviso = Some(Aviso {
-                    texto: format!("No se pudo detener la grabacion: {e}"),
+                    texto: tf(
+                        "No se pudo detener la grabacion: {e}",
+                        &[("{e}", &e.to_string())],
+                    ),
                     error: true,
                     desde: Instant::now(),
                 });
@@ -382,7 +392,7 @@ impl App {
         // Si el usuario cambio de boton mientras grababa, los pasos no son suyos.
         let Some(borrador) = self.borrador.as_mut().filter(|b| b.id == g.boton) else {
             self.aviso = Some(Aviso {
-                texto: "Grabacion descartada: se cambio de boton mientras grababa".into(),
+                texto: t("Grabacion descartada: se cambio de boton mientras grababa").into(),
                 error: true,
                 desde: Instant::now(),
             });
@@ -398,7 +408,10 @@ impl App {
         borrador.actions = None;
 
         self.aviso = Some(Aviso {
-            texto: format!("Macro grabada: {n} paso(s). Recuerda guardar."),
+            texto: tf(
+                "Macro grabada: {n} paso(s). Recuerda guardar.",
+                &[("{n}", &n.to_string())],
+            ),
             error: false,
             desde: Instant::now(),
         });

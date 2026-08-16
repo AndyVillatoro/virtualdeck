@@ -4,6 +4,7 @@
 //! los iconos y las imágenes de fondo son un paso aparte porque necesitan cargar
 //! y cachear texturas.
 
+use crate::i18n::{t, tf};
 use egui::{Align2, Color32, CornerRadius, FontId, Rect, Sense, Stroke, Vec2};
 
 use crate::app::{color_hex, App};
@@ -90,7 +91,11 @@ fn cabecera(app: &mut App, ui: &mut egui::Ui) {
             }
             ui.add_space(6.0);
 
-            let etiqueta = if app.modo_edicion { "Listo" } else { "Editar" };
+            let etiqueta = if app.modo_edicion {
+                t("Listo")
+            } else {
+                t("Editar")
+            };
             let boton =
                 egui::Button::new(egui::RichText::new(etiqueta).color(if app.modo_edicion {
                     Color32::BLACK
@@ -119,9 +124,12 @@ fn cabecera(app: &mut App, ui: &mut egui::Ui) {
             if !app.en_curso.is_empty() {
                 ui.add(egui::Spinner::new().size(14.0));
                 ui.label(
-                    egui::RichText::new(format!("{} en curso", app.en_curso.len()))
-                        .small()
-                        .color(Color32::from_gray(150)),
+                    egui::RichText::new(tf(
+                        "{} en curso",
+                        &[("{}", &app.en_curso.len().to_string())],
+                    ))
+                    .small()
+                    .color(Color32::from_gray(150)),
                 );
             }
         });
@@ -142,9 +150,9 @@ fn pie(app: &mut App, ui: &mut egui::Ui) {
             let n = app.estado.len();
             ui.label(
                 egui::RichText::new(if n == 0 {
-                    "Sin variables".to_string()
+                    t("Sin variables").to_string()
                 } else {
-                    format!("{n} variable(s)")
+                    tf("{n} variable(s)", &[("{n}", &n.to_string())])
                 })
                 .small()
                 .color(Color32::from_gray(90)),
@@ -159,7 +167,7 @@ fn sin_configuracion(app: &App, ui: &mut egui::Ui) {
         match &app.error_carga {
             Some(e) => {
                 ui.label(
-                    egui::RichText::new("No se pudo leer la configuración")
+                    egui::RichText::new(t("No se pudo leer la configuración"))
                         .color(Color32::from_rgb(0xE5, 0x73, 0x73)),
                 );
                 ui.add_space(6.0);
@@ -173,7 +181,7 @@ fn sin_configuracion(app: &App, ui: &mut egui::Ui) {
             // instalación limpia arranca con un deck vacío usable.
             None => {
                 ui.label(
-                    egui::RichText::new("No hay ninguna configuración")
+                    egui::RichText::new(t("No hay ninguna configuración"))
                         .color(Color32::from_gray(160)),
                 );
             }

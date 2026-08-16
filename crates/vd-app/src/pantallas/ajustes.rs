@@ -4,6 +4,7 @@
 //! como una ventana flotante para no quitarle sitio a la rejilla, que es lo que
 //! el usuario mira normalmente.
 
+use crate::i18n::{t, tf};
 use egui::{Color32, RichText};
 use vd_core::config::model::{Language, SensorsSettings, Theme};
 
@@ -35,7 +36,7 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
     let mut abierto = true;
     let mut cambio = false;
 
-    egui::Window::new("Ajustes")
+    egui::Window::new(t("Ajustes"))
         .open(&mut abierto)
         .resizable(true)
         .default_width(380.0)
@@ -60,14 +61,19 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
 
 fn apariencia(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
     let mut cambio = false;
-    ui.label(RichText::new("Apariencia").color(acento).small().strong());
+    ui.label(
+        RichText::new(t("Apariencia"))
+            .color(acento)
+            .small()
+            .strong(),
+    );
     ui.add_space(4.0);
 
     let Some(cfg) = app.config.as_mut() else {
         return false;
     };
 
-    ui.label(RichText::new("Acento").small());
+    ui.label(RichText::new(t("Acento")).small());
     ui.horizontal_wrapped(|ui| {
         for (hex, nombre) in ACENTOS {
             let color = color_hex(hex).unwrap_or(Color32::GRAY);
@@ -99,11 +105,11 @@ fn apariencia(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
 
     ui.add_space(8.0);
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Tema").small());
+        ui.label(RichText::new(t("Tema")).small());
         for (t, nombre) in [
-            (Theme::System, "Sistema"),
-            (Theme::Light, "Claro"),
-            (Theme::Dark, "Oscuro"),
+            (Theme::System, t("Sistema")),
+            (Theme::Light, t("Claro")),
+            (Theme::Dark, t("Oscuro")),
         ] {
             if ui.selectable_label(cfg.theme == Some(t), nombre).clicked() {
                 cfg.theme = Some(t);
@@ -114,9 +120,9 @@ fn apariencia(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
 
     ui.add_space(6.0);
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Idioma").small());
+        ui.label(RichText::new(t("Idioma")).small());
         for (l, nombre) in [
-            (Language::System, "Sistema"),
+            (Language::System, t("Sistema")),
             (Language::Es, "Español"),
             (Language::En, "English"),
         ] {
@@ -125,6 +131,9 @@ fn apariencia(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
                 .clicked()
             {
                 cfg.language = Some(l);
+                // Se aplica al momento: un selector de idioma que exige
+                // reiniciar es de las cosas mas frustrantes que hay.
+                crate::i18n::configurar(Some(l));
                 cambio = true;
             }
         }
@@ -135,14 +144,15 @@ fn apariencia(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
 
 fn sensores(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
     let mut cambio = false;
-    ui.label(RichText::new("Sensores").color(acento).small().strong());
+    ui.label(RichText::new(t("Sensores")).color(acento).small().strong());
 
     // Se dice qué se obtiene sin hacer nada, porque el nivel 2 suena a requisito
     // y no lo es: casi todo funciona sin instalar nada.
     let nativos = app.datos.sensores.len();
     ui.label(
-        RichText::new(format!(
-            "{nativos} sensores disponibles sin instalar nada (CPU, memoria, disco, red, GPU)."
+        RichText::new(tf(
+            "{nativos} sensores disponibles sin instalar nada (CPU, memoria, disco, red, GPU).",
+            &[("{nativos}", &nativos.to_string())],
         ))
         .small()
         .color(Color32::from_gray(120)),
@@ -157,7 +167,7 @@ fn sensores(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
     if ui
         .checkbox(
             &mut s.enabled,
-            "Usar LibreHardwareMonitor si está corriendo",
+            t("Usar LibreHardwareMonitor si está corriendo"),
         )
         .on_hover_text(
             "Añade temperatura del procesador, voltajes y ventiladores de la placa.\n\
@@ -170,20 +180,20 @@ fn sensores(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
 
     if s.enabled {
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Host").small());
+            ui.label(RichText::new(t("Host")).small());
             if ui
                 .add(egui::TextEdit::singleline(&mut s.host).desired_width(110.0))
                 .changed()
             {
                 cambio = true;
             }
-            ui.label(RichText::new("Puerto").small());
+            ui.label(RichText::new(t("Puerto")).small());
             if ui.add(egui::DragValue::new(&mut s.port)).changed() {
                 cambio = true;
             }
         });
         ui.label(
-            RichText::new("Los cambios se aplican al reiniciar la aplicación.")
+            RichText::new(t("Los cambios se aplican al reiniciar la aplicación."))
                 .small()
                 .color(Color32::from_gray(110)),
         );
@@ -193,7 +203,7 @@ fn sensores(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
 }
 
 fn sistema(app: &mut App, ui: &mut egui::Ui, acento: Color32) {
-    ui.label(RichText::new("Sistema").color(acento).small().strong());
+    ui.label(RichText::new(t("Sistema")).color(acento).small().strong());
     ui.add_space(4.0);
 
     // El estado se lee del registro, no de la configuración: alguien pudo
@@ -201,41 +211,55 @@ fn sistema(app: &mut App, ui: &mut egui::Ui, acento: Color32) {
     // la realidad, no lo que creemos haber dejado.
     let mut arranca = vd_core::arranque::activo();
     if ui
-        .checkbox(&mut arranca, "Arrancar con Windows")
-        .on_hover_text(
+        .checkbox(&mut arranca, t("Arrancar con Windows"))
+        .on_hover_text(t(
             "Añade una entrada en el registro del usuario. No pide permisos de administrador.",
-        )
+        ))
         .changed()
     {
         if let Err(e) = vd_core::arranque::set(arranca) {
-            app.avisar_error(format!("No se pudo cambiar el arranque: {e}"));
+            app.avisar_error(tf(
+                "No se pudo cambiar el arranque: {e}",
+                &[("{e}", &e.to_string())],
+            ));
         }
     }
 }
 
 fn diagnostico(app: &mut App, ui: &mut egui::Ui, acento: Color32) {
-    ui.label(RichText::new("Diagnóstico").color(acento).small().strong());
+    ui.label(
+        RichText::new(t("Diagnóstico"))
+            .color(acento)
+            .small()
+            .strong(),
+    );
     ui.add_space(4.0);
 
     ui.horizontal(|ui| {
-        if ui.button("Abrir carpeta de datos").clicked() {
+        if ui.button(t("Abrir carpeta de datos")).clicked() {
             match vd_core::config::user_data_dir() {
                 Ok(d) => {
                     if let Err(e) = vd_core::launcher::open_path(&d.to_string_lossy()) {
-                        app.avisar_error(format!("No se pudo abrir la carpeta: {e}"));
+                        app.avisar_error(tf(
+                            "No se pudo abrir la carpeta: {e}",
+                            &[("{e}", &e.to_string())],
+                        ));
                     }
                 }
-                Err(e) => app.avisar_error(format!("No se pudo localizar la carpeta: {e}")),
+                Err(e) => app.avisar_error(tf(
+                    "No se pudo localizar la carpeta: {e}",
+                    &[("{e}", &e.to_string())],
+                )),
             }
         }
         if ui
-            .button("Copiar registro")
+            .button(t("Copiar registro"))
             .on_hover_text("Copia las últimas líneas del log, para adjuntar a un reporte")
             .clicked()
         {
             let texto = vd_core::log::read_recent(16 * 1024);
             if let Err(e) = vd_core::launcher::set_clipboard(&texto) {
-                app.avisar_error(format!("No se pudo copiar: {e}"));
+                app.avisar_error(tf("No se pudo copiar: {e}", &[("{e}", &e.to_string())]));
             }
         }
     });
@@ -244,8 +268,9 @@ fn diagnostico(app: &mut App, ui: &mut egui::Ui, acento: Color32) {
         .map(|b| b.len())
         .unwrap_or(0);
     ui.label(
-        RichText::new(format!(
-            "{backups} copia(s) de seguridad de la configuración"
+        RichText::new(tf(
+            "{backups} copia(s) de seguridad de la configuración",
+            &[("{backups}", &backups.to_string())],
         ))
         .small()
         .color(Color32::from_gray(110)),

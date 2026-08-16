@@ -8,6 +8,7 @@ pub mod atajos;
 pub mod bandeja;
 pub mod datos;
 pub mod demo;
+pub mod i18n;
 pub mod iconos;
 pub mod pantallas;
 pub mod render;

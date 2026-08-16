@@ -4,6 +4,7 @@
 //! solo la vuelca a la configuración al guardar, para que salirse del editor no
 //! deje cambios a medias.
 
+use crate::i18n::{t, tf};
 use egui::{Color32, RichText};
 use vd_core::config::model::{ActionType, ButtonConfig, SensorWidget, VarWidget, WidgetKind};
 
@@ -40,15 +41,20 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::Macro, "Macro grabada"),
 ];
 
-fn nombre_tipo(t: &ActionType) -> String {
+fn nombre_tipo(tipo_actual: &ActionType) -> String {
     TIPOS
         .iter()
-        .find(|(tipo, _)| tipo == t)
-        .map(|(_, n)| (*n).to_string())
+        .find(|(tipo, _)| tipo == tipo_actual)
+        .map(|(_, n)| t(n).to_string())
         // Un tipo que este editor no cubre se muestra tal cual en vez de
         // esconderse: el usuario tiene que poder ver qué hay configurado aunque
         // no pueda cambiarlo desde aquí.
-        .unwrap_or_else(|| format!("{t:?} (no editable aquí)"))
+        .unwrap_or_else(|| {
+            tf(
+                "{t:?} (no editable aquí)",
+                &[("{t:?}", &format!("{tipo_actual:?}"))],
+            )
+        })
 }
 
 /// Dibuja el panel. Devuelve `true` si hay cambios sin guardar.
@@ -85,7 +91,7 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
         )
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Editar botón").color(acento).strong());
+                ui.label(RichText::new(t("Editar botón")).color(acento).strong());
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     ui.label(
                         RichText::new(&borrador.id)
@@ -113,18 +119,20 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
             ui.separator();
             ui.horizontal(|ui| {
                 if ui
-                    .add(egui::Button::new(RichText::new("Guardar").strong()).fill(acento))
+                    .add(egui::Button::new(RichText::new(t("Guardar")).strong()).fill(acento))
                     .clicked()
                 {
                     guardar = true;
                 }
-                if ui.button("Descartar").clicked() {
+                if ui.button(t("Descartar")).clicked() {
                     descartar = true;
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
-                        .button(RichText::new("Vaciar").color(Color32::from_rgb(0xE5, 0x73, 0x73)))
+                        .button(
+                            RichText::new(t("Vaciar")).color(Color32::from_rgb(0xE5, 0x73, 0x73)),
+                        )
                         .on_hover_text("Deja el botón sin acción ni etiqueta")
                         .clicked()
                     {
@@ -156,14 +164,19 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
 }
 
 fn apariencia(ui: &mut egui::Ui, b: &mut ButtonConfig, acento: Color32) {
-    ui.label(RichText::new("Apariencia").color(acento).small().strong());
+    ui.label(
+        RichText::new(t("Apariencia"))
+            .color(acento)
+            .small()
+            .strong(),
+    );
     ui.add_space(4.0);
 
-    ui.label("Etiqueta");
+    ui.label(t("Etiqueta"));
     ui.add(egui::TextEdit::singleline(&mut b.label).desired_width(f32::INFINITY));
 
     ui.add_space(6.0);
-    ui.label("Segunda línea");
+    ui.label(t("Segunda línea"));
     let mut sub = b.sublabel.clone().unwrap_or_default();
     if ui
         .add(egui::TextEdit::singleline(&mut sub).desired_width(f32::INFINITY))
@@ -175,23 +188,26 @@ fn apariencia(ui: &mut egui::Ui, b: &mut ButtonConfig, acento: Color32) {
     }
 
     ui.add_space(8.0);
-    ui.label("Icono");
+    ui.label(t("Icono"));
     let actual = b.brand_icon.clone().unwrap_or_default();
     let etiqueta = if actual.is_empty() {
-        "Ninguno".to_string()
+        t("Ninguno").to_string()
     } else {
         crate::iconos::buscar(&actual)
             .map(|i| i.label.clone())
             // Un icono que ya no existe en el paquete: se muestra su clave para
             // que el usuario entienda por qué no ve nada.
-            .unwrap_or_else(|| format!("{actual} (desconocido)"))
+            .unwrap_or_else(|| tf("{actual} (desconocido)", &[("{actual}", &actual)]))
     };
 
     egui::ComboBox::from_id_salt("icono")
         .selected_text(etiqueta)
         .width(ui.available_width())
         .show_ui(ui, |ui| {
-            if ui.selectable_label(actual.is_empty(), "Ninguno").clicked() {
+            if ui
+                .selectable_label(actual.is_empty(), t("Ninguno"))
+                .clicked()
+            {
                 b.brand_icon = None;
             }
             // Ordenados por nombre: con 68 iconos, encontrarlos en el orden
@@ -210,9 +226,9 @@ fn apariencia(ui: &mut egui::Ui, b: &mut ButtonConfig, acento: Color32) {
 
     ui.add_space(8.0);
     ui.horizontal(|ui| {
-        color_opcional(ui, "Fondo", &mut b.bg_color);
+        color_opcional(ui, t("Fondo"), &mut b.bg_color);
         ui.add_space(12.0);
-        color_opcional(ui, "Texto", &mut b.fg_color);
+        color_opcional(ui, t("Texto"), &mut b.fg_color);
     });
 }
 
@@ -227,11 +243,11 @@ const WIDGETS: &[(WidgetKind, &str)] = &[
 
 fn nombre_widget(k: Option<WidgetKind>) -> &'static str {
     match k {
-        None => "Ninguno",
+        None => t("Ninguno"),
         Some(kind) => WIDGETS
             .iter()
             .find(|(w, _)| *w == kind)
-            .map_or("Ninguno", |(_, n)| *n),
+            .map_or(t("Ninguno"), |(_, n)| *n),
     }
 }
 
@@ -241,11 +257,13 @@ fn widget(
     sensores: &[(String, String, String)],
     acento: Color32,
 ) {
-    ui.label(RichText::new("Widget").color(acento).small().strong());
+    ui.label(RichText::new(t("Widget")).color(acento).small().strong());
     ui.label(
-        RichText::new("Sustituye a la etiqueta por algo vivo. El boton sigue siendo pulsable.")
-            .small()
-            .color(Color32::from_gray(110)),
+        RichText::new(t(
+            "Sustituye a la etiqueta por algo vivo. El boton sigue siendo pulsable.",
+        ))
+        .small()
+        .color(Color32::from_gray(110)),
     );
     ui.add_space(4.0);
 
@@ -253,7 +271,10 @@ fn widget(
         .selected_text(nombre_widget(b.widget))
         .width(ui.available_width())
         .show_ui(ui, |ui| {
-            if ui.selectable_label(b.widget.is_none(), "Ninguno").clicked() {
+            if ui
+                .selectable_label(b.widget.is_none(), t("Ninguno"))
+                .clicked()
+            {
                 b.widget = None;
             }
             for (kind, nombre) in WIDGETS {
@@ -296,23 +317,23 @@ fn widget_sensor(ui: &mut egui::Ui, b: &mut ButtonConfig, sensores: &[(String, S
         .map(|(_, nombre, hw)| format!("{hw} · {nombre}"))
         .unwrap_or_else(|| {
             if cfg.sensor_id.is_empty() {
-                "Elegir sensor".to_string()
+                t("Elegir sensor").to_string()
             } else {
                 // El sensor guardado puede no existir aqui: viene de otro equipo,
                 // o es de LHM y el nivel 2 esta apagado. Se muestra su id para que
                 // se entienda por que el boton no ensena nada.
-                format!("{} (no disponible ahora)", cfg.sensor_id)
+                tf("{} (no disponible ahora)", &[("{}", &cfg.sensor_id)])
             }
         });
 
-    ui.label(RichText::new("Sensor").small());
+    ui.label(RichText::new(t("Sensor")).small());
     egui::ComboBox::from_id_salt("sensor")
         .selected_text(actual)
         .width(ui.available_width())
         .show_ui(ui, |ui| {
             if sensores.is_empty() {
                 ui.label(
-                    RichText::new("Todavia no hay lecturas")
+                    RichText::new(t("Todavia no hay lecturas"))
                         .small()
                         .color(Color32::from_gray(110)),
                 );
@@ -328,7 +349,7 @@ fn widget_sensor(ui: &mut egui::Ui, b: &mut ButtonConfig, sensores: &[(String, S
         });
 
     ui.add_space(6.0);
-    ui.label(RichText::new("Unidad (vacio = la del sensor)").small());
+    ui.label(RichText::new(t("Unidad (vacio = la del sensor)")).small());
     let mut sufijo = cfg.suffix.clone().unwrap_or_default();
     if ui
         .add(egui::TextEdit::singleline(&mut sufijo).desired_width(f32::INFINITY))
@@ -339,12 +360,12 @@ fn widget_sensor(ui: &mut egui::Ui, b: &mut ButtonConfig, sensores: &[(String, S
 
     ui.add_space(6.0);
     ui.label(
-        RichText::new("Umbrales: el valor cambia de color al pasarlos")
+        RichText::new(t("Umbrales: el valor cambia de color al pasarlos"))
             .small()
             .color(Color32::from_gray(110)),
     );
-    umbral(ui, "Advertencia", &mut cfg.warn_at);
-    umbral(ui, "Critico", &mut cfg.crit_at);
+    umbral(ui, t("Advertencia"), &mut cfg.warn_at);
+    umbral(ui, t("Critico"), &mut cfg.crit_at);
 }
 
 /// Umbral opcional: se puede dejar sin definir, que no es lo mismo que cero.
@@ -367,13 +388,16 @@ fn widget_variable(ui: &mut egui::Ui, b: &mut ButtonConfig) {
         suffix: None,
     });
 
-    ui.label(RichText::new("Variable").small());
+    ui.label(RichText::new(t("Variable")).small());
     ui.add(egui::TextEdit::singleline(&mut cfg.var_name).desired_width(f32::INFINITY));
 
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         // Prefijo y sufijo envuelven al valor: "CPU " + "78" + " %".
-        for (etiqueta, campo) in [("Prefijo", &mut cfg.prefix), ("Sufijo", &mut cfg.suffix)] {
+        for (etiqueta, campo) in [
+            (t("Prefijo"), &mut cfg.prefix),
+            (t("Sufijo"), &mut cfg.suffix),
+        ] {
             ui.vertical(|ui| {
                 ui.label(RichText::new(etiqueta).small());
                 let mut texto = campo.clone().unwrap_or_default();
@@ -434,56 +458,60 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
     // ilegible el editor de la version Electron.
     match b.action_type {
         ActionType::App => {
-            campo(ui, "Ruta del ejecutable", &mut b.app_path);
-            campo(ui, "Argumentos", &mut b.app_args);
+            campo(ui, t("Ruta del ejecutable"), &mut b.app_path);
+            campo(ui, t("Argumentos"), &mut b.app_args);
         }
         ActionType::Web => campo(ui, "URL", &mut b.url),
-        ActionType::Shortcut => campo(ui, "Ruta del acceso directo", &mut b.shortcut_path),
+        ActionType::Shortcut => campo(ui, t("Ruta del acceso directo"), &mut b.shortcut_path),
         ActionType::Script => {
-            multilinea(ui, "Script", &mut b.script);
-            campo(ui, "Guardar salida en la variable", &mut b.capture_to_var);
+            multilinea(ui, t("Script"), &mut b.script);
+            campo(
+                ui,
+                t("Guardar salida en la variable"),
+                &mut b.capture_to_var,
+            );
         }
         ActionType::AudioDevice => {
-            campo(ui, "Nombre del dispositivo", &mut b.device_name);
+            campo(ui, t("Nombre del dispositivo"), &mut b.device_name);
             ui.label(
-                RichText::new("Basta con parte del nombre.")
+                RichText::new(t("Basta con parte del nombre."))
                     .small()
                     .color(Color32::from_gray(110)),
             );
         }
         ActionType::Hotkey => {
-            campo(ui, "Combinación", &mut b.hotkey);
+            campo(ui, t("Combinación"), &mut b.hotkey);
             ui.label(
-                RichText::new("Por ejemplo: Ctrl+Shift+M")
+                RichText::new(t("Por ejemplo: Ctrl+Shift+M"))
                     .small()
                     .color(Color32::from_gray(110)),
             );
         }
-        ActionType::TypeText => multilinea(ui, "Texto", &mut b.type_text),
-        ActionType::Clipboard => multilinea(ui, "Texto", &mut b.clipboard_text),
-        ActionType::VolumeSet => numero(ui, "Volumen (%)", &mut b.volume_percent, 0, 100),
-        ActionType::Brightness => numero(ui, "Brillo (%)", &mut b.brightness_level, 0, 100),
-        ActionType::KillProcess => campo(ui, "Nombre del proceso", &mut b.process_name),
+        ActionType::TypeText => multilinea(ui, t("Texto"), &mut b.type_text),
+        ActionType::Clipboard => multilinea(ui, t("Texto"), &mut b.clipboard_text),
+        ActionType::VolumeSet => numero(ui, t("Volumen (%)"), &mut b.volume_percent, 0, 100),
+        ActionType::Brightness => numero(ui, t("Brillo (%)"), &mut b.brightness_level, 0, 100),
+        ActionType::KillProcess => campo(ui, t("Nombre del proceso"), &mut b.process_name),
         ActionType::Webhook => {
             campo(ui, "URL", &mut b.webhook_url);
-            multilinea(ui, "Cuerpo", &mut b.webhook_body);
+            multilinea(ui, t("Cuerpo"), &mut b.webhook_body);
         }
         ActionType::SetVar => {
-            campo(ui, "Variable", &mut b.var_name);
-            campo(ui, "Valor", &mut b.var_value);
+            campo(ui, t("Variable"), &mut b.var_name);
+            campo(ui, t("Valor"), &mut b.var_value);
         }
         ActionType::IncrVar => {
-            campo(ui, "Variable", &mut b.var_name);
-            numero(ui, "Incremento", &mut b.var_delta, -1000, 1000);
+            campo(ui, t("Variable"), &mut b.var_name);
+            numero(ui, t("Incremento"), &mut b.var_delta, -1000, 1000);
         }
         ActionType::Macro => {
             // La macro no se teclea: se graba con el boton de abajo. Aqui solo se
             // resume lo que hay, para saber si esta vacia sin abrir el JSON.
             let pasos = b.macro_steps.as_deref().unwrap_or(&[]);
             ui.label(
-                RichText::new(format!(
+                RichText::new(tf(
                     "Grabada: {}",
-                    super::secuencia::resumen_macro(pasos)
+                    &[("{}", &super::secuencia::resumen_macro(pasos))],
                 ))
                 .small()
                 .color(Color32::from_gray(150)),
@@ -491,7 +519,7 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
             ui.add_space(4.0);
             let mut repetir = b.macro_repeat.unwrap_or(1);
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Repetir").small());
+                ui.label(RichText::new(t("Repetir")).small());
                 if ui
                     .add(egui::DragValue::new(&mut repetir).range(1..=50))
                     .changed()

@@ -37,9 +37,9 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: el **instalador**, que es lo que hace todo esto
-instalable de verdad y cierra el objetivo de < 20 MB. Después: perfiles, y las
-acciones que el editor aún no cubre (ramas, cuentas atrás, carpetas, RGB).
+**Lo próximo, concreto**: perfiles, y las acciones que el editor aún no cubre
+(ramas, cuentas atrás, carpetas, RGB). El **instalador** queda para el final, por
+decisión del usuario.
 
 El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
 cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
@@ -1157,6 +1157,33 @@ Dos detalles que no son cosméticos:
 El arranque usa la clave `Run` del **usuario**, no la de la máquina, así que no
 pide permisos de administrador. Tiene test de ida y vuelta —activa, comprueba y
 restaura— marcado `#[ignore]`, porque escribe en el registro.
+
+### ✅ Fase 2 — traducción (español / inglés)
+
+Se hizo porque el selector de idioma recién añadido **no hacía nada**, y el propio
+usuario tenía inglés configurado mientras veía una interfaz en español. Un ajuste
+que no hace nada es peor que no tenerlo.
+
+**El español es el idioma fuente**: los literales del código están en español y
+`t()` los traduce al inglés. No hay claves abstractas tipo `boton.guardar`, que
+obligan a saltar a otro archivo para saber qué dice una pantalla.
+
+**El problema de ese enfoque, y su solución.** Con una tabla en vez de un `struct`
+de campos, olvidar una traducción no da error de compilación. Por eso hay un test
+que lee **el propio código fuente** de las pantallas con `include_str!`, busca
+cada `t("…")` y comprueba que esté en la tabla. Se verificó que funciona metiendo
+una cadena inventada a propósito: el test la señaló con archivo y texto exacto.
+
+Otros dos tests cubren lo que un descuido silencioso rompería: que no haya claves
+repetidas —una taparía a la otra— y que **los marcadores coincidan** entre los dos
+idiomas, porque perder un `{e}` al traducir dejaría el mensaje sin el dato.
+
+`format!` exige un literal, así que las cadenas con marcadores usan `tf()`, que
+traduce y sustituye en tiempo de ejecución. Los marcadores llevan **nombre**
+(`{e}`, `{n}`) y no posición, porque el orden de las palabras cambia entre
+idiomas y `{}` posicional se prestaría a barajarlos sin darse cuenta.
+
+El cambio de idioma **se aplica al momento**, sin reiniciar.
 
 Lo que el editor **aún no** cubre: ramas, cuentas atrás, carpetas y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para

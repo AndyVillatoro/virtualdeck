@@ -8,6 +8,7 @@
 //! aparte. Aquí solo se dibujan: **este módulo no consulta nada**, porque se
 //! ejecuta dentro del bucle de dibujo.
 
+use crate::i18n::t;
 use egui::{Align2, Color32, FontId, Rect, Vec2};
 use vd_core::config::model::{ButtonConfig, WidgetKind};
 
@@ -90,7 +91,7 @@ fn clima(app: &App, pintor: &egui::Painter, rect: Rect, color: Color32, cuerpo: 
             color.gamma_multiply(0.5),
             cuerpo,
             "—",
-            "sin clima",
+            t("sin clima"),
         ),
     }
 }
@@ -121,7 +122,7 @@ fn reproduciendo(app: &App, pintor: &egui::Painter, rect: Rect, color: Color32, 
             color.gamma_multiply(0.5),
             cuerpo,
             "—",
-            "nada sonando",
+            t("nada sonando"),
         ),
     }
 }
@@ -142,7 +143,7 @@ fn sensor(
             color.gamma_multiply(0.5),
             cuerpo,
             "—",
-            "sin sensor",
+            t("sin sensor"),
         );
         return;
     };
@@ -156,7 +157,7 @@ fn sensor(
             color.gamma_multiply(0.5),
             cuerpo,
             "—",
-            "no disponible",
+            t("no disponible"),
         );
         return;
     };
@@ -227,7 +228,7 @@ fn variable(
             color.gamma_multiply(0.5),
             cuerpo,
             "—",
-            "sin variable",
+            t("sin variable"),
         );
         return;
     };

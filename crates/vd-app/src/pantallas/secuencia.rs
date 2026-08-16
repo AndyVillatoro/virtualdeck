@@ -18,6 +18,7 @@
 //! el usuario va a otra aplicación, y se para desde aquí o sola al llegar al
 //! límite de tiempo.
 
+use crate::i18n::{t, tf};
 use egui::{Color32, RichText};
 use vd_core::config::model::{ActionType, ButtonAction, ButtonConfig, MacroStep, MacroStepType};
 
@@ -46,11 +47,13 @@ pub fn ui(
 ) -> Option<Orden> {
     let mut orden = None;
 
-    ui.label(RichText::new("Secuencia").color(acento).small().strong());
+    ui.label(RichText::new(t("Secuencia")).color(acento).small().strong());
     ui.label(
-        RichText::new("Varios pasos, en orden. Cada uno puede esperar o repetirse.")
-            .small()
-            .color(Color32::from_gray(110)),
+        RichText::new(t(
+            "Varios pasos, en orden. Cada uno puede esperar o repetirse.",
+        ))
+        .small()
+        .color(Color32::from_gray(110)),
     );
     ui.add_space(4.0);
 
@@ -86,7 +89,7 @@ pub fn ui(
     }
 
     ui.horizontal(|ui| {
-        if ui.button("+ Añadir paso").clicked() {
+        if ui.button(t("+ Añadir paso")).clicked() {
             pasos.push(ButtonAction {
                 action_type: ActionType::None,
                 ..ButtonAction::default()
@@ -96,9 +99,9 @@ pub fn ui(
         let etiqueta = match grabando {
             Some(g) if g.boton == b.id => {
                 let restante = MAXIMO_GRABACION.saturating_sub(g.desde.elapsed());
-                format!("Detener ({} s)", restante.as_secs())
+                tf("Detener ({} s)", &[("{}", &restante.as_secs().to_string())])
             }
-            _ => "Grabar macro".to_string(),
+            _ => t("Grabar macro").to_string(),
         };
         let activo = grabando.is_some_and(|g| g.boton == b.id);
         let boton = egui::Button::new(RichText::new(etiqueta).color(if activo {
@@ -155,7 +158,7 @@ pub enum Orden {
 fn opciones_paso(ui: &mut egui::Ui, paso: &mut ButtonAction, indice: usize) {
     ui.add_space(4.0);
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Esperar").small());
+        ui.label(RichText::new(t("Esperar")).small());
         let mut espera = paso.delay_ms.unwrap_or(if indice > 0 { 150 } else { 0 });
         if ui
             .add(egui::DragValue::new(&mut espera).speed(10.0).suffix(" ms"))
@@ -165,7 +168,7 @@ fn opciones_paso(ui: &mut egui::Ui, paso: &mut ButtonAction, indice: usize) {
         }
 
         ui.add_space(8.0);
-        ui.label(RichText::new("Repetir").small());
+        ui.label(RichText::new(t("Repetir")).small());
         let mut repetir = paso.repeat.unwrap_or(1);
         if ui
             .add(egui::DragValue::new(&mut repetir).range(1..=100))
@@ -181,7 +184,7 @@ fn opciones_paso(ui: &mut egui::Ui, paso: &mut ButtonAction, indice: usize) {
         if ui
             .checkbox(
                 &mut solo_si,
-                RichText::new("Solo si el paso anterior fue bien").small(),
+                RichText::new(t("Solo si el paso anterior fue bien")).small(),
             )
             .changed()
         {
@@ -193,7 +196,7 @@ fn opciones_paso(ui: &mut egui::Ui, paso: &mut ButtonAction, indice: usize) {
 /// Resume una macro grabada en una línea legible.
 pub fn resumen_macro(pasos: &[MacroStep]) -> String {
     if pasos.is_empty() {
-        return "sin pasos".into();
+        return t("sin pasos").into();
     }
     let teclas = pasos
         .iter()
@@ -206,13 +209,16 @@ pub fn resumen_macro(pasos: &[MacroStep]) -> String {
 
     let mut partes = Vec::new();
     if teclas > 0 {
-        partes.push(format!("{teclas} tecla(s)"));
+        partes.push(tf(
+            "{teclas} tecla(s)",
+            &[("{teclas}", &teclas.to_string())],
+        ));
     }
     if clics > 0 {
-        partes.push(format!("{clics} clic(s)"));
+        partes.push(tf("{clics} clic(s)", &[("{clics}", &clics.to_string())]));
     }
     if partes.is_empty() {
-        partes.push(format!("{} paso(s)", pasos.len()));
+        partes.push(tf("{} paso(s)", &[("{}", &pasos.len().to_string())]));
     }
     partes.join(", ")
 }
