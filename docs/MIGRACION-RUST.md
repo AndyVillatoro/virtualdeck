@@ -101,6 +101,17 @@ tipos verificados en compilación, en microsegundos en vez de cientos de miliseg
 
 **Objetivo medible**: instalador < 20 MB, RAM en reposo < 60 MB, latencia de acciones < 10 ms.
 
+**Medido en la Fase 2**, con la aplicación ya funcionando:
+
+| Objetivo | Meta | Real | |
+|---|---|---|---|
+| Binario | — | 3,18 MB | holgado |
+| RAM en reposo | < 60 MB | 128 MB | **no se cumple**; mejora los ~200 MB de Electron |
+| Latencia de una acción | < 10 ms | 21 ms (cambiar dispositivo de audio) | cerca; eran 150–400 ms con PowerShell |
+
+La memoria es lo único claramente fuera de meta y **sigue abierto**. Ver la
+sección del renderer.
+
 ---
 
 ## 2. Decisiones tomadas
@@ -809,44 +820,51 @@ De paso salió `launcher::force_foreground`, que hace la maniobra de
 Es la otra cara de la deuda del robo de foco: las dos necesitan las mismas
 primitivas.
 
-### ✅ Fase 2 — renderer: wgpu, decidido midiendo
+### ✅ Fase 2 — renderer: **glow**, tras corregir una decisión mal medida
 
-La duda era wgpu contra glow, y la premisa de partida era que wgpu sería
-demasiado pesado para un instalador por debajo de 20 MB. **La premisa era falsa.**
+Esta sección cuenta dos cosas: la elección final y **el error de método que la
+retrasó**, porque lo segundo importa más.
 
-Se montaron los dos backends dibujando **la misma escena** —una rejilla de 5×3
-botones con glifos dot-matrix, 525 círculos por fotograma— y se midió:
+**Primera decisión: wgpu.** Se montaron los dos backends dibujando la misma
+escena —rejilla de 5×3 con glifos dot-matrix, 525 círculos por fotograma— y se
+midió tamaño de binario y fotogramas por segundo. glow pesaba 2,2 MB menos y
+empataban en rendimiento; como 2,2 MB sobre un presupuesto de 20 MB se pagan sin
+problema, decidió la robustez: wgpu tiene respaldo por software (WARP) cuando no
+hay GPU utilizable, y OpenGL en Windows no.
 
-| Backend | Binario en release | Ritmo |
-|---|---|---|
-| glow (OpenGL / WGL) | 2,56 MB | 144 fps |
-| wgpu (Direct3D 12) | 4,77 MB | 144 fps |
+**El error: no se midió la memoria**, que es un objetivo declarado del proyecto
+(< 60 MB en reposo) y la mitad de la justificación de toda la migración. Se
+midieron dos de los tres criterios y se decidió como si estuvieran los tres.
 
-Empate en rendimiento (los dos limitados por vsync) y 2,2 MB de diferencia sobre
-un presupuesto de 20 MB. El tamaño, que parecía el factor decisivo, resultó no
-serlo. **Decide la robustez**: con D3D12 hay respaldo por software —verificado,
-`Microsoft Basic Render Driver`— cuando no hay GPU utilizable: sesión remota,
-máquina virtual o driver roto. OpenGL en Windows no tiene equivalente fiable;
-sin drivers del fabricante cae a una implementación 1.1 que no sirve. Ese riesgo
-es real para este proyecto: la versión Electron ya arrastraba un
-`disableHardwareAcceleration()` por problemas con monitores virtuales.
+Al medirla, la decisión se dio vuelta:
 
-Como argumento secundario, el código de wgpu es bastante más simple: comparar
-`spike_render_wgpu.rs` con `spike_render_glow.rs` lo deja claro, y glutin obliga
-a elegir el formato de píxel antes de que la ventana exista del todo.
+| Backend | Binario | Fotogramas | Residente | Privados |
+|---|---|---|---|---|
+| glow (OpenGL / WGL) | 2,56 MB | 144 fps | **121 MB** | 215 MB |
+| wgpu (Direct3D 12) | 4,76 MB | 144 fps | 170 MB | 454 MB |
 
-Los dos backends quedan en el repositorio tras features de cargo, para poder
-repetir la medición si cambia alguna premisa. El montaje ganador vive en
-`vd-app/src/render.rs` (`Lienzo`), que es ya código de la aplicación: las
-pantallas solo escriben su interfaz y no repiten la ceremonia de wgpu.
+Con wgpu la aplicación se plantaba en ~170 MB, prácticamente lo mismo que los
+~200 MB de Electron. Se cambió a **glow** por defecto, dejando wgpu tras la
+feature `render-wgpu` por si aparecen usuarios a los que OpenGL no les arranca.
 
-**Un fallo de bulto en el spike de texto.** Lo entregué **sin renderer**, con el
-argumento de que probaba la entrada y no el dibujo. En modo automático daba igual
-—compara los buffers por dentro— pero el modo manual, que es justo el que se le
-pide a una persona, mostraba una ventana en blanco donde no se veía nada de lo
-que se escribía. Inservible. Ya usa el `Lienzo` de wgpu y enseña además los puntos
-de código de cada campo, que es lo que permite distinguir "se ve raro" de saber si
-falla la composición o el par suplente.
+**Un segundo error, en la propia medición.** La primera cifra de glow fue 65 MB
+y no se reproduce: salía de mirar el proceso **demasiado pronto**, antes de que
+el contexto gráfico y el atlas de fuentes terminaran de inicializarse. Repetida
+con el mismo binario y dejando pasar unos segundos, da 121 MB. Queda anotado en
+`spike_render.rs` para que nadie vuelva a creerse una lectura temprana.
+
+**Estado real del objetivo**: la aplicación completa con glow está en **128 MB
+residentes** contra una meta de 60 MB. Mejor que Electron, pero **el objetivo no
+se cumple** y sigue abierto. Falta averiguar cuánto de eso es el driver de vídeo
+—que se mapea entero dentro del proceso— y cuánto es evitable.
+
+Se comprobó también, y resultó **falso**, que los límites amplios pedidos a wgpu
+(`adaptador.limits()`) explicaran su consumo: cambiarlos a un perfil conservador
+no movió la aguja.
+
+Los dos backends viven ahora en `src/render/` con la misma interfaz, y los dos
+spikes se unificaron en uno solo: el mismo código de medición para ambos es lo
+que hace la comparación honesta.
 
 **Dos tropiezos más, que valen como aviso:**
 
@@ -855,7 +873,7 @@ falla la composición o el par suplente.
   dentro de `naga`— no se parece en nada a la causa.
 - `wgpu::Limits::downlevel_defaults()` topa las texturas en **2048 px**. Cualquier
   pantalla moderna con escalado ya pide más, y la superficie falla al
-  configurarse. Hay que usar los límites del adaptador real.
+  configurarse.
 
 ### ✅ Fase 2 — primera pantalla: la rejilla ejecuta acciones
 

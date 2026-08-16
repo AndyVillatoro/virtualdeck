@@ -1,16 +1,19 @@
-//! Montaje de ventana y renderizado: winit + wgpu + egui.
+//! Backend de renderizado sobre **Direct3D 12** (wgpu).
 //!
-//! Concentra en un sitio todo lo que hay que hacer para tener una ventana que
-//! dibuje egui, para que las pantallas de la aplicación solo tengan que escribir
-//! su interfaz y no repetir la ceremonia de wgpu.
+//! **No es el backend por defecto.** Consume 170 MB de memoria residente frente
+//! a los 121 MB de glow, con el mismo rendimiento; ver [`super`] para la
+//! medición completa.
 //!
-//! El backend es Direct3D 12, decidido midiendo contra OpenGL; ver
-//! `docs/MIGRACION-RUST.md`.
+//! Se conserva porque tiene algo que glow no: respaldo por software (WARP)
+//! cuando no hay GPU utilizable —sesión remota, máquina virtual, driver roto—.
+//! Si aparecen usuarios a los que OpenGL no les arranca, se activa con la
+//! feature `render-wgpu` sin rehacer nada.
 
 use std::sync::Arc;
 
 use egui::ViewportId;
-use winit::window::Window;
+use winit::event_loop::ActiveEventLoop;
+use winit::window::{Window, WindowAttributes};
 
 /// Una ventana lista para dibujar egui.
 pub struct Lienzo {
@@ -27,7 +30,17 @@ pub struct Lienzo {
 }
 
 impl Lienzo {
-    pub fn nuevo(window: Arc<Window>) -> anyhow::Result<Self> {
+    /// Crea la ventana **y** su dispositivo de wgpu.
+    ///
+    /// Recibe los atributos en vez de una ventana ya hecha para tener la misma
+    /// firma que el backend de glow, donde la ventana y el contexto **tienen**
+    /// que crearse a la vez.
+    pub fn nuevo(
+        event_loop: &ActiveEventLoop,
+        atributos: WindowAttributes,
+    ) -> anyhow::Result<Self> {
+        let window = Arc::new(event_loop.create_window(atributos)?);
+
         // Solo DX12: incluir Vulkan, Metal y GL multiplicaría el tamaño del
         // binario para plataformas que este proyecto no soporta.
         let instancia = wgpu::Instance::new(&wgpu::InstanceDescriptor {
@@ -50,11 +63,19 @@ impl Lienzo {
             pollster::block_on(adaptador.request_device(&wgpu::DeviceDescriptor {
                 label: Some("vd-app"),
                 required_features: wgpu::Features::empty(),
-                // Los límites del adaptador real, no `downlevel_defaults()`: ese
-                // perfil topa las texturas en 2048 px y cualquier pantalla con
-                // escalado ya pide más, con lo que la superficie falla al
-                // configurarse. Verificado en vivo.
-                required_limits: adaptador.limits(),
+                // Perfil conservador con **solo** el limite que hacia falta
+                // subir: `downlevel_defaults()` topa las texturas en 2048 px y
+                // cualquier pantalla con escalado ya pide mas, con lo que la
+                // superficie falla al configurarse.
+                //
+                // Pedir `adaptador.limits()` entero tambien lo arregla, pero
+                // este perfil es mas conservador y por tanto mas portable a GPU
+                // debiles. (Se probo si los limites amplios explicaban el
+                // consumo de memoria de wgpu: **no**, no cambia nada.)
+                required_limits: wgpu::Limits {
+                    max_texture_dimension_2d: adaptador.limits().max_texture_dimension_2d,
+                    ..wgpu::Limits::downlevel_defaults()
+                },
                 ..Default::default()
             }))?;
 

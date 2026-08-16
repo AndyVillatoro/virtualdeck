@@ -34,7 +34,6 @@
 //! cargo run -p vd-app --bin spike_texto -- manual  # para probar el IME a mano
 //! ```
 
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use vd_app::render::Lienzo;
@@ -176,16 +175,7 @@ impl ApplicationHandler for Spike {
             .with_title("VirtualDeck — spike de entrada de texto")
             .with_inner_size(winit::dpi::LogicalSize::new(620.0, 340.0));
 
-        let window = match event_loop.create_window(atributos) {
-            Ok(w) => Arc::new(w),
-            Err(e) => {
-                eprintln!("No se pudo crear la ventana: {e}");
-                event_loop.exit();
-                return;
-            }
-        };
-
-        match Lienzo::nuevo(window) {
+        match Lienzo::nuevo(event_loop, atributos) {
             Ok(l) => self.lienzo = Some(l),
             Err(e) => {
                 eprintln!("No se pudo inicializar el renderizado: {e}");

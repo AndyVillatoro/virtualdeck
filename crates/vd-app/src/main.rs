@@ -3,8 +3,6 @@
 //! Bucle de eventos de winit sobre el [`Lienzo`] de wgpu. El estado vive en
 //! [`vd_app::app::App`] y el dibujo en [`vd_app::pantallas`].
 
-use std::sync::Arc;
-
 use vd_app::app::App;
 use vd_app::atajos::Atajos;
 use vd_app::bandeja::{Bandeja, Orden};
@@ -69,16 +67,7 @@ impl ApplicationHandler for VirtualDeck {
             .with_inner_size(winit::dpi::LogicalSize::new(760.0, 560.0))
             .with_min_inner_size(winit::dpi::LogicalSize::new(320.0, 240.0));
 
-        let window = match event_loop.create_window(atributos) {
-            Ok(w) => Arc::new(w),
-            Err(e) => {
-                eprintln!("No se pudo crear la ventana: {e}");
-                event_loop.exit();
-                return;
-            }
-        };
-
-        match Lienzo::nuevo(window) {
+        match Lienzo::nuevo(event_loop, atributos) {
             Ok(l) => self.lienzo = Some(l),
             Err(e) => {
                 eprintln!("No se pudo inicializar el renderizado: {e}");

@@ -78,8 +78,9 @@ version = "0.62"
 features = ["Win32_UI_Input_KeyboardAndMouse"]
 
 [features]
-# wgpu por defecto: es la decision tomada.
-default = ["render-wgpu"]
+# glow por defecto: consume 65 MB de memoria residente frente a los 172 MB de
+# wgpu, con el mismo rendimiento. La medicion esta en src/render/mod.rs.
+default = ["render-glow"]
 render-wgpu = ["dep:egui-wgpu", "dep:wgpu", "dep:pollster"]
 render-glow = [
     "dep:egui_glow",
@@ -92,19 +93,12 @@ render-glow = [
 [[bin]]
 name = "vd-app"
 path = "src/main.rs"
-required-features = ["render-wgpu"]
+
+[[bin]]
+name = "spike_render"
+path = "src/bin/spike_render.rs"
 
 [[bin]]
 name = "spike_texto"
 path = "src/bin/spike_texto.rs"
-required-features = ["render-wgpu"]
 
-[[bin]]
-name = "spike_render_wgpu"
-path = "src/bin/spike_render_wgpu.rs"
-required-features = ["render-wgpu"]
-
-[[bin]]
-name = "spike_render_glow"
-path = "src/bin/spike_render_glow.rs"
-required-features = ["render-glow"]
