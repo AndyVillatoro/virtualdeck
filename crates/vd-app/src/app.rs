@@ -55,6 +55,8 @@ pub struct App {
 
     /// En modo edición, pulsar un botón lo selecciona en vez de ejecutarlo.
     pub modo_edicion: bool,
+    /// ID del botón que se está arrastrando, si hay alguno.
+    pub arrastrando: Option<String>,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
     /// vuelca a la configuración al guardar, para que salirse del editor no deje
     /// cambios a medias.
@@ -90,6 +92,7 @@ impl App {
             error_carga,
             encendidos: std::collections::HashSet::new(),
             modo_edicion: false,
+            arrastrando: None,
             borrador: None,
             emisor,
             receptor,
@@ -244,10 +247,56 @@ impl App {
         if !self.aplicar_borrador() {
             return;
         }
+        self.guardar();
+    }
+
+    /// Intercambia el contenido de dos posiciones de la rejilla.
+    ///
+    /// Se cambia el **contenido**, no los identificadores: en esta configuración
+    /// el id codifica la posición (`0-4` es la quinta casilla de la primera
+    /// página), así que moverlos rompería esa correspondencia y dejaría la
+    /// rejilla inconsistente con el archivo.
+    ///
+    /// Devuelve `false` si no había nada que mover.
+    pub fn intercambiar(&mut self, origen: &str, destino: &str) -> bool {
+        if origen == destino {
+            return false;
+        }
+        let Some(cfg) = self.config.as_mut() else {
+            return false;
+        };
+
+        let i = cfg.buttons.iter().position(|b| b.id == origen);
+        let j = cfg.buttons.iter().position(|b| b.id == destino);
+        let (Some(i), Some(j)) = (i, j) else {
+            return false;
+        };
+
+        cfg.buttons.swap(i, j);
+        // Tras el intercambio, cada botón lleva el id del otro. Se devuelven a su
+        // sitio para que el id siga describiendo la posición.
+        let id_i = cfg.buttons[i].id.clone();
+        let id_j = cfg.buttons[j].id.clone();
+        cfg.buttons[i].id = id_j;
+        cfg.buttons[j].id = id_i;
+
+        // El estado de los interruptores va con el botón, no con la casilla.
+        let encendido_origen = self.encendidos.remove(origen);
+        let encendido_destino = self.encendidos.remove(destino);
+        if encendido_origen {
+            self.encendidos.insert(destino.to_string());
+        }
+        if encendido_destino {
+            self.encendidos.insert(origen.to_string());
+        }
+        true
+    }
+
+    /// Guarda la configuración tal como está en memoria.
+    pub fn guardar(&mut self) {
         let Some(cfg) = self.config.as_ref() else {
             return;
         };
-
         self.aviso = Some(match vd_core::config::save(cfg) {
             Ok(()) => Aviso {
                 texto: "Guardado".into(),
@@ -476,6 +525,80 @@ mod tests {
         });
         assert!(app.pulsacion_larga(&con));
         esperar_resultado(&mut app);
+    }
+
+    #[test]
+    fn intercambiar_mueve_el_contenido_y_deja_los_ids_en_su_sitio() {
+        // El id codifica la posicion ("0-4" es la quinta casilla), asi que al
+        // reordenar tienen que viajar las etiquetas y acciones, no los ids. Si
+        // se movieran los ids, la rejilla dejaria de coincidir con el archivo.
+        let mut app = App::nueva();
+        let Some(cfg) = app.config.as_ref() else {
+            return; // sin configuracion en esta maquina
+        };
+        let usados: Vec<_> = cfg
+            .buttons
+            .iter()
+            .filter(|b| !b.is_empty())
+            .take(2)
+            .cloned()
+            .collect();
+        if usados.len() < 2 {
+            return;
+        }
+        let (a, b) = (&usados[0], &usados[1]);
+
+        assert!(app.intercambiar(&a.id, &b.id));
+
+        let cfg = app.config.as_ref().unwrap();
+        assert_eq!(
+            cfg.button(&a.id).map(|x| x.label.as_str()),
+            Some(b.label.as_str()),
+            "en la casilla de origen deberia estar ahora la etiqueta del destino"
+        );
+        assert_eq!(
+            cfg.button(&b.id).map(|x| x.label.as_str()),
+            Some(a.label.as_str())
+        );
+        // Y los dos ids tienen que seguir existiendo, una sola vez cada uno.
+        assert_eq!(cfg.buttons.iter().filter(|x| x.id == a.id).count(), 1);
+        assert_eq!(cfg.buttons.iter().filter(|x| x.id == b.id).count(), 1);
+    }
+
+    #[test]
+    fn al_intercambiar_el_estado_del_interruptor_viaja_con_el_boton() {
+        // Si el estado se quedara en la casilla, mover un interruptor encendido
+        // apagaria ese y encenderia el que ocupara su sitio.
+        let mut app = App::nueva();
+        let Some(cfg) = app.config.as_ref() else {
+            return;
+        };
+        let ids: Vec<String> = cfg.buttons.iter().take(2).map(|b| b.id.clone()).collect();
+        if ids.len() < 2 {
+            return;
+        }
+
+        app.encendidos.insert(ids[0].clone());
+        assert!(app.intercambiar(&ids[0], &ids[1]));
+
+        assert!(
+            app.encendidos.contains(&ids[1]),
+            "el encendido tenia que acompañar al boton a su nueva casilla"
+        );
+        assert!(!app.encendidos.contains(&ids[0]));
+    }
+
+    #[test]
+    fn intercambiar_una_casilla_consigo_misma_no_hace_nada() {
+        let mut app = App::nueva();
+        let Some(cfg) = app.config.as_ref() else {
+            return;
+        };
+        let Some(id) = cfg.buttons.first().map(|b| b.id.clone()) else {
+            return;
+        };
+        assert!(!app.intercambiar(&id, &id));
+        assert!(!app.intercambiar(&id, "no-existe-esta-casilla"));
     }
 
     #[test]

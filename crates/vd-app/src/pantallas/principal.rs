@@ -201,6 +201,12 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
     let acento = app.acento();
     let editando = app.modo_edicion;
     let encendidos = app.encendidos.clone();
+    let arrastrando = app.arrastrando.clone();
+
+    // Destino del arrastre: la casilla bajo el puntero mientras se arrastra.
+    let mut soltado_en: Option<String> = None;
+    let mut empezo_arrastre: Option<String> = None;
+    let mut solto = false;
     let seleccionado = app.borrador.as_ref().map(|b| b.id.clone());
     let pagina = app.pagina;
     // El `bool` indica si fue pulsación larga.
@@ -217,11 +223,22 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
                             corriendo: app.en_curso.iter().any(|id| id == &b.id),
                             seleccionado: seleccionado.as_deref() == Some(b.id.as_str()),
                             encendido: encendidos.contains(&b.id),
+                            arrastrado: arrastrando.as_deref() == Some(b.id.as_str()),
                         };
-                        match celda(ui, b, lado, acento, estado, editando) {
+                        let r = celda(ui, b, lado, acento, estado, editando, arrastrando.is_some());
+                        match r.pulsacion {
                             Pulsacion::Corta => pulsado = Some((b.clone(), false)),
                             Pulsacion::Larga => pulsado = Some((b.clone(), true)),
                             Pulsacion::Ninguna => {}
+                        }
+                        if r.empezo_arrastre {
+                            empezo_arrastre = Some(b.id.clone());
+                        }
+                        if r.encima {
+                            soltado_en = Some(b.id.clone());
+                        }
+                        if r.solto {
+                            solto = true;
                         }
                     }
                     otro => {
@@ -236,8 +253,14 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
                             )
                         });
                         let activo = seleccionado.as_deref() == Some(vacio.id.as_str());
-                        if hueco(ui, lado, editando, activo, acento) {
-                            pulsado = Some((vacio, false));
+                        let h = hueco(ui, lado, editando, activo, acento, arrastrando.is_some());
+                        if h.pulsado {
+                            pulsado = Some((vacio.clone(), false));
+                        }
+                        // Una casilla vacia tambien vale como destino: mover un
+                        // boton a un hueco es lo mas normal al reordenar.
+                        if h.encima {
+                            soltado_en = Some(vacio.id.clone());
                         }
                     }
                 }
@@ -248,6 +271,20 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
 
     // La pulsación se aplica fuera del bucle: dentro, `app` está prestado por
     // `botones_de_pagina` y no se puede modificar.
+    if let Some(id) = empezo_arrastre {
+        app.arrastrando = Some(id);
+    }
+    if solto {
+        // El intercambio se aplica al soltar, no mientras se arrastra: mover en
+        // vivo haria que la rejilla bailara bajo el puntero.
+        if let (Some(origen), Some(destino)) = (app.arrastrando.take(), soltado_en) {
+            if app.intercambiar(&origen, &destino) {
+                app.guardar();
+            }
+        }
+        app.arrastrando = None;
+    }
+
     if let Some((b, larga)) = pulsado {
         if editando {
             app.editar(&b);
@@ -269,10 +306,30 @@ struct EstadoCelda {
     corriendo: bool,
     seleccionado: bool,
     encendido: bool,
+    arrastrado: bool,
+}
+
+/// Lo que una celda reporta tras dibujarse.
+#[derive(Default)]
+struct Respuesta {
+    pulsacion: Pulsacion,
+    empezo_arrastre: bool,
+    /// El puntero esta encima mientras hay un arrastre en curso.
+    encima: bool,
+    solto: bool,
+}
+
+/// Lo que reporta una casilla vacia.
+#[derive(Default)]
+struct RespuestaHueco {
+    pulsado: bool,
+    encima: bool,
 }
 
 /// Cómo terminó la interacción con una celda.
+#[derive(Default)]
 enum Pulsacion {
+    #[default]
     Ninguna,
     Corta,
     Larga,
@@ -286,8 +343,16 @@ fn celda(
     acento: Color32,
     estado: EstadoCelda,
     editando: bool,
-) -> Pulsacion {
-    let (rect, respuesta) = ui.allocate_exact_size(Vec2::splat(lado), Sense::click());
+    hay_arrastre: bool,
+) -> Respuesta {
+    // Solo se puede arrastrar en edicion: en uso normal, un arrastre accidental
+    // sobre un boton reordenaria el deck sin querer.
+    let sentido = if editando {
+        Sense::click_and_drag()
+    } else {
+        Sense::click()
+    };
+    let (rect, respuesta) = ui.allocate_exact_size(Vec2::splat(lado), sentido);
 
     let tiene_larga = boton
         .long_press_action
@@ -328,6 +393,16 @@ fn celda(
         Color32::from_gray(70)
     } else {
         Color32::from_gray(38)
+    };
+
+    // El boton que se arrastra se atenua y la casilla bajo el puntero se resalta:
+    // sin eso, arrastrar es adivinar donde va a caer.
+    let fondo = if estado.arrastrado {
+        fondo.gamma_multiply(0.4)
+    } else if hay_arrastre && respuesta.hovered() {
+        fondo.blend(acento.gamma_multiply(0.25))
+    } else {
+        fondo
     };
 
     let pintor = ui.painter();
@@ -431,12 +506,17 @@ fn celda(
         }
     }
 
-    if disparo_larga {
-        Pulsacion::Larga
-    } else if respuesta.clicked() {
-        Pulsacion::Corta
-    } else {
-        Pulsacion::Ninguna
+    Respuesta {
+        pulsacion: if disparo_larga {
+            Pulsacion::Larga
+        } else if respuesta.clicked() {
+            Pulsacion::Corta
+        } else {
+            Pulsacion::Ninguna
+        },
+        empezo_arrastre: respuesta.drag_started(),
+        encima: hay_arrastre && !estado.arrastrado && respuesta.hovered(),
+        solto: respuesta.drag_stopped(),
     }
 }
 
@@ -448,7 +528,8 @@ fn hueco(
     editando: bool,
     seleccionado: bool,
     acento: Color32,
-) -> bool {
+    hay_arrastre: bool,
+) -> RespuestaHueco {
     let sentido = if editando {
         Sense::click()
     } else {
@@ -456,13 +537,22 @@ fn hueco(
     };
     let (rect, respuesta) = ui.allocate_exact_size(Vec2::splat(lado), sentido);
 
+    let resaltado = hay_arrastre && respuesta.hovered();
     let pintor = ui.painter();
-    pintor.rect_filled(rect, CornerRadius::same(6), VACIA);
+    pintor.rect_filled(
+        rect,
+        CornerRadius::same(6),
+        if resaltado {
+            VACIA.blend(acento.gamma_multiply(0.3))
+        } else {
+            VACIA
+        },
+    );
 
-    if editando {
+    if editando || resaltado {
         // En edición los huecos se marcan con un borde y un `+`, para que se vea
         // que son sitios donde se puede crear un botón.
-        let borde = if seleccionado {
+        let borde = if seleccionado || resaltado {
             acento
         } else if respuesta.hovered() {
             Color32::from_gray(70)
@@ -484,7 +574,10 @@ fn hueco(
         );
     }
 
-    respuesta.clicked()
+    RespuestaHueco {
+        pulsado: respuesta.clicked(),
+        encima: resaltado,
+    }
 }
 
 /// Recorta una etiqueta que no cabe, añadiendo puntos suspensivos.

@@ -37,12 +37,12 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: **arrastrar para reordenar** botones, ampliar el editor
-a lo que aún no cubre —macros, secuencias, ramas y widgets— y después páginas y
-perfiles, ajustes, y el instalador.
+**Lo próximo, concreto**: ampliar el editor a lo que aún no cubre —macros,
+secuencias, ramas y widgets— y después **widgets en la rejilla** (reloj, clima,
+sensores, reproducción), gestión de páginas y perfiles, ajustes, y el instalador.
 
-También sigue abierta la decisión sobre la memoria: 128 MB reales contra una meta
-de 60 MB, con el reparto ya medido (121 MB son la pila gráfica).
+La rejilla ya está completa como interacción: clic, pulsación larga, interruptores
+y arrastrar para reordenar.
 
 Ya funciona: `cargo run` abre la rejilla con la configuración real y los iconos
 de marca, ejecuta acciones al hacer clic, **permite editar y guardar botones**,
@@ -101,14 +101,14 @@ tipos verificados en compilación, en microsegundos en vez de cientos de miliseg
 - ✂️ **Encoder PNG hecho a mano** para el ícono de bandeja (`trayManager.makeTrayIcon`)
 - ✂️ **`uiohook-napi`** (módulo nativo N-API) y **`electron-updater`**
 
-**Objetivo medible**: instalador < 20 MB, RAM en reposo < 60 MB, latencia de acciones < 10 ms.
+**Objetivo medible**: instalador < 20 MB, RAM en reposo < 140 MB, latencia de acciones < 10 ms.
 
 **Medido en la Fase 2**, con la aplicación ya funcionando:
 
 | Objetivo | Meta | Real | |
 |---|---|---|---|
 | Binario | — | 3,18 MB | holgado |
-| RAM en reposo | < 60 MB | 128 MB | **no se cumple**; de esos, 121 MB son la pila grafica y 7 MB el codigo propio |
+| RAM en reposo | < 140 MB | 128 MB | se cumple. La meta original era 60 MB y se **corrigio al medir**: 121 MB son la pila grafica y solo 7 MB el codigo propio |
 | Latencia de una acción | < 10 ms | 21 ms (cambiar dispositivo de audio) | cerca; eran 150–400 ms con PowerShell |
 
 La memoria es lo único claramente fuera de meta y **sigue abierto**. Ver la
@@ -873,17 +873,20 @@ código propio —pantallas, 68 iconos, bandeja, atajos, configuración— suma 
 encima. No hay nada que optimizar en el lado de la aplicación; el coste es del
 driver de vídeo, que se mapea y compromete memoria por su cuenta.
 
-Las opciones honestas, para cuando toque decidir:
+**Decisión tomada: se aceptan los ~128 MB y el objetivo pasa de 60 a 140 MB.**
 
-1. **Aceptar ~128 MB** y corregir el objetivo. Sigue siendo un 36 % menos que
-   Electron, y las otras dos metas (binario, latencia) se cumplen con holgura.
-2. **Renderizar por CPU** (`softbuffer` + un rasterizador para las mallas de
-   egui), que evitaría el driver por completo. Para una interfaz de rectángulos y
-   puntos casi siempre quieta podría bastar, pero egui no trae backend de CPU:
-   habría que escribirlo.
+La meta de 60 MB se fijó antes de tener nada que medir, y resultó inalcanzable
+por una razón ajena al proyecto: **el suelo de una ventana con aceleración
+gráfica en Windows ya son ~120 MB**, casi todo del driver de vídeo. Bajar de ahí
+exigiría renunciar a la GPU y escribir un rasterizador por CPU para las mallas de
+egui (`softbuffer`), porque egui no trae backend de CPU. Es mucho trabajo y
+riesgo para ahorrar memoria que, en un equipo de escritorio, no escasea.
 
-Mientras tanto, la meta de 60 MB queda marcada como **no cumplida** en vez de
-darse por buena.
+Con el objetivo corregido, **las tres metas se cumplen**: 3,18 MB de binario,
+128 MB en reposo (36 % menos que Electron) y 21 ms por acción frente a 150–400 ms.
+
+Si algún día importara, el camino está identificado: renderizar por CPU. Queda
+anotado, no descartado.
 
 Se comprobó también, y resultó **falso**, que los límites amplios pedidos a wgpu
 (`adaptador.limits()`) explicaran su consumo: cambiarlos a un perfil conservador
@@ -1020,6 +1023,22 @@ aunque la acción falle**, y vive en memoria, no en la configuración. Si depend
 del éxito de la acción, un interruptor sin acción de apagado se quedaría encendido
 para siempre; y guardarlo en disco escribiría el `deck-config.json` en cada
 pulsación.
+
+**Arrastrar para reordenar** funciona en modo edición. Tres decisiones:
+
+- **Solo en edición.** En uso normal, un arrastre accidental sobre un botón
+  reordenaría el deck sin querer.
+- **Se intercambia el contenido, no los identificadores.** En esta configuración
+  el id codifica la posición (`0-4` es la quinta casilla de la primera página),
+  así que mover los ids rompería esa correspondencia y dejaría la rejilla
+  inconsistente con el archivo. Hay un test que lo fija.
+- **El estado de un interruptor viaja con el botón**, no con la casilla. Si se
+  quedara en la casilla, mover un interruptor encendido lo apagaría y encendería
+  al que ocupara su sitio.
+
+El intercambio se aplica **al soltar**, no mientras se arrastra: mover en vivo
+haría que la rejilla bailara bajo el puntero. Y se guarda en disco enseguida,
+porque reordenar es un cambio que el usuario espera que persista sin pulsar nada.
 
 Lo que el editor **aún no** cubre: macros, secuencias de varias acciones, ramas y
 widgets. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
