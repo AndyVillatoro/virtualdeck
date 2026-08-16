@@ -64,6 +64,8 @@ pub struct App {
     pub grabacion: Option<crate::pantallas::secuencia::Grabacion>,
     /// La ventana de ajustes esta abierta.
     pub ajustes_abiertos: bool,
+    /// Sub-deck abierto, si hay alguno.
+    pub carpeta: Option<crate::pantallas::carpeta::Abierta>,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
     /// vuelca a la configuración al guardar, para que salirse del editor no deje
     /// cambios a medias.
@@ -113,6 +115,7 @@ impl App {
             datos: crate::datos::Datos::arrancar(ajustes_sensores),
             grabacion: None,
             ajustes_abiertos: false,
+            carpeta: None,
             borrador: None,
             emisor,
             receptor,
@@ -163,6 +166,16 @@ impl App {
     /// Para un botón interruptor alterna entre su acción y la de apagado; para
     /// el resto ejecuta la suya.
     pub fn pulsar(&mut self, boton: &ButtonConfig) {
+        // Una carpeta no ejecuta nada: despliega sus botones. El motor la marca
+        // como "para la interfaz" precisamente porque su efecto es este.
+        if boton.action.action_type == vd_core::config::model::ActionType::Folder {
+            self.carpeta = Some(crate::pantallas::carpeta::Abierta {
+                titulo: boton.label.clone(),
+                botones: boton.action.folder_buttons.clone().unwrap_or_default(),
+            });
+            return;
+        }
+
         if boton.is_toggle.unwrap_or(false) {
             let encendido = self.encendidos.contains(&boton.id);
             // La acción de apagado es opcional: un interruptor puede existir solo
@@ -192,6 +205,16 @@ impl App {
             _ => vec![boton.action.clone()],
         };
         self.lanzar(&boton.id, secuencia);
+    }
+
+    /// Ejecuta la accion de un boton de dentro de una carpeta.
+    ///
+    /// Los botones de carpeta no tienen id propio, asi que se les da uno
+    /// derivado de su texto: sirve para la guarda de "no ejecutar dos veces a la
+    /// vez" y para que la interfaz pueda mostrarlos como en curso.
+    pub fn pulsar_de_carpeta(&mut self, boton: &vd_core::config::model::FolderButton) {
+        let id = format!("carpeta:{}", boton.label);
+        self.lanzar(&id, vec![boton.action.clone()]);
     }
 
     /// Lanza la acción de **pulsación larga** de un botón, si la tiene.

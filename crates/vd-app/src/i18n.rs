@@ -271,6 +271,12 @@ const PARES: &[(&str, &str)] = &[
         "{backups} copia(s) de seguridad de la configuración",
         "{backups} configuration backup(s)",
     ),
+    // --- carpetas ---
+    ("← Volver", "← Back"),
+    ("Esta carpeta está vacía", "This folder is empty"),
+    ("Carpeta de botones", "Button folder"),
+    ("Botones de dentro", "Buttons inside"),
+    ("+ Añadir botón", "+ Add button"),
     // --- widgets en la rejilla ---
     ("sin clima", "no weather"),
     ("nada sonando", "nothing playing"),

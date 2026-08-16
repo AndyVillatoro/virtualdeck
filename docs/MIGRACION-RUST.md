@@ -38,8 +38,8 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
 **Lo próximo, concreto**: perfiles, y las acciones que el editor aún no cubre
-(ramas, cuentas atrás, carpetas, RGB). El **instalador** queda para el final, por
-decisión del usuario.
+(ramas, cuentas atrás, RGB). El **instalador** queda para el final, por decisión
+del usuario.
 
 El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
 cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
@@ -1185,7 +1185,31 @@ idiomas y `{}` posicional se prestaría a barajarlos sin darse cuenta.
 
 El cambio de idioma **se aplica al momento**, sin reiniciar.
 
-Lo que el editor **aún no** cubre: ramas, cuentas atrás, carpetas y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+### ✅ Fase 2 — carpetas (sub-decks)
+
+Un botón puede contener otros. Es lo que hace que un deck escale más allá de las
+casillas de una página, y era la última acción «de interfaz» sin implementar.
+
+Decisiones:
+
+- **Se dibuja encima de todo**, no dentro de la rejilla. Una carpeta es un
+  contexto temporal; dejar la rejilla de fondo accesible invitaría a pulsar cosas
+  de las dos a la vez.
+- **Se cierra al pulsar un botón de dentro**, porque una carpeta es un menú y no
+  una pantalla donde uno se queda. Escape también la cierra.
+- **La rejilla se ajusta al número de botones.** Una carpeta de tres no debería
+  verse como una página casi vacía.
+
+Los botones de dentro son `FolderButton`, no `ButtonConfig`: no tienen id, ni
+página, ni widget, ni atajo global. Es una limitación heredada del modelo de la
+versión Electron y **se respeta tal cual**, porque cambiarla obligaría a migrar
+el archivo de todos los usuarios. Como no tienen id, para la guarda de «no
+ejecutar dos veces a la vez» se les deriva uno de su etiqueta.
+
+Se editan desde el mismo panel, sin abrir otro nivel: son pocos campos y
+anidar paneles sería peor.
+
+Lo que el editor **aún no** cubre: ramas, cuentas atrás y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 

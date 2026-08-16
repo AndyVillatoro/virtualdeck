@@ -34,6 +34,7 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
 
     super::editor::panel(app, ctx);
     super::ajustes::ui(app, ctx);
+    super::carpeta::ui(app, ctx);
 
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE.fill(FONDO).inner_margin(8.0))

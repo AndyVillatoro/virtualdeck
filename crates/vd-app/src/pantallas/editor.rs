@@ -39,6 +39,7 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::SetVar, "Fijar variable"),
     (ActionType::IncrVar, "Incrementar variable"),
     (ActionType::Macro, "Macro grabada"),
+    (ActionType::Folder, "Carpeta de botones"),
 ];
 
 fn nombre_tipo(tipo_actual: &ActionType) -> String {
@@ -503,6 +504,65 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
         ActionType::IncrVar => {
             campo(ui, t("Variable"), &mut b.var_name);
             numero(ui, t("Incremento"), &mut b.var_delta, -1000, 1000);
+        }
+        ActionType::Folder => {
+            // Los botones de dentro se editan aqui mismo: son pocos campos y
+            // abrir otro nivel de panel por cada uno seria peor.
+            let dentro = b.folder_buttons.get_or_insert_with(Vec::new);
+            ui.label(
+                RichText::new(t("Botones de dentro"))
+                    .small()
+                    .color(Color32::from_gray(150)),
+            );
+            ui.add_space(4.0);
+
+            let mut quitar = None;
+            for (i, fb) in dentro.iter_mut().enumerate() {
+                ui.push_id(i, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut fb.label)
+                                .desired_width(120.0)
+                                .hint_text(t("Etiqueta")),
+                        );
+                        egui::ComboBox::from_id_salt("tipo_fb")
+                            .selected_text(nombre_tipo(&fb.action.action_type))
+                            .width(150.0)
+                            .show_ui(ui, |ui| {
+                                for (tipo, nombre) in TIPOS {
+                                    if ui
+                                        .selectable_label(fb.action.action_type == *tipo, t(nombre))
+                                        .clicked()
+                                    {
+                                        fb.action.action_type = tipo.clone();
+                                    }
+                                }
+                            });
+                        if ui.small_button("✕").on_hover_text(t("Quitar")).clicked() {
+                            quitar = Some(i);
+                        }
+                    });
+                    accion(ui, &mut fb.action);
+                });
+                ui.add_space(6.0);
+            }
+            if let Some(i) = quitar {
+                dentro.remove(i);
+            }
+            if ui.button(t("+ Añadir botón")).clicked() {
+                dentro.push(vd_core::config::model::FolderButton {
+                    label: String::new(),
+                    sublabel: None,
+                    icon: None,
+                    bg_color: None,
+                    fg_color: None,
+                    action: vd_core::config::model::ButtonAction {
+                        action_type: ActionType::None,
+                        ..vd_core::config::model::ButtonAction::default()
+                    },
+                });
+            }
+            ui.add_space(4.0);
         }
         ActionType::Macro => {
             // La macro no se teclea: se graba con el boton de abajo. Aqui solo se
