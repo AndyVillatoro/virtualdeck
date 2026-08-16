@@ -1174,6 +1174,16 @@ que lee **el propio código fuente** de las pantallas con `include_str!`, busca
 cada `t("…")` y comprueba que esté en la tabla. Se verificó que funciona metiendo
 una cadena inventada a propósito: el test la señaló con archivo y texto exacto.
 
+**Ese auditor tuvo dos puntos ciegos, y los dos dejaron pasar algo real.** Buscaba
+`t("` pegado, así que no veía las llamadas que rustfmt parte en varias líneas; y no
+resolvía la **continuación de línea** de Rust (una barra al final de línea que se
+come el salto y el sangrado), con lo que comparaba contra un texto que en tiempo
+de ejecución no existe. Con los dos arreglados destapó una cadena sin traducir que
+llevaba ahí desde la pantalla de ajustes.
+
+La lección no es sobre i18n: **una herramienta de auditoría en verde no prueba que
+audite**. Hay que romperla a propósito para saber que mira.
+
 Otros dos tests cubren lo que un descuido silencioso rompería: que no haya claves
 repetidas —una taparía a la otra— y que **los marcadores coincidan** entre los dos
 idiomas, porque perder un `{e}` al traducir dejaría el mensaje sin el dato.

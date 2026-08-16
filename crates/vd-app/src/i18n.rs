@@ -321,19 +321,29 @@ mod tests {
     ];
 
     /// Saca los literales de cada `t("…")` de un fuente.
+    ///
+    /// Acepta espacios y saltos de linea entre `t(` y la comilla: rustfmt parte
+    /// las llamadas largas, y buscar solo `t("` dejaria esas sin auditar. Ese
+    /// punto ciego existio y dejo pasar una cadena de verdad.
     fn claves_usadas(fuente: &str) -> Vec<String> {
         let mut claves = Vec::new();
         let mut resto = fuente;
-        while let Some(i) = resto.find("t(\"") {
+        while let Some(i) = resto.find("t(") {
             // `t(` tiene que ser la funcion, no el final de otro identificador
             // como `format!(` o `print!(`.
             let antes = resto[..i].chars().next_back();
             let es_llamada = !antes.is_some_and(|c| c.is_alphanumeric() || c == '_');
-            resto = &resto[i + 3..];
+            resto = &resto[i + 2..];
 
             if !es_llamada {
                 continue;
             }
+            // Saltar el espacio en blanco que rustfmt haya metido.
+            let tras_espacios = resto.trim_start();
+            let Some(sin_comilla) = tras_espacios.strip_prefix('"') else {
+                continue;
+            };
+            resto = sin_comilla;
             // El literal termina en la primera comilla no escapada.
             let mut fin = None;
             let bytes = resto.as_bytes();
@@ -356,6 +366,46 @@ mod tests {
         claves
     }
 
+    /// Aplica los escapes de Rust a un literal sacado del codigo fuente.
+    ///
+    /// El caso que importa es la **continuacion de linea**: una barra al final
+    /// de la linea se come el salto y el sangrado de la siguiente. Es un idioma
+    /// normal en Rust para partir cadenas largas, y sin tratarlo el auditor
+    /// comparaba contra un texto que en tiempo de ejecucion no existe.
+    fn desescapar(literal: &str) -> String {
+        let mut salida = String::with_capacity(literal.len());
+        let mut chars = literal.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c != '\\' {
+                salida.push(c);
+                continue;
+            }
+            match chars.next() {
+                Some('n') => salida.push('\n'),
+                Some('t') => salida.push('\t'),
+                Some('"') => salida.push('"'),
+                Some('\\') => salida.push('\\'),
+                // Continuacion: se descartan el salto y el sangrado siguiente.
+                Some('\n') => {
+                    while chars.peek().is_some_and(|c| c.is_whitespace()) {
+                        chars.next();
+                    }
+                }
+                Some(otro) => salida.push(otro),
+                None => break,
+            }
+        }
+        salida
+    }
+
+    #[test]
+    fn la_continuacion_de_linea_se_resuelve() {
+        // Es justo el caso que dejo pasar una cadena de verdad.
+        assert_eq!(desescapar("uno.\\n\\\n            dos"), "uno.\ndos");
+        assert_eq!(desescapar("sin escapes"), "sin escapes");
+        assert_eq!(desescapar("con\\ncorte"), "con\ncorte");
+    }
+
     #[test]
     fn no_faltan_traducciones() {
         // Es la red de seguridad que sustituye al compilador: con una tabla en
@@ -365,9 +415,7 @@ mod tests {
         let mut faltan = Vec::new();
         for (archivo, fuente) in FUENTES {
             for clave in claves_usadas(fuente) {
-                // Los literales del codigo llevan los escapes de Rust; la tabla
-                // los tiene ya resueltos.
-                let real = clave.replace("\\n", "\n").replace("\\\"", "\"");
+                let real = desescapar(&clave);
                 if !TABLA.contains_key(real.as_str()) {
                     faltan.push(format!("  {archivo}: {clave:?}"));
                 }

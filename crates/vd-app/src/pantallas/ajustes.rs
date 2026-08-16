@@ -169,10 +169,10 @@ fn sensores(app: &mut App, ui: &mut egui::Ui, acento: Color32) -> bool {
             &mut s.enabled,
             t("Usar LibreHardwareMonitor si está corriendo"),
         )
-        .on_hover_text(
+        .on_hover_text(t(
             "Añade temperatura del procesador, voltajes y ventiladores de la placa.\n\
              Requiere tener LibreHardwareMonitor abierto con su servidor web activo.",
-        )
+        ))
         .changed()
     {
         cambio = true;
