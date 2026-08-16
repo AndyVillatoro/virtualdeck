@@ -12,8 +12,9 @@ use crate::app::App;
 /// Tipos de acción que el editor sabe configurar, con su nombre para la lista.
 ///
 /// No están todos los del modelo a propósito: los que necesitan una interfaz
-/// propia —macros, secuencias, ramas— se editan en otro sitio y ofrecerlos aquí
-/// sin su editor dejaría botones a medio configurar.
+/// propia que aún no existe —ramas, cuentas atrás, carpetas, RGB— se dejan fuera,
+/// porque ofrecerlos sin su editor dejaría botones a medio configurar. Sí se
+/// **muestran** cuando un botón ya los tiene.
 const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::None, "Sin acción"),
     (ActionType::App, "Abrir aplicación"),
@@ -36,6 +37,7 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::Webhook, "Llamar a un webhook"),
     (ActionType::SetVar, "Fijar variable"),
     (ActionType::IncrVar, "Incrementar variable"),
+    (ActionType::Macro, "Macro grabada"),
 ];
 
 fn nombre_tipo(t: &ActionType) -> String {
@@ -66,6 +68,12 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
         .collect();
     let mut guardar = false;
     let mut descartar = false;
+    let mut orden_macro = None;
+    // Se saca del `app` antes de prestarlo al panel.
+    let grabacion = app.grabacion.as_ref().map(|g| super::secuencia::Grabacion {
+        desde: g.desde,
+        boton: g.boton.clone(),
+    });
 
     egui::SidePanel::right("editor")
         .resizable(true)
@@ -93,7 +101,13 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
                 ui.add_space(10.0);
                 widget(ui, &mut borrador, &sensores, acento);
                 ui.add_space(10.0);
-                accion(ui, &mut borrador);
+                orden_macro = super::secuencia::ui(
+                    ui,
+                    &mut borrador,
+                    acento,
+                    grabacion.as_ref(),
+                    &mut |ui, paso| accion(ui, paso),
+                );
             });
 
             ui.separator();
@@ -122,6 +136,17 @@ pub fn panel(app: &mut App, ctx: &egui::Context) {
         });
 
     app.borrador = Some(borrador);
+
+    match orden_macro {
+        Some(super::secuencia::Orden::Grabar) => {
+            let id = app.borrador.as_ref().map(|b| b.id.clone());
+            if let Some(id) = id {
+                app.grabar_macro(&id);
+            }
+        }
+        Some(super::secuencia::Orden::Detener) => app.detener_macro(),
+        None => {}
+    }
 
     if guardar {
         app.guardar_borrador();
@@ -388,25 +413,17 @@ fn color_opcional(ui: &mut egui::Ui, etiqueta: &str, campo: &mut Option<String>)
     });
 }
 
-fn accion(ui: &mut egui::Ui, b: &mut ButtonConfig) {
-    ui.label(
-        RichText::new("Acción")
-            .color(Color32::from_gray(160))
-            .small()
-            .strong(),
-    );
-    ui.add_space(4.0);
-
+fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
     egui::ComboBox::from_id_salt("tipo")
-        .selected_text(nombre_tipo(&b.action.action_type))
+        .selected_text(nombre_tipo(&b.action_type))
         .width(ui.available_width())
         .show_ui(ui, |ui| {
             for (tipo, nombre) in TIPOS {
                 if ui
-                    .selectable_label(b.action.action_type == *tipo, *nombre)
+                    .selectable_label(b.action_type == *tipo, *nombre)
                     .clicked()
                 {
-                    b.action.action_type = tipo.clone();
+                    b.action_type = tipo.clone();
                 }
             }
         });
@@ -415,23 +432,19 @@ fn accion(ui: &mut egui::Ui, b: &mut ButtonConfig) {
 
     // Cada tipo enseña solo sus campos. Mostrarlos todos a la vez fue lo que hizo
     // ilegible el editor de la version Electron.
-    match b.action.action_type {
+    match b.action_type {
         ActionType::App => {
-            campo(ui, "Ruta del ejecutable", &mut b.action.app_path);
-            campo(ui, "Argumentos", &mut b.action.app_args);
+            campo(ui, "Ruta del ejecutable", &mut b.app_path);
+            campo(ui, "Argumentos", &mut b.app_args);
         }
-        ActionType::Web => campo(ui, "URL", &mut b.action.url),
-        ActionType::Shortcut => campo(ui, "Ruta del acceso directo", &mut b.action.shortcut_path),
+        ActionType::Web => campo(ui, "URL", &mut b.url),
+        ActionType::Shortcut => campo(ui, "Ruta del acceso directo", &mut b.shortcut_path),
         ActionType::Script => {
-            multilinea(ui, "Script", &mut b.action.script);
-            campo(
-                ui,
-                "Guardar salida en la variable",
-                &mut b.action.capture_to_var,
-            );
+            multilinea(ui, "Script", &mut b.script);
+            campo(ui, "Guardar salida en la variable", &mut b.capture_to_var);
         }
         ActionType::AudioDevice => {
-            campo(ui, "Nombre del dispositivo", &mut b.action.device_name);
+            campo(ui, "Nombre del dispositivo", &mut b.device_name);
             ui.label(
                 RichText::new("Basta con parte del nombre.")
                     .small()
@@ -439,29 +452,54 @@ fn accion(ui: &mut egui::Ui, b: &mut ButtonConfig) {
             );
         }
         ActionType::Hotkey => {
-            campo(ui, "Combinación", &mut b.action.hotkey);
+            campo(ui, "Combinación", &mut b.hotkey);
             ui.label(
                 RichText::new("Por ejemplo: Ctrl+Shift+M")
                     .small()
                     .color(Color32::from_gray(110)),
             );
         }
-        ActionType::TypeText => multilinea(ui, "Texto", &mut b.action.type_text),
-        ActionType::Clipboard => multilinea(ui, "Texto", &mut b.action.clipboard_text),
-        ActionType::VolumeSet => numero(ui, "Volumen (%)", &mut b.action.volume_percent, 0, 100),
-        ActionType::Brightness => numero(ui, "Brillo (%)", &mut b.action.brightness_level, 0, 100),
-        ActionType::KillProcess => campo(ui, "Nombre del proceso", &mut b.action.process_name),
+        ActionType::TypeText => multilinea(ui, "Texto", &mut b.type_text),
+        ActionType::Clipboard => multilinea(ui, "Texto", &mut b.clipboard_text),
+        ActionType::VolumeSet => numero(ui, "Volumen (%)", &mut b.volume_percent, 0, 100),
+        ActionType::Brightness => numero(ui, "Brillo (%)", &mut b.brightness_level, 0, 100),
+        ActionType::KillProcess => campo(ui, "Nombre del proceso", &mut b.process_name),
         ActionType::Webhook => {
-            campo(ui, "URL", &mut b.action.webhook_url);
-            multilinea(ui, "Cuerpo", &mut b.action.webhook_body);
+            campo(ui, "URL", &mut b.webhook_url);
+            multilinea(ui, "Cuerpo", &mut b.webhook_body);
         }
         ActionType::SetVar => {
-            campo(ui, "Variable", &mut b.action.var_name);
-            campo(ui, "Valor", &mut b.action.var_value);
+            campo(ui, "Variable", &mut b.var_name);
+            campo(ui, "Valor", &mut b.var_value);
         }
         ActionType::IncrVar => {
-            campo(ui, "Variable", &mut b.action.var_name);
-            numero(ui, "Incremento", &mut b.action.var_delta, -1000, 1000);
+            campo(ui, "Variable", &mut b.var_name);
+            numero(ui, "Incremento", &mut b.var_delta, -1000, 1000);
+        }
+        ActionType::Macro => {
+            // La macro no se teclea: se graba con el boton de abajo. Aqui solo se
+            // resume lo que hay, para saber si esta vacia sin abrir el JSON.
+            let pasos = b.macro_steps.as_deref().unwrap_or(&[]);
+            ui.label(
+                RichText::new(format!(
+                    "Grabada: {}",
+                    super::secuencia::resumen_macro(pasos)
+                ))
+                .small()
+                .color(Color32::from_gray(150)),
+            );
+            ui.add_space(4.0);
+            let mut repetir = b.macro_repeat.unwrap_or(1);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Repetir").small());
+                if ui
+                    .add(egui::DragValue::new(&mut repetir).range(1..=50))
+                    .changed()
+                {
+                    b.macro_repeat = (repetir > 1).then_some(repetir);
+                }
+            });
+            ui.add_space(4.0);
         }
         // Los tipos sin parámetros (silenciar, pista siguiente…) no necesitan
         // nada más, y los no editables se avisan arriba en el desplegable.
@@ -551,9 +589,9 @@ mod tests {
 
     #[test]
     fn un_tipo_fuera_de_la_lista_se_avisa() {
-        // El editor no cubre las macros, y el usuario tiene que verlo en vez de
+        // El editor no cubre las ramas, y el usuario tiene que verlo en vez de
         // creer que el boton no tiene accion.
-        let n = nombre_tipo(&ActionType::Macro);
+        let n = nombre_tipo(&ActionType::Branch);
         assert!(n.contains("no editable"), "salio: {n}");
     }
 

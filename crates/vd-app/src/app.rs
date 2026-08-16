@@ -59,6 +59,8 @@ pub struct App {
     pub arrastrando: Option<String>,
     /// Datos en vivo para los widgets, sondeados en un hilo aparte.
     pub datos: crate::datos::Datos,
+    /// Grabacion de macro en curso, si la hay.
+    pub grabacion: Option<crate::pantallas::secuencia::Grabacion>,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
     /// vuelca a la configuración al guardar, para que salirse del editor no deje
     /// cambios a medias.
@@ -98,6 +100,7 @@ impl App {
             modo_edicion: false,
             arrastrando: None,
             datos: crate::datos::Datos::arrancar(ajustes_sensores),
+            grabacion: None,
             borrador: None,
             emisor,
             receptor,
@@ -110,6 +113,7 @@ impl App {
     /// listo, la interfaz sigue dibujando.
     pub fn recoger_resultados(&mut self) {
         self.datos.recoger();
+        self.vigilar_grabacion();
 
         while let Ok(t) = self.receptor.try_recv() {
             self.en_curso.retain(|id| *id != t.boton);
@@ -318,6 +322,93 @@ impl App {
                 desde: Instant::now(),
             },
         });
+    }
+
+    /// Empieza a grabar una macro para el boton indicado.
+    pub fn grabar_macro(&mut self, boton: &str) {
+        if self.grabacion.is_some() {
+            return;
+        }
+        match vd_core::macros::start_recording() {
+            Ok(()) => {
+                self.grabacion = Some(crate::pantallas::secuencia::Grabacion {
+                    desde: Instant::now(),
+                    boton: boton.to_string(),
+                });
+                self.aviso = Some(Aviso {
+                    texto: "Grabando: usa el teclado y el raton, luego pulsa Detener".into(),
+                    error: false,
+                    desde: Instant::now(),
+                });
+            }
+            Err(e) => {
+                self.aviso = Some(Aviso {
+                    texto: format!("No se pudo empezar a grabar: {e}"),
+                    error: true,
+                    desde: Instant::now(),
+                });
+            }
+        }
+    }
+
+    /// Detiene la grabacion y guarda los pasos en el borrador.
+    ///
+    /// Los pasos van al **borrador**, no a la configuracion: el usuario todavia
+    /// puede descartar, igual que con cualquier otro cambio del editor.
+    pub fn detener_macro(&mut self) {
+        let Some(g) = self.grabacion.take() else {
+            return;
+        };
+        let pasos = match vd_core::macros::stop_recording() {
+            Ok(p) => p,
+            Err(e) => {
+                self.aviso = Some(Aviso {
+                    texto: format!("No se pudo detener la grabacion: {e}"),
+                    error: true,
+                    desde: Instant::now(),
+                });
+                return;
+            }
+        };
+
+        // Si el usuario cambio de boton mientras grababa, los pasos no son suyos.
+        let Some(borrador) = self.borrador.as_mut().filter(|b| b.id == g.boton) else {
+            self.aviso = Some(Aviso {
+                texto: "Grabacion descartada: se cambio de boton mientras grababa".into(),
+                error: true,
+                desde: Instant::now(),
+            });
+            return;
+        };
+
+        let n = pasos.len();
+        borrador.action = vd_core::config::model::ButtonAction {
+            action_type: vd_core::config::model::ActionType::Macro,
+            macro_steps: Some(pasos),
+            ..vd_core::config::model::ButtonAction::default()
+        };
+        borrador.actions = None;
+
+        self.aviso = Some(Aviso {
+            texto: format!("Macro grabada: {n} paso(s). Recuerda guardar."),
+            error: false,
+            desde: Instant::now(),
+        });
+    }
+
+    /// Corta la grabacion si lleva demasiado tiempo.
+    ///
+    /// La grabacion instala un hook global de teclado; dejarlo activo porque el
+    /// usuario se olvido de pararlo es a la vez consumo inutil y algo que nadie
+    /// quiere corriendo sin darse cuenta.
+    pub fn vigilar_grabacion(&mut self) {
+        let vencida = self
+            .grabacion
+            .as_ref()
+            .is_some_and(|g| g.desde.elapsed() > crate::pantallas::secuencia::maximo_grabacion());
+        if vencida {
+            self.detener_macro();
+        }
     }
 
     pub fn paginas(&self) -> usize {

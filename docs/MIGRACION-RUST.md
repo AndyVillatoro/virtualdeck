@@ -37,9 +37,11 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: ampliar el editor a **macros y secuencias de varias
-acciones**, que es lo último que obliga a tocar el JSON a mano. Después: gestión
-de páginas y perfiles, ajustes, y el instalador.
+**Lo próximo, concreto**: gestión de **páginas y perfiles** (crear, renombrar,
+cambiar el tamaño de la rejilla), la pantalla de **ajustes**, y el **instalador**.
+
+El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
+cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
 
 La rejilla ya está completa como interacción: clic, pulsación larga, interruptores
 y arrastrar para reordenar.
@@ -1084,7 +1086,36 @@ muestra su id y se dice que no está disponible, en vez de aparecer vacío.
 Los umbrales son opcionales de verdad: una casilla decide si existen, porque
 «sin umbral» y «umbral en cero» son cosas distintas.
 
-Lo que el editor **aún no** cubre: macros, secuencias de varias acciones y ramas. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+### ✅ Fase 2 — secuencias y macros en el editor
+
+Eran las dos últimas cosas que obligaban a editar el `deck-config.json` a mano.
+
+**Secuencias**: cada paso se dibuja en su propio marco, con sus campos y sus
+opciones —esperar, repetir, y «solo si el paso anterior fue bien»—. La condición
+no se ofrece en el primer paso, porque no tiene anterior.
+
+Un detalle de compatibilidad que importa: un botón con **una sola** acción se
+sigue guardando como `action`, no como una lista de uno. Convertir todos los
+botones a lista cambiaría el archivo de todos los usuarios sin ninguna razón. La
+conversión ocurre solo al añadir un segundo paso, y se deshace al quitarlo.
+
+**Macros**: se graban desde el editor con el mismo hook global del núcleo. Tres
+decisiones:
+
+- **Tope de 60 segundos.** La grabación instala un hook de teclado de todo el
+  sistema; dejarlo activo porque alguien se olvidó de pararlo es a la vez consumo
+  inútil y algo que nadie quiere corriendo sin darse cuenta. El botón muestra la
+  cuenta atrás.
+- **Los pasos van al borrador, no a la configuración.** Se puede descartar como
+  cualquier otro cambio del editor.
+- **Si se cambia de botón mientras se graba, la grabación se descarta y se dice.**
+  Aplicar los pasos a otro botón sería peor que perderlos.
+
+Al ofrecer `Macro` en la lista de tipos, un test empezó a fallar: usaba
+precisamente ese tipo como ejemplo de «no editable». Falló por el motivo correcto
+y se actualizó.
+
+Lo que el editor **aún no** cubre: ramas, cuentas atrás, carpetas y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 

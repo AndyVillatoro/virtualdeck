@@ -5,4 +5,5 @@
 
 pub mod editor;
 pub mod principal;
+pub mod secuencia;
 pub mod widgets;
