@@ -4,6 +4,7 @@
 //! estado y la ejecución viven en [`crate::app`].
 
 pub mod editor;
+pub mod paginas;
 pub mod principal;
 pub mod secuencia;
 pub mod widgets;

@@ -75,9 +75,14 @@ impl App {
         let (emisor, receptor) = std::sync::mpsc::channel();
 
         let (config, error_carga) = match vd_core::config::load() {
-            Ok(c) => (c, None),
+            // Instalación limpia: se arranca con un deck vacío usable. No se
+            // guarda todavía; el archivo se crea cuando el usuario cambie algo.
+            Ok(None) => (Some(DeckConfig::default()), None),
+            Ok(algo) => (algo, None),
             // Una configuración ilegible no debe impedir que la aplicación
-            // arranque: se abre vacía y se dice por qué, en vez de no abrirse.
+            // arranque, pero **no** se sustituye por una vacía: el siguiente
+            // guardado machacaría el archivo del usuario, que quizá solo tiene
+            // una coma de más y es recuperable a mano.
             Err(e) => (None, Some(e.to_string())),
         };
 

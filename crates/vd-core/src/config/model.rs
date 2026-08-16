@@ -877,7 +877,48 @@ pub struct DeckConfig {
     pub extra: Extra,
 }
 
+impl Default for DeckConfig {
+    /// Configuracion de una instalacion limpia: una pagina de 4x4 vacia.
+    ///
+    /// Existe porque `load()` devuelve `None` cuando no hay archivo, y sin esto
+    /// no habria forma de crear el primero: la aplicacion se quedaria mostrando
+    /// "no hay configuracion" para siempre.
+    fn default() -> Self {
+        let pagina = PageConfig {
+            id: "p0".into(),
+            name: "Main".into(),
+            grid_size: Some(4),
+            grid_rows: Some(4),
+            extra: Extra::new(),
+        };
+        let casillas = usize::from(pagina.columns()) * usize::from(pagina.rows());
+
+        Self {
+            pages: vec![pagina],
+            buttons: (0..casillas)
+                .map(|i| ButtonConfig::empty(format!("0-{i}"), 0))
+                .collect(),
+            // El acento por defecto del proyecto.
+            accent: "#4FC3F7".into(),
+            wallpaper: "none".into(),
+            config_version: Some(crate::config::CURRENT_CONFIG_VERSION),
+            // Una instalacion nueva no tiene por que ver el tutorial de nuevo si
+            // el usuario ya lo hizo en otra maquina; pero aqui es de verdad
+            // nueva, asi que se deja sin marcar.
+            ..Self::vacia()
+        }
+    }
+}
+
 impl DeckConfig {
+    /// Todos los campos opcionales a `None`. Auxiliar de [`Default`].
+    fn vacia() -> Self {
+        // `serde` sabe construirla desde el JSON minimo, y asi este constructor
+        // no hay que actualizarlo cada vez que se agrega un campo opcional.
+        serde_json::from_str(r#"{"pages":[],"buttons":[],"accent":"","wallpaper":""}"#)
+            .expect("el JSON minimo de DeckConfig deberia parsear siempre")
+    }
+
     /// Botones de una pagina, en el orden en que aparecen.
     pub fn buttons_of_page(&self, page: i64) -> impl Iterator<Item = &ButtonConfig> {
         self.buttons.iter().filter(move |b| b.page == page)

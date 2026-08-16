@@ -41,6 +41,9 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
                 return;
             }
             rejilla(app, ui);
+            // Debajo de la rejilla, para que un cambio de tamaño se vea al
+            // momento sobre los botones reales.
+            super::paginas::ui(app, ui);
         });
 }
 
@@ -160,16 +163,12 @@ fn sin_configuracion(app: &App, ui: &mut egui::Ui) {
                         .color(Color32::from_gray(130)),
                 );
             }
+            // Sin error y sin configuración no debería llegarse aquí: una
+            // instalación limpia arranca con un deck vacío usable.
             None => {
                 ui.label(
-                    egui::RichText::new("No hay ninguna configuración en este equipo")
+                    egui::RichText::new("No hay ninguna configuración")
                         .color(Color32::from_gray(160)),
-                );
-                ui.add_space(6.0);
-                ui.label(
-                    egui::RichText::new("Se creará una al guardar por primera vez.")
-                        .small()
-                        .color(Color32::from_gray(110)),
                 );
             }
         }

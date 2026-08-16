@@ -37,8 +37,8 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: gestión de **páginas y perfiles** (crear, renombrar,
-cambiar el tamaño de la rejilla), la pantalla de **ajustes**, y el **instalador**.
+**Lo próximo, concreto**: la pantalla de **ajustes** (acento, tema, idioma,
+sensores, arranque con Windows) y el **instalador**. Después, perfiles.
 
 El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
 cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
@@ -1114,6 +1114,30 @@ decisiones:
 Al ofrecer `Macro` en la lista de tipos, un test empezó a fallar: usaba
 precisamente ese tipo como ejemplo de «no editable». Falló por el motivo correcto
 y se actualizó.
+
+### ✅ Fase 2 — gestión de páginas
+
+Crear, renombrar, redimensionar y borrar, en modo edición y debajo de la rejilla,
+para que un cambio de tamaño se vea al momento sobre los botones reales.
+
+**Lo delicado es borrar**, y por un motivo que no se ve: el número de página vive
+en **dos sitios** —el campo `page` y el propio id del botón (`3-7`)—. Borrar una
+página obliga a renumerar las siguientes en ambos, o quedan botones apuntando a
+páginas que ya no existen. Hay un test que recorre todos los botones comprobando
+que el prefijo del id coincide con su `page`.
+
+No se deja borrar la última página: sin ninguna no habría nada que mostrar **ni
+forma de crear la primera**.
+
+**De paso, un hueco real**: `DeckConfig` no tenía constructor. `load()` devuelve
+`None` cuando no hay archivo, así que una instalación limpia se quedaba mostrando
+«no hay configuración» para siempre, sin forma de crear la primera. Ahora arranca
+con un deck de 4×4 vacío y usable, que se escribe a disco al primer cambio.
+
+Con una salvedad importante: eso pasa **solo** cuando no hay archivo. Si el
+archivo existe pero está corrupto, la configuración queda en `None` y se muestra
+el error, en vez de sustituirla por una vacía —que al primer guardado machacaría
+un archivo que quizá solo tiene una coma de más y es recuperable a mano—.
 
 Lo que el editor **aún no** cubre: ramas, cuentas atrás, carpetas y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
