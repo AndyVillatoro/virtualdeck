@@ -203,6 +203,13 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
     let encendidos = app.encendidos.clone();
     let arrastrando = app.arrastrando.clone();
 
+    let ctx = Contexto {
+        lado,
+        acento,
+        editando,
+        hay_arrastre: arrastrando.is_some(),
+    };
+
     // Destino del arrastre: la casilla bajo el puntero mientras se arrastra.
     let mut soltado_en: Option<String> = None;
     let mut empezo_arrastre: Option<String> = None;
@@ -225,7 +232,7 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
                             encendido: encendidos.contains(&b.id),
                             arrastrado: arrastrando.as_deref() == Some(b.id.as_str()),
                         };
-                        let r = celda(ui, b, lado, acento, estado, editando, arrastrando.is_some());
+                        let r = celda(app, ui, b, ctx, estado);
                         match r.pulsacion {
                             Pulsacion::Corta => pulsado = Some((b.clone(), false)),
                             Pulsacion::Larga => pulsado = Some((b.clone(), true)),
@@ -300,7 +307,17 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
     }
 }
 
-/// Lo que hay que saber de una celda para dibujarla.
+/// Lo que comparten todas las celdas de una pasada de dibujo.
+#[derive(Clone, Copy)]
+struct Contexto {
+    lado: f32,
+    acento: Color32,
+    editando: bool,
+    /// Hay un arrastre en curso, de esta celda o de otra.
+    hay_arrastre: bool,
+}
+
+/// Lo que distingue a **esta** celda de las demás.
 #[derive(Clone, Copy)]
 struct EstadoCelda {
     corriendo: bool,
@@ -337,14 +354,18 @@ enum Pulsacion {
 
 /// Dibuja un botón. Devuelve `true` si se pulsó.
 fn celda(
+    app: &App,
     ui: &mut egui::Ui,
     boton: &vd_core::config::model::ButtonConfig,
-    lado: f32,
-    acento: Color32,
+    ctx: Contexto,
     estado: EstadoCelda,
-    editando: bool,
-    hay_arrastre: bool,
 ) -> Respuesta {
+    let Contexto {
+        lado,
+        acento,
+        editando,
+        hay_arrastre,
+    } = ctx;
     // Solo se puede arrastrar en edicion: en uso normal, un arrastre accidental
     // sobre un boton reordenaria el deck sin querer.
     let sentido = if editando {
@@ -463,6 +484,23 @@ fn celda(
     } else {
         0.0
     };
+
+    // Un widget sustituye a la etiqueta: el botón enseña algo vivo en lugar de un
+    // texto fijo. Sigue siendo pulsable y ejecuta su acción igual.
+    if super::widgets::dibujar(app, boton, pintor, rect, texto, acento) {
+        return Respuesta {
+            pulsacion: if disparo_larga {
+                Pulsacion::Larga
+            } else if respuesta.clicked() {
+                Pulsacion::Corta
+            } else {
+                Pulsacion::Ninguna
+            },
+            empezo_arrastre: respuesta.drag_started(),
+            encima: hay_arrastre && !estado.arrastrado && respuesta.hovered(),
+            solto: respuesta.drag_stopped(),
+        };
+    }
 
     if !boton.label.is_empty() {
         pintor.text(

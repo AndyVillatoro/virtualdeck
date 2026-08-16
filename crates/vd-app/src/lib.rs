@@ -6,6 +6,7 @@
 pub mod app;
 pub mod atajos;
 pub mod bandeja;
+pub mod datos;
 pub mod demo;
 pub mod iconos;
 pub mod pantallas;

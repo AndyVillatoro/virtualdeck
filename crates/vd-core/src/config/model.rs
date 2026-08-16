@@ -622,6 +622,10 @@ impl ButtonConfig {
             && self.icon.as_deref().unwrap_or("").is_empty()
             && self.image_data.is_none()
             && self.brand_icon.is_none()
+            // Un widget es contenido aunque no haya etiqueta ni accion: un reloj
+            // o un sensor son botones que solo muestran algo. Sin esto la rejilla
+            // los dibujaria como casillas vacias.
+            && self.widget.is_none()
     }
 }
 

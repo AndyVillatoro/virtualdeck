@@ -62,6 +62,27 @@ fn main() -> Result<()> {
         ["run"] | ["run", "list"] => cmd_run_list(),
         ["run", "dry", id] => cmd_run(id, true),
         ["run", id] => cmd_run(id, false),
+        ["silencio"] => {
+            println!(
+                "Silencio: {}",
+                if vd_core::launcher::is_muted()? {
+                    "activado"
+                } else {
+                    "desactivado"
+                }
+            );
+            Ok(())
+        }
+        ["silencio", "on"] => {
+            vd_core::launcher::set_muted(true)?;
+            println!("Silencio activado.");
+            Ok(())
+        }
+        ["silencio", "off"] => {
+            vd_core::launcher::set_muted(false)?;
+            println!("Silencio desactivado.");
+            Ok(())
+        }
         ["clima"] => cmd_clima(false),
         ["clima", "force"] => cmd_clima(true),
         ["log"] | ["log", "show"] => cmd_log_show(),

@@ -57,6 +57,8 @@ pub struct App {
     pub modo_edicion: bool,
     /// ID del botón que se está arrastrando, si hay alguno.
     pub arrastrando: Option<String>,
+    /// Datos en vivo para los widgets, sondeados en un hilo aparte.
+    pub datos: crate::datos::Datos,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
     /// vuelca a la configuración al guardar, para que salirse del editor no deje
     /// cambios a medias.
@@ -83,6 +85,8 @@ impl App {
             .map(|m| m.into_iter().collect())
             .unwrap_or_default();
 
+        let ajustes_sensores = config.as_ref().and_then(|c| c.sensors.clone());
+
         Self {
             config,
             estado,
@@ -93,6 +97,7 @@ impl App {
             encendidos: std::collections::HashSet::new(),
             modo_edicion: false,
             arrastrando: None,
+            datos: crate::datos::Datos::arrancar(ajustes_sensores),
             borrador: None,
             emisor,
             receptor,
@@ -104,6 +109,8 @@ impl App {
     /// Se llama una vez por fotograma. `try_recv` no bloquea: si no hay nada
     /// listo, la interfaz sigue dibujando.
     pub fn recoger_resultados(&mut self) {
+        self.datos.recoger();
+
         while let Ok(t) = self.receptor.try_recv() {
             self.en_curso.retain(|id| *id != t.boton);
 
@@ -518,13 +525,22 @@ mod tests {
         let b = boton_que_pone_variable("sin-larga", "x");
         assert!(!app.pulsacion_larga(&b));
 
+        // La accion de prueba tiene que ser inocua. Aqui hubo `Mute`, que
+        // silencia el sistema de verdad y deja el equipo mudo tras un
+        // `cargo test`. Ver la regla en docs/MIGRACION-RUST.md: un test no le
+        // cambia el equipo a quien lo ejecuta.
         let mut con = b.clone();
-        con.long_press_action = Some(ButtonAction {
-            action_type: ActionType::Mute,
+        let mut larga = ButtonAction {
+            action_type: ActionType::SetVar,
             ..ButtonAction::default()
-        });
+        };
+        larga.var_name = Some("probado".into());
+        larga.var_value = Some("larga".into());
+        con.long_press_action = Some(larga);
+
         assert!(app.pulsacion_larga(&con));
         esperar_resultado(&mut app);
+        assert_eq!(app.estado.get("probado").map(String::as_str), Some("larga"));
     }
 
     #[test]

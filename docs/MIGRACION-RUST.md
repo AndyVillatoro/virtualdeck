@@ -37,9 +37,10 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: ampliar el editor a lo que aún no cubre —macros,
-secuencias, ramas y widgets— y después **widgets en la rejilla** (reloj, clima,
-sensores, reproducción), gestión de páginas y perfiles, ajustes, y el instalador.
+**Lo próximo, concreto**: poder configurar los widgets **desde el editor** (hoy
+se dibujan pero solo se activan editando el JSON a mano), ampliar el editor a
+macros y secuencias, y después gestión de páginas y perfiles, ajustes, y el
+instalador.
 
 La rejilla ya está completa como interacción: clic, pulsación larga, interruptores
 y arrastrar para reordenar.
@@ -485,11 +486,25 @@ aportando bastante más.
 
 ### Los tests no le cambian el equipo a quien compila
 
-Regla dura, aprendida por las malas: **`cargo test` no puede dejar la máquina
-distinta de como la encontró.** Un test del módulo de brillo llamaba a
-`set_brightness(500)` —que se recorta a 100— sin restaurar nada, así que cada
-compilación le ponía los monitores al máximo a quien estuviera trabajando. Otro
-sobrescribía el portapapeles y borraba lo que el usuario tuviera copiado.
+Regla dura, aprendida por las malas **tres veces**: **`cargo test` no puede dejar
+la máquina distinta de como la encontró.**
+
+1. Un test de brillo llamaba a `set_brightness(500)` —que se recorta a 100— sin
+   restaurar nada, así que cada compilación le ponía los monitores al máximo a
+   quien estuviera trabajando.
+2. Otro sobrescribía el portapapeles y borraba lo que el usuario tuviera copiado.
+3. Un tercero usaba `ActionType::Mute` como acción de ejemplo "inofensiva" para
+   probar la pulsación larga. **Silencia el sistema de verdad**, y como la tecla
+   multimedia *alterna*, un número impar de ejecuciones dejaba el equipo mudo.
+
+Los tres los reportó el usuario, no los tests. El patrón común es elegir una
+llamada real por parecer barata o inocua **sin mirar qué hace en el sistema**.
+Antes de usar una acción en un test, la pregunta es: ¿qué cambia fuera del
+proceso? Si la respuesta no es "nada", no vale.
+
+Del tercer incidente salió algo útil: `launcher::is_muted()` y `set_muted()`.
+Restaurar el silencio exigía **leer** el estado, porque la tecla multimedia solo
+alterna y alternar a ciegas es el mismo error otra vez.
 
 Cómo se escriben en su lugar:
 
@@ -1040,8 +1055,28 @@ El intercambio se aplica **al soltar**, no mientras se arrastra: mover en vivo
 haría que la rejilla bailara bajo el puntero. Y se guarda en disco enseguida,
 porque reordenar es un cambio que el usuario espera que persista sin pulsar nada.
 
+### ✅ Fase 2 — widgets en la rejilla
+
+Un botón con widget sigue siendo un botón —se pulsa y ejecuta su acción— pero en
+vez de un texto fijo muestra algo vivo: **reloj, clima, sensor, reproducción o el
+valor de una variable**. Todos se apoyan en módulos del núcleo ya verificados.
+
+**Un hilo aparte los sondea**, y no es ceremonia: un refresco de sensores son
+~9 ms, y hacerlo en cada fotograma limitaría la interfaz a unos 110 fps por sí
+solo; el clima es una petición HTTP que puede tardar segundos. Cada dato tiene su
+periodo —sensores 1 s, reproducción 3 s, clima 15 min— y la interfaz siempre
+dibuja lo último que llegó, sin esperar a nadie.
+
+Cuando un dato falta se **dice** («sin clima», «no disponible») en vez de dejar el
+botón en blanco o mostrar un cero engañoso. Un sensor puede no existir porque
+viene de otro equipo o porque es de LHM y el nivel 2 está apagado.
+
+**Bug encontrado al probarlo**: `ButtonConfig::is_empty()` no miraba el widget, así
+que un botón que solo tiene un reloj —sin etiqueta ni acción— se consideraba vacío
+y la rejilla lo dibujaba como un hueco. Corregido en el núcleo.
+
 Lo que el editor **aún no** cubre: macros, secuencias de varias acciones, ramas y
-widgets. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+la configuración de los propios widgets. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 

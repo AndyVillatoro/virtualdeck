@@ -75,7 +75,10 @@ global-hotkey = { version = "0.8", default-features = false }
 # para reproducir el camino de las teclas muertas del driver de teclado.
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.62"
-features = ["Win32_UI_Input_KeyboardAndMouse"]
+features = [
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_SystemInformation",   # GetLocalTime, para el widget de reloj
+]
 
 [features]
 # glow por defecto: consume 65 MB de memoria residente frente a los 172 MB de

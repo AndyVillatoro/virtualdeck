@@ -322,6 +322,37 @@ pub fn master_volume() -> Result<i64, LauncherError> {
     }
 }
 
+/// Dice si el dispositivo de salida predeterminado esta silenciado.
+///
+/// Existe para poder **poner** el silencio en un estado concreto en vez de
+/// alternarlo. La tecla multimedia de silencio solo alterna, asi que sin leer el
+/// estado no hay forma de garantizar que el equipo queda con sonido.
+pub fn is_muted() -> Result<bool, LauncherError> {
+    // SAFETY: misma cadena COM que master_volume.
+    unsafe {
+        crate::audio::ensure_com();
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)?;
+        let device = enumerator.GetDefaultAudioEndpoint(eRender, eMultimedia)?;
+        let volume: IAudioEndpointVolume = device.Activate(CLSCTX_ALL, None)?;
+        Ok(volume.GetMute()?.as_bool())
+    }
+}
+
+/// Silencia o quita el silencio del dispositivo predeterminado.
+pub fn set_muted(mudo: bool) -> Result<(), LauncherError> {
+    // SAFETY: misma cadena COM que master_volume.
+    unsafe {
+        crate::audio::ensure_com();
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)?;
+        let device = enumerator.GetDefaultAudioEndpoint(eRender, eMultimedia)?;
+        let volume: IAudioEndpointVolume = device.Activate(CLSCTX_ALL, None)?;
+        volume.SetMute(mudo, std::ptr::null())?;
+        Ok(())
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Portapapeles
 // ---------------------------------------------------------------------------
