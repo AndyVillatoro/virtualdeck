@@ -37,10 +37,12 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: ampliar el editor a lo que aún no cubre —macros,
-secuencias de varias acciones, ramas y widgets— y las funciones sueltas de la
-rejilla: pulsación larga, toggle y arrastrar para reordenar. Después: páginas y
+**Lo próximo, concreto**: **arrastrar para reordenar** botones, ampliar el editor
+a lo que aún no cubre —macros, secuencias, ramas y widgets— y después páginas y
 perfiles, ajustes, y el instalador.
+
+También sigue abierta la decisión sobre la memoria: 128 MB reales contra una meta
+de 60 MB, con el reparto ya medido (121 MB son la pila gráfica).
 
 Ya funciona: `cargo run` abre la rejilla con la configuración real y los iconos
 de marca, ejecuta acciones al hacer clic, **permite editar y guardar botones**,
@@ -1006,6 +1008,18 @@ Otras dos decisiones que importan:
   configuración real a quien compile el proyecto.
 - Si el guardado en disco falla, **se dice**. El cambio sigue en memoria pero no
   en disco, y alguien podría cerrar creyendo que quedó guardado.
+
+**Pulsación larga y botones interruptores** ya funcionan en la rejilla. La larga
+se dibuja como un aro de puntos que se va completando mientras se mantiene
+pulsado, para que se vea que está pasando algo; medio segundo, igual que la
+versión Electron. Un botón sin acción larga trata la pulsación sostenida como un
+clic normal en vez de no hacer nada.
+
+Un detalle del interruptor que parece un descuido y no lo es: **el estado cambia
+aunque la acción falle**, y vive en memoria, no en la configuración. Si dependiera
+del éxito de la acción, un interruptor sin acción de apagado se quedaría encendido
+para siempre; y guardarlo en disco escribiría el `deck-config.json` en cada
+pulsación.
 
 Lo que el editor **aún no** cubre: macros, secuencias de varias acciones, ramas y
 widgets. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría

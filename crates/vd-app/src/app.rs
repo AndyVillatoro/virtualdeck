@@ -46,6 +46,13 @@ pub struct App {
     /// Error de carga de la configuración, si lo hubo.
     pub error_carga: Option<String>,
 
+    /// Botones de tipo interruptor que están encendidos ahora mismo.
+    ///
+    /// Vive en memoria y no en la configuración a propósito: es estado de la
+    /// sesión, no algo que el usuario haya configurado. Guardarlo escribiría el
+    /// `deck-config.json` en cada pulsación.
+    pub encendidos: std::collections::HashSet<String>,
+
     /// En modo edición, pulsar un botón lo selecciona en vez de ejecutarlo.
     pub modo_edicion: bool,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
@@ -81,6 +88,7 @@ impl App {
             en_curso: Vec::new(),
             aviso: None,
             error_carga,
+            encendidos: std::collections::HashSet::new(),
             modo_edicion: false,
             borrador: None,
             emisor,
@@ -125,23 +133,69 @@ impl App {
     }
 
     /// Lanza la acción de un botón en segundo plano.
+    ///
+    /// Para un botón interruptor alterna entre su acción y la de apagado; para
+    /// el resto ejecuta la suya.
     pub fn pulsar(&mut self, boton: &ButtonConfig) {
-        // Volver a pulsar un botón que ya está corriendo duplicaría su efecto:
-        // dos veces el mismo script, dos webhooks. Se ignora.
-        if self.en_curso.iter().any(|id| id == &boton.id) {
+        if boton.is_toggle.unwrap_or(false) {
+            let encendido = self.encendidos.contains(&boton.id);
+            // La acción de apagado es opcional: un interruptor puede existir solo
+            // para llevar la cuenta de un estado que se ve en la propia rejilla.
+            let accion = if encendido {
+                boton.action_toggle_off.clone()
+            } else {
+                Some(boton.action.clone())
+            };
+
+            // El estado se cambia aunque la acción falle: si no, un interruptor
+            // cuya acción de apagado no existe se quedaría encendido para siempre.
+            if encendido {
+                self.encendidos.remove(&boton.id);
+            } else {
+                self.encendidos.insert(boton.id.clone());
+            }
+
+            if let Some(a) = accion {
+                self.lanzar(&boton.id, vec![a]);
+            }
             return;
         }
 
-        let secuencia: Vec<_> = match &boton.actions {
+        let secuencia = match &boton.actions {
             Some(v) if !v.is_empty() => v.clone(),
             _ => vec![boton.action.clone()],
         };
+        self.lanzar(&boton.id, secuencia);
+    }
+
+    /// Lanza la acción de **pulsación larga** de un botón, si la tiene.
+    ///
+    /// Devuelve `false` cuando el botón no define ninguna, para que quien llama
+    /// pueda tratar la pulsación como un clic normal.
+    pub fn pulsacion_larga(&mut self, boton: &ButtonConfig) -> bool {
+        let Some(accion) = boton
+            .long_press_action
+            .clone()
+            .filter(|a| !a.action_type.is_none())
+        else {
+            return false;
+        };
+        self.lanzar(&boton.id, vec![accion]);
+        true
+    }
+
+    fn lanzar(&mut self, id: &str, secuencia: Vec<vd_core::config::model::ButtonAction>) {
+        // Volver a pulsar un botón que ya está corriendo duplicaría su efecto:
+        // dos veces el mismo script, dos webhooks. Se ignora.
+        if self.en_curso.iter().any(|e| e == id) {
+            return;
+        }
         if secuencia.iter().all(|a| a.action_type.is_none()) {
             return; // botón sin configurar
         }
 
-        self.en_curso.push(boton.id.clone());
-        let id = boton.id.clone();
+        self.en_curso.push(id.to_string());
+        let id = id.to_string();
         let estado = self.estado.clone();
         let emisor = self.emisor.clone();
 
@@ -350,6 +404,78 @@ mod tests {
         let cfg = app.config.as_ref().unwrap();
         assert_eq!(cfg.buttons.len(), antes + 1);
         assert!(cfg.button("pagina-inventada-99").is_some());
+    }
+
+    #[test]
+    fn un_interruptor_alterna_su_estado() {
+        let mut app = App::nueva();
+        let mut b = boton_que_pone_variable("toggle-1", "encendido");
+        b.is_toggle = Some(true);
+        b.action_toggle_off = Some({
+            let mut a = ButtonAction {
+                action_type: ActionType::SetVar,
+                ..ButtonAction::default()
+            };
+            a.var_name = Some("probado".into());
+            a.var_value = Some("apagado".into());
+            a
+        });
+
+        app.pulsar(&b);
+        assert!(
+            app.encendidos.contains("toggle-1"),
+            "deberia quedar encendido"
+        );
+        esperar_resultado(&mut app);
+        assert_eq!(
+            app.estado.get("probado").map(String::as_str),
+            Some("encendido")
+        );
+
+        app.pulsar(&b);
+        assert!(
+            !app.encendidos.contains("toggle-1"),
+            "deberia quedar apagado"
+        );
+        esperar_resultado(&mut app);
+        assert_eq!(
+            app.estado.get("probado").map(String::as_str),
+            Some("apagado")
+        );
+    }
+
+    #[test]
+    fn un_interruptor_sin_accion_de_apagado_igual_se_apaga() {
+        // Si el estado solo cambiara cuando hay accion de apagado, un interruptor
+        // sin ella se quedaria encendido para siempre.
+        let mut app = App::nueva();
+        let mut b = boton_que_pone_variable("toggle-2", "x");
+        b.is_toggle = Some(true);
+        b.action_toggle_off = None;
+
+        app.pulsar(&b);
+        assert!(app.encendidos.contains("toggle-2"));
+        esperar_resultado(&mut app);
+
+        app.pulsar(&b);
+        assert!(!app.encendidos.contains("toggle-2"));
+    }
+
+    #[test]
+    fn sin_accion_larga_configurada_se_avisa() {
+        // Quien llama necesita saberlo para tratar la pulsacion como un clic
+        // normal en vez de no hacer nada.
+        let mut app = App::nueva();
+        let b = boton_que_pone_variable("sin-larga", "x");
+        assert!(!app.pulsacion_larga(&b));
+
+        let mut con = b.clone();
+        con.long_press_action = Some(ButtonAction {
+            action_type: ActionType::Mute,
+            ..ButtonAction::default()
+        });
+        assert!(app.pulsacion_larga(&con));
+        esperar_resultado(&mut app);
     }
 
     #[test]

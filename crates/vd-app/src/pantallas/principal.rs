@@ -11,6 +11,12 @@ use crate::app::{color_hex, App};
 /// Cuánto dura el aviso de la última acción antes de desvanecerse.
 const AVISO_SEGUNDOS: f32 = 4.0;
 
+/// Cuánto hay que mantener pulsado para que cuente como pulsación larga.
+///
+/// Medio segundo es el valor de la versión Electron. Más corto dispara la acción
+/// alternativa por accidente al hacer clic con calma; más largo se siente roto.
+const PULSACION_LARGA: f32 = 0.5;
+
 const FONDO: Color32 = Color32::from_rgb(0x10, 0x12, 0x16);
 const CELDA: Color32 = Color32::from_rgb(0x14, 0x17, 0x1C);
 const CELDA_HOVER: Color32 = Color32::from_rgb(0x1B, 0x20, 0x27);
@@ -194,9 +200,11 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
 
     let acento = app.acento();
     let editando = app.modo_edicion;
+    let encendidos = app.encendidos.clone();
     let seleccionado = app.borrador.as_ref().map(|b| b.id.clone());
     let pagina = app.pagina;
-    let mut pulsado: Option<vd_core::config::model::ButtonConfig> = None;
+    // El `bool` indica si fue pulsación larga.
+    let mut pulsado: Option<(vd_core::config::model::ButtonConfig, bool)> = None;
 
     for fila in 0..filas {
         ui.horizontal(|ui| {
@@ -205,10 +213,15 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
                 let indice = fila * columnas + col;
                 match por_indice.get(&indice) {
                     Some(b) if !b.is_empty() => {
-                        let corriendo = app.en_curso.iter().any(|id| id == &b.id);
-                        let activo = seleccionado.as_deref() == Some(b.id.as_str());
-                        if celda(ui, b, lado, acento, corriendo, activo) {
-                            pulsado = Some(b.clone());
+                        let estado = EstadoCelda {
+                            corriendo: app.en_curso.iter().any(|id| id == &b.id),
+                            seleccionado: seleccionado.as_deref() == Some(b.id.as_str()),
+                            encendido: encendidos.contains(&b.id),
+                        };
+                        match celda(ui, b, lado, acento, estado, editando) {
+                            Pulsacion::Corta => pulsado = Some((b.clone(), false)),
+                            Pulsacion::Larga => pulsado = Some((b.clone(), true)),
+                            Pulsacion::Ninguna => {}
                         }
                     }
                     otro => {
@@ -224,7 +237,7 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
                         });
                         let activo = seleccionado.as_deref() == Some(vacio.id.as_str());
                         if hueco(ui, lado, editando, activo, acento) {
-                            pulsado = Some(vacio);
+                            pulsado = Some((vacio, false));
                         }
                     }
                 }
@@ -235,13 +248,34 @@ fn rejilla(app: &mut App, ui: &mut egui::Ui) {
 
     // La pulsación se aplica fuera del bucle: dentro, `app` está prestado por
     // `botones_de_pagina` y no se puede modificar.
-    if let Some(b) = pulsado {
+    if let Some((b, larga)) = pulsado {
         if editando {
             app.editar(&b);
+        } else if larga {
+            // Un botón sin acción larga configurada trata la pulsación sostenida
+            // como un clic normal, en vez de no hacer nada.
+            if !app.pulsacion_larga(&b) {
+                app.pulsar(&b);
+            }
         } else {
             app.pulsar(&b);
         }
     }
+}
+
+/// Lo que hay que saber de una celda para dibujarla.
+#[derive(Clone, Copy)]
+struct EstadoCelda {
+    corriendo: bool,
+    seleccionado: bool,
+    encendido: bool,
+}
+
+/// Cómo terminó la interacción con una celda.
+enum Pulsacion {
+    Ninguna,
+    Corta,
+    Larga,
 }
 
 /// Dibuja un botón. Devuelve `true` si se pulsó.
@@ -250,10 +284,33 @@ fn celda(
     boton: &vd_core::config::model::ButtonConfig,
     lado: f32,
     acento: Color32,
-    corriendo: bool,
-    seleccionado: bool,
-) -> bool {
+    estado: EstadoCelda,
+    editando: bool,
+) -> Pulsacion {
     let (rect, respuesta) = ui.allocate_exact_size(Vec2::splat(lado), Sense::click());
+
+    let tiene_larga = boton
+        .long_press_action
+        .as_ref()
+        .is_some_and(|a| !a.action_type.is_none());
+
+    // La pulsación larga se mide desde que el puntero baja sobre la celda. egui
+    // no la ofrece hecha, pero sí dice cuánto lleva pulsado el botón del ratón,
+    // que es justo lo que hace falta.
+    let mut progreso = 0.0_f32;
+    let mut disparo_larga = false;
+    if !editando && tiene_larga && respuesta.is_pointer_button_down_on() {
+        let sostenido = ui
+            .input(|i| i.pointer.press_start_time())
+            .map_or(0.0, |t| (ui.input(|i| i.time) - t) as f32);
+        progreso = (sostenido / PULSACION_LARGA).clamp(0.0, 1.0);
+        // Mientras se mantiene pulsado hay que seguir dibujando para que el aro
+        // de progreso avance.
+        ui.ctx().request_repaint();
+        if sostenido >= PULSACION_LARGA {
+            disparo_larga = true;
+        }
+    }
 
     let fondo = boton
         .bg_color
@@ -265,7 +322,7 @@ fn celda(
             CELDA
         });
 
-    let borde = if corriendo || seleccionado {
+    let borde = if estado.corriendo || estado.seleccionado || estado.encendido {
         acento
     } else if respuesta.hovered() {
         Color32::from_gray(70)
@@ -279,7 +336,7 @@ fn celda(
         rect,
         CornerRadius::same(6),
         Stroke::new(
-            if corriendo || seleccionado {
+            if estado.corriendo || estado.seleccionado || estado.encendido {
                 2.0_f32
             } else {
                 1.0_f32
@@ -302,6 +359,12 @@ fn celda(
     // El icono ocupa la parte de arriba y la etiqueta baja a su sitio. Sin icono,
     // la etiqueta se queda centrada, que es como se ve mejor un boton de solo
     // texto.
+    // Un interruptor encendido se tiñe de acento: el borde solo no basta para
+    // distinguirlo de un vistazo en una rejilla llena.
+    if estado.encendido {
+        pintor.rect_filled(rect, CornerRadius::same(6), acento.gamma_multiply(0.18));
+    }
+
     let hay_icono = boton
         .brand_icon
         .as_deref()
@@ -354,7 +417,27 @@ fn celda(
         );
     }
 
-    respuesta.clicked()
+    // Aro de progreso de la pulsación larga, dibujado con puntos para no romper
+    // la estética de la rejilla.
+    if progreso > 0.0 {
+        let radio = lado * 0.42;
+        let puntos = 16;
+        let encendidos = (progreso * puntos as f32).round() as usize;
+        for i in 0..encendidos {
+            let angulo =
+                -std::f32::consts::FRAC_PI_2 + (i as f32 / puntos as f32) * std::f32::consts::TAU;
+            let centro = rect.center() + Vec2::new(angulo.cos(), angulo.sin()) * radio;
+            pintor.circle_filled(centro, (lado * 0.02).max(1.5), acento);
+        }
+    }
+
+    if disparo_larga {
+        Pulsacion::Larga
+    } else if respuesta.clicked() {
+        Pulsacion::Corta
+    } else {
+        Pulsacion::Ninguna
+    }
 }
 
 /// Dibuja una posición vacía. Devuelve `true` si se pulsó, que solo puede pasar
@@ -377,8 +460,8 @@ fn hueco(
     pintor.rect_filled(rect, CornerRadius::same(6), VACIA);
 
     if editando {
-        // En edición los huecos se marcan con un borde punteado y un `+`, para
-        // que se vea que son sitios donde se puede crear un botón.
+        // En edición los huecos se marcan con un borde y un `+`, para que se vea
+        // que son sitios donde se puede crear un botón.
         let borde = if seleccionado {
             acento
         } else if respuesta.hovered() {
