@@ -38,9 +38,30 @@ export interface AudioDevice {
 /** Lo que expone el módulo nativo. Los nombres los genera napi desde Rust. */
 export interface NucleoNativo {
   version: () => string;
+
+  // --- audio ---
   listAudioDevices: () => AudioDevice[];
   setDefaultAudioDevice: (deviceId: string) => boolean;
   findAudioDeviceByName: (name: string) => AudioDevice | null;
+
+  // --- launcher ---
+  launchApp: (appPath: string, args: string[]) => boolean;
+  /** Cubre a la vez `openUrl` y `openShortcut`: hacían lo mismo. */
+  openPath: (target: string) => boolean;
+  runScript: (script: string, shell?: string) => { success: boolean; output: string };
+  setBrightness: (level: number) => boolean;
+  getBrightness: () => number | null;
+  copyToClipboard: (text: string) => boolean;
+  readClipboard: () => string | null;
+  typeText: (text: string) => boolean;
+  sendHotkey: (combo: string) => boolean;
+  getRunningProcesses: () => string[];
+  killProcess: (name: string) => boolean;
+  setVolume: (percent: number) => boolean;
+  getVolume: () => number | null;
+  isMuted: () => boolean | null;
+  setMuted: (muted: boolean) => boolean;
+  snapWindow: (position: string, processName?: string) => boolean;
 }
 
 /** Rutas donde puede estar el `.node`, en orden de preferencia. */
@@ -97,4 +118,28 @@ export function nucleo(): NucleoNativo | null {
 /** Si el núcleo nativo está disponible. Para decidir qué camino tomar. */
 export function hayNucleo(): boolean {
   return nucleo() !== null;
+}
+
+/**
+ * Intenta una operación por el camino nativo.
+ *
+ * Devuelve `undefined` —y **solo** `undefined`— cuando no se pudo intentar: no
+ * hay módulo, o lanzó. Quien llama distingue eso de un resultado legítimo, que
+ * puede perfectamente ser `false`, y decide si cae al camino de PowerShell.
+ *
+ * Existe para no repetir el mismo `try/catch` en cada una de las veintitantas
+ * funciones que se migran.
+ */
+export function intentarNativo<T>(
+  que: string,
+  operacion: (n: NucleoNativo) => T,
+): T | undefined {
+  const n = nucleo();
+  if (!n) return undefined;
+  try {
+    return operacion(n);
+  } catch (e) {
+    console.error(`[nativo] ${que} falló:`, (e as Error).message);
+    return undefined;
+  }
 }

@@ -1,8 +1,12 @@
+import { intentarNativo } from './native';
 import { exec, spawn } from 'child_process';
 import { shell } from 'electron';
 import { runPS, runPSBool } from './ps-helpers';
 
 export async function launchApp(appPath: string, args: string[] = []): Promise<boolean> {
+  const r = intentarNativo('launchApp', (n) => n.launchApp(appPath, args));
+  if (r !== undefined) return r;
+
   return new Promise((resolve) => {
     try {
       const child = spawn(appPath, args, { detached: true, stdio: 'ignore', shell: true });
@@ -15,14 +19,23 @@ export async function launchApp(appPath: string, args: string[] = []): Promise<b
 }
 
 export async function openUrl(url: string): Promise<boolean> {
+  const r = intentarNativo('openUrl', (n) => n.openPath(url));
+  if (r !== undefined) return r;
+
   try { await shell.openExternal(url); return true; } catch { return false; }
 }
 
 export async function openShortcut(path: string): Promise<boolean> {
+  const r = intentarNativo('openShortcut', (n) => n.openPath(path));
+  if (r !== undefined) return r;
+
   try { await shell.openPath(path); return true; } catch { return false; }
 }
 
 export async function runScript(script: string, shell_: string = 'powershell'): Promise<boolean> {
+  const r = intentarNativo('runScript', (n) => n.runScript(script, shell_).success);
+  if (r !== undefined) return r;
+
   // PS branch goes through the shared helper (tmp .ps1 + UTF-8 + -File). Other
   // shells fall back to direct exec — those are cmd one-liners from the user.
   if (shell_ === 'powershell') {
@@ -34,6 +47,9 @@ export async function runScript(script: string, shell_: string = 'powershell'): 
 }
 
 export async function runScriptCapture(script: string, shell_: string = 'powershell'): Promise<{ success: boolean; output: string }> {
+  const r = intentarNativo('runScriptCapture', (n) => n.runScript(script, shell_));
+  if (r !== undefined) return r;
+
   if (shell_ === 'powershell') {
     const r = await runPS(script, { timeoutMs: 30000 });
     return { success: r.ok, output: (r.stdout || r.stderr || '').trim() };
@@ -46,6 +62,9 @@ export async function runScriptCapture(script: string, shell_: string = 'powersh
 }
 
 export async function setBrightness(level: number): Promise<boolean> {
+  const r = intentarNativo('setBrightness', (n) => n.setBrightness(Math.round(level)));
+  if (r !== undefined) return r;
+
   const pct = Math.min(100, Math.max(0, Math.round(level)));
   const script = `
 param([int]$Pct)
@@ -58,6 +77,9 @@ try {
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {
+  const r = intentarNativo('copyToClipboard', (n) => n.copyToClipboard(text));
+  if (r !== undefined) return r;
+
   // $Text arrives via param() — never interpolated, so PS string-escape rules
   // and `$()` subshell expansion don't apply.
   const script = `param([string]$Text)
@@ -66,6 +88,9 @@ Set-Clipboard -Value $Text`;
 }
 
 export async function typeTextKeys(text: string): Promise<boolean> {
+  const r = intentarNativo('typeTextKeys', (n) => n.typeText(text));
+  if (r !== undefined) return r;
+
   // SendKeys metachars (+ ^ % ~ ( ) { } [ ]) must be wrapped — that's a
   // SendKeys-level concern, not a shell-level injection issue.
   const escaped = text.replace(/[+^%~(){}[\]]/g, (c) => `{${c}}`);
@@ -76,6 +101,9 @@ Add-Type -AssemblyName System.Windows.Forms
 }
 
 export async function getRunningProcesses(): Promise<string[]> {
+  const r = intentarNativo('getRunningProcesses', (n) => n.getRunningProcesses());
+  if (r !== undefined && r.length > 0) return r;
+
   return new Promise((resolve) => {
     exec('tasklist /NH /FO CSV', { timeout: 5000 }, (err, stdout) => {
       if (err) { resolve([]); return; }
@@ -90,6 +118,9 @@ export async function getRunningProcesses(): Promise<string[]> {
 }
 
 export async function killProcess(name: string): Promise<boolean> {
+  const r = intentarNativo('killProcess', (n) => n.killProcess(name));
+  if (r !== undefined) return r;
+
   const safe = name.replace(/['"&|<>]/g, '').trim();
   if (!safe) return false;
   return new Promise((resolve) => {
@@ -98,6 +129,9 @@ export async function killProcess(name: string): Promise<boolean> {
 }
 
 export async function setVolume(percent: number): Promise<boolean> {
+  const r = intentarNativo('setVolume', (n) => n.setVolume(Math.round(percent)));
+  if (r !== undefined) return r;
+
   const level = Math.min(1.0, Math.max(0.0, percent / 100));
   const script = `
 param([float]$V)
@@ -127,6 +161,9 @@ public class AudioCtrl {
 }
 
 export async function snapWindow(position: string, processName?: string): Promise<boolean> {
+  const r = intentarNativo('snapWindow', (n) => n.snapWindow(position, processName));
+  if (r !== undefined) return r;
+
   const pname = (processName ?? '').replace(/\.exe$/i, '').trim();
   const script = `
 param([string]$Pname, [string]$Pos)
@@ -197,6 +234,9 @@ function buildSendKeys(combo: string): string {
 }
 
 export async function sendHotkey(combo: string): Promise<boolean> {
+  const r = intentarNativo('sendHotkey', (n) => n.sendHotkey(combo));
+  if (r !== undefined) return r;
+
   const keys = buildSendKeys(combo);
   if (!keys) return false;
   const script = `param([string]$Keys)
