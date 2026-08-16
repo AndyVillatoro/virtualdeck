@@ -80,9 +80,14 @@ features = [
     "Win32_System_SystemInformation",   # GetLocalTime, para el widget de reloj
 ]
 
+[build-dependencies]
+# Incrusta el icono y la version en el .exe. Solo corre en build.rs, no entra en
+# el binario ni cuenta para su tamaño.
+winresource = "0.1"
+
 [features]
-# glow por defecto: consume 65 MB de memoria residente frente a los 172 MB de
-# wgpu, con el mismo rendimiento. La medicion esta en src/render/mod.rs.
+# glow por defecto: 121 MB de memoria residente frente a los 172 MB de wgpu, con
+# el mismo rendimiento. La medicion esta en src/render/mod.rs.
 default = ["render-glow"]
 render-wgpu = ["dep:egui-wgpu", "dep:wgpu", "dep:pollster"]
 render-glow = [

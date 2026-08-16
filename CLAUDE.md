@@ -8,9 +8,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 > [docs/MIGRACION-RUST.md](docs/MIGRACION-RUST.md)** — leelo antes que nada; empieza con un
 > punto de retomada de 30 segundos.
 >
-> Estado: la aplicación ya hace todo lo que se usa a diario (rejilla, widgets, editor completo,
-> páginas, perfiles, bandeja, atajos globales, ajustes, dos idiomas, RGB por OpenRGB).
-> **Falta el instalador.** Binario 3,18 MB · 128 MB de RAM · 21 ms por acción.
+> Estado: **paridad alcanzada.** La aplicación hace todo lo que hacía la versión Electron
+> (rejilla, widgets, editor completo, páginas, perfiles, bandeja, atajos globales, ajustes,
+> dos idiomas, notificaciones, RGB por OpenRGB) y tiene instalador.
+> **Instalador 1,95 MB** frente a los ~90 MB de Electron · 128 MB de RAM · 21 ms por acción.
 >
 > Este archivo (CLAUDE.md) describe la arquitectura **Electron de `main`**, que sigue siendo la
 > versión publicada (0.5.x) hasta que la migración salga como v1.0.0.

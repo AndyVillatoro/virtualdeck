@@ -7,10 +7,13 @@
 //! Sin él, `CreateToastNotifierWithId` falla o la notificación se descarta en
 //! silencio, que es peor.
 //!
-//! Por eso este módulo crea el acceso directo la primera vez, apuntando al
-//! ejecutable que está corriendo. Es lo mismo que hace el ejemplo oficial de
-//! Microsoft para aplicaciones de escritorio no empaquetadas, y es también lo que
-//! deja el instalador — quien instale nunca llegará a ejecutar esta parte.
+//! Por eso este módulo se asegura, la primera vez que hace falta notificar, de
+//! que ese acceso directo exista y **lleve el identificador**. Si no existe lo
+//! crea apuntando al ejecutable que está corriendo (el caso portable); si lo dejó
+//! el instalador, le añade el identificador sin tocarle el icono ni la carpeta de
+//! trabajo. NSIS no sabe escribir esa propiedad, así que este es el único sitio
+//! donde se pone. Es lo mismo que hace el ejemplo oficial de Microsoft para
+//! aplicaciones de escritorio no empaquetadas.
 //!
 //! El acceso directo es la **única** huella que VirtualDeck deja fuera de su
 //! carpeta de configuración, y solo aparece si alguien usa una acción de
@@ -21,9 +24,10 @@ use std::path::PathBuf;
 use windows::core::{Interface, HSTRING};
 use windows::Data::Xml::Dom::XmlDocument;
 use windows::Win32::Foundation::PROPERTYKEY;
+use windows::Win32::System::Com::StructuredStorage::PropVariantClear;
 use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
 use windows::Win32::System::Com::{
-    CoCreateInstance, CoTaskMemAlloc, IPersistFile, CLSCTX_INPROC_SERVER, STGM_READ,
+    CoCreateInstance, CoTaskMemAlloc, IPersistFile, CLSCTX_INPROC_SERVER, STGM_READWRITE,
 };
 use windows::Win32::UI::Shell::PropertiesSystem::IPropertyStore;
 use windows::Win32::UI::Shell::{IShellLinkW, ShellLink};
@@ -131,15 +135,23 @@ fn ruta_acceso_directo() -> Option<PathBuf> {
     )
 }
 
-/// Crea el acceso directo del menú Inicio si aún no existe.
+/// Deja el acceso directo del menú Inicio con el identificador correcto.
+///
+/// Hay tres situaciones y las tres tienen que acabar igual:
+///
+/// - **No hay acceso directo** (portable, o recién compilado): se crea.
+/// - **Lo dejó el instalador**, con su icono y su carpeta de trabajo, pero puede
+///   no llevar el identificador. Se le añade **sin tocar nada más**.
+/// - **Ya está bien**: no se escribe nada.
+///
+/// Mirar solo si el archivo existe no basta: un acceso directo sin identificador
+/// deja las notificaciones sin aparecer y sin ningún error que lo explique.
 fn asegurar_registro() -> Result<(), NotifyError> {
     let destino = ruta_acceso_directo()
         .ok_or_else(|| NotifyError::Registro("no se encontro la carpeta APPDATA".into()))?;
 
     if destino.exists() {
-        // Un acceso directo ya existente no se toca: puede ser el del
-        // instalador, con su icono y su carpeta de trabajo.
-        return Ok(());
+        return corregir_identificador(&destino);
     }
 
     let ejecutable = std::env::current_exe().map_err(|e| {
@@ -167,18 +179,68 @@ fn crear_acceso_directo(
 
         // El identificador va como propiedad del enlace, no del ejecutable: es
         // lo que Windows lee para saber quien notifica.
-        let propiedades: IPropertyStore = enlace.cast()?;
-        let valor = propvariant_cadena(ID_APLICACION)?;
-        propiedades.SetValue(&PKEY_APP_USER_MODEL_ID, &valor)?;
-        propiedades.Commit()?;
+        escribir_identificador(&enlace)?;
 
         let archivo: IPersistFile = enlace.cast()?;
         archivo.Save(&HSTRING::from(destino.as_os_str()), true)?;
-        // `Save` con `true` deja el archivo como "actual"; sin esto, algunas
-        // versiones no lo dan por escrito hasta cerrar el proceso.
-        archivo.Load(&HSTRING::from(destino.as_os_str()), STGM_READ)?;
     }
     Ok(())
+}
+
+/// Añade el identificador a un acceso directo que ya existe.
+fn corregir_identificador(destino: &std::path::Path) -> Result<(), NotifyError> {
+    // SAFETY: se carga el enlace, se mira su propiedad y solo se reescribe si
+    // hace falta. El PROPVARIANT que devuelve `GetValue` se libera siempre.
+    unsafe {
+        crate::audio::ensure_com();
+
+        let enlace: IShellLinkW = CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER)?;
+        let archivo: IPersistFile = enlace.cast()?;
+        archivo.Load(&HSTRING::from(destino.as_os_str()), STGM_READWRITE)?;
+
+        let propiedades: IPropertyStore = enlace.cast()?;
+        let mut valor = propiedades.GetValue(&PKEY_APP_USER_MODEL_ID)?;
+        let actual = leer_propvariant_cadena(&valor);
+        let _ = PropVariantClear(&mut valor);
+
+        if actual.as_deref() == Some(ID_APLICACION) {
+            return Ok(());
+        }
+
+        escribir_identificador(&enlace)?;
+        // Con `None` se guarda sobre el mismo archivo del que se cargo, sin
+        // tocar la ruta, el icono ni la carpeta de trabajo que puso el
+        // instalador.
+        archivo.Save(None, true)?;
+    }
+    Ok(())
+}
+
+/// Pone `ID_APLICACION` en la propiedad del enlace y lo confirma.
+unsafe fn escribir_identificador(enlace: &IShellLinkW) -> Result<(), NotifyError> {
+    let propiedades: IPropertyStore = enlace.cast()?;
+    let valor = propvariant_cadena(ID_APLICACION)?;
+    propiedades.SetValue(&PKEY_APP_USER_MODEL_ID, &valor)?;
+    propiedades.Commit()?;
+    Ok(())
+}
+
+/// Saca la cadena de un `PROPVARIANT`, si es que lleva una.
+unsafe fn leer_propvariant_cadena(valor: &PROPVARIANT) -> Option<String> {
+    let crudo = valor as *const PROPVARIANT as *const PropVariantCrudo;
+    if (*crudo).vt != VT_LPWSTR || (*crudo).datos.is_null() {
+        // Un enlace sin la propiedad devuelve VT_EMPTY, que es el caso normal
+        // del acceso directo recien creado por el instalador.
+        return None;
+    }
+    let inicio = (*crudo).datos as *const u16;
+    let mut largo = 0;
+    while *inicio.add(largo) != 0 {
+        largo += 1;
+    }
+    Some(String::from_utf16_lossy(std::slice::from_raw_parts(
+        inicio, largo,
+    )))
 }
 
 /// Arma un `PROPVARIANT` de cadena.

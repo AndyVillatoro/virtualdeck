@@ -4,8 +4,8 @@
 > (vos u otro LLM/editor) después de meses, **leé este archivo primero** y luego
 > [CLAUDE.md](../CLAUDE.md) y [ARQUITECTURA.md](ARQUITECTURA.md).
 >
-> Estado: **Fase 1 completa. Fase 2 casi completa** — la aplicación hace todo lo
-> que se usa a diario. Falta el instalador.
+> Estado: **Fases 1 y 2 completas** — la aplicación hace todo lo que hacía la
+> versión Electron, y ya tiene instalador.
 > Rama: `rewrite/rust`. Última actualización: 2026-08-16.
 
 ---
@@ -14,14 +14,15 @@
 
 ```bash
 git checkout rewrite/rust
-cargo test --workspace          # 204 tests, todos deben dar verde
-cargo run                       # abre la aplicación
-cargo run -p vd-cli -- help     # banco de pruebas del núcleo contra hardware real
+cargo test --workspace            # 219 tests, todos deben dar verde
+cargo run                         # abre la aplicación
+cargo run -p vd-cli -- help       # banco de pruebas del núcleo contra hardware real
+.\scripts\build-installer.ps1     # deja dist\VirtualDeck-Setup-<version>.exe
 ```
 
-**Dónde quedó**: **Fase 1 completa y Fase 2 casi completa.** La aplicación
-funciona y hace todo lo que se usa a diario. Falta el **instalador** —aplazado a
-propósito por el usuario— y tres acciones menores.
+**Dónde quedó**: **Fases 1 y 2 completas.** La aplicación hace todo lo que hacía
+la versión Electron y tiene instalador. Lo que falta ya no es código propio: es
+verificar en vivo el RGB y capturar el protocolo del Aura.
 
 ### Qué funciona
 
@@ -30,32 +31,47 @@ propósito por el usuario— y tres acciones menores.
 | Núcleo (config, audio, media, macros, launcher, sensores, red, clima, log, acciones) | ✅ verificado contra hardware real |
 | Rejilla: iconos, clic, pulsación larga, interruptores, arrastrar para reordenar | ✅ |
 | Widgets: reloj, clima, sensor, reproducción, variable | ✅ |
-| Editor: acciones, secuencias, macros, carpetas, ramas, cuentas atrás, widgets | ✅ |
+| Editor: los 35 tipos de acción que el motor ejecuta | ✅ |
 | Páginas y perfiles | ✅ |
 | Bandeja del sistema y atajos globales | ✅ |
 | Ajustes, arranque con Windows, español/inglés | ✅ |
-| RGB por OpenRGB | 🟡 implementado y probado con servidor de prueba; **falta confirmar en vivo** |
+| Notificaciones del sistema y captura de región | ✅ |
+| RGB por OpenRGB: color, modos, presets y perfiles | 🟡 probado contra un servidor de prueba; **falta confirmar en vivo** |
 | RGB nativo (Aura USB) | ❌ bloqueado: necesita captura del protocolo |
-| Instalador | ⬜ **← lo siguiente** |
+| Instalador | ✅ construido; **falta ejecutarlo una vez** |
 
 ### Los objetivos, medidos
 
 | Objetivo | Meta | Real |
 |---|---|---|
-| Binario | — | **3,18 MB** |
+| **Instalador** | < 20 MB | **1,95 MB** (Electron: ~90 MB) |
+| Binario | — | **4,59 MB** |
 | RAM en reposo | < 140 MB | **128 MB** (era 60 MB; se corrigió al medir, ver §renderer) |
 | Latencia de una acción | < 10 ms | **21 ms** (eran 150–400 ms con PowerShell) |
 
+El binario pasó de 3,18 a 4,59 MB al cerrar la fase: 0,1 MB es el icono
+incrustado y el resto llegó con las notificaciones (la proyección WinRT pesa),
+los modos de OpenRGB y el editor completo. No se midió el reparto exacto entre
+esas tres: no hay meta declarada para el binario y 4,59 MB no está cerca de
+ningún límite.
+
 ### Lo siguiente, concreto
 
-1. **Instalador** (NSIS o WiX). Cierra el objetivo de < 20 MB y permite
-   distribuir. Las notificaciones nativas dependen de él: necesitan un
-   identificador de aplicación registrado en el menú Inicio.
-2. **Confirmar el RGB en vivo**: abrir OpenRGB con su servidor activo y probar
-   `cargo run -p vd-cli -- rgb openrgb #FF0000`.
+Ya no hay nada que dependa solo de escribir código:
+
+1. **Ejecutar el instalador una vez** y comprobar el ciclo entero: instalar,
+   abrir, notificar, desinstalar, y que la configuración sobreviva si se elige
+   conservarla.
+2. **Confirmar el RGB en vivo**: abrir OpenRGB con su servidor activo y probar,
+   en este orden:
+   ```bash
+   cargo run -p vd-cli -- rgb openrgb          # ¿ve los dispositivos?
+   cargo run -p vd-cli -- rgb modos            # ¿qué modos tiene cada uno?
+   cargo run -p vd-cli -- rgb openrgb #FF0000  # color plano
+   cargo run -p vd-cli -- rgb modo breathing #0000FF
+   ```
 3. **Captura USB del Aura**, para el control nativo sin OpenRGB. Hace falta
    USBPcap + Wireshark y una captura mientras Armoury Crate cambia un color.
-4. Menores: modos y perfiles RGB, captura de región.
 
 ### Cosas que NO hay que romper
 
@@ -79,21 +95,41 @@ Todas tienen un test que las fija. Si uno de estos falla, **no es ruido**:
   contenido, no ids; borrar una página renumera `page` **y** el id.
 - La **negociación de versión de OpenRGB**: los campos de brillo solo existen
   desde la 3 y leerlos de más desalinea todo el bloque.
+- Los **números de comando de OpenRGB**, que se parecen entre sí y no dan ningún
+  error al confundirlos: el servidor descarta el mensaje y las luces no cambian.
+  «Modo personalizado» es **1100**; 1052 es actualizar un LED suelto.
+- El **identificador de aplicación** `AndyVillatoro.VirtualDeck`: Windows guarda
+  contra esa cadena las preferencias de notificación del usuario. El instalador y
+  `notify.rs` tienen que usar exactamente la misma.
+- El **auditor de acciones con efectos** en `actions/mod.rs`: si falla, es que un
+  test empezó a tocar el equipo de quien compila.
 
 ### Tres lecciones que costaron caro
 
-1. **Un test no puede cambiarle el equipo a quien lo ejecuta.** Pasó tres veces
-   —brillo al máximo, portapapeles borrado, sistema silenciado— y las tres las
-   reportó el usuario, no los tests. El patrón común: elegir una llamada real por
-   parecer barata **sin mirar qué hace fuera del proceso**. Si necesita tocar
-   hardware: guardar estado, restaurar, y `#[ignore]`.
+1. **Un test no puede cambiarle el equipo a quien lo ejecuta.** Pasó cuatro veces
+   —brillo al máximo, portapapeles borrado, sistema silenciado, notificaciones en
+   cada compilación— y las tres primeras las reportó el usuario, no los tests. El
+   patrón común: elegir una llamada real **porque era inocua cuando se escribió el
+   test**; `Notify` no hacía nada hasta el día en que se implementó. Si necesita
+   tocar hardware: guardar estado, restaurar, y `#[ignore]`. Y ahora hay un
+   auditor que lo comprueba solo — encontró otros tres casos el día que se
+   escribió.
 2. **Una herramienta de auditoría en verde no prueba que audite.** El detector de
-   traducciones tenía dos puntos ciegos y dejó pasar texto real. Hay que romperla
-   *en la forma en que fallaría de verdad*, no en el caso fácil.
+   traducciones tenía dos puntos ciegos y dejó pasar texto real; además no ve los
+   textos que viven en tablas de constantes, así que los nombres de los tipos de
+   acción llevaban sin traducir desde el principio. Hay que romperla *en la forma
+   en que fallaría de verdad*, no en el caso fácil.
 3. **Medir todos los criterios antes de decidir, no dos de tres.** El renderer se
    eligió por tamaño y fps sin medir memoria —que era un objetivo declarado— y
    hubo que darle la vuelta a la decisión. Y una primera medición de memoria salió
    mal por mirar el proceso demasiado pronto.
+4. **Un test contra un doble que uno mismo escribe puede confirmar el mismo
+   error dos veces.** El cliente de OpenRGB usaba 1052 para «modo personalizado»
+   —es 1100— y el servidor de prueba repetía el número equivocado, así que el
+   test pasaba en verde mientras las luces no cambiaban. Los valores del
+   protocolo salen ahora de la fuente de OpenRGB y hay un test que los fija por
+   nombre. Regla: **un doble no puede sacar sus constantes del código que
+   prueba.**
 
 ### Y una de método
 

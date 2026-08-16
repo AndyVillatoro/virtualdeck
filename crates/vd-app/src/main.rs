@@ -1,3 +1,7 @@
+// En release no se abre consola: una aplicación de bandeja con una ventana negra
+// detrás se ve rota. En depuración sí, porque ahí es donde salen los mensajes.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 //! VirtualDeck — aplicación.
 //!
 //! Bucle de eventos de winit sobre el [`Lienzo`] de wgpu. El estado vive en
