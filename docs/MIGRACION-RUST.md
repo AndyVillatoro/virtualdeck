@@ -14,7 +14,7 @@
 
 ```bash
 git checkout rewrite/rust
-cargo test --workspace            # 219 tests, todos deben dar verde
+cargo test --workspace            # 227 tests, todos deben dar verde
 cargo run                         # abre la aplicación
 cargo run -p vd-cli -- help       # banco de pruebas del núcleo contra hardware real
 .\scripts\build-installer.ps1     # deja dist\VirtualDeck-Setup-<version>.exe
