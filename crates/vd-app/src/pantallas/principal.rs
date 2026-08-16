@@ -32,6 +32,7 @@ pub fn ui(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| pie(app, ui));
 
     super::editor::panel(app, ctx);
+    super::ajustes::ui(app, ctx);
 
     egui::CentralPanel::default()
         .frame(egui::Frame::NONE.fill(FONDO).inner_margin(8.0))
@@ -84,6 +85,11 @@ fn cabecera(app: &mut App, ui: &mut egui::Ui) {
         }
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if ui.button("⚙").on_hover_text("Ajustes").clicked() {
+                app.ajustes_abiertos = !app.ajustes_abiertos;
+            }
+            ui.add_space(6.0);
+
             let etiqueta = if app.modo_edicion { "Listo" } else { "Editar" };
             let boton =
                 egui::Button::new(egui::RichText::new(etiqueta).color(if app.modo_edicion {

@@ -37,8 +37,9 @@ real. La interfaz (`vd-app`) ya abre y funciona; falta el editor.
 | `weather` + `log` | ✅ | Clima real por geo-IP; log con acentos y ñ intactos |
 | `actions` | ✅ | Ejecutó un botón real de la config y cambió el audio en 21 ms |
 
-**Lo próximo, concreto**: la pantalla de **ajustes** (acento, tema, idioma,
-sensores, arranque con Windows) y el **instalador**. Después, perfiles.
+**Lo próximo, concreto**: el **instalador**, que es lo que hace todo esto
+instalable de verdad y cierra el objetivo de < 20 MB. Después: perfiles, y las
+acciones que el editor aún no cubre (ramas, cuentas atrás, carpetas, RGB).
 
 El editor ya cubre todo lo que se usa a diario; solo quedan fuera las ramas, las
 cuentas atrás, las carpetas y el RGB, que necesitan interfaz propia.
@@ -1138,6 +1139,24 @@ Con una salvedad importante: eso pasa **solo** cuando no hay archivo. Si el
 archivo existe pero está corrupto, la configuración queda en `None` y se muestra
 el error, en vez de sustituirla por una vacía —que al primer guardado machacaría
 un archivo que quizá solo tiene una coma de más y es recuperable a mano—.
+
+### ✅ Fase 2 — ajustes
+
+Ventana flotante con acento (10 predefinidos más color libre), tema, idioma,
+sensores, arranque con Windows y diagnóstico.
+
+Dos detalles que no son cosméticos:
+
+- **La casilla de arranque lee el registro, no la configuración.** Alguien pudo
+  quitarlo desde el Administrador de tareas, y la casilla tiene que reflejar la
+  realidad y no lo que creemos haber dejado.
+- **El bloque de sensores dice cuántos hay sin instalar nada** antes de ofrecer
+  LibreHardwareMonitor. El nivel 2 suena a requisito y no lo es; sin ese texto,
+  alguien podría instalar un programa entero para algo que ya funciona.
+
+El arranque usa la clave `Run` del **usuario**, no la de la máquina, así que no
+pide permisos de administrador. Tiene test de ida y vuelta —activa, comprueba y
+restaura— marcado `#[ignore]`, porque escribe en el registro.
 
 Lo que el editor **aún no** cubre: ramas, cuentas atrás, carpetas y RGB. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para

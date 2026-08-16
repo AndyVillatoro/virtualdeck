@@ -15,6 +15,8 @@
 #[cfg(windows)]
 pub mod actions;
 #[cfg(windows)]
+pub mod arranque;
+#[cfg(windows)]
 pub mod audio;
 pub mod config;
 #[cfg(windows)]

@@ -61,6 +61,8 @@ pub struct App {
     pub datos: crate::datos::Datos,
     /// Grabacion de macro en curso, si la hay.
     pub grabacion: Option<crate::pantallas::secuencia::Grabacion>,
+    /// La ventana de ajustes esta abierta.
+    pub ajustes_abiertos: bool,
     /// Copia del botón que se está editando. Se trabaja sobre ella y solo se
     /// vuelca a la configuración al guardar, para que salirse del editor no deje
     /// cambios a medias.
@@ -106,6 +108,7 @@ impl App {
             arrastrando: None,
             datos: crate::datos::Datos::arrancar(ajustes_sensores),
             grabacion: None,
+            ajustes_abiertos: false,
             borrador: None,
             emisor,
             receptor,
@@ -414,6 +417,15 @@ impl App {
         if vencida {
             self.detener_macro();
         }
+    }
+
+    /// Muestra un error en el pie de la ventana.
+    pub fn avisar_error(&mut self, texto: String) {
+        self.aviso = Some(Aviso {
+            texto,
+            error: true,
+            desde: Instant::now(),
+        });
     }
 
     pub fn paginas(&self) -> usize {
