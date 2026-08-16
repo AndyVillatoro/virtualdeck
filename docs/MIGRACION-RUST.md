@@ -106,7 +106,7 @@ tipos verificados en compilación, en microsegundos en vez de cientos de miliseg
 | Objetivo | Meta | Real | |
 |---|---|---|---|
 | Binario | — | 3,18 MB | holgado |
-| RAM en reposo | < 60 MB | 128 MB | **no se cumple**; mejora los ~200 MB de Electron |
+| RAM en reposo | < 60 MB | 128 MB | **no se cumple**; de esos, 121 MB son la pila grafica y 7 MB el codigo propio |
 | Latencia de una acción | < 10 ms | 21 ms (cambiar dispositivo de audio) | cerca; eran 150–400 ms con PowerShell |
 
 La memoria es lo único claramente fuera de meta y **sigue abierto**. Ver la
@@ -855,8 +855,33 @@ con el mismo binario y dejando pasar unos segundos, da 121 MB. Queda anotado en
 
 **Estado real del objetivo**: la aplicación completa con glow está en **128 MB
 residentes** contra una meta de 60 MB. Mejor que Electron, pero **el objetivo no
-se cumple** y sigue abierto. Falta averiguar cuánto de eso es el driver de vídeo
-—que se mapea entero dentro del proceso— y cuánto es evitable.
+se cumple**.
+
+Se midió por capas para saber de dónde sale (`spike_ventana` abre una ventana de
+winit y nada más):
+
+| Capa | Residente | Privados |
+|---|---|---|
+| Ventana pelada de winit | **15 MB** | 2,5 MB |
+| + contexto OpenGL + egui | 121 MB | 215 MB |
+| Aplicación completa | 128 MB | 249 MB |
+
+El reparto es claro y algo incómodo: **la pila gráfica pone ~105 MB** y todo el
+código propio —pantallas, 68 iconos, bandeja, atajos, configuración— suma 7 MB
+encima. No hay nada que optimizar en el lado de la aplicación; el coste es del
+driver de vídeo, que se mapea y compromete memoria por su cuenta.
+
+Las opciones honestas, para cuando toque decidir:
+
+1. **Aceptar ~128 MB** y corregir el objetivo. Sigue siendo un 36 % menos que
+   Electron, y las otras dos metas (binario, latencia) se cumplen con holgura.
+2. **Renderizar por CPU** (`softbuffer` + un rasterizador para las mallas de
+   egui), que evitaría el driver por completo. Para una interfaz de rectángulos y
+   puntos casi siempre quieta podría bastar, pero egui no trae backend de CPU:
+   habría que escribirlo.
+
+Mientras tanto, la meta de 60 MB queda marcada como **no cumplida** en vez de
+darse por buena.
 
 Se comprobó también, y resultó **falso**, que los límites amplios pedidos a wgpu
 (`adaptador.limits()`) explicaran su consumo: cambiarlos a un perfil conservador

@@ -99,6 +99,10 @@ name = "spike_render"
 path = "src/bin/spike_render.rs"
 
 [[bin]]
+name = "spike_ventana"
+path = "src/bin/spike_ventana.rs"
+
+[[bin]]
 name = "spike_texto"
 path = "src/bin/spike_texto.rs"
 
