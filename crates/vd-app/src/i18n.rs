@@ -271,6 +271,8 @@ const PARES: &[(&str, &str)] = &[
         "{backups} copia(s) de seguridad de la configuración",
         "{backups} configuration backup(s)",
     ),
+    ("Leer en voz alta", "Read aloud"),
+    ("Usa las voces que tengas instaladas en Windows.", "Uses the voices installed in Windows."),
     // --- perfiles ---
     ("Perfiles", "Profiles"),
     (

@@ -31,6 +31,8 @@ pub mod net;
 pub mod rgb;
 pub mod sensors;
 #[cfg(windows)]
+pub mod voz;
+#[cfg(windows)]
 pub mod weather;
 
 /// Error comun del nucleo. Cada modulo define su propio error especifico y aqui

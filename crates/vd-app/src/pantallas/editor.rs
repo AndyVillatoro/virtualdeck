@@ -42,6 +42,7 @@ const TIPOS: &[(ActionType, &str)] = &[
     (ActionType::IncrVar, "Incrementar variable"),
     (ActionType::Macro, "Macro grabada"),
     (ActionType::Folder, "Carpeta de botones"),
+    (ActionType::Tts, "Leer en voz alta"),
     (ActionType::Branch, "Ramificación"),
     (ActionType::Countdown, "Cuenta atrás"),
 ];
@@ -508,6 +509,14 @@ fn accion(ui: &mut egui::Ui, b: &mut vd_core::config::model::ButtonAction) {
         ActionType::IncrVar => {
             campo(ui, t("Variable"), &mut b.var_name);
             numero(ui, t("Incremento"), &mut b.var_delta, -1000, 1000);
+        }
+        ActionType::Tts => {
+            multilinea(ui, "Texto", &mut b.tts_text);
+            ui.label(
+                RichText::new(t("Usa las voces que tengas instaladas en Windows."))
+                    .small()
+                    .color(Color32::from_gray(110)),
+            );
         }
         ActionType::Branch => {
             ui.label(RichText::new(t("Si la variable")).small());

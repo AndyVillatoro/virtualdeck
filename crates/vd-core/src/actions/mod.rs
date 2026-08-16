@@ -305,7 +305,7 @@ impl Ctx {
             T::Folder => Outcome::ForUi("abrir carpeta de botones"),
             T::Notify => Outcome::ForUi("mostrar notificacion"),
             T::RegionCapture => Outcome::ForUi("capturar region de pantalla"),
-            T::Tts => Outcome::ForUi("texto a voz"),
+            T::Tts => envolver(crate::voz::hablar(&self.texto(&a.tts_text))),
             T::RgbColor | T::RgbMode | T::RgbProfile | T::RgbPreset => {
                 // La escritura RGB no funciona todavia: falta analizar una
                 // captura del protocolo USB de Aura. Ver docs/MIGRACION-RUST.md.

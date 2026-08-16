@@ -475,21 +475,39 @@ fn celda(
         pintor.rect_filled(rect, CornerRadius::same(6), acento.gamma_multiply(0.18));
     }
 
-    let hay_icono = boton
-        .brand_icon
+    // El campo `icon` guarda un caracter suelto (◈, ★, ▶), no el nombre de un
+    // icono: se dibuja como texto. El icono de marca manda si hay los dos.
+    let glifo = boton
+        .icon
         .as_deref()
-        .and_then(crate::iconos::buscar)
-        .map(|icono| {
-            let area = Rect::from_min_size(
-                rect.min + Vec2::new(0.0, lado * 0.06),
-                Vec2::new(lado, lado * 0.56),
-            );
-            // Si el boton fija color de texto, el icono lo respeta: manda la
-            // eleccion del usuario sobre los colores de la marca.
-            let forzado = boton.fg_color.as_deref().and_then(color_hex);
-            icono.dibujar(pintor, area, forzado);
-        })
-        .is_some();
+        .filter(|s| !s.trim().is_empty())
+        .filter(|_| boton.brand_icon.is_none());
+    if let Some(g) = glifo {
+        pintor.text(
+            rect.center() - Vec2::new(0.0, lado * 0.14),
+            Align2::CENTER_CENTER,
+            g,
+            FontId::proportional(lado * 0.34),
+            texto,
+        );
+    }
+
+    let hay_icono = glifo.is_some()
+        || boton
+            .brand_icon
+            .as_deref()
+            .and_then(crate::iconos::buscar)
+            .map(|icono| {
+                let area = Rect::from_min_size(
+                    rect.min + Vec2::new(0.0, lado * 0.06),
+                    Vec2::new(lado, lado * 0.56),
+                );
+                // Si el boton fija color de texto, el icono lo respeta: manda la
+                // eleccion del usuario sobre los colores de la marca.
+                let forzado = boton.fg_color.as_deref().and_then(color_hex);
+                icono.dibujar(pintor, area, forzado);
+            })
+            .is_some();
 
     let desplazamiento = if hay_icono {
         lado * 0.31

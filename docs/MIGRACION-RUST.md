@@ -1246,8 +1246,29 @@ Por tercera vez, el test de «tipo no editable» falló al ampliar la lista: usa
 `Branch` como ejemplo y `Branch` acababa de volverse editable. Falló por el
 motivo correcto.
 
-Lo que el editor **aún no** cubre: RGB, notificaciones, texto a voz y captura de
-región. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
+### ✅ Fase 2 — texto a voz, y el icono de carácter
+
+**Texto a voz** deja de ser una acción muerta. Usa SAPI, la síntesis que ya trae
+Windows: no hay que instalar nada ni bajar modelos, y usa las voces que el
+usuario tenga configuradas, incluidas las de su idioma.
+
+Dos decisiones:
+
+- **Habla en asíncrono.** `Speak` bloquea hasta terminar de leer, y una frase
+  larga son varios segundos: en la aplicación eso congelaría la interfaz.
+- **Una lectura corta la anterior.** Es lo que espera quien pulsa dos botones
+  seguidos: oír lo último, no una cola de frases encadenadas.
+
+Verificado hablando de verdad. El test que lo hace está marcado `#[ignore]`,
+porque un `cargo test` no puede ponerse a hablar en el equipo de quien compila.
+
+**El campo `icon`** resulta que no guarda el nombre de un icono, sino un
+carácter suelto (`◈`, `★`, `▶`). Se descubrió mirando la configuración real en vez
+de suponerlo por el nombre del campo, y eso convirtió lo que parecía «hay que
+portar los iconos de lucide» en dibujar texto. El icono de marca manda si hay
+los dos.
+
+Lo que el editor **aún no** cubre: RGB, notificaciones y captura de región. Esos tipos no se ofrecen en la lista —ofrecerlos sin su interfaz dejaría
 botones a medio configurar— pero sí se **muestran** si un botón ya los tiene, para
 que se vea qué hay configurado aunque no se pueda cambiar desde aquí.
 
