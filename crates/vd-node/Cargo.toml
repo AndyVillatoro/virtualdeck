@@ -1,0 +1,28 @@
+[package]
+name = "vd-node"
+description = "Puente entre vd-core y Electron: expone el nucleo nativo como modulo de Node."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+# `cdylib` porque Node carga una biblioteca dinamica. La extension del archivo
+# la cambia el empaquetador a `.node`.
+crate-type = ["cdylib"]
+
+[dependencies]
+vd-core = { path = "../vd-core" }
+
+# N-API y **no** las cabeceras de V8: la ABI de N-API es estable entre versiones
+# de Node y de Electron, asi que el binario compilado una vez sirve para todas.
+# Es la misma razon por la que el proyecto ya usa `uiohook-napi` en vez de un
+# modulo nativo clasico: sin esto haria falta recompilar en cada actualizacion
+# de Electron.
+napi = { version = "2", default-features = false, features = ["napi6"] }
+napi-derive = "2"
+
+[build-dependencies]
+napi-build = "2"

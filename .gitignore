@@ -22,3 +22,8 @@ test-electron.js
 .claude/
 .agents/
 skills-lock.json
+
+# Rust: artefactos de compilación del núcleo nativo
+target/
+# El .node compilado — se genera con `npm run build:native`
+native/

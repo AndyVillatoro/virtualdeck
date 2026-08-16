@@ -1,0 +1,75 @@
+[package]
+name = "vd-core"
+description = "Nucleo de VirtualDeck: config, acciones, audio, media, macros, RGB, sensores. Sin dependencias de UI."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+regex = "1"
+hidapi = { version = "2.6.6", default-features = false, features = ["windows-native"] }
+wmi = "0.18.4"
+
+# --- sensores (Fase 1.8) ---
+# Nivel 1 (nativo, sin instalar nada): CPU/RAM/disco/red + GPU NVIDIA.
+# Solo las features que se usan: sin "multithread" (rayon) ni backends de otros SO.
+sysinfo = { version = "0.38.4", default-features = false, features = [
+    "system",
+    "disk",
+    "network",
+] }
+# NVML se carga dinamicamente en runtime desde nvml.dll (viene con el driver
+# NVIDIA). Si no hay GPU NVIDIA, la carga falla y se degrada a "sin sensores de
+# GPU" — no es un error fatal ni una dependencia de compilacion.
+nvml-wrapper = "0.12.1"
+
+# NOTA: las dependencias nativas se agregan por modulo a medida que se
+# implementan, no todas de golpe. Ver docs/MIGRACION-RUST.md seccion 4 (Fases).
+[target.'cfg(windows)'.dependencies]
+windows-core = "0.62"
+
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62"
+features = [
+    "Win32_Foundation",
+    "Win32_Media_Audio",                  # IMMDeviceEnumerator, IMMDevice, ERole
+    "Win32_System_Com",                   # CoInitializeEx, CoCreateInstance
+    "Win32_System_Com_StructuredStorage", # PROPVARIANT, PropVariantToStringAlloc
+    "Win32_System_Variant",               # VARENUM — requerido por GetValue
+    "Win32_UI_Shell_PropertiesSystem",    # IPropertyStore, PROPERTYKEY
+    "Win32_Devices_FunctionDiscovery",    # PKEY_Device_FriendlyName
+    # --- media ---
+    "Media",                              # MediaPlaybackAutoRepeatMode
+    "Media_Control",                      # SMTC (GlobalSystemMediaTransportControls*)
+    "Storage_Streams",                    # caratula: IRandomAccessStream, DataReader
+    "Foundation",                         # IAsyncOperation::get()
+    "Foundation_Collections",             # IVectorView de sesiones
+    "Win32_UI_WindowsAndMessaging",       # EnumWindows — fallback por titulo
+    "Win32_System_Threading",             # OpenProcess / QueryFullProcessImageNameW
+    # --- macros ---
+    "Win32_UI_Input_KeyboardAndMouse",    # SendInput, hooks de teclado/raton
+    "Win32_System_LibraryLoader",         # GetModuleHandleW (para instalar el hook)
+    # --- launcher ---
+    "Win32_UI_Shell",                     # ShellExecuteW
+    "Win32_System_Diagnostics_ToolHelp",  # enumerar procesos
+    "Win32_System_DataExchange",          # portapapeles
+    "Win32_System_Memory",                # GlobalAlloc para el portapapeles
+    "Win32_Media_Audio_Endpoints",        # IAudioEndpointVolume (volumen maestro)
+    "Win32_Devices_Display",              # DDC/CI: brillo de monitores externos
+    "Win32_Graphics_Gdi",                 # EnumDisplayMonitors
+    "Win32_Devices_HumanInterfaceDevice", # HidP_GetCaps (longitudes de report)
+    "Win32_Storage_FileSystem",           # CreateFileA sobre el device path
+    "Win32_Media_Speech",                 # texto a voz (SAPI)
+    "Win32_System_Registry",              # arranque con Windows (clave Run)
+    # --- red ---
+    "Win32_Networking_WinHttp",           # cliente HTTP/HTTPS con TLS del sistema
+    # --- notificaciones ---
+    "UI_Notifications",                   # las "tostadas" del sistema
+    "Data_Xml_Dom",                       # su plantilla va como XML
+]

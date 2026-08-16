@@ -17,6 +17,7 @@
     "preview": "electron-vite preview",
     "build:win": "electron-builder --win --dir",
     "build:icon": "node scripts/generate-icon.js",
+    "build:native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native.ps1",
     "build:installer": "npm run build:icon && electron-vite build && electron-builder --win nsis",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -66,7 +67,8 @@
       "package.json"
     ],
     "asarUnpack": [
-      "node_modules/uiohook-napi/**"
+      "node_modules/uiohook-napi/**",
+      "native/**"
     ],
     "extraResources": [
       {

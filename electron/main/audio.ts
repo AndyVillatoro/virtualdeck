@@ -1,3 +1,4 @@
+import { nucleo } from './native';
 import { runPS } from './ps-helpers';
 
 export interface AudioDevice {
@@ -180,6 +181,19 @@ public class VDAudio {
 `.trim();
 
 export async function listAudioDevices(): Promise<AudioDevice[]> {
+  // Camino nativo: unos 2 ms. El de PowerShell que sigue debajo tarda entre 150
+  // y 400 ms y se conserva solo para quien no haya compilado el módulo.
+  const nativo = nucleo();
+  if (nativo) {
+    try {
+      return nativo.listAudioDevices();
+    } catch (e) {
+      console.error('[audio] el núcleo nativo falló al listar:', (e as Error).message);
+      // Y se sigue por el camino de siempre en vez de devolver una lista vacía,
+      // que dejaría al usuario sin poder cambiar de dispositivo.
+    }
+  }
+
   const script = `
 Add-Type -TypeDefinition @"
 ${AUDIO_CS}
@@ -204,6 +218,19 @@ foreach ($d in $devices) { Write-Output "$($d[0])|$($d[1])|$($d[2])" }
 }
 
 export async function setDefaultAudioDevice(deviceId: string): Promise<boolean> {
+  const nativo = nucleo();
+  if (nativo) {
+    try {
+      // `vd-core` no se fía del HRESULT: vuelve a consultar el dispositivo
+      // predeterminado para comprobar que el cambio se aplicó, porque algunos
+      // controladores aceptan la llamada sin llegar a hacerlo.
+      if (nativo.setDefaultAudioDevice(deviceId)) return true;
+      console.error('[audio] el núcleo nativo no pudo cambiar el dispositivo; se prueba con PowerShell');
+    } catch (e) {
+      console.error('[audio] el núcleo nativo falló al cambiar:', (e as Error).message);
+    }
+  }
+
   // deviceId arrives via param() — never interpolated into the script body —
   // so PowerShell's $-expansion can't be abused to inject commands.
   const script = `
