@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { hayNucleo, intentarNativo } from './native';
 import { runPS as runPSShared } from './ps-helpers';
 
 export interface NowPlaying {
@@ -347,7 +347,12 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
   //
   // La cache de 4 s se respeta igual: la llamada nativa es rapida pero la
   // caratula pesa decenas de KB y el widget la pide en cada tick.
-  if (Date.now() - _cache.ts < 4000) return _cache.data;
+  // La caché baja de 4 s a 1 s cuando hay núcleo nativo: los 4 s escondían el
+  // coste de lanzar PowerShell, y a cambio la canción tardaba hasta cuatro
+  // segundos en actualizarse al cambiar de pista. Se conserva **algo** de caché
+  // porque la carátula pesa decenas de KB y el widget pregunta en cada tick.
+  const ttl = hayNucleo() ? 1000 : 4000;
+  if (Date.now() - _cache.ts < ttl) return _cache.data;
   {
     const nativo = intentarNativo('getNowPlaying', (n) => n.getNowPlaying());
     if (nativo !== undefined) {
