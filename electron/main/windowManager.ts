@@ -98,6 +98,24 @@ export function createMainWindow(): BrowserWindow {
     }
   });
 
+  // La ventana no tiene marco y su fondo es un gris muy oscuro. Si el renderer
+  // no llega a pintar, lo que se ve es un rectángulo vacío indistinguible de
+  // "la aplicación abrió pero no tiene nada configurado" — y el motivo real se
+  // queda dentro de las DevTools, que en la versión empaquetada no existen.
+  //
+  // Estos tres avisos sacan ese motivo al log del proceso principal, que es lo
+  // que se puede pedir en un reporte.
+  win.webContents.on('did-fail-load', (_e, codigo, descripcion, url) => {
+    console.error(`[ventana] no se pudo cargar ${url}: ${descripcion} (${codigo})`);
+  });
+  win.webContents.on('render-process-gone', (_e, detalles) => {
+    console.error('[ventana] el proceso del renderer murió:', detalles.reason);
+  });
+  win.webContents.on('console-message', (_e, nivel, mensaje, linea, fuente) => {
+    // Solo los errores: reenviar todo llenaría el log de ruido.
+    if (nivel >= 2) console.error(`[renderer] ${mensaje}  (${fuente}:${linea})`);
+  });
+
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL']);
     win.webContents.openDevTools({ mode: 'detach' });
