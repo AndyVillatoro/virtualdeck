@@ -52,7 +52,15 @@ export function createMainWindow(): BrowserWindow {
     minWidth: 900, minHeight: 600,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
     icon: join(__dirname, '../../build/icon.png'),
-    skipTaskbar: true,
+    // **Sí** en la barra de tareas.
+    //
+    // Antes se ocultaba porque la aplicación vive en la bandeja. Pero la ventana
+    // no tiene marco: si queda detrás de otra, no hay nada que la delate y no se
+    // puede recuperar más que por el icono de la bandeja — que es pequeño, está
+    // en el desplegable de iconos ocultos, y nadie recuerda que está ahí.
+    //
+    // El resultado práctico es indistinguible de que la aplicación no arranque.
+    skipTaskbar: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true, contextIsolation: true, nodeIntegration: false,
@@ -114,6 +122,57 @@ export function createMainWindow(): BrowserWindow {
   win.webContents.on('console-message', (_e, nivel, mensaje, linea, fuente) => {
     // Solo los errores: reenviar todo llenaría el log de ruido.
     if (nivel >= 2) console.error(`[renderer] ${mensaje}  (${fuente}:${linea})`);
+  });
+
+  // Diagnóstico bajo demanda: `VD_DIAG=1 npm run dev` cuenta qué hay dibujado.
+  //
+  // Existe porque distinguir "la ventana está en blanco" de "la ventana está
+  // detrás de otra" cuesta mucho más de lo que parece: la aplicación no sale en
+  // la barra de tareas, así que no se puede traer al frente para mirarla, y una
+  // captura de pantalla devuelve lo que haya encima, no la ventana.
+  if (process.env['VD_DIAG'] === '1') {
+    setTimeout(() => {
+      if (win.isDestroyed()) return;
+      console.log('[diag] cargando =', win.webContents.isLoading(), '| url =', win.webContents.getURL());
+      // capturePage devuelve lo que la ventana dibuja, sin importar qué haya
+      // por delante en la pantalla.
+      win.webContents
+        .capturePage()
+        .then((img) => {
+          const destino = join(process.env['TEMP'] ?? '.', 'vd-diag.png');
+          require('fs').writeFileSync(destino, img.toPNG());
+          console.log('[diag] captura de la ventana en', destino, '|', JSON.stringify(img.getSize()));
+        })
+        .catch((e) => console.error('[diag] no se pudo capturar:', e.message));
+      win.webContents
+        .executeJavaScript(
+          `(() => {
+             const r = document.getElementById('root');
+             return JSON.stringify({
+               nodos: r ? r.querySelectorAll('*').length : -1,
+               texto: (document.body.innerText || '').slice(0, 100),
+             });
+           })()`,
+        )
+        .then((s) => console.log('[diag] DOM:', s))
+        .catch((e) => console.error('[diag] no se pudo inspeccionar:', e.message));
+    }, 6000);
+  }
+
+  // La ventana se pone delante en cuanto hay DOM, **no** al terminar de cargar.
+  //
+  // `did-finish-load` espera a todos los recursos, incluida la hoja de fuentes
+  // remota. Si esa petición se queda colgada —y se queda: Electron no siempre
+  // alcanza Google Fonts aunque el resto del sistema sí— el evento no llega
+  // nunca. Y entonces pasa lo peor: la ventana no se trae al frente, queda
+  // tapada por otra, Chromium la da por oculta y **deja de dibujarla**. El
+  // resultado es una aplicación que parece no arrancar, sin un solo error.
+  //
+  // `dom-ready` depende solo del documento, así que llega siempre.
+  win.webContents.once('dom-ready', () => {
+    if (win.isDestroyed()) return;
+    win.show();
+    win.focus();
   });
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {

@@ -7,9 +7,26 @@
     <title>VirtualDeck</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Las fuentes se cargan SIN bloquear el primer pintado.
+
+      Un <link rel="stylesheet"> normal bloquea el renderizado hasta que el
+      servidor responde. Si la red no llega a Google Fonts —sin internet, tras un
+      proxy, o con la pila de red de Electron en mal estado— la ventana se queda
+      en negro indefinidamente: sin botones, sin error, y `isLoading()` en true
+      para siempre. Una aplicación de escritorio no puede depender de internet
+      para dibujar su propia interfaz.
+
+      El truco es pedirla como hoja de impresión, que no bloquea, y pasarla a
+      `all` desde `src/main.tsx` cuando termine de cargar. Se hace desde
+      JavaScript y no con un `onload=` en el atributo porque la CSP de
+      producción no permite manejadores en línea.
+    -->
     <link
+      id="vd-fuentes"
       href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
+      media="print"
     />
   </head>
   <body>
