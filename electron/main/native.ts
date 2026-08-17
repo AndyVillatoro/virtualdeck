@@ -71,8 +71,21 @@ export interface NucleoNativo {
   diagnoseMedia: () => string;
 
   // --- macros ---
-  /** Los pasos van como JSON: el nucleo los lee con el modelo de la config. */
+  /** Los pasos van como JSON: el núcleo los lee con el modelo de la config. */
   playMacro: (stepsJson: string, repeat?: number) => boolean;
+
+  // --- sensores ---
+  /**
+   * Devuelven JSON por la misma razón que las macros: el tipo ya está definido
+   * en `vd-core` y un espejo declarado aquí podría desviarse de él sin que nada
+   * fallara al compilar.
+   */
+  listSensors: (force: boolean) => string;
+  sensorsStatus: () => string;
+  configureSensors: (settingsJson: string) => boolean;
+
+  // --- teclas de medios ---
+  sendMediaKey: (key: string) => boolean;
 }
 
 /** Lo que devuelve el núcleo. Coincide con `NowPlaying` de `src/types.ts`. */

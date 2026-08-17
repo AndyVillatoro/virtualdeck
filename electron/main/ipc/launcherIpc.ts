@@ -1,3 +1,4 @@
+import { intentarNativo } from '../native';
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness,
@@ -18,6 +19,9 @@ export function registerLauncherIpc(win: BrowserWindow) {
     return sendHotkey(combo);
   });
   ipcMain.handle('launch:mediaKey', (_e: any, key: string) => {
+    const nativo = intentarNativo('sendMediaKey', (n) => n.sendMediaKey(key));
+    if (nativo !== undefined) return nativo;
+
     const codes: Record<string, number> = {
       'play-pause': 179, 'next': 176, 'prev': 177,
       'volume-up': 175, 'volume-down': 174, 'mute': 173,

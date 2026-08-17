@@ -1,3 +1,4 @@
+import { intentarNativo } from './native';
 import { app, net } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
@@ -155,9 +156,56 @@ function applyCategoryFilter(all: Sensor[]): Sensor[] {
   return all.filter((s) => allowedCategories.has(s.category));
 }
 
+/**
+ * Sensores del nivel nativo: CPU, RAM, disco, red y GPU NVIDIA.
+ *
+ * No necesitan **nada instalado**. Hasta ahora la única fuente era
+ * LibreHardwareMonitor: 19 MB empaquetados, un servidor HTTP y, para que pueda
+ * reservar el puerto, arrancarlo como administrador. Sin todo eso no se veía ni
+ * un sensor.
+ *
+ * LHM sigue siendo útil como nivel 2 para lo que solo él ve —voltajes,
+ * ventiladores de placa—, pero deja de ser un requisito para tener sensores.
+ */
+function nativos(force: boolean): Sensor[] {
+  const json = intentarNativo('listSensors', (n) => n.listSensors(force));
+  if (json === undefined) return [];
+  try {
+    return JSON.parse(json) as Sensor[];
+  } catch (e) {
+    console.error('[sensores] respuesta nativa ilegible:', (e as Error).message);
+    return [];
+  }
+}
+
+/**
+ * Une los sensores nativos con los de LHM.
+ *
+ * Ante un mismo id **gana LHM**: si el usuario se molestó en instalarlo y
+ * dejarlo corriendo, es porque quiere sus lecturas. Los ids no pueden chocar por
+ * accidente —los nativos llevan los prefijos `/native/` y `/nvml/`— así que un
+ * choque solo puede venir de una configuración deliberada.
+ */
+function unir(deLhm: Sensor[], delNucleo: Sensor[]): Sensor[] {
+  const porId = new Map<string, Sensor>();
+  for (const s of delNucleo) porId.set(s.id, s);
+  for (const s of deLhm) porId.set(s.id, s);
+  return [...porId.values()];
+}
+
 export async function list(force = false): Promise<Sensor[]> {
-  if (!enabled) { connected = false; return []; }
-  if (!force && Date.now() - lastFetchAt < CACHE_MS) return applyCategoryFilter(cache);
+  const delNucleo = nativos(force);
+
+  // Los nativos se sirven aunque LHM esté desactivado: son la fuente por
+  // defecto ahora, no un extra. Antes, con `enabled` en false no había sensores
+  // de ninguna clase.
+  if (!enabled) {
+    connected = false;
+    return applyCategoryFilter(delNucleo);
+  }
+  if (!force && Date.now() - lastFetchAt < CACHE_MS) {
+    return applyCategoryFilter(unir(cache, delNucleo));
+  }
   try {
     const tree = await fetchTree();
     const out: Sensor[] = [];
@@ -166,13 +214,13 @@ export async function list(force = false): Promise<Sensor[]> {
     connected = true;
     lastError = undefined;
     lastFetchAt = Date.now();
-    return applyCategoryFilter(cache);
+    return applyCategoryFilter(unir(cache, delNucleo));
   } catch (e) {
     connected = false;
     lastError = (e as Error).message;
     // Return last-known cache on transient failures so the UI doesn't flicker
     // to "no data" every time LHM hiccups for one tick.
-    return applyCategoryFilter(cache);
+    return applyCategoryFilter(unir(cache, delNucleo));
   }
 }
 
@@ -180,7 +228,10 @@ export async function get(id: string): Promise<Sensor | null> {
   // Bypass the category filter for direct id lookup so a saved widget keeps
   // working even if the user later narrows the allowed categories.
   if (Date.now() - lastFetchAt > CACHE_MS) await list();
-  return cache.find((s) => s.id === id) ?? null;
+  // Se busca en las dos fuentes: un widget configurado sobre un sensor nativo
+  // no aparece en `cache`, que solo guarda lo que vino de LHM. Sin esto, el
+  // widget se quedaria en blanco para siempre.
+  return unir(cache, nativos(false)).find((s) => s.id === id) ?? null;
 }
 
 export async function probe(): Promise<{ ok: boolean; count: number; error?: string }> {
