@@ -181,6 +181,66 @@ fn read_thumbnail(session: &Session) -> Option<Thumbnail> {
 ///
 /// Si SMTC no reporta nada util, cae al fallback por titulos de ventana. Ese
 /// segundo camino es el que salva a los navegadores que no registran sesion.
+/// Ejecuta trabajo de WinRT en un hilo con apartamento **MTA**.
+///
+/// # Por que hace falta
+///
+/// SMTC devuelve operaciones asincronas de WinRT y aqui se esperan de forma
+/// bloqueante. Eso funciona en un hilo MTA, donde la finalizacion llega por el
+/// pool de hilos de COM.
+///
+/// En un hilo **STA** con bomba de mensajes —como el hilo principal de
+/// Electron— se **cuelga para siempre**: la finalizacion tiene que despacharse
+/// en ese mismo hilo, y ese hilo esta bloqueado esperandola. El proceso entero
+/// deja de responder y Windows ofrece cerrarlo.
+///
+/// Costaba encontrarlo porque desde Node suelto funciona: su hilo principal no
+/// impone esa restriccion. Solo aparece dentro de Electron.
+///
+/// Se crea un hilo por llamada. Crear un hilo cuesta microsegundos, frente a
+/// los 150-400 ms que costaba lanzar PowerShell para lo mismo, asi que no
+/// compensa la complejidad de mantener uno vivo con su canal.
+fn en_hilo_mta<T, F>(trabajo: F) -> Option<T>
+where
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    std::thread::spawn(move || {
+        // SAFETY: inicializacion estandar. Si el hilo ya tuviera apartamento
+        // —no lo tiene, es nuevo— devolveria RPC_E_CHANGED_MODE y se ignora.
+        unsafe {
+            let _ = windows::Win32::System::Com::CoInitializeEx(
+                None,
+                windows::Win32::System::Com::COINIT_MULTITHREADED,
+            );
+        }
+        trabajo()
+    })
+    .join()
+    .ok()
+}
+
+pub fn now_playing_smtc() -> Option<NowPlaying> {
+    en_hilo_mta(now_playing_smtc_aqui).flatten()
+}
+
+pub fn control(cmd: MediaCommand) -> Result<(), MediaError> {
+    en_hilo_mta(move || control_aqui(cmd)).unwrap_or(Err(MediaError::NoSession))
+}
+
+pub fn toggle_shuffle() -> Result<bool, MediaError> {
+    en_hilo_mta(toggle_shuffle_aqui).unwrap_or(Err(MediaError::NoSession))
+}
+
+pub fn cycle_repeat() -> Result<MediaPlaybackAutoRepeatMode, MediaError> {
+    en_hilo_mta(cycle_repeat_aqui).unwrap_or(Err(MediaError::NoSession))
+}
+
+pub fn diagnose() -> String {
+    en_hilo_mta(diagnose_aqui)
+        .unwrap_or_else(|| "El diagnostico de SMTC no pudo completarse.".to_string())
+}
+
 pub fn now_playing() -> Option<NowPlaying> {
     if let Some(np) = now_playing_smtc() {
         return Some(np);
@@ -189,7 +249,7 @@ pub fn now_playing() -> Option<NowPlaying> {
 }
 
 /// Consulta solo SMTC, sin fallback.
-pub fn now_playing_smtc() -> Option<NowPlaying> {
+fn now_playing_smtc_aqui() -> Option<NowPlaying> {
     let mgr = manager().ok()?;
     let session = best_session(&mgr)?;
 
@@ -238,7 +298,7 @@ pub fn now_playing_from_windows() -> Option<NowPlaying> {
 }
 
 /// Envia un comando de control a la sesion activa.
-pub fn control(cmd: MediaCommand) -> Result<(), MediaError> {
+fn control_aqui(cmd: MediaCommand) -> Result<(), MediaError> {
     let mgr = manager()?;
     let session = best_session(&mgr).ok_or(MediaError::NoSession)?;
 
@@ -257,7 +317,7 @@ pub fn control(cmd: MediaCommand) -> Result<(), MediaError> {
 }
 
 /// Alterna el modo aleatorio.
-pub fn toggle_shuffle() -> Result<bool, MediaError> {
+fn toggle_shuffle_aqui() -> Result<bool, MediaError> {
     let mgr = manager()?;
     let session = best_session(&mgr).ok_or(MediaError::NoSession)?;
 
@@ -276,7 +336,7 @@ pub fn toggle_shuffle() -> Result<bool, MediaError> {
 }
 
 /// Cicla el modo de repeticion: ninguno -> pista -> lista -> ninguno.
-pub fn cycle_repeat() -> Result<MediaPlaybackAutoRepeatMode, MediaError> {
+fn cycle_repeat_aqui() -> Result<MediaPlaybackAutoRepeatMode, MediaError> {
     let mgr = manager()?;
     let session = best_session(&mgr).ok_or(MediaError::NoSession)?;
 
@@ -303,7 +363,7 @@ pub fn cycle_repeat() -> Result<MediaPlaybackAutoRepeatMode, MediaError> {
 ///
 /// Reemplaza al `media:diagnose` de Electron, que devolvia el stdout crudo de
 /// un script de PowerShell.
-pub fn diagnose() -> String {
+fn diagnose_aqui() -> String {
     let mut out = String::new();
 
     let mgr = match manager() {
