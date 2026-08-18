@@ -173,6 +173,9 @@ export function createMainWindow(): BrowserWindow {
     if (win.isDestroyed()) return;
     win.show();
     win.focus();
+    // Cuanto tardo en verse algo. Sin un numero, "tarda en arrancar" no se
+    // puede confirmar ni comparar entre versiones.
+    console.log(`[arranque] ventana visible a los ${Math.round(process.uptime() * 1000)} ms`);
   });
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {

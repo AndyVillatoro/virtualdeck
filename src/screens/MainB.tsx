@@ -765,6 +765,7 @@ export function MainB({
                 onDuplicate={() => onDuplicateButton(btn.id)}
                 onClear={() => onClearButton(btn.id)}
                 onDragStart={() => setDragSourceId(btn.id)}
+                onDragEnd={() => setDragSourceId(null)}
                 onDrop={() => {
                   if (dragSourceId && dragSourceId !== btn.id) onSwapButtons(dragSourceId, btn.id);
                   setDragSourceId(null);

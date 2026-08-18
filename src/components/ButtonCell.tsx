@@ -28,6 +28,8 @@ interface ButtonCellProps {
   onClear?: () => void;
   onDragStart?: () => void;
   onDrop?: () => void;
+  /** Se llama tambien si el arrastre se cancela, no solo al soltar. */
+  onDragEnd?: () => void;
 }
 
 const ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION_ICONS;
@@ -36,7 +38,7 @@ function ButtonCellInner({
   button, accent, toggled = false, isActive = false, isHidden = false, isRunning = false,
   isSelected = false,
   widgetData, soundEnabled = false, soundProfile = 'click',
-  resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop,
+  resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop, onDragEnd,
 }: ButtonCellProps) {
   const VD = useTheme();
   const [pressed, setPressed] = useState(false);
@@ -258,9 +260,14 @@ function ButtonCellInner({
           longPressTriggered.current = false;
           setPressed(false);
           e.dataTransfer.effectAllowed = 'move';
+          // El estandar exige adjuntar datos para que el arrastre arranque.
+          // Sin esto, Chromium inicia el gesto pero no lo trata como un
+          // arrastre con carga: el drop no llega y el boton nunca se mueve.
+          e.dataTransfer.setData('text/plain', button.id);
           onDragStart?.();
         }}
         onDragEnd={() => {
+          onDragEnd?.();
           setDragOver(false);
           setPressed(false);
         }}
