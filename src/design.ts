@@ -31,6 +31,8 @@ export const VD = {
   space: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32 } as const,
   // Color del píxel apagado en la matriz de puntos — atado al token de texto
   dotIdle: 'rgba(220,220,220,0.04)',
+  // Trama clara sobre fondo oscuro.
+  trama: '255,255,255',
 } as const;
 
 export type VDTokens = {
@@ -44,6 +46,8 @@ export type VDTokens = {
   shadow: { menu: string; modal: string };
   space: { readonly xs: number; readonly sm: number; readonly md: number; readonly lg: number; readonly xl: number; readonly '2xl': number; readonly '3xl': number };
   dotIdle: string;
+  /** Color de la trama de los fondos, como "r,g,b" para poder darle alfa. */
+  trama: string;
 };
 
 // Paleta clara — mismos tokens semánticos, valores invertidos.
@@ -65,6 +69,8 @@ export const VD_LIGHT: VDTokens = {
     modal: '0 16px 48px rgba(0,0,0,0.28)',
   },
   dotIdle: 'rgba(0,0,0,0.05)',
+  // Trama oscura sobre fondo claro: en blanco seria invisible.
+  trama: '0,0,0',
 };
 
 // Presets del color de acento — 10 colores que cubren el espectro sin chocar con

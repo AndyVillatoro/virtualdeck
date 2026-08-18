@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react';
-import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 
 interface WallpaperProps {
   kind?: string;
@@ -7,6 +7,9 @@ interface WallpaperProps {
 }
 
 export function Wallpaper({ kind = 'solid', style = {} }: WallpaperProps) {
+  // El tema se lee del contexto y no de la paleta oscura importada: asi el
+  // fondo sigue al modo claro en vez de dibujar trama blanca sobre blanco.
+  const VD = useTheme();
   const common: CSSProperties = { position: 'absolute', inset: 0, pointerEvents: 'none', ...style };
 
   if (kind === 'gradient' || kind === 'grid-blue') {
@@ -16,7 +19,7 @@ export function Wallpaper({ kind = 'solid', style = {} }: WallpaperProps) {
     return (
       <div style={{
         ...common,
-        background: `radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px) 0 0 / 14px 14px, ${VD.bg}`,
+        background: `radial-gradient(rgba(${VD.trama},0.14) 1px, transparent 1px) 0 0 / 14px 14px, ${VD.bg}`,
       }} />
     );
   }
@@ -41,9 +44,9 @@ export function Wallpaper({ kind = 'solid', style = {} }: WallpaperProps) {
           ...common,
           background:
             'radial-gradient(ellipse at center, rgba(20,30,40,0.0) 50%, rgba(0,0,0,0.45) 100%),' +
-            'repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(255,255,255,0.025) 2px, rgba(255,255,255,0.025) 3px),' +
+            `repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(${VD.trama},0.06) 2px, rgba(${VD.trama},0.06) 3px),` +
             'repeating-linear-gradient(0deg, #0d1410 0px, #0d1410 14px, #0e1612 14px, #0e1612 28px),' +
-            'repeating-linear-gradient(90deg, transparent 0px, transparent 14px, rgba(255,255,255,0.02) 14px, rgba(255,255,255,0.02) 15px)',
+            `repeating-linear-gradient(90deg, transparent 0px, transparent 14px, rgba(${VD.trama},0.05) 14px, rgba(${VD.trama},0.05) 15px)`,
         }} />
         <div className="vd-crt-flicker" style={{
           ...common,
@@ -59,8 +62,8 @@ export function Wallpaper({ kind = 'solid', style = {} }: WallpaperProps) {
       <div style={{
         ...common,
         background:
-          'repeating-linear-gradient(0deg, transparent 0px, transparent 27px, rgba(255,255,255,0.04) 27px, rgba(255,255,255,0.04) 28px),' +
-          'repeating-linear-gradient(90deg, transparent 0px, transparent 27px, rgba(255,255,255,0.04) 27px, rgba(255,255,255,0.04) 28px),' +
+          `repeating-linear-gradient(0deg, transparent 0px, transparent 27px, rgba(${VD.trama},0.10) 27px, rgba(${VD.trama},0.10) 28px),` +
+          `repeating-linear-gradient(90deg, transparent 0px, transparent 27px, rgba(${VD.trama},0.10) 27px, rgba(${VD.trama},0.10) 28px),` +
           VD.bg,
       }} />
     );

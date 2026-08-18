@@ -78,7 +78,9 @@ export function Onboarding({ accent, onClose }: OnboardingProps) {
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: accent }} />
             <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('onb.step', { n: s.badge, total: STEP_COUNT })}</DotLabel>
           </div>
-          <DotText text={s.title} dotSize={isFirst ? 5 : 4} gap={1.5} color={accent} />
+          {/* 560 de tarjeta menos 28+28 de relleno. Sin este tope, un titulo
+              largo se dibuja mas ancho que la tarjeta y se corta. */}
+          <DotText text={s.title} dotSize={isFirst ? 5 : 4} gap={1.5} color={accent} maxWidth={504} />
         </div>
 
         {/* Cuerpo */}
