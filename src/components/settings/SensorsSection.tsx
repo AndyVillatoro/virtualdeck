@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { VD } from '../../design';
+import type { VDTokens } from '../../design';
+import { useTheme } from '../../utils/theme';
 import type { SensorsSettings, SensorsStatus, SensorCategory } from '../../types';
-import { SettingLabel, ToggleRow, inputStyleSettings, miniBtnSettings } from './settingHelpers';
+import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 
 const SENSOR_CATEGORIES: Array<{ id: SensorCategory; label: string }> = [
   { id: 'cpu', label: 'CPU' },
@@ -20,6 +21,9 @@ export function SensorsSection({
   status: SensorsStatus | null;
   onChange: (next: SensorsSettings) => void;
 }) {
+  const VD = useTheme();
+  const inputStyleSettings = estiloEntradaAjustes(VD);
+  const miniBtnSettings = (c: string) => estiloBotonMiniAjustes(VD, c);
   const api = window.electronAPI;
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);

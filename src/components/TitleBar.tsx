@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { VD, ACCENT_PRESETS } from '../design';
+import type { VDTokens } from '../design';
+import { ACCENT_PRESETS } from '../design';
 import { useTheme } from '../utils/theme';
 import { SOUND_PROFILES, playSound } from '../utils/sound';
 import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, SoundProfileId } from '../types';
@@ -93,6 +94,8 @@ export function TitleBar({
   onDismissHint,
 }: TitleBarProps) {
   const VD = useTheme();
+  const btnStyle = estilo_btnStyle(VD);
+  const iconBtnStyle = estilo_iconBtnStyle(VD);
   const t = useT();
   const effectiveAccent = accent ?? VD.accent;
   const [showSettings, setShowSettings] = useState(false);
@@ -467,17 +470,21 @@ export function TitleBar({
 }
 
 
-const btnStyle: React.CSSProperties = {
-  height: 22, padding: '0 8px',
-  display: 'flex', alignItems: 'center',
-  fontSize: 9, letterSpacing: 1, color: VD.textDim,
-  background: 'transparent', border: `1px solid ${VD.border}`,
-  borderRadius: VD.radius.sm, cursor: 'pointer',
-};
+function estilo_btnStyle(VD: VDTokens): React.CSSProperties {
+  return {
+    height: 22, padding: '0 8px',
+    display: 'flex', alignItems: 'center',
+    fontSize: 9, letterSpacing: 1, color: VD.textDim,
+    background: 'transparent', border: `1px solid ${VD.border}`,
+    borderRadius: VD.radius.sm, cursor: 'pointer',
+  };
+}
 
-const iconBtnStyle: React.CSSProperties = {
-  width: 22, height: 22,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  fontSize: 14, color: VD.textDim,
-  background: 'transparent', border: 'none', borderRadius: VD.radius.sm, cursor: 'pointer',
-};
+function estilo_iconBtnStyle(VD: VDTokens): React.CSSProperties {
+  return {
+    width: 22, height: 22,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 14, color: VD.textDim,
+    background: 'transparent', border: 'none', borderRadius: VD.radius.sm, cursor: 'pointer',
+  };
+}

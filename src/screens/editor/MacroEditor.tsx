@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { VD } from '../../design';
 import { useTheme } from '../../utils/theme';
 import type { MacroStep, MacroStepType } from '../../types';
 

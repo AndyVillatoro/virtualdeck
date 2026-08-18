@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { VD } from '../design';
+import type { VDTokens } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotLabel } from './DotLabel';
 import { BRAND_ICON_GROUPS, BRAND_ICONS } from '../data/brandIcons';
 import { BrandIconDisplay } from './BrandIconDisplay';
@@ -14,6 +15,7 @@ interface BrandIconPickerProps {
 const ALL_GROUPS = [{ title: 'Todos', items: [] as [string, string, string][] }, ...BRAND_ICON_GROUPS];
 
 export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIconPickerProps) {
+  const VD = useTheme();
   const [search, setSearch] = useState('');
   const [groupTitle, setGroupTitle] = useState('Todos');
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);

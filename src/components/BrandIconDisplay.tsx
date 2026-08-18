@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { VD } from '../design';
+import type { VDTokens } from '../design';
+import { useTheme } from '../utils/theme';
 import { BRAND_ICONS_MAP, getCachedBrandIconSvg, generateSvgFromBitmap, mergePalette } from '../data/brandIcons';
 
 interface BrandIconDisplayProps {
@@ -23,6 +24,7 @@ export function BrandIconDisplay({
   iconKey, size = 40, animDelay, animated = false,
   customBitmap, customColor, customPalette, style,
 }: BrandIconDisplayProps) {
+  const VD = useTheme();
   const icon = BRAND_ICONS_MAP[iconKey];
 
   const svg = useMemo(() => {

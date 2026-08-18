@@ -40,4 +40,23 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'warn',
     },
   },
+  {
+    // El modo claro solo funciona si el color sale del contexto. Importar la
+    // paleta `VD` directamente de `design` congela los colores en oscuro, y el
+    // fallo no se ve en TypeScript ni en el build: se ve en pantalla, y solo si
+    // alguien prueba el tema claro en esa pantalla concreta. Se prohibe.
+    //
+    // `src/utils/theme.tsx` es quien construye el contexto, asi que si importa.
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['src/utils/theme.tsx'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/design'],
+          importNames: ['VD', 'VD_LIGHT'],
+          message: 'Usa useTheme() en vez de importar la paleta: si no, la pantalla se queda en modo oscuro.',
+        }],
+      }],
+    },
+  },
 );

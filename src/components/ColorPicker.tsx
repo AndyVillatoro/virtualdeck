@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { VD } from '../design';
+import type { VDTokens } from '../design';
+import { useTheme } from '../utils/theme';
 
 // HSV/HEX helpers — duplicados a propósito de BrandIconEditor para que este
 // componente sea autónomo (BrandIconEditor mantiene los suyos por su flujo
@@ -49,6 +50,7 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ value, onChange, showHexInput = true, height = 130 }: ColorPickerProps) {
+  const VD = useTheme();
   const [r, g, b] = hexToRgb(value);
   const [h, s, v] = rgbToHsv(r, g, b);
   const svRef = useRef<HTMLDivElement | null>(null);

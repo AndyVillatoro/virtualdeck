@@ -7,9 +7,8 @@ import { RGBManagerB } from './screens/RGBManagerB';
 import { SearchOverlay } from './components/SearchOverlay';
 import { Onboarding } from './components/Onboarding';
 import { NowPlayingProvider } from './utils/nowPlaying';
-import { ThemeProvider } from './utils/theme';
 import { LanguageProvider, useT } from './utils/i18n';
-import { VD } from './design';
+import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { runActionSequence, executeAction } from './utils/actions';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
@@ -50,7 +49,55 @@ type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb';
 // Banner de actualización lista. Extraído como componente para que pueda usar
 // useT() (App renderiza el LanguageProvider, así que su cuerpo queda fuera del
 // contexto i18n; sus hijos sí lo tienen).
+function PantallaCargando() {
+  const VD = useTheme();
+  return (
+    <div style={{ width: '100vw', height: '100vh', background: VD.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: VD.textMuted, fontFamily: VD.mono, fontSize: 12, letterSpacing: 2 }}>
+      CARGANDO...
+    </div>
+  );
+}
+
+function AvisoDeshacer({ texto }: { texto: string }) {
+  const VD = useTheme();
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 300,
+      background: VD.surface, border: `1px solid ${VD.borderStrong}`,
+      borderRadius: VD.radius.md, padding: '8px 14px',
+      fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 0.5,
+      boxShadow: VD.shadow.menu,
+    }}>
+      {texto}
+    </div>
+  );
+}
+
+function AvisoError({ texto, onCerrar }: { texto: string; onCerrar: () => void }) {
+  const VD = useTheme();
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+      zIndex: 310,
+      background: VD.surface, border: `1px solid ${VD.danger}`,
+      borderRadius: VD.radius.md, padding: '10px 16px',
+      fontFamily: VD.mono, fontSize: 11, color: VD.text,
+      maxWidth: 'min(560px, 80%)', boxShadow: VD.shadow.menu,
+      display: 'flex', gap: 10, alignItems: 'flex-start',
+    }}>
+      <span style={{ color: VD.danger, fontSize: 13, flexShrink: 0 }}>!</span>
+      <span style={{ flex: 1, lineHeight: 1.5 }}>{texto}</span>
+      <button
+        onClick={onCerrar}
+        style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}
+      >&times;</button>
+    </div>
+  );
+}
+
 function UpdateBanner({ version, onRestart, onLater }: { version: string; onRestart: () => void; onLater: () => void }) {
+  const VD = useTheme();
   const t = useT();
   return (
     <div style={{
@@ -591,10 +638,13 @@ export default function App() {
   }, [editingId, view, config.pages.length, undo, searchOpen]);
 
   if (!loaded) {
+    // Envuelta en el proveedor de tema porque `App` renderiza el proveedor: su
+    // propio cuerpo queda fuera del contexto, asi que el color tiene que salir
+    // de un componente hijo o siempre seria el oscuro.
     return (
-      <div style={{ width: '100vw', height: '100vh', background: VD.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: VD.textMuted, fontFamily: VD.mono, fontSize: 12, letterSpacing: 2 }}>
-        CARGANDO...
-      </div>
+      <ThemeProvider theme={config.theme ?? 'dark'} accent={config.accent}>
+        <PantallaCargando />
+      </ThemeProvider>
     );
   }
 
@@ -709,16 +759,7 @@ export default function App() {
 
       {/* Undo toast — bottom-center, no-blocking */}
       {undoToast && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 300,
-          background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-          borderRadius: VD.radius.md, padding: '8px 14px',
-          fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 0.5,
-          boxShadow: VD.shadow.menu,
-        }}>
-          {undoToast}
-        </div>
+        <AvisoDeshacer texto={undoToast} />
       )}
 
       {/* Update ready — bottom-center, offers restart */}
@@ -732,22 +773,7 @@ export default function App() {
 
       {/* Import error — bottom-center, dismissible */}
       {importError && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 310,
-          background: VD.surface, border: `1px solid ${VD.danger}`,
-          borderRadius: VD.radius.md, padding: '10px 16px',
-          fontFamily: VD.mono, fontSize: 11, color: VD.text,
-          maxWidth: 'min(560px, 80%)', boxShadow: VD.shadow.menu,
-          display: 'flex', gap: 10, alignItems: 'flex-start',
-        }}>
-          <span style={{ color: VD.danger, fontSize: 13, flexShrink: 0 }}>!</span>
-          <span style={{ flex: 1, lineHeight: 1.5 }}>{importError}</span>
-          <button
-            onClick={() => setImportError(null)}
-            style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}
-          >×</button>
-        </div>
+        <AvisoError texto={importError} onCerrar={() => setImportError(null)} />
       )}
 
     </div>

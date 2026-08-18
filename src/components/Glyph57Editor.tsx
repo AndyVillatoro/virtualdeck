@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { VD, GLYPHS_5x7 } from '../design';
+import type { VDTokens } from '../design';
+import { GLYPHS_5x7 } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotLabel } from './DotLabel';
 
 interface Glyph57EditorProps {
@@ -16,6 +18,7 @@ const EMPTY: number[] = [0, 0, 0, 0, 0, 0, 0];
 // que GLYPHS_5x7 en design.ts. El usuario dibuja → guardamos 7 enteros y
 // ButtonCell lo renderiza como puntos (firma del producto).
 export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57EditorProps) {
+  const VD = useTheme();
   const [rows, setRows] = useState<number[]>(() => initial && initial.length === 7 ? [...initial] : [...EMPTY]);
 
   useEffect(() => {
@@ -168,6 +171,7 @@ export function Glyph57View({ rows, dotSize = 4, gap = 1, color }: {
   gap?: number;
   color: string;
 }) {
+  const VD = useTheme();
   return (
     <div style={{
       display: 'grid',

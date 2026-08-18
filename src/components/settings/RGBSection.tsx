@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { VD } from '../../design';
+import type { VDTokens } from '../../design';
+import { useTheme } from '../../utils/theme';
 import type { RGBSettings, RGBStatus } from '../../types';
-import { SettingLabel, ToggleRow, inputStyleSettings, miniBtnSettings } from './settingHelpers';
+import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 
 export function RGBSection({
   accent, config, status, onChange,
@@ -11,6 +12,9 @@ export function RGBSection({
   status: RGBStatus | null;
   onChange: (next: RGBSettings) => void;
 }) {
+  const VD = useTheme();
+  const inputStyleSettings = estiloEntradaAjustes(VD);
+  const miniBtnSettings = (c: string) => estiloBotonMiniAjustes(VD, c);
   const api = window.electronAPI;
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);

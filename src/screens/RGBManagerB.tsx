@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { VD } from '../design';
+import type { VDTokens } from '../design';
+import { useTheme } from '../utils/theme';
 import { TitleBar } from '../components/TitleBar';
 import { ColorPicker } from '../components/ColorPicker';
 import { DotLabel } from '../components/DotLabel';
@@ -33,6 +34,9 @@ interface RGBManagerBProps {
 }
 
 export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps) {
+  const VD = useTheme();
+  const btnPrimary = estiloBotonPrimario(VD);
+  const btnSecondary = estiloBotonSecundario(VD);
   const api = window.electronAPI;
   const rgbCfg: RGBSettings = config.rgb ?? DEFAULT_RGB;
 
@@ -429,6 +433,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 
 // ── Subcomponentes ──────────────────────────────────────────────────────────
 function StatusBadge({ status, accent }: { status: RGBStatus; accent: string }) {
+  const VD = useTheme();
   const dotColor = status.connected ? VD.success : status.serverRunning ? VD.warning : VD.textMuted;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: VD.mono, fontSize: 10, color: VD.textDim, letterSpacing: 1 }}>
@@ -449,6 +454,8 @@ function DeviceDetail({
   onSetZoneColor: (zoneId: number, hex: string) => void;
   onSetSingleLed: (globalIdx: number, hex: string) => void;
 }) {
+  const VD = useTheme();
+  const selectStyle = estiloSelector(VD);
   const activeMode = device.modes.find((m) => m.id === device.activeMode);
   const [color, setColor] = useState(device.colors[0] ?? '#ffffff');
   const [showLedPainter, setShowLedPainter] = useState(false);
@@ -586,6 +593,7 @@ function LedPainter({ device, displayColors, color, accent, onPaintLed }: {
   accent: string;
   onPaintLed: (globalIdx: number, hex: string) => void;
 }) {
+  const VD = useTheme();
   const totalLeds = device.colors.length;
   if (totalLeds === 0) {
     return (
@@ -627,7 +635,7 @@ function LedPainter({ device, displayColors, color, accent, onPaintLed }: {
                     style={{
                       width: dotSize, height: dotSize,
                       background: ledColor,
-                      border: `1px solid rgba(255,255,255,0.12)`,
+                      border: `1px solid rgba(${VD.trama},0.18)`,
                       borderRadius: 2,
                       cursor: 'crosshair',
                       flexShrink: 0,
@@ -660,6 +668,7 @@ function zoneStartLed(device: RGBDeviceInfo, zoneId: number): number {
 }
 
 function SaveProfileBar({ onSave, accent, disabled }: { onSave: (name: string) => void; accent: string; disabled?: boolean }) {
+  const VD = useTheme();
   const [name, setName] = useState('');
   return (
     <div style={{ display: 'flex', gap: 6 }}>
@@ -701,6 +710,10 @@ function CalibratorModal({
   onCommit: (deviceName: string, deviceId: number, zoneId: number, zoneName: string, size: number) => Promise<void>;
   onClose: () => void;
 }) {
+  const VD = useTheme();
+  const btnPrimary = estiloBotonPrimario(VD);
+  const btnSecondary = estiloBotonSecundario(VD);
+  const modalStyle = estiloModal(VD);
   const targets = devices.flatMap((d) =>
     d.zones.filter((z) => z.resizable).map((z) => ({ device: d, zone: z })),
   );
@@ -791,29 +804,37 @@ function CalibratorModal({
 }
 
 // ── Estilos compartidos ─────────────────────────────────────────────────────
-const btnPrimary: React.CSSProperties = {
-  padding: '6px 12px', fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-  background: 'transparent', border: `1px solid ${VD.borderStrong}`,
-  color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm,
-};
-const btnSecondary: React.CSSProperties = {
-  padding: '5px 10px', fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-  background: VD.elevated, border: `1px solid ${VD.border}`,
-  color: VD.textDim, cursor: 'pointer', borderRadius: VD.radius.sm,
-};
-const selectStyle: React.CSSProperties = {
-  width: '100%', padding: '5px 8px',
-  background: VD.elevated, border: `1px solid ${VD.border}`,
-  color: VD.text, fontFamily: VD.mono, fontSize: 10,
-  outline: 'none', borderRadius: VD.radius.sm,
-};
+function estiloBotonPrimario(VD: VDTokens): React.CSSProperties {
+  return {
+    padding: '6px 12px', fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+    background: 'transparent', border: `1px solid ${VD.borderStrong}`,
+    color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm,
+  };
+}
+function estiloBotonSecundario(VD: VDTokens): React.CSSProperties {
+  return {
+    padding: '5px 10px', fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+    background: VD.elevated, border: `1px solid ${VD.border}`,
+    color: VD.textDim, cursor: 'pointer', borderRadius: VD.radius.sm,
+  };
+}
+function estiloSelector(VD: VDTokens): React.CSSProperties {
+  return {
+    width: '100%', padding: '5px 8px',
+    background: VD.elevated, border: `1px solid ${VD.border}`,
+    color: VD.text, fontFamily: VD.mono, fontSize: 10,
+    outline: 'none', borderRadius: VD.radius.sm,
+  };
+}
 const overlayStyle: React.CSSProperties = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
 };
-const modalStyle: React.CSSProperties = {
-  width: 'min(700px, 92vw)', maxHeight: '85vh',
-  background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-  borderRadius: VD.radius.lg, boxShadow: VD.shadow.modal,
-  display: 'flex', flexDirection: 'column', overflow: 'hidden',
-};
+function estiloModal(VD: VDTokens): React.CSSProperties {
+  return {
+    width: 'min(700px, 92vw)', maxHeight: '85vh',
+    background: VD.surface, border: `1px solid ${VD.borderStrong}`,
+    borderRadius: VD.radius.lg, boxShadow: VD.shadow.modal,
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+  };
+}

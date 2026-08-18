@@ -2,7 +2,8 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { IconNone } from '../components/VDIcon';
 import { ACTION_TYPES, PRESETS, FOLDER_PRESETS, PRESET_CATEGORIES, type ButtonPreset } from './editor/actionData';
 import { MacroEditor } from './editor/MacroEditor';
-import { VD } from '../design';
+import type { VDTokens } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotLabel } from '../components/DotLabel';
 import { BrandIconDisplay } from '../components/BrandIconDisplay';
 // 4.1 — picker y editor del catálogo de marcas se cargan a demanda. Evita
@@ -29,6 +30,8 @@ const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
 
 
 export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
+  const VD = useTheme();
+  const inputStyle = estiloEntrada(VD);
   const t = useT();
   const tf = useFieldText();
   const api = window.electronAPI;
@@ -1717,6 +1720,7 @@ function FolderButtonSlot({ button, accent, onChange }: {
   accent: string;
   onChange: (b: FolderButton | null) => void;
 }) {
+  const VD = useTheme();
   const tf = useFieldText();
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(button?.label ?? '');
@@ -1790,6 +1794,9 @@ function FolderButtonSlot({ button, accent, onChange }: {
 
 // Compact toggle-off action picker
 function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
+  const VD = useTheme();
+  const inputStyle = estiloEntrada(VD);
+  const selectStyle = estiloSelector(VD);
   const tr = useT();
   const tf = useFieldText();
   const simpleTypes: ActionType[] = ['hotkey', 'script', 'app', 'media-play-pause', 'mute', 'kill-process', 'volume-set', 'brightness', 'none'];
@@ -1842,6 +1849,9 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
 
 // Compact action picker for branch then/else — reuses ToggleOffActionPicker with an extended type list
 function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; onChange: (a: ButtonAction) => void; accent: string }) {
+  const VD = useTheme();
+  const inputStyle = estiloEntrada(VD);
+  const selectStyle = estiloSelector(VD);
   const tr = useT();
   const tf = useFieldText();
   const simpleTypes: ActionType[] = ['none', 'set-var', 'incr-var', 'hotkey', 'script', 'notify', 'webhook', 'clipboard', 'type-text', 'volume-set', 'brightness', 'rgb-preset', 'window-snap'];
@@ -1929,6 +1939,8 @@ function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; o
 }
 
 function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; onChange: (a: ButtonAction) => void; onRemove: () => void }) {
+  const VD = useTheme();
+  const miniInputStyle = estiloEntradaMini(VD);
   const tr = useT();
   const tf = useFieldText();
   const meta = ACTION_TYPES.find(a => a.type === action.type);
@@ -1979,27 +1991,34 @@ function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; 
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', boxSizing: 'border-box',
-  background: VD.bg, border: `1px solid ${VD.border}`,
-  padding: '9px 12px', color: VD.text,
-  fontFamily: VD.mono, fontSize: 11, outline: 'none', borderRadius: VD.radius.sm,
-};
+function estiloEntrada(VD: VDTokens): React.CSSProperties {
+  return {
+    width: '100%', boxSizing: 'border-box',
+    background: VD.bg, border: `1px solid ${VD.border}`,
+    padding: '9px 12px', color: VD.text,
+    fontFamily: VD.mono, fontSize: 11, outline: 'none', borderRadius: VD.radius.sm,
+  };
+}
 
-const miniInputStyle: React.CSSProperties = {
-  flex: 1, background: VD.bg, border: `1px solid ${VD.border}`,
-  padding: '4px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 10,
-  outline: 'none', borderRadius: VD.radius.sm,
-};
+function estiloEntradaMini(VD: VDTokens): React.CSSProperties {
+  return {
+    flex: 1, background: VD.bg, border: `1px solid ${VD.border}`,
+    padding: '4px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 10,
+    outline: 'none', borderRadius: VD.radius.sm,
+  };
+}
 
-const selectStyle: React.CSSProperties = {
-  width: '100%', boxSizing: 'border-box',
-  background: VD.bg, border: `1px solid ${VD.border}`,
-  padding: '8px 12px', color: VD.text,
-  fontFamily: VD.mono, fontSize: 11, outline: 'none', borderRadius: VD.radius.sm, cursor: 'pointer',
-};
+function estiloSelector(VD: VDTokens): React.CSSProperties {
+  return {
+    width: '100%', boxSizing: 'border-box',
+    background: VD.bg, border: `1px solid ${VD.border}`,
+    padding: '8px 12px', color: VD.text,
+    fontFamily: VD.mono, fontSize: 11, outline: 'none', borderRadius: VD.radius.sm, cursor: 'pointer',
+  };
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const VD = useTheme();
   return (
     <div>
       <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{label}</DotLabel>
@@ -2009,6 +2028,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Btn({ onClick, children, style }: { onClick: () => void; children: React.ReactNode; style?: React.CSSProperties }) {
+  const VD = useTheme();
   return (
     <button onClick={onClick} style={{ padding: '8px 12px', border: `1px solid ${VD.border}`, background: VD.elevated, fontFamily: VD.mono, fontSize: 10, color: VD.textDim, cursor: 'pointer', borderRadius: VD.radius.sm, whiteSpace: 'nowrap', letterSpacing: 0.5, ...style }}>
       {children}
@@ -2028,6 +2048,8 @@ function SensorPicker({
   accent: string;
   allowEmpty?: boolean;
 }) {
+  const VD = useTheme();
+  const selectStyle = estiloSelector(VD);
   const groups: Record<string, import('../types').Sensor[]> = {};
   for (const s of sensors) {
     const key = s.hardware || '—';

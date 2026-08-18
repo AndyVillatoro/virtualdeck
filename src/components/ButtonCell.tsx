@@ -1,6 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
-import { VD } from '../design';
 import { useTheme } from '../utils/theme';
 import { playSound } from '../utils/sound';
 import { BrandIconDisplay } from './BrandIconDisplay';

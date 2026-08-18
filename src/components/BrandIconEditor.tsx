@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { VD } from '../design';
+import type { VDTokens } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotLabel } from './DotLabel';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { BRAND_ICONS_MAP, ICON_SIZE } from '../data/brandIcons';
@@ -101,6 +102,7 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
 
 // ── Inline HSV picker ───────────────────────────────────────────────────────
 function ColorPicker({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+  const VD = useTheme();
   const [r, g, b] = hexToRgb(value);
   const [h, s, v] = rgbToHsv(r, g, b);
 
@@ -206,6 +208,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (hex: strin
 export function BrandIconEditor({
   iconKey, customBitmap, customColor, customPalette, onSave, onClose, accent,
 }: BrandIconEditorProps) {
+  const VD = useTheme();
   const icon = BRAND_ICONS_MAP[iconKey];
   const original = icon?.bitmap ?? [];
   const originalColor = icon?.color ?? '#ffffff';
