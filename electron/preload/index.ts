@@ -90,8 +90,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     spawnServer: (exePath?: string) => ipcRenderer.invoke('rgb:spawnServer', exePath),
     killServer: () => ipcRenderer.invoke('rgb:killServer'),
     listDevices: () => ipcRenderer.invoke('rgb:listDevices'),
-    setDeviceColor: (deviceId: number, color: string) =>
-      ipcRenderer.invoke('rgb:setDeviceColor', deviceId, color),
+    setDeviceColor: (deviceId: number, color: string, duradero?: boolean) =>
+      ipcRenderer.invoke('rgb:setDeviceColor', deviceId, color, duradero),
     setZoneColors: (deviceId: number, zoneId: number, colors: string[]) =>
       ipcRenderer.invoke('rgb:setZoneColors', deviceId, zoneId, colors),
     setSingleLed: (deviceId: number, ledId: number, color: string) =>

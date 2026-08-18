@@ -236,11 +236,34 @@ export async function listDevices(): Promise<RGBDeviceInfo[]> {
   return refreshDevices();
 }
 
-export async function setDeviceColor(deviceId: number, color: string): Promise<boolean> {
+/**
+ * Pinta un dispositivo entero de un color.
+ *
+ * `duradero` cambia **qué modo se elige**, y con ello si el color sobrevive a
+ * que VirtualDeck se cierre:
+ *
+ *   · `Direct` no guarda nada en el dispositivo: es OpenRGB alimentando los LEDs
+ *     en vivo. En cuanto el servidor muere —y VirtualDeck lo arranca él mismo y
+ *     lo mata al salir— la tira se queda sin quien la mande y se apaga.
+ *   · `Static` (y `Custom` en algunos) escribe el color *dentro del modo* del
+ *     propio controlador, que lo sigue mostrando sin nadie conectado.
+ *
+ * Por eso el botón de acción «Color RGB» pide `duradero`: lo que el usuario
+ * quiere es dejar las luces de ese color, no mientras la aplicación esté
+ * abierta. El pintado en vivo del gestor RGB **no** lo pide, porque ahí se está
+ * experimentando LED a LED y Direct es justo lo que hace falta.
+ *
+ * Devuelve false si no se pudo aplicar. Con `duradero`, si el dispositivo solo
+ * ofrece Direct se aplica igual (mejor encender que no hacer nada) pero se
+ * apunta en `lastError` que ese no se va a quedar.
+ */
+export async function setDeviceColor(
+  deviceId: number, color: string, duradero = false,
+): Promise<boolean> {
   if (!client?.isConnected) return false;
   try {
     if (deviceId < 0) {
-      for (const d of devicesCache) await setDeviceColor(d.id, color);
+      for (const d of devicesCache) await setDeviceColor(d.id, color, duradero);
       return true;
     }
     const dev = devicesCache.find((d) => d.id === deviceId);
@@ -253,9 +276,12 @@ export async function setDeviceColor(deviceId: number, color: string): Promise<b
     if (rawActiveMode) {
       const isPerLed = rawActiveMode.colorMode === CM_PER_LED || /^(direct|custom)$/i.test(rawActiveMode.name);
       const isPerMode = rawActiveMode.colorMode === CM_PER_MODE;
+      // Con `duradero`, seguir en Direct es exactamente el fallo que se quiere
+      // evitar: hay que salir de ahí aunque ya estemos dentro.
+      const seQueda = !duradero || !/^direct$/i.test(rawActiveMode.name);
 
       // Direct/Custom mode: set LEDs directly without switching modes (preserves mode)
-      if (isPerLed) {
+      if (isPerLed && seQueda) {
         const totalLeds = dev.colors.length || dev.zones.reduce((s, z) => s + z.ledCount, 0);
         if (totalLeds > 0) {
           const arr = new Array(totalLeds).fill(null).map(() => ({ ...rgb }));
@@ -277,10 +303,23 @@ export async function setDeviceColor(deviceId: number, color: string): Promise<b
     }
 
     // Need to switch to a color-capable mode.
-    // Priority: Direct (per-LED) > Static (per-mode, GPU style) > Custom > setCustomMode
+    // Orden normal: Direct (per-LED, instantáneo) > Static > Custom > setCustomMode.
+    // Con `duradero` se invierte: primero los que el dispositivo se queda.
     const directMode  = rawDev.modes.find((m) => /^direct$/i.test(m.name));
     const staticMode  = rawDev.modes.find((m) => /^static$/i.test(m.name));
     const customMode  = rawDev.modes.find((m) => /^custom$/i.test(m.name));
+
+    if (duradero && (staticMode || customMode)) {
+      const modo = staticMode ?? customMode!;
+      const arr = buildModeColors(modo, color);
+      await client.updateMode(deviceId, { id: modo.id, colors: arr });
+      dev.activeMode = modo.id;
+      dev.colors = arr.map(rgbToHex);
+      return true;
+    }
+    if (duradero && directMode) {
+      lastError = `${dev.name}: solo ofrece Direct, el color se perderá al cerrar OpenRGB.`;
+    }
 
     if (directMode) {
       if (dev.activeMode !== directMode.id) {

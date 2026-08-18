@@ -56,7 +56,25 @@ function setupWindow() {
       try {
         if (rgbCfg.spawnOnStart && rgbCfg.openrgbPath) await rgb.spawnServer(rgbCfg.openrgbPath);
         if (rgbCfg.autoConnect) await rgb.connect(rgbCfg.host, rgbCfg.port);
-      } catch {}
+
+        // Devolver las luces a como las dejó el usuario. Tras reiniciar el
+        // equipo nadie las ha vuelto a poner: el color de un modo Direct no se
+        // guarda en ninguna parte, y hasta un Static puede perderse al cortar
+        // la corriente. Sin esto hay que abrir el gestor RGB a mano cada vez.
+        if (rgbCfg.startupProfileId) {
+          const perfil = (rgbCfg.profiles ?? []).find(
+            (p: { id: string }) => p.id === rgbCfg.startupProfileId,
+          );
+          if (perfil) {
+            const ok = await rgb.applyProfile(perfil);
+            if (!ok) console.error(`[rgb] el perfil de arranque "${perfil.name}" no se aplicó del todo`);
+          } else {
+            console.error(`[rgb] perfil de arranque ${rgbCfg.startupProfileId} ya no existe`);
+          }
+        }
+      } catch (e) {
+        console.error('[rgb] fallo en el arranque:', (e as Error).message);
+      }
     })();
   }
 

@@ -209,6 +209,9 @@ const ES: Dict = {
   'rgb.hint.strimer24': 'Strimer Plus 24-pin',
   'rgb.hint.strimer8': 'Strimer Plus 8-pin',
   'rgb.hint.argb': 'Cabezal ARGB genérico (estimado)',
+  'rgb.startupOn': 'Se aplica al abrir VirtualDeck — clic para quitarlo',
+  'rgb.startupOff': 'Aplicar este perfil al abrir VirtualDeck',
+  'rgb.startupHint': '◉ = se aplica solo al abrir VirtualDeck.',
 };
 
 const EN: Dict = {
@@ -394,6 +397,9 @@ const EN: Dict = {
   'rgb.hint.strimer24': 'Strimer Plus 24-pin',
   'rgb.hint.strimer8': 'Strimer Plus 8-pin',
   'rgb.hint.argb': 'Generic ARGB header (estimate)',
+  'rgb.startupOn': 'Applied when VirtualDeck opens — click to unset',
+  'rgb.startupOff': 'Apply this profile when VirtualDeck opens',
+  'rgb.startupHint': '◉ = applied automatically when VirtualDeck opens.',
 };
 
 const DICTS: Record<Lang, Dict> = { es: ES, en: EN };

@@ -301,6 +301,15 @@ export interface RGBSettings {
   port: number;
   autoConnect: boolean;
   spawnOnStart: boolean;
+  /**
+   * Perfil que se aplica solo al arrancar VirtualDeck.
+   *
+   * Direct no se guarda en el dispositivo y `Static` no siempre sobrevive a un
+   * corte de corriente, asi que despues de reiniciar el equipo las luces pueden
+   * quedar como las dejo la placa base. Esto las devuelve a lo que el usuario
+   * eligio, sin tener que abrir el gestor RGB cada vez.
+   */
+  startupProfileId?: string;
   profiles: RGBProfile[];
   /** Tamaños de zonas redimensionables: zoneSizes[deviceName][zoneName] = N LEDs. */
   zoneSizes?: Record<string, Record<string, number>>;
@@ -528,7 +537,8 @@ export interface ElectronAPI {
     spawnServer: (exePath?: string) => Promise<{ ok: boolean; error?: string }>;
     killServer: () => Promise<void>;
     listDevices: () => Promise<RGBDeviceInfo[]>;
-    setDeviceColor: (deviceId: number, color: string) => Promise<boolean>;
+    /** `duradero`: elegir un modo que el dispositivo se queda al cerrar OpenRGB. */
+    setDeviceColor: (deviceId: number, color: string, duradero?: boolean) => Promise<boolean>;
     setZoneColors: (deviceId: number, zoneId: number, colors: string[]) => Promise<boolean>;
     setSingleLed: (deviceId: number, ledId: number, color: string) => Promise<boolean>;
     setMode: (deviceId: number, mode: string, color?: string, brightness?: number, speed?: number) => Promise<boolean>;

@@ -177,7 +177,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     if (!api) return;
     setBusy(true);
     try {
-      for (const d of devices) await api.rgb.setDeviceColor(d.id, '#000000');
+      for (const d of devices) await api.rgb.setDeviceColor(d.id, '#000000', true);
       await refresh();
     } finally { setBusy(false); }
   };
@@ -186,7 +186,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     if (!api) return;
     setBusy(true);
     try {
-      for (const d of devices) await api.rgb.setDeviceColor(d.id, hex);
+      for (const d of devices) await api.rgb.setDeviceColor(d.id, hex, true);
       await refresh();
     } finally { setBusy(false); }
   };
@@ -234,7 +234,21 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
   };
 
   const deleteProfile = (id: string) => {
-    persistRGB((prev) => ({ ...prev, profiles: prev.profiles.filter((p) => p.id !== id) }));
+    persistRGB((prev) => ({
+      ...prev,
+      profiles: prev.profiles.filter((p) => p.id !== id),
+      // Si el que se borra era el de arranque, hay que soltar la referencia:
+      // si no, al arrancar se busca un perfil que ya no existe.
+      startupProfileId: prev.startupProfileId === id ? undefined : prev.startupProfileId,
+    }));
+  };
+
+  /** Marca (o desmarca) el perfil que se aplica solo al abrir VirtualDeck. */
+  const toggleStartupProfile = (id: string) => {
+    persistRGB((prev) => ({
+      ...prev,
+      startupProfileId: prev.startupProfileId === id ? undefined : id,
+    }));
   };
 
   // ── Calibrador ────────────────────────────────────────────────────────────
@@ -392,6 +406,11 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
           <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.profiles')}</DotLabel>
           <SaveProfileBar onSave={saveProfile} accent={accent} disabled={!status.connected} />
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {rgbCfg.profiles.length > 0 && (
+              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginBottom: 4 }}>
+                {t('rgb.startupHint')}
+              </div>
+            )}
             {rgbCfg.profiles.length === 0 && (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '4px 0' }}>
                 {t('rgb.noProfiles')}
@@ -400,6 +419,11 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
             {rgbCfg.profiles.map((p) => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
                 <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                <button
+                  onClick={() => toggleStartupProfile(p.id)}
+                  title={t(rgbCfg.startupProfileId === p.id ? 'rgb.startupOn' : 'rgb.startupOff')}
+                  style={{ background: 'none', border: 'none', fontSize: 11, lineHeight: 1, cursor: 'pointer', padding: '0 2px', color: rgbCfg.startupProfileId === p.id ? accent : VD.textMuted }}
+                >{rgbCfg.startupProfileId === p.id ? '◉' : '○'}</button>
                 <button onClick={() => applyProfile(p.id)} disabled={!status.connected} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('rgb.apply')}</button>
                 <button onClick={() => deleteProfile(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>

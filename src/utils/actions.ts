@@ -215,7 +215,10 @@ export async function executeAction(
       case 'rgb-color': {
         if (!action.rgbColor) return fail('Falta el color RGB.');
         const id = action.rgbDeviceId ?? -1;
-        const ok = await api.rgb.setDeviceColor(id, action.rgbColor);
+        // `true` = duradero. Un botón de color quiere decir "deja las luces
+        // así", no "así mientras VirtualDeck esté abierto": ver setDeviceColor
+        // en electron/main/rgb.ts.
+        const ok = await api.rgb.setDeviceColor(id, action.rgbColor, true);
         return ok ? OK : fail('No se pudo aplicar el color RGB (¿OpenRGB conectado?).');
       }
       case 'rgb-mode': {

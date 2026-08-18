@@ -12,7 +12,7 @@ export function registerRgbIpc(win: BrowserWindow) {
   ipcMain.handle('rgb:spawnServer', (_e: any, exePath?: string) => rgb.spawnServer(exePath));
   ipcMain.handle('rgb:killServer', () => rgb.killServer());
   ipcMain.handle('rgb:listDevices', () => rgb.listDevices());
-  ipcMain.handle('rgb:setDeviceColor', (_e: any, id: number, c: string) => rgb.setDeviceColor(id, c));
+  ipcMain.handle('rgb:setDeviceColor', (_e: any, id: number, c: string, duradero?: boolean) => rgb.setDeviceColor(id, c, duradero));
   ipcMain.handle('rgb:setZoneColors', (_e: any, id: number, z: number, cs: string[]) => rgb.setZoneColors(id, z, cs));
   ipcMain.handle('rgb:setSingleLed', (_e: any, id: number, ledId: number, c: string) => rgb.setSingleLed(id, ledId, c));
   ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number, s?: number) => rgb.setMode(id, m, c, b, s));
