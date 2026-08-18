@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 
 interface WeatherData {
   temp: number;
@@ -45,6 +45,9 @@ export function wxInfo(code: number): [string, string] {
 }
 
 export function WeatherWidget() {
+  // La paleta viene del contexto, no de la importacion: importarla fijaba
+  // el tema oscuro y el modo claro no llegaba a esta pantalla.
+  const VD = useTheme();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);

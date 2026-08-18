@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotLabel } from './DotLabel';
 import { useT } from '../utils/i18n';
 import type { ButtonConfig, DeckConfig } from '../types';
@@ -37,6 +37,9 @@ function buildHaystack(b: ButtonConfig): string {
 }
 
 export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlayProps) {
+  // La paleta viene del contexto, no de la importacion: importarla fijaba
+  // el tema oscuro y el modo claro no llegaba a esta pantalla.
+  const VD = useTheme();
   const t = useT();
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);

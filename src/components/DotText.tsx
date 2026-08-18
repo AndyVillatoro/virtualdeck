@@ -1,11 +1,12 @@
 import React, { CSSProperties } from 'react';
-import { GLYPHS_5x7, VD } from '../design';
+import { GLYPHS_5x7 } from '../design';
+import { useTheme } from '../utils/theme';
 
 interface DotTextProps {
   text: string | number;
   dotSize?: number;
   gap?: number;
-  color?: string;
+  color?: string;  // sin valor: se toma del tema
   density?: number;
   /**
    * Ancho disponible en píxeles. Si el texto no cabe, los puntos se encogen
@@ -41,8 +42,10 @@ function anchoDe(cuantos: number, dotSize: number, gap: number): number {
 }
 
 export function DotText({
-  text, dotSize = 6, gap = 2, color = VD.text, density = 1, maxWidth, style = {},
+  text, dotSize = 6, gap = 2, color, density = 1, maxWidth, style = {},
 }: DotTextProps) {
+  const VD = useTheme();
+  const tinta = color ?? VD.text;
   const chars = sinTildes(String(text)).toUpperCase().split('');
 
   // Se reduce el tamaño del punto hasta que el texto quepa. La tarjeta que lo
@@ -84,7 +87,7 @@ export function DotText({
                       width: tamano,
                       height: tamano,
                       borderRadius: '50%',
-                      background: on ? color : apagado,
+                      background: on ? tinta : apagado,
                     }}
                   />
                 );
