@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotLabel } from '../components/DotLabel';
 import { useT } from '../utils/i18n';
 import type { DeckConfig } from '../types';
@@ -24,6 +24,9 @@ const WALLPAPERS: { id: string; label: string; preview: string }[] = [
 const PREVIEW_GRID = Array.from({ length: 12 });
 
 export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
+  // La paleta viene del contexto: importarla fijaba el tema oscuro y esta
+  // pantalla se quedaba sin modo claro por completo.
+  const VD = useTheme();
   const t = useT();
   const [selected, setSelected] = useState(config.wallpaper || 'solid');
   const [applied, setApplied] = useState(false);

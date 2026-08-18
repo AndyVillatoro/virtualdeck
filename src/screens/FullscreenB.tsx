@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward } from '../components/VDIcon';
-import { VD } from '../design';
+import { useTheme } from '../utils/theme';
 import { DotText } from '../components/DotText';
 import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
@@ -41,6 +41,9 @@ function getSourceName(src: string): string {
 }
 
 export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetKioskPin, onStateUpdate }: FullscreenBProps) {
+  // La paleta viene del contexto: importarla fijaba el tema oscuro y esta
+  // pantalla se quedaba sin modo claro por completo.
+  const VD = useTheme();
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
   const { sensors: sensorList, status: sensorStatus } = useSensors();
