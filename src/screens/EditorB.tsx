@@ -112,7 +112,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
       setAudioDevices(devs);
       setLoadingDevices(false);
     }).catch(() => {
-      setAudioError('No se pudo obtener la lista. Verifica que el audio esté activo o reinicia la aplicación.');
+      setAudioError(tf('No se pudo obtener la lista. Verifica que el audio esté activo o reinicia la aplicación.'));
       setLoadingDevices(false);
     });
   };
@@ -413,7 +413,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
             )}
             {extraActions.length > 0 && (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center' }}>
-                + {extraActions.length} acción{extraActions.length > 1 ? 'es' : ''} adicional{extraActions.length > 1 ? 'es' : ''}
+                + {extraActions.length} {extraActions.length > 1 ? tf('acciones adicionales') : tf('acción adicional')}
               </div>
             )}
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center', lineHeight: 1.6 }}>
@@ -430,7 +430,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 {/* Presets */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-                    <DotLabel size={9} color={VD.textMuted} spacing={2}>PRESETS RÁPIDOS</DotLabel>
+                    <DotLabel size={9} color={VD.textMuted} spacing={2}>{tf('PRESETS RÁPIDOS')}</DotLabel>
                     <input
                       value={presetSearch}
                       onChange={(e) => setPresetSearch(e.target.value)}
@@ -492,7 +492,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       );
                     })}
                     {filteredPresets.length === 0 && (
-                      <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, padding: '8px 0' }}>Sin resultados</div>
+                      <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, padding: '8px 0' }}>{tf('Sin resultados')}</div>
                     )}
                   </div>
                 </div>
@@ -502,7 +502,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 {/* Action types */}
                 <div>
                   <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 10 }}>
-                    TIPO DE ACCIÓN
+                    {tf('TIPO DE ACCIÓN')}
                   </DotLabel>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
                     {ACTION_TYPES.map((at) => {
@@ -554,7 +554,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer',
                         borderRadius: VD.radius.sm, letterSpacing: 1,
                       }}>
-                        + AÑADIR ACCIÓN ADICIONAL
+                        {tf('+ AÑADIR ACCIÓN ADICIONAL')}
                       </button>
                     )}
                     {showExtraPicker && (
@@ -597,7 +597,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {action.type === 'none' && (
                   <div style={{ color: VD.textMuted, fontFamily: VD.mono, fontSize: 11 }}>
-                    Sin acción configurada.
+                    {tf('Sin acción configurada.')}
                   </div>
                 )}
 
@@ -605,8 +605,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   <>
                     <Field label={tf("RUTA DE LA APLICACIÓN")}>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <input value={action.appPath || ''} onChange={(e) => setAction((a) => ({ ...a, appPath: e.target.value }))} placeholder={tf("C:\\Program Files\\App\\app.exe")} style={inputStyle} />
-                        <Btn onClick={pickFile}>Buscar</Btn>
+                        <input value={action.appPath || ''} onChange={(e) => setAction((a) => ({ ...a, appPath: e.target.value }))} placeholder={"C:\\Program Files\\App\\app.exe"} style={inputStyle} />
+                        <Btn onClick={pickFile}>{tf('Buscar')}</Btn>
                       </div>
                     </Field>
                     <Field label={tf("ARGUMENTOS (OPCIONAL)")}>
@@ -625,7 +625,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   <Field label={tf("RUTA DEL ARCHIVO O CARPETA")}>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <input value={action.shortcutPath || ''} onChange={(e) => setAction((a) => ({ ...a, shortcutPath: e.target.value }))} placeholder={tf("C:\\Users\\...\\archivo.lnk")} style={inputStyle} />
-                      <Btn onClick={pickShortcut}>Buscar</Btn>
+                      <Btn onClick={pickShortcut}>{tf('Buscar')}</Btn>
                     </div>
                   </Field>
                 )}
@@ -635,11 +635,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     <Field label={tf("INTÉRPRETE")}>
                       <select value={action.scriptShell || 'powershell'} onChange={(e) => setAction((a) => ({ ...a, scriptShell: e.target.value as any }))} style={{ ...inputStyle, cursor: 'pointer' }}>
                         <option value="powershell">PowerShell</option>
-                        <option value="cmd">CMD (Símbolo del sistema)</option>
+                        <option value="cmd">{tf('CMD (Símbolo del sistema)')}</option>
                       </select>
                     </Field>
                     <Field label={tf("SCRIPT")}>
-                      <textarea value={action.script || ''} onChange={(e) => setAction((a) => ({ ...a, script: e.target.value }))} placeholder={tf("Get-Process | Sort CPU -Descending")} rows={5} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} />
+                      <textarea value={action.script || ''} onChange={(e) => setAction((a) => ({ ...a, script: e.target.value }))} placeholder={"Get-Process | Sort CPU -Descending"} rows={5} style={{ ...inputStyle, resize: 'vertical', minHeight: 80 }} />
                     </Field>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                       <input
@@ -648,7 +648,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         onChange={(e) => setAction(a => ({ ...a, showOutput: e.target.checked }))}
                         style={{ accentColor: accent }}
                       />
-                      <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim }}>MOSTRAR SALIDA DEL SCRIPT EN PANTALLA</span>
+                      <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim }}>{tf('MOSTRAR SALIDA DEL SCRIPT EN PANTALLA')}</span>
                     </label>
                     <Field label={tf("GUARDAR SALIDA EN VARIABLE (opcional)")}>
                       <input
@@ -673,17 +673,17 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         </span>
                       )}
                       {!action.deviceName && <span />}
-                      <Btn onClick={loadAudioDevices}>{loadingDevices ? '...' : '⟳ RECARGAR'}</Btn>
+                      <Btn onClick={loadAudioDevices}>{loadingDevices ? '...' : tf('⟳ RECARGAR')}</Btn>
                     </div>
-                    {loadingDevices && <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '4px 0 8px' }}>Cargando dispositivos...</div>}
+                    {loadingDevices && <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '4px 0 8px' }}>{tf('Cargando dispositivos...')}</div>}
                     {!loadingDevices && audioError && (
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.danger, marginBottom: 6 }}>
                           ⚠ {audioError}
                         </div>
-                        <Btn onClick={loadAudioDevices} style={{ marginBottom: 8 }}>⟳ REINTENTAR</Btn>
+                        <Btn onClick={loadAudioDevices} style={{ marginBottom: 8 }}>{tf('⟳ REINTENTAR')}</Btn>
                         <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginBottom: 6 }}>
-                          O ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):
+                          {tf('O ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):')}
                         </div>
                         <input
                           value={action.deviceName || ''}
@@ -696,10 +696,10 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     {!loadingDevices && !audioError && audioDevices.length === 0 && (
                       <div style={{ marginBottom: 10 }}>
                         <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.danger, marginBottom: 8 }}>
-                          No se detectaron dispositivos automáticamente.
+                          {tf('No se detectaron dispositivos automáticamente.')}
                         </div>
                         <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginBottom: 6 }}>
-                          Ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):
+                          {tf('Ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):')}
                         </div>
                         <input
                           value={action.deviceName || ''}
@@ -726,8 +726,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         >
                           <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text }}>{dev.name}</span>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            {dev.isDefault && <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.success, letterSpacing: 1 }}>PREDETERMINADO</span>}
-                            {action.deviceId === dev.id && <span style={{ fontFamily: VD.mono, fontSize: 9, color: accent, letterSpacing: 1 }}>✓ SELECCIONADO</span>}
+                            {dev.isDefault && <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.success, letterSpacing: 1 }}>{tf('PREDETERMINADO')}</span>}
+                            {action.deviceId === dev.id && <span style={{ fontFamily: VD.mono, fontSize: 9, color: accent, letterSpacing: 1 }}>{tf('✓ SELECCIONADO')}</span>}
                           </div>
                         </div>
                       ))}
@@ -741,7 +741,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.hotkey || ''}
                         onChange={(e) => setAction((a) => ({ ...a, hotkey: e.target.value }))}
-                        placeholder={tf("Ctrl+Shift+F9")}
+                        placeholder={"Ctrl+Shift+F9"}
                         readOnly={capturing}
                         style={{ ...inputStyle, flex: 1, outline: capturing ? `2px solid ${accent}` : undefined }}
                       />
@@ -751,11 +751,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     </div>
                     {capturing && (
                       <div style={{ fontFamily: VD.mono, fontSize: 9, color: accent, marginTop: 6 }}>
-                        Presiona la combinación deseada...
+                        {tf('Presiona la combinación deseada...')}
                       </div>
                     )}
                     <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                      Ej: Ctrl+Alt+T · Ctrl+Shift+F9 · Ctrl+Z · V · Space
+                      {tf('Ej: Ctrl+Alt+T · Ctrl+Shift+F9 · Ctrl+Z · V · Space')}
                     </div>
                   </Field>
                 )}
@@ -784,7 +784,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       />
                     </Field>
                     <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-                      El texto se escribe en la ventana activa. Caracteres especiales (+, ^, %, %, (, )) se escapan automáticamente.
+                      {tf('El texto se escribe en la ventana activa. Caracteres especiales (+, ^, %, %, (, )) se escapan automáticamente.')}
                     </div>
                   </>
                 )}
@@ -795,7 +795,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.processName || ''}
                         onChange={(e) => setAction((a) => ({ ...a, processName: e.target.value }))}
-                        placeholder={tf("spotify.exe · chrome.exe · notepad.exe")}
+                        placeholder={"spotify.exe · chrome.exe · notepad.exe"}
                         style={inputStyle}
                       />
                     </Field>
@@ -830,7 +830,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input type="range" min={0} max={100} step={5} value={action.brightnessLevel ?? 70} onChange={(e) => setAction((a) => ({ ...a, brightnessLevel: parseInt(e.target.value) }))} style={{ flex: 1, accentColor: accent }} />
                       <span style={{ fontFamily: VD.mono, fontSize: 14, color: VD.text, minWidth: 40, textAlign: 'right' }}>{action.brightnessLevel ?? 70}%</span>
                     </div>
-                    <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>Controla el brillo del monitor principal via WMI.</div>
+                    <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>{tf('Controla el brillo del monitor principal via WMI.')}</div>
                   </Field>
                 )}
 
@@ -840,7 +840,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.notifyTitle ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, notifyTitle: e.target.value }))}
-                        placeholder={tf("VirtualDeck")}
+                        placeholder={"VirtualDeck"}
                         style={inputStyle}
                       />
                     </Field>
@@ -870,7 +870,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.varValue ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, varValue: e.target.value }))}
-                        placeholder={tf("0, true, {lastApp}")}
+                        placeholder={"0, true, {lastApp}"}
                         style={inputStyle}
                       />
                     </Field>
@@ -904,7 +904,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.webhookUrl ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, webhookUrl: e.target.value }))}
-                        placeholder={tf("https://...")}
+                        placeholder={"https://..."}
                         style={inputStyle}
                       />
                     </Field>
@@ -955,8 +955,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {action.type === 'region-capture' && (
                   <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, lineHeight: 1.6 }}>
-                    Abre la herramienta nativa de captura de región de Windows (Win+Shift+S).
-                    El recorte queda en el portapapeles.
+                    {tf('Abre la herramienta nativa de captura de región de Windows (Win+Shift+S). El recorte queda en el portapapeles.')}
                   </div>
                 )}
 
@@ -964,7 +963,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   <>
                     {!rgbConnected && (
                       <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, padding: '6px 10px', background: 'rgba(212,162,52,0.08)', border: `1px solid ${VD.warning}`, borderRadius: VD.radius.sm }}>
-                        OpenRGB no conectado. Conecta desde la pantalla RGB para listar dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.
+                        {tf('OpenRGB no conectado. Conecta desde la pantalla RGB para listar dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.')}
                       </div>
                     )}
                     <Field label={tf("DISPOSITIVO RGB")}>
@@ -973,7 +972,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         onChange={(e) => setAction((a) => ({ ...a, rgbDeviceId: parseInt(e.target.value, 10) }))}
                         style={inputStyle}
                       >
-                        <option value={-1}>Todos los dispositivos</option>
+                        <option value={-1}>{tf('Todos los dispositivos')}</option>
                         {rgbDevices.map((d) => (
                           <option key={d.id} value={d.id}>{d.name} ({d.typeLabel})</option>
                         ))}
@@ -1009,7 +1008,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.rgbMode ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, rgbMode: e.target.value }))}
-                        placeholder={tf("Direct, Static, Breathing, Rainbow, Spectrum Cycle...")}
+                        placeholder={"Direct, Static, Breathing, Rainbow, Spectrum Cycle..."}
                         list="rgb-modes-list"
                         style={inputStyle}
                       />
@@ -1067,7 +1066,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 {action.type === 'folder' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <DotLabel size={9} color={VD.textMuted} spacing={2}>CARGAR PRESET ADOBE</DotLabel>
+                      <DotLabel size={9} color={VD.textMuted} spacing={2}>{tf('CARGAR PRESET ADOBE')}</DotLabel>
                       {Object.entries(FOLDER_PRESETS).map(([key, fp]) => (
                         <button
                           key={key}
@@ -1113,7 +1112,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
                 {['media-play-pause', 'media-next', 'media-prev', 'volume-up', 'volume-down', 'mute'].includes(action.type) && (
                   <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '8px 0' }}>
-                    Esta acción no necesita configuración adicional.
+                    {tf('Esta acción no necesita configuración adicional.')}
                   </div>
                 )}
 
@@ -1122,10 +1121,10 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     <Field label={tf("POSICIÓN / TAMAÑO")}>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                         {([
-                          ['top-left','↖ Cuad. sup-izq'],['top-half','↑ Mitad superior'],['top-right','↗ Cuad. sup-der'],
-                          ['left-half','← Mitad izq'],['center','⊞ Centro 50%'],['right-half','→ Mitad der'],
-                          ['bottom-left','↙ Cuad. inf-izq'],['bottom-half','↓ Mitad inferior'],['bottom-right','↘ Cuad. inf-der'],
-                          ['maximize','⛶ Maximizar'],['restore','⊡ Restaurar'],
+                          ['top-left','↖ ' + tf('Cuad. sup-izq')],['top-half','↑ ' + tf('Mitad superior')],['top-right','↗ ' + tf('Cuad. sup-der')],
+                          ['left-half','← ' + tf('Mitad izq')],['center','⊞ ' + tf('Centro 50%')],['right-half','→ ' + tf('Mitad der')],
+                          ['bottom-left','↙ ' + tf('Cuad. inf-izq')],['bottom-half','↓ ' + tf('Mitad inferior')],['bottom-right','↘ ' + tf('Cuad. inf-der')],
+                          ['maximize','⛶ ' + tf('Maximizar')],['restore','⊡ ' + tf('Restaurar')],
                         ] as [string, string][]).map(([val, lbl]) => (
                           <div
                             key={val}
@@ -1145,7 +1144,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                       <input
                         value={action.snapProcessName ?? ''}
                         onChange={(e) => setAction((a) => ({ ...a, snapProcessName: e.target.value || undefined }))}
-                        placeholder={tf("chrome, notepad, code...")}
+                        placeholder={"chrome, notepad, code..."}
                         style={inputStyle}
                       />
                       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
@@ -1175,11 +1174,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           <option value="!=">!= distinto de</option>
                           <option value=">">{'>'} mayor que</option>
                           <option value="<">{'<'} menor que</option>
-                          <option value=">=">{'>='} mayor o igual</option>
-                          <option value="<=">{'<='} menor o igual</option>
-                          <option value="contains">contiene</option>
-                          <option value="empty">está vacío</option>
-                          <option value="not-empty">no está vacío</option>
+                          <option value=">=">{'>='} {tf('mayor o igual')}</option>
+                          <option value="<=">{'<='} {tf('menor o igual')}</option>
+                          <option value="contains">{tf('contiene')}</option>
+                          <option value="empty">{tf('está vacío')}</option>
+                          <option value="not-empty">{tf('no está vacío')}</option>
                         </select>
                         {!['empty','not-empty'].includes(action.branchOp ?? '==') && (
                           <input
@@ -1224,7 +1223,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         </span>
                       </div>
                       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                        Pausa la secuencia este tiempo antes de continuar con la siguiente acción.
+                        {tf('Pausa la secuencia este tiempo antes de continuar con la siguiente acción.')}
                       </div>
                     </Field>
                   </>
@@ -1252,13 +1251,13 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         style={{ accentColor: accent }}
                       />
                       <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-                        MODO TOGGLE — el botón alterna entre activado / desactivado
+                        {tf('MODO TOGGLE — el botón alterna entre activado / desactivado')}
                       </span>
                     </label>
                     {isToggle && (
                       <div style={{ marginLeft: 24 }}>
                         <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
-                          ACCIÓN AL DESACTIVAR (opcional — si vacío, repite la misma acción)
+                          {tf('ACCIÓN AL DESACTIVAR (opcional — si vacío, repite la misma acción)')}
                         </DotLabel>
                         <ToggleOffActionPicker
                           action={actionToggleOff}
@@ -1274,7 +1273,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 {action.type !== 'none' && action.type !== 'folder' && (
                   <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
                     <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
-                      ACCIÓN AL MANTENER PRESIONADO (~500 MS)
+                      {tf('ACCIÓN AL MANTENER PRESIONADO (~500 MS)')}
                     </DotLabel>
                     <ToggleOffActionPicker
                       action={longPressAction}
@@ -1323,7 +1322,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         style={{ accentColor: accent }}
                       />
                       <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-                        MOSTRAR EN MENÚ DEL TRAY (acción rápida)
+                        {tf('MOSTRAR EN MENÚ DEL TRAY (acción rápida)')}
                       </span>
                     </label>
                   </div>
@@ -1341,15 +1340,15 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   <input value={sublabel} onChange={(e) => setSublabel(e.target.value)} placeholder={tf("Descripción corta")} maxLength={30} style={inputStyle} />
                 </Field>
                 <Field label={tf("ICONO (EMOJI O SÍMBOLO — VACÍO = ÍCONO DEL TIPO)")}>
-                  <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder={tf("▶ ◉ 🎵 💻 🌐 ★")} maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
+                  <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder={"▶ ◉ 🎵 💻 🌐 ★"} maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
                 </Field>
                 <Field label={tf("IMAGEN PERSONALIZADA (PNG / JPG / GIF)")}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Btn onClick={pickImage}>Elegir imagen</Btn>
+                    <Btn onClick={pickImage}>{tf('Elegir imagen')}</Btn>
                     {imageData && (
                       <>
                         <img src={imageData} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: VD.radius.md, border: `1px solid ${VD.border}` }} />
-                        <Btn onClick={() => setImageData('')} style={{ color: VD.danger }}>Quitar</Btn>
+                        <Btn onClick={() => setImageData('')} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
                       </>
                     )}
                   </div>
@@ -1373,17 +1372,17 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           {BRAND_ICONS_MAP[brandIcon]?.label ?? brandIcon}
                           {brandIconCustomBitmap && <span style={{ color: accent, marginLeft: 6 }}>✎</span>}
                         </span>
-                        <Btn onClick={() => setShowBrandPicker(true)}>Cambiar</Btn>
-                        <Btn onClick={() => setShowBrandEditor(true)}>Editar puntos</Btn>
+                        <Btn onClick={() => setShowBrandPicker(true)}>{tf('Cambiar')}</Btn>
+                        <Btn onClick={() => setShowBrandEditor(true)}>{tf('Editar puntos')}</Btn>
                         {brandIconCustomBitmap && (
                           <Btn onClick={() => { setBrandIconCustomBitmap(undefined); setBrandIconCustomColor(undefined); setBrandIconCustomPalette(undefined); }}>
-                            Restaurar
+                            {tf('Restaurar')}
                           </Btn>
                         )}
-                        <Btn onClick={() => { setBrandIcon(''); setBrandIconCustomBitmap(undefined); setBrandIconCustomColor(undefined); setBrandIconCustomPalette(undefined); }} style={{ color: VD.danger }}>Quitar</Btn>
+                        <Btn onClick={() => { setBrandIcon(''); setBrandIconCustomBitmap(undefined); setBrandIconCustomColor(undefined); setBrandIconCustomPalette(undefined); }} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
                       </>
                     ) : (
-                      <Btn onClick={() => setShowBrandPicker(true)}>Elegir icono de marca</Btn>
+                      <Btn onClick={() => setShowBrandPicker(true)}>{tf('Elegir icono de marca')}</Btn>
                     )}
                   </div>
                   {brandIcon && (
@@ -1395,12 +1394,12 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         style={{ accentColor: accent }}
                       />
                       <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-                        ANIMACIÓN SIEMPRE ACTIVA — si está desactivado, anima solo cuando el botón está encendido (toggle ON)
+                        {tf('ANIMACIÓN SIEMPRE ACTIVA — si está desactivado, anima solo cuando el botón está encendido (toggle ON)')}
                       </span>
                     </label>
                   )}
                   <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                    68 iconos · Fondo transparente · Superpone al color de fondo del botón
+                    {tf('68 iconos · Fondo transparente · Superpone al color de fondo del botón')}
                   </div>
                 </Field>
 
@@ -1415,29 +1414,29 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         }}>
                           <Glyph57Inline rows={customGlyph57} color={fgColor || VD.text} />
                         </div>
-                        <Btn onClick={() => setShowGlyphEditor(true)}>Editar</Btn>
-                        <Btn onClick={() => setCustomGlyph57(undefined)} style={{ color: VD.danger }}>Quitar</Btn>
+                        <Btn onClick={() => setShowGlyphEditor(true)}>{tf('Editar')}</Btn>
+                        <Btn onClick={() => setCustomGlyph57(undefined)} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
                       </>
                     ) : (
-                      <Btn onClick={() => setShowGlyphEditor(true)}>Dibujar glifo</Btn>
+                      <Btn onClick={() => setShowGlyphEditor(true)}>{tf('Dibujar glifo')}</Btn>
                     )}
                   </div>
                   <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                    5×7 puntos hechos a mano. Coherente con la firma del producto.
+                    {tf('5×7 puntos hechos a mano. Coherente con la firma del producto.')}
                   </div>
                 </Field>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <Field label={tf("COLOR DE FONDO")}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input type="color" value={bgColor || '#222222'} onChange={(e) => setBgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
-                      <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder={tf("#222222")} style={{ ...inputStyle, flex: 1 }} />
+                      <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder={"#222222"} style={{ ...inputStyle, flex: 1 }} />
                       {bgColor && <Btn onClick={() => setBgColor('')}>✕</Btn>}
                     </div>
                   </Field>
                   <Field label={tf("COLOR DE TEXTO / ÍCONO")}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <input type="color" value={fgColor || '#dcdcdc'} onChange={(e) => setFgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
-                      <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder={tf("#dcdcdc")} style={{ ...inputStyle, flex: 1 }} />
+                      <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder={"#dcdcdc"} style={{ ...inputStyle, flex: 1 }} />
                       {fgColor && <Btn onClick={() => setFgColor('')}>✕</Btn>}
                     </div>
                   </Field>
@@ -1459,7 +1458,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           key={w ?? 'none'}
                           onClick={() => { if (!conflicts) setWidget(w); }}
                           disabled={conflicts}
-                          title={conflicts ? 'Incompatible con acción de Audio: el widget oculta el nombre del dispositivo.' : undefined}
+                          title={conflicts ? tf('Incompatible con acción de Audio: el widget oculta el nombre del dispositivo.') : undefined}
                           style={{
                             flex: '1 1 60px', padding: '5px 0', cursor: conflicts ? 'not-allowed' : 'pointer', borderRadius: VD.radius.sm,
                             background: widget === w ? VD.accentBg : VD.elevated,
@@ -1469,13 +1468,13 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                             opacity: conflicts ? 0.4 : 1,
                           }}
                         >
-                          {w === undefined ? 'NINGUNO' : w === 'clock' ? 'RELOJ' : w === 'weather' ? 'CLIMA' : w === 'now-playing' ? 'MÚSICA' : w === 'sensor' ? 'SENSOR' : 'VARIABLE'}
+                          {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : 'VARIABLE'}
                         </button>
                       );
                     })}
                   </div>
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    Sustituye el ícono/etiqueta con datos en vivo. El botón sigue siendo ejecutable.
+                    {tf('Sustituye el ícono/etiqueta con datos en vivo. El botón sigue siendo ejecutable.')}
                   </div>
                   {widget === 'sensor' && (
                     <div style={{ marginTop: 8, padding: 10, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1495,13 +1494,13 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         <input
                           value={sensorWidgetWarn}
                           onChange={(e) => setSensorWidgetWarn(e.target.value)}
-                          placeholder={tf("Warn ≥")}
+                          placeholder={"Warn ≥"}
                           style={{ ...inputStyle, width: 80 }}
                         />
                         <input
                           value={sensorWidgetCrit}
                           onChange={(e) => setSensorWidgetCrit(e.target.value)}
-                          placeholder={tf("Crit ≥")}
+                          placeholder={"Crit ≥"}
                           style={{ ...inputStyle, width: 80 }}
                         />
                       </div>
@@ -1537,7 +1536,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         />
                       </div>
                       <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
-                        Muestra el valor en vivo de una variable. Combínalo con acciones "Incrementar variable" / "Asignar variable" para hacer contadores. Las variables sin valor se muestran como 0.
+                        {tf('Muestra el valor en vivo de una variable. Combínalo con acciones "Incrementar variable" / "Asignar variable" para hacer contadores. Las variables sin valor se muestran como 0.')}
                       </div>
                     </div>
                   )}
@@ -1548,11 +1547,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   <input
                     value={visibleIfApp}
                     onChange={(e) => setVisibleIfApp(e.target.value)}
-                    placeholder={tf("spotify, chrome, obs64 ...")}
+                    placeholder={"spotify, chrome, obs64 ..."}
                     style={inputStyle}
                   />
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    Nombre del proceso sin .exe. Vacío = siempre visible.
+                    {tf('Nombre del proceso sin .exe. Vacío = siempre visible.')}
                   </div>
                 </Field>
 
@@ -1561,12 +1560,12 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                   <input
                     value={timerTriggerAt}
                     onChange={(e) => setTimerTriggerAt(e.target.value)}
-                    placeholder={tf("08:00")}
+                    placeholder={"08:00"}
                     maxLength={5}
                     style={inputStyle}
                   />
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    Formato 24h. Solo se dispara cuando la página del botón está activa.
+                    {tf('Formato 24h. Solo se dispara cuando la página del botón está activa.')}
                   </div>
                 </Field>
 
@@ -1603,7 +1602,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     )}
                   </div>
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    Aparece cuando el sensor cumple la condición. Combinable con app de arriba.
+                    {tf('Aparece cuando el sensor cumple la condición. Combinable con app de arriba.')}
                   </div>
                 </Field>
 
@@ -1640,7 +1639,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           <input
                             value={sensorTriggerCooldown}
                             onChange={(e) => setSensorTriggerCooldown(e.target.value)}
-                            placeholder={tf("Cooldown s")}
+                            placeholder={"Cooldown s"}
                             style={{ ...inputStyle, width: 100 }}
                           />
                         </div>
@@ -1648,7 +1647,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                     )}
                   </div>
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    Ejecuta la acción cuando se cumple la condición. Cooldown evita que se redispare cada poll (default 60s).
+                    {tf('Ejecuta la acción cuando se cumple la condición. Cooldown evita que se redispare cada poll (default 60s).')}
                   </div>
                 </Field>
               </div>
@@ -1748,12 +1747,12 @@ function FolderButtonSlot({ button, accent, onChange }: {
     return (
       <div style={{ background: VD.bg, border: `1px solid ${accent}`, borderRadius: VD.radius.md, padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder={tf("⌘")} maxLength={2}
+          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder={"⌘"} maxLength={2}
             style={{ width: 28, background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 4px', color: VD.text, fontFamily: VD.mono, fontSize: 13, outline: 'none', borderRadius: VD.radius.sm, textAlign: 'center' }} />
           <input value={label} onChange={e => setLabel(e.target.value)} placeholder={tf("Nombre")} maxLength={12}
             style={{ flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 6px', color: VD.text, fontFamily: VD.mono, fontSize: 9, outline: 'none', borderRadius: VD.radius.sm }} />
         </div>
-        <input value={hotkey} onChange={e => setHotkey(e.target.value)} placeholder={tf("Ctrl+Z")}
+        <input value={hotkey} onChange={e => setHotkey(e.target.value)} placeholder={"Ctrl+Z"}
           style={{ width: '100%', background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 6px', color: VD.text, fontFamily: VD.mono, fontSize: 9, outline: 'none', borderRadius: VD.radius.sm, boxSizing: 'border-box' }} />
         <div style={{ display: 'flex', gap: 4 }}>
           <button onClick={() => {
@@ -1813,7 +1812,7 @@ function ToggleOffActionPicker({ action, onChange, accent }: { action: ButtonAct
       </select>
       {action.type === 'hotkey' && (
         <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })}
-          placeholder={tf("Ctrl+Shift+F9")} style={{ ...inputStyle, fontSize: 11 }} />
+          placeholder={"Ctrl+Shift+F9"} style={{ ...inputStyle, fontSize: 11 }} />
       )}
       {action.type === 'script' && (
         <textarea value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })}
@@ -1880,7 +1879,7 @@ function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; o
       )}
       {action.type === 'hotkey' && (
         <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })}
-          placeholder={tf("Ctrl+Shift+F9")} style={{ ...inputStyle, fontSize: 11 }} />
+          placeholder={"Ctrl+Shift+F9"} style={{ ...inputStyle, fontSize: 11 }} />
       )}
       {action.type === 'script' && (
         <textarea value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })}
@@ -1896,7 +1895,7 @@ function BranchActionRow({ action, onChange, accent }: { action: ButtonAction; o
       )}
       {action.type === 'webhook' && (
         <input value={action.webhookUrl ?? ''} onChange={e => onChange({ ...action, webhookUrl: e.target.value, webhookMethod: action.webhookMethod ?? 'POST' })}
-          placeholder={tf("https://...")} style={inputStyle} />
+          placeholder={"https://..."} style={inputStyle} />
       )}
       {action.type === 'clipboard' && (
         <input value={action.clipboardText || ''} onChange={e => onChange({ ...action, clipboardText: e.target.value })}
@@ -1953,13 +1952,13 @@ function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; 
         <input value={action.appPath || ''} onChange={e => onChange({ ...action, appPath: e.target.value })} placeholder={tf("ruta o comando")} style={miniInputStyle} />
       )}
       {action.type === 'web' && (
-        <input value={action.url || ''} onChange={e => onChange({ ...action, url: e.target.value })} placeholder={tf("https://...")} style={miniInputStyle} />
+        <input value={action.url || ''} onChange={e => onChange({ ...action, url: e.target.value })} placeholder={"https://..."} style={miniInputStyle} />
       )}
       {action.type === 'script' && (
-        <input value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })} placeholder={tf("script")} style={miniInputStyle} />
+        <input value={action.script || ''} onChange={e => onChange({ ...action, script: e.target.value })} placeholder={"script"} style={miniInputStyle} />
       )}
       {action.type === 'hotkey' && (
-        <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })} placeholder={tf("Ctrl+Shift+F9")} style={miniInputStyle} />
+        <input value={action.hotkey || ''} onChange={e => onChange({ ...action, hotkey: e.target.value })} placeholder={"Ctrl+Shift+F9"} style={miniInputStyle} />
       )}
       {action.type === 'shortcut' && (
         <input value={action.shortcutPath || ''} onChange={e => onChange({ ...action, shortcutPath: e.target.value })} placeholder={tf("ruta")} style={miniInputStyle} />

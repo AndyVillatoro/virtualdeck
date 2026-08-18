@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { TitleBar } from '../components/TitleBar';
 import { ColorPicker } from '../components/ColorPicker';
 import { DotLabel } from '../components/DotLabel';
@@ -20,11 +21,12 @@ const DEFAULT_RGB: RGBSettings = {
 
 // Sugerencias de tamaño cuando el calibrador detecta una zona sin valor guardado.
 // Heurística: nombre conocido → cantidad. El usuario puede sobreescribir.
+// `note` es una clave de i18n, no texto: el idioma se resuelve al pintar.
 const KNOWN_ZONE_HINTS: Array<{ pattern: RegExp; size: number; note: string }> = [
-  { pattern: /uni\s*fan|sl120|sl-?infinity/i, size: 16, note: 'Lian Li UNI Fan SL (16 LEDs por fan)' },
-  { pattern: /strimer.*24/i, size: 24, note: 'Strimer Plus 24-pin' },
-  { pattern: /strimer.*8/i, size: 8, note: 'Strimer Plus 8-pin' },
-  { pattern: /argb.*header|addressable/i, size: 8, note: 'Cabezal ARGB genérico (estimado)' },
+  { pattern: /uni\s*fan|sl120|sl-?infinity/i, size: 16, note: 'rgb.hint.unifan' },
+  { pattern: /strimer.*24/i, size: 24, note: 'rgb.hint.strimer24' },
+  { pattern: /strimer.*8/i, size: 8, note: 'rgb.hint.strimer8' },
+  { pattern: /argb.*header|addressable/i, size: 8, note: 'rgb.hint.argb' },
 ];
 
 interface RGBManagerBProps {
@@ -35,6 +37,7 @@ interface RGBManagerBProps {
 
 export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps) {
   const VD = useTheme();
+  const t = useT();
   const btnPrimary = estiloBotonPrimario(VD);
   const btnSecondary = estiloBotonSecundario(VD);
   const api = window.electronAPI;
@@ -96,7 +99,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
       const s = await api.rgb.connect(rgbCfg.host, rgbCfg.port);
       setStatus(s);
       if (!s.connected) {
-        showToast(s.error ? `Conexión falló: ${s.error}` : 'Conexión falló (¿OpenRGB server activo?)');
+        showToast(s.error ? t('rgb.connFailed', { err: s.error }) : t('rgb.connFailedNoServer'));
       }
       await refresh();
     } finally { setBusy(false); }
@@ -225,7 +228,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     setBusy(true);
     try {
       const ok = await api.rgb.applyProfile(prof);
-      if (!ok) showToast('Algunos dispositivos no aceptaron el perfil.');
+      if (!ok) showToast(t('rgb.profilePartial'));
       await refresh();
     } finally { setBusy(false); }
   };
@@ -264,7 +267,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
   const commitZoneSize = async (deviceName: string, deviceId: number, zoneId: number, zoneName: string, size: number) => {
     if (!api) return;
     const ok = await api.rgb.resizeZone(deviceId, zoneId, size);
-    if (!ok) { showToast('No se pudo redimensionar la zona.'); return; }
+    if (!ok) { showToast(t('rgb.resizeFailed')); return; }
     persistRGB((prev) => ({
       ...prev,
       zoneSizes: {
@@ -290,24 +293,24 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
         <div style={{ flex: 1 }} />
         <StatusBadge status={status} accent={accent} />
         {status.connected ? (
-          <button onClick={handleDisconnect} disabled={busy} style={btnSecondary}>DESCONECTAR</button>
+          <button onClick={handleDisconnect} disabled={busy} style={btnSecondary}>{t('rgb.disconnect')}</button>
         ) : (
-          <button onClick={handleConnect} disabled={busy} style={{ ...btnPrimary, borderColor: accent, color: accent }}>CONECTAR</button>
+          <button onClick={handleConnect} disabled={busy} style={{ ...btnPrimary, borderColor: accent, color: accent }}>{t('rgb.connect')}</button>
         )}
-        <button onClick={refresh} disabled={busy || !status.connected} style={btnSecondary} title="Reescanear devices">↻</button>
+        <button onClick={refresh} disabled={busy || !status.connected} style={btnSecondary} title={t('rgb.rescan')}>↻</button>
       </div>
 
       {!status.connected && (
         <div style={{ padding: '14px 18px', borderBottom: `1px solid ${VD.border}`, fontFamily: VD.mono, fontSize: 10, color: VD.textDim, lineHeight: 1.6 }}>
-          <div style={{ color: VD.text, letterSpacing: 1, marginBottom: 6, fontSize: 11 }}>NO CONECTADO</div>
+          <div style={{ color: VD.text, letterSpacing: 1, marginBottom: 6, fontSize: 11 }}>{t('rgb.notConnected')}</div>
           {!rgbCfg.openrgbPath && (
             <div style={{ marginBottom: 4 }}>
-              · Configura la ruta de <strong>OpenRGB.exe</strong> en el flyout de ajustes (icono ⚙ en pantalla principal → sección RGB).
+              {t('rgb.setPath')}
             </div>
           )}
-          <div>· Asegúrate que el server SDK esté activo (puerto {rgbCfg.port}). VirtualDeck arranca OpenRGB en modo <code>--server</code>, sin GUI, así no aparece el diálogo de tamaño de zonas.</div>
+          <div>{t('rgb.serverHint', { port: rgbCfg.port })}</div>
           {status.error && (
-            <div style={{ marginTop: 6, color: VD.danger }}>Último error: {status.error}</div>
+            <div style={{ marginTop: 6, color: VD.danger }}>{t('rgb.lastError', { err: status.error })}</div>
           )}
         </div>
       )}
@@ -331,10 +334,10 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* Device list */}
         <div style={{ width: 240, borderRight: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
-          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>DISPOSITIVOS</DotLabel>
+          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.devices')}</DotLabel>
           {devices.length === 0 && (
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
-              {status.connected ? 'Ningún dispositivo detectado.' : 'Conecta para ver dispositivos.'}
+              {status.connected ? t('rgb.noDevices') : t('rgb.connectToSee')}
             </div>
           )}
           {devices.map((d) => (
@@ -357,10 +360,10 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 
           {status.connected && devices.length > 0 && (
             <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px solid ${VD.border}` }}>
-              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>ACCIONES RÁPIDAS</DotLabel>
-              <button onClick={allOff} disabled={busy} style={{ ...btnSecondary, width: '100%', marginBottom: 4 }}>APAGAR TODO</button>
-              <button onClick={() => allColor('#ffffff')} disabled={busy} style={{ ...btnSecondary, width: '100%', marginBottom: 4 }}>BLANCO TOTAL</button>
-              <button onClick={() => allColor(accent)} disabled={busy} style={{ ...btnSecondary, width: '100%' }}>COLOR ACENTO</button>
+              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.quickActions')}</DotLabel>
+              <button onClick={allOff} disabled={busy} style={{ ...btnSecondary, width: '100%', marginBottom: 4 }}>{t('rgb.allOff')}</button>
+              <button onClick={() => allColor('#ffffff')} disabled={busy} style={{ ...btnSecondary, width: '100%', marginBottom: 4 }}>{t('rgb.allWhite')}</button>
+              <button onClick={() => allColor(accent)} disabled={busy} style={{ ...btnSecondary, width: '100%' }}>{t('rgb.accentColor')}</button>
             </div>
           )}
         </div>
@@ -386,18 +389,18 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 
         {/* Profiles */}
         <div style={{ width: 240, borderLeft: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
-          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>PERFILES RGB</DotLabel>
+          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.profiles')}</DotLabel>
           <SaveProfileBar onSave={saveProfile} accent={accent} disabled={!status.connected} />
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
             {rgbCfg.profiles.length === 0 && (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '4px 0' }}>
-                Sin perfiles aún.
+                {t('rgb.noProfiles')}
               </div>
             )}
             {rgbCfg.profiles.map((p) => (
               <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
                 <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                <button onClick={() => applyProfile(p.id)} disabled={!status.connected} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>APLICAR</button>
+                <button onClick={() => applyProfile(p.id)} disabled={!status.connected} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('rgb.apply')}</button>
                 <button onClick={() => deleteProfile(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
             ))}
@@ -434,12 +437,13 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 // ── Subcomponentes ──────────────────────────────────────────────────────────
 function StatusBadge({ status, accent }: { status: RGBStatus; accent: string }) {
   const VD = useTheme();
+  const t = useT();
   const dotColor = status.connected ? VD.success : status.serverRunning ? VD.warning : VD.textMuted;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: VD.mono, fontSize: 10, color: VD.textDim, letterSpacing: 1 }}>
       <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor }} />
-      {status.connected ? `CONECTADO · ${status.deviceCount} DEV` :
-       status.serverRunning ? 'SERVIDOR ACTIVO' : 'DESCONECTADO'}
+      {status.connected ? t('rgb.connected', { n: status.deviceCount }) :
+       status.serverRunning ? t('rgb.serverUp') : t('rgb.disconnected')}
     </div>
   );
 }
@@ -455,6 +459,7 @@ function DeviceDetail({
   onSetSingleLed: (globalIdx: number, hex: string) => void;
 }) {
   const VD = useTheme();
+  const t = useT();
   const selectStyle = estiloSelector(VD);
   const activeMode = device.modes.find((m) => m.id === device.activeMode);
   const [color, setColor] = useState(device.colors[0] ?? '#ffffff');
@@ -485,13 +490,13 @@ function DeviceDetail({
 
       <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16 }}>
         <div>
-          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>COLOR</DotLabel>
+          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('rgb.color')}</DotLabel>
           <ColorPicker value={color} onChange={(v) => { setColor(v); onSetColor(v); }} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div>
-            <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>MODO</DotLabel>
+            <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('rgb.mode')}</DotLabel>
             <select
               value={activeMode?.name ?? ''}
               onChange={(e) => onSetMode(e.target.value, color)}
@@ -508,7 +513,7 @@ function DeviceDetail({
           {hasSpeed && activeMode && (
             <div>
               <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
-                VELOCIDAD · {speed}%
+                {t('rgb.speed', { n: speed })}
               </DotLabel>
               <input
                 type="range"
@@ -526,7 +531,7 @@ function DeviceDetail({
           )}
 
           <div>
-            <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>ZONAS</DotLabel>
+            <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('rgb.zones')}</DotLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {device.zones.map((z) => {
                 const firstColor = displayColors[zoneStartLed(device, z.id)] ?? '#000000';
@@ -545,7 +550,7 @@ function DeviceDetail({
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text }}>{z.name}</div>
                       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>
-                        {z.ledCount} LEDS{z.resizable ? ` · ${z.ledsMin}-${z.ledsMax} REDIM.` : ''}
+                        {t('rgb.zoneLeds', { n: z.ledCount })}{z.resizable ? t('rgb.zoneResizable', { min: z.ledsMin, max: z.ledsMax }) : ''}
                       </div>
                     </div>
                   </div>
@@ -557,12 +562,12 @@ function DeviceDetail({
           {/* LED Painter */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block' }}>PINTAR LEDs INDIVIDUALES</DotLabel>
+              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block' }}>{t('rgb.paintLeds')}</DotLabel>
               <button
                 onClick={() => setShowLedPainter((v) => !v)}
                 style={{ background: 'none', border: `1px solid ${VD.border}`, borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 8, color: showLedPainter ? accent : VD.textDim, cursor: 'pointer', padding: '2px 8px', letterSpacing: 0.5 }}
               >
-                {showLedPainter ? 'OCULTAR' : 'MOSTRAR'}
+                {showLedPainter ? t('rgb.hide') : t('rgb.show')}
               </button>
             </div>
             {showLedPainter && (
@@ -594,11 +599,12 @@ function LedPainter({ device, displayColors, color, accent, onPaintLed }: {
   onPaintLed: (globalIdx: number, hex: string) => void;
 }) {
   const VD = useTheme();
+  const t = useT();
   const totalLeds = device.colors.length;
   if (totalLeds === 0) {
     return (
       <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-        No hay LEDs reportados para este dispositivo.
+        {t('rgb.noLeds')}
       </div>
     );
   }
@@ -613,11 +619,11 @@ function LedPainter({ device, displayColors, color, accent, onPaintLed }: {
     <div style={{ marginTop: 8 }}>
       {!isPerLed && (
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.warning, marginBottom: 6, letterSpacing: 0.5 }}>
-          ⚠ El modo actual ({activeMode?.name ?? '?'}) no es per-LED. Cambia a Direct o Custom para que los cambios sean visibles.
+          {t('rgb.notPerLed', { mode: activeMode?.name ?? '?' })}
         </div>
       )}
       <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 0.5 }}>
-        {totalLeds} LEDs · Clic = pintar con color seleccionado
+        {t('rgb.ledsHint', { n: totalLeds })}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap, maxHeight: 200, overflowY: 'auto' }}>
         {device.zones.map((zone) => {
@@ -669,6 +675,7 @@ function zoneStartLed(device: RGBDeviceInfo, zoneId: number): number {
 
 function SaveProfileBar({ onSave, accent, disabled }: { onSave: (name: string) => void; accent: string; disabled?: boolean }) {
   const VD = useTheme();
+  const t = useT();
   const [name, setName] = useState('');
   return (
     <div style={{ display: 'flex', gap: 6 }}>
@@ -676,7 +683,7 @@ function SaveProfileBar({ onSave, accent, disabled }: { onSave: (name: string) =
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) { onSave(name.trim()); setName(''); } }}
-        placeholder="Nuevo perfil..."
+        placeholder={t('rgb.newProfile')}
         disabled={disabled}
         style={{
           flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
@@ -692,7 +699,7 @@ function SaveProfileBar({ onSave, accent, disabled }: { onSave: (name: string) =
           fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer',
           borderRadius: VD.radius.sm, letterSpacing: 1,
         }}
-      >GUARDAR</button>
+      >{t('rgb.save')}</button>
     </div>
   );
 }
@@ -711,6 +718,7 @@ function CalibratorModal({
   onClose: () => void;
 }) {
   const VD = useTheme();
+  const t = useT();
   const btnPrimary = estiloBotonPrimario(VD);
   const btnSecondary = estiloBotonSecundario(VD);
   const modalStyle = estiloModal(VD);
@@ -729,17 +737,17 @@ function CalibratorModal({
     <div style={overlayStyle} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={modalStyle}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${VD.border}` }}>
-          <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>CALIBRADOR DE ZONAS ARGB</div>
+          <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>{t('rgb.calibrator')}</div>
           <div style={{ flex: 1 }} />
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: VD.textDim, cursor: 'pointer', fontSize: 18 }}>×</button>
         </div>
         <div style={{ padding: 14, maxHeight: '70vh', overflowY: 'auto' }}>
           <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim, lineHeight: 1.6, marginBottom: 14 }}>
-            Para cada zona redimensionable: presiona <strong>IDENTIFICAR</strong> para que un LED se encienda en blanco recorriendo toda la cadena. Cuenta cuántos LEDs viste y guarda ese número. Esto sustituye al diálogo de OpenRGB y persiste en la config local.
+            {t('rgb.calibratorHelp')}
           </div>
 
           {targets.length === 0 && (
-            <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>No hay zonas redimensionables detectadas.</div>
+            <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>{t('rgb.noResizable')}</div>
           )}
 
           {targets.map(({ device, zone }) => {
@@ -754,11 +762,11 @@ function CalibratorModal({
               }}>
                 <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text }}>{device.name} → {zone.name}</div>
                 <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 3, letterSpacing: 1 }}>
-                  RANGO {zone.ledsMin}–{zone.ledsMax} · ACTUAL {zone.ledCount}{saved ? ` · GUARDADO ${saved}` : ''}
+                  {t('rgb.range', { min: zone.ledsMin, max: zone.ledsMax, cur: zone.ledCount })}{saved ? t('rgb.saved', { n: saved }) : ''}
                 </div>
                 {hint && (
                   <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.warning, marginTop: 4 }}>
-                    ◆ Sugerencia: {hint.note}
+                    {t('rgb.suggestion', { note: t(hint.note) })}
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
@@ -788,11 +796,11 @@ function CalibratorModal({
                   <button
                     onClick={() => onSweep(device.id, zone.id, value)}
                     style={{ ...btnSecondary, borderColor: accent, color: accent }}
-                  >IDENTIFICAR</button>
+                  >{t('rgb.identify')}</button>
                   <button
                     onClick={() => onCommit(device.name, device.id, zone.id, zone.name, value)}
                     style={{ ...btnPrimary, background: accent, color: '#000', borderColor: accent }}
-                  >GUARDAR</button>
+                  >{t('rgb.save')}</button>
                 </div>
               </div>
             );
