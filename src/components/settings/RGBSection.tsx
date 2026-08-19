@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { VDTokens } from '../../design';
 import { useTheme } from '../../utils/theme';
+import { useT } from '../../utils/i18n';
 import type { RGBSettings, RGBStatus } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 
@@ -12,6 +12,7 @@ export function RGBSection({
   status: RGBStatus | null;
   onChange: (next: RGBSettings) => void;
 }) {
+  const t = useT();
   const VD = useTheme();
   const inputStyleSettings = estiloEntradaAjustes(VD);
   const miniBtnSettings = (c: string) => estiloBotonMiniAjustes(VD, c);
@@ -45,14 +46,14 @@ export function RGBSection({
 
   return (
     <div>
-      <SettingLabel>RGB (OPENRGB)</SettingLabel>
+      <SettingLabel>{t('set.rgb')}</SettingLabel>
       <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <ToggleRow label="HABILITADO" value={config.enabled} accent={accent} onClick={setEnabled} />
-        <ToggleRow label="LANZAR OPENRGB AL ARRANCAR" value={config.spawnOnStart} accent={accent} onClick={setSpawn} />
-        <ToggleRow label="AUTOCONECTAR" value={config.autoConnect} accent={accent} onClick={setAuto} />
+        <ToggleRow label={t('set.enabled')} value={config.enabled} accent={accent} onClick={setEnabled} />
+        <ToggleRow label={t('set.rgbSpawn')} value={config.spawnOnStart} accent={accent} onClick={setSpawn} />
+        <ToggleRow label={t('set.rgbAuto')} value={config.autoConnect} accent={accent} onClick={setAuto} />
 
         <div>
-          <SettingLabel>RUTA OPENRGB.EXE</SettingLabel>
+          <SettingLabel>{t('set.rgbPath')}</SettingLabel>
           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
             <input
               value={config.openrgbPath ?? ''}
@@ -75,7 +76,7 @@ export function RGBSection({
             />
           </div>
           <div style={{ width: 70 }}>
-            <SettingLabel>PUERTO</SettingLabel>
+            <SettingLabel>{t('ui.port')}</SettingLabel>
             <input
               type="number"
               value={config.port}

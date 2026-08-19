@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useEffect, useRef, useState } from 'react';
 import { MainB } from './screens/MainB';
 import { FullscreenB } from './screens/FullscreenB';
 import { EditorB } from './screens/EditorB';
@@ -8,7 +8,7 @@ import { BarConfigB } from './screens/BarConfigB';
 import { SearchOverlay } from './components/SearchOverlay';
 import { Onboarding } from './components/Onboarding';
 import { NowPlayingProvider } from './utils/nowPlaying';
-import { LanguageProvider, useT } from './utils/i18n';
+import { LanguageProvider, useT, makeT, resolveLang } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { runActionSequence, executeAction } from './utils/actions';
@@ -235,6 +235,12 @@ export default function App() {
     showUndoToast(`↶ Se deshizo: ${last.label}`);
   }, [api, showUndoToast]);
 
+  // Traductor propio y no `useT()`: `App` *renderiza* el proveedor de idioma,
+  // asi que su cuerpo queda fuera del contexto y el hook devolveria siempre el
+  // idioma por defecto. Con esto los errores de accion salen en el idioma que
+  // el usuario eligio, tambien cuando el boton se dispara desde el tray.
+  const t = useMemo(() => makeT(resolveLang(config.language)), [config.language]);
+
   const saveConfig = useCallback((next: DeckConfig) => {
     setConfig((prev) => {
       historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: 'Cambio de configuración' }];
@@ -251,7 +257,7 @@ export default function App() {
   }, [withHistory]);
 
   const duplicateButton = useCallback((id: string) => {
-    withHistory('duplicar botón', (prev) => {
+    withHistory(t('undo.duplicate'), (prev) => {
       const src = prev.buttons.find((b) => b.id === id);
       if (!src) return prev;
       const emptySlot = prev.buttons.find((b) =>
@@ -269,7 +275,7 @@ export default function App() {
   }, [withHistory]);
 
   const clearButton = useCallback((id: string) => {
-    withHistory('limpiar botón', (prev) => ({
+    withHistory(t('undo.clear'), (prev) => ({
       ...prev,
       buttons: prev.buttons.map((b) => b.id === id
         ? { id: b.id, page: b.page, label: '', icon: '', action: { type: 'none' as ActionType } }
@@ -329,7 +335,7 @@ export default function App() {
   }, [withHistory]);
 
   const addPage = useCallback(() => {
-    withHistory('agregar página', (prev) => {
+    withHistory(t('undo.addPage'), (prev) => {
       if (prev.pages.length >= 8) return prev;
       const newIdx = prev.pages.length;
       const newPage: PageConfig = { id: `page_${Date.now()}`, name: `PÁGINA ${newIdx + 1}` };
@@ -343,7 +349,7 @@ export default function App() {
   }, [withHistory]);
 
   const deletePage = useCallback((id: string) => {
-    withHistory('eliminar página', (prev) => {
+    withHistory(t('undo.delPage'), (prev) => {
       if (prev.pages.length <= 1) return prev;
       const pageIdx = prev.pages.findIndex((p) => p.id === id);
       if (pageIdx < 0) return prev;
@@ -407,7 +413,7 @@ export default function App() {
 
   // Reorder pages by drag-and-drop
   const reorderPages = useCallback((fromIdx: number, toIdx: number) => {
-    withHistory('reordenar páginas', (prev) => {
+    withHistory(t('undo.movePage'), (prev) => {
       if (fromIdx === toIdx) return prev;
       const pages = [...prev.pages];
       const [moved] = pages.splice(fromIdx, 1);
@@ -486,7 +492,7 @@ export default function App() {
     if (!raw || typeof raw !== 'object') return;
     const imported = raw as { page?: PageConfig; buttons?: ButtonConfig[] };
     if (!imported.page || !Array.isArray(imported.buttons)) return;
-    withHistory('importar página', (prev) => {
+    withHistory(t('undo.importPage'), (prev) => {
       const newIdx = prev.pages.length;
       const newPage: PageConfig = { ...imported.page!, id: `page_${Date.now()}`, name: (imported.page!.name ?? 'IMPORTADA').toUpperCase() };
       const newButtons: ButtonConfig[] = (imported.buttons ?? []).map((b, i) => ({
@@ -550,14 +556,14 @@ export default function App() {
         const wasToggled = toggledIds.has(btn.id);
         handleToggle(btn.id);
         if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-          const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles);
+          const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t);
           if (r.stateUpdate) updateState(r.stateUpdate as Record<string, string>);
           return;
         }
       }
       const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
       const baseState = config.state ?? {};
-      const r = await runActionSequence(actionsToRun, api, baseState, undefined, config.rgb?.profiles);
+      const r = await runActionSequence(actionsToRun, api, baseState, undefined, config.rgb?.profiles, t);
       const newKeys = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== baseState[k]);
       if (newKeys.length > 0) {
         const update: Record<string, string> = {};

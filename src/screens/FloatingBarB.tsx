@@ -65,7 +65,7 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
     if (!api) return;
     setEjecutando((prev) => new Set(prev).add(btn.id));
     try {
-      await executeAction(btn.action, api, config.state ?? {}, config.rgb?.profiles ?? []);
+      await executeAction(btn.action, api, config.state ?? {}, config.rgb?.profiles ?? [], t);
     } finally {
       setEjecutando((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }

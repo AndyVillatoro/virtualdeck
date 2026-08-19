@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { VDTokens } from '../../design';
 import { useTheme } from '../../utils/theme';
+import { useT } from '../../utils/i18n';
 import type { SensorsSettings, SensorsStatus, SensorCategory } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 
@@ -21,6 +21,7 @@ export function SensorsSection({
   status: SensorsStatus | null;
   onChange: (next: SensorsSettings) => void;
 }) {
+  const t = useT();
   const VD = useTheme();
   const inputStyleSettings = estiloEntradaAjustes(VD);
   const miniBtnSettings = (c: string) => estiloBotonMiniAjustes(VD, c);
@@ -89,15 +90,15 @@ export function SensorsSection({
 
   return (
     <div>
-      <SettingLabel>SENSORES (LIBRE HARDWARE MONITOR)</SettingLabel>
+      <SettingLabel>{t('set.sensors')}</SettingLabel>
       <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <ToggleRow label="HABILITADO" value={config.enabled} accent={accent} onClick={setEnabled} />
-        <ToggleRow label="MOSTRAR WIDGET DE SENSORES" value={config.showWidget ?? true} accent={accent} onClick={() => onChange({ ...config, showWidget: !(config.showWidget ?? true) })} />
-        <ToggleRow label="INICIAR LHM CON VIRTUALDECK" value={!!config.spawnOnStart} accent={accent} onClick={setSpawn} />
-        <ToggleRow label="INICIAR LHM COMO ADMINISTRADOR (UAC)" value={!!config.spawnElevated} accent={accent} onClick={() => onChange({ ...config, spawnElevated: !config.spawnElevated })} />
+        <ToggleRow label={t('set.enabled')} value={config.enabled} accent={accent} onClick={setEnabled} />
+        <ToggleRow label={t('set.sensorWidget')} value={config.showWidget ?? true} accent={accent} onClick={() => onChange({ ...config, showWidget: !(config.showWidget ?? true) })} />
+        <ToggleRow label={t('set.lhmStart')} value={!!config.spawnOnStart} accent={accent} onClick={setSpawn} />
+        <ToggleRow label={t('set.lhmAdmin')} value={!!config.spawnElevated} accent={accent} onClick={() => onChange({ ...config, spawnElevated: !config.spawnElevated })} />
 
         <div>
-          <SettingLabel>RUTA LHM (vacío = bundled)</SettingLabel>
+          <SettingLabel>{t('set.lhmPath')}</SettingLabel>
           <input
             value={config.lhmPath ?? ''}
             onChange={(e) => onChange({ ...config, lhmPath: e.target.value })}
@@ -117,7 +118,7 @@ export function SensorsSection({
             />
           </div>
           <div style={{ width: 70 }}>
-            <SettingLabel>PUERTO</SettingLabel>
+            <SettingLabel>{t('ui.port')}</SettingLabel>
             <input
               type="number"
               value={config.port}
@@ -128,7 +129,7 @@ export function SensorsSection({
         </div>
 
         <div>
-          <SettingLabel>CATEGORÍAS VISIBLES</SettingLabel>
+          <SettingLabel>{t('set.categories')}</SettingLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
             {SENSOR_CATEGORIES.map((c) => {
               const on = enabledCats.has(c.id);
@@ -165,7 +166,7 @@ export function SensorsSection({
           <button
             onClick={registerAcl}
             disabled={registeringAcl}
-            title="Registra una reserva URL ACL en Windows (1 sola UAC). Después LHM puede correr sin admin."
+            title={t('set.urlAcl')}
             style={miniBtnSettings(accent)}
           >
             {registeringAcl ? 'REGISTRANDO...' : 'REGISTRAR URL ACL'}

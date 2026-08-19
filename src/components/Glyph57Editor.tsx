@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import type { VDTokens } from '../design';
 import { GLYPHS_5x7 } from '../design';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
 
 interface Glyph57EditorProps {
@@ -18,6 +18,7 @@ const EMPTY: number[] = [0, 0, 0, 0, 0, 0, 0];
 // que GLYPHS_5x7 en design.ts. El usuario dibuja → guardamos 7 enteros y
 // ButtonCell lo renderiza como puntos (firma del producto).
 export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57EditorProps) {
+  const t = useT();
   const VD = useTheme();
   const [rows, setRows] = useState<number[]>(() => initial && initial.length === 7 ? [...initial] : [...EMPTY]);
 
@@ -65,7 +66,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: accent }} />
-          <DotLabel size={11} color={VD.text} spacing={2}>EDITOR DE GLIFO 5×7</DotLabel>
+          <DotLabel size={11} color={VD.text} spacing={2}>{t('glyph.title')}</DotLabel>
           <div style={{ flex: 1 }} />
           <button
             onClick={onClose}
@@ -133,7 +134,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
               fontFamily: VD.mono, fontSize: 9, color: VD.textDim, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1,
             }}
-          >LIMPIAR</button>
+          >{t('ui.clear')}</button>
           <button
             onClick={() => setAll(31)}
             style={{
@@ -142,7 +143,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
               fontFamily: VD.mono, fontSize: 9, color: VD.textDim, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1,
             }}
-          >RELLENAR</button>
+          >{t('ui.fill')}</button>
           <button
             onClick={() => { onSave(rows); onClose(); }}
             style={{
@@ -151,7 +152,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
               fontFamily: VD.mono, fontSize: 9, color: accent, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1,
             }}
-          >GUARDAR ✓</button>
+          >{t('ui.save')}</button>
         </div>
 
         {rows.every((r) => r === 0) && (

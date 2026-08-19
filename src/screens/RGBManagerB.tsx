@@ -303,7 +303,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     }}>
       <TitleBar accent={accent} pageName="RGB MANAGER" showControls={false} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: `1px solid ${VD.border}`, background: VD.surface, flexShrink: 0 }}>
-        <button onClick={onBack} style={btnSecondary}>← VOLVER</button>
+        <button onClick={onBack} style={btnSecondary}>{t('ui.back')}</button>
         <div style={{ flex: 1 }} />
         <StatusBadge status={status} accent={accent} />
         {status.connected ? (
@@ -334,7 +334,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
           padding: '10px 16px', borderBottom: `1px solid ${VD.border}`, background: 'rgba(212,162,52,0.08)',
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
-          <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, letterSpacing: 1 }}>⚠ CALIBRACIÓN PENDIENTE</span>
+          <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, letterSpacing: 1 }}>{t('rgb.calibPending')}</span>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim }}>
             {uncalibratedCount} {uncalibratedCount === 1 ? 'zona ARGB' : 'zonas ARGB'} sin tamaño guardado.
           </span>

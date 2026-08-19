@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
 
 // HSV/HEX helpers — duplicados a propósito de BrandIconEditor para que este

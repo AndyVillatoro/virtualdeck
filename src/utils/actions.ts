@@ -1,4 +1,13 @@
 import type { ButtonAction, DeckConfig, ElectronAPI, RGBProfile } from '../types';
+import { makeT, type TFunc } from './i18n';
+
+/**
+ * Traductor por defecto: español.
+ *
+ * Solo se usa si alguien llama sin pasar el suyo. Las pantallas pasan el de
+ * `useT()`, que sigue el idioma elegido.
+ */
+const T_POR_DEFECTO = makeT('es');
 
 export interface ActionResult {
   ok: boolean;
@@ -19,33 +28,33 @@ export function interpolate(template: string | undefined, state: Record<string, 
   return template.replace(/\{(\w+)\}/g, (_, key) => state[key] ?? '');
 }
 
-function actionLabel(a: ButtonAction): string {
+function actionLabel(a: ButtonAction, t: TFunc): string {
   switch (a.type) {
-    case 'app':         return a.appPath ? `App "${a.appPath.split(/[\\/]/).pop()}"` : 'App';
-    case 'web':         return a.url ? `Abrir ${a.url}` : 'Abrir URL';
-    case 'shortcut':    return a.shortcutPath ? `Acceso "${a.shortcutPath.split(/[\\/]/).pop()}"` : 'Acceso directo';
-    case 'audio-device':return a.deviceName ? `Audio "${a.deviceName}"` : 'Cambiar audio';
-    case 'hotkey':      return a.hotkey ? `Atajo ${a.hotkey}` : 'Atajo';
-    case 'brightness':  return `Brillo ${a.brightnessLevel ?? 0}%`;
-    case 'clipboard':   return 'Copiar al portapapeles';
-    case 'type-text':   return 'Escribir texto';
-    case 'kill-process':return a.processName ? `Cerrar "${a.processName}"` : 'Cerrar proceso';
-    case 'volume-set':  return `Volumen ${a.volumePercent ?? 0}%`;
-    case 'notify':      return 'Notificación';
+    case 'app':         return a.appPath ? `${t('act.lbl.app')} "${a.appPath.split(/[\\/]/).pop()}"` : t('act.lbl.app');
+    case 'web':         return a.url ? `${t('act.lbl.open')} ${a.url}` : t('act.lbl.web');
+    case 'shortcut':    return a.shortcutPath ? `${t('act.lbl.shortcut')} "${a.shortcutPath.split(/[\\/]/).pop()}"` : t('act.lbl.shortcut');
+    case 'audio-device':return a.deviceName ? `${t('act.lbl.audio')} "${a.deviceName}"` : t('act.lbl.audio');
+    case 'hotkey':      return a.hotkey ? `${t('act.lbl.hotkey')} ${a.hotkey}` : t('act.lbl.hotkey');
+    case 'brightness':  return `${t('act.lbl.brightness')} ${a.brightnessLevel ?? 0}%`;
+    case 'clipboard':   return t('act.lbl.clipboard');
+    case 'type-text':   return t('act.lbl.type');
+    case 'kill-process':return a.processName ? `${t('act.lbl.kill')} "${a.processName}"` : t('act.lbl.kill');
+    case 'volume-set':  return `${t('act.lbl.volume')} ${a.volumePercent ?? 0}%`;
+    case 'notify':      return t('act.lbl.notify');
     case 'set-var':     return `Set ${a.varName}=${a.varValue}`;
     case 'incr-var':    return `Incr ${a.varName} ${a.varDelta && a.varDelta >= 0 ? '+' : ''}${a.varDelta}`;
-    case 'webhook':     return a.webhookUrl ? `Webhook ${a.webhookMethod ?? 'GET'} ${a.webhookUrl}` : 'Webhook';
-    case 'tts':         return 'Texto-a-voz';
-    case 'region-capture': return 'Captura de región';
+    case 'webhook':     return a.webhookUrl ? `Webhook ${a.webhookMethod ?? 'GET'} ${a.webhookUrl}` : t('act.lbl.webhook');
+    case 'tts':         return t('act.lbl.tts');
+    case 'region-capture': return t('act.lbl.capture');
     case 'rgb-color':   return `RGB color ${a.rgbColor ?? ''}`.trim();
-    case 'rgb-mode':    return a.rgbMode ? `RGB modo "${a.rgbMode}"` : 'RGB modo';
-    case 'rgb-profile': return a.rgbProfileName ? `RGB perfil "${a.rgbProfileName}"` : 'RGB perfil';
-    case 'rgb-preset':   return a.rgbPresetId ? `RGB preset "${a.rgbPresetId}"` : 'RGB preset';
-    case 'window-snap':    return a.snapPosition ? `Snap ${a.snapPosition}` : 'Window snap';
+    case 'rgb-mode':    return a.rgbMode ? `${t('act.lbl.rgbMode')} "${a.rgbMode}"` : t('act.lbl.rgbMode');
+    case 'rgb-profile': return a.rgbProfileName ? `${t('act.lbl.rgbProfile')} "${a.rgbProfileName}"` : t('act.lbl.rgbProfile');
+    case 'rgb-preset':   return a.rgbPresetId ? `${t('act.lbl.rgbPreset')} "${a.rgbPresetId}"` : t('act.lbl.rgbPreset');
+    case 'window-snap':    return a.snapPosition ? `Snap ${a.snapPosition}` : t('act.lbl.snap');
     case 'branch':         return `If {${a.branchVar ?? '?'}} ${a.branchOp ?? '=='} "${a.branchValue ?? ''}"`;
-    case 'media-shuffle':  return 'Toggle shuffle';
-    case 'media-repeat':   return 'Ciclar repetición';
-    case 'macro':          return `Macro (${a.macroSteps?.length ?? 0} pasos)`;
+    case 'media-shuffle':  return t('act.lbl.shuffle');
+    case 'media-repeat':   return t('act.lbl.repeat');
+    case 'macro':          return `${t('act.lbl.macro', { n: a.macroSteps?.length ?? 0 })}`;
     default:               return a.type;
   }
 }
@@ -55,78 +64,79 @@ export async function executeAction(
   api: ElectronAPI,
   state?: Record<string, string>,
   rgbProfiles?: RGBProfile[],
+  t: TFunc = T_POR_DEFECTO,
 ): Promise<ActionResult> {
   try {
     switch (action.type) {
       case 'app': {
         const path = interpolate(action.appPath, state);
-        if (!path) return fail('Falta la ruta del programa.');
+        if (!path) return fail(t('act.err.noAppPath'));
         const args = interpolate(action.appArgs, state).split(' ').filter(Boolean);
         const ok = await api.launch.app(path, args);
-        return ok ? OK : fail(`No se pudo iniciar: ${actionLabel(action)}. Verifica la ruta.`);
+        return ok ? OK : fail(t('act.err.launch', { que: actionLabel(action, t) }));
       }
       case 'web': {
         const url = interpolate(action.url, state);
-        if (!url) return fail('Falta la URL.');
+        if (!url) return fail(t('act.err.noUrl'));
         const ok = await api.launch.url(url);
-        return ok ? OK : fail(`No se pudo abrir: ${url}`);
+        return ok ? OK : fail(t('act.err.openUrl', { url }));
       }
       case 'shortcut': {
         const path = interpolate(action.shortcutPath, state);
-        if (!path) return fail('Falta el acceso directo.');
+        if (!path) return fail(t('act.err.noShortcut'));
         const ok = await api.launch.shortcut(path);
-        return ok ? OK : fail(`No se pudo abrir el acceso directo.`);
+        return ok ? OK : fail(t('act.err.shortcut'));
       }
       case 'audio-device': {
-        if (!action.deviceId && !action.deviceName) return fail('Falta el dispositivo de audio.');
+        if (!action.deviceId && !action.deviceName) return fail(t('act.err.noDevice'));
         let deviceId = action.deviceId;
         if (!deviceId && action.deviceName) {
           const devices = await api.audio.list();
           const match = devices.find((d) => d.name.toLowerCase() === action.deviceName!.toLowerCase())
             ?? devices.find((d) => d.name.toLowerCase().includes(action.deviceName!.toLowerCase()));
-          if (!match) return fail(`Dispositivo "${action.deviceName}" no encontrado. Verifica el nombre en Configuración → Sonido.`);
+          if (!match) return fail(t('act.err.deviceNotFound', { name: action.deviceName ?? '' }));
           deviceId = match.id;
         }
         const ok = await api.audio.setDefault(deviceId!);
-        return ok ? OK : fail(`No se pudo cambiar el audio a "${action.deviceName ?? deviceId}".`);
+        return ok ? OK : fail(t('act.err.switchAudio', { name: action.deviceName ?? deviceId }));
       }
       case 'hotkey': {
-        if (!action.hotkey) return fail('Falta la combinación de teclas.');
+        if (!action.hotkey) return fail(t('act.err.noHotkey'));
         const ok = await api.launch.hotkey(action.hotkey);
-        return ok ? OK : fail(`No se pudo enviar el atajo ${action.hotkey}.`);
+        return ok ? OK : fail(t('act.err.hotkey', { hotkey: action.hotkey ?? '' }));
       }
       case 'brightness': {
-        if (action.brightnessLevel === undefined) return fail('Falta el nivel de brillo.');
+        if (action.brightnessLevel === undefined) return fail(t('act.err.noBrightness'));
         const ok = await api.launch.brightness(action.brightnessLevel);
-        return ok ? OK : fail('No se pudo ajustar el brillo (¿monitor sin soporte WMI?).');
+        return ok ? OK : fail(t('act.err.brightness'));
       }
       case 'clipboard': {
         const text = interpolate(action.clipboardText, state);
-        if (!text) return fail('Falta el texto a copiar.');
+        if (!text) return fail(t('act.err.noClipText'));
         const ok = await api.launch.clipboard(text);
-        return ok ? OK : fail('No se pudo copiar al portapapeles.');
+        return ok ? OK : fail(t('act.err.clipboard'));
       }
       case 'type-text': {
         const text = interpolate(action.typeText, state);
-        if (!text) return fail('Falta el texto a escribir.');
+        if (!text) return fail(t('act.err.noTypeText'));
         const ok = await api.launch.typeText(text);
-        return ok ? OK : fail('No se pudo escribir el texto.');
+        return ok ? OK : fail(t('act.err.type'));
       }
       case 'kill-process': {
-        if (!action.processName) return fail('Falta el nombre del proceso.');
+        if (!action.processName) return fail(t('act.err.noProcess'));
         const ok = await api.launch.killProcess(action.processName);
-        return ok ? OK : fail(`No se pudo cerrar "${action.processName}". ¿Está activo?`);
+        return ok ? OK : fail(t('act.err.kill', { name: action.processName ?? '' }));
       }
       case 'volume-set': {
-        if (action.volumePercent === undefined) return fail('Falta el nivel de volumen.');
+        if (action.volumePercent === undefined) return fail(t('act.err.noVolume'));
         const ok = await api.launch.setVolume(action.volumePercent);
-        return ok ? OK : fail('No se pudo ajustar el volumen.');
+        return ok ? OK : fail(t('act.err.volume'));
       }
       case 'notify': {
         const title = interpolate(action.notifyTitle, state) || 'VirtualDeck';
         const body = interpolate(action.notifyBody, state);
         const ok = await api.notify.show(title, body);
-        return ok ? OK : fail('No se pudo mostrar la notificación.');
+        return ok ? OK : fail(t('act.err.notify'));
       }
       case 'media-play-pause':
       case 'media-next':
@@ -136,37 +146,37 @@ export async function executeAction(
                   : action.type === 'media-next'       ? 'next'
                   : 'prev';
         const ok = await api.media.control(cmd);
-        return ok ? OK : fail(`No se pudo enviar el control de media (${cmd}).`);
+        return ok ? OK : fail(t('act.err.media', { cmd }));
       }
       case 'media-shuffle': {
         const ok = await api.media.shuffle();
-        return ok ? OK : fail('No se pudo alternar shuffle (¿hay un reproductor activo?).');
+        return ok ? OK : fail(t('act.err.shuffle'));
       }
       case 'media-repeat': {
         const ok = await api.media.repeat();
-        return ok ? OK : fail('No se pudo cambiar el modo de repetición.');
+        return ok ? OK : fail(t('act.err.repeat'));
       }
       case 'macro': {
-        if (!action.macroSteps || action.macroSteps.length === 0) return fail('La macro no tiene pasos.');
+        if (!action.macroSteps || action.macroSteps.length === 0) return fail(t('act.err.macroEmpty'));
         const r = await api.macro.play(action.macroSteps, action.macroRepeat ?? 1);
-        return r.ok ? OK : fail(r.error ?? 'La macro falló.');
+        return r.ok ? OK : fail(r.error ?? t('act.err.macro'));
       }
       case 'volume-up':
       case 'volume-down':
       case 'mute': {
         // Volumen y mute siguen por SendKeys — no hay equivalente SMTC.
         const ok = await api.launch.mediaKey(action.type);
-        return ok ? OK : fail(`No se pudo enviar la tecla multimedia (${action.type}).`);
+        return ok ? OK : fail(t('act.err.mediaKey', { tipo: action.type }));
       }
 
       // 1.2 — Variables
       case 'set-var': {
-        if (!action.varName) return fail('Falta nombre de variable.');
+        if (!action.varName) return fail(t('act.err.noVar'));
         const value = interpolate(action.varValue ?? '', state);
         return { ok: true, stateUpdate: { [action.varName]: value } };
       }
       case 'incr-var': {
-        if (!action.varName) return fail('Falta nombre de variable.');
+        if (!action.varName) return fail(t('act.err.noVar'));
         const delta = action.varDelta ?? 1;
         const current = parseFloat(state?.[action.varName] ?? '0') || 0;
         const next = (current + delta).toString();
@@ -176,82 +186,82 @@ export async function executeAction(
       // 1.5 — Webhook (HTTP)
       case 'webhook': {
         const url = interpolate(action.webhookUrl, state);
-        if (!url) return fail('Falta la URL del webhook.');
+        if (!url) return fail(t('act.err.noWebhookUrl'));
         const method = action.webhookMethod ?? 'POST';
         let headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (action.webhookHeaders) {
           try {
             const parsed = JSON.parse(interpolate(action.webhookHeaders, state));
             if (parsed && typeof parsed === 'object') headers = { ...headers, ...parsed };
-          } catch { return fail('Headers inválidos (JSON malformado).'); }
+          } catch { return fail(t('act.err.headers')); }
         }
         const body = method === 'GET' ? undefined : interpolate(action.webhookBody, state);
         try {
           const res = await fetch(url, { method, headers, body });
-          if (!res.ok) return fail(`Webhook ${method} ${url} → ${res.status} ${res.statusText}`);
+          if (!res.ok) return fail(t('act.err.webhookStatus', { method, url, status: res.status, statusText: res.statusText }));
           return OK;
         } catch (e) {
-          return fail(`Webhook falló: ${(e as Error).message}`);
+          return fail(t('act.err.webhook', { msg: (e as Error).message }));
         }
       }
 
       // 1.5 — TTS (PowerShell SpeechSynthesizer)
       case 'tts': {
         const text = interpolate(action.ttsText, state);
-        if (!text) return fail('Falta el texto a leer.');
+        if (!text) return fail(t('act.err.noTtsText'));
         const escaped = text.replace(/'/g, "''");
         const ps = `Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('${escaped}')`;
         const ok = await api.launch.script(ps, 'powershell');
-        return ok ? OK : fail('No se pudo reproducir el texto-a-voz.');
+        return ok ? OK : fail(t('act.err.tts'));
       }
 
       // 1.5 — Captura de región (lanza la herramienta nativa de Windows)
       case 'region-capture': {
         const ok = await api.launch.url('ms-screenclip:');
-        return ok ? OK : fail('No se pudo abrir la herramienta de captura.');
+        return ok ? OK : fail(t('act.err.capture'));
       }
 
       // 2.x — RGB (OpenRGB)
       case 'rgb-color': {
-        if (!action.rgbColor) return fail('Falta el color RGB.');
+        if (!action.rgbColor) return fail(t('act.err.noRgbColor'));
         const id = action.rgbDeviceId ?? -1;
         // `true` = duradero. Un botón de color quiere decir "deja las luces
         // así", no "así mientras VirtualDeck esté abierto": ver setDeviceColor
         // en electron/main/rgb.ts.
         const ok = await api.rgb.setDeviceColor(id, action.rgbColor, true);
-        return ok ? OK : fail('No se pudo aplicar el color RGB (¿OpenRGB conectado?).');
+        return ok ? OK : fail(t('act.err.rgbColor'));
       }
       case 'rgb-mode': {
-        if (!action.rgbMode) return fail('Falta el modo RGB.');
+        if (!action.rgbMode) return fail(t('act.err.noRgbMode'));
         const id = action.rgbDeviceId ?? -1;
         const ok = await api.rgb.setMode(id, action.rgbMode, action.rgbColor, action.rgbBrightness);
-        return ok ? OK : fail(`No se pudo aplicar el modo "${action.rgbMode}".`);
+        return ok ? OK : fail(t('act.err.rgbMode', { modo: action.rgbMode ?? '' }));
       }
       case 'rgb-profile': {
-        if (!action.rgbProfileName) return fail('Falta el nombre del perfil RGB.');
+        if (!action.rgbProfileName) return fail(t('act.err.noRgbProfile'));
         const prof = rgbProfiles?.find((p) => p.name === action.rgbProfileName);
-        if (!prof) return fail(`Perfil RGB "${action.rgbProfileName}" no existe.`);
+        if (!prof) return fail(t('act.err.rgbProfileMissing', { name: action.rgbProfileName ?? '' }));
         const ok = await api.rgb.applyProfile(prof);
-        return ok ? OK : fail('No se pudo aplicar el perfil RGB.');
+        return ok ? OK : fail(t('act.err.rgbProfile'));
       }
       case 'rgb-preset': {
-        if (!action.rgbPresetId) return fail('Falta el ID del preset RGB.');
+        if (!action.rgbPresetId) return fail(t('act.err.noRgbPreset'));
         const ok = await api.rgb.smartPreset(action.rgbPresetId);
-        return ok ? OK : fail(`No se pudo aplicar el preset "${action.rgbPresetId}" (¿OpenRGB conectado?).`);
+        return ok ? OK : fail(t('act.err.rgbPreset', { id: action.rgbPresetId ?? '' }));
       }
 
       // 3.x — Window snap
       case 'window-snap': {
-        if (!action.snapPosition) return fail('Falta la posición de snap.');
+        if (!action.snapPosition) return fail(t('act.err.noSnap'));
         const ok = await api.launch.snapWindow(action.snapPosition, action.snapProcessName);
-        return ok ? OK : fail(`No se pudo snapear la ventana (¿proceso no encontrado?).`);
+        return ok ? OK : fail(t('act.err.snap'));
       }
 
       // 'script', 'folder' y 'branch' los maneja el caller
       default: return OK;
     }
   } catch (e) {
-    return fail(`Error inesperado en ${actionLabel(action)}: ${(e as Error).message ?? e}`);
+    return fail(t('act.err.unexpected', { que: actionLabel(action, t), msg: String((e as Error).message ?? e) }));
   }
 }
 
@@ -286,6 +296,7 @@ export async function runActionSequence(
     runScript: (script: string, shell?: 'powershell' | 'cmd') => Promise<{ ok: boolean; output?: string; error?: string }>;
   },
   rgbProfiles?: RGBProfile[],
+  t: TFunc = T_POR_DEFECTO,
 ): Promise<RunSequenceResult> {
   const merged: Record<string, string> = { ...state };
   let lastOk = true;
@@ -302,11 +313,11 @@ export async function runActionSequence(
         if (!scriptHooks) {
           // Fallback básico — sin captura
           const ok = await api.launch.script(a.script, a.scriptShell);
-          res = ok ? OK : fail('El script terminó con error.');
+          res = ok ? OK : fail(t('act.err.script'));
         } else {
           const r2 = await scriptHooks.runScript(a.script, a.scriptShell);
           if (!r2.ok) {
-            res = fail(r2.error ?? 'El script terminó con error.');
+            res = fail(r2.error ?? t('act.err.script'));
           } else if (a.captureToVar && r2.output !== undefined) {
             res = { ok: true, stateUpdate: { [a.captureToVar]: r2.output.trim() } };
           } else {
@@ -317,9 +328,9 @@ export async function runActionSequence(
         const delay = a.timerDelay ?? 1000;
         await new Promise<void>((resolve) => setTimeout(resolve, delay));
         if (a.timerActions && a.timerActions.length > 0) {
-          const sub = await runActionSequence(a.timerActions, api, { ...merged }, scriptHooks, rgbProfiles);
+          const sub = await runActionSequence(a.timerActions, api, { ...merged }, scriptHooks, rgbProfiles, t);
           Object.assign(merged, sub.stateUpdate);
-          res = sub.ok ? OK : fail(sub.error ?? 'Countdown sub-acción falló.');
+          res = sub.ok ? OK : fail(sub.error ?? t('act.err.countdown'));
         } else {
           res = OK;
         }
@@ -331,14 +342,14 @@ export async function runActionSequence(
         const condTrue = evaluateBranch(varVal, a.branchOp ?? '==', compareVal);
         const subActions = condTrue ? (a.branchThen ?? []) : (a.branchElse ?? []);
         if (subActions.length > 0) {
-          const sub = await runActionSequence(subActions, api, { ...merged }, scriptHooks, rgbProfiles);
+          const sub = await runActionSequence(subActions, api, { ...merged }, scriptHooks, rgbProfiles, t);
           Object.assign(merged, sub.stateUpdate);
           res = sub.ok ? OK : fail(sub.error ?? '');
         } else {
           res = OK;
         }
       } else {
-        res = await executeAction(a, api, merged, rgbProfiles);
+        res = await executeAction(a, api, merged, rgbProfiles, t);
       }
       lastOk = res.ok;
       if (res.stateUpdate) Object.assign(merged, res.stateUpdate);

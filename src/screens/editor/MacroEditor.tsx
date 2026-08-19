@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
+import { useT } from '../../utils/i18n';
 import type { MacroStep, MacroStepType } from '../../types';
 
 const STEP_LABELS: Record<MacroStepType, string> = {
@@ -20,6 +21,7 @@ interface MacroEditorProps {
 }
 
 export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProps) {
+  const t = useT();
   const VD = useTheme();
   const api = window.electronAPI;
   const [recording, setRecording] = useState(false);
@@ -119,7 +121,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
           </span>
         )}
         <div style={{ flex: 1 }} />
-        <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>REPETIR</span>
+        <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{t('ui.repeat')}</span>
         <input
           type="number"
           min={1}
@@ -128,7 +130,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
           onChange={(e) => onChange(steps, parseInt(e.target.value, 10) || 1)}
           style={{ ...inputStyle, width: 44, textAlign: 'center' }}
         />
-        <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>VECES</span>
+        <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{t('ui.times')}</span>
       </div>
 
       {/* Step list */}
@@ -185,9 +187,9 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
                         <>
                           <span style={labelSm(VD)}>BTN</span>
                           <select value={step.button ?? 0} onChange={(e) => updateStep(idx, { button: parseInt(e.target.value, 10) as 0|1|2 })} style={inputStyle}>
-                            <option value={0}>Izq</option>
-                            <option value={1}>Der</option>
-                            <option value={2}>Med</option>
+                            <option value={0}>{t('ui.mouseL')}</option>
+                            <option value={1}>{t('ui.mouseR')}</option>
+                            <option value={2}>{t('ui.mouseM')}</option>
                           </select>
                         </>
                       )}
@@ -195,12 +197,12 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
                   )}
                   {step.type === 'scroll' && (
                     <>
-                      <span style={labelSm(VD)}>UNIDADES</span>
+                      <span style={labelSm(VD)}>{t('ui.units')}</span>
                       <input type="number" value={step.scrollY ?? 3} onChange={(e) => updateStep(idx, { scrollY: parseInt(e.target.value, 10) || 1 })} style={{ ...inputStyle, width: 60 }} />
-                      <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>(+ arriba, − abajo)</span>
+                      <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{t('macro.scrollHint')}</span>
                     </>
                   )}
-                  <span style={labelSm(VD)}>PAUSA</span>
+                  <span style={labelSm(VD)}>{t('ui.pause')}</span>
                   <input
                     type="number" min={0} value={step.delayMs ?? 0}
                     onChange={(e) => updateStep(idx, { delayMs: parseInt(e.target.value, 10) || 0 })}

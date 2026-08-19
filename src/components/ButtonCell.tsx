@@ -1,6 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { Glyph57View } from './Glyph57Editor';
@@ -46,6 +47,7 @@ function ButtonCellInner({
   resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop, onDragEnd,
   showContextMenu = true,
 }: ButtonCellProps) {
+  const t = useT();
   const VD = useTheme();
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -451,7 +453,7 @@ function ButtonCellInner({
         {!isEmpty && (hovered || isTouch) && (
           <div
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            title="Editar botón"
+            title={t('cell.edit')}
             style={{
               position: 'absolute', top: 4, right: 4,
               width: 20, height: 20,
@@ -529,12 +531,12 @@ function ButtonCellInner({
             minWidth: 150,
           }}
         >
-          <ContextItem label="Editar" icon="✎" onClick={() => { setContextMenu(null); onEdit(); }} />
+          <ContextItem label={t('cell.editShort')} icon="✎" onClick={() => { setContextMenu(null); onEdit(); }} />
           {!isEmpty && onDuplicate && (
-            <ContextItem label="Duplicar" icon="⊕" onClick={() => { setContextMenu(null); onDuplicate(); }} />
+            <ContextItem label={t('cell.duplicate')} icon="⊕" onClick={() => { setContextMenu(null); onDuplicate(); }} />
           )}
           {!isEmpty && onClear && (
-            <ContextItem label="Limpiar botón" icon="○" onClick={() => { setContextMenu(null); onClear(); }} danger />
+            <ContextItem label={t('cell.clear')} icon="○" onClick={() => { setContextMenu(null); onClear(); }} danger />
           )}
         </div>
       )}

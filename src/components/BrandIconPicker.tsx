@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
 import { BRAND_ICON_GROUPS, BRAND_ICONS } from '../data/brandIcons';
 import { BrandIconDisplay } from './BrandIconDisplay';
@@ -15,6 +15,7 @@ interface BrandIconPickerProps {
 const ALL_GROUPS = [{ title: 'Todos', items: [] as [string, string, string][] }, ...BRAND_ICON_GROUPS];
 
 export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIconPickerProps) {
+  const t = useT();
   const VD = useTheme();
   const [search, setSearch] = useState('');
   const [groupTitle, setGroupTitle] = useState('Todos');
@@ -55,13 +56,13 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
           display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0,
         }}>
           <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: accent }} />
-          <DotLabel size={10} color={VD.text} spacing={2}>ICONOS DE MARCA ANIMADOS</DotLabel>
+          <DotLabel size={10} color={VD.text} spacing={2}>{t('brand.title')}</DotLabel>
           <div style={{ flex: 1 }} />
           <input
             autoFocus
             value={search}
             onChange={(e) => { setSearch(e.target.value); setGroupTitle('Todos'); }}
-            placeholder="Buscar icono..."
+            placeholder={t('brand.search')}
             style={{
               background: VD.elevated, border: `1px solid ${VD.border}`,
               padding: '4px 10px', color: VD.text, fontFamily: VD.mono, fontSize: 10,
@@ -109,7 +110,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
           {/* "Ninguno" tile */}
           <div
             onClick={() => { onSelect(''); onClose(); }}
-            title="Sin icono de marca"
+            title={t('brand.none')}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center', gap: 5, cursor: 'pointer',
@@ -121,7 +122,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = current === '' ? accent : VD.border; }}
           >
             <div style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: VD.textMuted }}>○</div>
-            <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, letterSpacing: 0.5, textAlign: 'center' }}>NINGUNO</div>
+            <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, letterSpacing: 0.5, textAlign: 'center' }}>{t('ui.none')}</div>
           </div>
 
           {displayed.map((icon) => {
@@ -181,7 +182,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
             padding: '6px 14px', border: `1px solid ${VD.border}`,
             background: 'transparent', fontFamily: VD.mono, fontSize: 9,
             letterSpacing: 1, color: VD.textDim, cursor: 'pointer', borderRadius: VD.radius.sm,
-          }}>CANCELAR</button>
+          }}>{t('ui.cancel')}</button>
         </div>
       </div>
     </div>

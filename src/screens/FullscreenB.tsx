@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward } from '../components/VDIcon';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { DotText } from '../components/DotText';
 import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
@@ -44,6 +45,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // La paleta viene del contexto: importarla fijaba el tema oscuro y esta
   // pantalla se quedaba sin modo claro por completo.
   const VD = useTheme();
+  const t = useT();
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
   const { sensors: sensorList, status: sensorStatus } = useSensors();
@@ -132,7 +134,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
       const wasToggled = toggledIds.has(btn.id);
       handleToggle(btn.id);
       if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-        const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles);
+        const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t);
         if (!r.ok && r.error) setRuntimeError(r.error);
         if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
         return;
@@ -227,7 +229,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
         <span style={{ color: config.accent }}>●</span>
-        <span>VIRTUALDECK · MODO PANTALLA COMPLETA</span>
+        <span>{t('full.title')}</span>
         <div style={{ flex: 1 }} />
         <span>{dayStr} {dateStr}</span>
         <button onClick={enterKiosk} title="Activar modo kiosko (oculta UI, ESC pide PIN)" style={{
@@ -260,7 +262,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           minHeight: 0,
         }}>
           <div>
-            <DotLabel size={8} color={VD.textMuted} spacing={2} style={{ marginBottom: 8, display: 'block' }}>HORA LOCAL</DotLabel>
+            <DotLabel size={8} color={VD.textMuted} spacing={2} style={{ marginBottom: 8, display: 'block' }}>{t('full.clock')}</DotLabel>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
               <DotText text={hours} dotSize={7} gap={2} color={VD.text} />
               <DotText text={minutes} dotSize={7} gap={2} color={VD.textDim} />
@@ -271,7 +273,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           {(config.sensors?.showWidget ?? true) && (
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <DotLabel size={8} color={VD.textMuted} spacing={2}>SENSORES</DotLabel>
+              <DotLabel size={8} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
               <span style={{
                 fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
                 color: sensorStatus?.connected ? VD.success : sensorStatus?.enabled ? VD.warning : VD.textMuted,
@@ -389,7 +391,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
                   color: VD.textDim, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
                 }}
-              >CANCELAR</button>
+              >{t('ui.cancel')}</button>
               <button
                 onClick={submitPin}
                 style={{
@@ -465,7 +467,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
                 </div>
               </>
             ) : (
-              <div style={{ color: VD.textMuted, fontSize: 10, fontFamily: VD.mono, letterSpacing: 1 }}>SIN REPRODUCCIÓN</div>
+              <div style={{ color: VD.textMuted, fontSize: 10, fontFamily: VD.mono, letterSpacing: 1 }}>{t('full.noMedia')}</div>
             )}
           </div>
           <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
@@ -502,7 +504,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column',
           justifyContent: 'center', gap: 2,
         }}>
-          <DotLabel size={7} color={VD.textMuted} spacing={2}>PÁGINA</DotLabel>
+          <DotLabel size={7} color={VD.textMuted} spacing={2}>{t('full.page')}</DotLabel>
           <div style={{ fontFamily: VD.mono, fontSize: 15, color: VD.text, lineHeight: 1 }}>
             {String(activePage + 1).padStart(2, '0')}/{config.pages.length}
           </div>

@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
 import { DotLabel } from './DotLabel';
 import { BrandIconDisplay } from './BrandIconDisplay';

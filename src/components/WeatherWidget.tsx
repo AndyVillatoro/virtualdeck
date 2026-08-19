@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 
 interface WeatherData {
   temp: number;
@@ -48,6 +49,7 @@ export function WeatherWidget() {
   // La paleta viene del contexto, no de la importacion: importarla fijaba
   // el tema oscuro y el modo claro no llegaba a esta pantalla.
   const VD = useTheme();
+  const t = useT();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,9 +92,9 @@ export function WeatherWidget() {
       <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{loading ? '⋯' : error ? '—' : emoji}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         {loading ? (
-          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Cargando clima...</div>
+          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{t('weather.loading')}</div>
         ) : error ? (
-          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Sin datos de clima</div>
+          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{t('weather.none')}</div>
         ) : weather ? (
           <>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>

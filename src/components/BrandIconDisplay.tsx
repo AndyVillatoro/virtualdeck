@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
 import { BRAND_ICONS_MAP, getCachedBrandIconSvg, generateSvgFromBitmap, mergePalette } from '../data/brandIcons';
 

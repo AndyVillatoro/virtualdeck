@@ -156,7 +156,7 @@ export function TitleBar({
               <button onClick={onFloatingBar} title={t('tip.bar')} style={btnStyle}>{t('bar.short')}</button>
             )}
             {onWallpaper && (
-              <button onClick={onWallpaper} style={btnStyle}>FONDO</button>
+              <button onClick={onWallpaper} style={btnStyle}>{t('ui.wallpaper')}</button>
             )}
             {onRGB && (
               <button onClick={onRGB} title={t('tip.rgb')} style={{ ...btnStyle, borderColor: rgbStatus?.connected ? VD.success : VD.border }}>
@@ -210,7 +210,7 @@ export function TitleBar({
         >
           {/* Accent color */}
           <div>
-            <SettingLabel>COLOR DE ACENTO</SettingLabel>
+            <SettingLabel>{t('set.accent')}</SettingLabel>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
               <input
                 type="color"
@@ -230,7 +230,7 @@ export function TitleBar({
           {/* UI Scale */}
           {onUiScaleChange && (
             <div>
-              <SettingLabel>ESCALA DE INTERFAZ</SettingLabel>
+              <SettingLabel>{t('set.scale')}</SettingLabel>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
                 <button
                   onClick={() => onUiScaleChange(Math.max(0.75, uiScale - 0.25))}
@@ -257,7 +257,7 @@ export function TitleBar({
           {/* Tile mode — square keeps StreamDeck aesthetic, fill maximizes cell size */}
           {onTileModeChange && (
             <div>
-              <SettingLabel>FORMA DE LAS CELDAS</SettingLabel>
+              <SettingLabel>{t('set.tiles')}</SettingLabel>
               <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
                 {(['square', 'fill'] as const).map((m) => (
                   <button
@@ -333,11 +333,11 @@ export function TitleBar({
 
           <ToggleRow label={t('settings.autostart')} value={autostart} accent={effectiveAccent} onClick={onAutostartToggle} />
           <ToggleRow label={t('settings.alwaysOnTop')} value={alwaysOnTop} accent={effectiveAccent} onClick={onAlwaysOnTopToggle} />
-          <ToggleRow label="SONIDO AL PRESIONAR" value={soundOnPress} accent={effectiveAccent} onClick={onSoundToggle} />
+          <ToggleRow label={t('set.sound')} value={soundOnPress} accent={effectiveAccent} onClick={onSoundToggle} />
 
           {soundOnPress && (
             <div>
-              <SettingLabel>TIMBRE</SettingLabel>
+              <SettingLabel>{t('set.chime')}</SettingLabel>
               <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
                 {SOUND_PROFILES.map((p) => {
                   const isActive = p.id === soundProfile;
@@ -367,7 +367,7 @@ export function TitleBar({
           {/* 6.1 — Importar perfil desde URL */}
           {onConfigImportFromUrl && (
             <div>
-              <SettingLabel>IMPORTAR DESDE URL</SettingLabel>
+              <SettingLabel>{t('set.importUrl')}</SettingLabel>
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <input
                   value={galleryUrl}
@@ -391,7 +391,7 @@ export function TitleBar({
                     padding: '5px 10px', background: VD.accentBg, border: `1px solid ${effectiveAccent}`,
                     fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
                   }}
-                >IMPORTAR</button>
+                >{t('ui.import')}</button>
               </div>
             </div>
           )}
@@ -424,7 +424,7 @@ export function TitleBar({
 
           {/* Profiles */}
           <div>
-            <SettingLabel>PERFILES</SettingLabel>
+            <SettingLabel>{t('set.profiles')}</SettingLabel>
             <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
               <input
                 value={newProfileName}
@@ -435,7 +435,7 @@ export function TitleBar({
                     setNewProfileName('');
                   }
                 }}
-                placeholder="Nombre del perfil..."
+                placeholder={t('set.profileName')}
                 style={{
                   flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
                   padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
@@ -457,7 +457,7 @@ export function TitleBar({
                 {profiles.map(p => (
                   <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
                     <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                    <button onClick={() => { onLoadProfile?.(p.id); setShowSettings(false); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>CARGAR</button>
+                    <button onClick={() => { onLoadProfile?.(p.id); setShowSettings(false); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('ui.load')}</button>
                     <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
                   </div>
                 ))}

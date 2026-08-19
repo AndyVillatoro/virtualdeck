@@ -13,7 +13,7 @@
 // aquí, y por eso `npm run check` lo ejecuta.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, extname } from 'node:path';
+import { join, extname, sep } from 'node:path';
 
 const RAIZ = 'src';
 const I18N = 'src/utils/i18n.tsx';
@@ -79,6 +79,68 @@ for (const ruta of archivos(RAIZ)) {
   for (const m of fuente.matchAll(/(?<![A-Za-z0-9_])tf\(\s*(['"])((?:(?!\1)[^\\]|\\.)*)\1/g)) {
     const clave = m[2].replace(/\\(['"])/g, '$1');
     if (!CAMPOS.has(clave)) problemas.push(`${ruta}: tf('${clave}') no está en FIELDS_EN — se vería en español`);
+  }
+}
+
+// 4. Texto visible en español que nunca pasó por t() ni tf().
+//
+// Este es el hueco que dejaron los tres primeros: comprueban que cada `t()` y
+// cada `tf()` tenga traducción, y no dicen nada del texto que jamás se
+// envolvió. Se coló así media interfaz —los mensajes de error de las acciones,
+// los ajustes, los menús de página— y lo encontró el usuario, no el build.
+//
+// Es una heurística: marca lo que lleva acentos españoles o dos palabras
+// funcionales seguidas. Lo que no sea idioma (rutas, atajos, marcas) va a
+// PERMITIDOS, que es una lista corta y explícita a propósito: si crece mucho,
+// probablemente la regla esté mal, no el código.
+const PALABRAS_ES = /\b(el|la|los|las|de|del|con|para|por|sin|un|una|que|se|al|y|o|es|son|más|cada|todo|todos|desde|hasta|entre|sobre|clic|botón|página|archivo|nombre|nuevo|nueva|eliminar|guardar|abrir|cerrar|buscar|editar|copiar|pegar|borrar|mostrar|ocultar|activar|habilitado|sonido|ajustes|arrancar|arrastrar|renombrar|exportar|importar|agregar|añadir|seleccionar|configurar|reiniciar|actualizar)\b/gi;
+const ACENTOS = /[áéíóúñÁÉÍÓÚÑ¿¡]/;
+
+// Palabras que solas ya delatan el idioma. Hacen falta porque la regla de "dos
+// palabras funcionales" no ve un botón que pone `FONDO` — y así se quedaron
+// FONDO, CANCELAR, PUERTO, COLUMNAS y una docena más después de dar la
+// traducción por terminada dos veces.
+const PALABRAS_SUELTAS = new Set([
+  'fondo', 'cancelar', 'aceptar', 'guardar', 'cargar', 'importar', 'exportar',
+  'limpiar', 'rellenar', 'puerto', 'columnas', 'filas', 'repetir', 'veces',
+  'unidades', 'pausa', 'ninguno', 'ninguna', 'izquierda', 'derecha', 'arriba',
+  'abajo', 'centrar', 'volver', 'siguiente', 'anterior', 'cerrar', 'abrir',
+  'quitar', 'añadir', 'agregar', 'editar', 'borrar', 'eliminar', 'duplicar',
+  'buscar', 'mover', 'renombrar', 'perfiles', 'perfil', 'ajustes', 'tamaño',
+  'color', 'idioma', 'tema', 'sonido', 'ayuda', 'acerca', 'sensores',
+]);
+
+const PERMITIDOS = new Set([
+  'VirtualDeck',
+  // `color` es igual en los dos idiomas.
+  'COLOR', 'Color',
+]);
+
+function pareceEspanol(s) {
+  const limpio = s.trim();
+  if (limpio.length < 3 || PERMITIDOS.has(limpio)) return false;
+  if (/^[\s\d\W]*$/.test(limpio)) return false;          // solo símbolos o números
+  if (/^(https?:|[A-Za-z]:[\\/]|\.{0,2}\/)/.test(limpio)) return false;  // URL o ruta
+  if (ACENTOS.test(limpio)) return true;
+  // Frases cortas: basta una palabra inequívoca.
+  const palabras = limpio.split(/[\s·/,.…]+/).filter(Boolean);
+  if (palabras.length <= 4 && palabras.some((p) => PALABRAS_SUELTAS.has(p.toLowerCase()))) return true;
+  return (limpio.match(PALABRAS_ES) ?? []).length >= 2;
+}
+
+for (const ruta of archivos(RAIZ)) {
+  if (ruta.split(sep).join('/') === I18N) continue;
+  for (const [i, linea] of readFileSync(ruta, 'utf-8').split('\n').entries()) {
+    const codigo = linea.replace(/\/\/.*$/, '');
+    if (!codigo.trim() || codigo.trimStart().startsWith('*')) continue;
+    const sospechas = [];
+    for (const m of codigo.matchAll(/(?:label|title|placeholder|alt)=(['"])([^'"]{3,})\1/g)) sospechas.push(m[2]);
+    for (const m of codigo.matchAll(/>([^<>{}\n]{3,})</g)) sospechas.push(m[1]);
+    for (const s of sospechas) {
+      if (pareceEspanol(s)) {
+        problemas.push(`${ruta}:${i + 1}: "${s.trim().slice(0, 60)}" está en español y no pasa por t() ni tf()`);
+      }
+    }
   }
 }
 

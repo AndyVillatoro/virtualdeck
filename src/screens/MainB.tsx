@@ -3,6 +3,7 @@ import {
   IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward,
 } from '../components/VDIcon';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 import { executeAction, runActionSequence, interpolate } from '../utils/actions';
 import { logError } from '../utils/logger';
@@ -98,6 +99,7 @@ export function MainB({
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
   const VD = useTheme();
+  const t = useT();
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
@@ -229,7 +231,7 @@ export function MainB({
       }
       if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
         const r = await withTimeout(
-          executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles),
+          executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t),
           { ok: false, error: 'Acción excedió 60s y se considera colgada.' },
         );
         if (!r.ok && r.error) showToast(r.error);
@@ -276,7 +278,7 @@ export function MainB({
 
   const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
     if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
-    const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles);
+    const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles, t);
     setExecLog((prev) => [
       { id: ++execLogIdRef.current, ts: Date.now(), label: `⇓ ${btn.label || btn.longPressAction!.type}`, actionType: btn.longPressAction!.type, ok: r.ok, error: r.error },
       ...prev.slice(0, 99),
@@ -574,7 +576,7 @@ export function MainB({
                 <span
                   onClick={() => onPageChange(i)}
                   onDoubleClick={() => { setRenamingPageId(p.id); setRenameValue(p.name); }}
-                  title="Clic · Doble clic para renombrar · Arrastrar para reordenar · Clic derecho para opciones"
+                  title={t('page.tip')}
                   style={{ cursor: 'pointer' }}
                 >
                   {p.name}
@@ -589,7 +591,7 @@ export function MainB({
           {config.pages.length < 8 && (
             <div
               onClick={onPageAdd}
-              title="Agregar página"
+              title={t('page.add')}
               style={{
                 padding: '8px 10px', color: VD.textMuted, fontSize: 16,
                 cursor: 'pointer', userSelect: 'none', position: 'relative', top: 1, lineHeight: 1,
@@ -599,12 +601,12 @@ export function MainB({
 
           <div style={{ flex: 1 }} />
           {onPageExport && (
-            <div onClick={() => onPageExport(activePage)} title="Exportar página actual" style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
+            <div onClick={() => onPageExport(activePage)} title={t('page.export')} style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
               ↗
             </div>
           )}
           {onPageImport && (
-            <div onClick={onPageImport} title="Importar página desde archivo" style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
+            <div onClick={onPageImport} title={t('page.import')} style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
               ↙
             </div>
           )}
@@ -630,7 +632,7 @@ export function MainB({
                 borderRadius: VD.radius.lg, overflow: 'hidden', boxShadow: VD.shadow.menu, minWidth: 160,
               }}
             >
-              <PageCtxItem label="Renombrar" onClick={() => {
+              <PageCtxItem label={t('page.rename')} onClick={() => {
                 if (ctxPage) { setRenamingPageId(ctxPage.id); setRenameValue(ctxPage.name); }
                 setPageContextMenu(null);
               }} />
@@ -642,7 +644,7 @@ export function MainB({
                     <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 1 }}>
                       GRILLA · {ctxGs}×{ctxRows}
                     </div>
-                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>COLUMNAS</div>
+                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.columns')}</div>
                     <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
                       {([3, 4, 5, 6] as const).map(cols => (
                         <button
@@ -658,7 +660,7 @@ export function MainB({
                         >{cols}</button>
                       ))}
                     </div>
-                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>FILAS</div>
+                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.rows')}</div>
                     <div style={{ display: 'flex', gap: 4 }}>
                       {([2, 3, 4, 5, 6] as const).map(rows => (
                         <button
@@ -678,7 +680,7 @@ export function MainB({
                 );
               })()}
               {config.pages.length > 1 && (
-                <PageCtxItem label="Eliminar página" danger onClick={() => {
+                <PageCtxItem label={t('page.delete')} danger onClick={() => {
                   onPageDelete(pageContextMenu.id);
                   setPageContextMenu(null);
                 }} />
@@ -804,7 +806,7 @@ export function MainB({
                   outline: 'none',
                 }}
               >
-                <option value="">MOVER A...</option>
+                <option value="">{t('ui.moveTo')}</option>
                 {config.pages.map((p, i) => i !== activePage && (
                   <option key={p.id} value={i}>{p.name}</option>
                 ))}
@@ -817,7 +819,7 @@ export function MainB({
                     setSelectedIds(new Set()); setBulkMoveTarget(null);
                   }}
                   style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-                >↗ MOVER</button>
+                >{t('bulk.move')}</button>
               )}
               {bulkMoveTarget !== null && (
                 <button
@@ -835,7 +837,7 @@ export function MainB({
                   setSelectedIds(new Set());
                 }}
                 style={{ padding: '4px 10px', background: 'none', border: `1px solid ${VD.danger}`, color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-              >✕ LIMPIAR</button>
+              >{t('bulk.clear')}</button>
 
               <button
                 onClick={() => { setSelectedIds(new Set()); setBulkMoveTarget(null); }}
@@ -868,7 +870,7 @@ export function MainB({
 
               {/* Weather */}
               <div>
-                <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>CLIMA</DotLabel>
+                <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('panel.weather')}</DotLabel>
                 <WeatherWidget />
               </div>
 
@@ -876,7 +878,7 @@ export function MainB({
               {sensorList.length > 0 && (config.sensors?.showWidget ?? true) && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <DotLabel size={9} color={VD.textMuted} spacing={2}>SENSORES</DotLabel>
+                    <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
                     <span style={{
                       fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
                       color: sensorStatus?.connected ? VD.success : VD.textMuted,
@@ -897,7 +899,7 @@ export function MainB({
                 <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>RGB</DotLabel>
                 <div
                   onClick={onRGB}
-                  title="Abrir Gestor RGB"
+                  title={t('panel.openRgb')}
                   style={{
                     background: VD.elevated, border: `1px solid ${VD.border}`,
                     borderRadius: VD.radius.md, padding: '8px 10px',
@@ -920,12 +922,12 @@ export function MainB({
               {/* Execution log */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showLog ? 6 : 0 }}>
-                  <DotLabel size={9} color={VD.textMuted} spacing={2}>LOG</DotLabel>
+                  <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.log')}</DotLabel>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     {execLog.length > 0 && (
                       <span
                         onClick={() => setExecLog([])}
-                        title="Limpiar log"
+                        title={t('panel.clearLog')}
                         style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, cursor: 'pointer', letterSpacing: 0.5 }}
                       >✕</span>
                     )}
@@ -955,7 +957,7 @@ export function MainB({
               {/* Now Playing */}
               <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <DotLabel size={9} color={VD.textMuted} spacing={2}>REPRODUCIENDO</DotLabel>
+                  <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.playing')}</DotLabel>
                   <span
                     onClick={async () => {
                       const r = await api?.media.diagnose();
@@ -963,7 +965,7 @@ export function MainB({
                       const lines = r.stdout.split(/\r?\n/).slice(0, 25).join('\n');
                       showToast(`SMTC diagnóstico:\n${lines}${r.stderr ? '\n\nstderr:\n' + r.stderr.slice(0, 300) : ''}`);
                     }}
-                    title="Diagnosticar widget de música"
+                    title={t('media.diagnose')}
                     style={{
                       fontFamily: VD.mono, fontSize: 8, color: VD.textMuted,
                       cursor: 'pointer', letterSpacing: 1, padding: '2px 4px',
@@ -1041,7 +1043,7 @@ export function MainB({
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>Sin reproducción activa</div>
+                  <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>{t('panel.noMedia')}</div>
                 )}
               </div>
             </div>

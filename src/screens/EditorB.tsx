@@ -583,7 +583,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                           borderRadius: VD.radius.md, padding: '5px 8px', cursor: 'pointer',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                          <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.danger }}>✕ cancelar</span>
+                          <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.danger }}>{t('ed.cancelCapture')}</span>
                         </div>
                       </div>
                     )}
@@ -2047,6 +2047,7 @@ function SensorPicker({
   accent: string;
   allowEmpty?: boolean;
 }) {
+  const t = useT();
   const VD = useTheme();
   const selectStyle = estiloSelector(VD);
   const groups: Record<string, import('../types').Sensor[]> = {};
@@ -2060,9 +2061,9 @@ function SensorPicker({
       onChange={(e) => onChange(e.target.value)}
       style={selectStyle}
     >
-      {allowEmpty !== false && <option value="">— Selecciona un sensor —</option>}
+      {allowEmpty !== false && <option value="">{t('ed.pickSensor')}</option>}
       {sensors.length === 0 && (
-        <option value="" disabled>(sin sensores: habilita LHM y conecta en TitleBar)</option>
+        <option value="" disabled>{t('ed.noSensors')}</option>
       )}
       {Object.entries(groups).map(([hw, list]) => (
         <optgroup key={hw} label={hw}>
