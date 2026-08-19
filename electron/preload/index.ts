@@ -8,6 +8,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
     fullscreen: () => ipcRenderer.send('window:fullscreen'),
     setAlwaysOnTop: (encima: boolean) => ipcRenderer.send('window:setAlwaysOnTop', encima),
   },
+  bar: {
+    open: (g: BarGeometry): Promise<boolean> => ipcRenderer.invoke('bar:open', g),
+    close: (): Promise<boolean> => ipcRenderer.invoke('bar:close'),
+    isOpen: (): Promise<boolean> => ipcRenderer.invoke('bar:isOpen'),
+    apply: (g: BarGeometry): Promise<boolean> => ipcRenderer.invoke('bar:apply', g),
+    position: (): Promise<{ y: number } | null> => ipcRenderer.invoke('bar:position'),
+    /** La ventana se movio: llega la Y nueva para guardarla. */
+    onMoved: (cb: (y: number) => void) => {
+      const h = (_e: unknown, y: number) => cb(y);
+      ipcRenderer.on('bar:moved', h);
+      return () => ipcRenderer.removeListener('bar:moved', h);
+    },
+    /** Aviso de que la configuracion cambio. Devuelve la funcion para desuscribirse. */
+    onConfigChanged: (cb: (data: unknown) => void) => {
+      const h = (_e: unknown, data: unknown) => cb(data);
+      ipcRenderer.on('config:changed', h);
+      return () => ipcRenderer.removeListener('config:changed', h);
+    },
+  },
   config: {
     load: (): Promise<object> => ipcRenderer.invoke('config:load'),
     save: (data: object): Promise<boolean> => ipcRenderer.invoke('config:save', data),
@@ -142,4 +161,5 @@ interface NowPlayingResult { title: string; artist: string; status: string; sour
 interface AudioDevice { id: string; name: string; isDefault: boolean; }
 interface BackupInfo { filename: string; timestamp: number; sizeBytes: number; }
 interface WeatherResult { temp: number; code: number; city: string; country: string; }
+interface BarGeometry { huecos: number; lado: 'left' | 'right'; tile: number; y: number | null; }
 interface MediaDiagnosticResult { ok: boolean; stage: string; stdout: string; stderr: string; }

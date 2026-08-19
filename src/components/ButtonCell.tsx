@@ -30,6 +30,11 @@ interface ButtonCellProps {
   onDrop?: (sourceId: string) => void;
   /** Se llama tambien si el arrastre se cancela, no solo al soltar. */
   onDragEnd?: () => void;
+  /**
+   * Menu de clic derecho. La barra flotante lo apaga: sus opciones (editar,
+   * duplicar, vaciar) son de la grilla y ahi no significan nada.
+   */
+  showContextMenu?: boolean;
 }
 
 const ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION_ICONS;
@@ -39,6 +44,7 @@ function ButtonCellInner({
   isSelected = false,
   widgetData, soundEnabled = false, soundProfile = 'click',
   resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop, onDragEnd,
+  showContextMenu = true,
 }: ButtonCellProps) {
   const VD = useTheme();
   const [pressed, setPressed] = useState(false);
@@ -137,6 +143,7 @@ function ButtonCellInner({
     // Long press already fired → suppress the contextmenu the browser generates
     // right after (timing varies by browser/OS but typically ~500 ms on touch).
     if (longPressTriggered.current) { longPressTriggered.current = false; return; }
+    if (!showContextMenu) return;
     setContextMenu({ x: e.clientX, y: e.clientY });
   }
 
@@ -546,6 +553,7 @@ export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
   prev.isRunning === next.isRunning &&
   prev.isSelected === next.isSelected &&
   prev.accent === next.accent &&
+  prev.showContextMenu === next.showContextMenu &&
   prev.soundEnabled === next.soundEnabled &&
   prev.soundProfile === next.soundProfile &&
   prev.resolvedLabel === next.resolvedLabel &&

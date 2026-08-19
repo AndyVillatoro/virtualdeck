@@ -4,6 +4,7 @@ import { FullscreenB } from './screens/FullscreenB';
 import { EditorB } from './screens/EditorB';
 import { WallpaperB } from './screens/WallpaperB';
 import { RGBManagerB } from './screens/RGBManagerB';
+import { BarConfigB } from './screens/BarConfigB';
 import { SearchOverlay } from './components/SearchOverlay';
 import { Onboarding } from './components/Onboarding';
 import { NowPlayingProvider } from './utils/nowPlaying';
@@ -44,7 +45,7 @@ const DEFAULT_CONFIG: DeckConfig = {
   // como true para usuarios existentes.
 };
 
-type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb';
+type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb' | 'barra';
 
 // Banner de actualización lista. Extraído como componente para que pueda usar
 // useT() (App renderiza el LanguageProvider, así que su cuerpo queda fuera del
@@ -635,6 +636,7 @@ export default function App() {
         if (view === 'fullscreen') { setView('main'); return; }
         if (view === 'wallpaper') { setView('main'); return; }
         if (view === 'rgb') { setView('main'); return; }
+        if (view === 'barra') { setView('main'); return; }
         return;
       }
       // 1-5+: switch pages
@@ -675,6 +677,7 @@ export default function App() {
           onEditButton={(id) => setEditingId(id)}
           onWallpaper={() => setView('wallpaper')}
           onRGB={() => setView('rgb')}
+          onFloatingBar={() => setView('barra')}
           onConfigChange={saveConfig}
           onDuplicateButton={duplicateButton}
           onClearButton={clearButton}
@@ -736,6 +739,14 @@ export default function App() {
 
       {view === 'rgb' && (
         <RGBManagerB
+          config={config}
+          onConfigChange={saveConfig}
+          onBack={() => setView('main')}
+        />
+      )}
+
+      {view === 'barra' && (
+        <BarConfigB
           config={config}
           onConfigChange={saveConfig}
           onBack={() => setView('main')}

@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import { FloatingBarB } from './screens/FloatingBarB'
 import './index.css'
 import './vd-icons.css'
 import './brand-icons.css'
@@ -19,8 +20,20 @@ if (fuentes) {
   else fuentes.addEventListener('load', activar, { once: true });
 }
 
+// La barra flotante es otra ventana de Electron, pero el mismo bundle: se
+// distingue por el hash con el que se abre (ver electron/main/floatingBar.ts).
+// Asi no hay que compilar un segundo renderer solo para una columna de tiles.
+const esBarra = window.location.hash === '#barra';
+
+if (esBarra) {
+  // Sin fondo: la ventana es transparente y lo unico que debe verse son los
+  // tiles. El CSS global le pone color al body, asi que hay que quitarselo.
+  document.documentElement.style.background = 'transparent';
+  document.body.style.background = 'transparent';
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    {esBarra ? <FloatingBarB /> : <App />}
   </React.StrictMode>,
 )

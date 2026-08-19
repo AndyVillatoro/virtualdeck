@@ -270,6 +270,8 @@ export interface DeckConfig {
   language?: 'es' | 'en' | 'system';
   /** 6.x — True cuando el usuario completó (o saltó) el onboarding inicial. */
   onboardingCompleted?: boolean;
+  /** 6.x — Columna de tiles flotante sobre el resto del escritorio. */
+  floatingBar?: FloatingBarSettings;
   /** 6.x — Keys de hints contextuales que el usuario ya descartó. */
   hintsDismissed?: string[];
   /**
@@ -280,6 +282,33 @@ export interface DeckConfig {
    * de VirtualDeck no tiene marco con el que distinguirla del fondo.
    */
   alwaysOnTop?: boolean;
+}
+
+/**
+ * Barra flotante: una columna de tiles por encima de todo, en el monitor
+ * principal. Los tiles son botones que ya existen en el deck — la barra guarda
+ * ids, no copias, para que editar el boton se refleje en los dos sitios.
+ */
+/** Geometria que el proceso principal necesita para colocar la barra. */
+export interface BarGeometry {
+  huecos: number;
+  lado: 'left' | 'right';
+  tile: number;
+  y: number | null;
+}
+
+export interface FloatingBarSettings {
+  enabled: boolean;
+  /** Ids de botones del deck en orden. `null` = hueco vacio. */
+  slots: (string | null)[];
+  /** Opacidad de los tiles, 0.3 – 1. Default 0.9. */
+  opacity?: number;
+  /** Lado del monitor principal al que se pega. Default 'right'. */
+  side?: 'left' | 'right';
+  /** Y absoluta guardada tras moverla. `null` = centrada. */
+  y?: number | null;
+  /** Lado del tile en px, 40 – 120. Default 64. */
+  tileSize?: number;
 }
 
 export interface SensorsSettings {
@@ -466,6 +495,15 @@ export interface ElectronAPI {
     close: () => void;
     fullscreen: () => void;
     setAlwaysOnTop: (encima: boolean) => void;
+  };
+  bar: {
+    open: (g: BarGeometry) => Promise<boolean>;
+    close: () => Promise<boolean>;
+    isOpen: () => Promise<boolean>;
+    apply: (g: BarGeometry) => Promise<boolean>;
+    position: () => Promise<{ y: number } | null>;
+    onMoved: (cb: (y: number) => void) => () => void;
+    onConfigChanged: (cb: (data: unknown) => void) => () => void;
   };
   config: {
     load: () => Promise<object>;

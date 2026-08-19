@@ -4,6 +4,7 @@ import { loadConfig, saveConfig, listBackups, restoreBackup } from '../configMan
 import { applyTriggerableConfig } from '../trayManager';
 import * as sensors from '../sensors';
 import { getWeather } from '../weather';
+import { avisarCambioDeConfig } from '../floatingBar';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
@@ -15,6 +16,9 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
     if (sCfg) sensors.configure({
       host: sCfg.host, port: sCfg.port, enabled: sCfg.enabled, categories: sCfg.categories,
     });
+    // La barra flotante es otra ventana y no comparte el estado de React: si no
+    // se le avisa, sigue mostrando los botones viejos hasta que se reabra.
+    avisarCambioDeConfig(data);
     return true;
   });
 

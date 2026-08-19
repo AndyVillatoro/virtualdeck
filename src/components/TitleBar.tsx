@@ -23,6 +23,7 @@ interface TitleBarProps {
   onFullscreen?: () => void;
   onWallpaper?: () => void;
   onRGB?: () => void;
+  onFloatingBar?: () => void;
   onConfigExport?: () => void;
   onConfigImport?: () => void;
   onConfigImportFromUrl?: (url: string) => void;
@@ -68,6 +69,7 @@ export function TitleBar({
   onFullscreen,
   onWallpaper,
   onRGB,
+  onFloatingBar,
   onConfigExport,
   onConfigImport,
   onConfigImportFromUrl,
@@ -149,6 +151,9 @@ export function TitleBar({
             )}
             {onConfigImport && (
               <button onClick={onConfigImport} style={btnStyle} title={t('tip.import')}>↙ IMP</button>
+            )}
+            {onFloatingBar && (
+              <button onClick={onFloatingBar} title={t('tip.bar')} style={btnStyle}>{t('bar.short')}</button>
             )}
             {onWallpaper && (
               <button onClick={onWallpaper} style={btnStyle}>FONDO</button>

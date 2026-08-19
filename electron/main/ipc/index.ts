@@ -12,6 +12,7 @@ import { registerSensorsIpc } from './sensorsIpc';
 import { registerMacroIpc } from './macroIpc';
 import { registerLogIpc } from './logIpc';
 import { registerUpdateIpc } from './updateIpc';
+import { registerFloatingBarIpc } from './floatingBarIpc';
 
 export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerWindowIpc(win);
@@ -27,4 +28,5 @@ export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerMacroIpc();
   registerLogIpc();
   registerUpdateIpc(win);
+  registerFloatingBarIpc();
 }

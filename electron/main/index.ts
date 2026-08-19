@@ -7,6 +7,7 @@ import { registerAllIpc } from './ipc';
 import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
+import { abrirBarra } from './floatingBar';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -40,6 +41,18 @@ function setupWindow() {
   // Primer plano desde el arranque: si se dejara para cuando el renderer avisa,
   // la ventana aparecería detrás y saltaría al frente un instante después.
   if ((initialCfg as any)?.alwaysOnTop) win.setAlwaysOnTop(true, 'screen-saver');
+
+  // Barra flotante: si quedó activada, sale sola al arrancar. Es una ventana
+  // aparte, así que no depende de que la principal esté visible.
+  const barraCfg = (initialCfg as any)?.floatingBar;
+  if (barraCfg?.enabled && Array.isArray(barraCfg.slots) && barraCfg.slots.length > 0) {
+    abrirBarra({
+      huecos: barraCfg.slots.length,
+      lado: barraCfg.side === 'left' ? 'left' : 'right',
+      tile: typeof barraCfg.tileSize === 'number' ? barraCfg.tileSize : 64,
+      y: typeof barraCfg.y === 'number' ? barraCfg.y : null,
+    });
+  }
 
   // Apply sensors config from disk so first poll uses the user's host/port.
   const sensorsCfg = (initialCfg as any)?.sensors;
