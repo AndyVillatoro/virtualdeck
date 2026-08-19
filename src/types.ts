@@ -502,6 +502,8 @@ export interface ElectronAPI {
     isOpen: () => Promise<boolean>;
     apply: (g: BarGeometry) => Promise<boolean>;
     position: () => Promise<{ y: number } | null>;
+    /** Ajusta la ventana al contenido medido, para que nunca quede recortada. */
+    fit: (ancho: number, alto: number) => Promise<boolean>;
     onMoved: (cb: (y: number) => void) => () => void;
     onConfigChanged: (cb: (data: unknown) => void) => () => void;
   };

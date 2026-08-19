@@ -28,8 +28,13 @@ const esBarra = window.location.hash === '#barra';
 if (esBarra) {
   // Sin fondo: la ventana es transparente y lo unico que debe verse son los
   // tiles. El CSS global le pone color al body, asi que hay que quitarselo.
+  // Los tres: `index.css` le pone el mismo fondo opaco a `html`, `body` y
+  // `#root`. Con dejarse uno, se ve un recuadro solido detras de los tiles y la
+  // barra deja de parecer que flota.
   document.documentElement.style.background = 'transparent';
   document.body.style.background = 'transparent';
+  const raiz = document.getElementById('root');
+  if (raiz) raiz.style.background = 'transparent';
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

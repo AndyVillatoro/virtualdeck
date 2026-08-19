@@ -90,6 +90,18 @@ export function abrirBarra(g: GeometriaBarra): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true, contextIsolation: true, nodeIntegration: false,
+      // Sesión propia, y no la del deck, por el **zoom**.
+      //
+      // Chromium guarda el nivel de zoom por origen y por sesión. El deck y la
+      // barra cargan el mismo `index.html`, o sea el mismo origen: con la sesión
+      // compartida, poner la interfaz al 150 % agrandaba también el contenido de
+      // la barra, que tiene el tamaño de ventana calculado en píxeles y se
+      // quedaba recortada — se veían tres tiles de cuatro y no había forma de
+      // llegar al resto.
+      //
+      // El tamaño de los tiles de la barra se ajusta en su propia pantalla.
+      partition: 'persist:vd-barra',
+      zoomFactor: 1,
     },
   });
 
@@ -127,6 +139,29 @@ export function cerrarBarra(): void {
 export function aplicarGeometria(g: GeometriaBarra): void {
   if (!barraAbierta()) return;
   ventana!.setBounds(posicion(g));
+}
+
+/**
+ * Ajusta la ventana al contenido que el renderer dice necesitar.
+ *
+ * Red de seguridad para que no vuelva a pasar lo del recorte: el alto se
+ * calcula aquí a partir de la configuración, pero cualquier diferencia de zoom,
+ * fuente o densidad de pantalla cambia lo que ocupa de verdad. En vez de
+ * confiar en la cuenta, la barra se mide después de dibujarse y pide el tamaño
+ * exacto.
+ */
+export function ajustarAlContenido(ancho: number, alto: number): void {
+  if (!barraAbierta()) return;
+  const b = ventana!.getBounds();
+  const area = screen.getPrimaryDisplay().workArea;
+  const w = Math.max(24, Math.round(ancho));
+  const h = Math.min(Math.max(24, Math.round(alto)), area.height);
+  if (Math.abs(b.width - w) < 2 && Math.abs(b.height - h) < 2) return;
+  // Si estaba pegada al borde derecho, se mantiene pegada al cambiar de ancho.
+  const pegadaDerecha = Math.abs(b.x + b.width - (area.x + area.width)) < 4;
+  const x = pegadaDerecha ? area.x + area.width - w : b.x;
+  const y = Math.min(Math.max(b.y, area.y), area.y + area.height - h);
+  ventana!.setBounds({ x, y, width: w, height: h });
 }
 
 /** Y actual, para guardarla cuando el usuario mueve la barra. */

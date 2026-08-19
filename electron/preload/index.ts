@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     isOpen: (): Promise<boolean> => ipcRenderer.invoke('bar:isOpen'),
     apply: (g: BarGeometry): Promise<boolean> => ipcRenderer.invoke('bar:apply', g),
     position: (): Promise<{ y: number } | null> => ipcRenderer.invoke('bar:position'),
+    fit: (ancho: number, alto: number): Promise<boolean> => ipcRenderer.invoke('bar:fit', ancho, alto),
     /** La ventana se movio: llega la Y nueva para guardarla. */
     onMoved: (cb: (y: number) => void) => {
       const h = (_e: unknown, y: number) => cb(y);

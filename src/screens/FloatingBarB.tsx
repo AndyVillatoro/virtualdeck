@@ -36,6 +36,28 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
 
   const porId = new Map(config.buttons.map((b) => [b.id, b]));
 
+  // Medirse y pedir ese tamaño exacto.
+  //
+  // El proceso principal calcula el alto a partir de la configuración, pero esa
+  // cuenta no sabe del zoom, de la fuente ni de la densidad de la pantalla. Con
+  // la interfaz al 150 % la ventana se quedaba corta y solo se veían tres tiles
+  // de cuatro, sin manera de llegar al resto. Medir después de dibujar es lo
+  // único que no se puede equivocar.
+  const cajaRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const caja = cajaRef.current;
+    if (!caja || !api) return;
+    const medir = () => {
+      // scroll*, no getBoundingClientRect: la caja mide lo que le dio la
+      // ventana, y lo que hace falta saber es lo que **pide el contenido**.
+      api.bar.fit(Math.ceil(caja.scrollWidth), Math.ceil(caja.scrollHeight)).catch(() => {});
+    };
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(caja);
+    return () => obs.disconnect();
+  }, [api, barra.slots.length, tile]);
+
   const ejecutar = useCallback(async (btn: ButtonConfig) => {
     if (!api) return;
     setEjecutando((prev) => new Set(prev).add(btn.id));
@@ -55,11 +77,14 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
 
   return (
     <div
+      ref={cajaRef}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         // Sin `background`: la ventana es transparente a propósito.
-        width: '100vw', height: '100vh',
+        // Alto por contenido, no 100vh: la ventana se ajusta a la columna, no
+        // al reves. Si fuera al reves volveria a recortarse.
+        width: '100vw', minHeight: '100vh',
         padding: MARGEN, boxSizing: 'border-box',
         // Ancla del boton de cerrar, que va posicionado sobre esta caja.
         position: 'relative',
