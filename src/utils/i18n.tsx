@@ -298,6 +298,7 @@ const ES: Dict = {
   'rgb.calibPending': '⚠ CALIBRACIÓN PENDIENTE',
   'ed.noSensors': '(sin sensores: habilita LHM y conecta en TitleBar)',
   // ── Errores y etiquetas de acciones ──
+  'act.err.sinManejador': 'La accion "{tipo}" no esta implementada.',
   'act.err.noAppPath': 'Falta la ruta del programa.',
   'act.err.launch': 'No se pudo iniciar: {que}. Verifica la ruta.',
   'act.err.noUrl': 'Falta la URL.',
@@ -663,6 +664,7 @@ const EN: Dict = {
   'rgb.calibPending': '⚠ CALIBRATION PENDING',
   'ed.noSensors': '(no sensors: enable LHM and connect from the title bar)',
   // ── Action errors and labels ──
+  'act.err.sinManejador': 'The "{tipo}" action is not implemented.',
   'act.err.noAppPath': 'The program path is missing.',
   'act.err.launch': 'Could not start: {que}. Check the path.',
   'act.err.noUrl': 'The URL is missing.',

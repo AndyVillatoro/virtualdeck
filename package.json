@@ -23,8 +23,9 @@
     "lint": "eslint .",
     "lint:arch": "depcruise src electron",
     "lint:dead": "knip",
-    "check": "tsc --noEmit && depcruise src electron && eslint . && node scripts/check-i18n.mjs",
-    "lint:i18n": "node scripts/check-i18n.mjs"
+    "check": "tsc --noEmit && depcruise src electron && eslint . && node scripts/check-i18n.mjs && node scripts/check-acciones.mjs",
+    "lint:i18n": "node scripts/check-i18n.mjs",
+    "lint:acciones": "node scripts/check-acciones.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",

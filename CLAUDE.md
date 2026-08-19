@@ -11,7 +11,7 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **[docs/wiki/](docs/wiki/)** — Staging del wiki público (bilingüe ES/EN) al que apunta el botón Documentación. Ver `docs/wiki/README.md` para publicar.
 - **package.json** → campo `version`: source of truth de la versión actual.
 
-**Antes y después de cualquier cambio**: corré `npm run check` (tsc + arquitectura + eslint). Cero **errores** antes y después (los *warnings* de eslint son señal de deuda SRP, no bloquean — ver Bloque B del roadmap). Tooling: `npm run lint:arch` (dependency-cruiser, límites de capas SRP), `npm run lint` (eslint), `npm run lint:dead` (knip, código muerto).
+**Antes y después de cualquier cambio**: corré `npm run check` (tsc + arquitectura + eslint). Cero **errores** antes y después (los *warnings* de eslint son señal de deuda SRP, no bloquean — ver Bloque B del roadmap). Tooling: `npm run lint:acciones` (cobertura de tipos de acción), `npm run lint:arch` (dependency-cruiser, límites de capas SRP), `npm run lint` (eslint), `npm run lint:dead` (knip, código muerto).
 
 ## Stack
 - **Electron 33** (main: `electron/main/index.ts`, preload: `electron/preload/index.ts`)
@@ -25,7 +25,11 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `src/screens/` — pantallas: `MainB`, `EditorB`, `FullscreenB`, `RGBManagerB`, `WallpaperB`
 - `src/screens/editor/` — sub-módulos del editor: `actionData.ts` (datos puros), `MacroEditor.tsx`
 - `src/components/ButtonCell.tsx` — celda de botón configurable (drag, long-press, multi-select)
-- `src/utils/actions.ts` — ejecución de acciones (audio-device, app, url, webhook, tts, macro, etc.)
+- `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
+- `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
+  `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que
+  resuelve `runActionSequence`: script, folder, branch, countdown). **No hay `default: return OK`**:
+  un tipo sin manejador devuelve error, y `scripts/check-acciones.mjs` lo detecta antes de ejecutar.
 - `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
 - `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
 - `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC
