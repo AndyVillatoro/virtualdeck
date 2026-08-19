@@ -136,6 +136,17 @@ for (const ruta of archivos(RAIZ)) {
     const sospechas = [];
     for (const m of codigo.matchAll(/(?:label|title|placeholder|alt)=(['"])([^'"]{3,})\1/g)) sospechas.push(m[2]);
     for (const m of codigo.matchAll(/>([^<>{}\n]{3,})</g)) sospechas.push(m[1]);
+    // Texto JSX que ocupa su propia línea: la etiqueta que lo abre está arriba
+    // y la que lo cierra abajo, así que el patrón `>texto<` no lo ve. Se
+    // colaron así "DISPARADORES EXTERNOS" y la ayuda del grupo radio, con la
+    // auditoría en verde.
+    const suelto = codigo.trim();
+    // Se excluye lo que acaba en coma: es una propiedad de objeto partida en
+    // varias líneas (`color,`), no un texto de la interfaz.
+    if (suelto.length >= 3 && !/[<>{}=;()[\]`'"]/.test(suelto) && !/[,]$/.test(suelto)
+        && !/^(\/\/|\*|import|export)/.test(suelto)) {
+      sospechas.push(suelto);
+    }
     for (const s of sospechas) {
       if (pareceEspanol(s)) {
         problemas.push(`${ruta}:${i + 1}: "${s.trim().slice(0, 60)}" está en español y no pasa por t() ni tf()`);

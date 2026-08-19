@@ -104,7 +104,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
         {/* Quick presets */}
         <div>
           <DotLabel size={8} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
-            CARGAR DESDE TIPOGRAFÍA
+            {t('glyph.fromFont')}
           </DotLabel>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {Object.keys(GLYPHS_5x7).filter((k) => k.match(/[A-Z0-9]/)).map((ch) => (
@@ -157,7 +157,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
 
         {rows.every((r) => r === 0) && (
           <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center' }}>
-            Vacío — guardar lo eliminará del botón
+            {t('glyph.empty')}
           </div>
         )}
       </div>

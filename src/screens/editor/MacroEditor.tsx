@@ -117,7 +117,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
         )}
         {recording && (
           <span style={{ fontFamily: VD.mono, fontSize: 8, color: '#d95f5f', letterSpacing: 1 }}>
-            REC • presioná teclas y hacé clics...
+            {t('macro.recording')}
           </span>
         )}
         <div style={{ flex: 1 }} />
@@ -136,7 +136,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
       {/* Step list */}
       {steps.length === 0 ? (
         <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
-          Sin pasos. Grabá una macro o añadí pasos manualmente.
+          {t('macro.noSteps')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 260, overflowY: 'auto' }}>

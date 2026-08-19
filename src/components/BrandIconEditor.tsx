@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { BRAND_ICONS_MAP, ICON_SIZE } from '../data/brandIcons';
@@ -207,6 +208,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (hex: strin
 export function BrandIconEditor({
   iconKey, customBitmap, customColor, customPalette, onSave, onClose, accent,
 }: BrandIconEditorProps) {
+  const t = useT();
   const VD = useTheme();
   const icon = BRAND_ICONS_MAP[iconKey];
   const original = icon?.bitmap ?? [];
@@ -504,7 +506,7 @@ export function BrandIconEditor({
                 background: 'transparent', color: VD.textDim,
                 fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, cursor: 'pointer', borderRadius: VD.radius.sm,
               }}>
-                LIMPIAR TODO
+                {t('brand.clearAll')}
               </button>
             </div>
           </div>
@@ -549,7 +551,7 @@ export function BrandIconEditor({
             {/* Active color */}
             <div>
               <DotLabel size={8} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
-                COLOR ACTIVO
+                {t('brand.activeColor')}
               </DotLabel>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
                 <div style={{
@@ -661,7 +663,7 @@ export function BrandIconEditor({
             )}
 
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, lineHeight: 1.6 }}>
-              17×17 · Soporta multi-color · Animaciones siguen el patrón de puntos
+              {t('brand.hint')}
             </div>
           </div>
         </div>
@@ -684,14 +686,14 @@ export function BrandIconEditor({
             background: 'transparent', fontFamily: VD.mono, fontSize: 9,
             letterSpacing: 1, color: VD.textDim, cursor: 'pointer', borderRadius: VD.radius.sm,
           }}>
-            CANCELAR
+            {t('ui.cancel')}
           </button>
           <button onClick={handleSave} style={{
             padding: '7px 20px', background: accent, border: 'none',
             fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
             color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm,
           }}>
-            GUARDAR ICONO ✓
+            {t('brand.saveIcon')}
           </button>
         </div>
       </div>

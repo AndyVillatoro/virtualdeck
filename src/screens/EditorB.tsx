@@ -657,7 +657,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                         />
                       </div>
                       <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
-                        Warn pinta el valor en amarillo, Crit en rojo. Mismas unidades que el sensor.
+                        {t('ed.thresholdHint')}
                       </div>
                     </div>
                   )}

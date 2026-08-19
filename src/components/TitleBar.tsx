@@ -449,7 +449,7 @@ export function TitleBar({
                   fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
                 }}
               >
-                GUARDAR
+                {t('ui.saveShort')}
               </button>
             </div>
             {profiles.length > 0 && (
@@ -465,7 +465,7 @@ export function TitleBar({
             )}
             {profiles.length === 0 && (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                Sin perfiles guardados.
+                {t('set.noProfiles')}
               </div>
             )}
           </div>

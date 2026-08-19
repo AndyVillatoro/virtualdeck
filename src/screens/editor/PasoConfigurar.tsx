@@ -268,7 +268,7 @@ export function PasoConfigurar({ accent, action, setAction, actionToggleOff, set
               />
             </Field>
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-              Usa el nombre exacto del ejecutable. Equivale a taskkill /IM nombre /F.
+              {t('ed.killHint')}
             </div>
           </>
         )}
@@ -287,7 +287,7 @@ export function PasoConfigurar({ accent, action, setAction, actionToggleOff, set
               </span>
             </div>
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-              Establece el volumen maestro del sistema al porcentaje indicado.
+              {t('ed.volumeHint')}
             </div>
           </Field>
         )}
@@ -514,7 +514,7 @@ export function PasoConfigurar({ accent, action, setAction, actionToggleOff, set
           <Field label={tf("PERFIL RGB")}>
             {rgbProfiles.length === 0 ? (
               <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, lineHeight: 1.6 }}>
-                No hay perfiles RGB guardados. Abre la pantalla RGB y guarda un perfil con el estado actual de tus dispositivos.
+                {t('ed.noRgbProfiles')}
               </div>
             ) : (
               <select
@@ -616,7 +616,7 @@ export function PasoConfigurar({ accent, action, setAction, actionToggleOff, set
                 style={inputStyle}
               />
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                Sin nombre de proceso, snapea la ventana en foco al momento de ejecutar.
+                {t('ed.snapHint')}
                 Funciona mejor con hotkeys globales (sin pasar por VirtualDeck).
               </div>
             </Field>
@@ -762,7 +762,7 @@ export function PasoConfigurar({ accent, action, setAction, actionToggleOff, set
                 style={inputStyle}
               />
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                Todos los toggles con el mismo grupo se desactivan cuando se activa este.
+                {t('ed.radioHint')}
               </div>
             </Field>
           </div>
@@ -772,7 +772,7 @@ export function PasoConfigurar({ accent, action, setAction, actionToggleOff, set
         {action.type !== 'none' && action.type !== 'folder' && (
           <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 10 }}>
-              DISPARADORES EXTERNOS
+              {t('ed.triggers')}
             </DotLabel>
             <Field label={tf("HOTKEY GLOBAL DEL SO (ej. Ctrl+Alt+1)")}>
               <input

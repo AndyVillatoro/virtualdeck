@@ -1097,6 +1097,7 @@ function FolderOverlay({ btn, accent, soundEnabled, soundProfile, state, rgbProf
   onActionError: (msg: string) => void;
   onStateUpdate: (update: Record<string, string>) => void;
 }) {
+  const t = useT();
   const VD = useTheme();
   const api = window.electronAPI;
   const [flash, setFlash] = useState<number | null>(null);
@@ -1174,13 +1175,13 @@ function FolderOverlay({ btn, accent, soundEnabled, soundProfile, state, rgbProf
           ))}
           {buttons.length === 0 && (
             <div style={{ gridColumn: '1 / -1', padding: 20, textAlign: 'center', fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>
-              Sin botones configurados. Edita este botón para añadirlos.
+              {t('folder.empty')}
             </div>
           )}
         </div>
 
         <div style={{ marginTop: 12, fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, textAlign: 'center' }}>
-          ESC PARA CERRAR
+          {t('folder.esc')}
         </div>
       </div>
     </div>

@@ -386,7 +386,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
         <div style={{ flex: 1, padding: 16, overflowY: 'auto' }}>
           {!selected && (
             <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, padding: 20 }}>
-              Selecciona un dispositivo a la izquierda.
+              {t('rgb.pickDevice')}
             </div>
           )}
           {selected && (
