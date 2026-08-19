@@ -23,7 +23,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `build/` — app icon (`icon.ico`, `icon.png`, `icon.svg`) generado por `scripts/generate-icon.js`
 - `scripts/generate-icon.js` — renderiza icono dot-matrix SVG → PNG → ICO (requiere `sharp`)
 - `src/screens/` — pantallas: `MainB`, `EditorB`, `FullscreenB`, `RGBManagerB`, `WallpaperB`
-- `src/screens/editor/` — sub-módulos del editor: `actionData.ts` (datos puros), `MacroEditor.tsx`
+- `src/screens/editor/` — el editor por partes: `PasoAccion` (elegir qué hace),
+  `PasoConfigurar` (los campos de esa acción), `comunes.tsx` (`Field`, `Btn`, los sub-selectores
+  y las funciones de estilo que comparten los pasos), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
+  `EditorB.tsx` se queda con el estado, el paso de estilo y el guardado.
 - `src/components/ButtonCell.tsx` — celda de botón configurable (drag, long-press, multi-select)
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
