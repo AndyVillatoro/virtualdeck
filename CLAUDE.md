@@ -71,6 +71,26 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **PowerShell `param()`**: `runPS` (en `ps-helpers.ts`) detecta si el script empieza con `param(...)` y, en ese caso, inserta el prefix UTF-8 DESPUÉS del bloque param. PowerShell exige que `param()` sea la primera sentencia del script — meterle `chcp 65001` arriba lo rompe silenciosamente. Si modificás `runPS`, mantené ese parser.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
 
+## ⏱️ Arranque: desarrollo y producción no se parecen
+
+Medido con `VD_DIAG=1` (la línea `[arranque] ventana visible a los N ms`):
+
+| Cómo se ejecuta | Tiempo hasta ver algo |
+|---|---|
+| `npx electron .` sobre `out/` — lo mismo que instala el usuario | **~240 ms** |
+| `npm run dev` (electron-vite) | **~49 s** |
+
+Los 49 s son **solo de desarrollo**, y son reproducibles. Ya se descartaron, con
+medición y no por deducción: la resolución de `localhost` (127.0.0.1 tarda igual),
+el plugin de CSP de desarrollo, las DevTools, el proxy de Chromium
+(`no-proxy-server`), la velocidad de disco (3000 archivos de `node_modules` en
+483 ms) y esbuild (empaqueta `src` + React entero en 55 ms). El servidor sirve
+cada módulo en menos de 1 ms: el tiempo se va en huecos de 10–20 s **entre
+oleadas de peticiones**, o sea del lado del renderer. Causa no encontrada.
+
+Antes de "optimizar el arranque", mirá cuál de los dos se está midiendo: si el
+reporte sale de `npm run dev`, la aplicación empaquetada no tiene ese problema.
+
 ## ⚡ Workflow rápido (cheatsheet)
 
 ### Verificar antes de cualquier cambio
