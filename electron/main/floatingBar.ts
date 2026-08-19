@@ -17,6 +17,15 @@ const isDev = process.env.NODE_ENV === 'development';
 
 let ventana: BrowserWindow | null = null;
 
+/**
+ * Movimientos hechos por nosotros, que no cuentan como "el usuario la movio".
+ *
+ * `setBounds` dispara `moved` igual que si la hubieran arrastrado. Sin esto,
+ * recentrar la barra al crecer guardaria una Y en la configuracion, y a partir
+ * de ahi dejaria de recentrarse: se centraria una sola vez y nunca mas.
+ */
+let movimientoPropio = 0;
+
 export interface GeometriaBarra {
   /** Cuántos tiles caben. */
   huecos: number;
@@ -116,6 +125,7 @@ export function abrirBarra(g: GeometriaBarra): void {
   let temporizador: NodeJS.Timeout | null = null;
   ventana.on('moved', () => {
     if (temporizador) clearTimeout(temporizador);
+    if (movimientoPropio > 0) { movimientoPropio -= 1; return; }
     temporizador = setTimeout(() => {
       if (!barraAbierta()) return;
       ventana!.webContents.send('bar:moved', ventana!.getBounds().y);
@@ -138,6 +148,7 @@ export function cerrarBarra(): void {
 
 export function aplicarGeometria(g: GeometriaBarra): void {
   if (!barraAbierta()) return;
+  movimientoPropio += 1;
   ventana!.setBounds(posicion(g));
 }
 
@@ -150,7 +161,7 @@ export function aplicarGeometria(g: GeometriaBarra): void {
  * confiar en la cuenta, la barra se mide después de dibujarse y pide el tamaño
  * exacto.
  */
-export function ajustarAlContenido(ancho: number, alto: number): void {
+export function ajustarAlContenido(ancho: number, alto: number, centrar: boolean): void {
   if (!barraAbierta()) return;
   const b = ventana!.getBounds();
   const area = screen.getPrimaryDisplay().workArea;
@@ -160,8 +171,30 @@ export function ajustarAlContenido(ancho: number, alto: number): void {
   // Si estaba pegada al borde derecho, se mantiene pegada al cambiar de ancho.
   const pegadaDerecha = Math.abs(b.x + b.width - (area.x + area.width)) < 4;
   const x = pegadaDerecha ? area.x + area.width - w : b.x;
-  const y = Math.min(Math.max(b.y, area.y), area.y + area.height - h);
+  // Al crecer, la columna **no** se alarga hacia abajo.
+  //
+  // Si el usuario no la ha movido, se recentra en la pantalla. Si la movió, se
+  // reparte alrededor del centro donde la dejó. En los dos casos los tiles
+  // nuevos salen mitad arriba y mitad abajo, en vez de irse cayendo hacia el
+  // borde inferior hasta chocar con él.
+  const centroDeseado = centrar
+    ? area.y + area.height / 2
+    : b.y + b.height / 2;
+  const y = Math.round(Math.min(Math.max(centroDeseado - h / 2, area.y), area.y + area.height - h));
+  movimientoPropio += 1;
   ventana!.setBounds({ x, y, width: w, height: h });
+}
+
+/**
+ * Cuántos tiles de `tile` px caben de alto en el monitor principal.
+ *
+ * Se calcula aquí y no en la pantalla de ajustes porque el deck puede estar en
+ * otro monitor: `window.screen` daría el del deck, no el de la barra.
+ */
+export function huecosQueCaben(tile: number): number {
+  const area = screen.getPrimaryDisplay().workArea;
+  const util = area.height - MARGEN * 2 + SEPARACION;
+  return Math.max(1, Math.floor(util / (Math.max(8, tile) + SEPARACION)));
 }
 
 /** Y actual, para guardarla cuando el usuario mueve la barra. */

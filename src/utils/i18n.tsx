@@ -214,6 +214,7 @@ const ES: Dict = {
   // ── Barra flotante ──
   'bar.short': 'BARRA',
   'bar.close': 'Cerrar la barra flotante',
+  'bar.max': 'Caben {n} con este tamano de tile',
   'bar.title': 'BARRA FLOTANTE',
   'bar.back': '← VOLVER',
   'bar.enabled': 'MOSTRAR LA BARRA',
@@ -422,6 +423,7 @@ const EN: Dict = {
   // ── Floating bar ──
   'bar.short': 'BAR',
   'bar.close': 'Close the floating bar',
+  'bar.max': '{n} fit at this tile size',
   'bar.title': 'FLOATING BAR',
   'bar.back': '← BACK',
   'bar.enabled': 'SHOW THE BAR',

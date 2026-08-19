@@ -50,13 +50,16 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
     const medir = () => {
       // scroll*, no getBoundingClientRect: la caja mide lo que le dio la
       // ventana, y lo que hace falta saber es lo que **pide el contenido**.
-      api.bar.fit(Math.ceil(caja.scrollWidth), Math.ceil(caja.scrollHeight)).catch(() => {});
+      // `y == null` significa "nunca la he movido": entonces se recentra en la
+      // pantalla al crecer, en vez de alargarse hacia abajo.
+      const centrar = (barra.y ?? null) === null;
+      api.bar.fit(Math.ceil(caja.scrollWidth), Math.ceil(caja.scrollHeight), centrar).catch(() => {});
     };
     medir();
     const obs = new ResizeObserver(medir);
     obs.observe(caja);
     return () => obs.disconnect();
-  }, [api, barra.slots.length, tile]);
+  }, [api, barra.slots.length, tile, barra.y]);
 
   const ejecutar = useCallback(async (btn: ButtonConfig) => {
     if (!api) return;

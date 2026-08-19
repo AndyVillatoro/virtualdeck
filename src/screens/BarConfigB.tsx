@@ -21,7 +21,8 @@ interface BarConfigBProps {
 }
 
 const MIN_HUECOS = 1;
-const MAX_HUECOS = 12;
+/** Tope duro. El de verdad lo pone la pantalla y se pregunta al proceso principal. */
+const MAX_HUECOS = 24;
 
 export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) {
   const VD = useTheme();
@@ -29,6 +30,17 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
   const api = window.electronAPI;
   const barra: FloatingBarSettings = config.floatingBar ?? BARRA_POR_DEFECTO;
   const [arrastrando, setArrastrando] = useState<string | null>(null);
+  // Cuantos caben de alto en el monitor principal. Lo calcula el proceso
+  // principal: el deck puede estar en otro monitor, asi que `window.screen`
+  // daria el numero equivocado.
+  const [maximo, setMaximo] = useState(MAX_HUECOS);
+
+  useEffect(() => {
+    if (!api) return;
+    api.bar.maxSlots(barra.tileSize ?? 64)
+      .then((n) => setMaximo(Math.max(MIN_HUECOS, Math.min(MAX_HUECOS, n))))
+      .catch(() => {});
+  }, [api, barra.tileSize]);
 
   const guardar = useCallback((next: Partial<FloatingBarSettings>) => {
     onConfigChange({ ...config, floatingBar: { ...barra, ...next } });
@@ -49,7 +61,7 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
   }, [api, barra.enabled, barra.slots.length, barra.side, barra.tileSize, barra.y]);
 
   const cambiarHuecos = (n: number) => {
-    const total = Math.max(MIN_HUECOS, Math.min(MAX_HUECOS, n));
+    const total = Math.max(MIN_HUECOS, Math.min(maximo, n));
     const slots = barra.slots.slice(0, total);
     while (slots.length < total) slots.push(null);
     guardar({ slots });
@@ -167,8 +179,11 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
             <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, minWidth: 24, textAlign: 'center' }}>
               {barra.slots.length}
             </span>
-            <button onClick={() => cambiarHuecos(barra.slots.length + 1)} disabled={barra.slots.length >= MAX_HUECOS}
+            <button onClick={() => cambiarHuecos(barra.slots.length + 1)} disabled={barra.slots.length >= maximo}
               style={estiloMini(VD)}>+</button>
+          </div>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, textAlign: 'center', marginTop: 6 }}>
+            {t('bar.max', { n: maximo })}
           </div>
         </div>
 
