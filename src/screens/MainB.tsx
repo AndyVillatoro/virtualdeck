@@ -770,8 +770,8 @@ export function MainB({
                 onClear={() => onClearButton(btn.id)}
                 onDragStart={() => setDragSourceId(btn.id)}
                 onDragEnd={() => setDragSourceId(null)}
-                onDrop={() => {
-                  if (dragSourceId && dragSourceId !== btn.id) onSwapButtons(dragSourceId, btn.id);
+                onDrop={(sourceId) => {
+                  if (sourceId && sourceId !== btn.id) onSwapButtons(sourceId, btn.id);
                   setDragSourceId(null);
                 }}
               />

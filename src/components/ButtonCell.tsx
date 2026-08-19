@@ -26,7 +26,8 @@ interface ButtonCellProps {
   onDuplicate?: () => void;
   onClear?: () => void;
   onDragStart?: () => void;
-  onDrop?: () => void;
+  /** Recibe el id del boton arrastrado, leido del propio evento. */
+  onDrop?: (sourceId: string) => void;
   /** Se llama tambien si el arrastre se cancela, no solo al soltar. */
   onDragEnd?: () => void;
 }
@@ -279,7 +280,14 @@ function ButtonCellInner({
         onDrop={(e) => {
           e.preventDefault();
           setDragOver(false);
-          onDrop?.();
+          // El id viaja dentro del propio arrastre, no en un estado de React.
+          //
+          // Esta celda esta memoizada y el comparador ignora los handlers a
+          // proposito, asi que `onDrop` sigue siendo el que se creo antes de
+          // empezar a arrastrar: si leyera el id del estado del padre, veria
+          // el valor viejo (null) y el drop no haria nada. Eso es exactamente
+          // lo que pasaba.
+          onDrop?.(e.dataTransfer.getData('text/plain'));
         }}
         style={{
           background: bg,
