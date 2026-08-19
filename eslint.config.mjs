@@ -59,4 +59,11 @@ export default tseslint.config(
       }],
     },
   },
+  {
+    // Archivos que son datos, no logica: el limite de lineas no dice nada de
+    // ellos. `brandIcons.ts` son 1500 lineas de bitmaps de iconos; partirlo en
+    // cinco archivos de 300 no lo hace mas facil de leer ni de cambiar.
+    files: ['src/data/**'],
+    rules: { 'max-lines': 'off' },
+  },
 );

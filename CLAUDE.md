@@ -50,7 +50,9 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
 - `electron/main/ipc/` — handlers IPC organizados por dominio (audio, media, macro, config, etc.)
 - `electron/main/index.ts` — slim bootstrap (~95 líneas); importa los módulos anteriores
-- `src/components/settings/` — componentes de settings extraídos de TitleBar: RGBSection, SensorsSection
+- `src/components/settings/` — `PanelAjustes` (el desplegable entero de la rueda dentada)
+  y sus secciones: `RGBSection`, `SensorsSection`, `settingHelpers`. `TitleBar` se queda con
+  la barra en sí (~250 líneas).
 
 ## Scripts
 - `npm run dev` — desarrollo (electron-vite)

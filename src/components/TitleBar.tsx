@@ -1,13 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { VDTokens } from '../design';
-import { ACCENT_PRESETS } from '../design';
 import { useTheme } from '../utils/theme';
-import { SOUND_PROFILES, playSound } from '../utils/sound';
 import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, SoundProfileId } from '../types';
-import { RGBSection } from './settings/RGBSection';
-import { SensorsSection } from './settings/SensorsSection';
-import { ToggleRow, SettingLabel } from './settings/settingHelpers';
-import { HelpAboutPanel } from './help/HelpAboutPanel';
+import { PanelAjustes } from './settings/PanelAjustes';
 import { Hint } from './Hint';
 import { useT } from '../utils/i18n';
 
@@ -193,287 +188,44 @@ export function TitleBar({
 
       {/* Settings flyout */}
       {showSettings && (
-        <div
-          ref={panelRef}
-          style={{
-            position: 'absolute', top: '100%', right: 0, zIndex: 200,
-            background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-            borderRadius: `0 0 ${VD.radius.lg}px ${VD.radius.lg}px`, padding: 16, width: 260,
-            boxShadow: VD.shadow.menu,
-            display: 'flex', flexDirection: 'column', gap: 14,
-            // Cap height so the panel never spills past the viewport bottom and
-            // scroll for the rest. Required since RGB + Sensors + Profiles can
-            // exceed window height on small screens.
-            maxHeight: 'calc(100vh - 50px)',
-            overflowY: 'auto',
-          }}
-        >
-          {/* Accent color */}
-          <div>
-            <SettingLabel>{t('set.accent')}</SettingLabel>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
-              <input
-                type="color"
-                value={effectiveAccent}
-                onChange={(e) => onAccentChange?.(e.target.value)}
-                style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, cursor: 'pointer', padding: 2, background: 'none', borderRadius: VD.radius.sm }}
-              />
-              <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim }}>{effectiveAccent}</span>
-              <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
-                {ACCENT_PRESETS.map(c => (
-                  <div key={c} onClick={() => onAccentChange?.(c)} style={{ width: 14, height: 14, borderRadius: '50%', background: c, cursor: 'pointer', border: c === effectiveAccent ? `2px solid ${VD.text}` : '2px solid transparent' }} />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* UI Scale */}
-          {onUiScaleChange && (
-            <div>
-              <SettingLabel>{t('set.scale')}</SettingLabel>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
-                <button
-                  onClick={() => onUiScaleChange(Math.max(0.75, uiScale - 0.25))}
-                  style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >−</button>
-                <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, flex: 1, textAlign: 'center', letterSpacing: 1 }}>
-                  {Math.round(uiScale * 100)}%
-                </span>
-                <button
-                  onClick={() => onUiScaleChange(Math.min(1.75, uiScale + 0.25))}
-                  style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >+</button>
-                {uiScale !== 1 && (
-                  <button
-                    onClick={() => onUiScaleChange(1)}
-                    style={{ padding: '0 8px', height: 28, background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 8, letterSpacing: 1 }}
-                  >RESET</button>
-                )}
-              </div>
-              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>Rango: 75% – 175%</div>
-            </div>
-          )}
-
-          {/* Tile mode — square keeps StreamDeck aesthetic, fill maximizes cell size */}
-          {onTileModeChange && (
-            <div>
-              <SettingLabel>{t('set.tiles')}</SettingLabel>
-              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                {(['square', 'fill'] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => onTileModeChange(m)}
-                    style={{
-                      flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                      background: tileMode === m ? VD.accentBg : VD.elevated,
-                      border: `1px solid ${tileMode === m ? effectiveAccent : VD.border}`,
-                      color: tileMode === m ? effectiveAccent : VD.textDim,
-                      fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-                    }}
-                  >{m === 'square' ? 'CUADRADAS' : 'LLENAR ÁREA'}</button>
-                ))}
-              </div>
-              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4, lineHeight: 1.4 }}>
-                {tileMode === 'square'
-                  ? 'Celdas siempre cuadradas; deja margen si la ventana no es proporcional a la grilla.'
-                  : 'Celdas ocupan toda el área; pueden volverse ligeramente rectangulares.'}
-              </div>
-            </div>
-          )}
-
-          {/* Theme */}
-          {onThemeChange && (
-            <div>
-              <SettingLabel>{t('settings.theme')}</SettingLabel>
-              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                {(['dark', 'light', 'system'] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => onThemeChange(opt)}
-                    style={{
-                      flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                      background: theme === opt ? VD.accentBg : VD.elevated,
-                      border: `1px solid ${theme === opt ? effectiveAccent : VD.border}`,
-                      fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                      color: theme === opt ? effectiveAccent : VD.textDim,
-                    }}
-                  >
-                    {opt === 'dark' ? t('settings.theme.dark') : opt === 'light' ? t('settings.theme.light') : t('settings.theme.system')}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Language */}
-          {onLanguageChange && (
-            <div>
-              <SettingLabel>{t('settings.language')}</SettingLabel>
-              <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-                {(['system', 'es', 'en'] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => onLanguageChange(opt)}
-                    style={{
-                      flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                      background: language === opt ? VD.accentBg : VD.elevated,
-                      border: `1px solid ${language === opt ? effectiveAccent : VD.border}`,
-                      fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                      color: language === opt ? effectiveAccent : VD.textDim,
-                    }}
-                  >
-                    {opt === 'system' ? t('settings.language.system') : opt === 'es' ? 'ESPAÑOL' : 'ENGLISH'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div style={{ height: 1, background: VD.border }} />
-
-          <ToggleRow label={t('settings.autostart')} value={autostart} accent={effectiveAccent} onClick={onAutostartToggle} />
-          <ToggleRow label={t('settings.alwaysOnTop')} value={alwaysOnTop} accent={effectiveAccent} onClick={onAlwaysOnTopToggle} />
-          <ToggleRow label={t('set.sound')} value={soundOnPress} accent={effectiveAccent} onClick={onSoundToggle} />
-
-          {soundOnPress && (
-            <div>
-              <SettingLabel>{t('set.chime')}</SettingLabel>
-              <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                {SOUND_PROFILES.map((p) => {
-                  const isActive = p.id === soundProfile;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => { onSoundProfileChange?.(p.id); playSound(p.id); }}
-                      style={{
-                        flex: '1 1 calc(50% - 2px)', padding: '5px 6px',
-                        fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
-                        background: isActive ? VD.accentBg : VD.elevated,
-                        border: `1px solid ${isActive ? effectiveAccent : VD.border}`,
-                        color: isActive ? effectiveAccent : VD.textDim,
-                        cursor: 'pointer', borderRadius: VD.radius.sm,
-                      }}
-                    >
-                      {p.label.toUpperCase()}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div style={{ height: 1, background: VD.border }} />
-
-          {/* 6.1 — Importar perfil desde URL */}
-          {onConfigImportFromUrl && (
-            <div>
-              <SettingLabel>{t('set.importUrl')}</SettingLabel>
-              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                <input
-                  value={galleryUrl}
-                  onChange={(e) => setGalleryUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && galleryUrl.trim()) {
-                      onConfigImportFromUrl(galleryUrl.trim());
-                      setGalleryUrl('');
-                    }
-                  }}
-                  placeholder="https://...perfil.json"
-                  style={{
-                    flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
-                    padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
-                    outline: 'none', borderRadius: VD.radius.sm,
-                  }}
-                />
-                <button
-                  onClick={() => { if (galleryUrl.trim()) { onConfigImportFromUrl(galleryUrl.trim()); setGalleryUrl(''); } }}
-                  style={{
-                    padding: '5px 10px', background: VD.accentBg, border: `1px solid ${effectiveAccent}`,
-                    fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
-                  }}
-                >{t('ui.import')}</button>
-              </div>
-            </div>
-          )}
-
-          {onRGBConfigChange && rgbConfig && (
-            <>
-              <div style={{ height: 1, background: VD.border }} />
-              <RGBSection
-                accent={effectiveAccent}
-                config={rgbConfig}
-                status={rgbStatus ?? null}
-                onChange={onRGBConfigChange}
-              />
-            </>
-          )}
-
-          {onSensorsConfigChange && sensorsConfig && (
-            <>
-              <div style={{ height: 1, background: VD.border }} />
-              <SensorsSection
-                accent={effectiveAccent}
-                config={sensorsConfig}
-                status={sensorsStatus ?? null}
-                onChange={onSensorsConfigChange}
-              />
-            </>
-          )}
-
-          <div style={{ height: 1, background: VD.border }} />
-
-          {/* Profiles */}
-          <div>
-            <SettingLabel>{t('set.profiles')}</SettingLabel>
-            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-              <input
-                value={newProfileName}
-                onChange={(e) => setNewProfileName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newProfileName.trim()) {
-                    onSaveProfile?.(newProfileName.trim());
-                    setNewProfileName('');
-                  }
-                }}
-                placeholder={t('set.profileName')}
-                style={{
-                  flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
-                  padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
-                  outline: 'none', borderRadius: VD.radius.sm,
-                }}
-              />
-              <button
-                onClick={() => { if (newProfileName.trim()) { onSaveProfile?.(newProfileName.trim()); setNewProfileName(''); } }}
-                style={{
-                  padding: '5px 10px', background: VD.accentBg, border: `1px solid ${effectiveAccent}`,
-                  fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
-                }}
-              >
-                {t('ui.saveShort')}
-              </button>
-            </div>
-            {profiles.length > 0 && (
-              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 130, overflowY: 'auto' }}>
-                {profiles.map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
-                    <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                    <button onClick={() => { onLoadProfile?.(p.id); setShowSettings(false); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('ui.load')}</button>
-                    <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {profiles.length === 0 && (
-              <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                {t('set.noProfiles')}
-              </div>
-            )}
-          </div>
-
-          <div style={{ height: 1, background: VD.border }} />
-
-          <HelpAboutPanel accent={effectiveAccent} onReplayOnboarding={onReplayOnboarding} />
-        </div>
+        <PanelAjustes
+          accent={effectiveAccent}
+          onAccentChange={onAccentChange}
+          uiScale={uiScale}
+          onUiScaleChange={onUiScaleChange}
+          tileMode={tileMode}
+          onTileModeChange={onTileModeChange}
+          theme={theme}
+          onThemeChange={onThemeChange}
+          language={language}
+          onLanguageChange={onLanguageChange}
+          autostart={autostart}
+          onAutostartToggle={onAutostartToggle}
+          alwaysOnTop={alwaysOnTop}
+          onAlwaysOnTopToggle={onAlwaysOnTopToggle}
+          soundOnPress={soundOnPress}
+          onSoundToggle={onSoundToggle}
+          soundProfile={soundProfile}
+          onSoundProfileChange={onSoundProfileChange}
+          rgbConfig={rgbConfig}
+          onRGBConfigChange={onRGBConfigChange}
+          rgbStatus={rgbStatus}
+          sensorsConfig={sensorsConfig}
+          onSensorsConfigChange={onSensorsConfigChange}
+          sensorsStatus={sensorsStatus}
+          onConfigImportFromUrl={onConfigImportFromUrl}
+          profiles={profiles}
+          onSaveProfile={onSaveProfile}
+          onLoadProfile={onLoadProfile}
+          onDeleteProfile={onDeleteProfile}
+          onReplayOnboarding={onReplayOnboarding}
+          newProfileName={newProfileName}
+          setNewProfileName={setNewProfileName}
+          galleryUrl={galleryUrl}
+          setGalleryUrl={setGalleryUrl}
+          panelRef={panelRef}
+          onCerrar={() => setShowSettings(false)}
+        />
       )}
     </div>
   );
