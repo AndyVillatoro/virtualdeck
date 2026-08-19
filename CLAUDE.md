@@ -30,7 +30,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `sistema`, `datos`, `rgb`, `compuestos`), `comunes.tsx` (`Field`, `Btn`, los sub-selectores
   y las funciones de estilo que comparten los pasos), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
   `EditorB.tsx` se queda con el estado, el paso de estilo y el guardado.
-- `src/components/ButtonCell.tsx` — celda de botón configurable (drag, long-press, multi-select)
+- `src/components/ButtonCell.tsx` — celda de botón: estructura, gestos y estado (~370 líneas)
+- `src/components/celda/` — las piezas de la celda: `colores.ts` (prioridad de fondo y borde),
+  `ContenidoCentral` (widget o icono, con sus cuatro formas), `Insignias` (las marcas de las esquinas),
+  `MenuContextual` y `usePulsacionTactil` (toque, doble toque y pulsación larga).
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
   `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que

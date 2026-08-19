@@ -1,10 +1,13 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
 import { useTheme } from '../utils/theme';
-import { useT } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 import { BrandIconDisplay } from './BrandIconDisplay';
-import { Glyph57View } from './Glyph57Editor';
+import { ContenidoCentral } from './celda/ContenidoCentral';
+import { Insignias } from './celda/Insignias';
+import { usePulsacionTactil } from './celda/usePulsacionTactil';
+import { MenuContextual } from './celda/MenuContextual';
+import { colorDeFondo, colorDeBorde } from './celda/colores';
 import type { ButtonConfig, SoundProfileId } from '../types';
 
 interface ButtonCellProps {
@@ -47,14 +50,12 @@ function ButtonCellInner({
   resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop, onDragEnd,
   showContextMenu = true,
 }: ButtonCellProps) {
-  const t = useT();
   const VD = useTheme();
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [flash, setFlash] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<number | null>(null);
   const longPressTriggered = useRef(false);
   const cellRef = useRef<HTMLDivElement>(null);
@@ -71,34 +72,14 @@ function ButtonCellInner({
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
-  const hasCustomBg = !!button.bgColor;
+
   const hasLongPress = !isEmpty && !!onLongPress;
 
   // 5.3 — el pulso radial reemplaza el flash de fondo plano. La celda mantiene
   // su bg estable durante la ejecución; la "ondita" se renderiza encima como overlay.
-  const bg = toggled
-    ? VD.accentBg
-    : dragOver
-    ? VD.accentBg
-    : hasCustomBg
-    ? button.bgColor!
-    : pressed
-    ? VD.overlay
-    : hovered && !isEmpty
-    ? VD.elevatedHover
-    : VD.elevated;
-
-  const borderColor = flash || dragOver
-    ? accent
-    : toggled
-    ? accent
-    : hasCustomBg
-    ? 'transparent'
-    : pressed
-    ? accent
-    : hovered
-    ? VD.borderStrong
-    : VD.border;
+  const estado = { toggled, dragOver, pressed, hovered, flash, isEmpty, bgPropio: button.bgColor };
+  const bg = colorDeFondo(estado, VD);
+  const borderColor = colorDeBorde(estado, VD, accent);
 
   const displayLabel = resolvedLabel ?? (button.label || (button.action.type !== 'none' ? button.action.type.replace(/-/g, ' ').toUpperCase() : ''));
   const ActionIcon = ACTION_ICONS[button.action.type] ?? IconNone;
@@ -156,76 +137,23 @@ function ButtonCellInner({
     return () => document.removeEventListener('click', close);
   }, [contextMenu]);
 
-  // Non-passive touchstart listener: blocks the browser's native long-press
-  // contextmenu when an alternate action is configured. React's synthetic
-  // touch events are passive by default and cannot call preventDefault().
-  useEffect(() => {
-    const el = cellRef.current;
-    if (!el || !hasLongPress) return;
+  // Destello de confirmacion. Los tres sitios que lo usan repetian el mismo
+  // par de llamadas con el mismo numero magico.
+  const destellar = useCallback(() => {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 300);
+    if (soundEnabledRef.current) playSound(soundProfileRef.current);
+  }, []);
 
-    let timer: number | null = null;
-    let fired = false;
-    let lastTap = 0;
-
-    const start = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      e.preventDefault(); // blocks native contextmenu + text selection on hold
-      fired = false;
-      setPressed(true);
-      longPressTriggered.current = false;
-      timer = window.setTimeout(() => {
-        fired = true;
-        timer = null;
-        longPressTriggered.current = true;
-        setPressed(false);
-        setFlash(true);
-        setTimeout(() => setFlash(false), 300);
-        if (soundEnabledRef.current) playSound(soundProfileRef.current);
-        onLongPressRef.current?.();
-      }, 500);
-    };
-
-    const end = (e: TouchEvent) => {
-      e.preventDefault();
-      setPressed(false);
-      if (timer !== null) { clearTimeout(timer); timer = null; }
-      if (!fired) {
-        const now = Date.now();
-        if (now - lastTap < 320) {
-          // Double-tap → alternate action
-          lastTap = 0;
-          setFlash(true);
-          setTimeout(() => setFlash(false), 300);
-          if (soundEnabledRef.current) playSound(soundProfileRef.current);
-          onLongPressRef.current?.();
-        } else {
-          // Single tap → main action
-          lastTap = now;
-          setFlash(true);
-          setTimeout(() => setFlash(false), 300);
-          if (soundEnabledRef.current) playSound(soundProfileRef.current);
-          onExecuteRef.current?.();
-        }
-      }
-      fired = false;
-    };
-
-    const cancel = () => {
-      setPressed(false);
-      if (timer !== null) { clearTimeout(timer); timer = null; }
-      fired = false;
-    };
-
-    el.addEventListener('touchstart', start, { passive: false });
-    el.addEventListener('touchend', end, { passive: false });
-    el.addEventListener('touchcancel', cancel);
-    return () => {
-      el.removeEventListener('touchstart', start);
-      el.removeEventListener('touchend', end);
-      el.removeEventListener('touchcancel', cancel);
-      if (timer !== null) clearTimeout(timer);
-    };
-  }, [hasLongPress]);
+  usePulsacionTactil({
+    ref: cellRef,
+    activo: hasLongPress,
+    setPressed,
+    destellar,
+    yaDisparoRef: longPressTriggered,
+    alPulsar: useCallback(() => onExecuteRef.current?.(), []),
+    alPulsarLargo: useCallback(() => onLongPressRef.current?.(), []),
+  })
 
   // Botón oculto por visibilidad condicional: placeholder inerte. Va DESPUÉS de
   // todos los hooks (Rules of Hooks: no se pueden llamar tras un return temprano).
@@ -320,24 +248,18 @@ function ButtonCellInner({
           height: '100%',
         }}
       >
-        {/* Active state: thin green bar at top when external state matches (process running, device is default, etc.) */}
-        {isActive && (
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            height: 2, background: '#4caf50',
-            borderRadius: `${VD.radius.lg} ${VD.radius.lg} 0 0`,
-          }} />
-        )}
-
-        {/* Multi-select checkmark */}
-        {isSelected && (
-          <div style={{
-            position: 'absolute', top: 4, left: 4, width: 16, height: 16,
-            borderRadius: '50%', background: accent, zIndex: 3,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 10, color: '#fff', fontWeight: 700, lineHeight: 1,
-          }}>✓</div>
-        )}
+        <Insignias
+          button={button}
+          accent={accent}
+          isEmpty={isEmpty}
+          isActive={isActive}
+          isSelected={isSelected}
+          hovered={hovered}
+          isTouch={isTouch}
+          toggled={toggled}
+          multiCount={multiCount}
+          onEdit={onEdit}
+        />
 
         {/* 5.3 — Pulso radial al ejecutar */}
         {flash && <span className="vd-flash-pulse" />}
@@ -372,51 +294,13 @@ function ButtonCellInner({
           paddingBottom: displayLabel ? 22 : 6,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         }}>
-          {widgetData ? (
-            /* Widget content — clock / weather / now-playing / sensor */
-            <>
-              <div style={{
-                fontFamily: VD.mono,
-                fontSize: widgetData.line1.length > 8 ? 9 : 14,
-                color: widgetData.tone === 'crit' ? VD.danger : widgetData.tone === 'warn' ? VD.warning : VD.text,
-                lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84,
-              }}>
-                {widgetData.line1}
-              </div>
-              {widgetData.line2 && (
-                <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginTop: 3, letterSpacing: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84 }}>
-                  {widgetData.line2}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              {/* 2.1 — Glifo 5×7 personalizado (prioridad sobre íconos por defecto) */}
-              {!button.imageData && !button.brandIcon && button.customGlyph57 && button.customGlyph57.length === 7 && (
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
-                </div>
-              )}
-              {/* Show center icon only when: no brand icon, no custom glyph (or has explicit emoji override) */}
-              {!button.imageData && !button.brandIcon && !button.customGlyph57 && (
-                button.icon ? (
-                  <div style={{ fontSize: isEmpty ? 20 : 24, color: iconColor, lineHeight: 1 }}>
-                    {button.icon}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <ActionIcon size={isEmpty ? 20 : 24} color={iconColor} />
-                  </div>
-                )
-              )}
-              {/* When brand icon is set but user also typed an emoji, show emoji on top */}
-              {button.brandIcon && button.icon && (
-                <div style={{ fontSize: isEmpty ? 20 : 24, color: 'rgba(255,255,255,0.9)', lineHeight: 1, textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
-                  {button.icon}
-                </div>
-              )}
-            </>
-          )}
+          <ContenidoCentral
+            button={button}
+            isEmpty={isEmpty}
+            iconColor={iconColor}
+            ActionIcon={ActionIcon}
+            widgetData={widgetData}
+          />
         </div>
 
         {/* Label banner — pinned at the bottom, always rendered when there's a label
@@ -449,143 +333,43 @@ function ButtonCellInner({
           </div>
         )}
 
-        {/* Edit icon on hover */}
-        {!isEmpty && (hovered || isTouch) && (
-          <div
-            onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            title={t('cell.edit')}
-            style={{
-              position: 'absolute', top: 4, right: 4,
-              width: 20, height: 20,
-              background: 'rgba(0,0,0,0.75)',
-              border: `1px solid ${VD.borderStrong}`,
-              borderRadius: VD.radius.md,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, color: VD.textDim, zIndex: 2, lineHeight: 1,
-            }}
-          >
-            ✎
-          </div>
-        )}
-
-        {/* Multi-action badge */}
-        {multiCount > 1 && !hovered && (
-          <div style={{
-            position: 'absolute', top: 4, left: 4,
-            background: 'rgba(0,0,0,0.7)', borderRadius: VD.radius.sm,
-            fontFamily: VD.mono, fontSize: 7, color: accent,
-            padding: '1px 4px', lineHeight: 1.4,
-          }}>
-            ×{multiCount}
-          </div>
-        )}
-
-        {/* Toggle indicator */}
-        {button.isToggle && !hovered && (
-          <div style={{
-            position: 'absolute', top: 4, left: multiCount > 1 ? 28 : 4,
-            width: 6, height: 6, borderRadius: 3,
-            background: toggled ? accent : VD.textMuted,
-            opacity: 0.8,
-          }} />
-        )}
-
-        {/* Folder indicator */}
-        {button.action.type === 'folder' && !hovered && (
-          <div style={{
-            position: 'absolute', bottom: 4, left: 4,
-            fontFamily: VD.mono, fontSize: 7,
-            color: accent, opacity: 0.7,
-          }}>
-            {(button.action.folderButtons?.length ?? 0)}
-          </div>
-        )}
-
-        {/* Configured indicator dot */}
-        {!isEmpty && (
-          <div style={{
-            position: 'absolute', bottom: 4, right: 4,
-            width: 5, height: 5, borderRadius: 3,
-            background: accent,
-            opacity: hovered ? 0 : 0.7,
-            transition: 'opacity 0.15s',
-          }} />
-        )}
       </div>
 
       {/* Right-click context menu */}
       {contextMenu && (
-        <div
-          ref={menuRef}
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'fixed',
-            left: contextMenu.x,
-            top: contextMenu.y,
-            zIndex: 9999,
-            background: VD.surface,
-            border: `1px solid ${VD.borderStrong}`,
-            borderRadius: VD.radius.lg,
-            overflow: 'hidden',
-            boxShadow: VD.shadow.menu,
-            minWidth: 150,
-          }}
-        >
-          <ContextItem label={t('cell.editShort')} icon="✎" onClick={() => { setContextMenu(null); onEdit(); }} />
-          {!isEmpty && onDuplicate && (
-            <ContextItem label={t('cell.duplicate')} icon="⊕" onClick={() => { setContextMenu(null); onDuplicate(); }} />
-          )}
-          {!isEmpty && onClear && (
-            <ContextItem label={t('cell.clear')} icon="○" onClick={() => { setContextMenu(null); onClear(); }} danger />
-          )}
-        </div>
+        <MenuContextual
+          x={contextMenu.x}
+          y={contextMenu.y}
+          isEmpty={isEmpty}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onClear={onClear}
+          onCerrar={() => setContextMenu(null)}
+        />
       )}
     </>
   );
 }
 
-// Memoizado: la grilla re-renderiza al editar un solo botón. Solo redibuja
-// si cambia el botón (referencia), su estado toggled, el accent o el sonido.
-// Los handlers cambian de identidad por render del padre — los ignoramos a propósito.
-export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
-  prev.button === next.button &&
-  prev.toggled === next.toggled &&
-  prev.isActive === next.isActive &&
-  prev.isHidden === next.isHidden &&
-  prev.isRunning === next.isRunning &&
-  prev.isSelected === next.isSelected &&
-  prev.accent === next.accent &&
-  prev.showContextMenu === next.showContextMenu &&
-  prev.soundEnabled === next.soundEnabled &&
-  prev.soundProfile === next.soundProfile &&
-  prev.resolvedLabel === next.resolvedLabel &&
-  (prev.widgetData?.line1 ?? null) === (next.widgetData?.line1 ?? null) &&
-  (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null) &&
-  (prev.widgetData?.tone ?? null) === (next.widgetData?.tone ?? null),
-);
+/**
+ * Props que obligan a redibujar la celda.
+ *
+ * Como lista y no como cadena de `&&`: añadir una prop que deba redibujar es
+ * añadir un nombre aqui, y olvidarse de una deja de ser un `&&` perdido en
+ * medio de trece.
+ */
+const REDIBUJAN = [
+  'button', 'toggled', 'isActive', 'isHidden', 'isRunning', 'isSelected',
+  'accent', 'showContextMenu', 'soundEnabled', 'soundProfile', 'resolvedLabel',
+] as const;
 
-function ContextItem({ label, icon, onClick, danger }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
-  const VD = useTheme();
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '9px 14px',
-        background: hov ? VD.elevated : 'transparent',
-        cursor: 'pointer',
-        fontFamily: VD.mono, fontSize: 11,
-        color: danger ? VD.danger : VD.text,
-        letterSpacing: 0.5,
-        transition: 'background 0.1s',
-        borderBottom: `1px solid ${VD.border}`,
-      }}
-    >
-      <span style={{ fontSize: 13, opacity: 0.7 }}>{icon}</span>
-      {label}
-    </div>
-  );
-}
+// Memoizado: la grilla re-renderiza al editar un solo boton, y sin esto se
+// redibujarian las treinta celdas. Los handlers cambian de identidad en cada
+// render del padre, asi que se ignoran a proposito — por eso el id del boton
+// arrastrado viaja en el `dataTransfer` y no en un estado (ver `onDrop`).
+export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
+  REDIBUJAN.every((k) => prev[k] === next[k])
+  && (prev.widgetData?.line1 ?? null) === (next.widgetData?.line1 ?? null)
+  && (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null)
+  && (prev.widgetData?.tone ?? null) === (next.widgetData?.tone ?? null),
+);
