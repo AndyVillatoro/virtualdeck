@@ -37,6 +37,10 @@ function setupWindow() {
   createTray(win, onQuit);
   applyTriggerableConfig(win, initialCfg, onQuit);
 
+  // Primer plano desde el arranque: si se dejara para cuando el renderer avisa,
+  // la ventana aparecería detrás y saltaría al frente un instante después.
+  if ((initialCfg as any)?.alwaysOnTop) win.setAlwaysOnTop(true, 'screen-saver');
+
   // Apply sensors config from disk so first poll uses the user's host/port.
   const sensorsCfg = (initialCfg as any)?.sensors;
   if (sensorsCfg) {

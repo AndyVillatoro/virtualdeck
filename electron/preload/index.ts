@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     maximize: () => ipcRenderer.send('window:maximize'),
     close: () => ipcRenderer.send('window:close'),
     fullscreen: () => ipcRenderer.send('window:fullscreen'),
+    setAlwaysOnTop: (encima: boolean) => ipcRenderer.send('window:setAlwaysOnTop', encima),
   },
   config: {
     load: (): Promise<object> => ipcRenderer.invoke('config:load'),

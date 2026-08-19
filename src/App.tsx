@@ -153,6 +153,12 @@ export default function App() {
     api.app.setZoom(config.uiScale).catch(() => {});
   }, [config.uiScale]);
 
+  // Primer plano. El proceso principal ya lo aplica al crear la ventana leyendo
+  // la config del disco; esto es para cuando el usuario lo cambia en caliente.
+  useEffect(() => {
+    api?.window.setAlwaysOnTop(!!config.alwaysOnTop);
+  }, [config.alwaysOnTop]);
+
   // Apply theme class on documentElement for CSS variable overrides
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', config.theme ?? 'dark');
@@ -440,6 +446,10 @@ export default function App() {
     api?.app.setZoom(clamped).catch(() => {});
   }, [config, saveConfig, api]);
 
+  const toggleAlwaysOnTop = useCallback(() => {
+    saveConfig({ ...config, alwaysOnTop: !config.alwaysOnTop });
+  }, [config, saveConfig]);
+
   // Theme handler
   const setTheme = useCallback((theme: 'dark' | 'light' | 'system') => {
     saveConfig({ ...config, theme });
@@ -691,6 +701,8 @@ export default function App() {
           onStateUpdate={updateState}
           uiScale={config.uiScale ?? 1}
           onUiScaleChange={setUiScale}
+          alwaysOnTop={config.alwaysOnTop ?? false}
+          onAlwaysOnTopToggle={toggleAlwaysOnTop}
           theme={config.theme ?? 'dark'}
           onThemeChange={setTheme}
           language={config.language ?? 'system'}

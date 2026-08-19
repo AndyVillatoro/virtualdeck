@@ -57,6 +57,8 @@ interface MainBProps {
   onStateUpdate: (update: Record<string, string>) => void;
   uiScale?: number;
   onUiScaleChange?: (scale: number) => void;
+  alwaysOnTop?: boolean;
+  onAlwaysOnTopToggle?: () => void;
   theme?: 'dark' | 'light' | 'system';
   onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
   language?: 'system' | 'es' | 'en';
@@ -92,7 +94,7 @@ export function MainB({
   onConfigExport, onConfigImport, onConfigImportFromUrl, onSwapButtons,
   onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage,
   onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
-  uiScale, onUiScaleChange, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
+  uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
   const VD = useTheme();
   const api = window.electronAPI;
@@ -483,6 +485,8 @@ export function MainB({
           onDeleteProfile={onDeleteProfile}
           uiScale={uiScale}
           onUiScaleChange={onUiScaleChange}
+          alwaysOnTop={alwaysOnTop}
+          onAlwaysOnTopToggle={onAlwaysOnTopToggle}
           theme={theme}
           onThemeChange={onThemeChange}
           language={language}

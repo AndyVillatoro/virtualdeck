@@ -272,6 +272,14 @@ export interface DeckConfig {
   onboardingCompleted?: boolean;
   /** 6.x — Keys de hints contextuales que el usuario ya descartó. */
   hintsDismissed?: string[];
+  /**
+   * 6.x — La ventana se queda por encima de las demás.
+   *
+   * Para quien deja el deck abierto en la pantalla principal y lo pulsa con
+   * el ratón: sin esto, cualquier ventana que reciba el foco lo tapa, y la
+   * de VirtualDeck no tiene marco con el que distinguirla del fondo.
+   */
+  alwaysOnTop?: boolean;
 }
 
 export interface SensorsSettings {
@@ -457,6 +465,7 @@ export interface ElectronAPI {
     maximize: () => void;
     close: () => void;
     fullscreen: () => void;
+    setAlwaysOnTop: (encima: boolean) => void;
   };
   config: {
     load: () => Promise<object>;

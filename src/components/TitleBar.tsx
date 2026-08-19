@@ -16,6 +16,7 @@ interface TitleBarProps {
   pageName?: string;
   accent?: string;
   autostart?: boolean;
+  alwaysOnTop?: boolean;
   soundOnPress?: boolean;
   soundProfile?: SoundProfileId;
   profiles?: Profile[];
@@ -27,6 +28,7 @@ interface TitleBarProps {
   onConfigImportFromUrl?: (url: string) => void;
   onAccentChange?: (color: string) => void;
   onAutostartToggle?: () => void;
+  onAlwaysOnTopToggle?: () => void;
   onSoundToggle?: () => void;
   onSoundProfileChange?: (id: SoundProfileId) => void;
   onSaveProfile?: (name: string) => void;
@@ -59,6 +61,7 @@ export function TitleBar({
   pageName = '',
   accent,
   autostart = false,
+  alwaysOnTop = false,
   soundOnPress = true,
   soundProfile = 'click',
   profiles = [],
@@ -70,6 +73,7 @@ export function TitleBar({
   onConfigImportFromUrl,
   onAccentChange,
   onAutostartToggle,
+  onAlwaysOnTopToggle,
   onSoundToggle,
   onSoundProfileChange,
   onSaveProfile,
@@ -323,6 +327,7 @@ export function TitleBar({
           <div style={{ height: 1, background: VD.border }} />
 
           <ToggleRow label={t('settings.autostart')} value={autostart} accent={effectiveAccent} onClick={onAutostartToggle} />
+          <ToggleRow label={t('settings.alwaysOnTop')} value={alwaysOnTop} accent={effectiveAccent} onClick={onAlwaysOnTopToggle} />
           <ToggleRow label="SONIDO AL PRESIONAR" value={soundOnPress} accent={effectiveAccent} onClick={onSoundToggle} />
 
           {soundOnPress && (
