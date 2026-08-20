@@ -1,27 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward,
-} from '../components/VDIcon';
 import { useTheme } from '../utils/theme';
-import { useT } from '../utils/i18n';
+import { useT, useLang } from '../utils/i18n';
+import { formatoHora, formatoFecha } from './main/formatos';
+import { BarraLateral } from './main/BarraLateral';
 import { playSound } from '../utils/sound';
 import { executeAction, runActionSequence, interpolate } from '../utils/actions';
 import { logError } from '../utils/logger';
-import { DotLabel } from '../components/DotLabel';
-import { DotText } from '../components/DotText';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
 import { Hint } from '../components/Hint';
-import { WeatherWidget, wxInfo } from '../components/WeatherWidget';
+import { wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors, findSensor, evalCondition } from '../utils/sensors';
-import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
 import type { ButtonConfig, DeckConfig, FolderButton, RGBStatus } from '../types';
 
-// Formatters reutilizables — evita instanciar Intl.DateTimeFormat cada tick.
-const TIME_FMT = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit', hour12: false });
-const DATE_FMT = new Intl.DateTimeFormat('es', { weekday: 'short', day: '2-digit', month: 'short' });
 
 interface MainBProps {
   config: DeckConfig;
@@ -100,6 +93,11 @@ export function MainB({
 }: MainBProps) {
   const VD = useTheme();
   const t = useT();
+  const lang = useLang();
+  // Memoizados: son dependencia de un `useMemo` y de un `useEffect`, y sin
+  // referencia estable los harian recalcular en cada render.
+  const TIME_FMT = useMemo(() => formatoHora(lang), [lang]);
+  const DATE_FMT = useMemo(() => formatoFecha(lang), [lang]);
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
@@ -274,7 +272,7 @@ export function MainB({
     } finally {
       setRunningButtons((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }
-  }, [api, toggledIds, onToggle, showToast, config.state, config.rgb?.profiles, onStateUpdate, config.buttons]);
+  }, [api, t, toggledIds, onToggle, showToast, config.state, config.rgb?.profiles, onStateUpdate, config.buttons]);
 
   const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
     if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
@@ -285,7 +283,7 @@ export function MainB({
     ]);
     if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
     if (!r.ok && r.error) showToast(r.error);
-  }, [api, config.state, config.rgb?.profiles, onStateUpdate, showToast]);
+  }, [api, t, config.state, config.rgb?.profiles, onStateUpdate, showToast]);
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
@@ -360,7 +358,7 @@ export function MainB({
       }
     }
     return map;
-  }, [config.buttons, config.state, clock, widgetWeather, nowPlaying, sensorList]);
+  }, [config.buttons, config.state, clock, widgetWeather, nowPlaying, sensorList, TIME_FMT, DATE_FMT]);
 
   // Scheduled triggers: check every 15s for buttons with timerTriggerAt matching current HH:MM.
   useEffect(() => {
@@ -374,7 +372,7 @@ export function MainB({
       }
     }, 15000);
     return () => clearInterval(t);
-  }, [config.buttons, activePage, executeButton]);
+  }, [config.buttons, activePage, executeButton, TIME_FMT]);
 
   // Sensor triggers: level-triggered with cooldown. Re-runs on every sensor
   // poll tick (the sensorList reference changes when new data lands). Cooldown
@@ -848,205 +846,23 @@ export function MainB({
 
           {/* Sidebar */}
           {showSidebar && (
-            <div style={{
-              width: 220, borderLeft: `1px solid ${VD.border}`,
-              padding: '10px 14px 10px', background: VD.surface,
-              display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0,
-              overflowY: 'auto',
-            }}>
-              {/* Clock — DotText es la firma del reloj */}
-              <div style={{
-                paddingBottom: 10, borderBottom: `1px solid ${VD.border}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-              }}>
-                <DotText
-                  text={TIME_FMT.format(clock)}
-                  dotSize={3} gap={1} color={VD.text}
-                />
-                <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>
-                  {DATE_FMT.format(clock).toUpperCase()}
-                </div>
-              </div>
-
-              {/* Weather */}
-              <div>
-                <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('panel.weather')}</DotLabel>
-                <WeatherWidget />
-              </div>
-
-              {/* Sensor cards — compact, below weather. Only shows when LHM has data. */}
-              {sensorList.length > 0 && (config.sensors?.showWidget ?? true) && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
-                    <span style={{
-                      fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
-                      color: sensorStatus?.connected ? VD.success : VD.textMuted,
-                    }}>
-                      {sensorStatus?.connected ? '●' : '○'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {groupSensorsByHardware(sensorList).map((g) => (
-                      <SensorCard key={g.hardware} group={g} compact />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* RGB status */}
-              <div>
-                <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>RGB</DotLabel>
-                <div
-                  onClick={onRGB}
-                  title={t('panel.openRgb')}
-                  style={{
-                    background: VD.elevated, border: `1px solid ${VD.border}`,
-                    borderRadius: VD.radius.md, padding: '8px 10px',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-                  }}
-                >
-                  <div style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: rgbStatus?.connected ? VD.success : rgbStatus?.serverRunning ? VD.warning : VD.textMuted,
-                  }} />
-                  <div style={{ flex: 1, fontFamily: VD.mono, fontSize: 9, color: VD.textDim, letterSpacing: 0.5 }}>
-                    {rgbStatus?.connected
-                      ? `${rgbStatus.deviceCount} ${rgbStatus.deviceCount === 1 ? 'DEVICE' : 'DEVICES'}`
-                      : rgbStatus?.serverRunning ? 'SERVER ACTIVO' : 'DESCONECTADO'}
-                  </div>
-                  <span style={{ fontFamily: VD.mono, fontSize: 9, color: config.accent }}>→</span>
-                </div>
-              </div>
-
-              {/* Execution log */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showLog ? 6 : 0 }}>
-                  <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.log')}</DotLabel>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    {execLog.length > 0 && (
-                      <span
-                        onClick={() => setExecLog([])}
-                        title={t('panel.clearLog')}
-                        style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, cursor: 'pointer', letterSpacing: 0.5 }}
-                      >✕</span>
-                    )}
-                    <span
-                      onClick={() => setShowLog((v) => !v)}
-                      style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer', userSelect: 'none' }}
-                    >{showLog ? '▲' : '▼'}</span>
-                  </div>
-                </div>
-                {showLog && (
-                  <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {execLog.length === 0 ? (
-                      <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Sin actividad</div>
-                    ) : execLog.map((entry) => (
-                      <div key={entry.id} title={entry.error} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ color: entry.ok ? VD.success : VD.danger, fontSize: 8, flexShrink: 0 }}>●</span>
-                        <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.label}</span>
-                        <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, flexShrink: 0 }}>
-                          {new Date(entry.ts).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Now Playing */}
-              <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}` }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.playing')}</DotLabel>
-                  <span
-                    onClick={async () => {
-                      const r = await api?.media.diagnose();
-                      if (!r) return;
-                      const lines = r.stdout.split(/\r?\n/).slice(0, 25).join('\n');
-                      showToast(`SMTC diagnóstico:\n${lines}${r.stderr ? '\n\nstderr:\n' + r.stderr.slice(0, 300) : ''}`);
-                    }}
-                    title={t('media.diagnose')}
-                    style={{
-                      fontFamily: VD.mono, fontSize: 8, color: VD.textMuted,
-                      cursor: 'pointer', letterSpacing: 1, padding: '2px 4px',
-                    }}
-                  >?</span>
-                </div>
-                {nowPlaying ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <div style={{
-                        width: 44, height: 44, flexShrink: 0, borderRadius: VD.radius.lg,
-                        background: VD.overlay, overflow: 'hidden',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        border: `1px solid ${VD.border}`, position: 'relative',
-                      }}>
-                        <div style={{ opacity: 0.35 }}>
-                          {isPlaying
-                            ? <IconMediaPlay size={18} color={VD.textMuted} />
-                            : <IconMediaPause size={18} color={VD.textMuted} />
-                          }
-                        </div>
-                        {nowPlaying.thumbnail && (
-                          <img
-                            src={nowPlaying.thumbnail}
-                            alt=""
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                          />
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: VD.font, fontSize: 11, color: VD.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>
-                          {nowPlaying.title || '—'}
-                        </div>
-                        {nowPlaying.artist && (
-                          <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                            {nowPlaying.artist}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: isPlaying ? VD.success : VD.textMuted, flexShrink: 0 }} />
-                      <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-                        {isPlaying ? 'Reproduciendo' : 'Pausado'}{sourceName ? ` · ${sourceName}` : ''}
-                      </span>
-                    </div>
-                    {/* Media controls — Lucide icons, matching app design */}
-                    <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
-                      {([
-                        { key: 'prev',       Icon: IconMediaSkipBack,                          title: 'Anterior'   },
-                        { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: 'Play/Pausa' },
-                        { key: 'next',       Icon: IconMediaSkipForward,                       title: 'Siguiente'  },
-                      ] as const).map(({ key, Icon, title }) => (
-                        <button
-                          key={key}
-                          title={title}
-                          onClick={() => {
-                            // Usa SMTC nativo (TrySkipNext/Previous/TogglePlayPause); cae a SendKeys si falla.
-                            api?.media.control(key as 'play-pause' | 'next' | 'prev');
-                          }}
-                          style={{
-                            flex: 1, padding: '6px 0',
-                            background: VD.elevated, border: `1px solid ${VD.border}`,
-                            cursor: 'pointer', borderRadius: VD.radius.md,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'background 0.1s, border-color 0.1s',
-                          }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
-                        >
-                          <Icon size={13} color={VD.textDim} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>{t('panel.noMedia')}</div>
-                )}
-              </div>
-            </div>
+            <BarraLateral
+              config={config}
+              clock={clock}
+              api={api}
+              sensorList={sensorList}
+              sensorStatus={sensorStatus}
+              rgbStatus={rgbStatus}
+              onRGB={onRGB}
+              execLog={execLog}
+              setExecLog={setExecLog}
+              showLog={showLog}
+              setShowLog={setShowLog}
+              nowPlaying={nowPlaying}
+              isPlaying={isPlaying}
+              sourceName={sourceName}
+              showToast={showToast}
+            />
           )}
 
           {/* Script output toast */}
