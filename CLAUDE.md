@@ -42,6 +42,9 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `src/components/celda/` — las piezas de la celda: `colores.ts` (prioridad de fondo y borde),
   `ContenidoCentral` (widget o icono, con sus cuatro formas), `Insignias` (las marcas de las esquinas),
   `MenuContextual` y `usePulsacionTactil` (toque, doble toque y pulsación larga).
+- `src/utils/useDeck.ts` — la configuración del deck y las 25 operaciones que la cambian
+  (botones, páginas, perfiles, ajustes), con el historial de deshacer. `App` se queda con la
+  vista y los avisos. `src/utils/configDefaults.ts` — la configuración de una instalación nueva.
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
   `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que
