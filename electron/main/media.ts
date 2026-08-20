@@ -515,12 +515,28 @@ export async function repeatMedia(): Promise<boolean> {
 }
 
 // Diagnóstico — devuelve raw output para que el usuario entienda el estado.
+/**
+ * Diagnóstico del widget de música (el botón "?" del panel).
+ *
+ * **Va por PowerShell a propósito, aunque el núcleo nativo tenga su versión.**
+ *
+ * El diagnóstico recorre *todas* las sesiones SMTC, y basta con que una
+ * aplicación haya dejado una sesión a medio cerrar para que su
+ * `TryGetMediaPropertiesAsync` no termine nunca. La llamada nativa es síncrona
+ * desde el punto de vista de quien la hace, así que eso **congela el proceso
+ * principal de Electron entero**: la aplicación deja de responder y Windows
+ * ofrece cerrarla. Se comprobó en esta máquina, con Edge reproduciendo — ni
+ * siquiera un `Promise.race` con temporizador llega a dispararse, porque el
+ * bucle de eventos está bloqueado.
+ *
+ * PowerShell tarda cientos de milisegundos, pero corre en otro proceso: si se
+ * cuelga, se cuelga él solo.
+ *
+ * En `vd-core` ya está escrito el límite de 5 segundos que lo arregla de raíz
+ * (`en_hilo_mta_con_limite`), pero no se ha podido compilar todavía. Cuando el
+ * `.node` se reconstruya, esto puede volver a `intentarNativo`.
+ */
 export async function diagnose(): Promise<MediaDiagnostic> {
-  const nativo = intentarNativo('diagnose', (n) => n.diagnoseMedia());
-  if (nativo !== undefined) {
-    return { ok: true, stage: 'nativo', stdout: nativo, stderr: '' };
-  }
-
   const r = await runPS(DIAGNOSE_SCRIPT);
   return {
     ok: r.ok,

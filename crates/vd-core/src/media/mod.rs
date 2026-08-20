@@ -220,6 +220,39 @@ where
     .ok()
 }
 
+/// Igual que `en_hilo_mta`, pero se rinde pasado un tiempo.
+///
+/// `join()` sobre el hilo no se puede limitar, asi que la respuesta viaja por
+/// un canal y se espera con `recv_timeout`. Si vence, el hilo se queda ahi
+/// colgado —no hay forma de matar un hilo bloqueado en COM— pero **quien llama
+/// vuelve**, que es lo que importa: al otro lado esta el hilo principal de
+/// Electron y bloquearlo congela la aplicacion entera.
+///
+/// Solo lo usa el diagnostico. El resto de llamadas consultan **una** sesion,
+/// la activa, y esa responde o falla; el diagnostico recorre **todas**, y basta
+/// con que una aplicacion haya dejado una sesion zombi para que su
+/// `TryGetMediaPropertiesAsync` no termine nunca. Se encontro asi: pulsando el
+/// boton "?" del panel de musica con Edge reproduciendo.
+fn en_hilo_mta_con_limite<T, F>(trabajo: F, limite: std::time::Duration) -> Option<T>
+where
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        // SAFETY: igual que arriba — hilo nuevo, sin apartamento previo.
+        unsafe {
+            let _ = windows::Win32::System::Com::CoInitializeEx(
+                None,
+                windows::Win32::System::Com::COINIT_MULTITHREADED,
+            );
+        }
+        // Si el receptor ya se rindio, el envio falla y no pasa nada.
+        let _ = tx.send(trabajo());
+    });
+    rx.recv_timeout(limite).ok()
+}
+
 pub fn now_playing_smtc() -> Option<NowPlaying> {
     en_hilo_mta(now_playing_smtc_aqui).flatten()
 }
@@ -236,9 +269,19 @@ pub fn cycle_repeat() -> Result<MediaPlaybackAutoRepeatMode, MediaError> {
     en_hilo_mta(cycle_repeat_aqui).unwrap_or(Err(MediaError::NoSession))
 }
 
+/// Cuanto se espera al diagnostico antes de darlo por colgado.
+///
+/// Cinco segundos: lo normal son milisegundos, y quien pulsa "?" esta mirando
+/// la pantalla. Mas que esto y parece que la aplicacion se ha roto.
+const LIMITE_DIAGNOSTICO: std::time::Duration = std::time::Duration::from_secs(5);
+
 pub fn diagnose() -> String {
-    en_hilo_mta(diagnose_aqui)
-        .unwrap_or_else(|| "El diagnostico de SMTC no pudo completarse.".to_string())
+    en_hilo_mta_con_limite(diagnose_aqui, LIMITE_DIAGNOSTICO).unwrap_or_else(|| {
+        "El diagnostico de SMTC no respondio en 5 segundos.
+
+         Suele significar que alguna aplicacion dejo una sesion de medios a medio          cerrar: Windows la sigue listando pero ya no contesta. Cerrar y volver a          abrir el reproductor normalmente la limpia."
+            .to_string()
+    })
 }
 
 pub fn now_playing() -> Option<NowPlaying> {

@@ -84,6 +84,14 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - Widget `now-playing` no se aplica a botones de tipo `audio-device` (filtro en `MainB.tsx`).
 - `media.ts` re-consulta ventanas activas en cada ciclo cuando SMTC falla, para reflejar cambios de pestaña/video.
 - **SMTC await (NO tocar)**: el `Await-Op` del PREAMBLE de `media.ts` convierte el `IAsyncOperation` de WinRT a un `Task` de .NET vía `System.Runtime.WindowsRuntime` + reflection (`AsTask`), pasando el tipo de resultado explícito. **NO** volver al polling de `$op.Status`: en PowerShell 5.1 stock esa propiedad no se proyecta (queda vacía), el await devuelve siempre `$null`, el manager sale `null` y el widget de música deja de mostrar nada. Verificado en vivo (polling → manager null, AsTask → OK). Los alias de tipo (`$TMgr`, `$TProps`, `$TStream`) usan el loader WinRT completo `,Namespace,ContentType=WindowsRuntime` para resolver sin depender del orden de carga del winmd. El thumbnail (`OpenReadAsync`) devuelve `IAsyncOperationWithProgress`, por eso se le pasa también `$progressType` (`[UInt64]`).
+- ** va por PowerShell a propósito.** El diagnóstico recorre *todas* las sesiones
+  SMTC y una sesión zombi hace que  no termine nunca; como la llamada
+  nativa es síncrona, eso congela el proceso principal de Electron (ni un  con
+  temporizador se dispara: el bucle de eventos está parado). En  ya está
+   con 5 s, pero **el  no se ha podido recompilar** — una directiva
+  de Control de aplicaciones de Windows bloquea los proc-macro recién compilados
+  (, os error 4551). Cuando se pueda compilar,  puede volver a
+  .
 - **Audio cache**: `audioIpc.ts` cachea la lista de dispositivos 30 s. Invalida automáticamente al cambiar dispositivo default. Pasar `force=true` para forzar refresco.
 - **Multi-select**: Ctrl+clic en celdas para seleccionar múltiples botones. La barra de bulk-ops flota sobre la grilla. `selectedIds` se limpia al cambiar de página.
 - **Shuffle/repeat SMTC**: usan `TryChangeShuffleActiveAsync` / `TryChangeAutoRepeatModeAsync` de Windows.Media.Control. Requieren que haya una sesión SMTC activa.

@@ -62,6 +62,12 @@ del código que no se ve pero que toca casi todos los archivos.
   ignora los handlers a propósito, así que la celda de destino se quedaba con el
   de antes del arrastre, cuando todavía no había nada arrastrándose. El id viaja
   ahora dentro del propio arrastre.
+- **El botón "?" del widget de música congelaba la aplicación.** El diagnóstico
+  recorre todas las sesiones SMTC, y basta con que una aplicación haya dejado
+  una a medio cerrar para que no termine nunca. Al ser una llamada nativa
+  síncrona, bloqueaba el proceso principal entero. Va por PowerShell mientras
+  tanto: tarda medio segundo pero corre en otro proceso. El arreglo de raíz
+  (límite de 5 s en `vd-core`) está escrito pero **sin compilar** — ver abajo.
 - **SMTC colgaba el proceso principal**: el widget de música bloqueaba Electron
   indefinidamente. Las llamadas a WinRT van ahora en un hilo MTA propio.
 - **La CSP bloqueaba el arranque en desarrollo** (pantalla en negro sin ningún
