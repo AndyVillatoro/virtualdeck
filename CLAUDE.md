@@ -33,9 +33,11 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `PasoConfigurar` (los apartados comunes: toggle, mantener pulsado, disparadores),
   `formularios/` (**un componente por tipo de acción en un mapa `FORMULARIOS`** — añadir un tipo
   es añadir una entrada, no tocar una cadena de condiciones; repartidos por familia: `basicos`,
-  `sistema`, `datos`, `rgb`, `compuestos`), `comunes.tsx` (`Field`, `Btn`, los sub-selectores
+  `sistema`, `datos`, `rgb`, `compuestos`), `PasoEstilo` (etiqueta,
+  iconos, colores, widget y disparadores), `guardar.ts` (arma el botón a guardar, función pura),
+  `comunes.tsx` (`Field`, `Btn`, los sub-selectores
   y las funciones de estilo que comparten los pasos), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
-  `EditorB.tsx` se queda con el estado, el paso de estilo y el guardado.
+  `EditorB.tsx` se queda con el estado y el armado de la pantalla.
 - `src/components/ButtonCell.tsx` — celda de botón: estructura, gestos y estado (~370 líneas)
 - `src/components/celda/` — las piezas de la celda: `colores.ts` (prioridad de fondo y borde),
   `ContenidoCentral` (widget o icono, con sus cuatro formas), `Insignias` (las marcas de las esquinas),

@@ -1,20 +1,18 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { IconNone } from '../components/VDIcon';
 import { ACTION_TYPES, PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData';
 import { PasoAccion } from './editor/PasoAccion';
 import { PasoConfigurar } from './editor/PasoConfigurar';
+import { PasoEstilo } from './editor/PasoEstilo';
+import { construirBoton } from './editor/guardar';
 import { useTheme } from '../utils/theme';
 import { DotLabel } from '../components/DotLabel';
-import { BrandIconDisplay } from '../components/BrandIconDisplay';
 // 4.1 — picker y editor del catálogo de marcas se cargan a demanda. Evita
 // arrastrar el bundle de marcas al árbol inicial cuando el usuario no abre el modal.
 const BrandIconPicker = lazy(() => import('../components/BrandIconPicker').then(m => ({ default: m.BrandIconPicker })));
 const BrandIconEditor = lazy(() => import('../components/BrandIconEditor').then(m => ({ default: m.BrandIconEditor })));
 import { ButtonCell } from '../components/ButtonCell';
-import { Glyph57Editor, Glyph57View as Glyph57Inline } from '../components/Glyph57Editor';
-import { BRAND_ICONS_MAP } from '../data/brandIcons';
+import { Glyph57Editor } from '../components/Glyph57Editor';
 import { useT, useFieldText } from '../utils/i18n';
-import { Field, Btn, SensorPicker, estiloEntrada } from './editor/comunes';
 import type { AudioDevice, ButtonAction, ButtonConfig, FolderButton, RGBDeviceInfo, RGBProfile } from '../types';
 
 interface EditorBProps {
@@ -32,7 +30,6 @@ const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
 
 export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
   const VD = useTheme();
-  const inputStyle = estiloEntrada(VD);
   const t = useT();
   const tf = useFieldText();
   const api = window.electronAPI;
@@ -180,71 +177,46 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   }, [folderButtons]);
 
   const handleSave = () => {
-    const allActions = extraActions.length > 0 ? [action, ...extraActions] : undefined;
-    const updated: ButtonConfig = {
-      ...button,
+    onSave(construirBoton(button, {
+      action,
+      extraActions,
       label,
       sublabel,
       icon,
       imageData,
-      brandIcon: brandIcon || undefined,
-      brandIconAlwaysAnimate: brandIconAlwaysAnimate || undefined,
-      brandIconCustomBitmap: brandIconCustomBitmap,
-      brandIconCustomColor: brandIconCustomColor,
-      brandIconCustomPalette: brandIconCustomPalette && Object.keys(brandIconCustomPalette).length > 0 ? brandIconCustomPalette : undefined,
-      bgColor: bgColor || undefined,
-      fgColor: fgColor || undefined,
-      action: action.type === 'folder' ? { ...action, folderButtons } : action,
-      actions: allActions,
-      isToggle: isToggle || undefined,
-      actionToggleOff: isToggle && actionToggleOff.type !== 'none' ? actionToggleOff : undefined,
-      globalHotkey: globalHotkey.trim() || undefined,
-      inTrayMenu: inTrayMenu || undefined,
-      customGlyph57: customGlyph57 && customGlyph57.length === 7 ? customGlyph57 : undefined,
-      longPressAction: longPressAction.type !== 'none' ? longPressAction : undefined,
-      radioGroup: radioGroup.trim() || undefined,
-      widget: widget || undefined,
-      sensorWidget: widget === 'sensor' && sensorWidgetId
-        ? {
-            sensorId: sensorWidgetId,
-            suffix: sensorWidgetSuffix.trim() || undefined,
-            warnAt: sensorWidgetWarn.trim() ? parseFloat(sensorWidgetWarn) : undefined,
-            critAt: sensorWidgetCrit.trim() ? parseFloat(sensorWidgetCrit) : undefined,
-          }
-        : undefined,
-      varWidget: widget === 'variable' && varWidgetName.trim()
-        ? {
-            varName: varWidgetName.trim(),
-            prefix: varWidgetPrefix || undefined,
-            suffix: varWidgetSuffix.trim() || undefined,
-          }
-        : undefined,
-      visibleIf: (() => {
-        const app = visibleIfApp.trim();
-        const sensorVal = visibleIfSensorVal.trim();
-        const hasSensor = !!visibleIfSensorId && sensorVal !== '' && !isNaN(parseFloat(sensorVal));
-        if (!app && !hasSensor) return undefined;
-        return {
-          app: app || undefined,
-          sensor: hasSensor
-            ? { id: visibleIfSensorId, op: visibleIfSensorOp, value: parseFloat(sensorVal) }
-            : undefined,
-        };
-      })(),
-      timerTriggerAt: timerTriggerAt.trim() || undefined,
-      sensorTrigger: (() => {
-        const v = sensorTriggerVal.trim();
-        if (!sensorTriggerId || v === '' || isNaN(parseFloat(v))) return undefined;
-        const cd = sensorTriggerCooldown.trim();
-        return {
-          id: sensorTriggerId,
-          op: sensorTriggerOp,
-          value: parseFloat(v),
-          cooldownMs: cd && !isNaN(parseFloat(cd)) ? parseFloat(cd) * 1000 : undefined,
-        };
-      })(),
-    };
-    onSave(updated);
+      brandIcon,
+      brandIconAlwaysAnimate,
+      brandIconCustomBitmap,
+      brandIconCustomColor,
+      brandIconCustomPalette,
+      bgColor,
+      fgColor,
+      folderButtons,
+      isToggle,
+      actionToggleOff,
+      globalHotkey,
+      inTrayMenu,
+      customGlyph57,
+      longPressAction,
+      radioGroup,
+      widget,
+      sensorWidgetId,
+      sensorWidgetSuffix,
+      sensorWidgetWarn,
+      sensorWidgetCrit,
+      varWidgetName,
+      varWidgetPrefix,
+      varWidgetSuffix,
+      visibleIfApp,
+      visibleIfSensorId,
+      visibleIfSensorOp,
+      visibleIfSensorVal,
+      timerTriggerAt,
+      sensorTriggerId,
+      sensorTriggerOp,
+      sensorTriggerVal,
+      sensorTriggerCooldown,
+    }));
   };
 
   const applyPreset = (preset: ButtonPreset) => {
@@ -318,8 +290,6 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   }, [api]);
 
   const accent = VD.accent;
-  const currentActionMeta = ACTION_TYPES.find((a) => a.type === action.type);
-  const PreviewIcon = currentActionMeta?.Icon ?? IconNone;
 
   const filteredPresets = PRESETS.filter((p) => {
     if (presetSearch.trim()) {
@@ -484,325 +454,75 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
             {/* STEP 2: Style */}
             {step === 2 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <Field label={tf("ETIQUETA DEL BOTÓN")}>
-                  <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={tf("Mi Botón")} maxLength={20} style={inputStyle} />
-                </Field>
-                <Field label={tf("SUB-ETIQUETA (OPCIONAL)")}>
-                  <input value={sublabel} onChange={(e) => setSublabel(e.target.value)} placeholder={tf("Descripción corta")} maxLength={30} style={inputStyle} />
-                </Field>
-                <Field label={tf("ICONO (EMOJI O SÍMBOLO — VACÍO = ÍCONO DEL TIPO)")}>
-                  <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder={"▶ ◉ 🎵 💻 🌐 ★"} maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
-                </Field>
-                <Field label={tf("IMAGEN PERSONALIZADA (PNG / JPG / GIF)")}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <Btn onClick={pickImage}>{tf('Elegir imagen')}</Btn>
-                    {imageData && (
-                      <>
-                        <img src={imageData} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: VD.radius.md, border: `1px solid ${VD.border}` }} />
-                        <Btn onClick={() => setImageData('')} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
-                      </>
-                    )}
-                  </div>
-                </Field>
-
-                <Field label={tf("ICONO DE MARCA ANIMADO (DOT-MATRIX)")}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    {brandIcon ? (
-                      <>
-                        <div style={{ position: 'relative', width: 36, height: 36, borderRadius: VD.radius.lg, border: `1px solid ${VD.border}`, overflow: 'hidden', background: VD.elevated }}>
-                          <BrandIconDisplay
-                            iconKey={brandIcon}
-                            customBitmap={brandIconCustomBitmap}
-                            customColor={brandIconCustomColor}
-                            customPalette={brandIconCustomPalette}
-                            animated={false}
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-                          />
-                        </div>
-                        <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text }}>
-                          {BRAND_ICONS_MAP[brandIcon]?.label ?? brandIcon}
-                          {brandIconCustomBitmap && <span style={{ color: accent, marginLeft: 6 }}>✎</span>}
-                        </span>
-                        <Btn onClick={() => setShowBrandPicker(true)}>{tf('Cambiar')}</Btn>
-                        <Btn onClick={() => setShowBrandEditor(true)}>{tf('Editar puntos')}</Btn>
-                        {brandIconCustomBitmap && (
-                          <Btn onClick={() => { setBrandIconCustomBitmap(undefined); setBrandIconCustomColor(undefined); setBrandIconCustomPalette(undefined); }}>
-                            {tf('Restaurar')}
-                          </Btn>
-                        )}
-                        <Btn onClick={() => { setBrandIcon(''); setBrandIconCustomBitmap(undefined); setBrandIconCustomColor(undefined); setBrandIconCustomPalette(undefined); }} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
-                      </>
-                    ) : (
-                      <Btn onClick={() => setShowBrandPicker(true)}>{tf('Elegir icono de marca')}</Btn>
-                    )}
-                  </div>
-                  {brandIcon && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={brandIconAlwaysAnimate}
-                        onChange={e => setBrandIconAlwaysAnimate(e.target.checked)}
-                        style={{ accentColor: accent }}
-                      />
-                      <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-                        {tf('ANIMACIÓN SIEMPRE ACTIVA — si está desactivado, anima solo cuando el botón está encendido (toggle ON)')}
-                      </span>
-                    </label>
-                  )}
-                  <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                    {tf('68 iconos · Fondo transparente · Superpone al color de fondo del botón')}
-                  </div>
-                </Field>
-
-                {/* 2.1 — Glifo 5×7 personal del usuario */}
-                <Field label={tf("GLIFO PERSONAL 5×7 (DOT-MATRIX)")}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    {customGlyph57 && customGlyph57.length === 7 && customGlyph57.some((r) => r > 0) ? (
-                      <>
-                        <div style={{
-                          width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: VD.radius.md, border: `1px solid ${VD.border}`, background: VD.elevated,
-                        }}>
-                          <Glyph57Inline rows={customGlyph57} color={fgColor || VD.text} />
-                        </div>
-                        <Btn onClick={() => setShowGlyphEditor(true)}>{tf('Editar')}</Btn>
-                        <Btn onClick={() => setCustomGlyph57(undefined)} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
-                      </>
-                    ) : (
-                      <Btn onClick={() => setShowGlyphEditor(true)}>{tf('Dibujar glifo')}</Btn>
-                    )}
-                  </div>
-                  <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                    {tf('5×7 puntos hechos a mano. Coherente con la firma del producto.')}
-                  </div>
-                </Field>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <Field label={tf("COLOR DE FONDO")}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input type="color" value={bgColor || '#222222'} onChange={(e) => setBgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
-                      <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder={"#222222"} style={{ ...inputStyle, flex: 1 }} />
-                      {bgColor && <Btn onClick={() => setBgColor('')}>✕</Btn>}
-                    </div>
-                  </Field>
-                  <Field label={tf("COLOR DE TEXTO / ÍCONO")}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <input type="color" value={fgColor || '#dcdcdc'} onChange={(e) => setFgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
-                      <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder={"#dcdcdc"} style={{ ...inputStyle, flex: 1 }} />
-                      {fgColor && <Btn onClick={() => setFgColor('')}>✕</Btn>}
-                    </div>
-                  </Field>
-                </div>
-
-                <div style={{ height: 1, background: VD.border }} />
-
-                {/* Widget — live data display on the button cell */}
-                <Field label={tf("WIDGET (MUESTRA DATOS EN EL BOTÓN)")}>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable'] as const).map((w) => {
-                      // now-playing on an audio-device button hides the device
-                      // name in favor of the playing track — useless combo, so
-                      // we lock it out here instead of silently dropping the
-                      // widget at render time (was the old behavior).
-                      const conflicts = w === 'now-playing' && action.type === 'audio-device';
-                      return (
-                        <button
-                          key={w ?? 'none'}
-                          onClick={() => { if (!conflicts) setWidget(w); }}
-                          disabled={conflicts}
-                          title={conflicts ? tf('Incompatible con acción de Audio: el widget oculta el nombre del dispositivo.') : undefined}
-                          style={{
-                            flex: '1 1 60px', padding: '5px 0', cursor: conflicts ? 'not-allowed' : 'pointer', borderRadius: VD.radius.sm,
-                            background: widget === w ? VD.accentBg : VD.elevated,
-                            border: `1px solid ${widget === w ? accent : VD.border}`,
-                            fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
-                            color: widget === w ? accent : VD.textDim,
-                            opacity: conflicts ? 0.4 : 1,
-                          }}
-                        >
-                          {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : 'VARIABLE'}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    {tf('Sustituye el ícono/etiqueta con datos en vivo. El botón sigue siendo ejecutable.')}
-                  </div>
-                  {widget === 'sensor' && (
-                    <div style={{ marginTop: 8, padding: 10, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <SensorPicker
-                        sensors={sensorList}
-                        value={sensorWidgetId}
-                        onChange={setSensorWidgetId}
-                        accent={accent}
-                      />
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          value={sensorWidgetSuffix}
-                          onChange={(e) => setSensorWidgetSuffix(e.target.value)}
-                          placeholder={tf("Etiqueta (ej. CPU)")}
-                          style={{ ...inputStyle, flex: 1 }}
-                        />
-                        <input
-                          value={sensorWidgetWarn}
-                          onChange={(e) => setSensorWidgetWarn(e.target.value)}
-                          placeholder={"Warn ≥"}
-                          style={{ ...inputStyle, width: 80 }}
-                        />
-                        <input
-                          value={sensorWidgetCrit}
-                          onChange={(e) => setSensorWidgetCrit(e.target.value)}
-                          placeholder={"Crit ≥"}
-                          style={{ ...inputStyle, width: 80 }}
-                        />
-                      </div>
-                      <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
-                        {t('ed.thresholdHint')}
-                      </div>
-                    </div>
-                  )}
-                  {widget === 'variable' && (
-                    <div style={{ marginTop: 8, padding: 10, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <input
-                        value={varWidgetName}
-                        onChange={(e) => setVarWidgetName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                        placeholder={tf("Nombre de variable (ej. tomas)")}
-                        list="vd-known-vars"
-                        style={{ ...inputStyle }}
-                      />
-                      <datalist id="vd-known-vars">
-                        {Object.keys(deckState).map((k) => <option key={k} value={k} />)}
-                      </datalist>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                          value={varWidgetPrefix}
-                          onChange={(e) => setVarWidgetPrefix(e.target.value)}
-                          placeholder={tf("Prefijo (ej. 🎬 )")}
-                          style={{ ...inputStyle, flex: 1 }}
-                        />
-                        <input
-                          value={varWidgetSuffix}
-                          onChange={(e) => setVarWidgetSuffix(e.target.value)}
-                          placeholder={tf("Etiqueta debajo")}
-                          style={{ ...inputStyle, flex: 1 }}
-                        />
-                      </div>
-                      <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
-                        {tf('Muestra el valor en vivo de una variable. Combínalo con acciones "Incrementar variable" / "Asignar variable" para hacer contadores. Las variables sin valor se muestran como 0.')}
-                      </div>
-                    </div>
-                  )}
-                </Field>
-
-                {/* Visibility condition */}
-                <Field label={tf("VISIBLE SOLO SI ESTA APP ESTÁ ACTIVA (opcional)")}>
-                  <input
-                    value={visibleIfApp}
-                    onChange={(e) => setVisibleIfApp(e.target.value)}
-                    placeholder={"spotify, chrome, obs64 ..."}
-                    style={inputStyle}
-                  />
-                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    {tf('Nombre del proceso sin .exe. Vacío = siempre visible.')}
-                  </div>
-                </Field>
-
-                {/* Scheduled trigger */}
-                <Field label={tf("DISPARAR AUTOMÁTICAMENTE A LA HORA (HH:MM)")}>
-                  <input
-                    value={timerTriggerAt}
-                    onChange={(e) => setTimerTriggerAt(e.target.value)}
-                    placeholder={"08:00"}
-                    maxLength={5}
-                    style={inputStyle}
-                  />
-                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    {tf('Formato 24h. Solo se dispara cuando la página del botón está activa.')}
-                  </div>
-                </Field>
-
-                {/* Visibility by sensor */}
-                <Field label={tf("VISIBLE SOLO SI SENSOR (opcional)")}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <SensorPicker
-                      sensors={sensorList}
-                      value={visibleIfSensorId}
-                      onChange={setVisibleIfSensorId}
-                      accent={accent}
-                      allowEmpty
-                    />
-                    {visibleIfSensorId && (
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <select
-                          value={visibleIfSensorOp}
-                          onChange={(e) => setVisibleIfSensorOp(e.target.value as any)}
-                          style={{ ...inputStyle, width: 70 }}
-                        >
-                          <option value=">">{'>'}</option>
-                          <option value="<">{'<'}</option>
-                          <option value=">=">{'≥'}</option>
-                          <option value="<=">{'≤'}</option>
-                          <option value="==">{'='}</option>
-                        </select>
-                        <input
-                          value={visibleIfSensorVal}
-                          onChange={(e) => setVisibleIfSensorVal(e.target.value)}
-                          placeholder={tf("Valor (ej. 80)")}
-                          style={{ ...inputStyle, flex: 1 }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    {tf('Aparece cuando el sensor cumple la condición. Combinable con app de arriba.')}
-                  </div>
-                </Field>
-
-                {/* Sensor-triggered automatic execution */}
-                <Field label={tf("DISPARAR CUANDO SENSOR (opcional)")}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <SensorPicker
-                      sensors={sensorList}
-                      value={sensorTriggerId}
-                      onChange={setSensorTriggerId}
-                      accent={accent}
-                      allowEmpty
-                    />
-                    {sensorTriggerId && (
-                      <>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <select
-                            value={sensorTriggerOp}
-                            onChange={(e) => setSensorTriggerOp(e.target.value as any)}
-                            style={{ ...inputStyle, width: 70 }}
-                          >
-                            <option value=">">{'>'}</option>
-                            <option value="<">{'<'}</option>
-                            <option value=">=">{'≥'}</option>
-                            <option value="<=">{'≤'}</option>
-                            <option value="==">{'='}</option>
-                          </select>
-                          <input
-                            value={sensorTriggerVal}
-                            onChange={(e) => setSensorTriggerVal(e.target.value)}
-                            placeholder={tf("Valor (ej. 85)")}
-                            style={{ ...inputStyle, flex: 1 }}
-                          />
-                          <input
-                            value={sensorTriggerCooldown}
-                            onChange={(e) => setSensorTriggerCooldown(e.target.value)}
-                            placeholder={"Cooldown s"}
-                            style={{ ...inputStyle, width: 100 }}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    {tf('Ejecuta la acción cuando se cumple la condición. Cooldown evita que se redispare cada poll (default 60s).')}
-                  </div>
-                </Field>
-              </div>
+              <PasoEstilo
+                accent={accent}
+                action={action}
+                bgColor={bgColor}
+                brandIcon={brandIcon}
+                brandIconAlwaysAnimate={brandIconAlwaysAnimate}
+                brandIconCustomBitmap={brandIconCustomBitmap}
+                brandIconCustomColor={brandIconCustomColor}
+                brandIconCustomPalette={brandIconCustomPalette}
+                setBrandIconCustomPalette={setBrandIconCustomPalette}
+                button={button}
+                customGlyph57={customGlyph57}
+                deckState={deckState}
+                fgColor={fgColor}
+                icon={icon}
+                imageData={imageData}
+                label={label}
+                pickImage={pickImage}
+                sensorList={sensorList}
+                sensorTriggerCooldown={sensorTriggerCooldown}
+                sensorTriggerId={sensorTriggerId}
+                sensorTriggerOp={sensorTriggerOp}
+                setSensorTriggerOp={setSensorTriggerOp}
+                sensorTriggerVal={sensorTriggerVal}
+                sensorWidgetCrit={sensorWidgetCrit}
+                sensorWidgetId={sensorWidgetId}
+                sensorWidgetSuffix={sensorWidgetSuffix}
+                sensorWidgetWarn={sensorWidgetWarn}
+                setBgColor={setBgColor}
+                setBrandIcon={setBrandIcon}
+                setBrandIconAlwaysAnimate={setBrandIconAlwaysAnimate}
+                setBrandIconCustomBitmap={setBrandIconCustomBitmap}
+                setBrandIconCustomColor={setBrandIconCustomColor}
+                setCustomGlyph57={setCustomGlyph57}
+                setFgColor={setFgColor}
+                setIcon={setIcon}
+                setImageData={setImageData}
+                setLabel={setLabel}
+                setSensorTriggerCooldown={setSensorTriggerCooldown}
+                setSensorTriggerId={setSensorTriggerId}
+                setSensorTriggerVal={setSensorTriggerVal}
+                setSensorWidgetCrit={setSensorWidgetCrit}
+                setSensorWidgetId={setSensorWidgetId}
+                setSensorWidgetSuffix={setSensorWidgetSuffix}
+                setSensorWidgetWarn={setSensorWidgetWarn}
+                setShowBrandEditor={setShowBrandEditor}
+                setShowBrandPicker={setShowBrandPicker}
+                setShowGlyphEditor={setShowGlyphEditor}
+                setSublabel={setSublabel}
+                setTimerTriggerAt={setTimerTriggerAt}
+                setVarWidgetName={setVarWidgetName}
+                setVarWidgetPrefix={setVarWidgetPrefix}
+                setVarWidgetSuffix={setVarWidgetSuffix}
+                setVisibleIfApp={setVisibleIfApp}
+                setVisibleIfSensorId={setVisibleIfSensorId}
+                setVisibleIfSensorVal={setVisibleIfSensorVal}
+                setWidget={setWidget}
+                sublabel={sublabel}
+                timerTriggerAt={timerTriggerAt}
+                varWidgetName={varWidgetName}
+                varWidgetPrefix={varWidgetPrefix}
+                varWidgetSuffix={varWidgetSuffix}
+                visibleIfApp={visibleIfApp}
+                visibleIfSensorId={visibleIfSensorId}
+                visibleIfSensorOp={visibleIfSensorOp}
+                setVisibleIfSensorOp={setVisibleIfSensorOp}
+                visibleIfSensorVal={visibleIfSensorVal}
+                widget={widget}
+              />
             )}
           </div>
         </div>
