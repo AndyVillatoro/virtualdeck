@@ -130,7 +130,12 @@ function pareceEspanol(s) {
 
 for (const ruta of archivos(RAIZ)) {
   if (ruta.split(sep).join('/') === I18N) continue;
-  for (const [i, linea] of readFileSync(ruta, 'utf-8').split('\n').entries()) {
+  // Se parte por `\r?\n`, no por `\n`: los archivos del repo están en CRLF, y
+  // partiendo solo por `\n` cada línea queda terminada en `\r`. Eso rompe el
+  // recorte de comentarios —el `$` de `/\/\/.*$/` no cruza el `\r`— así que las
+  // líneas con comentario al final se analizaban con el comentario incluido.
+  // Daba falsos positivos y, peor, falsos negativos.
+  for (const [i, linea] of readFileSync(ruta, 'utf-8').split(/\r?\n/).entries()) {
     const codigo = linea.replace(/\/\/.*$/, '');
     if (!codigo.trim() || codigo.trimStart().startsWith('*')) continue;
     const sospechas = [];
