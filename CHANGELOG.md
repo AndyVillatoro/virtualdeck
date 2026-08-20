@@ -4,6 +4,105 @@ Todos los cambios notables de VirtualDeck se documentan acá.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.6.0] — 2026-08-20
+
+Dos cosas grandes: el núcleo pasa a ser código nativo en Rust en vez de
+PowerShell, y aparece la barra flotante. El resto es una tanda larga de
+arreglos de interfaz —modo claro, traducciones, arrastre— y una reorganización
+del código que no se ve pero que toca casi todos los archivos.
+
+### Added
+- **Núcleo nativo (`vd-core`, Rust compilado como módulo de Node)**. Sustituye a
+  PowerShell en audio, lanzador, media, macros y sensores. Lo que antes eran
+  procesos de PowerShell de cientos de milisegundos ahora son llamadas directas
+  a la API de Windows. Si el `.node` no carga, se cae a PowerShell como antes:
+  nada deja de funcionar, solo va más lento.
+- **Barra flotante**: una columna de tiles por encima de todo, en el monitor
+  principal, para pulsar botones sin abrir el deck. Sin fondo (solo los tiles se
+  ven), opacidad 30–100 %, 1–N huecos según lo que quepa en la pantalla, y se
+  arrastra a donde quieras. Se arma en la pantalla **BARRA** arrastrando botones
+  que ya existen; guarda ids, así que editar el botón en el deck cambia también
+  la barra.
+- **Siempre visible** (Ajustes ⚙): la ventana del deck se queda por encima de
+  las demás. Usa el nivel `screen-saver`, que también gana a un juego en
+  pantalla completa.
+- **Perfil RGB de arranque**: se marca con el círculo junto a APLICAR en el
+  panel de perfiles. Al abrir VirtualDeck se aplica solo, que es lo que faltaba
+  para no tener que abrir el gestor RGB después de cada reinicio.
+- **Sensores sin LibreHardwareMonitor**: el núcleo nativo lee los sensores
+  directamente. LHM sigue soportado como alternativa.
+
+### Changed
+- **Sin PowerShell en el camino caliente.** Se quitaron las cachés de audio y
+  sensores: existían solo para tapar la lentitud de PowerShell y ahora estorban
+  (devolvían datos viejos).
+- **El deck aparece en la barra de tareas.** Antes se ocultaba porque la
+  aplicación vive en la bandeja, pero la ventana no tiene marco: si quedaba
+  detrás de otra no había forma de distinguirla, y el resultado era
+  indistinguible de que la aplicación no arrancara.
+- **La ventana se muestra en cuanto hay DOM**, no al terminar de cargar. Antes
+  esperaba a la hoja de fuentes remota, y si Google Fonts no respondía la
+  ventana no llegaba a mostrarse nunca.
+- **El reloj y la fecha siguen al idioma elegido.** Estaban fijos en español.
+- Los umbrales del widget de sensor ya no guardan `NaN` cuando se escribe algo
+  que no es número.
+
+### Fixed
+- **Un color RGB dejaba las luces apagadas al cerrar la aplicación.** La acción
+  pintaba en modo `Direct`, que no guarda nada en el dispositivo: es OpenRGB
+  alimentando los LEDs en vivo. Como VirtualDeck arranca OpenRGB y lo mata al
+  salir, la tira se quedaba sin nadie que la mandara. Ahora usa `Static`, que el
+  controlador se queda. **Sin probar contra hardware**: cambiar de modo a ciegas
+  en una placa que no se puede observar es justo lo que apagó las luces la otra
+  vez.
+- **El núcleo nativo no llegaba al instalador.** `asarUnpack` lo incluía, pero
+  `files` no, así que nunca entraba en el paquete. No fallaba —hay respaldo en
+  PowerShell— simplemente no había núcleo nativo en la aplicación instalada.
+- **Arrastrar un botón a otra casilla no hacía nada.** El memo de la celda
+  ignora los handlers a propósito, así que la celda de destino se quedaba con el
+  de antes del arrastre, cuando todavía no había nada arrastrándose. El id viaja
+  ahora dentro del propio arrastre.
+- **SMTC colgaba el proceso principal**: el widget de música bloqueaba Electron
+  indefinidamente. Las llamadas a WinRT van ahora en un hilo MTA propio.
+- **La CSP bloqueaba el arranque en desarrollo** (pantalla en negro sin ningún
+  error).
+- **Modo claro**: doce archivos leían la paleta oscura directamente en vez del
+  contexto. En modo claro se veían con texto oscuro sobre fondo oscuro. Una
+  regla de eslint lo impide ahora.
+- **Traducción al inglés**: quedaban ~75 textos en español, incluidos los 50
+  mensajes de error de las acciones y el panel de ajustes entero.
+- **La barra flotante se recortaba** con la interfaz escalada, y el recuadro de
+  detrás no era transparente. Ahora se mide a sí misma y pide el tamaño exacto.
+- Tildes que se comían los títulos, títulos cortados, y fondos de pantalla que
+  no se veían.
+
+### Interno
+Reorganización grande. No cambia nada de lo que se ve, pero es la mitad de los
+commits de esta versión.
+
+- `EditorB` 2083 → 553 líneas, repartido en pasos (`PasoAccion`,
+  `PasoConfigurar`, `PasoEstilo`), un formulario por tipo de acción en un mapa,
+  y piezas comunes.
+- `MainB` 1210 → 815 (`BarraLateral`, `PestanasPagina`, `OverlayCarpeta`).
+- `App` 813 → 542: toda la configuración y sus 25 operaciones van a `useDeck`.
+- `ButtonCell` complejidad 94 → 43; `RGBManagerB` 872 → 456; `TitleBar` 500 →
+  257; el despachador de acciones, de complejidad 105 a 6.
+- Tres auditorías nuevas en `npm run check`, cada una porque el fallo que
+  detectan ya se había colado:
+  - `check-acciones.mjs`: un tipo de acción sin implementar hacía un botón que
+    no hacía nada y decía que había ido bien.
+  - `check-i18n.mjs`: texto visible en español que nunca se envolvió.
+  - regla de eslint contra importar la paleta de colores directamente.
+
+### Sin probar
+Lo verificado a mano: arranque, arrastre entre casillas y a otra página, los
+tres pasos del editor, el panel de ajustes, la pantalla RGB, la barra flotante,
+el cambio de idioma, y que un cambio llegue al disco.
+
+No verificado: la mayoría de los 30 tipos de acción uno por uno, el calibrador
+de zonas ARGB, el grabador de macros y el widget de música. Ejecutarlos habría
+cambiado el audio, el brillo y las luces de la máquina donde se desarrolla.
+
 ## [0.5.1] — 2026-05-29
 
 ### Fixed
