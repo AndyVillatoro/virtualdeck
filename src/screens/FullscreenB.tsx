@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward } from '../components/VDIcon';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
+import { PinKiosko, type ModoPin } from './fullscreen/PinKiosko';
+import { SonandoAhora } from './fullscreen/SonandoAhora';
 import { DotText } from '../components/DotText';
 import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
-import { playSound } from '../utils/sound';
 import { executeAction, runActionSequence } from '../utils/actions';
 import { useNowPlaying } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
@@ -59,37 +59,18 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // 5.5 — Modo kiosko: oculta topbar, deshabilita context menu y pide PIN para salir.
   // Activación per-session (no persistida); el PIN sí se guarda para próximos turnos.
   const [kioskActive, setKioskActive] = useState(false);
-  const [pinPrompt, setPinPrompt] = useState<null | 'set' | 'exit'>(null);
-  const [pinInput, setPinInput] = useState('');
-  const [pinShake, setPinShake] = useState(false);
+  const [pinPrompt, setPinPrompt] = useState<ModoPin>(null);
   const storedPin = config.kiosk?.pin ?? '';
 
   const enterKiosk = () => {
     if (!storedPin) {
-      setPinInput('');
       setPinPrompt('set');
     } else {
       setKioskActive(true);
     }
   };
-  const requestExitKiosk = () => { setPinInput(''); setPinPrompt('exit'); };
+  const requestExitKiosk = () => setPinPrompt('exit');
 
-  const submitPin = () => {
-    if (pinInput.length !== 4 || !/^\d{4}$/.test(pinInput)) {
-      setPinShake(true); setTimeout(() => setPinShake(false), 350); return;
-    }
-    if (pinPrompt === 'set') {
-      onSetKioskPin(pinInput);
-      setKioskActive(true); setPinPrompt(null); setPinInput('');
-    } else if (pinPrompt === 'exit') {
-      if (pinInput === storedPin) {
-        setKioskActive(false); setPinPrompt(null); setPinInput('');
-      } else {
-        setPinShake(true); setTimeout(() => setPinShake(false), 350);
-        setPinInput('');
-      }
-    }
-  };
 
   useEffect(() => {
     if (!runtimeError) return;
@@ -169,7 +150,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
       onStateUpdate(update);
     }
     if (!r.ok && r.error) setRuntimeError(r.error);
-  }, [toggledIds, handleToggle, config.state, config.rgb?.profiles, onStateUpdate]);
+  }, [t, toggledIds, handleToggle, config.state, config.rgb?.profiles, onStateUpdate]);
 
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -340,70 +321,14 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
       </div>
 
       {/* PIN prompt — set new (kiosk activation) o exit (kiosk deactivation) */}
-      {pinPrompt && (
-        <div style={{
-          position: 'absolute', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{
-            background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-            borderRadius: VD.radius.lg, padding: 28, width: 340,
-            boxShadow: VD.shadow.modal,
-            display: 'flex', flexDirection: 'column', gap: 14,
-            transform: pinShake ? 'translateX(-6px)' : 'none',
-            transition: 'transform 60ms',
-            animation: pinShake ? 'vd-pin-shake 0.32s' : undefined,
-          }}>
-            <DotLabel size={10} color={VD.text} spacing={2}>
-              {pinPrompt === 'set' ? 'ESTABLECER PIN DE 4 DÍGITOS' : 'INGRESA PIN PARA SALIR'}
-            </DotLabel>
-            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, letterSpacing: 1 }}>
-              {pinPrompt === 'set'
-                ? 'Necesario una vez para activar el modo kiosko. Lo guardamos en tu config.'
-                : 'Modo kiosko activo. ESC desactiva con PIN.'}
-            </div>
-            <input
-              autoFocus
-              type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submitPin();
-                if (e.key === 'Escape') { e.preventDefault(); setPinPrompt(null); setPinInput(''); }
-              }}
-              placeholder="••••"
-              style={{
-                fontFamily: VD.mono, fontSize: 22, letterSpacing: 12,
-                textAlign: 'center', padding: '12px 14px',
-                background: VD.elevated, border: `1px solid ${VD.borderStrong}`,
-                color: VD.text, outline: 'none', borderRadius: VD.radius.md,
-              }}
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setPinPrompt(null); setPinInput(''); }}
-                style={{
-                  padding: '8px 14px', background: 'transparent', border: `1px solid ${VD.border}`,
-                  color: VD.textDim, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-                  cursor: 'pointer', borderRadius: VD.radius.sm,
-                }}
-              >{t('ui.cancel')}</button>
-              <button
-                onClick={submitPin}
-                style={{
-                  padding: '8px 14px', background: VD.accentBg, border: `1px solid ${config.accent}`,
-                  color: config.accent, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-                  cursor: 'pointer', borderRadius: VD.radius.sm,
-                }}
-              >{pinPrompt === 'set' ? 'GUARDAR' : 'CONFIRMAR'}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PinKiosko
+        modo={pinPrompt}
+        setModo={setPinPrompt}
+        pinGuardado={storedPin}
+        accent={config.accent ?? VD.accent}
+        onGuardarPin={onSetKioskPin}
+        setKioskActive={setKioskActive}
+      />
 
       {/* Runtime error toast */}
       {runtimeError && (
@@ -432,71 +357,14 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         background: VD.surface, flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
         {/* Now Playing */}
-        <div style={{
-          flex: 1, minWidth: 0, border: `1px solid ${VD.border}`,
-          padding: '5px 8px', display: 'flex', gap: 8, alignItems: 'center', background: VD.elevated,
-        }}>
-          <div className="vd-fs-thumb" style={{
-            width: 36, height: 36, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.md,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden', border: `1px solid ${VD.border}`, position: 'relative',
-          }}>
-            <div style={{ opacity: 0.35 }}>
-              {isPlaying
-                ? <IconMediaPlay size={16} color={VD.textDim} />
-                : <IconMediaPause size={16} color={VD.textDim} />
-              }
-            </div>
-            {nowPlaying?.thumbnail && (
-              <img
-                src={nowPlaying.thumbnail}
-                alt=""
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-              />
-            )}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {nowPlaying ? (
-              <>
-                <div style={{ color: VD.text, fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500, lineHeight: 1.2 }}>
-                  {nowPlaying.title || '—'}
-                </div>
-                <div style={{ color: VD.textDim, fontSize: 9, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono, lineHeight: 1.2 }}>
-                  {nowPlaying.artist}{sourceName ? ` · ${sourceName}` : ''}
-                </div>
-              </>
-            ) : (
-              <div style={{ color: VD.textMuted, fontSize: 10, fontFamily: VD.mono, letterSpacing: 1 }}>{t('full.noMedia')}</div>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-            {([
-              { key: 'prev',       Icon: IconMediaSkipBack,                          title: 'Anterior'  },
-              { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: 'Play/Pausa' },
-              { key: 'next',       Icon: IconMediaSkipForward,                       title: 'Siguiente' },
-            ] as const).map(({ key, Icon, title }) => (
-              <button
-                key={key}
-                title={title}
-                onClick={() => {
-                  window.electronAPI?.media.control(key as 'play-pause' | 'next' | 'prev');
-                  if (soundOnPress) playSound(soundProfile);
-                }}
-                style={{
-                  width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: VD.overlay, border: `1px solid ${VD.border}`,
-                  cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'border-color 0.1s',
-                  padding: 0,
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
-              >
-                <Icon size={12} color={VD.textDim} />
-              </button>
-            ))}
-          </div>
-        </div>
+        <SonandoAhora
+          nowPlaying={nowPlaying}
+          isPlaying={isPlaying}
+          sourceName={sourceName}
+          config={config}
+          soundOnPress={soundOnPress}
+          soundProfile={soundProfile}
+        />
 
         {/* Page indicator — drops out on narrow windows via .vd-fs-page CSS rule. */}
         <div className="vd-fs-page" style={{
