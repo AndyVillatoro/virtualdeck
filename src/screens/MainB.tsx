@@ -3,7 +3,8 @@ import { useTheme } from '../utils/theme';
 import { useT, useLang } from '../utils/i18n';
 import { formatoHora, formatoFecha } from './main/formatos';
 import { BarraLateral } from './main/BarraLateral';
-import { playSound } from '../utils/sound';
+import { FolderOverlay, PageCtxItem } from './main/OverlayCarpeta';
+import { PestanasPagina } from './main/PestanasPagina';
 import { executeAction, runActionSequence, interpolate } from '../utils/actions';
 import { logError } from '../utils/logger';
 import { TitleBar } from '../components/TitleBar';
@@ -13,7 +14,7 @@ import { Hint } from '../components/Hint';
 import { wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors, findSensor, evalCondition } from '../utils/sensors';
-import type { ButtonConfig, DeckConfig, FolderButton, RGBStatus } from '../types';
+import type { ButtonConfig, DeckConfig, RGBStatus } from '../types';
 
 
 interface MainBProps {
@@ -501,121 +502,31 @@ export function MainB({
         />
 
         {/* Page tabs */}
-        <div style={{
-          display: 'flex', padding: '12px 20px 0', gap: 2,
-          borderBottom: `1px solid ${VD.border}`,
-          background: VD.surface, flexShrink: 0, alignItems: 'flex-end',
-        }}>
-          {config.pages.map((p, i) => (
-            <div
-              key={p.id}
-              draggable
-              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragPageIdx(i); }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = e.shiftKey && dragSourceId ? 'copy' : 'move';
-                setDragOverPageIdx(i);
-              }}
-              onDragLeave={() => setDragOverPageIdx(null)}
-              onDragEnd={() => { setDragPageIdx(null); setDragOverPageIdx(null); }}
-              onDrop={(e) => {
-                if (dragSourceId && i !== activePage) {
-                  // Drop de un botón sobre otra pestaña → mover (o copiar con Shift)
-                  const ok = onMoveButtonToPage(dragSourceId, i, e.shiftKey);
-                  if (!ok) {
-                    setToast(`No hay slot libre en "${p.name}".`);
-                    clearTimeout(toastTimer.current);
-                    toastTimer.current = window.setTimeout(() => setToast(null), 4000);
-                  }
-                  setDragSourceId(null);
-                } else if (dragPageIdx !== null && dragPageIdx !== i) {
-                  onPageReorder(dragPageIdx, i);
-                }
-                setDragPageIdx(null); setDragOverPageIdx(null);
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setPageContextMenu({ id: p.id, x: e.clientX, y: e.clientY });
-              }}
-              style={{
-                padding: '8px 16px',
-                fontFamily: VD.mono, fontSize: 10, letterSpacing: 2,
-                color: i === activePage ? VD.text : VD.textDim,
-                borderBottom: i === activePage
-                  ? `2px solid ${config.accent}`
-                  : dragOverPageIdx === i
-                  ? `2px solid ${config.accent}66`
-                  : '2px solid transparent',
-                position: 'relative', top: 1, cursor: 'grab', userSelect: 'none',
-                display: 'flex', alignItems: 'center',
-                opacity: dragPageIdx === i ? 0.4 : 1,
-                transition: 'opacity 0.15s',
-              }}
-            >
-              {renamingPageId === p.id ? (
-                <input
-                  autoFocus
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={() => confirmRename(p.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') confirmRename(p.id);
-                    if (e.key === 'Escape') setRenamingPageId(null);
-                    e.stopPropagation();
-                  }}
-                  style={{
-                    background: 'transparent', border: 'none',
-                    outline: `1px solid ${config.accent}`,
-                    fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.text,
-                    width: Math.max(60, renameValue.length * 9), padding: '0 2px',
-                  }}
-                />
-              ) : (
-                <span
-                  onClick={() => onPageChange(i)}
-                  onDoubleClick={() => { setRenamingPageId(p.id); setRenameValue(p.name); }}
-                  title={t('page.tip')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {p.name}
-                  {(p.gridSize ?? 4) !== 4 && (
-                    <span style={{ fontSize: 7, marginLeft: 4, opacity: 0.5 }}>{p.gridSize ?? 4}×{p.gridRows ?? p.gridSize ?? 4}</span>
-                  )}
-                </span>
-              )}
-            </div>
-          ))}
-
-          {config.pages.length < 8 && (
-            <div
-              onClick={onPageAdd}
-              title={t('page.add')}
-              style={{
-                padding: '8px 10px', color: VD.textMuted, fontSize: 16,
-                cursor: 'pointer', userSelect: 'none', position: 'relative', top: 1, lineHeight: 1,
-              }}
-            >+</div>
-          )}
-
-          <div style={{ flex: 1 }} />
-          {onPageExport && (
-            <div onClick={() => onPageExport(activePage)} title={t('page.export')} style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
-              ↗
-            </div>
-          )}
-          {onPageImport && (
-            <div onClick={onPageImport} title={t('page.import')} style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
-              ↙
-            </div>
-          )}
-          <div
-            onClick={() => setShowSidebar((v) => !v)}
-            title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
-            style={{ padding: '8px 10px', fontSize: 12, cursor: 'pointer', userSelect: 'none', color: showSidebar ? VD.textDim : VD.textMuted, transition: 'color 0.15s' }}
-          >
-            {showSidebar ? '▶' : '◀'}
-          </div>
-        </div>
+        <PestanasPagina
+          config={config}
+          activePage={activePage}
+          onPageChange={onPageChange}
+          onPageAdd={onPageAdd}
+          onPageExport={onPageExport}
+          onPageImport={onPageImport}
+          onPageReorder={onPageReorder}
+          onMoveButtonToPage={onMoveButtonToPage}
+          renamingPageId={renamingPageId}
+          setRenamingPageId={setRenamingPageId}
+          renameValue={renameValue}
+          setRenameValue={setRenameValue}
+          setPageContextMenu={setPageContextMenu}
+          dragPageIdx={dragPageIdx}
+          setDragPageIdx={setDragPageIdx}
+          dragOverPageIdx={dragOverPageIdx}
+          setDragOverPageIdx={setDragOverPageIdx}
+          dragSourceId={dragSourceId}
+          setDragSourceId={setDragSourceId}
+          showSidebar={showSidebar}
+          setShowSidebar={setShowSidebar}
+          showToast={showToast}
+          confirmRename={confirmRename}
+        />
 
         {/* Page context menu */}
         {pageContextMenu && (() => {
@@ -902,125 +813,3 @@ export function MainB({
 }
 
 // ── Folder sub-deck overlay ────────────────────────────────────────────────
-function FolderOverlay({ btn, accent, soundEnabled, soundProfile, state, rgbProfiles, onClose, onActionError, onStateUpdate }: {
-  btn: ButtonConfig;
-  accent: string;
-  soundEnabled: boolean;
-  soundProfile: import('../types').SoundProfileId;
-  state?: Record<string, string>;
-  rgbProfiles?: import('../types').RGBProfile[];
-  onClose: () => void;
-  onActionError: (msg: string) => void;
-  onStateUpdate: (update: Record<string, string>) => void;
-}) {
-  const t = useT();
-  const VD = useTheme();
-  const api = window.electronAPI;
-  const [flash, setFlash] = useState<number | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  async function runFolderAction(fb: FolderButton, idx: number) {
-    if (!api) return;
-    setFlash(idx);
-    setTimeout(() => setFlash(null), 300);
-    if (soundEnabled) playSound(soundProfile);
-    // Pass state + RGB profiles so folder actions can interpolate {var} and
-    // resolve RGB profile references (same context the parent grid uses).
-    const r = await executeAction(fb.action, api, state, rgbProfiles);
-    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
-    if (!r.ok && r.error) onActionError(r.error);
-    onClose();
-  }
-
-  const buttons: FolderButton[] = btn.action.folderButtons ?? [];
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 60,
-        background: 'rgba(0,0,0,0.82)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-        borderRadius: VD.radius.lg, padding: 20, boxShadow: VD.shadow.modal,
-        minWidth: 340,
-      }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          {btn.icon && <span style={{ fontSize: 18, color: btn.fgColor || VD.text }}>{btn.icon}</span>}
-          <span style={{ fontFamily: VD.mono, fontSize: 11, letterSpacing: 2, color: VD.text }}>
-            {btn.label || 'CARPETA'}
-          </span>
-          <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: VD.textDim, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
-        </div>
-
-        {/* Sub-button grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          {buttons.map((fb, i) => (
-            <div
-              key={i}
-              onClick={() => runFolderAction(fb, i)}
-              style={{
-                height: 72, borderRadius: VD.radius.lg, cursor: 'pointer',
-                background: flash === i ? (fb.bgColor ? fb.bgColor : VD.accentBg) : (fb.bgColor || VD.elevated),
-                border: `1px solid ${flash === i ? accent : VD.border}`,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'background 0.1s, border-color 0.1s',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = accent; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = flash === i ? accent : VD.border; }}
-            >
-              {fb.icon && <div style={{ fontSize: 18, color: fb.fgColor || VD.text, lineHeight: 1 }}>{fb.icon}</div>}
-              <div style={{ fontFamily: VD.mono, fontSize: 8, letterSpacing: 1, color: fb.fgColor || VD.textDim, textAlign: 'center', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
-                {fb.label}
-              </div>
-              {fb.action.hotkey && (
-                <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, opacity: 0.7 }}>{fb.action.hotkey}</div>
-              )}
-            </div>
-          ))}
-          {buttons.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', padding: 20, textAlign: 'center', fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>
-              {t('folder.empty')}
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginTop: 12, fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, textAlign: 'center' }}>
-          {t('folder.esc')}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Helper components ─────────────────────────────────────────────────────
-function PageCtxItem({ label, onClick, danger }: { label: string; onClick: () => void; danger?: boolean }) {
-  const VD = useTheme();
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        padding: '9px 14px', background: hov ? VD.elevated : 'transparent',
-        cursor: 'pointer', fontFamily: VD.mono, fontSize: 11,
-        color: danger ? VD.danger : VD.text, letterSpacing: 0.5,
-        transition: 'background 0.1s', borderBottom: `1px solid ${VD.border}`,
-      }}
-    >
-      {label}
-    </div>
-  );
-}

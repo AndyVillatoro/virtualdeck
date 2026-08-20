@@ -24,7 +24,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `scripts/generate-icon.js` — renderiza icono dot-matrix SVG → PNG → ICO (requiere `sharp`)
 - `src/screens/` — pantallas: `MainB`, `EditorB`, `FullscreenB`, `RGBManagerB`, `WallpaperB`
 - `src/screens/main/` — piezas de la principal: `BarraLateral` (reloj, clima, sensores, RGB,
-  registro y música) y `formatos.ts` (reloj y fecha, en el idioma elegido)
+  registro y música), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
+  arrastrados), `OverlayCarpeta` y `formatos.ts` (reloj y fecha, en el idioma elegido)
 - `src/screens/editor/` — el editor por partes: `PasoAccion` (elegir qué hace),
   `PasoConfigurar` (los apartados comunes: toggle, mantener pulsado, disparadores),
   `formularios/` (**un componente por tipo de acción en un mapa `FORMULARIOS`** — añadir un tipo
