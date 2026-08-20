@@ -1,5 +1,8 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { ACTION_TYPES, PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData';
+import { PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData';
+import {
+  accionInicial, estiloInicial, widgetInicial, visibilidadInicial, disparadoresInicial,
+} from './editor/valoresIniciales';
 import { PasoAccion } from './editor/PasoAccion';
 import { PasoConfigurar } from './editor/PasoConfigurar';
 import { PasoEstilo } from './editor/PasoEstilo';
@@ -13,7 +16,7 @@ const BrandIconEditor = lazy(() => import('../components/BrandIconEditor').then(
 import { ButtonCell } from '../components/ButtonCell';
 import { Glyph57Editor } from '../components/Glyph57Editor';
 import { useT, useFieldText } from '../utils/i18n';
-import type { AudioDevice, ButtonAction, ButtonConfig, FolderButton, RGBDeviceInfo, RGBProfile } from '../types';
+import type { AudioDevice, ButtonConfig, RGBDeviceInfo, RGBProfile } from '../types';
 
 interface EditorBProps {
   button: ButtonConfig;
@@ -33,61 +36,64 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const t = useT();
   const tf = useFieldText();
   const api = window.electronAPI;
+  // Los valores de partida salen de `valoresIniciales`: alli estan todos los
+  // `?? ''` que antes vivian aqui dentro, uno por campo.
+  //
+  // Se calculan una vez y se pasan como valor inicial. No hace falta `useState`
+  // con funcion perezosa: son tres objetos planos, construirlos es gratis.
+  const ini = accionInicial(button);
+  const est = estiloInicial(button);
+  const wid = widgetInicial(button);
+  const vis = visibilidadInicial(button);
+  const dis = disparadoresInicial(button);
+
   const [step, setStep] = useState(0);
-  const [action, setAction] = useState<ButtonAction>({ ...button.action });
-  const [extraActions, setExtraActions] = useState<ButtonAction[]>(
-    button.actions && button.actions.length > 1 ? button.actions.slice(1) : []
-  );
+  const [action, setAction] = useState(ini.action);
+  const [extraActions, setExtraActions] = useState(ini.extraActions);
   const [showExtraPicker, setShowExtraPicker] = useState(false);
-  const [isToggle, setIsToggle] = useState(button.isToggle ?? false);
-  const [actionToggleOff, setActionToggleOff] = useState<ButtonAction>(
-    button.actionToggleOff ?? { type: 'none' }
-  );
-  const [label, setLabel] = useState(button.label || '');
-  const [sublabel, setSublabel] = useState(button.sublabel || '');
-  const [icon, setIcon] = useState(button.icon || '');
-  const [imageData, setImageData] = useState(button.imageData || '');
-  const [brandIcon, setBrandIcon] = useState(button.brandIcon || '');
-  const [brandIconAlwaysAnimate, setBrandIconAlwaysAnimate] = useState(button.brandIconAlwaysAnimate ?? false);
-  const [brandIconCustomBitmap, setBrandIconCustomBitmap] = useState<string[] | undefined>(button.brandIconCustomBitmap);
-  const [brandIconCustomColor, setBrandIconCustomColor] = useState<string | undefined>(button.brandIconCustomColor);
-  const [brandIconCustomPalette, setBrandIconCustomPalette] = useState<Record<string, string> | undefined>(button.brandIconCustomPalette);
+  const [isToggle, setIsToggle] = useState(ini.isToggle);
+  const [actionToggleOff, setActionToggleOff] = useState(ini.actionToggleOff);
+  const [label, setLabel] = useState(est.label);
+  const [sublabel, setSublabel] = useState(est.sublabel);
+  const [icon, setIcon] = useState(est.icon);
+  const [imageData, setImageData] = useState(est.imageData);
+  const [brandIcon, setBrandIcon] = useState(est.brandIcon);
+  const [brandIconAlwaysAnimate, setBrandIconAlwaysAnimate] = useState(est.brandIconAlwaysAnimate);
+  const [brandIconCustomBitmap, setBrandIconCustomBitmap] = useState(est.brandIconCustomBitmap);
+  const [brandIconCustomColor, setBrandIconCustomColor] = useState(est.brandIconCustomColor);
+  const [brandIconCustomPalette, setBrandIconCustomPalette] = useState(est.brandIconCustomPalette);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [showBrandEditor, setShowBrandEditor] = useState(false);
-  const [bgColor, setBgColor] = useState(button.bgColor || '');
-  const [fgColor, setFgColor] = useState(button.fgColor || '');
+  const [bgColor, setBgColor] = useState(est.bgColor);
+  const [fgColor, setFgColor] = useState(est.fgColor);
   // 1.4 — Disparadores externos
-  const [globalHotkey, setGlobalHotkey] = useState(button.globalHotkey ?? '');
-  const [inTrayMenu, setInTrayMenu] = useState(button.inTrayMenu ?? false);
+  const [globalHotkey, setGlobalHotkey] = useState(dis.globalHotkey);
+  const [inTrayMenu, setInTrayMenu] = useState(dis.inTrayMenu);
   // 3.x — Long press + radio group
-  const [longPressAction, setLongPressAction] = useState<import('../types').ButtonAction>(
-    button.longPressAction ?? { type: 'none' }
-  );
-  const [radioGroup, setRadioGroup] = useState(button.radioGroup ?? '');
+  const [longPressAction, setLongPressAction] = useState(ini.longPressAction);
+  const [radioGroup, setRadioGroup] = useState(ini.radioGroup);
   // Widget / Visibility / Scheduled trigger
-  const [widget, setWidget] = useState<'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | undefined>(button.widget);
-  const [sensorWidgetId, setSensorWidgetId] = useState(button.sensorWidget?.sensorId ?? '');
-  const [sensorWidgetSuffix, setSensorWidgetSuffix] = useState(button.sensorWidget?.suffix ?? '');
-  const [sensorWidgetWarn, setSensorWidgetWarn] = useState(button.sensorWidget?.warnAt?.toString() ?? '');
-  const [sensorWidgetCrit, setSensorWidgetCrit] = useState(button.sensorWidget?.critAt?.toString() ?? '');
-  const [varWidgetName, setVarWidgetName] = useState(button.varWidget?.varName ?? '');
-  const [varWidgetPrefix, setVarWidgetPrefix] = useState(button.varWidget?.prefix ?? '');
-  const [varWidgetSuffix, setVarWidgetSuffix] = useState(button.varWidget?.suffix ?? '');
-  const [visibleIfApp, setVisibleIfApp] = useState(button.visibleIf?.app ?? '');
-  const [visibleIfSensorId, setVisibleIfSensorId] = useState(button.visibleIf?.sensor?.id ?? '');
-  const [visibleIfSensorOp, setVisibleIfSensorOp] = useState<'>'|'<'|'>='|'<='|'=='>(button.visibleIf?.sensor?.op ?? '>');
-  const [visibleIfSensorVal, setVisibleIfSensorVal] = useState(button.visibleIf?.sensor?.value?.toString() ?? '');
-  const [timerTriggerAt, setTimerTriggerAt] = useState(button.timerTriggerAt ?? '');
-  const [sensorTriggerId, setSensorTriggerId] = useState(button.sensorTrigger?.id ?? '');
-  const [sensorTriggerOp, setSensorTriggerOp] = useState<'>'|'<'|'>='|'<='|'=='>(button.sensorTrigger?.op ?? '>');
-  const [sensorTriggerVal, setSensorTriggerVal] = useState(button.sensorTrigger?.value?.toString() ?? '');
-  const [sensorTriggerCooldown, setSensorTriggerCooldown] = useState(
-    button.sensorTrigger?.cooldownMs !== undefined ? String(Math.round(button.sensorTrigger.cooldownMs / 1000)) : ''
-  );
+  const [widget, setWidget] = useState(est.widget);
+  const [sensorWidgetId, setSensorWidgetId] = useState(wid.sensorWidgetId);
+  const [sensorWidgetSuffix, setSensorWidgetSuffix] = useState(wid.sensorWidgetSuffix);
+  const [sensorWidgetWarn, setSensorWidgetWarn] = useState(wid.sensorWidgetWarn);
+  const [sensorWidgetCrit, setSensorWidgetCrit] = useState(wid.sensorWidgetCrit);
+  const [varWidgetName, setVarWidgetName] = useState(wid.varWidgetName);
+  const [varWidgetPrefix, setVarWidgetPrefix] = useState(wid.varWidgetPrefix);
+  const [varWidgetSuffix, setVarWidgetSuffix] = useState(wid.varWidgetSuffix);
+  const [visibleIfApp, setVisibleIfApp] = useState(vis.visibleIfApp);
+  const [visibleIfSensorId, setVisibleIfSensorId] = useState(vis.visibleIfSensorId);
+  const [visibleIfSensorOp, setVisibleIfSensorOp] = useState(vis.visibleIfSensorOp);
+  const [visibleIfSensorVal, setVisibleIfSensorVal] = useState(vis.visibleIfSensorVal);
+  const [timerTriggerAt, setTimerTriggerAt] = useState(dis.timerTriggerAt);
+  const [sensorTriggerId, setSensorTriggerId] = useState(dis.sensorTriggerId);
+  const [sensorTriggerOp, setSensorTriggerOp] = useState(dis.sensorTriggerOp);
+  const [sensorTriggerVal, setSensorTriggerVal] = useState(dis.sensorTriggerVal);
+  const [sensorTriggerCooldown, setSensorTriggerCooldown] = useState(dis.sensorTriggerCooldown);
   // Sensor list shared by widget/visibility/trigger pickers.
   const [sensorList, setSensorList] = useState<import('../types').Sensor[]>([]);
   // 2.1 — Glifo 5×7 personalizado (7 enteros bitmask)
-  const [customGlyph57, setCustomGlyph57] = useState<number[] | undefined>(button.customGlyph57);
+  const [customGlyph57, setCustomGlyph57] = useState(est.customGlyph57);
   const [showGlyphEditor, setShowGlyphEditor] = useState(false);
   const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
@@ -97,9 +103,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const [presetCategory, setPresetCategory] = useState<ButtonPreset['category']>('APPS');
   const [presetSearch, setPresetSearch] = useState('');
   const [capturing, setCapturing] = useState(false);
-  const [folderButtons, setFolderButtons] = useState<FolderButton[]>(
-    button.action.folderButtons ?? []
-  );
+  const [folderButtons, setFolderButtons] = useState(ini.folderButtons);
   const captureRef = useRef(false);
 
   const loadAudioDevices = () => {

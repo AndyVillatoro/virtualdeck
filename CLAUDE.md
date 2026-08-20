@@ -30,6 +30,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   registro y música), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
   arrastrados), `OverlayCarpeta` y `formatos.ts` (reloj y fecha, en el idioma elegido)
 - `src/screens/editor/` — el editor por partes: `PasoAccion` (elegir qué hace),
+  `valoresIniciales.ts` (de qué botón guardado salen los campos del formulario — ahí viven
+  todos los `?? ''`, que eran la mitad de la complejidad de `EditorB`),
   `PasoConfigurar` (los apartados comunes: toggle, mantener pulsado, disparadores),
   `formularios/` (**un componente por tipo de acción en un mapa `FORMULARIOS`** — añadir un tipo
   es añadir una entrada, no tocar una cadena de condiciones; repartidos por familia: `basicos`,
