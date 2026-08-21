@@ -10,6 +10,7 @@ import { logError } from '../utils/logger';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
+import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { Hint } from '../components/Hint';
 import { wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
@@ -132,8 +133,6 @@ export function MainB({
   // collapses when children are 100%-sized (no intrinsic dimension). We measure
   // the wrapper and compute exact px so the grid expands to the largest box
   // that fits while keeping cells square.
-  const gridWrapperRef = useRef<HTMLDivElement>(null);
-  const [gridBox, setGridBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   // Coalesced 5s tick: RGB status + audio default + running procs all share
   // the same cadence. One interval + one Promise.all batch is cheaper than
@@ -291,31 +290,6 @@ export function MainB({
   const gridRows = currentPage?.gridRows ?? gridSize;
   const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
-
-  // Recompute the grid pixel box whenever the wrapper resizes or the grid
-  // shape changes. In 'square' mode we constrain to aspect-ratio = N/M; in
-  // 'fill' mode we just take the full wrapper area.
-  useEffect(() => {
-    const el = gridWrapperRef.current;
-    if (!el) return;
-    const compute = () => {
-      const W = el.clientWidth;
-      const H = el.clientHeight;
-      if (W === 0 || H === 0) return;
-      if (config.tileMode === 'fill') {
-        setGridBox({ w: W, h: H });
-        return;
-      }
-      const ratio = gridSize / gridRows;
-      let w = W, h = W / ratio;
-      if (h > H) { h = H; w = H * ratio; }
-      setGridBox({ w: Math.floor(w), h: Math.floor(h) });
-    };
-    compute();
-    const observer = new ResizeObserver(compute);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [gridSize, gridRows, config.tileMode, showSidebar]);
 
   const widgetDataMap = useMemo(() => {
     const map: Record<string, { line1: string; line2?: string; tone?: 'warn' | 'crit' }> = {};
@@ -621,16 +595,13 @@ export function MainB({
               style={{ bottom: 12, left: '50%', transform: 'translateX(-50%)' }}
             />
           )}
-          {/* Button grid — two modes via config.tileMode:
-              'square' (default): N:M aspect locked, square cells, may leave margin
-              'fill':   cells fill the area (slightly rectangular when needed) */}
-          <div
-            ref={gridWrapperRef}
-            style={{
-              flex: 1, padding: 16, minWidth: 0, minHeight: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}
+          <RejillaBotones
+            botones={pageButtons}
+            columnas={gridSize}
+            filas={gridRows}
+            modo={config.tileMode === 'fill' ? 'fill' : 'square'}
+            relleno={16}
+            senal={showSidebar}
             onTouchStart={(e) => {
               touchStartXRef.current = e.touches[0].clientX;
               touchStartYRef.current = e.touches[0].clientY;
@@ -648,16 +619,7 @@ export function MainB({
               if (dx < 0 && activePage < config.pages.length - 1) onPageChange(activePage + 1);
               else if (dx > 0 && activePage > 0) onPageChange(activePage - 1);
             }}
-          >
-          <div style={{
-            width: gridBox.w || '100%',
-            height: gridBox.h || '100%',
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
-            gap: 8,
-          }}>
-            {pageButtons.map((btn) => (
+            celda={(btn) => (
               <ButtonCell
                 key={btn.id}
                 button={btn}
@@ -688,9 +650,8 @@ export function MainB({
                   setDragSourceId(null);
                 }}
               />
-            ))}
-          </div>
-          </div>
+            )}
+          />
 
           {/* Bulk-select toolbar — floats over grid when ≥1 button selected */}
           {selectedIds.size > 0 && (

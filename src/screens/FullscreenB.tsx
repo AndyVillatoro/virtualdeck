@@ -7,6 +7,7 @@ import { DotText } from '../components/DotText';
 import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
+import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { executeAction, runActionSequence } from '../utils/actions';
 import { useNowPlaying } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
@@ -53,8 +54,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const errorTimer = useRef<number>();
-  const gridWrapperRef = useRef<HTMLDivElement>(null);
-  const [gridBox, setGridBox] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   // 5.5 — Modo kiosko: oculta topbar, deshabilita context menu y pide PIN para salir.
   // Activación per-session (no persistida); el PIN sí se guarda para próximos turnos.
@@ -169,26 +168,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // fills the left pane below the clock.
   const sensorGroups = useMemo(() => groupSensorsByHardware(sensorList), [sensorList]);
 
-  // Same JS-driven grid sizing as MainB. FullscreenB uses gridSize × gridSize
-  // (it doesn't expose gridRows separately). Aspect = 1 in 'square' mode.
-  useEffect(() => {
-    const el = gridWrapperRef.current;
-    if (!el) return;
-    const compute = () => {
-      const W = el.clientWidth, H = el.clientHeight;
-      if (W === 0 || H === 0) return;
-      if (config.tileMode === 'fill') { setGridBox({ w: W, h: H }); return; }
-      const ratio = gridSize / gridRows;
-      let w = W, h = W / ratio;
-      if (h > H) { h = H; w = H * ratio; }
-      setGridBox({ w: Math.floor(w), h: Math.floor(h) });
-    };
-    compute();
-    const observer = new ResizeObserver(compute);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [gridSize, gridRows, config.tileMode]);
-
   return (
     <div
       onContextMenu={(e) => { if (kioskActive) e.preventDefault(); }}
@@ -290,34 +269,26 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           </div>
         </div>
 
-        {/* Right: button grid — same two-mode logic as MainB. */}
-        <div ref={gridWrapperRef} style={{
-          flex: 1, padding: 20, minWidth: 0, minHeight: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            width: gridBox.w || '100%',
-            height: gridBox.h || '100%',
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${gridRows}, minmax(0, 1fr))`,
-            gap: 8,
-          }}>
-            {pageButtons.map((btn) => (
-              <ButtonCell
-                key={btn.id}
-                button={btn}
-                accent={config.accent}
-                toggled={toggledIds.has(btn.id)}
-                soundEnabled={soundOnPress}
-                soundProfile={soundProfile}
-                onEdit={() => {}}
-                onExecute={() => executeButton(btn)}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Right: la rejilla, compartida con MainB. */}
+        <RejillaBotones
+          botones={pageButtons}
+          columnas={gridSize}
+          filas={gridRows}
+          modo={config.tileMode === 'fill' ? 'fill' : 'square'}
+          relleno={20}
+          celda={(btn) => (
+            <ButtonCell
+              key={btn.id}
+              button={btn}
+              accent={config.accent}
+              toggled={toggledIds.has(btn.id)}
+              soundEnabled={soundOnPress}
+              soundProfile={soundProfile}
+              onEdit={() => {}}
+              onExecute={() => executeButton(btn)}
+            />
+          )}
+        />
       </div>
 
       {/* PIN prompt — set new (kiosk activation) o exit (kiosk deactivation) */}
