@@ -3,14 +3,16 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { MacroStep, MacroStepType } from '../../types';
 
+// El nombre de cada paso se guarda como **clave**, no como texto: el mapa es
+// una constante de modulo y ahi no se puede llamar a `useT()`.
 const STEP_LABELS: Record<MacroStepType, string> = {
-  key: 'Tecla',
-  hotkey: 'Combinación',
-  text: 'Texto',
-  click: 'Clic ratón',
-  move: 'Mover ratón',
-  delay: 'Pausa (ms)',
-  scroll: 'Scroll',
+  key: 'macro.step.key',
+  hotkey: 'macro.step.hotkey',
+  text: 'macro.step.text',
+  click: 'macro.step.click',
+  move: 'macro.step.move',
+  delay: 'macro.step.delay',
+  scroll: 'macro.step.scroll',
 };
 
 interface MacroEditorProps {
@@ -152,7 +154,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
                   {idx + 1}
                 </span>
                 <span style={{ fontFamily: VD.mono, fontSize: 8, color: accent, letterSpacing: 1, flex: 1 }}>
-                  {STEP_LABELS[step.type]}
+                  {t(STEP_LABELS[step.type])}
                   {step.value ? ` — ${step.value}` : ''}
                   {(step.x !== undefined && step.type !== 'scroll') ? ` (${step.x}, ${step.y})` : ''}
                   {step.delayMs ? ` +${step.delayMs}ms` : ''}
@@ -168,11 +170,11 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
                 <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                   {(step.type === 'key' || step.type === 'hotkey' || step.type === 'text') && (
                     <>
-                      <span style={labelSm(VD)}>{step.type === 'text' ? 'TEXTO' : 'TECLA'}</span>
+                      <span style={labelSm(VD)}>{t(step.type === 'text' ? 'macro.fieldText' : 'macro.fieldKey')}</span>
                       <input
                         value={step.value ?? ''}
                         onChange={(e) => updateStep(idx, { value: e.target.value })}
-                        placeholder={step.type === 'text' ? 'Texto a escribir' : step.type === 'hotkey' ? 'Ctrl+C' : 'Enter'}
+                        placeholder={step.type === 'text' ? t('macro.textPlaceholder') : step.type === 'hotkey' ? 'Ctrl+C' : 'Enter'}
                         style={{ ...inputStyle, flex: 1, minWidth: 80 }}
                       />
                     </>
@@ -218,16 +220,16 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
 
       {/* Add-step buttons */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-        {(Object.keys(STEP_LABELS) as MacroStepType[]).map((t) => (
+        {(Object.keys(STEP_LABELS) as MacroStepType[]).map((tipo) => (
           <button
-            key={t}
-            onClick={() => addStep(t)}
+            key={tipo}
+            onClick={() => addStep(tipo)}
             style={{
               padding: '3px 8px', background: VD.elevated, border: `1px solid ${VD.border}`,
               color: VD.textDim, fontFamily: VD.mono, fontSize: 7, letterSpacing: 0.5,
               cursor: 'pointer', borderRadius: VD.radius.sm,
             }}
-          >+ {STEP_LABELS[t]}</button>
+          >+ {t(STEP_LABELS[tipo])}</button>
         ))}
       </div>
     </div>

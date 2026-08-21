@@ -10,15 +10,18 @@ interface WallpaperBProps {
   onSave: (wallpaper: string) => void;
 }
 
-const WALLPAPERS: { id: string; label: string; preview: string }[] = [
-  { id: 'solid', label: 'Sólido', preview: '#0f0f0f' },
-  { id: 'gradient', label: 'Gradiente Azul', preview: 'linear-gradient(135deg,#0d1a2e,#1a1a2e)' },
-  { id: 'dotgrid', label: 'Cuadrícula Dot', preview: 'repeating-linear-gradient(0deg,#222 0,#222 1px,transparent 0,transparent 14px),repeating-linear-gradient(90deg,#222 0,#222 1px,transparent 0,transparent 14px)' },
-  { id: 'scanlines', label: 'Scanlines', preview: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.03) 0,rgba(255,255,255,0.03) 4px)' },
-  { id: 'crt', label: 'CRT', preview: 'radial-gradient(ellipse,#0e1612 50%,#000 100%),repeating-linear-gradient(0deg,#0d1410 0,#0d1410 4px,#0e1612 4px,#0e1612 8px)' },
-  { id: 'mesh', label: 'Mesh técnico', preview: 'repeating-linear-gradient(0deg,#0f0f0f 0,#0f0f0f 13px,#1a1a1a 13px,#1a1a1a 14px),repeating-linear-gradient(90deg,#0f0f0f 0,#0f0f0f 13px,#1a1a1a 13px,#1a1a1a 14px)' },
-  { id: 'photo', label: 'Neón', preview: 'radial-gradient(circle at 30% 30%,#1a2040,#0f0f1a 60%)' },
-  { id: 'grid-blue', label: 'Grid Azul', preview: 'linear-gradient(135deg,#0a1020,#101828)' },
+// Sin `label`: el nombre visible sale del diccionario, por clave `wp.name.`
+// mas el id. El campo seguia
+// aqui con los nombres en espanol, sin que nadie lo leyera.
+const WALLPAPERS: { id: string; preview: string }[] = [
+  { id: 'solid', preview: '#0f0f0f' },
+  { id: 'gradient', preview: 'linear-gradient(135deg,#0d1a2e,#1a1a2e)' },
+  { id: 'dotgrid', preview: 'repeating-linear-gradient(0deg,#222 0,#222 1px,transparent 0,transparent 14px),repeating-linear-gradient(90deg,#222 0,#222 1px,transparent 0,transparent 14px)' },
+  { id: 'scanlines', preview: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.03) 0,rgba(255,255,255,0.03) 4px)' },
+  { id: 'crt', preview: 'radial-gradient(ellipse,#0e1612 50%,#000 100%),repeating-linear-gradient(0deg,#0d1410 0,#0d1410 4px,#0e1612 4px,#0e1612 8px)' },
+  { id: 'mesh', preview: 'repeating-linear-gradient(0deg,#0f0f0f 0,#0f0f0f 13px,#1a1a1a 13px,#1a1a1a 14px),repeating-linear-gradient(90deg,#0f0f0f 0,#0f0f0f 13px,#1a1a1a 13px,#1a1a1a 14px)' },
+  { id: 'photo', preview: 'radial-gradient(circle at 30% 30%,#1a2040,#0f0f1a 60%)' },
+  { id: 'grid-blue', preview: 'linear-gradient(135deg,#0a1020,#101828)' },
 ];
 
 const PREVIEW_GRID = Array.from({ length: 12 });

@@ -392,7 +392,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               </div>
             )}
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center', lineHeight: 1.6 }}>
-              HOVER ✎ → EDITAR<br />CLIC → EJECUTAR
+              {t('editor.previewHint')}<br />{t('editor.previewHint2')}
             </div>
           </div>
 

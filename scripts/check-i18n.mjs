@@ -108,12 +108,19 @@ const PALABRAS_SUELTAS = new Set([
   'quitar', 'añadir', 'agregar', 'editar', 'borrar', 'eliminar', 'duplicar',
   'buscar', 'mover', 'renombrar', 'perfiles', 'perfil', 'ajustes', 'tamaño',
   'color', 'idioma', 'tema', 'sonido', 'ayuda', 'acerca', 'sensores',
+  // Encontradas mirando la aplicacion en ingles, no leyendo el codigo: la
+  // heuristica las daba por buenas porque no llevan acento ni van acompanadas
+  // de dos palabras funcionales.
+  'rango', 'probar', 'probando', 'celdas', 'casillas', 'tecla', 'teclas',
+  'ratón', 'raton', 'combinación', 'texto', 'reproduciendo', 'pausado',
+  'sólido', 'solido', 'vacío', 'vacio',
 ]);
 
 const PERMITIDOS = new Set([
   'VirtualDeck',
-  // `color` es igual en los dos idiomas.
-  'COLOR', 'Color',
+  // `color` es igual en los dos idiomas. En minuscula ademas casi siempre es
+  // CSS (`transition: 'color 0.15s'`, `<input type="color">`), no un texto.
+  'COLOR', 'Color', 'color', 'color 0.15s',
 ]);
 
 function pareceEspanol(s) {
@@ -123,7 +130,9 @@ function pareceEspanol(s) {
   if (/^(https?:|[A-Za-z]:[\\/]|\.{0,2}\/)/.test(limpio)) return false;  // URL o ruta
   if (ACENTOS.test(limpio)) return true;
   // Frases cortas: basta una palabra inequívoca.
-  const palabras = limpio.split(/[\s·/,.…]+/).filter(Boolean);
+  // Se parte tambien por `:` y `;`: sin ellos «Rango: 75%» daba la palabra
+  // «rango:», que no esta en la lista, y el texto pasaba.
+  const palabras = limpio.split(/[\s·/,.;:…]+/).filter(Boolean);
   if (palabras.length <= 4 && palabras.some((p) => PALABRAS_SUELTAS.has(p.toLowerCase()))) return true;
   return (limpio.match(PALABRAS_ES) ?? []).length >= 2;
 }
@@ -136,7 +145,13 @@ for (const ruta of archivos(RAIZ)) {
   // líneas con comentario al final se analizaban con el comentario incluido.
   // Daba falsos positivos y, peor, falsos negativos.
   for (const [i, linea] of readFileSync(ruta, 'utf-8').split(/\r?\n/).entries()) {
-    const codigo = linea.replace(/\/\/.*$/, '');
+    // Fuera los comentarios: los de linea, los de bloque y los de JSX
+    // (`{/* ... */}`), que no son `//` y colaban su texto como si fuera
+    // interfaz.
+    const codigo = linea
+      .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/, '');
     if (!codigo.trim() || codigo.trimStart().startsWith('*')) continue;
     const sospechas = [];
     for (const m of codigo.matchAll(/(?:label|title|placeholder|alt)=(['"])([^'"]{3,})\1/g)) sospechas.push(m[2]);
@@ -145,7 +160,27 @@ for (const ruta of archivos(RAIZ)) {
     // y la que lo cierra abajo, así que el patrón `>texto<` no lo ve. Se
     // colaron así "DISPARADORES EXTERNOS" y la ayuda del grupo radio, con la
     // auditoría en verde.
-    const suelto = codigo.trim();
+    // Literales de cadena sueltos, dentro de una expresion: los ternarios
+    // (`x ? 'SI' : 'NO'`), los `??` y los mapas de objeto. Ninguno de los tres
+    // patrones de arriba los ve —no son atributos ni texto entre etiquetas— y
+    // por ahi se colaron los avisos de sensores, los modos de casilla, los
+    // estados de RGB y las etiquetas del grabador de macros: veinte textos
+    // visibles, con la auditoria en verde.
+    //
+    // Solo en `.tsx`. En `.ts` los literales en español que quedan son datos
+    // sembrados (`actionData`, `brandIcons`): se copian dentro del boton que
+    // crea el usuario, y traducirlos en caliente le cambiaria las etiquetas
+    // que el ya guardo.
+    if (ruta.endsWith('.tsx')) {
+      // Fuera lo que ya pasa por el traductor, para no marcarlo.
+      const resto = codigo.replace(/\b(t|tf)\((['"`])(?:\.|(?!\2).)*?\2/g, '');
+      for (const m of resto.matchAll(/(['"`])((?:\.|(?!\1)[^\n]){3,}?)\1/g)) sospechas.push(m[2]);
+    }
+
+    // Se quitan las etiquetas de por medio antes de mirar la linea suelta: un
+    // parrafo con un `<strong>` dentro tiene `<` y `>`, y el filtro de abajo lo
+    // descartaba entero. Asi se colo el aviso de LHM de la seccion de sensores.
+    const suelto = codigo.replace(/<\/?[A-Za-z][^<>]*>/g, ' ').trim();
     // Se excluye lo que acaba en coma: es una propiedad de objeto partida en
     // varias líneas (`color,`), no un texto de la interfaz.
     if (suelto.length >= 3 && !/[<>{}=;()[\]`'"]/.test(suelto) && !/[,]$/.test(suelto)

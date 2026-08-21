@@ -310,7 +310,7 @@ export default function App() {
     const migrated = migrateConfig(raw);
     const v = validateConfig(migrated);
     if (!v.ok || !v.config) {
-      setImportError(`Importación rechazada: ${v.error ?? 'shape inválido'}`);
+      setImportError(t('import.rejected', { motivo: v.error ?? t('import.badShape') }));
       return false;
     }
     const s = v.config;

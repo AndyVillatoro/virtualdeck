@@ -133,12 +133,12 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           try {
             const out = await api.launch.scriptCapture(script, shell);
             if (actionDef?.showOutput && out.output) setRuntimeError(out.output);
-            return { ok: out.success, output: out.output, error: out.success ? undefined : 'El script terminó con error.' };
+            return { ok: out.success, output: out.output, error: out.success ? undefined : t('act.err.script') };
           } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
         }
         try {
           const ok = await api.launch.script(script, shell);
-          return { ok, error: ok ? undefined : 'El script terminó con error.' };
+          return { ok, error: ok ? undefined : t('act.err.script') };
         } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
       },
     }, config.rgb?.profiles);
@@ -243,7 +243,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
             </div>
             {sensorGroups.length === 0 ? (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
-                {sensorStatus?.enabled ? 'Sin datos. Verifica que LibreHardwareMonitor esté corriendo.' : 'Sensores deshabilitados. Configura LHM en TitleBar.'}
+                {t(sensorStatus?.enabled ? 'sensors.noData' : 'sensors.offHint')}
               </div>
             ) : (
               sensorGroups.map((g) => <SensorCard key={g.hardware} group={g} />)

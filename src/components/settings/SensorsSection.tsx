@@ -47,7 +47,7 @@ export function SensorsSection({
     setSpawning(true); setTestResult(null);
     try {
       const r = await api.sensors.spawnLHM(config.lhmPath?.trim() || undefined, !!config.spawnElevated);
-      if (!r.ok) { setTestResult(`Falló al iniciar LHM: ${r.error ?? 'desconocido'}`); return; }
+      if (!r.ok) { setTestResult(t('sensors.lhmFailed', { error: r.error ?? t('sensors.unknown') })); return; }
       // LHM's web server can take 3–8 s on cold start. Retry up to 12 times.
       await api.sensors.configure({ host: config.host, port: config.port, enabled: true });
       let probe = await api.sensors.probe();
@@ -56,8 +56,8 @@ export function SensorsSection({
         probe = await api.sensors.probe();
       }
       setTestResult(probe.ok
-        ? `OK · ${probe.count} sensores`
-        : `Web server no responde tras 12s: ${probe.error ?? '?'}. Intentá ejecutar VirtualDeck como administrador.`);
+        ? t('sensors.okCount', { n: probe.count })
+        : t('sensors.noWebServer', { error: probe.error ?? '?' }));
     } finally { setSpawning(false); }
   };
 
@@ -73,8 +73,8 @@ export function SensorsSection({
     try {
       const r = await api.sensors.registerUrlAcl(config.port);
       setTestResult(r.ok
-        ? `URL ACL registrado: ${r.url} — LHM ya no necesita admin.`
-        : `Falló registro URL ACL: ${r.error ?? '?'}`);
+        ? t('sensors.aclOk', { url: r.url ?? '' })
+        : t('sensors.aclFailed', { error: r.error ?? '?' }));
     } finally { setRegisteringAcl(false); }
   };
 
@@ -84,7 +84,9 @@ export function SensorsSection({
     try {
       await api.sensors.configure({ host: config.host, port: config.port, enabled: true });
       const r = await api.sensors.probe();
-      setTestResult(r.ok ? `OK · ${r.count} sensores` : `Falló: ${r.error ?? 'sin respuesta'}`);
+      setTestResult(r.ok
+        ? t('sensors.okCount', { n: r.count })
+        : t('rgb.connectFailed', { error: r.error ?? t('sensors.noReply') }));
     } finally { setTesting(false); }
   };
 
@@ -161,7 +163,7 @@ export function SensorsSection({
             </button>
           )}
           <button onClick={probe} disabled={testing} style={miniBtnSettings(accent)}>
-            {testing ? 'PROBANDO...' : 'PROBAR'}
+            {t(testing ? 'sensors.testing' : 'sensors.test')}
           </button>
           <button
             onClick={registerAcl}
@@ -169,14 +171,16 @@ export function SensorsSection({
             title={t('set.urlAcl')}
             style={miniBtnSettings(accent)}
           >
-            {registeringAcl ? 'REGISTRANDO...' : 'REGISTRAR URL ACL'}
+            {t(registeringAcl ? 'sensors.registering' : 'sensors.registerAcl')}
           </button>
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 9, minHeight: 14, color: testResult?.startsWith('OK') ? VD.success : testResult ? VD.danger : VD.textMuted }}>
-          {testResult ?? (status?.connected ? `● ${status.count} sensores conectado` : status?.enabled ? '○ habilitado · sin conexión' : '○ deshabilitado')}
+          {testResult ?? (status?.connected
+            ? t('sensors.connectedCount', { n: status.count })
+            : t(status?.enabled ? 'sensors.enabledNoConn' : 'sensors.disabledDot'))}
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
-          LHM viene <strong>bundled</strong> en VirtualDeck. Sensores como CPU/SMBus requieren admin — si faltan datos, lanzá VirtualDeck como administrador.
+          {t('sensors.adminHint')}
         </div>
       </div>
     </div>

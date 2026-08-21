@@ -120,7 +120,7 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
             >RESET</button>
           )}
         </div>
-        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>Rango: 75% – 175%</div>
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>{t('settings.scaleRange')}</div>
       </div>
     )}
 
@@ -140,13 +140,13 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
                 color: tileMode === m ? effectiveAccent : VD.textDim,
                 fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
               }}
-            >{m === 'square' ? 'CUADRADAS' : 'LLENAR ÁREA'}</button>
+            >{t(m === 'square' ? 'settings.tile.square' : 'settings.tile.fill')}</button>
           ))}
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4, lineHeight: 1.4 }}>
           {tileMode === 'square'
-            ? 'Celdas siempre cuadradas; deja margen si la ventana no es proporcional a la grilla.'
-            : 'Celdas ocupan toda el área; pueden volverse ligeramente rectangulares.'}
+            ? t('settings.tile.squareHelp')
+            : t('settings.tile.fillHelp')}
         </div>
       </div>
     )}

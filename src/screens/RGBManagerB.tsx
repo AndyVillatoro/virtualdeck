@@ -213,7 +213,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
   const saveProfile = (name: string) => {
     const prof = captureCurrentAsProfile(name);
     persistRGB((prev) => ({ ...prev, profiles: [...prev.profiles, prof] }));
-    showToast(`Perfil "${name}" guardado.`);
+    showToast(t('rgb.profileSaved', { nombre: name }));
   };
 
   const applyProfile = async (id: string) => {

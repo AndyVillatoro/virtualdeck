@@ -37,10 +37,12 @@ export function RGBSection({
     try {
       if (config.spawnOnStart && config.openrgbPath && !status?.serverRunning) {
         const r = await api.rgb.spawnServer(config.openrgbPath);
-        if (!r.ok) { setTestResult(`Spawn falló: ${r.error}`); return; }
+        if (!r.ok) { setTestResult(t('rgb.spawnFailed', { error: r.error ?? '' })); return; }
       }
       const s = await api.rgb.connect(config.host, config.port);
-      setTestResult(s.connected ? `OK · ${s.deviceCount} dispositivos` : `Falló: ${s.error ?? 'sin server'}`);
+      setTestResult(s.connected
+        ? t('rgb.okDevices', { n: s.deviceCount })
+        : t('rgb.connectFailed', { error: s.error ?? t('rgb.noServer') }));
     } finally { setTesting(false); }
   };
 
@@ -88,7 +90,7 @@ export function RGBSection({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button onClick={testConnect} disabled={testing} style={miniBtnSettings(accent)}>
-            {testing ? 'PROBANDO...' : 'PROBAR CONEXIÓN'}
+            {t(testing ? 'rgb.testing' : 'rgb.test')}
           </button>
           {testResult && (
             <span style={{ fontFamily: VD.mono, fontSize: 9, color: testResult.startsWith('OK') ? VD.success : VD.danger }}>

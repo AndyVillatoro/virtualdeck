@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
 import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
 import { playSound } from '../utils/sound';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { ContenidoCentral } from './celda/ContenidoCentral';
@@ -51,6 +52,7 @@ function ButtonCellInner({
   showContextMenu = true,
 }: ButtonCellProps) {
   const VD = useTheme();
+  const t = useT();
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -171,7 +173,7 @@ function ButtonCellInner({
       <div
         ref={cellRef}
         className="vd-btn"
-        title={isEmpty ? 'Clic para configurar · Clic derecho para más opciones' : `${displayLabel} — clic para ejecutar · Ctrl+clic para seleccionar`}
+        title={isEmpty ? t('cell.tipEmpty') : t('cell.tipFilled', { etiqueta: displayLabel })}
         draggable={!isEmpty}
         onClick={handleClick}
         onDoubleClick={() => {

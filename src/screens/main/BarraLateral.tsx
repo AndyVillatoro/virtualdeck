@@ -173,7 +173,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                   const r = await api?.media.diagnose();
                   if (!r) return;
                   const lines = r.stdout.split(/\r?\n/).slice(0, 25).join('\n');
-                  showToast(`SMTC diagnóstico:\n${lines}${r.stderr ? '\n\nstderr:\n' + r.stderr.slice(0, 300) : ''}`);
+                  showToast(`${t('media.diagTitle')}\n${lines}${r.stderr ? '\n\nstderr:\n' + r.stderr.slice(0, 300) : ''}`);
                 }}
                 title={t('media.diagnose')}
                 style={{
@@ -220,15 +220,15 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: isPlaying ? VD.success : VD.textMuted, flexShrink: 0 }} />
                   <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-                    {isPlaying ? 'Reproduciendo' : 'Pausado'}{sourceName ? ` · ${sourceName}` : ''}
+                    {t(isPlaying ? 'media.playing' : 'media.paused')}{sourceName ? ` · ${sourceName}` : ''}
                   </span>
                 </div>
                 {/* Media controls — Lucide icons, matching app design */}
                 <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
                   {([
-                    { key: 'prev',       Icon: IconMediaSkipBack,                          title: 'Anterior'   },
-                    { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: 'Play/Pausa' },
-                    { key: 'next',       Icon: IconMediaSkipForward,                       title: 'Siguiente'  },
+            { key: 'prev',       Icon: IconMediaSkipBack,                          title: t('media.prev') },
+                    { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: t('media.playPause') },
+                    { key: 'next',       Icon: IconMediaSkipForward,                       title: t('media.next') },
                   ] as const).map(({ key, Icon, title }) => (
                     <button
                       key={key}

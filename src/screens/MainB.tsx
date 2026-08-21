@@ -230,7 +230,7 @@ export function MainB({
       if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
         const r = await withTimeout(
           executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t),
-          { ok: false, error: 'Acción excedió 60s y se considera colgada.' },
+          { ok: false, error: t('act.err.timeout') },
         );
         if (!r.ok && r.error) showToast(r.error);
         if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
@@ -248,15 +248,15 @@ export function MainB({
           try {
             const out = await api.launch.scriptCapture(script, shell);
             if (actionDef?.showOutput && out.output) showToast(out.output);
-            return { ok: out.success, output: out.output, error: out.success ? undefined : 'El script terminó con error.' };
+            return { ok: out.success, output: out.output, error: out.success ? undefined : t('act.err.script') };
           } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
         }
         try {
           const ok = await api.launch.script(script, shell);
-          return { ok, error: ok ? undefined : 'El script terminó con error.' };
+          return { ok, error: ok ? undefined : t('act.err.script') };
         } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
       },
-    }, config.rgb?.profiles), { ok: false, error: 'Acción excedió 60s y se considera colgada.', stateUpdate: {} });
+    }, config.rgb?.profiles), { ok: false, error: t('act.err.timeout'), stateUpdate: {} });
     // Diff state update vs baseState para sólo persistir lo nuevo.
     const newKeys = Object.keys(r.stateUpdate ?? {}).filter((k) => r.stateUpdate![k] !== baseState[k]);
     if (newKeys.length > 0 && r.stateUpdate) {

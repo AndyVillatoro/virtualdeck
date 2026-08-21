@@ -85,12 +85,12 @@ export function PinKiosko({ modo, setModo, pinGuardado, accent, onGuardarPin, se
             animation: pinShake ? 'vd-pin-shake 0.32s' : undefined,
           }}>
             <DotLabel size={10} color={VD.text} spacing={2}>
-              {modo === 'set' ? 'ESTABLECER PIN DE 4 DÍGITOS' : 'INGRESA PIN PARA SALIR'}
+              {t(modo === 'set' ? 'pin.setTitle' : 'pin.exitTitle')}
             </DotLabel>
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, letterSpacing: 1 }}>
               {modo === 'set'
-                ? 'Necesario una vez para activar el modo kiosko. Lo guardamos en tu config.'
-                : 'Modo kiosko activo. ESC desactiva con PIN.'}
+                ? t('pin.setHelp')
+                : t('pin.exitHelp')}
             </div>
             <input
               autoFocus
@@ -128,7 +128,7 @@ export function PinKiosko({ modo, setModo, pinGuardado, accent, onGuardarPin, se
                   color: accent, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
                 }}
-              >{modo === 'set' ? 'GUARDAR' : 'CONFIRMAR'}</button>
+              >{t(modo === 'set' ? 'pin.save' : 'pin.confirm')}</button>
             </div>
           </div>
         </div>

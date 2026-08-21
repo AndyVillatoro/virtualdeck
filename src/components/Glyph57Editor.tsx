@@ -111,7 +111,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
               <button
                 key={ch}
                 onClick={() => loadFromChar(ch)}
-                title={`Cargar "${ch}"`}
+                title={t('glyph.load', { ch })}
                 style={{
                   width: 22, height: 22,
                   background: VD.elevated, border: `1px solid ${VD.border}`,

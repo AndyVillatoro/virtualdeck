@@ -69,9 +69,9 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
         </div>
         <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
           {([
-            { key: 'prev',       Icon: IconMediaSkipBack,                          title: 'Anterior'  },
-            { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: 'Play/Pausa' },
-            { key: 'next',       Icon: IconMediaSkipForward,                       title: 'Siguiente' },
+            { key: 'prev',       Icon: IconMediaSkipBack,                          title: t('media.prev') },
+            { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: t('media.playPause') },
+            { key: 'next',       Icon: IconMediaSkipForward,                       title: t('media.next') },
           ] as const).map(({ key, Icon, title }) => (
             <button
               key={key}
