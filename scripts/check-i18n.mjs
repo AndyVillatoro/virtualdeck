@@ -16,7 +16,15 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, extname, sep } from 'node:path';
 
 const RAIZ = 'src';
+// Los tres diccionarios viven cada uno en su archivo desde que `i18n.tsx`
+// paso de las mil lineas. `I18N` sigue siendo el modulo que **no** se audita
+// como codigo de interfaz (sus literales son el diccionario en si).
 const I18N = 'src/utils/i18n.tsx';
+const DICCIONARIOS = {
+  'ES: Dict': 'src/utils/idiomas/es.ts',
+  'EN: Dict': 'src/utils/idiomas/en.ts',
+  'FIELDS_EN': 'src/utils/idiomas/campos.ts',
+};
 
 function archivos(dir) {
   const salida = [];
@@ -29,9 +37,11 @@ function archivos(dir) {
 }
 
 /** Extrae las claves de un objeto literal `const NOMBRE ... = { 'k': 'v', ... }`. */
-function clavesDe(fuente, nombre) {
+function clavesDe(nombre) {
+  const ruta = DICCIONARIOS[nombre];
+  const fuente = readFileSync(ruta, 'utf-8');
   const inicio = fuente.indexOf(`const ${nombre}`);
-  if (inicio < 0) throw new Error(`no encuentro ${nombre} en ${I18N}`);
+  if (inicio < 0) throw new Error(`no encuentro ${nombre} en ${ruta}`);
   const fin = fuente.indexOf('\n};', inicio);
   const cuerpo = fuente.slice(inicio, fin);
   const claves = new Map();
@@ -42,10 +52,9 @@ function clavesDe(fuente, nombre) {
   return claves;
 }
 
-const fuenteI18n = readFileSync(I18N, 'utf-8');
-const ES = clavesDe(fuenteI18n, 'ES: Dict');
-const EN = clavesDe(fuenteI18n, 'EN: Dict');
-const CAMPOS = clavesDe(fuenteI18n, 'FIELDS_EN');
+const ES = clavesDe('ES: Dict');
+const EN = clavesDe('EN: Dict');
+const CAMPOS = clavesDe('FIELDS_EN');
 
 const problemas = [];
 
@@ -149,7 +158,8 @@ function pareceEspanol(s) {
 }
 
 for (const ruta of archivos(RAIZ)) {
-  if (ruta.split(sep).join('/') === I18N) continue;
+  const rel = ruta.split(sep).join('/');
+  if (rel === I18N || Object.values(DICCIONARIOS).includes(rel)) continue;
   // Se parte por `\r?\n`, no por `\n`: los archivos del repo están en CRLF, y
   // partiendo solo por `\n` cada línea queda terminada en `\r`. Eso rompe el
   // recorte de comentarios —el `$` de `/\/\/.*$/` no cruza el `\r`— así que las
