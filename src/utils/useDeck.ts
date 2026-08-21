@@ -57,16 +57,16 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     historyRef.current = historyRef.current.slice(0, -1);
     setConfig(last.config);
     api?.config.save(last.config).catch(() => {});
-    showUndoToast(`↶ Se deshizo: ${last.label}`);
-  }, [api, showUndoToast]);
+    showUndoToast(t('undo.done', { label: last.label }));
+  }, [api, showUndoToast, t]);
 
   const saveConfig = useCallback((next: DeckConfig) => {
     setConfig((prev) => {
-      historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: 'Cambio de configuración' }];
+      historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: t('undo.configChange') }];
       api?.config.save(next).catch(() => {});
       return next;
     });
-  }, [api]);
+  }, [api, t]);
 
   const updateButton = useCallback((updated: ButtonConfig) => {
     withHistory(`editar "${updated.label || updated.action.type}"`, (prev) => ({
@@ -91,7 +91,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
         ),
       };
     });
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   const clearButton = useCallback((id: string) => {
     withHistory(t('undo.clear'), (prev) => ({
@@ -101,13 +101,13 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
         : b
       ),
     }));
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   // Mover (o copiar) un botón a otra página. Usa el primer slot vacío del destino.
   // Devuelve true si se realizó la operación, false si no había slot libre.
   const moveButtonToPage = useCallback((buttonId: string, targetPage: number, copy: boolean): boolean => {
     let moved = false;
-    withHistory(copy ? 'copiar entre páginas' : 'mover entre páginas', (prev) => {
+    withHistory(t(copy ? 'undo.copyBetweenPages' : 'undo.moveBetweenPages'), (prev) => {
       const src = prev.buttons.find((b) => b.id === buttonId);
       if (!src || targetPage < 0 || targetPage >= prev.pages.length) return prev;
       if (src.page === targetPage) return prev;
@@ -127,7 +127,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
       };
     });
     return moved;
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   const swapButtons = useCallback((idA: string, idB: string) => {
     withHistory('reordenar botones', (prev) => {
@@ -147,17 +147,17 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
 
   // Page management
   const renamePage = useCallback((id: string, name: string) => {
-    withHistory(`renombrar a "${name}"`, (prev) => ({
+    withHistory(t('undo.renameTo', { nombre: name }), (prev) => ({
       ...prev,
       pages: prev.pages.map((p) => p.id === id ? { ...p, name } : p),
     }));
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   const addPage = useCallback(() => {
     withHistory(t('undo.addPage'), (prev) => {
       if (prev.pages.length >= 8) return prev;
       const newIdx = prev.pages.length;
-      const newPage: PageConfig = { id: `page_${Date.now()}`, name: `PÁGINA ${newIdx + 1}` };
+      const newPage: PageConfig = { id: `page_${Date.now()}`, name: t('page.defaultName', { n: newIdx + 1 }) };
       const newButtons: ButtonConfig[] = Array.from({ length: 16 }, (_, slot) => ({
         id: `p${Date.now()}_${slot}`,
         page: newIdx,
@@ -165,7 +165,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
       }));
       return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
     });
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   const deletePage = useCallback((id: string) => {
     withHistory(t('undo.delPage'), (prev) => {
@@ -179,7 +179,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
       return { ...prev, pages: newPages, buttons: newButtons };
     });
     setActivePage((p) => Math.max(0, p > 0 ? p - 1 : 0));
-  }, [withHistory]);
+  }, [withHistory, setActivePage, t]);
 
   // Reorder pages by drag-and-drop
   const reorderPages = useCallback((fromIdx: number, toIdx: number) => {
@@ -195,7 +195,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
       return { ...prev, pages, buttons };
     });
     setActivePage(toIdx);
-  }, [withHistory]);
+  }, [withHistory, setActivePage, t]);
 
   // Set grid size for a page (extends to 5×5, 6×6, and rectangular gridRows)
   const setPageGridSize = useCallback((pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => {
@@ -233,13 +233,13 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   }, [api]);
 
   const loadProfile = useCallback((id: string) => {
-    withHistory('cargar perfil', (prev) => {
+    withHistory(t('undo.loadProfile'), (prev) => {
       const profile = prev.profiles?.find((p) => p.id === id);
       if (!profile) return prev;
       return { ...prev, pages: profile.pages, buttons: profile.buttons, accent: profile.accent };
     });
     setActivePage(0);
-  }, [withHistory]);
+  }, [withHistory, setActivePage, t]);
 
   const deleteProfile = useCallback((id: string) => {
     setConfig((prev) => {

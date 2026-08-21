@@ -57,7 +57,7 @@ export function HelpAboutPanel({
   const reportBug = async () => {
     let recentLog = '';
     try { recentLog = (await api?.log.readRecent(2500)) ?? ''; } catch {}
-    open(buildIssueUrl({ platformInfo, recentLog }));
+    open(buildIssueUrl({ platformInfo, recentLog }, t));
   };
 
   const linkBtn: React.CSSProperties = {

@@ -14,20 +14,23 @@ export interface BugReportInput {
   userNote?: string;
 }
 
-export function buildIssueUrl(input: BugReportInput): string {
+export function buildIssueUrl(
+  input: BugReportInput,
+  t: (k: string, v?: Record<string, string | number>) => string,
+): string {
   const pi = input.platformInfo;
   const logTail = (input.recentLog ?? '').slice(-MAX_LOG_TAIL);
 
   const title = '[Bug] ';
   const bodyParts = [
-    '## Descripción',
-    input.userNote?.trim() || '<!-- Describe el problema: qué hacías, qué esperabas, qué pasó -->',
+    t('bug.sectionDesc'),
+    input.userNote?.trim() || t('bug.descPlaceholder'),
     '',
-    '## Pasos para reproducir',
+    t('bug.sectionSteps'),
     '1. ',
     '2. ',
     '',
-    '## Entorno',
+    t('bug.sectionEnv'),
     pi
       ? [
           `- VirtualDeck: ${pi.appVersion}`,
@@ -35,12 +38,12 @@ export function buildIssueUrl(input: BugReportInput): string {
           `- Electron: ${pi.electron} · Chrome: ${pi.chrome}`,
           `- Locale: ${pi.locale}`,
         ].join('\n')
-      : '- (no disponible)',
+      : t('bug.envUnavailable'),
     '',
   ];
 
   if (logTail.trim()) {
-    bodyParts.push('## Registro reciente', '```', logTail.trim(), '```', '');
+    bodyParts.push(t('bug.sectionLog'), '```', logTail.trim(), '```', '');
   }
 
   const body = bodyParts.join('\n');
@@ -48,7 +51,10 @@ export function buildIssueUrl(input: BugReportInput): string {
 
   // Si excede el límite, recortar el log progresivamente.
   if (url.length > MAX_URL_LEN && logTail) {
-    const trimmedBody = body.replace(/## Registro reciente[\s\S]*$/, '## Registro reciente\n(Adjuntá el log exportado: botón "Exportar registro" en Ayuda → Acerca de)\n');
+    const trimmedBody = body.replace(
+      new RegExp(t('bug.sectionLog') + '[\\s\\S]*$'),
+      `${t('bug.sectionLog')}\n${t('bug.logTrimmed')}\n`,
+    );
     url = `${LINKS.newIssue}?labels=bug&title=${encodeURIComponent(title)}&body=${encodeURIComponent(trimmedBody)}`;
   }
   return url;

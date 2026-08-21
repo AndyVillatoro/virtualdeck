@@ -116,6 +116,17 @@ const PALABRAS_SUELTAS = new Set([
   'sólido', 'solido', 'vacío', 'vacio',
 ]);
 
+// Los dos archivos de datos sembrados. Lo que hay aqui en espanol se **copia
+// dentro** del boton que crea el usuario: traducirlo en caliente le cambiaria
+// etiquetas que ya guardo.
+//
+// Al principio la comprobacion se salteaba todos los `.ts` por este motivo, y
+// asi se colo el rotulo de deshacer de `useDeck.ts`, que si es interfaz viva.
+const DATOS_SEMBRADOS = new Set([
+  'src/screens/editor/actionData.ts',
+  'src/data/brandIcons.ts',
+]);
+
 const PERMITIDOS = new Set([
   'VirtualDeck',
   // `color` es igual en los dos idiomas. En minuscula ademas casi siempre es
@@ -171,7 +182,7 @@ for (const ruta of archivos(RAIZ)) {
     // sembrados (`actionData`, `brandIcons`): se copian dentro del boton que
     // crea el usuario, y traducirlos en caliente le cambiaria las etiquetas
     // que el ya guardo.
-    if (ruta.endsWith('.tsx')) {
+    if (!DATOS_SEMBRADOS.has(ruta.split(sep).join('/'))) {
       // Fuera lo que ya pasa por el traductor, para no marcarlo.
       const resto = codigo.replace(/\b(t|tf)\((['"`])(?:\.|(?!\2).)*?\2/g, '');
       for (const m of resto.matchAll(/(['"`])((?:\.|(?!\1)[^\n]){3,}?)\1/g)) sospechas.push(m[2]);

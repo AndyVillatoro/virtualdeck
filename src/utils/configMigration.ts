@@ -50,31 +50,36 @@ function isButton(v: unknown): v is ButtonConfig {
   return true;
 }
 
-export function validateConfig(raw: unknown): ValidationResult {
-  if (!isObject(raw)) return { ok: false, error: 'El archivo no contiene un objeto JSON válido.' };
+/**
+ * `t` entra como parametro porque este modulo es puro y no puede usar `useT()`.
+ * Devolver la clave en vez del texto obligaria a quien llama a saber que unas
+ * llevan el numero de pagina interpolado y otras no.
+ */
+export function validateConfig(raw: unknown, t: (k: string, v?: Record<string, string | number>) => string): ValidationResult {
+  if (!isObject(raw)) return { ok: false, error: t('validate.notObject') };
 
-  if (!Array.isArray(raw.pages)) return { ok: false, error: 'Falta el campo "pages" (array).' };
-  if (raw.pages.length === 0) return { ok: false, error: '"pages" no puede estar vacío.' };
+  if (!Array.isArray(raw.pages)) return { ok: false, error: t('validate.missingPages') };
+  if (raw.pages.length === 0) return { ok: false, error: t('validate.emptyPages') };
   for (let i = 0; i < raw.pages.length; i++) {
-    if (!isPage(raw.pages[i])) return { ok: false, error: `Página #${i + 1} con shape inválido (falta id/name).` };
+    if (!isPage(raw.pages[i])) return { ok: false, error: t('validate.badPage', { n: i + 1 }) };
   }
 
-  if (!Array.isArray(raw.buttons)) return { ok: false, error: 'Falta el campo "buttons" (array).' };
+  if (!Array.isArray(raw.buttons)) return { ok: false, error: t('validate.missingButtons') };
   for (let i = 0; i < raw.buttons.length; i++) {
     if (!isButton(raw.buttons[i])) {
-      return { ok: false, error: `Botón #${i + 1} con shape inválido (falta id/page/label/action).` };
+      return { ok: false, error: t('validate.badButton', { n: i + 1 }) };
     }
   }
 
-  if (typeof raw.accent !== 'string') return { ok: false, error: 'Falta el campo "accent" (color hex).' };
-  if (typeof raw.wallpaper !== 'string') return { ok: false, error: 'Falta el campo "wallpaper".' };
+  if (typeof raw.accent !== 'string') return { ok: false, error: t('validate.missingAccent') };
+  if (typeof raw.wallpaper !== 'string') return { ok: false, error: t('validate.missingWallpaper') };
 
   // profiles y soundOnPress son opcionales — si vienen, deben tener tipos correctos.
   if (raw.profiles !== undefined && !Array.isArray(raw.profiles)) {
-    return { ok: false, error: '"profiles" debe ser un array.' };
+    return { ok: false, error: t('validate.badProfiles') };
   }
   if (raw.soundOnPress !== undefined && typeof raw.soundOnPress !== 'boolean') {
-    return { ok: false, error: '"soundOnPress" debe ser booleano.' };
+    return { ok: false, error: t('validate.badSound') };
   }
 
   return { ok: true, config: raw as unknown as DeckConfig };

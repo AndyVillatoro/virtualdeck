@@ -308,7 +308,7 @@ export default function App() {
 
   const applyImportedConfig = useCallback((raw: unknown) => {
     const migrated = migrateConfig(raw);
-    const v = validateConfig(migrated);
+    const v = validateConfig(migrated, t);
     if (!v.ok || !v.config) {
       setImportError(t('import.rejected', { motivo: v.error ?? t('import.badShape') }));
       return false;

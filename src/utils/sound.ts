@@ -4,11 +4,13 @@
 
 export type SoundProfile = 'click' | 'tick' | 'thud' | 'off';
 
+// `label` es una **clave** del diccionario, no el texto: este archivo no es un
+// componente y no puede llamar a `useT()`. Lo traduce quien lo pinta.
 export const SOUND_PROFILES: { id: SoundProfile; label: string }[] = [
-  { id: 'click', label: 'Click mecánico' },
-  { id: 'tick',  label: 'Tick' },
-  { id: 'thud',  label: 'Thud' },
-  { id: 'off',   label: 'Silencio' },
+  { id: 'click', label: 'sound.click' },
+  { id: 'tick',  label: 'sound.tick' },
+  { id: 'thud',  label: 'sound.thud' },
+  { id: 'off',   label: 'sound.off' },
 ];
 
 let _ctx: AudioContext | null = null;

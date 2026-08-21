@@ -224,7 +224,7 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
                 }}
               >
-                {p.label.toUpperCase()}
+                {t(p.label).toUpperCase()}
               </button>
             );
           })}

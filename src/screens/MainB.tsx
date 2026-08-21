@@ -170,10 +170,16 @@ export function MainB({
   }, []);
 
   // Poll weather for widget buttons (15 min TTL, same as WeatherWidget sidebar).
+  //
+  // `hayClima` se calcula **fuera** del efecto y entra en sus dependencias. Se
+  // miraba dentro, con el efecto dependiendo solo de `api` — que no cambia
+  // nunca. Resultado: poner un widget de clima en un boton no arrancaba el
+  // sondeo hasta reiniciar la aplicacion, y quitar el ultimo no lo paraba.
+  // Es un booleano a proposito: si dependiera de `config.buttons`, el
+  // temporizador se reiniciaria con cada edicion de cualquier boton.
+  const hayClima = config.buttons.some((b) => b.widget === 'weather');
   useEffect(() => {
-    if (!api) return;
-    const hasWeather = config.buttons.some((b) => b.widget === 'weather');
-    if (!hasWeather) return;
+    if (!api || !hayClima) return;
     let cancelled = false;
     const poll = async () => {
       try { const d = await api.weather.get(); if (!cancelled && d) setWidgetWeather(d); } catch {}
@@ -181,7 +187,7 @@ export function MainB({
     poll();
     const t = setInterval(poll, 15 * 60 * 1000);
     return () => { cancelled = true; clearInterval(t); };
-  }, [api]);
+  }, [api, hayClima]);
 
   useEffect(() => {
     if (!pageContextMenu) return;
