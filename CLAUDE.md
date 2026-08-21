@@ -51,7 +51,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   casillas del modo `square` no salian cuadradas y en `fill` la ultima fila se recortaba.
 - `src/components/celda/` — las piezas de la celda: `colores.ts` (prioridad de fondo y borde),
   `ContenidoCentral` (widget o icono, con sus cuatro formas), `Insignias` (las marcas de las esquinas),
-  `MenuContextual` y `usePulsacionTactil` (toque, doble toque y pulsación larga).
+  `MenuContextual`, y los dos hermanos del gesto: `usePulsacionTactil` (dedo) y
+  `usePulsacionRaton` (ratón). El destello y el sonido salen **solo** de
+  `destellar()`, dentro del hook de ratón; estaban copiados en tres sitios que leían
+  las props en vez de las referencias, y el comparador del `memo` ignora esas props.
 - `src/utils/useDeck.ts` — la configuración del deck y las 25 operaciones que la cambian
   (botones, páginas, perfiles, ajustes), con el historial de deshacer. `App` se queda con la
   vista y los avisos. `src/utils/configDefaults.ts` — la configuración de una instalación nueva.

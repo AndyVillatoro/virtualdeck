@@ -2,11 +2,11 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
-import { playSound } from '../utils/sound';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { ContenidoCentral } from './celda/ContenidoCentral';
 import { Insignias } from './celda/Insignias';
 import { usePulsacionTactil } from './celda/usePulsacionTactil';
+import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
 import type { ButtonConfig, SoundProfileId } from '../types';
@@ -53,29 +53,30 @@ function ButtonCellInner({
 }: ButtonCellProps) {
   const VD = useTheme();
   const t = useT();
-  const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [flash, setFlash] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const longPressTimer = useRef<number | null>(null);
-  const longPressTriggered = useRef(false);
   const cellRef = useRef<HTMLDivElement>(null);
   // Callback refs: memo comparator ignores handler identity, so we keep fresh
-  // copies without adding them to effect dependency arrays.
+  // copies without adding them to effect dependency arrays. Las del sonido se
+  // fueron con `usePulsacionRaton`, que ahora es el unico que lo dispara.
   const onLongPressRef = useRef(onLongPress);
   const onExecuteRef = useRef(onExecute);
-  const soundEnabledRef = useRef(soundEnabled);
-  const soundProfileRef = useRef(soundProfile);
   onLongPressRef.current = onLongPress;
   onExecuteRef.current = onExecute;
-  soundEnabledRef.current = soundEnabled;
-  soundProfileRef.current = soundProfile;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
 
   const hasLongPress = !isEmpty && !!onLongPress;
+
+  const raton = usePulsacionRaton({
+    isEmpty, hasLongPress, soundEnabled, soundProfile,
+    onEdit, onExecute, onLongPress, onSelect,
+    showContextMenu,
+    abrirMenu: (x, y) => setContextMenu({ x, y }),
+  });
+  const { pressed, flash, destellar } = raton;
 
   // 5.3 — el pulso radial reemplaza el flash de fondo plano. La celda mantiene
   // su bg estable durante la ejecución; la "ondita" se renderiza encima como overlay.
@@ -88,50 +89,6 @@ function ButtonCellInner({
   const iconColor = isEmpty ? VD.textMuted : (button.fgColor || (toggled ? accent : VD.text));
   const multiCount = button.actions && button.actions.length > 1 ? button.actions.length : 0;
 
-  function handleMouseDown() {
-    setPressed(true);
-    longPressTriggered.current = false;
-    if (onLongPress && !isEmpty) {
-      longPressTimer.current = window.setTimeout(() => {
-        longPressTriggered.current = true;
-        longPressTimer.current = null;
-        setPressed(false);
-        setFlash(true);
-        setTimeout(() => setFlash(false), 300);
-        if (soundEnabled) playSound(soundProfile);
-        onLongPress();
-      }, 500);
-    }
-  }
-
-  function handleMouseUpOrLeave() {
-    setPressed(false);
-    if (longPressTimer.current !== null) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }
-
-  function handleClick(e: React.MouseEvent) {
-    if (longPressTriggered.current) { longPressTriggered.current = false; return; }
-    // Ctrl/Cmd+click → toggle selection (multi-select mode)
-    if ((e.ctrlKey || e.metaKey) && onSelect) { onSelect(); return; }
-    if (isEmpty) { onEdit(); return; }
-    setFlash(true);
-    setTimeout(() => setFlash(false), 300);
-    if (soundEnabled) playSound(soundProfile);
-    onExecute();
-  }
-
-  function handleContextMenu(e: React.MouseEvent) {
-    e.preventDefault();
-    // Long press already fired → suppress the contextmenu the browser generates
-    // right after (timing varies by browser/OS but typically ~500 ms on touch).
-    if (longPressTriggered.current) { longPressTriggered.current = false; return; }
-    if (!showContextMenu) return;
-    setContextMenu({ x: e.clientX, y: e.clientY });
-  }
-
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
@@ -139,20 +96,12 @@ function ButtonCellInner({
     return () => document.removeEventListener('click', close);
   }, [contextMenu]);
 
-  // Destello de confirmacion. Los tres sitios que lo usan repetian el mismo
-  // par de llamadas con el mismo numero magico.
-  const destellar = useCallback(() => {
-    setFlash(true);
-    setTimeout(() => setFlash(false), 300);
-    if (soundEnabledRef.current) playSound(soundProfileRef.current);
-  }, []);
-
   usePulsacionTactil({
     ref: cellRef,
     activo: hasLongPress,
-    setPressed,
+    setPressed: raton.setPressed,
     destellar,
-    yaDisparoRef: longPressTriggered,
+    yaDisparoRef: raton.yaDisparo,
     alPulsar: useCallback(() => onExecuteRef.current?.(), []),
     alPulsarLargo: useCallback(() => onLongPressRef.current?.(), []),
   })
@@ -175,29 +124,15 @@ function ButtonCellInner({
         className="vd-btn"
         title={isEmpty ? t('cell.tipEmpty') : t('cell.tipFilled', { etiqueta: displayLabel })}
         draggable={!isEmpty}
-        onClick={handleClick}
-        onDoubleClick={() => {
-          if (!hasLongPress) return;
-          setFlash(true);
-          setTimeout(() => setFlash(false), 300);
-          if (soundEnabled) playSound(soundProfile);
-          onLongPress!();
-        }}
-        onContextMenu={handleContextMenu}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUpOrLeave}
+        onClick={raton.alClic}
+        onDoubleClick={raton.alDobleClic}
+        onContextMenu={raton.alMenuContextual}
+        onMouseDown={raton.alBajar}
+        onMouseUp={raton.alSubirOSalir}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => { setHovered(false); handleMouseUpOrLeave(); }}
+        onMouseLeave={() => { setHovered(false); raton.alSubirOSalir(); }}
         onDragStart={(e) => {
-          // Cancel pending long-press: HTML5 drag suppresses mouseup, so the
-          // 500 ms timer would otherwise fire mid-drag, run the action, and
-          // re-render the cell (via isRunning) — which breaks the drag.
-          if (longPressTimer.current !== null) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
-          }
-          longPressTriggered.current = false;
-          setPressed(false);
+          raton.alEmpezarArrastre();
           e.dataTransfer.effectAllowed = 'move';
           // El estandar exige adjuntar datos para que el arrastre arranque.
           // Sin esto, Chromium inicia el gesto pero no lo trata como un
@@ -208,7 +143,7 @@ function ButtonCellInner({
         onDragEnd={() => {
           onDragEnd?.();
           setDragOver(false);
-          setPressed(false);
+          raton.setPressed(false);
         }}
         onDragOver={(e) => {
           e.preventDefault();
