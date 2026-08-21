@@ -39,7 +39,20 @@ export interface Contexto {
 
 export type Manejador = (c: Contexto) => Promise<ActionResult> | ActionResult;
 
-/** Nombre corto de la acción, para los mensajes de error y el registro. */
+/**
+ * Nombre corto de la acción, para los mensajes de error y el registro.
+ *
+ * Se queda como `switch` a propósito, aunque sean 25 casos y el linter cuente
+ * eso como complejidad 48. Cada `case` **estrecha el tipo** de `a`: dentro de
+ * `case 'app'` existe `a.appPath` y no existe `a.hotkey`. Un mapa
+ * `Record<ActionType, fn>` —que es lo que hace el despachador de al lado con
+ * `MANEJADORES`— recibiría la unión entera en cada entrada y habría que ir
+ * casteando: se cambiaría seguridad de tipos real por un número más bajo.
+ *
+ * Ahí el mapa sí compensa porque los manejadores hacen trabajo; aquí cada
+ * rama es una línea de texto.
+ */
+// eslint-disable-next-line complexity -- ver arriba: el switch estrecha el tipo
 export function actionLabel(a: ButtonAction, t: TFunc): string {
   switch (a.type) {
     case 'app':         return a.appPath ? `${t('act.lbl.app')} "${a.appPath.split(/[\\/]/).pop()}"` : t('act.lbl.app');
