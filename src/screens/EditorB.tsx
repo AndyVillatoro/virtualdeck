@@ -174,11 +174,15 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   }, [capturing]);
 
   // Sync folderButtons into action when they change
+  //
+  // Tambien cuando cambia el tipo: si se elige "carpeta" despues de haber
+  // preparado los botones, el efecto no corria y la accion se quedaba sin
+  // ellos. No hay bucle — dentro solo se entra si el tipo ya es 'folder'.
   useEffect(() => {
     if (action.type === 'folder') {
       setAction(a => ({ ...a, folderButtons }));
     }
-  }, [folderButtons]);
+  }, [folderButtons, action.type]);
 
   const handleSave = () => {
     onSave(construirBoton(button, {

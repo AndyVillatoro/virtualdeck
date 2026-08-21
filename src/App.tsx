@@ -300,7 +300,13 @@ export default function App() {
         updateState(update);
       }
     });
-  }, [api, config.buttons, config.state, toggledIds, updateState]);
+    // `config.rgb?.profiles` estaba fuera de las dependencias, y con el la
+    // suscripcion se quedaba con la lista de perfiles del momento en que se
+    // creo. Editar los colores de un perfil no toca `config.buttons`, asi que
+    // nada refrescaba la clausura: el atajo global seguia aplicando los
+    // colores viejos. `handleToggle` y `t` son estables (useCallback sin
+    // dependencias y useMemo por idioma), asi que anadirlos no resuscribe.
+  }, [api, config.buttons, config.state, config.rgb?.profiles, toggledIds, updateState, handleToggle, t]);
 
   const handleConfigExport = useCallback(async () => { await api?.config.export(); }, [api]);
 
