@@ -1,7 +1,7 @@
 import { FormNone, FormApp, FormWeb, FormShortcut, FormScript } from './basicos';
 import { FormAudioDevice, FormHotkey, FormClipboard, FormTypeText, FormKillProcess, FormVolumeSet, FormBrightness, FormNotify, FormTts, FormRegionCapture, FormMediaPlayPause, FormWindowSnap } from './sistema';
 import { FormSetVar, FormIncrVar, FormWebhook, FormBranch, FormCountdown } from './datos';
-import { FormRgbColor, FormRgbMode, FormRgbProfile } from './rgb';
+import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb';
 import { FormFolder, FormMacro } from './compuestos';
 import type { PropsFormulario } from './base';
 
@@ -33,10 +33,16 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'rgb-color': FormRgbColor,
   'rgb-mode': FormRgbMode,
   'rgb-profile': FormRgbProfile,
+  'rgb-preset': FormRgbPreset,
   'folder': FormFolder,
   'media-play-pause': FormMediaPlayPause,
   'media-next': FormMediaPlayPause,
   'media-prev': FormMediaPlayPause,
+  // Estos dos estaban en el selector de acciones pero no aqui, asi que el paso
+  // de configuracion salia **en blanco** en vez de con el aviso de "no necesita
+  // configuracion" que ven sus seis hermanos.
+  'media-shuffle': FormMediaPlayPause,
+  'media-repeat': FormMediaPlayPause,
   'volume-up': FormMediaPlayPause,
   'volume-down': FormMediaPlayPause,
   'mute': FormMediaPlayPause,

@@ -490,4 +490,12 @@ export const ES: Dict = {
   'bug.envUnavailable': '- (no disponible)',
   'bug.sectionLog': '## Registro reciente',
   'bug.logTrimmed': '(Adjuntá el log exportado: botón "Exportar registro" en Ayuda → Acerca de)',
+  'rgb.preset.off': 'APAGADO',
+  'rgb.preset.gaming': 'GAMING',
+  'rgb.preset.cinema': 'CINE',
+  'rgb.preset.work': 'TRABAJO',
+  'rgb.preset.rainbow': 'ARCOÍRIS',
+  'rgb.preset.night-blue': 'AZUL NOCHE',
+  'rgb.preset.alert-red': 'ALERTA ROJA',
+  'editor.applyPreset': 'Aplicar preset: {nombre}',
 };

@@ -121,6 +121,7 @@ const PALABRAS_SUELTAS = new Set([
   // heuristica las daba por buenas porque no llevan acento ni van acompanadas
   // de dos palabras funcionales.
   'rango', 'probar', 'probando', 'celdas', 'casillas', 'tecla', 'teclas',
+  'aplicar', 'preset', 'elegir', 'clic', 'arrastrar',
   'ratón', 'raton', 'combinación', 'texto', 'reproduciendo', 'pausado',
   'sólido', 'solido', 'vacío', 'vacio',
 ]);

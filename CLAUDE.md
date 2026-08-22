@@ -39,6 +39,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   es añadir una entrada, no tocar una cadena de condiciones; repartidos por familia: `basicos`,
   `sistema`, `datos`, `rgb`, `compuestos`), `PasoEstilo` (etiqueta,
   iconos, colores, widget y disparadores), `guardar.ts` (arma el botón a guardar, función pura),
+  `actionData.ts` deriva `PRESET_CATEGORIES` **de los propios presets**: escrita a mano faltaba
+  'RGB', y sus doce botones sembrados no salían por ninguna pestaña — solo buscándolos.
   `comunes.tsx` (`Field`, `Btn`, los sub-selectores
   y las funciones de estilo que comparten los pasos), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
   `EditorB.tsx` se queda con el estado y el armado de la pantalla.
@@ -62,7 +64,7 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
   `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que
   resuelve `runActionSequence`: script, folder, branch, countdown). **No hay `default: return OK`**:
-  un tipo sin manejador devuelve error, y `scripts/check-acciones.mjs` lo detecta antes de ejecutar.
+  un tipo sin manejador devuelve error, y `scripts/check-acciones.mjs` lo detecta antes de ejecutar. El mismo script comprueba que **cada tipo tenga formulario** en el editor: `media-shuffle`, `media-repeat` y `rgb-preset` estaban en el selector sin entrada en `FORMULARIOS`, y el paso 2 salía en blanco aunque el botón funcionase al pulsarlo.
 - `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
 - `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
 - `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC

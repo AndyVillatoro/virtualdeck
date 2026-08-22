@@ -7,6 +7,7 @@ import { type ButtonPreset } from './actionData';
 import { MacroEditor } from './MacroEditor';
 import { Field, ToggleOffActionPicker, estiloEntrada } from './comunes';
 import { FORMULARIOS, type PropsFormulario } from './formularios';
+import { FormMediaPlayPause } from './formularios/sistema';
 import type {
   ActionType, AudioDevice, ButtonAction, FolderButton, RGBDeviceInfo, RGBProfile,
 } from '../../types';
@@ -33,10 +34,17 @@ export function PasoConfigurar(p: PropsPasoConfigurar) {
   return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {(() => {
-          // Un formulario por tipo; los que no tienen (media, volumen…)
-          // caen en el aviso de "no necesita configuracion".
-          const Formulario = FORMULARIOS[action.type];
-          return Formulario ? <Formulario {...p} /> : null;
+          // Un formulario por tipo. El que no lo necesita (media, volumen…)
+          // usa `FormMediaPlayPause`, que es el aviso de "no necesita
+          // configuracion".
+          //
+          // El respaldo es ese mismo aviso y no `null`: devolviendo null, un
+          // tipo que se olvidara aqui dejaba el paso 2 vacio, sin nada que
+          // delatara el olvido. Le paso a media-shuffle, a media-repeat y a
+          // rgb-preset. `scripts/check-acciones.mjs` ya lo comprueba, pero si
+          // vuelve a pasar que al menos se vea.
+          const Formulario = FORMULARIOS[action.type] ?? FormMediaPlayPause;
+          return <Formulario {...p} />;
         })()}
 
         {/* Toggle mode — for non-folder actions */}

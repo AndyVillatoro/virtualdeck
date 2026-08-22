@@ -83,7 +83,7 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                 <div
                   key={i}
                   onClick={() => applyPreset(preset)}
-                  title={`Aplicar preset: ${preset.label}`}
+                  title={t('editor.applyPreset', { nombre: preset.label })}
                   style={{
                     width: 70, height: 70, borderRadius: VD.radius.lg,
                     background: preset.bgColor || VD.elevated,

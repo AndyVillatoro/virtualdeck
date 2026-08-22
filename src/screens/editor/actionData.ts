@@ -18,8 +18,6 @@ export interface ButtonPreset {
   action: ButtonAction;
 }
 
-export const PRESET_CATEGORIES: ButtonPreset['category'][] = ['APPS', 'WEB', 'MEDIA', 'SISTEMA', 'CREATIVO'];
-
 // label/desc son CLAVES i18n (ver `act.*` en src/utils/i18n.tsx). Se resuelven
 // con t() en el render. El dict es la fuente única ES/EN; acá no hay texto.
 export const ACTION_TYPES: { type: ActionType; label: string; Icon: React.ComponentType<VDIconProps>; desc: string }[] = [
@@ -141,6 +139,21 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'RGB', label: 'RGB Noche Azul', icon: '◉', bgColor: '#000010', fgColor: '#0055ff', action: { type: 'rgb-preset', rgbPresetId: 'night-blue' } },
   { category: 'RGB', label: 'RGB Alerta',     icon: '◉', bgColor: '#1a0000', fgColor: '#ff0000', action: { type: 'rgb-preset', rgbPresetId: 'alert-red' } },
 ];
+
+/**
+ * Las pestanas del catalogo de presets.
+ *
+ * **Se derivan de `PRESETS`**, no se escriben a mano. Escritas a mano faltaba
+ * 'RGB', asi que los doce botones sembrados de esa categoria no salian por
+ * ninguna pestana: solo aparecian si el usuario escribia en el buscador. El
+ * tipo si la declaraba, o sea que ni TypeScript lo veia.
+ *
+ * El orden es el de aparicion en `PRESETS`, que ya esta agrupado por
+ * categoria.
+ */
+export const PRESET_CATEGORIES: ButtonPreset['category'][] =
+  [...new Set(PRESETS.map((p) => p.category))];
+
 
 export const FOLDER_PRESETS: Record<string, { label: string; icon: string; bgColor: string; fgColor: string; buttons: FolderButton[] }> = {
   illustrator: {

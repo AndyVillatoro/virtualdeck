@@ -150,3 +150,40 @@ export function FormRgbProfile(p: PropsFormulario) {
     </>
   );
 }
+
+/**
+ * Los presets "inteligentes" del RGB.
+ *
+ * No tenia formulario, y sin el la accion `rgb-preset` era un callejon: se
+ * puede elegir como sub-accion (esta en `simpleTypes`) y llega dentro de los
+ * botones sembrados de la categoria RGB, pero al abrir el editor no habia con
+ * que cambiar el preset — el paso 2 salia en blanco.
+ *
+ * Los siete ids son los de `SMART_PRESETS`, en `electron/main/rgb.ts`. Si se
+ * añade uno alli, hay que añadirlo aqui: es la lista que ve el usuario.
+ */
+const PRESETS_RGB = ['off', 'gaming', 'cinema', 'work', 'rainbow', 'night-blue', 'alert-red'];
+
+export function FormRgbPreset({ action, setAction }: PropsFormulario) {
+  const VD = useTheme();
+  const t = useT();
+  const tf = useFieldText();
+  const inputStyle = estiloEntrada(VD);
+  return (
+    <Field label={tf('PRESET')}>
+      <select
+        value={action.rgbPresetId ?? ''}
+        onChange={(e) => setAction((a) => ({ ...a, rgbPresetId: e.target.value || undefined }))}
+        style={inputStyle}
+      >
+        <option value="">{tf('— elegir —')}</option>
+        {PRESETS_RGB.map((id) => (
+          <option key={id} value={id}>{t(`rgb.preset.${id}`)}</option>
+        ))}
+      </select>
+      <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 4, lineHeight: 1.4 }}>
+        {tf('Cada preset prueba varios modos hasta dar con uno que el dispositivo soporte.')}
+      </div>
+    </Field>
+  );
+}

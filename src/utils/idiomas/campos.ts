@@ -169,4 +169,8 @@ export const FIELDS_EN: Record<string, string> = {
   'HOTKEY GLOBAL DEL SO (ej. Ctrl+Alt+1)': 'GLOBAL OS HOTKEY (e.g. Ctrl+Alt+1)',
   'Texto al portapapeles': 'Text to clipboard',
   'texto a escribir': 'text to type',
+  'PRESET': 'PRESET',
+  '— elegir —': '— choose —',
+  'Cada preset prueba varios modos hasta dar con uno que el dispositivo soporte.':
+    'Each preset tries several modes until one the device supports works.',
 };

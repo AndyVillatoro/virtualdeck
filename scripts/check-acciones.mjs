@@ -15,6 +15,7 @@ import { join } from 'node:path';
 
 const TIPOS = 'src/types.ts';
 const DIR = 'src/utils/acciones';
+const FORMULARIOS = 'src/screens/editor/formularios/index.tsx';
 
 // ── tipos declarados ──────────────────────────────────────────────────────
 const fuenteTipos = readFileSync(TIPOS, 'utf-8');
@@ -64,6 +65,26 @@ for (const tipo of porElLlamador) {
   if (!declarados.has(tipo)) problemas.push(`'${tipo}' está en RESUELTAS_POR_EL_LLAMADOR pero no en ActionType`);
 }
 
+// Que el tipo se ejecute no basta: hay que poder configurarlo.
+//
+// `media-shuffle` y `media-repeat` estaban en el selector de acciones, y
+// `rgb-preset` en el de sub-acciones, los tres sin entrada en FORMULARIOS. El
+// paso 2 del editor salia en blanco: la accion se elegia y no habia con que
+// ajustarla. Ninguna de las otras comprobaciones lo veia, porque los tres
+// tenian manejador y hacian su trabajo al pulsar.
+const fuenteForm = readFileSync(FORMULARIOS, 'utf-8');
+const conFormulario = new Set(
+  [...fuenteForm.slice(fuenteForm.indexOf('FORMULARIOS')).matchAll(/^  '([a-z-]+)':/gm)].map((m) => m[1]),
+);
+for (const tipo of declarados) {
+  if (!conFormulario.has(tipo)) {
+    problemas.push(`'${tipo}' no tiene entrada en FORMULARIOS — el paso 2 del editor saldría vacío`);
+  }
+}
+for (const tipo of conFormulario) {
+  if (!declarados.has(tipo)) problemas.push(`'${tipo}' tiene formulario pero no está en ActionType`);
+}
+
 if (problemas.length) {
   console.error(`acciones: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  · ' + p);
@@ -71,5 +92,5 @@ if (problemas.length) {
 }
 console.log(
   `acciones: ok — ${declarados.size} tipos, ${implementados.size} con manejador, ` +
-  `${porElLlamador.size} los resuelve quien llama`,
+  `${porElLlamador.size} los resuelve quien llama, ${conFormulario.size} con formulario`,
 );
