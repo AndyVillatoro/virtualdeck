@@ -489,4 +489,6 @@ export const EN: Dict = {
   'rgb.preset.night-blue': 'NIGHT BLUE',
   'rgb.preset.alert-red': 'ALERT RED',
   'editor.applyPreset': 'Apply preset: {nombre}',
+  'full.kioskBadge': '🔒 KIOSK',
+  'full.exit': 'EXIT ⤡',
 };

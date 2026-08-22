@@ -51,6 +51,12 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `celda`, porque la principal pasa veinte props y kiosko seis. El calculo del encaje
   descuenta el relleno (`clientWidth` lo incluye) y los huecos entre casillas: sin eso las
   casillas del modo `square` no salian cuadradas y en `fill` la ultima fila se recortaba.
+- `src/utils/formatos.ts` — reloj, fecha y día en el idioma elegido, cacheados por idioma.
+  Vivía bajo `screens/main/`, y el limitador de capas no dejaba que un componente lo usara.
+- `src/components/celda/useDatosWidget.ts` — lo que muestra cada widget (reloj, clima,
+  reproducción, sensor, variable), compartido por las dos pantallas. Estaba dentro de `MainB`
+  y **kiosko no lo tenía**: un botón con widget mostraba el icono de la acción en pantalla
+  completa. Incluye `useClimaWidget`, el sondeo del clima.
 - `src/components/celda/` — las piezas de la celda: `colores.ts` (prioridad de fondo y borde),
   `ContenidoCentral` (widget o icono, con sus cuatro formas), `Insignias` (las marcas de las esquinas),
   `MenuContextual`, y los dos hermanos del gesto: `usePulsacionTactil` (dedo) y

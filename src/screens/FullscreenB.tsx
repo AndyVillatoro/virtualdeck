@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
-import { useT } from '../utils/i18n';
+import { useT, useLang } from '../utils/i18n';
 import { PinKiosko, type ModoPin } from './fullscreen/PinKiosko';
 import { SonandoAhora } from './fullscreen/SonandoAhora';
 import { DotText } from '../components/DotText';
 import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
+import { useDatosWidget, useClimaWidget } from '../components/celda/useDatosWidget';
+import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { executeAction, runActionSequence } from '../utils/actions';
 import { useNowPlaying } from '../utils/nowPlaying';
@@ -14,8 +16,6 @@ import { useSensors } from '../utils/sensors';
 import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
 import type { ButtonConfig, DeckConfig } from '../types';
 
-const FS_DAY_FMT = new Intl.DateTimeFormat('es-HN', { weekday: 'short' });
-const FS_DATE_FMT = new Intl.DateTimeFormat('es-HN', { month: 'short', day: 'numeric' });
 
 
 interface FullscreenBProps {
@@ -47,6 +47,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // pantalla se quedaba sin modo claro por completo.
   const VD = useTheme();
   const t = useT();
+  const lang = useLang();
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
   const { sensors: sensorList, status: sensorStatus } = useSensors();
@@ -153,8 +154,8 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
 
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
-  const dayStr = FS_DAY_FMT.format(now).toUpperCase();
-  const dateStr = FS_DATE_FMT.format(now).toUpperCase();
+  const dayStr = formatoDia(lang).format(now).toUpperCase();
+  const dateStr = formatoDiaMes(lang).format(now).toUpperCase();
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
@@ -167,6 +168,19 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // auto-pick the most representative reading per kind. This is the data that
   // fills the left pane below the clock.
   const sensorGroups = useMemo(() => groupSensorsByHardware(sensorList), [sensorList]);
+
+  // Los mismos datos de widget que la pantalla principal. Kiosko los dibujaba
+  // sin ellos, asi que un boton con reloj o con un sensor mostraba el icono de
+  // la accion y ya.
+  const clima = useClimaWidget(config.buttons.some((b) => b.widget === 'weather'), window.electronAPI);
+  const datosWidget = useDatosWidget({
+    botones: config.buttons,
+    estado: config.state,
+    reloj: now,
+    clima,
+    sonando: nowPlaying,
+    sensores: sensorList,
+  });
 
   return (
     <div
@@ -198,14 +212,14 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           letterSpacing: 1, padding: '3px 8px', cursor: 'pointer',
           marginRight: 4,
         }}>
-          🔒 KIOSKO
+          {t('full.kioskBadge')}
         </button>
         <button onClick={onExit} style={{
           background: 'transparent', border: `1px solid ${VD.border}`,
           color: VD.textDim, fontFamily: VD.mono, fontSize: 9,
           letterSpacing: 1, padding: '3px 8px', cursor: 'pointer',
         }}>
-          SALIR ⤡
+          {t('full.exit')}
         </button>
       </div>
       )}
@@ -282,6 +296,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               button={btn}
               accent={config.accent}
               toggled={toggledIds.has(btn.id)}
+              widgetData={datosWidget[btn.id]}
               soundEnabled={soundOnPress}
               soundProfile={soundProfile}
               onEdit={() => {}}

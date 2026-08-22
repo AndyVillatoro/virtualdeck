@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT, useLang } from '../utils/i18n';
-import { formatoHora, formatoFecha } from './main/formatos';
+import { formatoHora } from '../utils/formatos';
 import { BarraLateral } from './main/BarraLateral';
 import { FolderOverlay, PageCtxItem } from './main/OverlayCarpeta';
 import { PestanasPagina } from './main/PestanasPagina';
@@ -10,9 +10,9 @@ import { logError } from '../utils/logger';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
+import { useDatosWidget, useClimaWidget } from '../components/celda/useDatosWidget';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { Hint } from '../components/Hint';
-import { wxInfo } from '../components/WeatherWidget';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors, findSensor, evalCondition } from '../utils/sensors';
 import type { ButtonConfig, DeckConfig, RGBStatus } from '../types';
@@ -99,7 +99,6 @@ export function MainB({
   // Memoizados: son dependencia de un `useMemo` y de un `useEffect`, y sin
   // referencia estable los harian recalcular en cada render.
   const TIME_FMT = useMemo(() => formatoHora(lang), [lang]);
-  const DATE_FMT = useMemo(() => formatoFecha(lang), [lang]);
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
@@ -123,7 +122,6 @@ export function MainB({
   const execLogIdRef = useRef(0);
   const [showLog, setShowLog] = useState(false);
   const [runningButtons, setRunningButtons] = useState<Set<string>>(new Set());
-  const [widgetWeather, setWidgetWeather] = useState<{ temp: number; code: number; city: string; country: string } | null>(null);
   const toastTimer = useRef<number>();
   const lastFiredMinuteRef = useRef<string | null>(null);
   const touchStartXRef = useRef<number>(0);
@@ -169,25 +167,9 @@ export function MainB({
     return () => clearInterval(t);
   }, []);
 
-  // Poll weather for widget buttons (15 min TTL, same as WeatherWidget sidebar).
-  //
-  // `hayClima` se calcula **fuera** del efecto y entra en sus dependencias. Se
-  // miraba dentro, con el efecto dependiendo solo de `api` — que no cambia
-  // nunca. Resultado: poner un widget de clima en un boton no arrancaba el
-  // sondeo hasta reiniciar la aplicacion, y quitar el ultimo no lo paraba.
-  // Es un booleano a proposito: si dependiera de `config.buttons`, el
-  // temporizador se reiniciaria con cada edicion de cualquier boton.
-  const hayClima = config.buttons.some((b) => b.widget === 'weather');
-  useEffect(() => {
-    if (!api || !hayClima) return;
-    let cancelled = false;
-    const poll = async () => {
-      try { const d = await api.weather.get(); if (!cancelled && d) setWidgetWeather(d); } catch {}
-    };
-    poll();
-    const t = setInterval(poll, 15 * 60 * 1000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, [api, hayClima]);
+  // El sondeo del clima vive con el resto de datos de widget, para que kiosko
+  // lo tenga igual que la pantalla principal.
+  const widgetWeather = useClimaWidget(config.buttons.some((b) => b.widget === 'weather'), api);
 
   useEffect(() => {
     if (!pageContextMenu) return;
@@ -297,49 +279,14 @@ export function MainB({
   const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
-  const widgetDataMap = useMemo(() => {
-    const map: Record<string, { line1: string; line2?: string; tone?: 'warn' | 'crit' }> = {};
-    for (const btn of config.buttons) {
-      if (!btn.widget) continue;
-      // 'now-playing' on an audio-device button is an invalid combo: the cell
-      // would show the playing track instead of the configured device name.
-      if (btn.widget === 'now-playing' && btn.action.type === 'audio-device') continue;
-      if (btn.widget === 'clock') {
-        map[btn.id] = { line1: TIME_FMT.format(clock), line2: DATE_FMT.format(clock).toUpperCase() };
-      } else if (btn.widget === 'weather' && widgetWeather) {
-        const [emoji] = wxInfo(widgetWeather.code);
-        map[btn.id] = { line1: `${emoji} ${widgetWeather.temp}°`, line2: widgetWeather.city };
-      } else if (btn.widget === 'now-playing' && nowPlaying) {
-        map[btn.id] = { line1: nowPlaying.title || '—', line2: nowPlaying.artist || undefined };
-      } else if (btn.widget === 'variable' && btn.varWidget?.varName) {
-        const raw = config.state?.[btn.varWidget.varName] ?? '0';
-        map[btn.id] = {
-          line1: `${btn.varWidget.prefix ?? ''}${raw}`,
-          line2: btn.varWidget.suffix || btn.varWidget.varName,
-        };
-      } else if (btn.widget === 'sensor' && btn.sensorWidget) {
-        const s = findSensor(btn.sensorWidget.sensorId, sensorList);
-        if (s) {
-          // Compact unit: ° instead of °C, RPM unchanged. Round whole numbers
-          // for everything except voltage (precision matters there).
-          const unit = s.unit.replace('°C', '°').replace('°F', '°');
-          const v = s.kind === 'Voltage' ? s.value.toFixed(2) : Math.round(s.value).toString();
-          const tone =
-            btn.sensorWidget.critAt !== undefined && s.value >= btn.sensorWidget.critAt ? 'crit' as const :
-            btn.sensorWidget.warnAt !== undefined && s.value >= btn.sensorWidget.warnAt ? 'warn' as const :
-            undefined;
-          map[btn.id] = {
-            line1: `${v}${unit}`,
-            line2: btn.sensorWidget.suffix || s.name,
-            tone,
-          };
-        } else {
-          map[btn.id] = { line1: '—', line2: btn.sensorWidget.suffix || 'sin datos' };
-        }
-      }
-    }
-    return map;
-  }, [config.buttons, config.state, clock, widgetWeather, nowPlaying, sensorList, TIME_FMT, DATE_FMT]);
+  const widgetDataMap = useDatosWidget({
+    botones: config.buttons,
+    estado: config.state,
+    reloj: clock,
+    clima: widgetWeather,
+    sonando: nowPlaying,
+    sensores: sensorList,
+  });
 
   // Scheduled triggers: check every 15s for buttons with timerTriggerAt matching current HH:MM.
   useEffect(() => {

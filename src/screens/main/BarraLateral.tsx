@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useLang } from '../../utils/i18n';
-import { formatoHora, formatoFecha } from './formatos';
+import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { DotLabel } from '../../components/DotLabel';
 import { DotText } from '../../components/DotText';
 import { SensorCard, groupSensorsByHardware } from '../../components/SensorPanel';
