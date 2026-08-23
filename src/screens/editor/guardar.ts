@@ -42,6 +42,7 @@ export interface CamposDelEditor {
   sensorWidgetCrit: string;
   varWidgetName: string;
   varWidgetPrefix: string;
+  currencyWidget: ButtonConfig['currencyWidget'];
   varWidgetSuffix: string;
   visibleIfApp: string;
   visibleIfSensorId: string;
@@ -105,6 +106,19 @@ function disparadorDeSensor(c: CamposDelEditor): ButtonConfig['sensorTrigger'] {
   };
 }
 
+/**
+ * Solo se guarda si el widget elegido es el de divisas y tiene las dos
+ * monedas: media configuracion guardada saldria como un guion en la celda.
+ */
+function widgetDeDivisa(c: CamposDelEditor): ButtonConfig['currencyWidget'] {
+  if (c.widget !== 'currency') return undefined;
+  const de = (c.currencyWidget?.from ?? '').toUpperCase();
+  const a = (c.currencyWidget?.to ?? '').toUpperCase();
+  if (!/^[A-Z]{3}$/.test(de) || !/^[A-Z]{3}$/.test(a)) return undefined;
+  const cuanto = c.currencyWidget?.amount;
+  return { from: de, to: a, amount: cuanto && cuanto > 0 ? cuanto : 1 };
+}
+
 export function construirBoton(button: ButtonConfig, c: CamposDelEditor): ButtonConfig {
   return {
     ...button,
@@ -137,6 +151,7 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     widget: c.widget || undefined,
     sensorWidget: widgetDeSensor(c),
     varWidget: widgetDeVariable(c),
+    currencyWidget: widgetDeDivisa(c),
     visibleIf: condicionDeVisibilidad(c),
     timerTriggerAt: c.timerTriggerAt.trim() || undefined,
     sensorTrigger: disparadorDeSensor(c),

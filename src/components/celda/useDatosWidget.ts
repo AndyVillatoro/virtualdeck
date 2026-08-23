@@ -3,7 +3,7 @@ import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { useLang } from '../../utils/i18n';
 import { wxInfo } from '../WeatherWidget';
 import { findSensor } from '../../utils/sensors';
-import type { ButtonConfig, Sensor } from '../../types';
+import type { ButtonConfig, Sensor, TasasDivisa } from '../../types';
 
 /**
  * Lo que muestra cada widget encima de su botón, para todos los botones a la vez.
@@ -35,6 +35,8 @@ export interface DatosClima {
 
 interface Entradas {
   botones: ButtonConfig[];
+  /** Tasas por moneda base, para los widgets de divisas. */
+  divisas?: Record<string, TasasDivisa>;
   /** Las variables interpolables, para el widget de tipo `variable`. */
   estado?: Record<string, string>;
   /** El reloj que ya tiene la pantalla; no se crea otro. */
@@ -44,7 +46,7 @@ interface Entradas {
   sensores: Sensor[];
 }
 
-export function useDatosWidget({ botones, estado, reloj, clima, sonando, sensores }: Entradas) {
+export function useDatosWidget({ botones, estado, reloj, clima, sonando, sensores, divisas }: Entradas) {
   const lang = useLang();
   const hora = useMemo(() => formatoHora(lang), [lang]);
   const fecha = useMemo(() => formatoFecha(lang), [lang]);
@@ -73,10 +75,12 @@ export function useDatosWidget({ botones, estado, reloj, clima, sonando, sensore
         };
       } else if (b.widget === 'sensor' && b.sensorWidget) {
         mapa[b.id] = datosDeSensor(b, sensores);
+      } else if (b.widget === 'currency' && b.currencyWidget) {
+        mapa[b.id] = datosDeDivisa(b.currencyWidget, divisas);
       }
     }
     return mapa;
-  }, [botones, estado, reloj, clima, sonando, sensores, hora, fecha]);
+  }, [botones, estado, reloj, clima, sonando, sensores, divisas, hora, fecha]);
 }
 
 function datosDeSensor(b: ButtonConfig, sensores: Sensor[]): DatosWidget {
@@ -92,6 +96,82 @@ function datosDeSensor(b: ButtonConfig, sensores: Sensor[]): DatosWidget {
     cfg.warnAt !== undefined && s.value >= cfg.warnAt ? 'warn' as const :
     undefined;
   return { line1: `${v}${unidad}`, line2: cfg.suffix || s.name, tone };
+}
+
+/**
+ * Cuánto vale `amount` de una moneda en la otra.
+ *
+ * Las tasas son diarias y el proceso principal las cachea, así que aquí no hay
+ * ninguna llamada: solo la cuenta. Sin tasas todavía —primer arranque sin
+ * conexión— se enseña un guion en vez de un cero, que sería mentira.
+ */
+function datosDeDivisa(
+  cfg: NonNullable<ButtonConfig['currencyWidget']>,
+  divisas: Record<string, TasasDivisa> | undefined,
+): DatosWidget {
+  const de = (cfg.from || 'USD').toUpperCase();
+  const a = (cfg.to || 'USD').toUpperCase();
+  const cuanto = cfg.amount && cfg.amount > 0 ? cfg.amount : 1;
+  const segunda = `${formatearImporte(cuanto)} ${de}`;
+  const tasa = de === a ? 1 : divisas?.[de]?.rates?.[a];
+  if (tasa === undefined) return { line1: '—', line2: segunda };
+  return { line1: `${formatearImporte(cuanto * tasa)} ${a}`, line2: segunda };
+}
+
+/**
+ * Dos decimales para lo normal, cuatro para lo muy pequeño.
+ *
+ * Un euro son 0,86 dolares y se lee bien con dos; pero un yen son 0,0063 y con
+ * dos decimales saldria «0.01», que no dice nada.
+ */
+function formatearImporte(v: number): string {
+  if (v >= 1000) return Math.round(v).toLocaleString();
+  if (v >= 1) return v.toFixed(2);
+  return v.toFixed(4);
+}
+
+/**
+ * Las tasas que hacen falta para los widgets que haya puestos.
+ *
+ * Se piden **por moneda base**, no por par: una sola respuesta trae las 166
+ * monedas, asi que dos widgets con la misma base son una peticion. Y se pide
+ * cuando toca segun el propio servicio, que dice en la respuesta cuando vuelve
+ * a actualizar; entre medias todo sale de la cache del proceso principal.
+ */
+export function useDivisas(
+  botones: ButtonConfig[],
+  api: { currency: { rates: (base: string, force?: boolean) => Promise<{ ok: boolean; datos?: TasasDivisa }> } } | null | undefined,
+) {
+  const [tasas, setTasas] = useState<Record<string, TasasDivisa>>({});
+
+  // Las bases van como texto ordenado: asi el efecto no se rearma en cada
+  // repintado solo porque el array sea otro.
+  const bases = [...new Set(
+    botones.filter((b) => b.widget === 'currency' && b.currencyWidget?.from)
+      .map((b) => b.currencyWidget!.from.toUpperCase()),
+  )].sort().join(',');
+
+  useEffect(() => {
+    if (!api || !bases) return;
+    let cancelado = false;
+    const consultar = async () => {
+      for (const base of bases.split(',')) {
+        try {
+          const r = await api.currency.rates(base);
+          if (!cancelado && r.ok && r.datos) {
+            setTasas((prev) => ({ ...prev, [base]: r.datos! }));
+          }
+        } catch { /* sin conexion: se reintenta en el siguiente ciclo */ }
+      }
+    };
+    consultar();
+    // Cada hora se vuelve a preguntar; el proceso principal responde de su
+    // cache hasta que el servicio publica las del dia siguiente.
+    const t = setInterval(consultar, 60 * 60 * 1000);
+    return () => { cancelado = true; clearInterval(t); };
+  }, [api, bases]);
+
+  return tasas;
 }
 
 /**

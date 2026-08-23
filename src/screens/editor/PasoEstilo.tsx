@@ -7,7 +7,8 @@ import { BrandIconDisplay } from '../../components/BrandIconDisplay';
 import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
 import { BRAND_ICONS_MAP } from '../../data/brandIcons';
 import { Field, Btn, SensorPicker, estiloEntrada } from './comunes';
-import type { ButtonAction, ButtonConfig, Sensor } from '../../types';
+import { CamposDivisa } from './CamposDivisa';
+import type { ButtonAction, ButtonConfig, Sensor, TipoWidget } from '../../types';
 
 /**
  * Paso 3 de 3: como se ve el boton y cuando aparece o se dispara solo.
@@ -78,7 +79,7 @@ interface Props {
   setVisibleIfApp: React.Dispatch<React.SetStateAction<string>>;
   setVisibleIfSensorId: React.Dispatch<React.SetStateAction<string>>;
   setVisibleIfSensorVal: React.Dispatch<React.SetStateAction<string>>;
-  setWidget: React.Dispatch<React.SetStateAction<'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | undefined>>;
+  setWidget: React.Dispatch<React.SetStateAction<TipoWidget | undefined>>;
   sublabel: string;
   timerTriggerAt: string;
   varWidgetName: string;
@@ -89,10 +90,12 @@ interface Props {
   visibleIfSensorOp: '>' | '<' | '>=' | '<=' | '==';
   setVisibleIfSensorOp: React.Dispatch<React.SetStateAction<'>' | '<' | '>=' | '<=' | '=='>>;
   visibleIfSensorVal: string;
-  widget: 'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | undefined;
+  widget: TipoWidget | undefined;
+  currencyWidget: ButtonConfig['currencyWidget'];
+  setCurrencyWidget: React.Dispatch<React.SetStateAction<ButtonConfig['currencyWidget']>>;
 }
 
-export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, button, customGlyph57, deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorTriggerCooldown, sensorTriggerId, sensorTriggerOp, setSensorTriggerOp, sensorTriggerVal, sensorWidgetCrit, sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon, setBrandIconAlwaysAnimate, setBrandIconCustomBitmap, setBrandIconCustomColor, setCustomGlyph57, setFgColor, setIcon, setImageData, setLabel, setSensorTriggerCooldown, setSensorTriggerId, setSensorTriggerVal, setSensorWidgetCrit, setSensorWidgetId, setSensorWidgetSuffix, setSensorWidgetWarn, setShowBrandEditor, setShowBrandPicker, setShowGlyphEditor, setSublabel, setTimerTriggerAt, setVarWidgetName, setVarWidgetPrefix, setVarWidgetSuffix, setVisibleIfApp, setVisibleIfSensorId, setVisibleIfSensorVal, setWidget, sublabel, timerTriggerAt, varWidgetName, varWidgetPrefix, varWidgetSuffix, visibleIfApp, visibleIfSensorId, visibleIfSensorOp, setVisibleIfSensorOp, visibleIfSensorVal, widget }: Props) {
+export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, button, customGlyph57, deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorTriggerCooldown, sensorTriggerId, sensorTriggerOp, setSensorTriggerOp, sensorTriggerVal, sensorWidgetCrit, sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon, setBrandIconAlwaysAnimate, setBrandIconCustomBitmap, setBrandIconCustomColor, setCustomGlyph57, setFgColor, setIcon, setImageData, setLabel, setSensorTriggerCooldown, setSensorTriggerId, setSensorTriggerVal, setSensorWidgetCrit, setSensorWidgetId, setSensorWidgetSuffix, setSensorWidgetWarn, setShowBrandEditor, setShowBrandPicker, setShowGlyphEditor, setSublabel, setTimerTriggerAt, setVarWidgetName, setVarWidgetPrefix, setVarWidgetSuffix, setVisibleIfApp, setVisibleIfSensorId, setVisibleIfSensorVal, setWidget, sublabel, timerTriggerAt, varWidgetName, varWidgetPrefix, varWidgetSuffix, visibleIfApp, visibleIfSensorId, visibleIfSensorOp, setVisibleIfSensorOp, visibleIfSensorVal, widget, currencyWidget, setCurrencyWidget }: Props) {
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
@@ -214,7 +217,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
               {/* Widget — live data display on the button cell */}
               <Field label={tf("WIDGET (MUESTRA DATOS EN EL BOTÓN)")}>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable'] as const).map((w) => {
+                  {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable', 'currency'] as const).map((w) => {
                     // now-playing on an audio-device button hides the device
                     // name in favor of the playing track — useless combo, so
                     // we lock it out here instead of silently dropping the
@@ -235,7 +238,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                           opacity: conflicts ? 0.4 : 1,
                         }}
                       >
-                        {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : 'VARIABLE'}
+                        {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : w === 'currency' ? tf('DIVISA') : 'VARIABLE'}
                       </button>
                     );
                   })}
@@ -243,6 +246,13 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
                   {tf('Sustituye el ícono/etiqueta con datos en vivo. El botón sigue siendo ejecutable.')}
                 </div>
+                {widget === 'currency' && (
+                  <CamposDivisa
+                    accent={accent}
+                    valor={currencyWidget}
+                    onChange={setCurrencyWidget}
+                  />
+                )}
                 {widget === 'sensor' && (
                   <div style={{ marginTop: 8, padding: 10, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <SensorPicker

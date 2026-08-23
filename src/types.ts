@@ -160,7 +160,9 @@ export interface ButtonConfig {
   radioGroup?: string;
   // 4.x — Widget en vivo
   /** Widget de datos en tiempo real que reemplaza el icono/etiqueta. */
-  widget?: 'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable';
+  widget?: TipoWidget;
+  /** Widget de divisas: cuánto vale `amount` de `from` en `to`. */
+  currencyWidget?: { from: string; to: string; amount?: number };
   /** Configuración del widget 'variable': muestra el valor de una variable de `DeckConfig.state`. */
   varWidget?: {
     /** Nombre de la variable de estado a mostrar (ej. "tomas", "pomodoro"). */
@@ -480,6 +482,23 @@ export interface PlatformInfo {
   locale: string;
 }
 
+/**
+ * Los widgets que puede llevar una celda.
+ *
+ * Estaba escrito a mano en `types.ts` y dos veces mas en `PasoEstilo`, asi que
+ * añadir uno pedia acordarse de los tres.
+ */
+export type TipoWidget = 'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | 'currency';
+
+/** Tasas de cambio con una base, tal y como las devuelve el proceso principal. */
+export interface TasasDivisa {
+  base: string;
+  rates: Record<string, number>;
+  /** Cuándo las publicó el servicio, para poder enseñarlo. */
+  actualizado: string;
+  caducaEn: number;
+}
+
 export interface ElectronAPI {
   window: {
     minimize: () => void;
@@ -519,6 +538,10 @@ export interface ElectronAPI {
     shuffle: () => Promise<boolean>;
     repeat: () => Promise<boolean>;
     diagnose: () => Promise<{ ok: boolean; stage: string; stdout: string; stderr: string }>;
+  };
+  currency: {
+    /** Tasas de cambio con esa base. Diarias; el proceso principal las cachea. */
+    rates: (base: string, force?: boolean) => Promise<{ ok: boolean; datos?: TasasDivisa; error?: string }>;
   };
   weather: {
     get: (force?: boolean) => Promise<WeatherInfo | null>;

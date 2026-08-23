@@ -89,6 +89,12 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
 - `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
 - `electron/main/ipc/` — handlers IPC organizados por dominio (audio, media, macro, config, etc.)
+- `electron/main/divisas.ts` — las tasas de cambio del widget de divisas. Va en el proceso
+  principal por lo mismo que la descarga de perfiles: la CSP del renderer solo deja
+  conectar con `self` y los dos servicios del clima. Fuente `open.er-api.com` (gratis, sin
+  clave, 166 monedas incluido el lempira, una actualización al día). La respuesta dice
+  cuándo toca la siguiente, así que no hay intervalo inventado; se cachea en `userData` y
+  con eso se sigue enseñando la tasa de ayer sin conexión.
 - `electron/main/idioma.ts` — el puñado de textos que enseña el **proceso principal**
   (menú de la bandeja, títulos de los diálogos de archivo, los errores que devuelve al
   renderer). No puede usar el i18n de `src/`: son dos procesos. Estaba todo fijo en

@@ -7,7 +7,7 @@ import { DotText } from '../components/DotText';
 import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
-import { useDatosWidget, useClimaWidget } from '../components/celda/useDatosWidget';
+import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
@@ -194,6 +194,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
 
   const clima = useClimaWidget(config.buttons.some((b) => b.widget === 'weather'), window.electronAPI);
+  const divisas = useDivisas(config.buttons, window.electronAPI);
   const datosWidget = useDatosWidget({
     botones: config.buttons,
     estado: config.state,
@@ -201,6 +202,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
     clima,
     sonando: nowPlaying,
     sensores: sensorList,
+    divisas,
   });
 
   return (

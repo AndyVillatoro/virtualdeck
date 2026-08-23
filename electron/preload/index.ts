@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { TasasDivisa } from '../../src/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   window: {
@@ -48,6 +49,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     shuffle: (): Promise<boolean> => ipcRenderer.invoke('media:shuffle'),
     repeat: (): Promise<boolean> => ipcRenderer.invoke('media:repeat'),
     diagnose: (): Promise<MediaDiagnosticResult> => ipcRenderer.invoke('media:diagnose'),
+  },
+  currency: {
+    rates: (base: string, force?: boolean): Promise<{ ok: boolean; datos?: TasasDivisa; error?: string }> =>
+      ipcRenderer.invoke('currency:rates', base, force),
   },
   weather: {
     get: (force?: boolean): Promise<WeatherResult | null> => ipcRenderer.invoke('weather:get', force),

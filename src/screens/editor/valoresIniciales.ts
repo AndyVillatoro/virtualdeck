@@ -57,6 +57,7 @@ export function widgetInicial(button: ButtonConfig) {
     varWidgetName: button.varWidget?.varName ?? '',
     varWidgetPrefix: button.varWidget?.prefix ?? '',
     varWidgetSuffix: button.varWidget?.suffix ?? '',
+    currencyWidget: button.currencyWidget,
   };
 }
 

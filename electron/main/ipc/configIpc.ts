@@ -4,6 +4,7 @@ import { loadConfig, saveConfig, listBackups, restoreBackup } from '../configMan
 import { applyTriggerableConfig } from '../trayManager';
 import * as sensors from '../sensors';
 import { getWeather } from '../weather';
+import { obtenerTasas } from '../divisas';
 import { avisarCambioDeConfig } from '../floatingBar';
 import { tm, fijarIdioma } from '../idioma';
 
@@ -62,4 +63,5 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   });
 
   ipcMain.handle('weather:get', (_e: any, force?: boolean) => getWeather(!!force));
+  ipcMain.handle('currency:rates', (_e: any, base: string, force?: boolean) => obtenerTasas(base, !!force));
 }

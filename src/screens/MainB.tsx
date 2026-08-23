@@ -9,7 +9,7 @@ import { logError } from '../utils/logger';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
-import { useDatosWidget, useClimaWidget } from '../components/celda/useDatosWidget';
+import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { Hint } from '../components/Hint';
@@ -250,6 +250,7 @@ export function MainB({
   const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
+  const divisas = useDivisas(config.buttons, api);
   const widgetDataMap = useDatosWidget({
     botones: config.buttons,
     estado: config.state,
@@ -257,6 +258,7 @@ export function MainB({
     clima: widgetWeather,
     sonando: nowPlaying,
     sensores: sensorList,
+    divisas,
   });
 
   const isPlaying = nowPlaying?.status === 'Playing';

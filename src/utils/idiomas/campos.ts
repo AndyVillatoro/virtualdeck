@@ -173,4 +173,9 @@ export const FIELDS_EN: Record<string, string> = {
   '— elegir —': '— choose —',
   'Cada preset prueba varios modos hasta dar con uno que el dispositivo soporte.':
     'Each preset tries several modes until one the device supports works.',
+  'DIVISA': 'CURRENCY',
+  'DE': 'FROM',
+  'A': 'TO',
+  'La tasa se actualiza una vez al día y se guarda, así que el botón sigue mostrando la última aunque no haya conexión.':
+    'The rate updates once a day and is stored, so the button keeps showing the last one even offline.',
 };

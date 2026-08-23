@@ -81,6 +81,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const [varWidgetName, setVarWidgetName] = useState(wid.varWidgetName);
   const [varWidgetPrefix, setVarWidgetPrefix] = useState(wid.varWidgetPrefix);
   const [varWidgetSuffix, setVarWidgetSuffix] = useState(wid.varWidgetSuffix);
+  const [currencyWidget, setCurrencyWidget] = useState(wid.currencyWidget);
   const [visibleIfApp, setVisibleIfApp] = useState(vis.visibleIfApp);
   const [visibleIfSensorId, setVisibleIfSensorId] = useState(vis.visibleIfSensorId);
   const [visibleIfSensorOp, setVisibleIfSensorOp] = useState(vis.visibleIfSensorOp);
@@ -215,6 +216,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
       varWidgetName,
       varWidgetPrefix,
       varWidgetSuffix,
+      currencyWidget,
       visibleIfApp,
       visibleIfSensorId,
       visibleIfSensorOp,
@@ -535,6 +537,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 setVisibleIfSensorOp={setVisibleIfSensorOp}
                 visibleIfSensorVal={visibleIfSensorVal}
                 widget={widget}
+                currencyWidget={currencyWidget}
+                setCurrencyWidget={setCurrencyWidget}
               />
             )}
           </div>

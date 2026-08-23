@@ -105,7 +105,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 25 | 1.1 Mando móvil | Controlar el deck desde el teléfono (red local). | ⬜ |
 | 26 | 5.3/5.4 Pulido sensorial | Animación de press + sonidos seleccionables. | ⬜ |
 | 27 | Botón deslizante / ± | Un tipo de botón que **ajusta** en vez de disparar: brillo, volumen y lo que admita un rango. Deslizar sobre la celda, o dos flechas de subir y bajar. Pedido 2026-08-23. | ⬜ |
-| 28 | Widget de divisas | Conversión en vivo entre dos monedas elegidas, en un widget de celda. Hace falta decidir la fuente: Google no tiene API pública para esto. Pedido 2026-08-23. | ⬜ |
+| 28 | Widget de divisas | Conversión entre dos monedas, tasa diaria de `open.er-api.com`, cacheada. | ✅ 2026-08-23 |
 | 29 | Presets RGB con arte y animación | Los siete de ahora son color + modo del propio dispositivo. Se pide poder componer efectos propios. Pedido 2026-08-23. | ⬜ |
 
 ---
