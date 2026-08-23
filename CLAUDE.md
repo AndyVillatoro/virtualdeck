@@ -87,7 +87,12 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
 - `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC
 - `electron/main/macro.ts` — grabación de macros (uiohook-napi) + reproducción via PowerShell
-- `electron/main/rgb.ts` — control RGB vía OpenRGB SDK
+- `electron/main/rgb.ts` — control RGB vía OpenRGB SDK. `SMART_PRESETS` son 18 presets que
+  se apoyan **solo en modos que el dispositivo ya sabe hacer**: no hay motor de animación,
+  VirtualDeck no manda fotogramas. Cada uno lleva color, una lista de modos a intentar (de
+  lo específico a lo genérico, acabando siempre en `static`/`direct`) y opcionalmente
+  brillo y velocidad. `scripts/check-acciones.mjs` cruza esa lista con
+  `src/data/rgbPresets.ts`: si se separan, el botón no haría nada y no habría error
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)

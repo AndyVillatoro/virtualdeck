@@ -143,6 +143,17 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'RGB', label: 'RGB Arcoiris',   icon: '◈', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'rgb-preset', rgbPresetId: 'rainbow' } },
   { category: 'RGB', label: 'RGB Noche Azul', icon: '◉', bgColor: '#000010', fgColor: '#0055ff', action: { type: 'rgb-preset', rgbPresetId: 'night-blue' } },
   { category: 'RGB', label: 'RGB Alerta',     icon: '◉', bgColor: '#1a0000', fgColor: '#ff0000', action: { type: 'rgb-preset', rgbPresetId: 'alert-red' } },
+  { category: 'RGB', label: 'RGB Lectura',    icon: '◐', bgColor: '#1a1206', fgColor: '#ff9d3c', action: { type: 'rgb-preset', rgbPresetId: 'reading' } },
+  { category: 'RGB', label: 'RGB Foco',       icon: '◯', bgColor: '#0d141a', fgColor: '#cfe6ff', action: { type: 'rgb-preset', rgbPresetId: 'focus' } },
+  { category: 'RGB', label: 'RGB Tenue',      icon: '○', bgColor: '#0a0a0a', fgColor: '#9a9a9a', action: { type: 'rgb-preset', rgbPresetId: 'dim' } },
+  { category: 'RGB', label: 'RGB Atardecer',  icon: '◐', bgColor: '#1a0800', fgColor: '#ff5c1a', action: { type: 'rgb-preset', rgbPresetId: 'sunset' } },
+  { category: 'RGB', label: 'RGB Oceano',     icon: '◉', bgColor: '#001016', fgColor: '#00a0c8', action: { type: 'rgb-preset', rgbPresetId: 'ocean' } },
+  { category: 'RGB', label: 'RGB Bosque',     icon: '◉', bgColor: '#001a0c', fgColor: '#1fa04a', action: { type: 'rgb-preset', rgbPresetId: 'forest' } },
+  { category: 'RGB', label: 'RGB Vela',       icon: '◐', bgColor: '#160c00', fgColor: '#ff8a2a', action: { type: 'rgb-preset', rgbPresetId: 'candle' } },
+  { category: 'RGB', label: 'RGB Violeta',    icon: '◉', bgColor: '#12001a', fgColor: '#8a2be2', action: { type: 'rgb-preset', rgbPresetId: 'violet' } },
+  { category: 'RGB', label: 'RGB Ola',        icon: '◈', bgColor: '#001418', fgColor: '#00d0ff', action: { type: 'rgb-preset', rgbPresetId: 'wave' } },
+  { category: 'RGB', label: 'RGB Fiesta',     icon: '◈', bgColor: '#140014', fgColor: '#ff40c0', action: { type: 'rgb-preset', rgbPresetId: 'party' } },
+  { category: 'RGB', label: 'RGB Estrobo',    icon: '◉', bgColor: '#141414', fgColor: '#ffffff', action: { type: 'rgb-preset', rgbPresetId: 'strobe' } },
 ];
 
 /**

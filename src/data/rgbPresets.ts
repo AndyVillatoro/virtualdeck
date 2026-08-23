@@ -11,7 +11,14 @@
  * crudos en vez de los nombres traducidos.
  */
 export const RGB_PRESET_IDS = [
-  'off', 'gaming', 'cinema', 'work', 'rainbow', 'night-blue', 'alert-red',
+  // Basicos
+  'off', 'work', 'dim',
+  // Para trabajar y leer
+  'reading', 'focus',
+  // Ambiente
+  'cinema', 'sunset', 'ocean', 'forest', 'candle', 'violet', 'night-blue',
+  // Con movimiento
+  'rainbow', 'wave', 'party', 'gaming', 'strobe', 'alert-red',
 ] as const;
 
 /** Clave de diccionario del nombre visible de un preset. */

@@ -412,20 +412,7 @@ export async function setMode(
       update.colors = buildModeColors(rawMode, color);
     }
 
-    if (brightness !== undefined && rawMode.brightnessMin !== undefined && rawMode.brightnessMax !== undefined) {
-      const range = rawMode.brightnessMax - rawMode.brightnessMin;
-      update.brightness = Math.round(rawMode.brightnessMin + (range * Math.max(0, Math.min(100, brightness)) / 100));
-    }
-
-    // Speed: 0..100 user-facing, mapped onto the mode's [speedMin, speedMax].
-    // Note: in OpenRGB the protocol value runs *backwards* — speedMin is the
-    // FASTEST end and speedMax the slowest. Invert so 100 = fastest.
-    const sMin = (rawMode as any).speedMin;
-    const sMax = (rawMode as any).speedMax;
-    if (speed !== undefined && sMin !== undefined && sMax !== undefined && sMax !== sMin) {
-      const pct = Math.max(0, Math.min(100, speed));
-      update.speed = Math.round(sMax - ((sMax - sMin) * pct / 100));
-    }
+    aplicarBrilloYVelocidad(update, rawMode, brightness, speed);
 
     await client.updateMode(deviceId, update);
     dev.activeMode = rawMode.id;
@@ -491,17 +478,83 @@ export async function applyProfile(profile: RGBProfile): Promise<boolean> {
 interface SmartPresetDef {
   color: string;      // primary color ('#rrggbb'). '' = skip color (for autonomous effects)
   tryModes: string[]; // mode name substrings, tried in order (case-insensitive)
+  /** 0..100 sobre el rango que declare el modo. Sin valor, el de fabrica. */
+  brillo?: number;
+  /** 0..100, donde 100 es rapido. Sin valor, el de fabrica. */
+  velocidad?: number;
 }
 
+/**
+ * Los presets que ofrece el boton de «preset RGB».
+ *
+ * Todos se apoyan en modos que el propio dispositivo ya sabe hacer: aqui no
+ * hay motor de animacion, VirtualDeck no manda fotogramas. Lo que distingue a
+ * uno de otro es el color, la lista de modos que se intentan y —desde ahora—
+ * el brillo y la velocidad, que es lo que permite que dos presets sobre el
+ * mismo modo «breathing» se sientan distintos.
+ *
+ * `tryModes` va de lo especifico a lo generico y **acaba siempre en algo que
+ * cualquier dispositivo tiene** (`static` o `direct`): si la placa no sabe
+ * hacer olas, al menos se queda del color que toca en vez de no hacer nada.
+ *
+ * Si se añade uno aqui hay que añadirlo tambien a `src/data/rgbPresets.ts` y
+ * ponerle nombre en los dos diccionarios; `scripts/check-acciones.mjs` cruza
+ * las dos listas y falla si se separan.
+ */
 const SMART_PRESETS: Record<string, SmartPresetDef> = {
   off:          { color: '#000000', tryModes: ['off', 'black', 'static', 'direct', 'custom'] },
-  gaming:       { color: '#ff1800', tryModes: ['breathing', 'breath', 'pulse', 'blink', 'static'] },
-  cinema:       { color: '#200400', tryModes: ['static', 'direct', 'custom', 'breathing'] },
-  work:         { color: '#ffffff', tryModes: ['static', 'direct', 'custom'] },
-  rainbow:      { color: '',        tryModes: ['spectrum cycle', 'rainbow wave', 'rainbow', 'spectrum', 'cycle'] },
-  'night-blue': { color: '#000880', tryModes: ['breathing', 'breath', 'pulse', 'static'] },
-  'alert-red':  { color: '#ff0000', tryModes: ['flicker', 'flash', 'blink', 'breathing', 'static'] },
+  gaming:       { color: '#ff1800', tryModes: ['breathing', 'breath', 'pulse', 'blink', 'static'], brillo: 100, velocidad: 75 },
+  cinema:       { color: '#200400', tryModes: ['static', 'direct', 'custom', 'breathing'], brillo: 25 },
+  work:         { color: '#ffffff', tryModes: ['static', 'direct', 'custom'], brillo: 100 },
+  rainbow:      { color: '',        tryModes: ['spectrum cycle', 'rainbow wave', 'rainbow', 'spectrum', 'cycle'], velocidad: 50 },
+  'night-blue': { color: '#000880', tryModes: ['breathing', 'breath', 'pulse', 'static'], brillo: 35, velocidad: 25 },
+  'alert-red':  { color: '#ff0000', tryModes: ['flicker', 'flash', 'blink', 'breathing', 'static'], brillo: 100, velocidad: 100 },
+
+  // — Para trabajar y leer —
+  reading:      { color: '#ff9d3c', tryModes: ['static', 'direct', 'custom'], brillo: 55 },
+  focus:        { color: '#cfe6ff', tryModes: ['static', 'direct', 'custom'], brillo: 90 },
+  dim:          { color: '#ffffff', tryModes: ['static', 'direct', 'custom'], brillo: 10 },
+
+  // — Ambiente —
+  sunset:       { color: '#ff5c1a', tryModes: ['breathing', 'breath', 'pulse', 'static'], brillo: 60, velocidad: 15 },
+  ocean:        { color: '#00a0c8', tryModes: ['breathing', 'breath', 'wave', 'static'], brillo: 55, velocidad: 20 },
+  forest:       { color: '#1fa04a', tryModes: ['breathing', 'breath', 'pulse', 'static'], brillo: 50, velocidad: 20 },
+  candle:       { color: '#ff8a2a', tryModes: ['flicker', 'breathing', 'breath', 'static'], brillo: 40, velocidad: 35 },
+  violet:       { color: '#8a2be2', tryModes: ['breathing', 'breath', 'pulse', 'static'], brillo: 65, velocidad: 30 },
+
+  // — Con movimiento propio del dispositivo —
+  party:        { color: '',        tryModes: ['spectrum cycle', 'rainbow wave', 'rainbow', 'spectrum', 'cycle'], brillo: 100, velocidad: 100 },
+  wave:         { color: '#00d0ff', tryModes: ['wave', 'rainbow wave', 'spectrum cycle', 'breathing', 'static'], brillo: 80, velocidad: 45 },
+  strobe:       { color: '#ffffff', tryModes: ['flashing', 'flash', 'blink', 'strobe', 'flicker', 'breathing'], brillo: 100, velocidad: 100 },
 };
+
+/**
+ * Traduce brillo y velocidad de 0..100 al rango que declare el modo.
+ *
+ * Estaba solo dentro de `setDeviceMode`, y los presets no lo usaban: por eso
+ * todos salian a la velocidad y el brillo que trajera el modo de fabrica.
+ * Compartirlo es lo que permite que dos presets con el mismo modo se
+ * distingan —una respiracion lenta y tenue no es la misma que una rapida y a
+ * tope— sin motor de animacion ninguno.
+ *
+ * Lo importante y lo que no se puede perder de vista: **en OpenRGB el valor de
+ * velocidad va al reves**, `speedMin` es el extremo mas rapido. Por eso se
+ * invierte, para que aqui 100 signifique rapido.
+ */
+function aplicarBrilloYVelocidad(
+  update: Record<string, unknown>,
+  rawMode: { brightnessMin?: number; brightnessMax?: number; speedMin?: number; speedMax?: number },
+  brillo?: number,
+  velocidad?: number,
+): void {
+  const { brightnessMin: bMin, brightnessMax: bMax, speedMin: sMin, speedMax: sMax } = rawMode;
+  if (brillo !== undefined && bMin !== undefined && bMax !== undefined) {
+    update.brightness = Math.round(bMin + ((bMax - bMin) * Math.max(0, Math.min(100, brillo)) / 100));
+  }
+  if (velocidad !== undefined && sMin !== undefined && sMax !== undefined && sMax !== sMin) {
+    update.speed = Math.round(sMax - ((sMax - sMin) * Math.max(0, Math.min(100, velocidad)) / 100));
+  }
+}
 
 export async function applySmartPreset(presetId: string): Promise<boolean> {
   if (!client?.isConnected) return false;
@@ -526,6 +579,7 @@ export async function applySmartPreset(presetId: string): Promise<boolean> {
         if (preset.color && rawMode.colorMode !== CM_NONE && rawMode.colorMode !== CM_RANDOM) {
           update.colors = buildModeColors(rawMode, preset.color);
         }
+        aplicarBrilloYVelocidad(update, rawMode, preset.brillo, preset.velocidad);
 
         await client.updateMode(rawDev.deviceId, update);
         devInfo.activeMode = rawMode.id;
