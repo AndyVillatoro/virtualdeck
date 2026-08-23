@@ -160,6 +160,18 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **PowerShell `param()`**: `runPS` (en `ps-helpers.ts`) detecta si el script empieza con `param(...)` y, en ese caso, inserta el prefix UTF-8 DESPUÉS del bloque param. PowerShell exige que `param()` sea la primera sentencia del script — meterle `chcp 65001` arriba lo rompe silenciosamente. Si modificás `runPS`, mantené ese parser.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
 
+## 🔬 Sondas en el proceso principal: `require` no sirve
+
+electron-vite empaqueta todo el proceso principal en **un solo `out/main/index.js`**,
+así que dentro de una sonda temporal `require('./rgb')` o `require('./floatingBar')`
+falla: en tiempo de ejecución esos módulos no existen como archivos. La sonda no
+imprime nada y parece que el código no se ejecuta — dos veces se dio por «no medible»
+un arreglo que sí lo era.
+
+Lo que funciona es usar el módulo **ya importado arriba** (`import * as rgb`), o añadir
+el import que haga falta en el propio `index.ts` mientras dure la sonda. `require('electron')`
+sí funciona, porque es un módulo externo de verdad.
+
 ## ⏱️ Arranque: desarrollo y producción no se parecen
 
 Medido con `VD_DIAG=1` (la línea `[arranque] ventana visible a los N ms`):
