@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { formatoHora } from './formatos';
+import { useEffect, useRef } from 'react';
 import { findSensor, evalCondition } from './sensors';
-import { useLang } from './i18n';
 import type { ButtonConfig, Sensor } from '../types';
 
 /**
@@ -28,14 +26,38 @@ interface Opciones {
   disparar: (b: ButtonConfig) => void | Promise<void>;
 }
 
-/** Cada cuánto se mira el reloj. Menos de un minuto para no perder el minuto. */
+/** Cada cuánto se mira el reloj. */
 const MS_TIC_RELOJ = 15000;
+/**
+ * Más de esto entre dos tics y se da por perdido: el equipo estuvo suspendido
+ * y no tiene sentido disparar de golpe todo lo que tocaba mientras dormía.
+ */
+const MS_HUECO_MAXIMO = 5 * 60 * 1000;
 /** Sin enfriamiento propio, un sensor caliente dispararía en cada sondeo. */
 const MS_ENFRIAMIENTO = 60000;
 
+/**
+ * ¿El instante «HH:MM» cae entre el tic anterior y este?
+ *
+ * Se compara sobre el día de `ahora`, que es lo correcto salvo justo al cruzar
+ * la medianoche; ahí el hueco se resuelve en el tic siguiente.
+ */
+function inicioDelMinuto(d: Date): number {
+  const m = new Date(d);
+  m.setSeconds(0, 0);
+  return m.getTime();
+}
+
+function cruzoLaHora(hhmm: string, previo: number, ahora: Date): boolean {
+  const [h, m] = hhmm.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return false;
+  const objetivo = new Date(ahora);
+  objetivo.setHours(h, m, 0, 0);
+  const t = objetivo.getTime();
+  return t > previo && t <= ahora.getTime();
+}
+
 export function useDisparadores({ botones, sensores, disparar }: Opciones) {
-  const lang = useLang();
-  const hora = useMemo(() => formatoHora(lang), [lang]);
 
   // Las opciones van por referencia para que los efectos no se rearmen con
   // cada repintado: `disparar` cambia de identidad al cambiar la
@@ -44,18 +66,33 @@ export function useDisparadores({ botones, sensores, disparar }: Opciones) {
   ref.current = { botones, sensores, disparar };
 
   // --- Por hora.
-  const ultimoMinuto = useRef<string>('');
+  //
+  // Se mira el **intervalo transcurrido**, no si el reloj marca justo la hora
+  // programada. Exigir igualdad obliga a que algun tic caiga dentro del minuto
+  // exacto, y eso no se puede dar por hecho: si el equipo se suspende, si la
+  // pestaña se estrangula o si el sistema va cargado, el tic se retrasa y el
+  // minuto se pierde entero. Asi solo hace falta que el tic ocurra *despues*.
+  const ultimoInstante = useRef<number | null>(null);
   useEffect(() => {
     const t = setInterval(() => {
-      const ahora = hora.format(new Date());
-      if (ahora === ultimoMinuto.current) return;
-      const tocan = ref.current.botones.filter((b) => b.timerTriggerAt === ahora);
-      if (tocan.length === 0) return;
-      ultimoMinuto.current = ahora;
-      for (const b of tocan) void ref.current.disparar(b);
+      const ahora = new Date();
+      // En el primer tic la referencia es el **principio del minuto en curso**,
+      // no el instante actual. Asi se conserva lo de antes —que un programado
+      // salta en cualquier momento de su minuto— sin repescar nada anterior:
+      // abrir la aplicacion a las seis de la tarde no dispara lo del desayuno.
+      const previo = ultimoInstante.current ?? inicioDelMinuto(ahora) - 1;
+      ultimoInstante.current = ahora.getTime();
+      // Un hueco enorme es que el equipo estuvo suspendido; no se recuperan
+      // disparos viejos, se vuelve a tomar referencia y se sigue.
+      if (ahora.getTime() - previo > MS_HUECO_MAXIMO) return;
+      for (const b of ref.current.botones) {
+        if (!b.timerTriggerAt) continue;
+        if (!cruzoLaHora(b.timerTriggerAt, previo, ahora)) continue;
+        void ref.current.disparar(b);
+      }
     }, MS_TIC_RELOJ);
     return () => clearInterval(t);
-  }, [hora]);
+  }, []);
 
   // --- Por sensor. Por nivel, no por flanco: se repite mientras la condición
   // siga siendo cierta, con enfriamiento entre disparos.

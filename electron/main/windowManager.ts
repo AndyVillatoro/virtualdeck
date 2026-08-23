@@ -60,10 +60,22 @@ export function createMainWindow(): BrowserWindow {
     // en el desplegable de iconos ocultos, y nadie recuerda que está ahí.
     //
     // El resultado práctico es indistinguible de que la aplicación no arranque.
+    //
+    // Pero solo **mientras se ve**: al esconderla a la bandeja se quita de la
+    // barra de tareas, que es lo que uno espera de una aplicación de bandeja.
+    // Los dos `setSkipTaskbar` de más abajo lo mantienen sincronizado.
     skipTaskbar: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true, contextIsolation: true, nodeIntegration: false,
+      // Los temporizadores siguen corriendo con la ventana escondida.
+      //
+      // Chromium estrangula los `setInterval` de una ventana oculta a uno por
+      // minuto. Y la ventana pasa casi todo el tiempo oculta: cerrarla la
+      // manda a la bandeja. Con eso, el tic de 15 s que vigila la hora caia en
+      // una fase cualquiera y **se saltaba el minuto** que tenia que disparar.
+      // Unas veces funcionaba y otras no, que es lo peor de todo.
+      backgroundThrottling: false,
     },
   });
 
@@ -169,6 +181,12 @@ export function createMainWindow(): BrowserWindow {
   // resultado es una aplicación que parece no arrancar, sin un solo error.
   //
   // `dom-ready` depende solo del documento, así que llega siempre.
+  // Solo sale en la barra de tareas cuando está a la vista. Escondida vive en
+  // la bandeja y nada más: tener las dos cosas a la vez confunde, porque el
+  // icono de la barra no la trae de vuelta si la ventana está oculta.
+  win.on('hide', () => { if (!win.isDestroyed()) win.setSkipTaskbar(true); });
+  win.on('show', () => { if (!win.isDestroyed()) win.setSkipTaskbar(false); });
+
   win.webContents.once('dom-ready', () => {
     if (win.isDestroyed()) return;
     win.show();

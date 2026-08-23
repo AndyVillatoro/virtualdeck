@@ -12,6 +12,7 @@ import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
+import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, makeDefaultButtons } from './utils/configDefaults';
 import { useDeck } from './utils/useDeck';
@@ -306,6 +307,10 @@ export default function App() {
   const dispararBoton = useCallback(async (btn: ButtonConfig) => {
     if (!api) return;
     if (btn.action.type === 'folder') return; // Una carpeta necesita interfaz.
+    // Suena igual que si lo hubieras pulsado. Un boton que se dispara solo —a
+    // una hora, por un sensor, por un atajo global— no da ninguna otra señal
+    // de que ha pasado algo, que es justo cuando mas falta hace.
+    if (config.soundOnPress ?? true) playSound(config.soundProfile ?? 'click');
     if (btn.isToggle) {
       const estaba = toggledIds.has(btn.id);
       handleToggle(btn.id);
@@ -324,7 +329,8 @@ export default function App() {
       for (const k of nuevas) cambio[k] = r.stateUpdate[k];
       updateState(cambio);
     }
-  }, [api, config.state, config.rgb?.profiles, toggledIds, updateState, handleToggle, t]);
+  }, [api, config.state, config.rgb?.profiles, config.soundOnPress, config.soundProfile,
+      toggledIds, updateState, handleToggle, t]);
 
   // Atajo global del sistema y menu de la bandeja: el proceso principal emite
   // button:trigger y aqui se ejecuta la cadena del boton.

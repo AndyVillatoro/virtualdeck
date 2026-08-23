@@ -104,15 +104,21 @@ export function TitleBar({
   const [galleryUrl, setGalleryUrl] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
 
+  const ruedaRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     if (!showSettings) return;
-    const close = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setShowSettings(false);
-      }
+    const cerrar = (e: MouseEvent) => {
+      const donde = e.target as Node;
+      if (panelRef.current?.contains(donde)) return;
+      // La propia rueda queda fuera: si no, este `mousedown` cerraba el panel
+      // y el `onClick` del boton lo volvia a abrir un instante despues. El
+      // resultado era que pulsar la rueda con el panel abierto no hacia nada.
+      if (ruedaRef.current?.contains(donde)) return;
+      setShowSettings(false);
     };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener('mousedown', cerrar);
+    return () => document.removeEventListener('mousedown', cerrar);
   }, [showSettings]);
 
   return (
@@ -160,6 +166,7 @@ export function TitleBar({
             )}
             <span style={{ position: 'relative', display: 'inline-flex' }}>
               <button
+                ref={ruedaRef}
                 onClick={() => setShowSettings(v => !v)}
                 title={t('tip.settings')}
                 style={{ ...iconBtnStyle, color: showSettings ? effectiveAccent : VD.textDim }}

@@ -91,9 +91,19 @@ function ButtonCellInner({
 
   useEffect(() => {
     if (!contextMenu) return;
-    const close = () => setContextMenu(null);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
+    const cerrar = () => setContextMenu(null);
+    // Tambien con el clic **derecho**: pulsando con el derecho en otra celda
+    // no hay evento `click`, asi que el menu de la primera se quedaba abierto
+    // encima mientras se abria el de la segunda.
+    //
+    // No se usa `mousedown`, que seria lo obvio: llega antes que el `click` de
+    // las propias entradas del menu y se las comeria.
+    document.addEventListener('click', cerrar);
+    document.addEventListener('contextmenu', cerrar);
+    return () => {
+      document.removeEventListener('click', cerrar);
+      document.removeEventListener('contextmenu', cerrar);
+    };
   }, [contextMenu]);
 
   usePulsacionTactil({
