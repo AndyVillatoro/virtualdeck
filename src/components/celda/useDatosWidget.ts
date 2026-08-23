@@ -3,7 +3,7 @@ import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { useLang } from '../../utils/i18n';
 import { wxInfo } from '../WeatherWidget';
 import { findSensor } from '../../utils/sensors';
-import type { ButtonConfig, Sensor, TasasDivisa } from '../../types';
+import type { ButtonConfig, Sensor, TasasDivisa, TipoWidget } from '../../types';
 
 /**
  * Lo que muestra cada widget encima de su botón, para todos los botones a la vez.
@@ -46,12 +46,63 @@ interface Entradas {
   sensores: Sensor[];
 }
 
+/** Lo que cada constructor tiene a mano. */
+interface Fuentes {
+  estado?: Record<string, string>;
+  reloj: Date;
+  clima: DatosClima | null;
+  sonando: { title?: string; artist?: string } | null;
+  sensores: Sensor[];
+  divisas?: Record<string, TasasDivisa>;
+  hora: Intl.DateTimeFormat;
+  fecha: Intl.DateTimeFormat;
+}
+
+/**
+ * Un constructor por tipo de widget. Devolver `null` es «este botón no tiene
+ * nada que enseñar todavía»: la celda se queda con su icono.
+ *
+ * Es un mapa y no una cadena de `else if` —como sí lo es `actionLabel`— porque
+ * aquí el tipo no estrecha nada: `b.widget` es un campo suelto y todas las
+ * ramas reciben el mismo `ButtonConfig`. Así añadir un widget es una entrada,
+ * y el `Record<TipoWidget, ...>` obliga a que no falte ninguna: si se añade un
+ * tipo y se olvida el constructor, no compila. Mejor que un guardián aparte.
+ */
+const CONSTRUCTORES: Record<TipoWidget, (b: ButtonConfig, f: Fuentes) => DatosWidget | null> = {
+  'clock': (_b, f) => ({
+    line1: f.hora.format(f.reloj),
+    line2: f.fecha.format(f.reloj).toUpperCase(),
+  }),
+
+  'weather': (_b, f) => {
+    if (!f.clima) return null;
+    const [emoji] = wxInfo(f.clima.code);
+    return { line1: `${emoji} ${f.clima.temp}°`, line2: f.clima.city };
+  },
+
+  'now-playing': (_b, f) => (f.sonando
+    ? { line1: f.sonando.title || '—', line2: f.sonando.artist || undefined }
+    : null),
+
+  'variable': (b, f) => {
+    const cfg = b.varWidget;
+    if (!cfg?.varName) return null;
+    const bruto = f.estado?.[cfg.varName] ?? '0';
+    return { line1: `${cfg.prefix ?? ''}${bruto}`, line2: cfg.suffix || cfg.varName };
+  },
+
+  'sensor': (b, f) => (b.sensorWidget ? datosDeSensor(b, f.sensores) : null),
+
+  'currency': (b, f) => (b.currencyWidget ? datosDeDivisa(b.currencyWidget, f.divisas) : null),
+};
+
 export function useDatosWidget({ botones, estado, reloj, clima, sonando, sensores, divisas }: Entradas) {
   const lang = useLang();
   const hora = useMemo(() => formatoHora(lang), [lang]);
   const fecha = useMemo(() => formatoFecha(lang), [lang]);
 
   return useMemo(() => {
+    const fuentes: Fuentes = { estado, reloj, clima, sonando, sensores, divisas, hora, fecha };
     const mapa: Record<string, DatosWidget> = {};
     for (const b of botones) {
       if (!b.widget) continue;
@@ -59,25 +110,8 @@ export function useDatosWidget({ botones, estado, reloj, clima, sonando, sensore
       // combinación inválida: la celda mostraría la canción en vez del
       // dispositivo que el botón selecciona.
       if (b.widget === 'now-playing' && b.action.type === 'audio-device') continue;
-
-      if (b.widget === 'clock') {
-        mapa[b.id] = { line1: hora.format(reloj), line2: fecha.format(reloj).toUpperCase() };
-      } else if (b.widget === 'weather' && clima) {
-        const [emoji] = wxInfo(clima.code);
-        mapa[b.id] = { line1: `${emoji} ${clima.temp}°`, line2: clima.city };
-      } else if (b.widget === 'now-playing' && sonando) {
-        mapa[b.id] = { line1: sonando.title || '—', line2: sonando.artist || undefined };
-      } else if (b.widget === 'variable' && b.varWidget?.varName) {
-        const bruto = estado?.[b.varWidget.varName] ?? '0';
-        mapa[b.id] = {
-          line1: `${b.varWidget.prefix ?? ''}${bruto}`,
-          line2: b.varWidget.suffix || b.varWidget.varName,
-        };
-      } else if (b.widget === 'sensor' && b.sensorWidget) {
-        mapa[b.id] = datosDeSensor(b, sensores);
-      } else if (b.widget === 'currency' && b.currencyWidget) {
-        mapa[b.id] = datosDeDivisa(b.currencyWidget, divisas);
-      }
+      const datos = CONSTRUCTORES[b.widget]?.(b, fuentes);
+      if (datos) mapa[b.id] = datos;
     }
     return mapa;
   }, [botones, estado, reloj, clima, sonando, sensores, divisas, hora, fecha]);
