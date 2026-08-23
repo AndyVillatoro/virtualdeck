@@ -330,6 +330,9 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               soundProfile={soundProfile}
               onEdit={() => {}}
               onExecute={() => executeButton(btn)}
+              onAdjustWheel={(signo) => executeButton({ ...btn, action: {
+                ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
+              } })}
               onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none'
                 ? () => executeLongPress(btn) : undefined}
             />

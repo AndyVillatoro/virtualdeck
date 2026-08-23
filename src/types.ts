@@ -1,5 +1,6 @@
 export type ActionType =
   | 'none'
+  | 'adjust'
   | 'app'
   | 'web'
   | 'shortcut'
@@ -64,6 +65,9 @@ export interface ButtonAction {
   deviceName?: string;
   hotkey?: string;
   brightnessLevel?: number;
+  /** `adjust`: que se sube o se baja, y de cuanto en cuanto. */
+  adjustTarget?: 'brightness' | 'volume';
+  adjustDelta?: number;
   clipboardText?: string;
   typeText?: string;
   processName?: string;
@@ -548,6 +552,9 @@ export interface ElectronAPI {
   };
   launch: {
     app: (path: string, args?: string[]) => Promise<boolean>;
+    /** Brillo actual 0..100, o null si el equipo no lo expone (monitor externo). */
+    getBrightness: () => Promise<number | null>;
+    getVolume: () => Promise<number | null>;
     url: (url: string) => Promise<boolean>;
     script: (script: string, shell?: string) => Promise<boolean>;
     scriptCapture: (script: string, shell?: string) => Promise<{ success: boolean; output: string }>;

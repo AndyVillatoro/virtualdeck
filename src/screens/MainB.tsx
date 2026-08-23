@@ -483,6 +483,9 @@ export function MainB({
                 resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
                 onEdit={() => onEditButton(btn.id)}
                 onExecute={() => executeButton(btn)}
+                onAdjustWheel={(signo) => executeButton({ ...btn, action: {
+                  ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
+                } })}
                 onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none' ? () => executeLongPressButton(btn) : undefined}
                 onSelect={() => setSelectedIds((prev) => {
                   const next = new Set(prev);

@@ -66,6 +66,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     shortcut: (path: string): Promise<boolean> => ipcRenderer.invoke('launch:shortcut', path),
     mediaKey: (key: string): Promise<boolean> => ipcRenderer.invoke('launch:mediaKey', key),
     brightness: (level: number): Promise<boolean> => ipcRenderer.invoke('launch:brightness', level),
+    getBrightness: (): Promise<number | null> => ipcRenderer.invoke('launch:getBrightness'),
+    getVolume: (): Promise<number | null> => ipcRenderer.invoke('launch:getVolume'),
     hotkey: (combo: string): Promise<boolean> => ipcRenderer.invoke('launch:hotkey', combo),
     clipboard: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:clipboard', text),
     typeText: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:typeText', text),

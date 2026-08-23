@@ -33,6 +33,8 @@ interface ButtonCellProps {
   onDragStart?: () => void;
   /** Recibe el id del boton arrastrado, leido del propio evento. */
   onDrop?: (sourceId: string) => void;
+  /** Rueda sobre un boton de ajuste: +1 hacia arriba, -1 hacia abajo. */
+  onAdjustWheel?: (signo: 1 | -1) => void;
   /** Se llama tambien si el arrastre se cancela, no solo al soltar. */
   onDragEnd?: () => void;
   /**
@@ -49,6 +51,7 @@ function ButtonCellInner({
   isSelected = false,
   widgetData, soundEnabled = false, soundProfile = 'click',
   resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop, onDragEnd,
+  onAdjustWheel,
   showContextMenu = true,
 }: ButtonCellProps) {
   const VD = useTheme();
@@ -63,9 +66,11 @@ function ButtonCellInner({
   const onLongPressRef = useRef(onLongPress);
   const onExecuteRef = useRef(onExecute);
   const onDropRef = useRef(onDrop);
+  const onAdjustWheelRef = useRef(onAdjustWheel);
   onLongPressRef.current = onLongPress;
   onExecuteRef.current = onExecute;
   onDropRef.current = onDrop;
+  onAdjustWheelRef.current = onAdjustWheel;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
@@ -161,6 +166,12 @@ function ButtonCellInner({
         draggable={!isEmpty}
         onClick={raton.alClic}
         onContextMenu={raton.alMenuContextual}
+        // La rueda solo hace algo en los botones de ajuste, y ahi ahorra tener
+        // dos: arriba suma el paso, abajo lo resta.
+        onWheel={button.action.type === 'adjust' ? (e) => {
+          e.preventDefault();
+          onAdjustWheelRef.current?.(e.deltaY < 0 ? 1 : -1);
+        } : undefined}
         onMouseDown={raton.alBajar}
         onMouseUp={raton.alSubirOSalir}
         onMouseEnter={() => setHovered(true)}

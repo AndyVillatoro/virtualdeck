@@ -153,6 +153,9 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                 showContextMenu={false}
                 onEdit={() => { /* la barra no edita: para eso está el deck */ }}
                 onExecute={() => ejecutar(btn)}
+                onAdjustWheel={(signo) => ejecutar({ ...btn, action: {
+                  ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
+                } })}
                 onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none'
                   ? () => pulsacionLarga(btn) : undefined}
               />

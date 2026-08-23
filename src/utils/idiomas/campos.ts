@@ -178,4 +178,10 @@ export const FIELDS_EN: Record<string, string> = {
   'A': 'TO',
   'La tasa se actualiza una vez al día y se guarda, así que el botón sigue mostrando la última aunque no haya conexión.':
     'The rate updates once a day and is stored, so the button keeps showing the last one even offline.',
+  'QUÉ SE AJUSTA': 'WHAT TO ADJUST',
+  'CUÁNTO CAMBIA CADA PULSACIÓN': 'STEP PER PRESS',
+  'BRILLO': 'BRIGHTNESS',
+  'VOLUMEN': 'VOLUME',
+  'Con la rueda del ratón encima del botón también funciona: arriba suma, abajo resta. Un valor negativo hace que la pulsación baje.':
+    'The mouse wheel over the button works too: up adds, down subtracts. A negative value makes the press lower it.',
 };

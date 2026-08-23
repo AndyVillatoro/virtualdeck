@@ -69,6 +69,76 @@ try {
   return runPSBool(script, { timeoutMs: 10000, args: [String(pct)] });
 }
 
+/** La primera línea de la salida, que es donde el script deja el número. */
+function primeraLinea(salida: string | undefined): string {
+  return (salida ?? '').trim().split(/\r?\n/)[0] ?? '';
+}
+
+/**
+ * Brillo actual, 0..100, o `null` si el equipo no lo expone.
+ *
+ * Hace falta para los botones que **ajustan** en vez de fijar: subir diez por
+ * ciento exige saber de cuanto se parte. El nucleo nativo ya sabia leerlo
+ * —`getBrightness` estaba declarado— pero nunca se habia expuesto: solo habia
+ * camino para escribir.
+ *
+ * Un portatil responde; una torre con monitor por HDMI casi nunca, porque el
+ * brillo lo lleva el propio monitor. Por eso puede devolver `null` y quien
+ * llame tiene que contar con ello.
+ */
+export async function getBrightness(): Promise<number | null> {
+  const r = intentarNativo('getBrightness', (n) => n.getBrightness());
+  if (r !== undefined) return r;
+
+  const res = await runPS(`
+try {
+  $b = Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightness
+  if ($b) { Write-Output $b.CurrentBrightness }
+} catch {}
+`, { timeoutMs: 8000 });
+  const n = parseInt(primeraLinea(res.stdout), 10);
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : null;
+}
+
+/** Volumen actual del dispositivo de salida por defecto, 0..100. */
+export async function getVolume(): Promise<number | null> {
+  const r = intentarNativo('getVolume', (n) => n.getVolume());
+  if (r !== undefined) return r;
+
+  const res = await runPS(`
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+[Guid("BCDE0395-E52F-467C-8E3D-C4579291692E"), ComImport] class MMDev {}
+[Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IMMDevEnum { void R(); [return:MarshalAs(UnmanagedType.Interface)] object GetDefaultAudioEndpoint(int a, int b); }
+[Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IMMDevice { [return:MarshalAs(UnmanagedType.Interface)] object Activate(ref Guid g, uint c, IntPtr p); }
+[Guid("5CDF2C82-841E-4546-9722-0CF74078229A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+interface IAudioEndpointVolume {
+  void NotImpl1(); void NotImpl2();
+  int GetChannelCount(out uint c);
+  int SetMasterVolumeLevel(float f, ref Guid g);
+  int SetMasterVolumeLevelScalar(float f, ref Guid g);
+  int GetMasterVolumeLevel(out float f);
+  int GetMasterVolumeLevelScalar(out float f);
+}
+public class VolLeer {
+  public static float Get() {
+    var e = (IMMDevEnum)(new MMDev() as object);
+    var d = (IMMDevice)e.GetDefaultAudioEndpoint(0, 1);
+    var g = typeof(IAudioEndpointVolume).GUID;
+    var v = (IAudioEndpointVolume)d.Activate(ref g, 1, IntPtr.Zero);
+    float f; v.GetMasterVolumeLevelScalar(out f); return f;
+  }
+}
+'@
+Write-Output ([VolLeer]::Get())
+`, { timeoutMs: 8000 });
+  const f = parseFloat(primeraLinea(res.stdout));
+  return Number.isFinite(f) ? Math.min(100, Math.max(0, Math.round(f * 100))) : null;
+}
+
 export async function copyToClipboard(text: string): Promise<boolean> {
   const r = intentarNativo('copyToClipboard', (n) => n.copyToClipboard(text));
   if (r !== undefined) return r;

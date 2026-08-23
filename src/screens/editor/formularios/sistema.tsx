@@ -215,6 +215,57 @@ export function FormVolumeSet(p: PropsFormulario) {
   );
 }
 
+/**
+ * Subir o bajar brillo o volumen, en vez de fijarlos.
+ *
+ * Con dos botones —uno +10 y otro -10— se tiene el par de flechas de toda la
+ * vida. Y con la rueda del raton encima de la celda sirve uno solo: hacia
+ * arriba suma, hacia abajo resta.
+ */
+export function FormAdjust(p: PropsFormulario) {
+  const VD = useTheme();
+  const tf = useFieldText();
+  const { accent, action, setAction } = p;
+  const objetivo = action.adjustTarget ?? 'brightness';
+  const delta = action.adjustDelta ?? 10;
+  return (
+    <>
+      <Field label={tf("QUÉ SE AJUSTA")}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['brightness', 'volume'] as const).map((o) => (
+            <button
+              key={o}
+              onClick={() => setAction((a) => ({ ...a, adjustTarget: o }))}
+              style={{
+                flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                background: objetivo === o ? VD.accentBg : VD.elevated,
+                border: `1px solid ${objetivo === o ? accent : VD.border}`,
+                color: objetivo === o ? accent : VD.textDim,
+                fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+              }}
+            >{tf(o === 'brightness' ? 'BRILLO' : 'VOLUMEN')}</button>
+          ))}
+        </div>
+      </Field>
+      <Field label={tf("CUÁNTO CAMBIA CADA PULSACIÓN")}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <input
+            type="range" min={-50} max={50} step={5} value={delta}
+            onChange={(e) => setAction((a) => ({ ...a, adjustDelta: parseInt(e.target.value, 10) }))}
+            style={{ flex: 1, accentColor: accent }}
+          />
+          <span style={{ fontFamily: VD.mono, fontSize: 14, color: VD.text, minWidth: 48, textAlign: 'right' }}>
+            {delta > 0 ? '+' : ''}{delta}%
+          </span>
+        </div>
+        <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6, lineHeight: 1.4 }}>
+          {tf('Con la rueda del ratón encima del botón también funciona: arriba suma, abajo resta. Un valor negativo hace que la pulsación baje.')}
+        </div>
+      </Field>
+    </>
+  );
+}
+
 export function FormBrightness(p: PropsFormulario) {
   const VD = useTheme();
   const tf = useFieldText();

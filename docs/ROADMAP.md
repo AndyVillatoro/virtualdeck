@@ -104,7 +104,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 24 | 6.1 Galería de perfiles | Repo público de perfiles ([spec](galeria.md)). | ⬜ |
 | 25 | 1.1 Mando móvil | Controlar el deck desde el teléfono (red local). | ⬜ |
 | 26 | 5.3/5.4 Pulido sensorial | Animación de press + sonidos seleccionables. | ⬜ |
-| 27 | Botón deslizante / ± | Un tipo de botón que **ajusta** en vez de disparar: brillo, volumen y lo que admita un rango. Deslizar sobre la celda, o dos flechas de subir y bajar. Pedido 2026-08-23. | ⬜ |
+| 27 | Botón ± para brillo y volumen | Acción `adjust`: sube o baja desde donde esté. Rueda del ratón sobre la celda, o dos botones. Cuatro presets sembrados. | ✅ 2026-08-23 |
 | 28 | Widget de divisas | Conversión entre dos monedas, tasa diaria de `open.er-api.com`, cacheada. | ✅ 2026-08-23 |
 | 29 | Presets RGB con arte y animación | Los siete de ahora son color + modo del propio dispositivo. Se pide poder componer efectos propios. Pedido 2026-08-23. | ⬜ |
 

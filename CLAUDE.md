@@ -75,6 +75,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   (botones, páginas, perfiles, ajustes), con el historial de deshacer. `App` se queda con la
   vista y los avisos. `src/utils/configDefaults.ts` — la configuración de una instalación nueva.
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
+- `adjust` (en `acciones/audio.ts`) sube o baja brillo/volumen **desde donde estén**, en vez
+  de fijar un número. Para eso hay que leer primero: el núcleo nativo ya declaraba
+  `getBrightness`/`getVolume` pero solo había camino para escribir. Un monitor externo no
+  suele exponer el brillo, así que la lectura puede devolver `null` y se avisa.
 - `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
   `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que
   resuelve `runActionSequence`: script, folder, branch, countdown). **No hay `default: return OK`**:

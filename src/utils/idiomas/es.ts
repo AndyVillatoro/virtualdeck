@@ -509,4 +509,9 @@ export const ES: Dict = {
   'cat.SISTEMA': 'SISTEMA',
   'cat.CREATIVO': 'CREATIVO',
   'cat.RGB': 'RGB',
+  'act.err.noDelta': 'El botón de ajuste no tiene cuánto subir o bajar.',
+  'act.err.noReadBrightness': 'No se pudo leer el brillo actual. Un monitor externo suele no exponerlo.',
+  'act.err.noReadVolume': 'No se pudo leer el volumen actual.',
+  'act.adjust.label': 'Subir / Bajar',
+  'act.adjust.desc': 'Sube o baja el brillo o el volumen desde donde esté',
 };

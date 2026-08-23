@@ -1,7 +1,7 @@
 import { intentarNativo } from '../native';
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import {
-  launchApp, runScript, runScriptCapture, openShortcut, setBrightness,
+  launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
   sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume,
   getRunningProcesses, snapWindow,
 } from '../launcher';
@@ -13,6 +13,8 @@ export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:script:capture', (_e: any, script: string, sh: string) => runScriptCapture(script, sh));
   ipcMain.handle('launch:shortcut', (_e: any, path: string) => openShortcut(path));
   ipcMain.handle('launch:brightness', (_e: any, level: number) => setBrightness(level));
+  ipcMain.handle('launch:getBrightness', () => getBrightness());
+  ipcMain.handle('launch:getVolume', () => getVolume());
   ipcMain.handle('launch:hotkey', async (_e: any, combo: string) => {
     win.blur();
     await new Promise(r => setTimeout(r, 80));

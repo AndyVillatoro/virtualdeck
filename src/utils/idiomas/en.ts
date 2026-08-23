@@ -500,4 +500,9 @@ export const EN: Dict = {
   'cat.SISTEMA': 'SYSTEM',
   'cat.CREATIVO': 'CREATIVE',
   'cat.RGB': 'RGB',
+  'act.err.noDelta': 'The adjust button has no step configured.',
+  'act.err.noReadBrightness': 'Could not read the current brightness. External monitors usually do not expose it.',
+  'act.err.noReadVolume': 'Could not read the current volume.',
+  'act.adjust.label': 'Step up / down',
+  'act.adjust.desc': 'Raises or lowers brightness or volume from wherever it is',
 };
