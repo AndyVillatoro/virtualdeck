@@ -22,7 +22,7 @@
 
 ---
 
-## Estado general (2026-05-29)
+## Estado general (2026-08-23)
 
 Auditoría sobre el código (no solo el doc):
 
@@ -33,17 +33,21 @@ Auditoría sobre el código (no solo el doc):
   `incr-var`, persistencia, `branch`, widget `variable`).
 - **Iteración 4 (comunidad): 🟡** — auto-update ✅, docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
-- **Publicado:** **v0.5.0** (i18n base + onboarding + hints + widget variable + marco de
-  mejoras + fix widget música) y **v0.5.1** (fix ícono de bandeja vacío en el instalador).
-- **i18n profundo (Bloque A):** ✅ #1 Wallpaper · #2 chrome editor · #3 tipos de acción ·
-  #4 campos del editor. 🚧 #5 estilo (labels/placeholders ya). ⬜ #6 RGB · #7 Fullscreen ·
-  #8 MainB · #9 settings · #10 BrandIcon.
+- **Publicado:** hasta **v0.5.1**. **v0.6.0** y **v0.7.0** están etiquetadas y con
+  instalador construido, pero **sin publicar** (decisión pendiente: Microsoft Store en vez
+  de release de GitHub).
+- **i18n profundo (Bloque A): ✅ todo**, incluido lo que no estaba en la lista — el
+  **proceso principal** (bandeja y diálogos) y los módulos que no son componentes.
+  512 claves ES/EN. Con una salvedad que conviene no olvidar: la auditoría es una
+  heurística, y esta sesión encontró textos con ella en verde **abriendo la app en
+  inglés**. «Auditoría limpia» no es «todo traducido».
+- **Código muerto: ✅** knip en cero (eran ~97 exports y 17 tipos).
 
 ---
 
 ## Bloque A — i18n profundo (pantalla por pantalla)
 
-La infraestructura (`utils/i18n.tsx`) y el chrome ya están. Falta la config profunda.
+Cerrado. Quedó además cubierto el proceso principal, que no estaba en la lista.
 
 | # | Apartado | Objetivo | Estado |
 |---|----------|----------|--------|
@@ -51,22 +55,22 @@ La infraestructura (`utils/i18n.tsx`) y el chrome ya están. Falta la config pro
 | 2 | `EditorB` — pasos y chrome | Pasos, botones, encabezados de sección. | ✅ 2026-05-29 |
 | 3 | `editor/actionData.ts` | Etiquetas/descripciones de los 34 tipos de acción (label→clave i18n). | ✅ 2026-05-29 |
 | 4 | `EditorB` — config por acción | Campos/placeholders de cada tipo (120 strings vía `useFieldText`). | ✅ 2026-05-29 |
-| 5 | `EditorB` — estilo e íconos | Labels/placeholders de estilo ✅; faltan textos de botones/hints (children) y `BrandIcon*` (#10). | 🚧 parcial |
-| 6 | `RGBManagerB` | Traducir 100% (~760 líneas). | ⬜ |
-| 7 | `FullscreenB` | Strings visibles (reloj, salida, PIN kiosko). | ⬜ |
-| 8 | `MainB` | Restantes (menú contextual, feedback de ejecución). | ⬜ |
-| 9 | `settings/RGBSection` · `SensorsSection` | Traducir secciones de settings. | ⬜ |
-| 10 | `BrandIconEditor` / `BrandIconPicker` | Traducir editor/selector de íconos. | ⬜ |
+| 5 | `EditorB` — estilo e íconos | Completo; la auditoría cubre labels, placeholders y children. | ✅ 2026-08-23 |
+| 6 | `RGBManagerB` | Traducido (27 llamadas a t/tf en la pantalla + 26 en sus piezas). | ✅ 2026-08-23 |
+| 7 | `FullscreenB` | Traducido, incluida la fecha del reloj, que estaba fija en `es-HN`. | ✅ 2026-08-23 |
+| 8 | `MainB` | Traducido. | ✅ 2026-08-23 |
+| 9 | `settings/RGBSection` · `SensorsSection` | Traducido. | ✅ 2026-08-23 |
+| 10 | `BrandIconEditor` / `BrandIconPicker` | Traducido. | ✅ 2026-08-23 |
 
 ## Bloque B — Deuda SRP (dividir lo que hace de más)
 
 | # | Apartado | Objetivo | Estado |
 |---|----------|----------|--------|
 | 11 | `EditorB` | Dividir por sección (ActionStep / StyleStep / IconStep / TriggersStep). | ⬜ |
-| 12 | `TitleBar` | Extraer el settings flyout a `SettingsPanel`. | ⬜ |
-| 13 | `MainB` | Extraer grilla y panel lateral a sub-componentes. | ⬜ |
+| 12 | `TitleBar` | Extraído a `settings/PanelAjustes` + `RGBSection`/`SensorsSection`. | ✅ |
+| 13 | `MainB` | Rejilla, panel lateral, pestañas, widgets y disparadores fuera. 815 → 618 líneas. | ✅ |
 | 14 | `RGBManagerB` | Separar lista de dispositivos / editor de perfil / presets. | ⬜ |
-| 15 | `utils/actions.ts` | Evaluar dividir el dispatcher por familia de acción. | ⬜ |
+| 15 | `utils/actions.ts` | Dividido en `utils/acciones/` (una familia por archivo) + guardián de cobertura. | ✅ |
 
 ### Limpieza continua de código muerto (knip)
 
@@ -74,7 +78,7 @@ Correr `npm run lint:dead` y eliminar lo confirmado, de a poco. (`electron-updat
 
 - ✅ 2026-05-29 — `electron/main/bootstrap.ts` (entry point alternativo huérfano, con no-op roto) eliminado.
 - ✅ 2026-05-29 — `lucide-react` (dependencia muerta: `VDIcon` migró a SVG inline) desinstalada + atribución quitada de `credits.ts`.
-- ⬜ ~88 *unused exports* reportados por knip (helpers exportados sin uso externo): revisar por módulo y volver `export`→privado o eliminar. Verificar caso por caso (algunos pueden ser API intencional).
+- ✅ 2026-08-23 — knip en cero. 64 iconos SVG muertos, 6 funciones huérfanas y 35 `export` innecesarios. El paquete **no adelgazó** (mismo hash): Vite ya los descartaba.
 
 ## Bloque C — Documentación (wiki bilingüe)
 
