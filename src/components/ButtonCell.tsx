@@ -5,7 +5,7 @@ import { useT } from '../utils/i18n';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { ContenidoCentral } from './celda/ContenidoCentral';
 import { Insignias } from './celda/Insignias';
-import { usePulsacionTactil } from './celda/usePulsacionTactil';
+import { usePulsacionTactil, EVENTO_SOBRE, EVENTO_FUERA, EVENTO_SOLTAR } from './celda/usePulsacionTactil';
 import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
@@ -62,8 +62,10 @@ function ButtonCellInner({
   // fueron con `usePulsacionRaton`, que ahora es el unico que lo dispara.
   const onLongPressRef = useRef(onLongPress);
   const onExecuteRef = useRef(onExecute);
+  const onDropRef = useRef(onDrop);
   onLongPressRef.current = onLongPress;
   onExecuteRef.current = onExecute;
+  onDropRef.current = onDrop;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
   const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
@@ -106,15 +108,38 @@ function ButtonCellInner({
     };
   }, [contextMenu]);
 
+  // Con el dedo, mantener pulsado arrastra. Solo donde eso significa algo: la
+  // rejilla principal, que es la unica que sabe recolocar botones (`onDrop`).
+  // En kiosko y en la barra flotante no se secuestra el toque.
   usePulsacionTactil({
     ref: cellRef,
-    activo: hasLongPress,
+    activo: !isEmpty && !!onDrop,
+    idBoton: button.id,
     setPressed: raton.setPressed,
     destellar,
     yaDisparoRef: raton.yaDisparo,
     alPulsar: useCallback(() => onExecuteRef.current?.(), []),
-    alPulsarLargo: useCallback(() => onLongPressRef.current?.(), []),
   })
+
+  // El otro extremo del arrastre tactil: esta celda como destino.
+  useEffect(() => {
+    const el = cellRef.current;
+    if (!el) return;
+    const sobre = () => setDragOver(true);
+    const fuera = () => setDragOver(false);
+    const soltar = (e: Event) => {
+      setDragOver(false);
+      onDropRef.current?.((e as CustomEvent<string>).detail);
+    };
+    el.addEventListener(EVENTO_SOBRE, sobre);
+    el.addEventListener(EVENTO_FUERA, fuera);
+    el.addEventListener(EVENTO_SOLTAR, soltar);
+    return () => {
+      el.removeEventListener(EVENTO_SOBRE, sobre);
+      el.removeEventListener(EVENTO_FUERA, fuera);
+      el.removeEventListener(EVENTO_SOLTAR, soltar);
+    };
+  }, []);
 
   // Botón oculto por visibilidad condicional: placeholder inerte. Va DESPUÉS de
   // todos los hooks (Rules of Hooks: no se pueden llamar tras un return temprano).
@@ -135,7 +160,6 @@ function ButtonCellInner({
         title={isEmpty ? t('cell.tipEmpty') : t('cell.tipFilled', { etiqueta: displayLabel })}
         draggable={!isEmpty}
         onClick={raton.alClic}
-        onDoubleClick={raton.alDobleClic}
         onContextMenu={raton.alMenuContextual}
         onMouseDown={raton.alBajar}
         onMouseUp={raton.alSubirOSalir}

@@ -3,9 +3,14 @@ import { playSound } from '../../utils/sound';
 import type { SoundProfileId } from '../../types';
 
 /**
- * Clic, doble clic y pulsación larga con el ratón.
+ * Clic y pulsación larga con el ratón.
  *
- * Es el hermano de [usePulsacionTactil]: el mismo gesto por el otro camino.
+ * El doble clic se quitó: hacía lo mismo que la pulsación larga y no aportaba
+ * ningún gesto que faltara.
+ *
+ * Es el hermano de [usePulsacionTactil], aunque ya no hacen lo mismo: con el
+ * dedo, mantener pulsado arrastra; con el ratón lanza la acción alternativa,
+ * porque el ratón ya arrastra por su cuenta con el arrastre nativo.
  * Estaban los dos en `ButtonCell`, pero el táctil ya se había sacado y el de
  * ratón se quedó dentro, repartido entre cinco funciones sueltas, dos estados
  * y dos refs — la mitad de las ramas del componente.
@@ -95,13 +100,6 @@ export function usePulsacionRaton(o: Opciones) {
     onExecute();
   }, [destellar]);
 
-  const alDobleClic = useCallback(() => {
-    const { hasLongPress, onLongPress } = ref.current;
-    if (!hasLongPress || !onLongPress) return;
-    destellar();
-    onLongPress();
-  }, [destellar]);
-
   const alMenuContextual = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     // Tras una larga el navegador genera su propio contextmenu (~500 ms en
@@ -124,6 +122,6 @@ export function usePulsacionRaton(o: Opciones) {
 
   return {
     pressed, setPressed, flash, destellar, yaDisparo,
-    alBajar, alSubirOSalir, alClic, alDobleClic, alMenuContextual, alEmpezarArrastre,
+    alBajar, alSubirOSalir, alClic, alMenuContextual, alEmpezarArrastre,
   };
 }
