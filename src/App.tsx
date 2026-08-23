@@ -251,12 +251,30 @@ export default function App() {
   const handlePageImport = useCallback(async () => {
     if (!api) return;
     const raw = await api.page.import().catch(() => null);
-    if (!raw || typeof raw !== 'object') return;
+    // `null` es «el usuario cancelo el dialogo»: ahi no hay nada que decir.
+    if (raw === null || raw === undefined) return;
     const imported = raw as { page?: PageConfig; buttons?: ButtonConfig[] };
-    if (!imported.page || !Array.isArray(imported.buttons)) return;
+    if (typeof raw !== 'object' || !imported.page || !Array.isArray(imported.buttons)) {
+      // Antes esto era un `return` mudo: elegias un archivo que no era una
+      // pagina y no pasaba nada, sin decir por que.
+      setImportError(t('page.importRejected'));
+      return;
+    }
     withHistory(t('undo.importPage'), (prev) => {
       const newIdx = prev.pages.length;
-      const newPage: PageConfig = { ...imported.page!, id: `page_${Date.now()}`, name: (imported.page!.name ?? 'IMPORTADA').toUpperCase() };
+      // La rejilla viene del archivo y hay que acotarla: un `gridSize: 99` en
+      // el JSON pasaba tal cual y creaba una pagina de 99 columnas que no se
+      // puede usar ni deshacer desde la interfaz.
+      const cols = [3, 4, 5, 6].includes(Number(imported.page!.gridSize))
+        ? (Number(imported.page!.gridSize) as 3 | 4 | 5 | 6) : 4;
+      const filasCrudas = Number(imported.page!.gridRows);
+      const filas = Number.isFinite(filasCrudas) && filasCrudas >= 1 && filasCrudas <= 8
+        ? Math.round(filasCrudas) : cols;
+      const newPage: PageConfig = {
+        ...imported.page!, gridSize: cols, gridRows: filas,
+        id: `page_${Date.now()}`,
+        name: (imported.page!.name || t('page.importedName')).toUpperCase(),
+      };
       const newButtons: ButtonConfig[] = (imported.buttons ?? []).map((b, i) => ({
         ...b,
         id: `p${Date.now()}_${i}`,
@@ -264,7 +282,7 @@ export default function App() {
       }));
       return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
     });
-  }, [api, withHistory]);
+  }, [api, withHistory, t]);
 
 
 

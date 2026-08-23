@@ -493,4 +493,6 @@ export const EN: Dict = {
   'full.exit': 'EXIT ⤡',
   'import.downloadFailed': 'Download failed ({motivo})',
   'import.downloadError': 'Download error: {motivo}',
+  'page.importRejected': 'That file is not a VirtualDeck page export.',
+  'page.importedName': 'IMPORTED',
 };
