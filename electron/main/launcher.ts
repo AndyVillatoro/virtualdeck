@@ -18,13 +18,6 @@ export async function launchApp(appPath: string, args: string[] = []): Promise<b
   });
 }
 
-export async function openUrl(url: string): Promise<boolean> {
-  const r = intentarNativo('openUrl', (n) => n.openPath(url));
-  if (r !== undefined) return r;
-
-  try { await shell.openExternal(url); return true; } catch { return false; }
-}
-
 export async function openShortcut(path: string): Promise<boolean> {
   const r = intentarNativo('openShortcut', (n) => n.openPath(path));
   if (r !== undefined) return r;

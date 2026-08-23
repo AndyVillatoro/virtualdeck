@@ -2,11 +2,11 @@ import { app } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readdirSync, unlinkSync, statSync } from 'fs';
 
-export function getConfigPath() {
+function getConfigPath() {
   return join(app.getPath('userData'), 'deck-config.json');
 }
 
-export function getBackupsDir() {
+function getBackupsDir() {
   return join(app.getPath('userData'), 'backups');
 }
 

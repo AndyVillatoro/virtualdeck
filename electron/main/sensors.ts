@@ -10,7 +10,7 @@ import { tm } from './idioma';
 // settings. We optionally bundle LHM under resources/lhm and can spawn it on
 // startup so the user doesn't need a separate install.
 
-export type SensorKind =
+type SensorKind =
   | 'Temperature' | 'Fan' | 'Voltage' | 'Load' | 'Clock' | 'Power'
   | 'Data' | 'Throughput' | 'Level' | 'SmallData' | 'Other';
 

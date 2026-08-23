@@ -290,7 +290,7 @@ export interface DeckConfig {
  * ids, no copias, para que editar el boton se refleje en los dos sitios.
  */
 /** Geometria que el proceso principal necesita para colocar la barra. */
-export interface BarGeometry {
+interface BarGeometry {
   huecos: number;
   lado: 'left' | 'right';
   tile: number;
@@ -366,7 +366,7 @@ export interface RGBDeviceState {
   zones: Array<{ zoneId: number; zoneName: string; colors: string[] }>;
 }
 
-export interface RGBZoneInfo {
+interface RGBZoneInfo {
   id: number;
   name: string;
   type: number;
@@ -376,7 +376,7 @@ export interface RGBZoneInfo {
   resizable: boolean;
 }
 
-export interface RGBModeInfo {
+interface RGBModeInfo {
   id: number;
   name: string;
   flags: number;
@@ -418,13 +418,13 @@ export interface AudioDevice {
   isDefault: boolean;
 }
 
-export interface BackupInfo {
+interface BackupInfo {
   filename: string;
   timestamp: number;
   sizeBytes: number;
 }
 
-export interface WeatherInfo {
+interface WeatherInfo {
   temp: number;
   code: number;
   city: string;
@@ -439,7 +439,7 @@ export interface NowPlaying {
   thumbnail?: string;
 }
 
-export type SensorKind =
+type SensorKind =
   | 'Temperature' | 'Fan' | 'Voltage' | 'Load' | 'Clock' | 'Power'
   | 'Data' | 'Throughput' | 'Level' | 'SmallData' | 'Other';
 
@@ -478,14 +478,6 @@ export interface PlatformInfo {
   chrome: string;
   os: string;
   locale: string;
-}
-
-export interface LogEntry {
-  ts: number;
-  level: 'error' | 'warn' | 'info';
-  scope: string;
-  message: string;
-  meta?: unknown;
 }
 
 export interface ElectronAPI {

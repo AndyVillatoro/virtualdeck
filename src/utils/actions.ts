@@ -161,7 +161,3 @@ export async function runActionSequence(
   }
   return { ok: !firstError, error: firstError, stateUpdate: merged };
 }
-
-export function applyStateUpdate(config: DeckConfig, update: Record<string, string>): DeckConfig {
-  return { ...config, state: { ...(config.state ?? {}), ...update } };
-}

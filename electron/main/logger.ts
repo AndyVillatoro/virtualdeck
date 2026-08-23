@@ -20,7 +20,7 @@ function getLogsDir() {
   return join(app.getPath('userData'), 'logs');
 }
 
-export function getLogPath() {
+function getLogPath() {
   return join(getLogsDir(), 'virtualdeck.log');
 }
 

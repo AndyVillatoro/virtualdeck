@@ -4,14 +4,17 @@ import { useTheme } from '../utils/theme';
 // HSV/HEX helpers — duplicados a propósito de BrandIconEditor para que este
 // componente sea autónomo (BrandIconEditor mantiene los suyos por su flujo
 // específico de paleta). Si alguno cambia aquí, el otro no se ve afectado.
+//
+// Por eso ya no se exportan: nadie de fuera los usaba, y el `export` sugería
+// lo contrario de lo que dice este comentario.
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)); }
-export function hexToRgb(hex: string): [number, number, number] {
+function hexToRgb(hex: string): [number, number, number] {
   const m = (hex || '').replace('#', '').padEnd(6, '0').slice(0, 6);
   const n = parseInt(m, 16);
   if (Number.isNaN(n)) return [255, 255, 255];
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 }
-export function rgbToHex(r: number, g: number, b: number): string {
+function rgbToHex(r: number, g: number, b: number): string {
   const t = (v: number) => Math.round(clamp01(v / 255) * 255).toString(16).padStart(2, '0');
   return `#${t(r)}${t(g)}${t(b)}`;
 }

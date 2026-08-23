@@ -23,14 +23,6 @@ export function logError(scope: string, err: unknown, meta?: unknown) {
   write('error', scope, err, meta);
 }
 
-export function logWarn(scope: string, err: unknown, meta?: unknown) {
-  write('warn', scope, err, meta);
-}
-
-export function logInfo(scope: string, message: string, meta?: unknown) {
-  write('info', scope, message, meta);
-}
-
 let installed = false;
 
 /** Engancha window.onerror + unhandledrejection. Llamar 1 vez en App. */

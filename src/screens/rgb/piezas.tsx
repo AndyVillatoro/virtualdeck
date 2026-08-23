@@ -179,7 +179,7 @@ export function DeviceDetail({
   );
 }
 
-export function LedPainter({ device, displayColors, color, onPaintLed }: {
+function LedPainter({ device, displayColors, color, onPaintLed }: {
   device: RGBDeviceInfo;
   displayColors: string[];
   color: string;
@@ -251,7 +251,7 @@ export function LedPainter({ device, displayColors, color, onPaintLed }: {
   );
 }
 
-export function zoneStartLed(device: RGBDeviceInfo, zoneId: number): number {
+function zoneStartLed(device: RGBDeviceInfo, zoneId: number): number {
   let cursor = 0;
   for (const z of device.zones) {
     if (z.id === zoneId) return cursor;
@@ -413,7 +413,7 @@ export function estiloBotonSecundario(VD: VDTokens): React.CSSProperties {
     color: VD.textDim, cursor: 'pointer', borderRadius: VD.radius.sm,
   };
 }
-export function estiloSelector(VD: VDTokens): React.CSSProperties {
+function estiloSelector(VD: VDTokens): React.CSSProperties {
   return {
     width: '100%', padding: '5px 8px',
     background: VD.elevated, border: `1px solid ${VD.border}`,
@@ -421,11 +421,11 @@ export function estiloSelector(VD: VDTokens): React.CSSProperties {
     outline: 'none', borderRadius: VD.radius.sm,
   };
 }
-export const overlayStyle: React.CSSProperties = {
+const overlayStyle: React.CSSProperties = {
   position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
 };
-export function estiloModal(VD: VDTokens): React.CSSProperties {
+function estiloModal(VD: VDTokens): React.CSSProperties {
   return {
     width: 'min(700px, 92vw)', maxHeight: '85vh',
     background: VD.surface, border: `1px solid ${VD.borderStrong}`,

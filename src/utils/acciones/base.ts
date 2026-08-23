@@ -29,7 +29,7 @@ export function interpolate(template: string | undefined, state: Record<string, 
 }
 
 /** Todo lo que un manejador necesita para ejecutar una acción. */
-export interface Contexto {
+interface Contexto {
   action: ButtonAction;
   api: ElectronAPI;
   state?: Record<string, string>;

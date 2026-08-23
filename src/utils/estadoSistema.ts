@@ -32,7 +32,7 @@ export interface EstadoSistema {
  * acepta .lnk/.bat/.cmd ademas de .exe. Simplificarla cambiaria en silencio
  * que botones se ven como activos.
  */
-export function extractExeName(appPath: string): string | null {
+function extractExeName(appPath: string): string | null {
   if (!appPath) return null;
   const seg = appPath.split(/[/\\]/).pop() ?? appPath;
   return seg.replace(/\s.*$/, '').replace(/\.(exe|lnk|bat|cmd)$/i, '').toLowerCase() || null;

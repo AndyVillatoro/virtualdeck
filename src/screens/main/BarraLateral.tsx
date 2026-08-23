@@ -19,7 +19,7 @@ import type { DeckConfig, ElectronAPI, RGBStatus, Sensor, SensorsStatus } from '
  */
 
 /** Una linea del registro de ejecucion. */
-export interface EntradaRegistro {
+interface EntradaRegistro {
   id: number;
   ts: number;
   label: string;

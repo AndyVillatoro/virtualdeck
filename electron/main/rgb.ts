@@ -19,11 +19,11 @@ export interface RGBStatus {
   port: number;
   error?: string;
 }
-export interface RGBZoneInfo {
+interface RGBZoneInfo {
   id: number; name: string; type: number; ledCount: number;
   ledsMin: number; ledsMax: number; resizable: boolean;
 }
-export interface RGBModeInfo {
+interface RGBModeInfo {
   id: number; name: string; flags: number; colorMode: number;
   brightnessMin?: number; brightnessMax?: number;
   speedMin?: number; speedMax?: number;

@@ -28,5 +28,5 @@ export const RESUELTAS_POR_EL_LLAMADOR = new Set([
   'none', 'script', 'folder', 'branch', 'countdown',
 ]);
 
-export type { Contexto, Manejador, ActionResult } from './base';
-export { OK, fail, interpolate, actionLabel } from './base';
+// Sin reexportar nada: todo el mundo importa de './base' directamente, y el
+// barril solo hacia que knip contara seis exports muertos.

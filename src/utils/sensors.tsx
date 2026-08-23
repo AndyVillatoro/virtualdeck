@@ -72,11 +72,6 @@ export function findSensor(id: string | undefined, sensors: Sensor[]): Sensor | 
 }
 
 /** Force an immediate refresh (used by probe/config screens). */
-export function refreshSensors(): void {
-  if (pollTimer) clearTimeout(pollTimer);
-  tick();
-}
-
 /** Evaluate a SensorCondition against a current value. */
 export function evalCondition(cond: SensorCondition, current: number): boolean {
   switch (cond.op) {

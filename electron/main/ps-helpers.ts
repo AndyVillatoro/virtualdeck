@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 
 // Forces UTF-8 across PS pipeline + console writer + underlying code page.
 // Without this, accented chars / ñ / non-ASCII titles arrive mangled.
-export const PS_UTF8_PREFIX =
+const PS_UTF8_PREFIX =
   'chcp 65001 > $null\r\n' +
   '$OutputEncoding = [System.Text.Encoding]::UTF8\r\n' +
   '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\r\n';

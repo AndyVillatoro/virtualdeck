@@ -80,5 +80,3 @@ export function playSound(profile: SoundProfile = 'click') {
   } catch {}
 }
 
-// Compat con código previo: playClick es el perfil 'click'.
-export function playClick() { playSound('click'); }

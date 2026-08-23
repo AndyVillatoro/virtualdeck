@@ -95,7 +95,7 @@ export function createTray(win: BrowserWindow, onQuit: () => void) {
   }
 }
 
-export function pickTriggerables(rawConfig: any): TriggerableButton[] {
+function pickTriggerables(rawConfig: any): TriggerableButton[] {
   if (!rawConfig || typeof rawConfig !== 'object' || !Array.isArray(rawConfig.buttons)) return [];
   return rawConfig.buttons
     .filter((b: any) => b && (b.globalHotkey || b.inTrayMenu))
@@ -105,7 +105,7 @@ export function pickTriggerables(rawConfig: any): TriggerableButton[] {
     }));
 }
 
-export function refreshGlobalShortcuts(win: BrowserWindow, triggerables: TriggerableButton[]) {
+function refreshGlobalShortcuts(win: BrowserWindow, triggerables: TriggerableButton[]) {
   try { globalShortcut.unregisterAll(); } catch {}
   for (const t of triggerables) {
     if (!t.globalHotkey) continue;
@@ -119,7 +119,7 @@ export function refreshGlobalShortcuts(win: BrowserWindow, triggerables: Trigger
   }
 }
 
-export function rebuildTrayMenu(win: BrowserWindow, triggerables: TriggerableButton[], onQuit: () => void) {
+function rebuildTrayMenu(win: BrowserWindow, triggerables: TriggerableButton[], onQuit: () => void) {
   if (!tray) return;
   const trayItems = triggerables.filter((t) => t.inTrayMenu);
   const template: Electron.MenuItemConstructorOptions[] = [

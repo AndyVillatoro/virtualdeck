@@ -14,7 +14,7 @@ import type { ButtonConfig } from '../../types';
  */
 
 /** Cómo se encaja la rejilla en el hueco disponible. */
-export type ModoCasilla = 'square' | 'fill';
+type ModoCasilla = 'square' | 'fill';
 
 /** Separacion entre casillas. Entra en el calculo del encaje, no solo en el CSS. */
 const HUECO = 8;

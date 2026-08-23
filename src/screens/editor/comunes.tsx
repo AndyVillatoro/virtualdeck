@@ -301,7 +301,7 @@ export function estiloEntrada(VD: VDTokens): React.CSSProperties {
   };
 }
 
-export function estiloEntradaMini(VD: VDTokens): React.CSSProperties {
+function estiloEntradaMini(VD: VDTokens): React.CSSProperties {
   return {
     flex: 1, background: VD.bg, border: `1px solid ${VD.border}`,
     padding: '4px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 10,
@@ -309,7 +309,7 @@ export function estiloEntradaMini(VD: VDTokens): React.CSSProperties {
   };
 }
 
-export function estiloSelector(VD: VDTokens): React.CSSProperties {
+function estiloSelector(VD: VDTokens): React.CSSProperties {
   return {
     width: '100%', boxSizing: 'border-box',
     background: VD.bg, border: `1px solid ${VD.border}`,

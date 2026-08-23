@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-export interface AudioDevice {
+interface AudioDevice {
   id: string;
   name: string;
   isDefault: boolean;
@@ -89,7 +89,7 @@ export interface NucleoNativo {
 }
 
 /** Lo que devuelve el núcleo. Coincide con `NowPlaying` de `src/types.ts`. */
-export interface NowPlayingNativo {
+interface NowPlayingNativo {
   title: string;
   artist: string;
   status: 'Playing' | 'Paused' | 'Stopped' | 'Unknown';

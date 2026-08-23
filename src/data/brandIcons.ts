@@ -1484,7 +1484,8 @@ for (const group of BRAND_ICON_GROUPS) {
 }
 
 // ── SVG generator ─────────────────────────────────────────────────────────────
-export const ICON_SIZE = 17, ICON_PITCH = 8, ICON_PAD = 4, ICON_VB = 140;
+export const ICON_SIZE = 17;
+const ICON_PITCH = 8, ICON_PAD = 4, ICON_VB = 140;
 const R_ON = 3.2;
 const CENTER = (ICON_SIZE - 1) / 2;
 

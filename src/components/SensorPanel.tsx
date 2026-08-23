@@ -45,7 +45,7 @@ export function groupSensorsByHardware(list: Sensor[]): HardwareGroup[] {
     });
 }
 
-export function shortHardwareLabel(name: string): string {
+function shortHardwareLabel(name: string): string {
   return name
     .replace(/(?:AMD|Intel|NVIDIA)\s+/gi, '')
     .replace(/\s+(Processor|CPU)\s*$/i, '')
