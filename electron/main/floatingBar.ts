@@ -18,13 +18,24 @@ const isDev = process.env.NODE_ENV === 'development';
 let ventana: BrowserWindow | null = null;
 
 /**
- * Movimientos hechos por nosotros, que no cuentan como "el usuario la movio".
+ * Cuando movimos la ventana nosotros, para no confundirlo con un arrastre.
  *
  * `setBounds` dispara `moved` igual que si la hubieran arrastrado. Sin esto,
  * recentrar la barra al crecer guardaria una Y en la configuracion, y a partir
  * de ahi dejaria de recentrarse: se centraria una sola vez y nunca mas.
+ *
+ * Era un **contador**, y ahi estaba el fallo: `setBounds` no emite siempre
+ * exactamente un `moved`. Cambiando solo el tamaño no emite ninguno y el
+ * contador se quedaba alto, tragandose el siguiente arrastre de verdad;
+ * cambiando tamaño y posicion a la vez Windows puede emitir dos, y entonces el
+ * segundo pasaba por movimiento del usuario, guardaba una Y y **la barra
+ * dejaba de centrarse para siempre**. Que es justo lo reportado.
+ *
+ * Con una marca de tiempo da igual cuantos eventos lleguen.
  */
-let movimientoPropio = 0;
+let instanteMovimientoPropio = 0;
+/** Margen para los `moved` que llegan detras de un `setBounds`. */
+const MS_MOVIMIENTO_PROPIO = 400;
 
 export interface GeometriaBarra {
   /** Cuántos tiles caben. */
@@ -54,7 +65,15 @@ function ancho(g: GeometriaBarra): number {
  * otro: la barra es para tenerla a mano donde se trabaja, y el monitor principal
  * es la única referencia que no depende de dónde quedó la ventana del deck.
  */
-function posicion(g: GeometriaBarra): { x: number; y: number; width: number; height: number } {
+/**
+ * @param recentrar Ignorar la Y guardada y volver al centro de la pantalla.
+ *   Se usa cuando cambia el numero de tiles. La Y guardada es el **borde de
+ *   arriba**, asi que respetarla al crecer alarga la columna hacia abajo desde
+ *   ahi: los tiles nuevos se van cayendo hacia el borde inferior y la barra
+ *   deja de estar centrada. Al abrir si se respeta, para que una barra
+ *   arrastrada vuelva donde la dejaron.
+ */
+function posicion(g: GeometriaBarra, recentrar = false): { x: number; y: number; width: number; height: number } {
   const area = screen.getPrimaryDisplay().workArea;
   const w = ancho(g);
   const h = Math.min(alto(g), area.height);
@@ -62,7 +81,9 @@ function posicion(g: GeometriaBarra): { x: number; y: number; width: number; hei
   // Y guardada, pero recortada al área visible: un monitor que cambia de
   // resolución dejaría la barra fuera de la pantalla y sin forma de recuperarla.
   const yCentrada = Math.round(area.y + (area.height - h) / 2);
-  const y = g.y === null ? yCentrada : Math.min(Math.max(g.y, area.y), area.y + area.height - h);
+  const y = (recentrar || g.y === null)
+    ? yCentrada
+    : Math.min(Math.max(g.y, area.y), area.y + area.height - h);
   return { x, y, width: w, height: h };
 }
 
@@ -125,7 +146,7 @@ export function abrirBarra(g: GeometriaBarra): void {
   let temporizador: NodeJS.Timeout | null = null;
   ventana.on('moved', () => {
     if (temporizador) clearTimeout(temporizador);
-    if (movimientoPropio > 0) { movimientoPropio -= 1; return; }
+    if (Date.now() - instanteMovimientoPropio < MS_MOVIMIENTO_PROPIO) return;
     temporizador = setTimeout(() => {
       if (!barraAbierta()) return;
       ventana!.webContents.send('bar:moved', ventana!.getBounds().y);
@@ -148,8 +169,10 @@ export function cerrarBarra(): void {
 
 export function aplicarGeometria(g: GeometriaBarra): void {
   if (!barraAbierta()) return;
-  movimientoPropio += 1;
-  ventana!.setBounds(posicion(g));
+  instanteMovimientoPropio = Date.now();
+  // `aplicarGeometria` corre justo cuando cambia la configuracion de la barra
+  // —tiles, tamaño, lado—, que es cuando toca volver al centro.
+  ventana!.setBounds(posicion(g, true));
 }
 
 /**
@@ -161,7 +184,7 @@ export function aplicarGeometria(g: GeometriaBarra): void {
  * confiar en la cuenta, la barra se mide después de dibujarse y pide el tamaño
  * exacto.
  */
-export function ajustarAlContenido(ancho: number, alto: number, centrar: boolean): void {
+export function ajustarAlContenido(ancho: number, alto: number): void {
   if (!barraAbierta()) return;
   const b = ventana!.getBounds();
   const area = screen.getPrimaryDisplay().workArea;
@@ -171,17 +194,16 @@ export function ajustarAlContenido(ancho: number, alto: number, centrar: boolean
   // Si estaba pegada al borde derecho, se mantiene pegada al cambiar de ancho.
   const pegadaDerecha = Math.abs(b.x + b.width - (area.x + area.width)) < 4;
   const x = pegadaDerecha ? area.x + area.width - w : b.x;
-  // Al crecer, la columna **no** se alarga hacia abajo.
+  // Al cambiar de tamaño, la columna se vuelve a centrar en la pantalla.
   //
-  // Si el usuario no la ha movido, se recentra en la pantalla. Si la movió, se
-  // reparte alrededor del centro donde la dejó. En los dos casos los tiles
-  // nuevos salen mitad arriba y mitad abajo, en vez de irse cayendo hacia el
-  // borde inferior hasta chocar con él.
-  const centroDeseado = centrar
-    ? area.y + area.height / 2
-    : b.y + b.height / 2;
+  // Antes solo se centraba mientras el usuario no la hubiera movido nunca:
+  // en cuanto arrastraba una vez quedaba una Y guardada y a partir de ahi
+  // crecia alrededor de donde la dejo. En la practica eso es «no se centra»,
+  // porque cualquiera la mueve el primer dia. Arrastrarla sigue valiendo —se
+  // queda donde la sueltes— hasta que cambie el numero de tiles.
+  const centroDeseado = area.y + area.height / 2;
   const y = Math.round(Math.min(Math.max(centroDeseado - h / 2, area.y), area.y + area.height - h));
-  movimientoPropio += 1;
+  instanteMovimientoPropio = Date.now();
   ventana!.setBounds({ x, y, width: w, height: h });
 }
 

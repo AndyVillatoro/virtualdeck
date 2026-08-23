@@ -14,8 +14,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     isOpen: (): Promise<boolean> => ipcRenderer.invoke('bar:isOpen'),
     apply: (g: BarGeometry): Promise<boolean> => ipcRenderer.invoke('bar:apply', g),
     position: (): Promise<{ y: number } | null> => ipcRenderer.invoke('bar:position'),
-    fit: (ancho: number, alto: number, centrar: boolean): Promise<boolean> =>
-      ipcRenderer.invoke('bar:fit', ancho, alto, centrar),
+    fit: (ancho: number, alto: number): Promise<boolean> =>
+      ipcRenderer.invoke('bar:fit', ancho, alto),
     maxSlots: (tile: number): Promise<number> => ipcRenderer.invoke('bar:maxSlots', tile),
     /** La ventana se movio: llega la Y nueva para guardarla. */
     onMoved: (cb: (y: number) => void) => {

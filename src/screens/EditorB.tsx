@@ -401,7 +401,12 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
           </div>
 
           {/* Form */}
-          <div style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* `key={step}` fuerza a React a crear un contenedor nuevo en cada
+              paso, y uno nuevo nace arriba del todo. Sin esto se reutilizaba
+              el mismo elemento y **conservaba el desplazamiento del paso
+              anterior**: al pasar a Configurar aparecia ya bajado, tapando los
+              campos de arriba, que son los que dicen que hace el boton. */}
+          <div key={step} className="vd-scroll" style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* STEP 0: Action type + presets */}
             {step === 0 && (

@@ -51,10 +51,9 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
     const medir = () => {
       // scroll*, no getBoundingClientRect: la caja mide lo que le dio la
       // ventana, y lo que hace falta saber es lo que **pide el contenido**.
-      // `y == null` significa "nunca la he movido": entonces se recentra en la
-      // pantalla al crecer, en vez de alargarse hacia abajo.
-      const centrar = (barra.y ?? null) === null;
-      api.bar.fit(Math.ceil(caja.scrollWidth), Math.ceil(caja.scrollHeight), centrar).catch(() => {});
+      // Quien decide donde queda es el proceso principal: es el unico que
+      // sabe de que monitor hablamos. Aqui solo se dice cuanto ocupa.
+      api.bar.fit(Math.ceil(caja.scrollWidth), Math.ceil(caja.scrollHeight)).catch(() => {});
     };
     medir();
     const obs = new ResizeObserver(medir);

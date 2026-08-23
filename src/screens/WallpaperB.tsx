@@ -107,7 +107,12 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
         </div>
 
         {/* Miniaturas */}
-        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+        {/* Se reparten en varias filas en vez de en una sola que se sale.
+            Tenia `overflowX: auto`, pero `index.css` esconde todas las barras
+            de desplazamiento, asi que los de la derecha no se veian **ni se
+            sabia que estaban ahi**: ocho miniaturas de 120 px no caben en
+            ninguna ventana, ni en la mas ancha. */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingBottom: 4 }}>
           {WALLPAPERS.map((w) => (
             <button
               key={w.id}

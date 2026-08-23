@@ -178,6 +178,7 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
   const rel = ruta.split(sep).join('/');
   const esMain = rel.startsWith(RAIZ_MAIN);
   let enConsola = false;
+  let enComentario = false;
   if (rel === I18N || rel === IDIOMA_MAIN || Object.values(DICCIONARIOS).includes(rel)) continue;
   // Se parte por `\r?\n`, no por `\n`: los archivos del repo están en CRLF, y
   // partiendo solo por `\n` cada línea queda terminada en `\r`. Eso rompe el
@@ -204,6 +205,18 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
       // comentarios y su `Write-Output` no son interfaz, son el protocolo por
       // el que el script le habla al proceso principal.
       if (/^\s*#/.test(linea) || /Write-(Output|Host|Error)/.test(linea)) continue;
+    }
+    // Un comentario de bloque o de JSX repartido en varias lineas: se salta
+    // entero. Antes solo se quitaban los que cabian en una linea, asi que los
+    // comentarios largos —que en este repo son casi todos, y en español— se
+    // reportaban como interfaz sin traducir.
+    if (enComentario) {
+      if (/\*\//.test(linea)) enComentario = false;
+      continue;
+    }
+    if (/(\{\s*)?\/\*/.test(linea) && !/\*\//.test(linea)) {
+      enComentario = true;
+      continue;
     }
     // Fuera los comentarios: los de linea, los de bloque y los de JSX
     // (`{/* ... */}`), que no son `//` y colaban su texto como si fuera

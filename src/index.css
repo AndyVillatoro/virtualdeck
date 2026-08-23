@@ -48,6 +48,29 @@ html, body, #root {
   display: none;
 }
 
+/*
+ * ...salvo donde el contenido crece sin tope y hay que saber que hay más.
+ *
+ * Esconderlas en todas partes deja sin pista las pocas zonas que de verdad se
+ * desplazan —la lista de sensores es la clara: con un equipo lleno de sondas
+ * no cabe—. La barra va fina y translúcida para no romper el aspecto.
+ */
+.vd-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128, 128, 128, 0.45) transparent;
+}
+.vd-scroll::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+.vd-scroll::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.45);
+  border-radius: 3px;
+}
+.vd-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 button {
   cursor: pointer;
   font-family: inherit;

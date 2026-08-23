@@ -495,7 +495,7 @@ export interface ElectronAPI {
     apply: (g: BarGeometry) => Promise<boolean>;
     position: () => Promise<{ y: number } | null>;
     /** Ajusta la ventana al contenido medido, para que nunca quede recortada. */
-    fit: (ancho: number, alto: number, centrar: boolean) => Promise<boolean>;
+    fit: (ancho: number, alto: number) => Promise<boolean>;
     /** Cuantos tiles de ese tamano caben de alto en el monitor principal. */
     maxSlots: (tile: number) => Promise<number>;
     onMoved: (cb: (y: number) => void) => () => void;

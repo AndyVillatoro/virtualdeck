@@ -62,7 +62,11 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
           width: 220, borderLeft: `1px solid ${VD.border}`,
           padding: '10px 14px 10px', background: VD.surface,
           display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0,
-          overflowY: 'auto',
+          // La columna **no** se desplaza. Antes si, y con unos cuantos
+          // sensores la franja de musica —que va anclada abajo— se salia por
+          // debajo del borde y habia que buscarla desplazando. Ahora lo unico
+          // que se desplaza es la lista de sensores, que es lo que crece.
+          overflow: 'hidden',
         }}>
           {/* Clock — DotText es la firma del reloj */}
           <div style={{
@@ -86,7 +90,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
 
           {/* Sensor cards — compact, below weather. Only shows when LHM has data. */}
           {sensorList.length > 0 && (config.sensors?.showWidget ?? true) && (
-            <div>
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
                 <span style={{
@@ -96,7 +100,10 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                   {sensorStatus?.connected ? '●' : '○'}
                 </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="vd-scroll" style={{
+                display: 'flex', flexDirection: 'column', gap: 6,
+                flex: 1, minHeight: 0, overflowY: 'auto',
+              }}>
                 {groupSensorsByHardware(sensorList).map((g) => (
                   <SensorCard key={g.hardware} group={g} compact />
                 ))}
@@ -165,7 +172,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
           </div>
 
           {/* Now Playing */}
-          <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}` }}>
+          <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}`, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.playing')}</DotLabel>
               <span
