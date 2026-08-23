@@ -337,10 +337,17 @@ export default function App() {
       const found = s.buttons.find((b) => b.id === def.id);
       return found ?? def;
     });
-    setConfig({ ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION });
+    const final = { ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION };
+    setConfig(final);
+    // Guardar aqui y no en el proceso principal, por dos motivos: solo se
+    // escribe lo que ha pasado la validacion, y se escribe **esto** —migrado y
+    // fusionado— y no el JSON crudo del archivo. Ademas hace que la
+    // importacion desde una URL persista: antes solo cambiaba el estado de
+    // React y al reiniciar el perfil descargado ya no estaba.
+    api?.config.save(final).catch(() => {});
     setImportError(null);
     return true;
-  }, []);
+  }, [api, t]);
 
   const handleConfigImport = useCallback(async () => {
     const data = await api?.config.import();
@@ -351,18 +358,17 @@ export default function App() {
   // 6.1 — Importar perfil desde URL (galería remota)
   const handleConfigImportFromUrl = useCallback(async (url: string) => {
     if (!url.trim()) return;
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) {
-        setImportError(`No se pudo descargar (${res.status} ${res.statusText})`);
-        return;
-      }
-      const json = await res.json();
-      applyImportedConfig(json);
-    } catch (e) {
-      setImportError(`Error de descarga: ${(e as Error).message}`);
+    // La descarga la hace el proceso principal: la CSP del renderer solo
+    // permite 'self' y los dos servicios del clima, asi que un fetch de aqui
+    // se rechaza siempre.
+    const r = await api?.config.fetchRemote(url);
+    if (!r) return;
+    if (!r.ok) {
+      setImportError(t('import.downloadFailed', { motivo: r.error ?? '' }));
+      return;
     }
-  }, [applyImportedConfig]);
+    applyImportedConfig(r.data);
+  }, [api, applyImportedConfig, t]);
 
   // Keyboard shortcuts
   useEffect(() => {

@@ -129,6 +129,7 @@ const PALABRAS_SUELTAS = new Set([
   'rango', 'probar', 'probando', 'celdas', 'casillas', 'tecla', 'teclas',
   'aplicar', 'preset', 'elegir', 'clic', 'arrastrar',
   'salir', 'entrar', 'kiosko', 'activar', 'desactivar', 'conectar',
+  'descargar', 'descarga', 'pudo', 'error de', 'importar', 'importacion',
   'ratón', 'raton', 'combinación', 'texto', 'reproduciendo', 'pausado',
   'sólido', 'solido', 'vacío', 'vacio',
 ]);

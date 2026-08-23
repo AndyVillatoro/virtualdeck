@@ -516,6 +516,8 @@ export interface ElectronAPI {
     import: () => Promise<object | null>;
     listBackups: () => Promise<BackupInfo[]>;
     restoreBackup: (filename: string) => Promise<object | null>;
+    /** Descarga un perfil remoto desde el proceso principal (la CSP del renderer lo impide). */
+    fetchRemote: (url: string) => Promise<{ ok: boolean; data?: unknown; error?: string }>;
   };
   audio: {
     list: () => Promise<AudioDevice[]>;

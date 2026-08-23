@@ -500,4 +500,6 @@ export const ES: Dict = {
   'editor.applyPreset': 'Aplicar preset: {nombre}',
   'full.kioskBadge': '🔒 KIOSKO',
   'full.exit': 'SALIR ⤡',
+  'import.downloadFailed': 'No se pudo descargar ({motivo})',
+  'import.downloadError': 'Error de descarga: {motivo}',
 };
