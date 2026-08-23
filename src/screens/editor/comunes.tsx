@@ -6,6 +6,7 @@ import { DotLabel } from '../../components/DotLabel';
 import { IconNone } from '../../components/VDIcon';
 import { ACTION_TYPES } from './actionData';
 import type { ActionType, ButtonAction, FolderButton, Sensor } from '../../types';
+import { RGB_PRESET_IDS, clavePreset } from '../../data/rgbPresets';
 
 /**
  * Piezas que comparten los tres pasos del editor: los estilos de los campos,
@@ -222,8 +223,8 @@ export function BranchActionRow({ action, onChange, accent }: { action: ButtonAc
       )}
       {action.type === 'rgb-preset' && (
         <select value={action.rgbPresetId ?? ''} onChange={e => onChange({ ...action, rgbPresetId: e.target.value })} style={{ ...selectStyle }}>
-          {['off','gaming','cinema','work','rainbow','night-blue','alert-red'].map(p => (
-            <option key={p} value={p}>{p}</option>
+          {RGB_PRESET_IDS.map(p => (
+            <option key={p} value={p}>{tr(clavePreset(p))}</option>
           ))}
         </select>
       )}

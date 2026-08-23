@@ -11,7 +11,7 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **[docs/wiki/](docs/wiki/)** — Staging del wiki público (bilingüe ES/EN) al que apunta el botón Documentación. Ver `docs/wiki/README.md` para publicar.
 - **package.json** → campo `version`: source of truth de la versión actual.
 
-**Antes y después de cualquier cambio**: corré `npm run check` (tsc + arquitectura + eslint). Cero **errores** antes y después (los *warnings* de eslint son señal de deuda SRP, no bloquean — ver Bloque B del roadmap). Tooling: `npm run lint:acciones` (cobertura de tipos de acción), `npm run lint:arch` (dependency-cruiser, límites de capas SRP), `npm run lint` (eslint), `npm run lint:dead` (knip, código muerto).
+**Antes y después de cualquier cambio**: corré `npm run check` (tsc + arquitectura + eslint). Cero **errores** antes y después (los *warnings* de eslint son señal de deuda SRP, no bloquean — ver Bloque B del roadmap). Tooling: `npm run lint:acciones` (cobertura de tipos de acción), `npm run lint:arch` (dependency-cruiser, límites de capas SRP), `npm run lint` (eslint), `npm run lint:dead` (knip, código muerto). `scripts/check-ipc.mjs` cruza los 85 canales IPC del proceso principal contra el puente del preload: los dos lados son cadenas sueltas, así que un renombrado en uno solo revienta en la máquina del usuario, y solo al pulsar justo eso.
 
 ## Stack
 - **Electron 33** (main: `electron/main/index.ts`, preload: `electron/preload/index.ts`)

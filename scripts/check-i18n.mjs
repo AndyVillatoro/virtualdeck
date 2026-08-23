@@ -156,6 +156,9 @@ function pareceEspanol(s) {
   if (limpio.length < 3 || PERMITIDOS.has(limpio)) return false;
   if (/^[\s\d\W]*$/.test(limpio)) return false;          // solo símbolos o números
   if (/^(https?:|[A-Za-z]:[\\/]|\.{0,2}\/)/.test(limpio)) return false;  // URL o ruta
+  // Una clave de diccionario no es texto: `rgb.preset.${id}` es con lo que se
+  // busca la traducción, no la traducción.
+  if (/^[a-z][A-Za-z0-9]*(\.[A-Za-z0-9${}_-]+)+$/.test(limpio)) return false;
   // Una expresión regular no es idioma aunque lleve palabras en español: son
   // precisamente las que tiene que reconocer. `media.ts` casa así los títulos
   // de pestaña del navegador («y 3 páginas más»).

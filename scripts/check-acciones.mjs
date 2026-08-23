@@ -16,6 +16,8 @@ import { join } from 'node:path';
 const TIPOS = 'src/types.ts';
 const DIR = 'src/utils/acciones';
 const FORMULARIOS = 'src/screens/editor/formularios/index.tsx';
+const PRESETS_RENDERER = 'src/data/rgbPresets.ts';
+const PRESETS_MAIN = 'electron/main/rgb.ts';
 
 // ── tipos declarados ──────────────────────────────────────────────────────
 const fuenteTipos = readFileSync(TIPOS, 'utf-8');
@@ -85,6 +87,28 @@ for (const tipo of conFormulario) {
   if (!declarados.has(tipo)) problemas.push(`'${tipo}' tiene formulario pero no está en ActionType`);
 }
 
+// Los presets RGB que ofrece el editor tienen que existir en el proceso
+// principal. `applySmartPreset` devuelve false para un id desconocido: el
+// boton no hace **nada** y no hay error en ninguna parte.
+const fuenteRend = readFileSync(PRESETS_RENDERER, 'utf-8');
+const idsRend = new Set(
+  [...fuenteRend.slice(fuenteRend.indexOf('RGB_PRESET_IDS')).matchAll(/'([a-z-]+)'/g)].map((m) => m[1]),
+);
+const fuenteMainRgb = readFileSync(PRESETS_MAIN, 'utf-8');
+const bloqueMain = fuenteMainRgb.slice(
+  fuenteMainRgb.indexOf('const SMART_PRESETS'),
+  fuenteMainRgb.indexOf('\n};', fuenteMainRgb.indexOf('const SMART_PRESETS')),
+);
+const idsMain = new Set(
+  [...bloqueMain.matchAll(/^\s{2}'?([a-z-]+)'?:\s*\{/gm)].map((m) => m[1]),
+);
+for (const id of idsRend) {
+  if (!idsMain.has(id)) problemas.push(`el preset RGB '${id}' esta en el editor y no en SMART_PRESETS — el boton no haria nada`);
+}
+for (const id of idsMain) {
+  if (!idsRend.has(id)) problemas.push(`el preset RGB '${id}' existe en SMART_PRESETS y el editor no lo ofrece`);
+}
+
 if (problemas.length) {
   console.error(`acciones: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  · ' + p);
@@ -92,5 +116,6 @@ if (problemas.length) {
 }
 console.log(
   `acciones: ok — ${declarados.size} tipos, ${implementados.size} con manejador, ` +
-  `${porElLlamador.size} los resuelve quien llama, ${conFormulario.size} con formulario`,
+  `${porElLlamador.size} los resuelve quien llama, ${conFormulario.size} con formulario, ` +
+  `${idsRend.size} presets RGB`,
 );
