@@ -21,7 +21,6 @@ interface TitleBarProps {
   onFloatingBar?: () => void;
   onConfigExport?: () => void;
   onConfigImport?: () => void;
-  onConfigImportFromUrl?: (url: string) => void;
   onAccentChange?: (color: string) => void;
   onAutostartToggle?: () => void;
   onAlwaysOnTopToggle?: () => void;
@@ -67,7 +66,6 @@ export function TitleBar({
   onFloatingBar,
   onConfigExport,
   onConfigImport,
-  onConfigImportFromUrl,
   onAccentChange,
   onAutostartToggle,
   onAlwaysOnTopToggle,
@@ -101,7 +99,6 @@ export function TitleBar({
   const effectiveAccent = accent ?? VD.accent;
   const [showSettings, setShowSettings] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
-  const [galleryUrl, setGalleryUrl] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
 
   const ruedaRef = useRef<HTMLButtonElement>(null);
@@ -222,7 +219,6 @@ export function TitleBar({
           sensorsConfig={sensorsConfig}
           onSensorsConfigChange={onSensorsConfigChange}
           sensorsStatus={sensorsStatus}
-          onConfigImportFromUrl={onConfigImportFromUrl}
           profiles={profiles}
           onSaveProfile={onSaveProfile}
           onLoadProfile={onLoadProfile}
@@ -230,8 +226,6 @@ export function TitleBar({
           onReplayOnboarding={onReplayOnboarding}
           newProfileName={newProfileName}
           setNewProfileName={setNewProfileName}
-          galleryUrl={galleryUrl}
-          setGalleryUrl={setGalleryUrl}
           panelRef={panelRef}
           onCerrar={() => setShowSettings(false)}
         />

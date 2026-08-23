@@ -23,8 +23,7 @@ type Clave =
   | 'filter.images' | 'filter.text'
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
-  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
-  | 'import.badUrl' | 'import.tooBig' | 'import.badProtocol';
+  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode';
 
 const ES: Record<Clave, string> = {
   'tray.show': 'Mostrar VirtualDeck',
@@ -49,9 +48,6 @@ const ES: Record<Clave, string> = {
   'sensors.disabled': 'Sensores deshabilitados',
   'sensors.uacCancelled': 'UAC cancelado por el usuario',
   'sensors.netshCode': 'netsh terminó con código',
-  'import.badUrl': 'URL inválida',
-  'import.tooBig': 'El archivo es demasiado grande',
-  'import.badProtocol': 'Protocolo no admitido:',
 };
 
 const EN: Record<Clave, string> = {
@@ -77,9 +73,6 @@ const EN: Record<Clave, string> = {
   'sensors.disabled': 'Sensors disabled',
   'sensors.uacCancelled': 'UAC cancelled by the user',
   'sensors.netshCode': 'netsh exited with code',
-  'import.badUrl': 'Invalid URL',
-  'import.tooBig': 'The file is too large',
-  'import.badProtocol': 'Unsupported protocol:',
 };
 
 let actual: Record<Clave, string> = ES;

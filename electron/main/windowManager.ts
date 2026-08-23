@@ -9,7 +9,7 @@ function getWindowStatePath() {
   return join(app.getPath('userData'), 'window-state.json');
 }
 
-export function loadWindowState(): WindowBounds | null {
+function loadWindowState(): WindowBounds | null {
   try {
     const p = getWindowStatePath();
     if (!existsSync(p)) return null;
@@ -20,11 +20,11 @@ export function loadWindowState(): WindowBounds | null {
   } catch { return null; }
 }
 
-export function saveWindowState(b: WindowBounds) {
+function saveWindowState(b: WindowBounds) {
   try { writeFileSync(getWindowStatePath(), JSON.stringify(b), 'utf-8'); } catch {}
 }
 
-export function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
+function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
   const displays = screen.getAllDisplays();
   const onScreen = displays.some((d) => {
     const a = d.workArea;

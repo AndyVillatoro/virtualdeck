@@ -36,7 +36,6 @@ interface MainBProps {
   onClearButton: (id: string) => void;
   onConfigExport: () => void;
   onConfigImport: () => void;
-  onConfigImportFromUrl: (url: string) => void;
   onSwapButtons: (idA: string, idB: string) => void;
   onPageRename: (id: string, name: string) => void;
   onPageAdd: () => void;
@@ -88,7 +87,7 @@ export function MainB({
   config, activePage, autostart, toggledIds, soundOnPress, soundProfile,
   onPageChange, onToggle, onFullscreen, onEditButton, onWallpaper, onRGB,
   onConfigChange, onDuplicateButton, onClearButton,
-  onConfigExport, onConfigImport, onConfigImportFromUrl, onSwapButtons,
+  onConfigExport, onConfigImport, onSwapButtons,
   onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage,
   onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
@@ -298,7 +297,6 @@ export function MainB({
           onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
           onConfigExport={onConfigExport}
           onConfigImport={onConfigImport}
-          onConfigImportFromUrl={onConfigImportFromUrl}
           onAccentChange={(color) => onConfigChange({ ...config, accent: color })}
           onAutostartToggle={onAutostartToggle}
           onSoundToggle={onSoundToggle}

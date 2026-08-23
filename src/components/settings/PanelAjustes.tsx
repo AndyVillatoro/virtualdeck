@@ -43,7 +43,6 @@ interface Props {
   sensorsConfig?: SensorsSettings;
   onSensorsConfigChange?: (next: SensorsSettings) => void;
   sensorsStatus?: SensorsStatus | null;
-  onConfigImportFromUrl?: (url: string) => void;
   profiles: Profile[];
   onSaveProfile?: (name: string) => void;
   onLoadProfile?: (id: string) => void;
@@ -51,14 +50,12 @@ interface Props {
   onReplayOnboarding?: () => void;
   newProfileName: string;
   setNewProfileName: (s: string) => void;
-  galleryUrl: string;
-  setGalleryUrl: (s: string) => void;
   panelRef: React.RefObject<HTMLDivElement>;
   /** Cerrar el panel. Al cargar un perfil se cierra solo: lo que se ve detras cambia entero. */
   onCerrar: () => void;
 }
 
-export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, onConfigImportFromUrl, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, galleryUrl, setGalleryUrl, panelRef, onCerrar }: Props) {
+export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
   const VD = useTheme();
   const t = useT();
 
@@ -233,38 +230,6 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
     )}
 
     <div style={{ height: 1, background: VD.border }} />
-
-    {/* 6.1 — Importar perfil desde URL */}
-    {onConfigImportFromUrl && (
-      <div>
-        <SettingLabel>{t('set.importUrl')}</SettingLabel>
-        <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-          <input
-            value={galleryUrl}
-            onChange={(e) => setGalleryUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && galleryUrl.trim()) {
-                onConfigImportFromUrl(galleryUrl.trim());
-                setGalleryUrl('');
-              }
-            }}
-            placeholder="https://...perfil.json"
-            style={{
-              flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
-              padding: '5px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
-              outline: 'none', borderRadius: VD.radius.sm,
-            }}
-          />
-          <button
-            onClick={() => { if (galleryUrl.trim()) { onConfigImportFromUrl(galleryUrl.trim()); setGalleryUrl(''); } }}
-            style={{
-              padding: '5px 10px', background: VD.accentBg, border: `1px solid ${effectiveAccent}`,
-              fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1,
-            }}
-          >{t('ui.import')}</button>
-        </div>
-      </div>
-    )}
 
     {onRGBConfigChange && rgbConfig && (
       <>

@@ -1486,6 +1486,20 @@ for (const group of BRAND_ICON_GROUPS) {
 // ── SVG generator ─────────────────────────────────────────────────────────────
 export const ICON_SIZE = 17;
 const ICON_PITCH = 8, ICON_PAD = 4, ICON_VB = 140;
+
+/**
+ * De una fracción 0..1 sobre el lienzo a la celda que hay debajo.
+ *
+ * Hace falta porque el dibujo **no** reparte el ancho en 17 tramos iguales:
+ * cada punto va en `ICON_PAD + c * ICON_PITCH + ICON_PITCH / 2` sobre un
+ * `viewBox` de `ICON_VB`. Dividir el ancho entre 17 da un centro distinto, y
+ * la diferencia es mayor cuanto más a la izquierda: en un lienzo de 300 px son
+ * 8 px en la primera columna y casi cero en la última. Se notaba como que el
+ * clic caía a la izquierda del cursor, y no había forma de pintar fino.
+ */
+export function celdaDesdeFraccion(f: number): number {
+  return Math.floor((f * ICON_VB - ICON_PAD) / ICON_PITCH);
+}
 const R_ON = 3.2;
 const CENTER = (ICON_SIZE - 1) / 2;
 

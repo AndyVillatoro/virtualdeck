@@ -374,21 +374,6 @@ export default function App() {
     applyImportedConfig(data);
   }, [api, applyImportedConfig]);
 
-  // 6.1 — Importar perfil desde URL (galería remota)
-  const handleConfigImportFromUrl = useCallback(async (url: string) => {
-    if (!url.trim()) return;
-    // La descarga la hace el proceso principal: la CSP del renderer solo
-    // permite 'self' y los dos servicios del clima, asi que un fetch de aqui
-    // se rechaza siempre.
-    const r = await api?.config.fetchRemote(url);
-    if (!r) return;
-    if (!r.ok) {
-      setImportError(t('import.downloadFailed', { motivo: r.error ?? '' }));
-      return;
-    }
-    applyImportedConfig(r.data);
-  }, [api, applyImportedConfig, t]);
-
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -462,7 +447,6 @@ export default function App() {
           onClearButton={clearButton}
           onConfigExport={handleConfigExport}
           onConfigImport={handleConfigImport}
-          onConfigImportFromUrl={handleConfigImportFromUrl}
           onSwapButtons={swapButtons}
           onPageRename={renamePage}
           onPageAdd={addPage}

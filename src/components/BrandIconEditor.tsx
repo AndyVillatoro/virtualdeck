@@ -3,7 +3,7 @@ import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
 import { BrandIconDisplay } from './BrandIconDisplay';
-import { BRAND_ICONS_MAP, ICON_SIZE } from '../data/brandIcons';
+import { BRAND_ICONS_MAP, ICON_SIZE, celdaDesdeFraccion } from '../data/brandIcons';
 
 interface BrandIconEditorProps {
   iconKey: string;
@@ -268,9 +268,8 @@ export function BrandIconEditor({
     const svg = svgRef.current; if (!svg) return null;
     const rect = svg.getBoundingClientRect();
     if (rect.width === 0) return null;
-    const px = ((e.clientX - rect.left) / rect.width) * ICON_SIZE;
-    const py = ((e.clientY - rect.top) / rect.height) * ICON_SIZE;
-    const c = Math.floor(px), r = Math.floor(py);
+    const c = celdaDesdeFraccion((e.clientX - rect.left) / rect.width);
+    const r = celdaDesdeFraccion((e.clientY - rect.top) / rect.height);
     if (r < 0 || r >= ICON_SIZE || c < 0 || c >= ICON_SIZE) return null;
     return { r, c };
   }, []);

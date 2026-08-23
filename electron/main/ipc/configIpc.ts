@@ -1,4 +1,4 @@
-import { ipcMain, dialog, BrowserWindow, net } from 'electron';
+import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { readFileSync, writeFileSync } from 'fs';
 import { loadConfig, saveConfig, listBackups, restoreBackup } from '../configManager';
 import { applyTriggerableConfig } from '../trayManager';
@@ -59,38 +59,6 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
       // por defecto, que es lo que la aplicacion usa de verdad.
       return JSON.parse(readFileSync(r.filePaths[0], 'utf-8'));
     } catch { return null; }
-  });
-
-  /**
-   * Descargar un perfil de una URL.
-   *
-   * Lo hace el proceso principal y no el renderer porque **la CSP de la
-   * aplicacion lo prohibe**: `connect-src` solo deja 'self' y los dos
-   * servicios del clima. El `fetch` del renderer se rechazaba siempre —y de
-   * paso tumbaba la ventana— asi que la importacion por URL no habia
-   * funcionado nunca. Relajar la CSP para arreglarlo seria abrir la puerta
-   * entera; aqui no hay CSP y la ventana sigue cerrada.
-   *
-   * Solo http y https: sin esto una URL `file://` convertiria este canal en un
-   * lector de archivos arbitrarios para quien pudiera escribir en el campo.
-   */
-  ipcMain.handle('config:fetchRemote', async (_e: any, url: string) => {
-    let u: URL;
-    try { u = new URL(url); } catch { return { ok: false, error: tm('import.badUrl') }; }
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
-      return { ok: false, error: `${tm('import.badProtocol')} ${u.protocol}` };
-    }
-    try {
-      const res = await net.fetch(u.toString(), { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) return { ok: false, error: `${res.status} ${res.statusText}` };
-      const texto = await res.text();
-      // Un perfil son unas decenas de KB. El tope es para no tragarse un
-      // archivo enorme por accidente, no una medida de seguridad.
-      if (texto.length > 2_000_000) return { ok: false, error: tm('import.tooBig') };
-      return { ok: true, data: JSON.parse(texto) };
-    } catch (e) {
-      return { ok: false, error: (e as Error).message };
-    }
   });
 
   ipcMain.handle('weather:get', (_e: any, force?: boolean) => getWeather(!!force));

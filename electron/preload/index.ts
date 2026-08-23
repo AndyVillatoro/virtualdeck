@@ -37,8 +37,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     import: (): Promise<object | null> => ipcRenderer.invoke('config:import'),
     listBackups: (): Promise<BackupInfo[]> => ipcRenderer.invoke('config:listBackups'),
     restoreBackup: (filename: string): Promise<object | null> => ipcRenderer.invoke('config:restoreBackup', filename),
-    fetchRemote: (url: string): Promise<{ ok: boolean; data?: unknown; error?: string }> =>
-      ipcRenderer.invoke('config:fetchRemote', url),
   },
   audio: {
     list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),
