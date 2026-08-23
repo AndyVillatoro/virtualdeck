@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
-import { useT, useLang } from '../utils/i18n';
-import { formatoHora } from '../utils/formatos';
+import { useT } from '../utils/i18n';
 import { BarraLateral } from './main/BarraLateral';
 import { FolderOverlay, PageCtxItem } from './main/OverlayCarpeta';
 import { PestanasPagina } from './main/PestanasPagina';
@@ -15,8 +14,8 @@ import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSist
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { Hint } from '../components/Hint';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
-import { useSensors, findSensor, evalCondition } from '../utils/sensors';
-import type { ButtonConfig, DeckConfig, RGBStatus } from '../types';
+import { useSensors } from '../utils/sensors';
+import type { ButtonConfig, DeckConfig } from '../types';
 
 
 interface MainBProps {
@@ -96,10 +95,6 @@ export function MainB({
 }: MainBProps) {
   const VD = useTheme();
   const t = useT();
-  const lang = useLang();
-  // Memoizados: son dependencia de un `useMemo` y de un `useEffect`, y sin
-  // referencia estable los harian recalcular en cada render.
-  const TIME_FMT = useMemo(() => formatoHora(lang), [lang]);
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
@@ -125,7 +120,6 @@ export function MainB({
   const [showLog, setShowLog] = useState(false);
   const [runningButtons, setRunningButtons] = useState<Set<string>>(new Set());
   const toastTimer = useRef<number>();
-  const lastFiredMinuteRef = useRef<string | null>(null);
   const touchStartXRef = useRef<number>(0);
   const touchStartYRef = useRef<number>(0);
   const lastSwipeAtRef = useRef<number>(0);
@@ -265,47 +259,6 @@ export function MainB({
     sonando: nowPlaying,
     sensores: sensorList,
   });
-
-  // Scheduled triggers: check every 15s for buttons with timerTriggerAt matching current HH:MM.
-  useEffect(() => {
-    const t = setInterval(() => {
-      const nowStr = TIME_FMT.format(new Date());
-      if (nowStr === lastFiredMinuteRef.current) return;
-      const scheduled = config.buttons.filter((b) => b.timerTriggerAt === nowStr && b.page === activePage);
-      if (scheduled.length > 0) {
-        lastFiredMinuteRef.current = nowStr;
-        scheduled.forEach((btn) => executeButton(btn));
-      }
-    }, 15000);
-    return () => clearInterval(t);
-  }, [config.buttons, activePage, executeButton, TIME_FMT]);
-
-  // Sensor triggers: level-triggered with cooldown. Re-runs on every sensor
-  // poll tick (the sensorList reference changes when new data lands). Cooldown
-  // default is 60 s so a hot CPU doesn't fire the action 12× per minute.
-  const sensorTriggerStateRef = useRef<Map<string, number>>(new Map());
-  useEffect(() => {
-    if (sensorList.length === 0) return;
-    const lastFired = sensorTriggerStateRef.current;
-    const now = Date.now();
-    for (const btn of config.buttons) {
-      const trig = btn.sensorTrigger;
-      if (!trig) continue;
-      const s = findSensor(trig.id, sensorList);
-      if (!s) continue;
-      const conditionTrue = evalCondition(trig, s.value);
-      const cooldown = trig.cooldownMs ?? 60000;
-      if (!conditionTrue) {
-        // Falling edge: reset so next true-edge fires immediately.
-        if ((lastFired.get(btn.id) ?? 0) > 0) lastFired.set(btn.id, 0);
-        continue;
-      }
-      const last = lastFired.get(btn.id) ?? 0;
-      if (now - last < cooldown) continue;
-      lastFired.set(btn.id, now);
-      executeButton(btn);
-    }
-  }, [sensorList, config.buttons, executeButton]);
 
   const isPlaying = nowPlaying?.status === 'Playing';
   // Para hints contextuales: ¿el deck ya tiene al menos un botón configurado?

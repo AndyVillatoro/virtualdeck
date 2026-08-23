@@ -51,6 +51,9 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `celda`, porque la principal pasa veinte props y kiosko seis. El calculo del encaje
   descuenta el relleno (`clientWidth` lo incluye) y los huecos entre casillas: sin eso las
   casillas del modo `square` no salian cuadradas y en `fill` la ultima fila se recortaba.
+- `src/utils/useDisparadores.ts` — los botones que se disparan solos (a una hora, o por
+  umbral de un sensor). Los llama `App`, que está montada siempre: dentro de `MainB`
+  **dejaban de sonar en kiosko**, y el programado además solo miraba la página abierta.
 - `src/utils/estadoSistema.ts` — el sondeo de 5 s (salida de audio por defecto, procesos
   corriendo, estado RGB) y las dos funciones que lo leen: `botonActivo` y `botonVisible`.
   Estaba dentro de `MainB` y **kiosko no lo tenía**: la visibilidad condicional se ignoraba

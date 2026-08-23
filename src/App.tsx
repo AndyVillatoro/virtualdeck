@@ -11,6 +11,8 @@ import { NowPlayingProvider } from './utils/nowPlaying';
 import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
+import { useDisparadores } from './utils/useDisparadores';
+import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, makeDefaultButtons } from './utils/configDefaults';
 import { useDeck } from './utils/useDeck';
 import { runActionSequence, executeAction } from './utils/actions';
@@ -274,39 +276,50 @@ export default function App() {
   // 1.4 — Disparadores externos. Cuando el main proceso emite button:trigger
   // (por hotkey global o tray), ejecutamos la cadena del botón. Funciona
   // independiente de la vista actual; toggles aún se actualizan vía toggledIds.
+  /**
+   * Disparar un boton sin que nadie lo pulse: atajo global, menu de la
+   * bandeja, hora programada o umbral de un sensor.
+   *
+   * Vive en `App` porque `App` esta montada siempre. Los disparadores por hora
+   * y por sensor estaban dentro de `MainB`, asi que **dejaban de sonar en
+   * kiosko** — justo el modo de dejar el deck solo, que es donde una accion
+   * programada tiene mas sentido.
+   */
+  const dispararBoton = useCallback(async (btn: ButtonConfig) => {
+    if (!api) return;
+    if (btn.action.type === 'folder') return; // Una carpeta necesita interfaz.
+    if (btn.isToggle) {
+      const estaba = toggledIds.has(btn.id);
+      handleToggle(btn.id);
+      if (estaba && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
+        const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t);
+        if (r.stateUpdate) updateState(r.stateUpdate as Record<string, string>);
+        return;
+      }
+    }
+    const acciones = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
+    const estadoBase = config.state ?? {};
+    const r = await runActionSequence(acciones, api, estadoBase, undefined, config.rgb?.profiles, t);
+    const nuevas = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== estadoBase[k]);
+    if (nuevas.length > 0) {
+      const cambio: Record<string, string> = {};
+      for (const k of nuevas) cambio[k] = r.stateUpdate[k];
+      updateState(cambio);
+    }
+  }, [api, config.state, config.rgb?.profiles, toggledIds, updateState, handleToggle, t]);
+
+  // Atajo global del sistema y menu de la bandeja: el proceso principal emite
+  // button:trigger y aqui se ejecuta la cadena del boton.
   useEffect(() => {
     if (!api?.events) return;
-    return api.events.onButtonTrigger(async (id) => {
+    return api.events.onButtonTrigger((id) => {
       const btn = config.buttons.find((b) => b.id === id);
-      if (!btn || !api) return;
-      // Toggle/folder: replicamos lógica de MainB.executeButton de forma simplificada.
-      if (btn.action.type === 'folder') return; // Folder requiere UI
-      if (btn.isToggle) {
-        const wasToggled = toggledIds.has(btn.id);
-        handleToggle(btn.id);
-        if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-          const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t);
-          if (r.stateUpdate) updateState(r.stateUpdate as Record<string, string>);
-          return;
-        }
-      }
-      const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
-      const baseState = config.state ?? {};
-      const r = await runActionSequence(actionsToRun, api, baseState, undefined, config.rgb?.profiles, t);
-      const newKeys = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== baseState[k]);
-      if (newKeys.length > 0) {
-        const update: Record<string, string> = {};
-        for (const k of newKeys) update[k] = r.stateUpdate[k];
-        updateState(update);
-      }
+      if (btn) void dispararBoton(btn);
     });
-    // `config.rgb?.profiles` estaba fuera de las dependencias, y con el la
-    // suscripcion se quedaba con la lista de perfiles del momento en que se
-    // creo. Editar los colores de un perfil no toca `config.buttons`, asi que
-    // nada refrescaba la clausura: el atajo global seguia aplicando los
-    // colores viejos. `handleToggle` y `t` son estables (useCallback sin
-    // dependencias y useMemo por idioma), asi que anadirlos no resuscribe.
-  }, [api, config.buttons, config.state, config.rgb?.profiles, toggledIds, updateState, handleToggle, t]);
+  }, [api, config.buttons, dispararBoton]);
+
+  const { sensors: sensorList } = useSensors();
+  useDisparadores({ botones: config.buttons, sensores: sensorList, disparar: dispararBoton });
 
   const handleConfigExport = useCallback(async () => { await api?.config.export(); }, [api]);
 
