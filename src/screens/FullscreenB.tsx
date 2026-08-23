@@ -8,9 +8,10 @@ import { DotLabel } from '../components/DotLabel';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
 import { useDatosWidget, useClimaWidget } from '../components/celda/useDatosWidget';
+import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
-import { executeAction, runActionSequence } from '../utils/actions';
+import { executeAction, runActionSequence, interpolate } from '../utils/actions';
 import { useNowPlaying } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
@@ -107,6 +108,14 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
     });
   }, []);
 
+  const executeLongPress = useCallback(async (btn: ButtonConfig) => {
+    const api = window.electronAPI;
+    if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
+    const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles, t);
+    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
+    if (!r.ok && r.error) setRuntimeError(r.error);
+  }, [t, config.state, config.rgb?.profiles, onStateUpdate]);
+
   const executeButton = useCallback(async (btn: ButtonConfig) => {
     const api = window.electronAPI;
     if (!api) return;
@@ -122,6 +131,8 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
       }
     }
 
+    setEjecutando((prev) => new Set(prev).add(btn.id));
+    try {
     const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
     const baseState = config.state ?? {};
     // Same scriptHooks shape as MainB so script actions with showOutput/captureToVar
@@ -150,6 +161,9 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
       onStateUpdate(update);
     }
     if (!r.ok && r.error) setRuntimeError(r.error);
+    } finally {
+      setEjecutando((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
+    }
   }, [t, toggledIds, handleToggle, config.state, config.rgb?.profiles, onStateUpdate]);
 
   const hours = String(now.getHours()).padStart(2, '0');
@@ -172,6 +186,13 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // Los mismos datos de widget que la pantalla principal. Kiosko los dibujaba
   // sin ellos, asi que un boton con reloj o con un sensor mostraba el icono de
   // la accion y ya.
+  // Lo mismo que mira la pantalla principal: que salida de audio manda y que
+  // procesos corren. Sin esto, en kiosko la visibilidad condicional se
+  // ignoraba (un boton con «solo si corre tal app» salia siempre) y el anillo
+  // del dispositivo activo no se pintaba.
+  const estadoSistema = useEstadoSistema(window.electronAPI);
+  const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
+
   const clima = useClimaWidget(config.buttons.some((b) => b.widget === 'weather'), window.electronAPI);
   const datosWidget = useDatosWidget({
     botones: config.buttons,
@@ -296,11 +317,19 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               button={btn}
               accent={config.accent}
               toggled={toggledIds.has(btn.id)}
+              isActive={botonActivo(btn, estadoSistema)}
+              isHidden={!botonVisible(btn, estadoSistema, sensorList)}
+              isRunning={ejecutando.has(btn.id)}
               widgetData={datosWidget[btn.id]}
+              // Sin esto, una etiqueta con {variable} salia con las llaves
+              // literales en kiosko y resuelta en la pantalla principal.
+              resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
               soundEnabled={soundOnPress}
               soundProfile={soundProfile}
               onEdit={() => {}}
               onExecute={() => executeButton(btn)}
+              onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none'
+                ? () => executeLongPress(btn) : undefined}
             />
           )}
         />

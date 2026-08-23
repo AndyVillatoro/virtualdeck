@@ -11,6 +11,7 @@ import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
 import { useDatosWidget, useClimaWidget } from '../components/celda/useDatosWidget';
+import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { Hint } from '../components/Hint';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
@@ -115,9 +116,10 @@ export function MainB({
   const [openFolderBtn, setOpenFolderBtn] = useState<ButtonConfig | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
-  const [rgbStatus, setRgbStatus] = useState<RGBStatus | null>(null);
-  const [activeAudioDeviceId, setActiveAudioDeviceId] = useState<string | null>(null);
-  const [runningProcesses, setRunningProcesses] = useState<Set<string>>(new Set());
+  // El sondeo del sistema y las dos funciones que lo leen se comparten con
+  // kiosko, que no las tenia.
+  const estadoSistema = useEstadoSistema(api);
+  const { rgbStatus } = estadoSistema;
   const [execLog, setExecLog] = useState<{ id: number; ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
   const execLogIdRef = useRef(0);
   const [showLog, setShowLog] = useState(false);
@@ -131,30 +133,6 @@ export function MainB({
   // collapses when children are 100%-sized (no intrinsic dimension). We measure
   // the wrapper and compute exact px so the grid expands to the largest box
   // that fits while keeping cells square.
-
-  // Coalesced 5s tick: RGB status + audio default + running procs all share
-  // the same cadence. One interval + one Promise.all batch is cheaper than
-  // three separate ones — fewer IPC round-trips and a single render commit
-  // when state lands. RGB also retriggers immediately on device change events.
-  useEffect(() => {
-    if (!api) return;
-    let cancelled = false;
-    const tick = async () => {
-      const [rgb, audioList, procs] = await Promise.all([
-        api.rgb.status().catch(() => null),
-        api.audio.list().catch(() => []),
-        api.state.activeApps().catch(() => [] as string[]),
-      ]);
-      if (cancelled) return;
-      setRgbStatus(rgb ?? null);
-      setActiveAudioDeviceId(audioList.find((d) => d.isDefault)?.id ?? null);
-      setRunningProcesses(new Set(procs));
-    };
-    tick();
-    const t = setInterval(tick, 5000);
-    const off = api.events.onRGBDevicesChanged?.(() => { tick(); });
-    return () => { cancelled = true; clearInterval(t); off?.(); };
-  }, [api]);
 
   // Clear selection when switching pages
   useEffect(() => { setSelectedIds(new Set()); }, [activePage]);
@@ -334,42 +312,6 @@ export function MainB({
   const hasConfiguredButtons = config.buttons.some(
     (b) => b.action.type !== 'none' || b.label || b.icon || b.imageData || b.brandIcon
   );
-
-  function extractExeName(appPath: string): string | null {
-    if (!appPath) return null;
-    const seg = appPath.split(/[/\\]/).pop() ?? appPath;
-    return seg.replace(/\s.*$/, '').replace(/\.(exe|lnk|bat|cmd)$/i, '').toLowerCase() || null;
-  }
-
-  function isButtonActive(btn: ButtonConfig): boolean {
-    const a = btn.action;
-    if (a.type === 'audio-device' && a.deviceId) return a.deviceId === activeAudioDeviceId;
-    if (a.type === 'app' && a.appPath) {
-      const name = extractExeName(a.appPath);
-      return !!name && runningProcesses.has(name);
-    }
-    if (a.type === 'kill-process' && a.processName) {
-      return runningProcesses.has(a.processName.replace(/\.exe$/i, '').toLowerCase());
-    }
-    return false;
-  }
-
-  function isButtonVisible(btn: ButtonConfig): boolean {
-    const v = btn.visibleIf;
-    if (!v) return true;
-    if (v.app) {
-      const name = v.app.replace(/\.exe$/i, '').toLowerCase();
-      if (!runningProcesses.has(name)) return false;
-    }
-    if (v.sensor) {
-      const s = findSensor(v.sensor.id, sensorList);
-      // No data yet → keep button hidden (matches "condition not met"). Better
-      // than briefly flashing the button on every reload.
-      if (!s) return false;
-      if (!evalCondition(v.sensor, s.value)) return false;
-    }
-    return true;
-  }
 
   function confirmRename(id: string) {
     if (renameValue.trim()) onPageRename(id, renameValue.trim().toUpperCase());
@@ -579,8 +521,8 @@ export function MainB({
                 accent={config.accent}
                 toggled={toggledIds.has(btn.id)}
                 isSelected={selectedIds.has(btn.id)}
-                isActive={isButtonActive(btn)}
-                isHidden={!isButtonVisible(btn)}
+                isActive={botonActivo(btn, estadoSistema)}
+                isHidden={!botonVisible(btn, estadoSistema, sensorList)}
                 isRunning={runningButtons.has(btn.id)}
                 widgetData={widgetDataMap[btn.id]}
                 soundEnabled={soundOnPress}

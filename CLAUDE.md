@@ -51,6 +51,11 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `celda`, porque la principal pasa veinte props y kiosko seis. El calculo del encaje
   descuenta el relleno (`clientWidth` lo incluye) y los huecos entre casillas: sin eso las
   casillas del modo `square` no salian cuadradas y en `fill` la ultima fila se recortaba.
+- `src/utils/estadoSistema.ts` — el sondeo de 5 s (salida de audio por defecto, procesos
+  corriendo, estado RGB) y las dos funciones que lo leen: `botonActivo` y `botonVisible`.
+  Estaba dentro de `MainB` y **kiosko no lo tenía**: la visibilidad condicional se ignoraba
+  y el marcador de activo no se pintaba. Las dos pantallas se turnan en la misma ventana,
+  así que compartirlo no duplica el sondeo.
 - `src/utils/formatos.ts` — reloj, fecha y día en el idioma elegido, cacheados por idioma.
   Vivía bajo `screens/main/`, y el limitador de capas no dejaba que un componente lo usara.
 - `src/components/celda/useDatosWidget.ts` — lo que muestra cada widget (reloj, clima,
@@ -102,7 +107,8 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 ## Notas técnicas
 - PowerShell scripts (audio.ts, media.ts) fuerzan UTF-8 con `chcp 65001` + `$OutputEncoding` + `[Console]::OutputEncoding`. No usar BOM — rompe el parsing de PS.
 - `IPolicyConfig` COM: IID correcto es `F8679F50-850A-41CF-9C72-430F290290C8` (no confundir con CLSID `870AF99C-...`). El orden de métodos en la interfaz debe coincidir con la vtable real.
-- Widget `now-playing` no se aplica a botones de tipo `audio-device` (filtro en `MainB.tsx`).
+- Widget `now-playing` no se aplica a botones de tipo `audio-device`: el editor deshabilita
+  esa combinación (`PasoEstilo`) y `useDatosWidget` la descarta también.
 - `media.ts` re-consulta ventanas activas en cada ciclo cuando SMTC falla, para reflejar cambios de pestaña/video.
 - **SMTC await (NO tocar)**: el `Await-Op` del PREAMBLE de `media.ts` convierte el `IAsyncOperation` de WinRT a un `Task` de .NET vía `System.Runtime.WindowsRuntime` + reflection (`AsTask`), pasando el tipo de resultado explícito. **NO** volver al polling de `$op.Status`: en PowerShell 5.1 stock esa propiedad no se proyecta (queda vacía), el await devuelve siempre `$null`, el manager sale `null` y el widget de música deja de mostrar nada. Verificado en vivo (polling → manager null, AsTask → OK). Los alias de tipo (`$TMgr`, `$TProps`, `$TStream`) usan el loader WinRT completo `,Namespace,ContentType=WindowsRuntime` para resolver sin depender del orden de carga del winmd. El thumbnail (`OpenReadAsync`) devuelve `IAsyncOperationWithProgress`, por eso se le pasa también `$progressType` (`[UInt64]`).
 - **`media.diagnose` va por PowerShell a propósito (NO tocar sin leer esto).** El diagnóstico
