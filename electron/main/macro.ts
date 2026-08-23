@@ -13,6 +13,7 @@
 import { intentarNativo } from './native';
 import { runPS } from './ps-helpers';
 import type { MacroStep } from '../../src/types';
+import { tm } from './idioma';
 
 // ---------------------------------------------------------------------------
 // Recording
@@ -41,7 +42,7 @@ let _lastTs = 0;
 /** Start capturing keyboard + mouse events globally. */
 export function startRecording(): void {
   const uio = getUio();
-  if (!uio) throw new Error('uiohook-napi no está disponible en este sistema.');
+  if (!uio) throw new Error(tm('macro.noUiohook'));
   if (_recording) return;
 
   _recording = true;
@@ -92,7 +93,7 @@ export async function playMacro(
   steps: MacroStep[],
   repeat = 1,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!steps || steps.length === 0) return { ok: false, error: 'Sin pasos en la macro.' };
+  if (!steps || steps.length === 0) return { ok: false, error: tm('macro.noSteps') };
 
   // Camino nativo: SendInput directo, sin generar ni ejecutar ningún script.
   // Los pasos viajan como JSON y los lee el mismo modelo que lee la
@@ -104,7 +105,7 @@ export async function playMacro(
   if (nativo !== undefined) {
     return nativo
       ? { ok: true }
-      : { ok: false, error: 'La reproducción nativa falló; mirá el log del proceso principal.' };
+      : { ok: false, error: tm('macro.playFailed') };
   }
 
   const script = buildPlaybackScript(steps, Math.max(1, repeat));

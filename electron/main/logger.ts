@@ -1,6 +1,7 @@
 import { app, dialog, shell } from 'electron';
 import { join } from 'path';
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { tm } from './idioma';
 
 // Logger rotativo a archivo en userData/logs/virtualdeck.log.
 // Rota a .1 cuando supera MAX_BYTES; mantiene 1 archivo previo.
@@ -91,9 +92,9 @@ export async function exportLog(): Promise<boolean> {
     const p = getLogPath();
     if (!existsSync(p)) return false;
     const { canceled, filePath } = await dialog.showSaveDialog({
-      title: 'Exportar registro de VirtualDeck',
+      title: tm('dlg.exportLog'),
       defaultPath: `virtualdeck-log-${new Date().toISOString().slice(0, 10)}.txt`,
-      filters: [{ name: 'Texto', extensions: ['txt', 'log'] }],
+      filters: [{ name: tm('filter.text'), extensions: ['txt', 'log'] }],
     });
     if (canceled || !filePath) return false;
     copyFileSync(p, filePath);

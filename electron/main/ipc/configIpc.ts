@@ -5,12 +5,16 @@ import { applyTriggerableConfig } from '../trayManager';
 import * as sensors from '../sensors';
 import { getWeather } from '../weather';
 import { avisarCambioDeConfig } from '../floatingBar';
+import { tm, fijarIdioma } from '../idioma';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
 
   ipcMain.handle('config:save', (_e: any, data: object) => {
     saveConfig(data);
+    // Antes de reconstruir el menu de la bandeja, por si cambio el idioma: si
+    // no, la bandeja se queda en el anterior hasta el siguiente arranque.
+    fijarIdioma((data as any)?.language);
     applyTriggerableConfig(win, data, onQuit);
     const sCfg = (data as any)?.sensors;
     if (sCfg) sensors.configure({
@@ -27,7 +31,7 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
 
   ipcMain.handle('config:export', async () => {
     const r = await dialog.showSaveDialog(win, {
-      title: 'Exportar configuración de VirtualDeck',
+      title: tm('dlg.exportConfig'),
       defaultPath: 'virtualdeck-config.json',
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });
@@ -38,7 +42,7 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
 
   ipcMain.handle('config:import', async () => {
     const r = await dialog.showOpenDialog(win, {
-      title: 'Importar configuración de VirtualDeck',
+      title: tm('dlg.importConfig'),
       filters: [{ name: 'JSON', extensions: ['json'] }],
       properties: ['openFile'],
     });

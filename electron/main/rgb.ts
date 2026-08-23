@@ -2,6 +2,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { Client, utils as orgbUtils } from 'openrgb-sdk';
 import type Device from 'openrgb-sdk/dist/device';
 import type { Mode, RGBColor } from 'openrgb-sdk/dist/device';
+import { tm } from './idioma';
 
 // OpenRGB colorMode constants
 const CM_NONE    = 0; // autonomous effect (Spectrum Cycle, Rainbow) — no user color input
@@ -318,7 +319,7 @@ export async function setDeviceColor(
       return true;
     }
     if (duradero && directMode) {
-      lastError = `${dev.name}: solo ofrece Direct, el color se perderá al cerrar OpenRGB.`;
+      lastError = `${dev.name}: ${tm('rgb.onlyDirect')}`;
     }
 
     if (directMode) {

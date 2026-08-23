@@ -3,6 +3,7 @@ import { app, net } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { tm } from './idioma';
 
 // Integration with LibreHardwareMonitor (LHM). LHM exposes its full sensor
 // tree at http://host:port/data.json when "Run Web Server" is enabled in its
@@ -235,7 +236,7 @@ export async function get(id: string): Promise<Sensor | null> {
 }
 
 export async function probe(): Promise<{ ok: boolean; count: number; error?: string }> {
-  if (!enabled) return { ok: false, count: 0, error: 'Sensores deshabilitados' };
+  if (!enabled) return { ok: false, count: 0, error: tm('sensors.disabled') };
   try {
     const tree = await fetchTree();
     const out: Sensor[] = [];
@@ -333,8 +334,8 @@ export async function registerUrlAcl(targetPort?: number): Promise<{ ok: boolean
     ps.on('exit', (code) => {
       if (code === 0) resolve({ ok: true, url });
       // Code 1223 = usuario canceló UAC.
-      else if (code === 1223) resolve({ ok: false, error: 'UAC cancelado por el usuario', url });
-      else resolve({ ok: false, error: `netsh terminó con código ${code}`, url });
+      else if (code === 1223) resolve({ ok: false, error: tm('sensors.uacCancelled'), url });
+      else resolve({ ok: false, error: `${tm('sensors.netshCode')} ${code}`, url });
     });
   });
 }

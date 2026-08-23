@@ -1,10 +1,11 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { readFileSync, writeFileSync } from 'fs';
+import { tm } from '../idioma';
 
 export function registerPageIpc(win: BrowserWindow) {
   ipcMain.handle('page:export', async (_e: any, pageData: object) => {
     const result = await dialog.showSaveDialog(win, {
-      title: 'Exportar página',
+      title: tm('dlg.exportPage'),
       defaultPath: 'pagina-virtualdeck.json',
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });
@@ -15,7 +16,7 @@ export function registerPageIpc(win: BrowserWindow) {
 
   ipcMain.handle('page:import', async () => {
     const result = await dialog.showOpenDialog(win, {
-      title: 'Importar página',
+      title: tm('dlg.importPage'),
       filters: [{ name: 'JSON', extensions: ['json'] }],
       properties: ['openFile'],
     });

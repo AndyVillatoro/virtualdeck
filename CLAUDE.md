@@ -89,6 +89,11 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
 - `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
 - `electron/main/ipc/` — handlers IPC organizados por dominio (audio, media, macro, config, etc.)
+- `electron/main/idioma.ts` — el puñado de textos que enseña el **proceso principal**
+  (menú de la bandeja, títulos de los diálogos de archivo, los errores que devuelve al
+  renderer). No puede usar el i18n de `src/`: son dos procesos. Estaba todo fijo en
+  español y la auditoría no lo veía, porque solo miraba `src/`. `fijarIdioma()` se llama
+  al arrancar y al guardar la configuración, antes de reconstruir la bandeja.
 - `electron/main/index.ts` — slim bootstrap (~95 líneas); importa los módulos anteriores
 - `src/components/settings/` — `PanelAjustes` (el desplegable entero de la rueda dentada)
   y sus secciones: `RGBSection`, `SensorsSection`, `settingHelpers`. `TitleBar` se queda con

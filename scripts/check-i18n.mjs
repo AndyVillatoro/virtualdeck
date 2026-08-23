@@ -16,6 +16,12 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, extname, sep } from 'node:path';
 
 const RAIZ = 'src';
+// El proceso principal tambien enseña texto —el menu de la bandeja, los
+// titulos de los dialogos— y era un punto ciego: la auditoria solo miraba
+// `src/`, asi que la bandeja seguia en español con la interfaz en ingles.
+// Su diccionario es `electron/main/idioma.ts`, con su propia funcion `tm`.
+const RAIZ_MAIN = 'electron/main';
+const IDIOMA_MAIN = 'electron/main/idioma.ts';
 // Los tres diccionarios viven cada uno en su archivo desde que `i18n.tsx`
 // paso de las mil lineas. `I18N` sigue siendo el modulo que **no** se audita
 // como codigo de interfaz (sus literales son el diccionario en si).
@@ -75,7 +81,7 @@ for (const clave of EN.keys()) {
 
 // 3. Cada t('...') / tf('...') del código debe tener entrada.
 //    Solo literales: `t(variable)` no se puede comprobar aquí.
-for (const ruta of archivos(RAIZ)) {
+for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
   if (ruta.replace(/\\/g, '/') === I18N) continue;
   const fuente = readFileSync(ruta, 'utf-8');
   for (const m of fuente.matchAll(/(?<![A-Za-z0-9_])t\(\s*'((?:[^'\\]|\\.)*)'/g)) {
@@ -150,6 +156,10 @@ function pareceEspanol(s) {
   if (limpio.length < 3 || PERMITIDOS.has(limpio)) return false;
   if (/^[\s\d\W]*$/.test(limpio)) return false;          // solo símbolos o números
   if (/^(https?:|[A-Za-z]:[\\/]|\.{0,2}\/)/.test(limpio)) return false;  // URL o ruta
+  // Una expresión regular no es idioma aunque lleve palabras en español: son
+  // precisamente las que tiene que reconocer. `media.ts` casa así los títulos
+  // de pestaña del navegador («y 3 páginas más»).
+  if (/^\(\?[:=!]/.test(limpio) || /\\d\+/.test(limpio)) return false;
   if (ACENTOS.test(limpio)) return true;
   // Frases cortas: basta una palabra inequívoca.
   // Se parte tambien por `:` y `;`: sin ellos «Rango: 75%» daba la palabra
@@ -159,15 +169,37 @@ function pareceEspanol(s) {
   return (limpio.match(PALABRAS_ES) ?? []).length >= 2;
 }
 
-for (const ruta of archivos(RAIZ)) {
+for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
   const rel = ruta.split(sep).join('/');
-  if (rel === I18N || Object.values(DICCIONARIOS).includes(rel)) continue;
+  const esMain = rel.startsWith(RAIZ_MAIN);
+  let enConsola = false;
+  if (rel === I18N || rel === IDIOMA_MAIN || Object.values(DICCIONARIOS).includes(rel)) continue;
   // Se parte por `\r?\n`, no por `\n`: los archivos del repo están en CRLF, y
   // partiendo solo por `\n` cada línea queda terminada en `\r`. Eso rompe el
   // recorte de comentarios —el `$` de `/\/\/.*$/` no cruza el `\r`— así que las
   // líneas con comentario al final se analizaban con el comentario incluido.
   // Daba falsos positivos y, peor, falsos negativos.
   for (const [i, linea] of readFileSync(ruta, 'utf-8').split(/\r?\n/).entries()) {
+    // En el proceso principal, fuera lo que va a la consola: ese texto es para
+    // quien depura, no para el usuario, y esta bien en el idioma del autor.
+    // Sin esto la comprobacion saca veinte avisos de `console.error` y el
+    // ruido tapa los tres o cuatro que si se ven en pantalla.
+    if (esMain) {
+      // Una llamada a consola puede ocupar varias lineas; el mensaje suele ir
+      // en la segunda. Se sigue saltando hasta que la llamada cierra.
+      if (enConsola) {
+        if (/\);\s*$/.test(linea)) enConsola = false;
+        continue;
+      }
+      if (/console\.(log|warn|error|info|debug)\s*\(/.test(linea)) {
+        if (!/\);\s*$/.test(linea)) enConsola = true;
+        continue;
+      }
+      // Lineas de los scripts de PowerShell que se generan aqui dentro: sus
+      // comentarios y su `Write-Output` no son interfaz, son el protocolo por
+      // el que el script le habla al proceso principal.
+      if (/^\s*#/.test(linea) || /Write-(Output|Host|Error)/.test(linea)) continue;
+    }
     // Fuera los comentarios: los de linea, los de bloque y los de JSX
     // (`{/* ... */}`), que no son `//` y colaban su texto como si fuera
     // interfaz.

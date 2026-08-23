@@ -1,6 +1,7 @@
 import { BrowserWindow, Tray, Menu, nativeImage, globalShortcut } from 'electron';
 import { join } from 'path';
 import { deflateSync } from 'zlib';
+import { tm } from './idioma';
 
 export interface TriggerableButton {
   id: string;
@@ -84,9 +85,9 @@ export function createTray(win: BrowserWindow, onQuit: () => void) {
     tray = new Tray(trayIcon);
     tray.setToolTip('VirtualDeck');
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: 'Mostrar VirtualDeck', click: () => { win.show(); win.focus(); } },
+      { label: tm('tray.show'), click: () => { win.show(); win.focus(); } },
       { type: 'separator' },
-      { label: 'Salir', click: onQuit },
+      { label: tm('tray.quit'), click: onQuit },
     ]));
     tray.on('click', () => win.isVisible() ? win.focus() : win.show());
   } catch (e) {
@@ -99,7 +100,7 @@ export function pickTriggerables(rawConfig: any): TriggerableButton[] {
   return rawConfig.buttons
     .filter((b: any) => b && (b.globalHotkey || b.inTrayMenu))
     .map((b: any) => ({
-      id: b.id, label: b.label || `Botón ${b.id}`,
+      id: b.id, label: b.label || `${tm('tray.button')} ${b.id}`,
       icon: b.icon, globalHotkey: b.globalHotkey, inTrayMenu: !!b.inTrayMenu,
     }));
 }
@@ -122,11 +123,11 @@ export function rebuildTrayMenu(win: BrowserWindow, triggerables: TriggerableBut
   if (!tray) return;
   const trayItems = triggerables.filter((t) => t.inTrayMenu);
   const template: Electron.MenuItemConstructorOptions[] = [
-    { label: 'Mostrar VirtualDeck', click: () => { win.show(); win.focus(); } },
+    { label: tm('tray.show'), click: () => { win.show(); win.focus(); } },
     { type: 'separator' },
   ];
   if (trayItems.length > 0) {
-    template.push({ label: 'Acciones rápidas', enabled: false });
+    template.push({ label: tm('tray.quick'), enabled: false });
     for (const t of trayItems) {
       template.push({
         label: `${t.icon ? t.icon + '  ' : ''}${t.label}`,
@@ -135,7 +136,7 @@ export function rebuildTrayMenu(win: BrowserWindow, triggerables: TriggerableBut
     }
     template.push({ type: 'separator' });
   }
-  template.push({ label: 'Salir', click: onQuit });
+  template.push({ label: tm('tray.quit'), click: onQuit });
   tray.setContextMenu(Menu.buildFromTemplate(template));
 }
 

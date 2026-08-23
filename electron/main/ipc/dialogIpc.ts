@@ -1,6 +1,7 @@
 import { ipcMain, dialog, Notification, BrowserWindow, app } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
+import { tm } from '../idioma';
 
 export function registerDialogIpc(win: BrowserWindow) {
   ipcMain.handle('dialog:openFile', (_e: any, opts: any) =>
@@ -25,8 +26,8 @@ export function registerDialogIpc(win: BrowserWindow) {
 
   ipcMain.handle('dialog:openImage', async () => {
     const r = await dialog.showOpenDialog(win, {
-      title: 'Seleccionar imagen o GIF',
-      filters: [{ name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'] }],
+      title: tm('dlg.pickImage'),
+      filters: [{ name: tm('filter.images'), extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'] }],
       properties: ['openFile'],
     });
     if (r.canceled || !r.filePaths[0]) return null;

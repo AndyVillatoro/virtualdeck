@@ -1,5 +1,6 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import * as rgb from '../rgb';
+import { tm } from '../idioma';
 
 export function registerRgbIpc(win: BrowserWindow) {
   rgb.setOnDeviceListUpdated(() => {
@@ -22,7 +23,7 @@ export function registerRgbIpc(win: BrowserWindow) {
 
   ipcMain.handle('rgb:pickFile', async () => {
     const r = await dialog.showOpenDialog(win, {
-      title: 'Selecciona OpenRGB.exe',
+      title: tm('dlg.pickOpenRGB'),
       filters: [{ name: 'OpenRGB', extensions: ['exe'] }],
       properties: ['openFile'],
     });

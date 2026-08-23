@@ -1,5 +1,6 @@
 import { hayNucleo, intentarNativo } from './native';
 import { runPS as runPSShared } from './ps-helpers';
+import { tm } from './idioma';
 
 export interface NowPlaying {
   title: string;
@@ -183,8 +184,8 @@ foreach ($s in $sessions) {
     if ($null -eq $props) {
       Write-Output "INFO|session-$idx-props=NULL"
     } else {
-      $t = if ($props.Title) { $props.Title } else { '(sin título)' }
-      $a = if ($props.Artist) { $props.Artist } else { '(sin artista)' }
+      $t = if ($props.Title) { $props.Title } else { '${tm('media.untitled')}' }
+      $a = if ($props.Artist) { $props.Artist } else { '${tm('media.noArtist')}' }
       Write-Output "INFO|session-$idx-title=$t"
       Write-Output "INFO|session-$idx-artist=$a"
     }

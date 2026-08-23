@@ -8,6 +8,7 @@ import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
 import { abrirBarra } from './floatingBar';
+import { fijarIdioma } from './idioma';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -34,6 +35,9 @@ function setupWindow() {
   });
 
   const initialCfg = loadConfig();
+  // El idioma de lo poco que enseña el proceso principal: la bandeja y los
+  // titulos de los dialogos de archivo.
+  fijarIdioma((initialCfg as any)?.language);
   registerAllIpc(win, onQuit);
   createTray(win, onQuit);
   applyTriggerableConfig(win, initialCfg, onQuit);
