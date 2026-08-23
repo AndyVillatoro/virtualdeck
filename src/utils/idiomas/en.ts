@@ -495,4 +495,12 @@ export const EN: Dict = {
   'import.downloadError': 'Download error: {motivo}',
   'page.importRejected': 'That file is not a VirtualDeck page export.',
   'page.importedName': 'IMPORTED',
+  'ed.actionSequence': 'ACTION SEQUENCE (OPTIONAL)',
+  'ed.snapHint2': 'Works best with global hotkeys, without going through VirtualDeck.',
+  'cat.APPS': 'APPS',
+  'cat.WEB': 'WEB',
+  'cat.MEDIA': 'MEDIA',
+  'cat.SISTEMA': 'SYSTEM',
+  'cat.CREATIVO': 'CREATIVE',
+  'cat.RGB': 'RGB',
 };

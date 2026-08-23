@@ -504,4 +504,12 @@ export const ES: Dict = {
   'import.downloadError': 'Error de descarga: {motivo}',
   'page.importRejected': 'Ese archivo no es una página exportada de VirtualDeck.',
   'page.importedName': 'IMPORTADA',
+  'ed.actionSequence': 'SECUENCIA DE ACCIONES (OPCIONAL)',
+  'ed.snapHint2': 'Funciona mejor con atajos globales, sin pasar por VirtualDeck.',
+  'cat.APPS': 'APPS',
+  'cat.WEB': 'WEB',
+  'cat.MEDIA': 'MEDIA',
+  'cat.SISTEMA': 'SISTEMA',
+  'cat.CREATIVO': 'CREATIVO',
+  'cat.RGB': 'RGB',
 };

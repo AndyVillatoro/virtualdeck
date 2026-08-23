@@ -345,8 +345,7 @@ export function FormWindowSnap(p: PropsFormulario) {
                 style={inputStyle}
               />
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                {t('ed.snapHint')}
-                Funciona mejor con hotkeys globales (sin pasar por VirtualDeck).
+                {t('ed.snapHint')}{' '}{t('ed.snapHint2')}
               </div>
             </Field>
           </>

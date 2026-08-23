@@ -130,6 +130,7 @@ const PALABRAS_SUELTAS = new Set([
   'aplicar', 'preset', 'elegir', 'clic', 'arrastrar',
   'salir', 'entrar', 'kiosko', 'activar', 'desactivar', 'conectar',
   'descargar', 'descarga', 'pudo', 'error de', 'importar', 'importacion',
+  'secuencia', 'acciones', 'accion', 'opcional', 'funciona', 'atajos',
   'ratón', 'raton', 'combinación', 'texto', 'reproduciendo', 'pausado',
   'sólido', 'solido', 'vacío', 'vacio',
 ]);

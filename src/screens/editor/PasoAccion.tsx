@@ -70,7 +70,7 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                     color: presetCategory === cat ? accent : VD.textMuted,
                     cursor: 'pointer', borderRadius: VD.radius.sm,
                   }}>
-                    {cat}
+                    {t(`cat.${cat}`)}
                   </button>
                 ))}
               </div>
@@ -154,7 +154,7 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
           <div>
             <div style={{ height: 1, background: VD.border, marginBottom: 12 }} />
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
-              SECUENCIA DE ACCIONES (OPCIONAL)
+              {t('ed.actionSequence')}
             </DotLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {extraActions.map((ea, idx) => (

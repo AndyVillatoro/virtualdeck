@@ -43,7 +43,10 @@ export function Insignias({
       {isActive && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0,
-          height: 2, background: '#4caf50',
+          // El acento, no un verde fijo: si el usuario elige un color de
+          // acento, la barra de «este es el que esta puesto» tiene que ir con
+          // el. Estaba clavada en #4caf50 y era de lo poco que no cambiaba.
+          height: 2, background: accent,
           borderRadius: `${VD.radius.lg} ${VD.radius.lg} 0 0`,
         }} />
       )}

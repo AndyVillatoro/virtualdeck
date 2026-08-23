@@ -61,8 +61,11 @@ export const VD_LIGHT: VDTokens = {
   border: '#c0c0c0',
   borderStrong: '#aaaaaa',
   text: '#1a1a1a',
-  textDim: '#444444',
-  textMuted: '#888888',
+  // Mas oscuros que el gris de antes (#444 y #888). Sobre `bg: #f0f0f0` el
+  // apagado daba un contraste de ~3.5:1, por debajo del minimo legible, y la
+  // interfaz esta casi entera a 8-9 px.
+  textDim: '#333333',
+  textMuted: '#5c5c5c',
   accentBg: 'rgba(74,142,240,0.15)',
   shadow: {
     menu: '0 8px 24px rgba(0,0,0,0.18)',

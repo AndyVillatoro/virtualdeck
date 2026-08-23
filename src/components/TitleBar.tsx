@@ -159,9 +159,11 @@ export function TitleBar({
             {onWallpaper && (
               <button onClick={onWallpaper} style={btnStyle}>{t('ui.wallpaper')}</button>
             )}
+            {/* Conectado se marca con el acento, no con el verde del tema: es
+                el mismo criterio que la barra de activo de las celdas. */}
             {onRGB && (
-              <button onClick={onRGB} title={t('tip.rgb')} style={{ ...btnStyle, borderColor: rgbStatus?.connected ? VD.success : VD.border }}>
-                <span style={{ marginRight: 4, color: rgbStatus?.connected ? VD.success : VD.textMuted }}>●</span>RGB
+              <button onClick={onRGB} title={t('tip.rgb')} style={{ ...btnStyle, borderColor: rgbStatus?.connected ? effectiveAccent : VD.border }}>
+                <span style={{ marginRight: 4, color: rgbStatus?.connected ? effectiveAccent : VD.textMuted }}>●</span>RGB
               </button>
             )}
             <span style={{ position: 'relative', display: 'inline-flex' }}>

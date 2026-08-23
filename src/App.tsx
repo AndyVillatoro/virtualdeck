@@ -146,11 +146,6 @@ export default function App() {
     api?.window.setAlwaysOnTop(!!config.alwaysOnTop);
   }, [config.alwaysOnTop]);
 
-  // Apply theme class on documentElement for CSS variable overrides
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', config.theme ?? 'dark');
-  }, [config.theme]);
-
   // Clamp activePage when pages change
   useEffect(() => {
     if (activePage >= config.pages.length) setActivePage(config.pages.length - 1);

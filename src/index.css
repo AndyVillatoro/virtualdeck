@@ -11,8 +11,33 @@ html, body, #root {
   background: #0f0f0f;
 }
 
+/* En claro, el fondo de la raíz también. Casi siempre queda tapado por el
+   papel tapiz, pero asoma mientras carga y en los bordes. */
+:root[data-theme='light'] html,
+:root[data-theme='light'] body,
+:root[data-theme='light'] #root {
+  background: #f0f0f0;
+}
+
 :root {
   --vd-accent: #4a8ef0;
+}
+
+/*
+ * El texto en tema claro se veía demasiado fino y costaba leerlo.
+ *
+ * Son dos cosas a la vez y ninguna es el color. La primera: el suavizado por
+ * subpíxel adelgaza el trazo cuando es oscuro sobre claro —al revés que sobre
+ * fondo oscuro, donde lo engorda—, y la fuente de la aplicación es una mono
+ * de trazo ya de por sí delgado. La segunda: casi toda la interfaz está a 8 y
+ * 9 píxeles, tamaños en los que medio píxel de trazo se nota mucho.
+ *
+ * Aquí se pide el suavizado normal (no `antialiased`, que es el que adelgaza)
+ * y medio grado más de grosor. En oscuro no se toca nada: ahí ya se lee bien.
+ */
+:root[data-theme='light'] body {
+  -webkit-font-smoothing: auto;
+  font-weight: 500;
 }
 
 /* Hide scrollbars globally */
