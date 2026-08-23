@@ -4,6 +4,101 @@ Todos los cambios notables de VirtualDeck se documentan acá.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.7.0] — 2026-08-23
+
+Una tanda de arreglos, casi todos del mismo tipo: cosas que estaban en la
+interfaz y no hacían lo que decían. Ninguno salió de un reporte — salieron de
+cruzar inventarios (qué tipos de acción existen contra cuáles se pueden
+configurar, qué le pasa cada pantalla a una celda, qué canales IPC declara
+cada lado) y de abrir la aplicación en inglés.
+
+### Fixed
+
+- **Importar una configuración inválida borraba la que tenías.** El archivo se
+  guardaba en disco *antes* de validarlo, así que un JSON que no fuera un deck
+  reemplazaba todo mientras la pantalla decía «Importación rechazada» — es
+  decir, «no ha pasado nada». Quedaba copia de seguridad, pero había que saber
+  que hacía falta buscarla. Ahora se valida primero y solo se guarda lo que
+  pasa.
+- **Importar un perfil desde una URL no podía funcionar.** La política de
+  seguridad de la propia ventana bloquea cualquier conexión que no sea a los
+  servicios del clima, así que la descarga se rechazaba siempre y además
+  tumbaba la ventana. Ahora la hace el proceso principal, que no está sujeto a
+  esa política, y solo admite `http` y `https`.
+- **Una importación correcta tampoco se guardaba del todo**: se escribía el
+  JSON del archivo y no lo que la aplicación estaba usando. Por eso un perfil
+  descargado desaparecía al reiniciar.
+- **Los widgets no se dibujaban en pantalla completa.** Un botón con reloj,
+  clima o sensor mostraba el dato en la ventana normal y el icono de la acción
+  en kiosko — justo el modo pensado para dejar el deck mirando a la
+  habitación.
+- **En kiosko faltaban además**: las etiquetas con `{variable}` salían con las
+  llaves literales, la visibilidad condicional se ignoraba (un botón con «solo
+  si corre tal aplicación» aparecía siempre), no se marcaba el dispositivo de
+  audio en uso y la pulsación larga no hacía nada.
+- **Los disparadores automáticos no sonaban en kiosko.** Los de hora y los de
+  sensor vivían en la pantalla principal, así que al pasar a pantalla completa
+  dejaban de existir. El de hora además solo miraba la página que tuvieras
+  abierta: una acción puesta a las 08:00 solo saltaba si a esa hora estabas
+  mirando esa página.
+- **En la barra flotante, un botón con varias acciones ejecutaba solo la
+  primera**, y la acción «al apagar» de un interruptor no se ejecutaba nunca.
+- **Tres tipos de acción no se podían configurar**: al elegir *Shuffle*,
+  *Repetir* o un preset RGB, el paso 2 del editor salía en blanco.
+- **Doce botones de ejemplo estaban escondidos**: la categoría RGB del
+  catálogo no aparecía entre las pestañas, solo se llegaba a ella escribiendo
+  en el buscador.
+- **Un atajo global aplicaba perfiles RGB desactualizados**: si editabas los
+  colores de un perfil, el atajo seguía aplicando los de antes hasta
+  reiniciar.
+- **Poner un widget de clima no arrancaba nada** hasta reiniciar la
+  aplicación.
+- **Las casillas del modo «cuadradas» no eran cuadradas** (114×122 en una
+  rejilla de 4×3) y en modo «llenar área» la última fila quedaba recortada.
+- Elegir un archivo que no fuera una página exportada cerraba el diálogo sin
+  decir nada.
+- En el editor de ramas, los presets RGB se listaban por su identificador
+  interno (`night-blue`) en vez de por su nombre.
+
+### Changed
+
+- **La aplicación en inglés ya está en inglés.** Faltaban unos sesenta textos
+  que la auditoría no veía: los que viven dentro de expresiones (`x ? 'A' :
+  'B'`), los de los módulos que no son componentes, y **todo el proceso
+  principal** — el menú de la bandeja, los títulos de los diálogos de archivo
+  y los errores que devuelve a la pantalla. La fecha de kiosko también estaba
+  fija en español.
+- El nombre de la página importada y el aviso de rechazo pasan por el
+  diccionario.
+
+### Interno
+
+- Cuatro cosas que estaban duplicadas entre pantallas pasan a compartirse: la
+  rejilla de botones, los datos de los widgets, el sondeo del sistema y los
+  disparadores. Los cuatro fallos de kiosko de esta versión eran justamente
+  copias que se habían separado.
+- Dos guardianes nuevos en `npm run check`: uno cruza los 86 canales IPC entre
+  el proceso principal y el puente del preload, y otro comprueba que cada tipo
+  de acción tenga formulario en el editor y que los presets RGB existan en los
+  dos lados. Los dos fallan si se rompe la correspondencia; comprobado
+  rompiéndola a propósito.
+- La auditoría de idioma gana tres formas nuevas de mirar y aprende a callarse
+  con lo que no es interfaz (la salida de consola, los scripts de PowerShell
+  que se generan dentro, las expresiones regulares que casan texto en
+  español).
+- `i18n.tsx` pasa de 1135 líneas a 75; los diccionarios viven aparte.
+
+### Sin probar
+
+- Macros con teclado real, síntesis de voz, notificaciones y RGB con hardware:
+  verificados por código, no ejecutados en esta tanda.
+- El desplegable de presets dentro del editor de ramas: no se puede abrir esa
+  pantalla con eventos sintéticos. El selector equivalente del paso 2 sí está
+  comprobado en la aplicación empaquetada.
+- Los widgets en la barra flotante siguen sin dibujarse. Esa ventana no
+  consulta nada a propósito, y el clima, la música y los sensores traerían un
+  segundo proceso de sondeo permanente.
+
 ## [0.6.0] — 2026-08-20
 
 Dos cosas grandes: el núcleo pasa a ser código nativo en Rust en vez de
