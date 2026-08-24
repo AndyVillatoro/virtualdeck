@@ -37,19 +37,19 @@ const ES: Record<Clave, string> = {
   'dlg.pickImage': 'Seleccionar imagen o GIF',
   'dlg.exportPage': 'Exportar página',
   'dlg.importPage': 'Importar página',
-  'dlg.pickOpenRGB': 'Selecciona OpenRGB.exe',
+  'dlg.pickOpenRGB': 'Seleccione OpenRGB.exe',
   'filter.images': 'Imágenes',
   'filter.text': 'Texto',
   'macro.noUiohook': 'uiohook-napi no está disponible en este sistema.',
   'macro.noSteps': 'Sin pasos en la macro.',
-  'macro.playFailed': 'La reproducción nativa falló; mirá el log del proceso principal.',
+  'macro.playFailed': 'La reproducción nativa falló; consulte el registro del proceso principal.',
   'media.untitled': '(sin título)',
   'media.noArtist': '(sin artista)',
   'rgb.onlyDirect': 'solo ofrece Direct, el color se perderá al cerrar OpenRGB.',
   'sensors.disabled': 'Sensores deshabilitados',
   'sensors.uacCancelled': 'UAC cancelado por el usuario',
   'sensors.netshCode': 'netsh terminó con código',
-  'currency.badCode': 'Moneda inválida:',
+  'currency.badCode': 'Moneda no válida:',
 };
 
 const EN: Record<Clave, string> = {

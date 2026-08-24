@@ -115,7 +115,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
       setAudioDevices(devs);
       setLoadingDevices(false);
     }).catch(() => {
-      setAudioError(tf('No se pudo obtener la lista. Verifica que el audio esté activo o reinicia la aplicación.'));
+      setAudioError(tf('No se pudo obtener la lista. Compruebe que el audio esté activo o reinicie la aplicación.'));
       setLoadingDevices(false);
     });
   };

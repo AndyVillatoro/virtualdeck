@@ -51,7 +51,7 @@ export function FormIncrVar(p: PropsFormulario) {
                 style={inputStyle}
               />
             </Field>
-            <Field label={tf("DELTA (entero — usa negativo para restar)")}>
+            <Field label={tf("DELTA (número entero — use negativo para restar)")}>
               <input
                 type="number"
                 value={action.varDelta ?? 1}

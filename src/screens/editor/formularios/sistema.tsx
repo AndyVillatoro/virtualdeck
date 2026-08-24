@@ -31,7 +31,7 @@ export function FormAudioDevice(p: PropsFormulario) {
                 </div>
                 <Btn onClick={loadAudioDevices} style={{ marginBottom: 8 }}>{tf('⟳ REINTENTAR')}</Btn>
                 <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginBottom: 6 }}>
-                  {tf('O ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):')}
+                  {tf('O introduzca el nombre exacto del dispositivo (tal como aparece en Configuración → Sonido):')}
                 </div>
                 <input
                   value={action.deviceName || ''}
@@ -47,7 +47,7 @@ export function FormAudioDevice(p: PropsFormulario) {
                   {tf('No se detectaron dispositivos automáticamente.')}
                 </div>
                 <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginBottom: 6 }}>
-                  {tf('Ingresa el nombre exacto del dispositivo (como aparece en Configuración → Sonido):')}
+                  {tf('Introduzca el nombre exacto del dispositivo (tal como aparece en Configuración → Sonido):')}
                 </div>
                 <input
                   value={action.deviceName || ''}
@@ -107,7 +107,7 @@ export function FormHotkey(p: PropsFormulario) {
             </div>
             {capturing && (
               <div style={{ fontFamily: VD.mono, fontSize: 9, color: accent, marginTop: 6 }}>
-                {tf('Presiona la combinación deseada...')}
+                {tf('Pulse la combinación deseada...')}
               </div>
             )}
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
@@ -156,7 +156,7 @@ export function FormTypeText(p: PropsFormulario) {
               />
             </Field>
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-              {tf('El texto se escribe en la ventana activa. Caracteres especiales (+, ^, %, %, (, )) se escapan automáticamente.')}
+              {tf('El texto se escribe en la ventana activa. Los caracteres especiales (+, ^, %, (, )) se escapan automáticamente.')}
             </div>
           </>
     </>
@@ -277,7 +277,7 @@ export function FormBrightness(p: PropsFormulario) {
               <input type="range" min={0} max={100} step={5} value={action.brightnessLevel ?? 70} onChange={(e) => setAction((a) => ({ ...a, brightnessLevel: parseInt(e.target.value) }))} style={{ flex: 1, accentColor: accent }} />
               <span style={{ fontFamily: VD.mono, fontSize: 14, color: VD.text, minWidth: 40, textAlign: 'right' }}>{action.brightnessLevel ?? 70}%</span>
             </div>
-            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>{tf('Controla el brillo del monitor principal via WMI.')}</div>
+            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>{tf('Controla el brillo del monitor principal mediante WMI.')}</div>
           </Field>
     </>
   );
@@ -351,7 +351,7 @@ export function FormMediaPlayPause() {
   return (
     <>
           <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '8px 0' }}>
-            {tf('Esta acción no necesita configuración adicional.')}
+            {tf('Esta acción no necesita ninguna configuración adicional.')}
           </div>
     </>
   );
@@ -388,7 +388,7 @@ export function FormWindowSnap(p: PropsFormulario) {
                 ))}
               </div>
             </Field>
-            <Field label={tf("PROCESO A SNAPEAR (opcional — vacío = ventana activa)")}>
+            <Field label={tf("PROCESO A AJUSTAR (opcional — vacío = ventana activa)")}>
               <input
                 value={action.snapProcessName ?? ''}
                 onChange={(e) => setAction((a) => ({ ...a, snapProcessName: e.target.value || undefined }))}

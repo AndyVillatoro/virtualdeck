@@ -17,7 +17,7 @@ export function FormRgbColor(p: PropsFormulario) {
           <>
             {!rgbConnected && (
               <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, padding: '6px 10px', background: 'rgba(212,162,52,0.08)', border: `1px solid ${VD.warning}`, borderRadius: VD.radius.sm }}>
-                {tf('OpenRGB no conectado. Conecta desde la pantalla RGB para listar dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.')}
+                {tf('OpenRGB no está conectado. Conéctelo desde la pantalla RGB para listar los dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.')}
               </div>
             )}
             <Field label={tf("DISPOSITIVO RGB")}>
@@ -65,7 +65,7 @@ export function FormRgbMode(p: PropsFormulario) {
           <>
             {!rgbConnected && (
               <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, padding: '6px 10px', background: 'rgba(212,162,52,0.08)', border: `1px solid ${VD.warning}`, borderRadius: VD.radius.sm }}>
-                {tf('OpenRGB no conectado. Conecta desde la pantalla RGB para listar dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.')}
+                {tf('OpenRGB no está conectado. Conéctelo desde la pantalla RGB para listar los dispositivos. La acción seguirá funcionando si OpenRGB está activo cuando se ejecute el botón.')}
               </div>
             )}
             <Field label={tf("DISPOSITIVO RGB")}>
@@ -179,7 +179,7 @@ export function FormRgbPreset({ action, setAction }: PropsFormulario) {
         ))}
       </select>
       <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 4, lineHeight: 1.4 }}>
-        {tf('Cada preset prueba varios modos hasta dar con uno que el dispositivo soporte.')}
+        {tf('Cada preset prueba varios modos hasta dar con uno compatible con el dispositivo.')}
       </div>
     </Field>
   );

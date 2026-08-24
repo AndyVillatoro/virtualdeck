@@ -109,7 +109,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
               <Field label={tf("SUB-ETIQUETA (OPCIONAL)")}>
                 <input value={sublabel} onChange={(e) => setSublabel(e.target.value)} placeholder={tf("Descripción corta")} maxLength={30} style={inputStyle} />
               </Field>
-              <Field label={tf("ICONO (EMOJI O SÍMBOLO — VACÍO = ÍCONO DEL TIPO)")}>
+              <Field label={tf("ICONO (EMOJI O SÍMBOLO — VACÍO = ICONO DEL TIPO)")}>
                 <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder={"▶ ◉ 🎵 💻 🌐 ★"} maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
               </Field>
               <Field label={tf("IMAGEN PERSONALIZADA (PNG / JPG / GIF)")}>
@@ -169,7 +169,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   </label>
                 )}
                 <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginTop: 6 }}>
-                  {tf('68 iconos · Fondo transparente · Superpone al color de fondo del botón')}
+                  {tf('68 iconos · Fondo transparente · Se superpone al color de fondo del botón')}
                 </div>
               </Field>
 
@@ -203,7 +203,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                     {bgColor && <Btn onClick={() => setBgColor('')}>✕</Btn>}
                   </div>
                 </Field>
-                <Field label={tf("COLOR DE TEXTO / ÍCONO")}>
+                <Field label={tf("COLOR DE TEXTO / ICONO")}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input type="color" value={fgColor || '#dcdcdc'} onChange={(e) => setFgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
                     <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder={"#dcdcdc"} style={{ ...inputStyle, flex: 1 }} />
@@ -244,7 +244,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   })}
                 </div>
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                  {tf('Sustituye el ícono/etiqueta con datos en vivo. El botón sigue siendo ejecutable.')}
+                  {tf('Sustituye el icono o la etiqueta por datos en vivo. El botón se sigue pudiendo ejecutar.')}
                 </div>
                 {widget === 'currency' && (
                   <CamposDivisa
@@ -313,7 +313,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                       />
                     </div>
                     <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
-                      {tf('Muestra el valor en vivo de una variable. Combínalo con acciones "Incrementar variable" / "Asignar variable" para hacer contadores. Las variables sin valor se muestran como 0.')}
+                      {tf('Muestra el valor en vivo de una variable. Combínelo con las acciones "Incrementar variable" y "Asignar variable" para crear contadores. Las variables sin valor se muestran como 0.')}
                     </div>
                   </div>
                 )}
@@ -328,7 +328,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   style={inputStyle}
                 />
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                  {tf('Nombre del proceso sin .exe. Vacío = siempre visible.')}
+                  {tf('Nombre del proceso, sin la extensión .exe. Vacío = siempre visible.')}
                 </div>
               </Field>
 
@@ -342,7 +342,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   style={inputStyle}
                 />
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                  {tf('Formato 24h. Solo se dispara cuando la página del botón está activa.')}
+                  {tf('Formato de 24 horas. Solo se ejecuta cuando la página del botón está activa.')}
                 </div>
               </Field>
 
@@ -379,7 +379,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   )}
                 </div>
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                  {tf('Aparece cuando el sensor cumple la condición. Combinable con app de arriba.')}
+                  {tf('Aparece cuando el sensor cumple la condición. Se puede combinar con la aplicación de arriba.')}
                 </div>
               </Field>
 
@@ -424,7 +424,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   )}
                 </div>
                 <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                  {tf('Ejecuta la acción cuando se cumple la condición. Cooldown evita que se redispare cada poll (default 60s).')}
+                  {tf('Ejecuta la acción cuando se cumple la condición. La espera mínima evita que se repita en cada lectura del sensor (60 s por omisión).')}
                 </div>
               </Field>
             </div>

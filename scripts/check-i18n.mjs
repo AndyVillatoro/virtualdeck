@@ -292,6 +292,48 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
   }
 }
 
+// 5. Registro del español: neutro y formal (usted), sin regionalismos.
+//
+// El diccionario nacio mezclado —voseo rioplatense en el tutorial, tuteo en los
+// ajustes, «grilla» e «ícono» en unos sitios y no en otros— y eso no lo detecta
+// nada: son cadenas validas, traducidas y con su pareja en ingles. Lo encontro
+// el usuario leyendo la aplicacion. Esta lista es corta a proposito: solo formas
+// que no admiten duda.
+const REGISTRO = [
+  // Voseo: **solo** las formas acentuadas. `Cambi[aá]` tambien casaba con
+  // «Cambia el modo/efecto RGB», que es la descripcion en tercera persona de lo
+  // que hace un boton y esta bien asi. Un imperativo de tuteo sin acento
+  // (`Usa`, `Abre`) es indistinguible de esa tercera persona mirando la cadena,
+  // de modo que esos no se pueden buscar con una expresion regular: van en la
+  // lista explicita de abajo.
+  [/\b(Hacé|Elegí|Organizá|Pulsá|Creá|Arrastrá|Cambiá|Entrá|Poné|Tené|Mirá|Probá|Guardá|Abrí|Escribí|Seleccioná|Usá|Buscá|Revisá|Configurá|Activá|Volvé|Dejá|Grabá|Adjuntá|Intentá|Reiniciá|Presioná|Importá|Exportá|Añadí|probalos|usá|hacé|abrí|añadí|importá|reiniciá)\b/, 'voseo'],
+  [/\b(querés|podés|tenés|debés|sabés)\b/i, 'voseo'],
+  // Tuteo, solo verbos que como descripcion en tercera persona no tendrian
+  // sentido en la interfaz.
+  [/\b(Ingresa|Presiona|Verifica|Asegúrate|Fijate|Combínalo|Combinalo)\b/, 'tuteo'],
+  [/\b(tu|tus)\s+(botón|botones|configuración|dispositivos|deck|perfil|perfiles|página|páginas|config)\b/i, 'tuteo'],
+  [/\b(TU|TUS)\s+(BOTÓN|BOTONES|CONFIGURACIÓN|DISPOSITIVOS|DECK|PERFIL|PERFILES)\b/, 'tuteo'],
+  // Regionalismos y anglicismos con equivalente neutro. `ícono` **con tilde**:
+  // `icono` es la forma que se quiere y casaba con el patron anterior.
+  [/ícono/i, 'usar «icono», sin tilde en la i'],
+  [/\bgrilla\b/i, 'usar «cuadrícula»'],
+  [/\bGRILLA\b/, 'usar «CUADRÍCULA»'],
+  [/\bac[á]\b/i, 'usar «aquí»'],
+  [/\bsnape(a|ar)\b/i, 'usar «ajustar»'],
+];
+{
+  const fuente = readFileSync('src/utils/idiomas/es.ts', 'utf-8')
+    + '\n' + readFileSync('src/utils/idiomas/campos.ts', 'utf-8')
+    + '\n' + readFileSync('electron/main/idioma.ts', 'utf-8');
+  for (const [i, linea] of fuente.split(/\r?\n/).entries()) {
+    if (/^\s*(\/\/|\*|\/\*)/.test(linea)) continue;
+    for (const [re, motivo] of REGISTRO) {
+      const m = linea.match(re);
+      if (m) problemas.push(`registro ES: "${m[0]}" (${motivo}) — linea ${i + 1} de los diccionarios`);
+    }
+  }
+}
+
 if (problemas.length) {
   console.error(`i18n: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  · ' + p);

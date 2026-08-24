@@ -80,7 +80,7 @@ export function PasoConfigurar(p: PropsPasoConfigurar) {
         {action.type !== 'none' && action.type !== 'folder' && (
           <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
-              {tf('ACCIÓN AL MANTENER PRESIONADO (~500 MS)')}
+              {tf('ACCIÓN AL MANTENER PULSADO (~500 MS)')}
             </DotLabel>
             <ToggleOffActionPicker
               action={longPressAction}
@@ -129,7 +129,7 @@ export function PasoConfigurar(p: PropsPasoConfigurar) {
                 style={{ accentColor: accent }}
               />
               <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-                {tf('MOSTRAR EN MENÚ DEL TRAY (acción rápida)')}
+                {tf('MOSTRAR EN EL MENÚ DE LA BANDEJA (acción rápida)')}
               </span>
             </label>
           </div>
