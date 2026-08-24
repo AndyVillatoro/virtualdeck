@@ -375,7 +375,7 @@ export function MainB({
                 return (
                   <div style={{ padding: '8px 14px', borderBottom: `1px solid ${VD.border}` }}>
                     <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 1 }}>
-                      GRILLA · {ctxGs}×{ctxRows}
+                      {t('page.grid')} · {ctxGs}×{ctxRows}
                     </div>
                     <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.columns')}</div>
                     <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>

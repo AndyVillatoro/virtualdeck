@@ -140,6 +140,9 @@ const PALABRAS_SUELTAS = new Set([
   'grabar', 'grabando', 'detener', 'detenido', 'reproducir', 'pasos', 'paso',
   // Los tres estados del boton de LibreHardwareMonitor, del mismo barrido.
   'iniciar', 'iniciando', 'activo', 'salida',
+  // El rotulo del menu de pagina. El patron nuevo si lo veia; lo que faltaba
+  // era la palabra aqui.
+  'grilla', 'cuadricula', 'cuadrícula', 'pagina', 'página', 'paginas', 'páginas',
 ]);
 
 // Los dos archivos de datos sembrados. Lo que hay aqui en espanol se **copia
@@ -268,6 +271,16 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
     // El patrón de «línea suelta» lo descarta por llevar llaves, y el de
     // `>texto<` no lo ve porque la etiqueta no está en esa línea. Asi se colo
     // el rotulo de la barra de seleccion multiple.
+    // El espejo del de abajo: texto que **precede** a una expresión en la misma
+    // línea. `GRILLA · {ctxGs}×{ctxRows}`, el rótulo del menú de la página, no
+    // lo veía ninguno de los cinco patrones: la línea lleva llaves, así que el
+    // de «línea suelta» la descarta, y el de `}texto` solo mira lo que va detrás.
+    for (const m of codigo.matchAll(/(?:^|>)\s*([^<>{}\n]{3,}?)\s*(?=\{)/g)) {
+      const trozo = m[1].trim();
+      if (/[;=,'"`()[\]]/.test(trozo)) continue;
+      if (!/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(trozo)) continue;
+      sospechas.push(trozo);
+    }
     for (const m of codigo.matchAll(/\}\s*([^<>{}\n]{3,})(?=$|<)/g)) {
       const trozo = m[1].trim();
       // Sin puntuación de código: detrás de un `}` hay tanto texto de interfaz

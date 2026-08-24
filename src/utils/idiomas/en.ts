@@ -262,6 +262,7 @@ export const EN: Dict = {
   'ui.pause': 'PAUSE',
   'full.title': 'VIRTUALDECK · FULLSCREEN MODE',
   'ui.columns': 'COLUMNS',
+  'page.grid': 'GRID',
   'ui.rows': 'ROWS',
   'ui.moveTo': 'MOVE TO...',
   // ── Settings, pages and menus ──

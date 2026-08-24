@@ -271,6 +271,7 @@ export const ES: Dict = {
   'ui.pause': 'PAUSA',
   'full.title': 'VIRTUALDECK · MODO PANTALLA COMPLETA',
   'ui.columns': 'COLUMNAS',
+  'page.grid': 'CUADRÍCULA',
   'ui.rows': 'FILAS',
   'ui.moveTo': 'MOVER A...',
   // ── Ajustes, paginas y menus ──

@@ -14,7 +14,7 @@ import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/c
 import { useDisparadores } from './utils/useDisparadores';
 import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
-import { DEFAULT_CONFIG, PAGES_DEFAULT, makeDefaultButtons } from './utils/configDefaults';
+import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
 import { useDeck } from './utils/useDeck';
 import { runActionSequence, executeAction } from './utils/actions';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
@@ -173,10 +173,7 @@ export default function App() {
       const migrated = migrateConfig(saved);
       const s = migrated as Partial<DeckConfig>;
       if (s && s.buttons && s.buttons.length > 0) {
-        const merged = makeDefaultButtons(s.pages || PAGES_DEFAULT).map((def) => {
-          const found = s.buttons?.find((b) => b.id === def.id);
-          return found ?? def;
-        });
+        const merged = conHuecosCompletos(s.pages || PAGES_DEFAULT, s.buttons);
         setConfig({ ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION });
       }
       setAutostart(as as boolean);
@@ -272,12 +269,14 @@ export default function App() {
         id: `page_${Date.now()}`,
         name: (imported.page!.name || t('page.importedName')).toUpperCase(),
       };
-      const newButtons: ButtonConfig[] = (imported.buttons ?? []).map((b, i) => ({
-        ...b,
-        id: `p${Date.now()}_${i}`,
-        page: newIdx,
-      }));
-      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+      // Se rellena hasta cubrir la rejilla. Un archivo con menos botones que
+      // huecos dejaba celdas que **no existian**: no se podian pulsar para
+      // crear un boton, porque no habia objeto detras. La configuracion
+      // completa ya se rellenaba al importarse; una pagina suelta no.
+      const soloDeEstaPagina = (imported.buttons ?? []).map((b) => ({ ...b, page: 0 }));
+      const rellenados = conHuecosCompletos([newPage], soloDeEstaPagina)
+        .map((b, i) => ({ ...b, id: `p${Date.now()}_${i}`, page: newIdx }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...rellenados] };
     });
   }, [api, withHistory, t]);
 
@@ -353,10 +352,7 @@ export default function App() {
       return false;
     }
     const s = v.config;
-    const merged = makeDefaultButtons(s.pages).map((def) => {
-      const found = s.buttons.find((b) => b.id === def.id);
-      return found ?? def;
-    });
+    const merged = conHuecosCompletos(s.pages, s.buttons);
     const final = { ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION };
     setConfig(final);
     // Guardar aqui y no en el proceso principal, por dos motivos: solo se
