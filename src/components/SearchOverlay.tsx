@@ -17,23 +17,40 @@ interface SearchHit {
   haystack: string;
 }
 
+/** Ni un icono base64 ni un script enorme aportan nada al buscador. */
+const LARGO_MAXIMO = 200;
+
+/**
+ * Todo el texto por el que se puede encontrar un botón.
+ *
+ * Los campos de la acción se recorren **enteros**, no uno a uno. Antes era una
+ * lista escrita a mano y se había separado del tipo: se quedaban fuera quince
+ * campos de texto, entre ellos el script que ejecuta, la variable que pone, la
+ * URL del webhook, el perfil RGB y el texto de voz. O sea que buscar por lo que
+ * el botón *hace* no funcionaba, y el buscador no daba ninguna señal de estar
+ * mirando de menos.
+ *
+ * Se cuela algo de ruido —`scriptShell`, un color en hexadecimal— y da igual:
+ * el buscador solo empareja lo que se escribe.
+ */
 function buildHaystack(b: ButtonConfig): string {
-  return [
-    b.label,
-    b.sublabel,
-    b.action.type,
-    b.action.appPath,
-    b.action.url,
-    b.action.shortcutPath,
-    b.action.hotkey,
-    b.action.deviceName,
-    b.action.processName,
-    b.action.notifyTitle,
-    b.action.notifyBody,
-    b.action.clipboardText,
-    b.action.typeText,
-    ...(b.actions ?? []).map((a) => a.type),
-  ].filter(Boolean).join(' ').toLowerCase();
+  const trozos: string[] = [b.label, b.sublabel ?? '', b.icon ?? ''];
+
+  const anotar = (v: unknown) => {
+    if (typeof v === 'string' && v && v.length <= LARGO_MAXIMO) trozos.push(v);
+    else if (typeof v === 'number') trozos.push(String(v));
+  };
+
+  for (const v of Object.values(b.action)) anotar(v);
+  // Las acciones de la secuencia: al menos su tipo y sus textos.
+  for (const a of b.actions ?? []) for (const v of Object.values(a)) anotar(v);
+  // Y lo que enseña el widget, que también es como el usuario lo reconoce.
+  for (const cfg of [b.sensorWidget, b.varWidget, b.currencyWidget]) {
+    if (cfg) for (const v of Object.values(cfg)) anotar(v);
+  }
+  if (b.widget) trozos.push(b.widget);
+
+  return trozos.filter(Boolean).join(' ').toLowerCase();
 }
 
 export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlayProps) {
