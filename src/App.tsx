@@ -530,7 +530,17 @@ export default function App() {
       )}
 
       {showOnboarding && (
-        <Onboarding accent={config.accent} onClose={finishOnboarding} />
+        <Onboarding
+          accent={config.accent}
+          language={config.language ?? 'system'}
+          theme={config.theme ?? 'dark'}
+          onLanguageChange={setLanguage}
+          onThemeChange={setTheme}
+          onAccentChange={(accent) => saveConfig({ ...config, accent })}
+          onExport={handleConfigExport}
+          onImport={handleConfigImport}
+          onClose={finishOnboarding}
+        />
       )}
 
       {searchOpen && view === 'main' && (

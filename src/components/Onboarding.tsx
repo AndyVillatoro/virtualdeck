@@ -3,19 +3,39 @@ import { useTheme } from '../utils/theme';
 import { DotText } from './DotText';
 import { DotLabel } from './DotLabel';
 import { useT } from '../utils/i18n';
+import { PasoIdioma, PasoApariencia, PasoRespaldo, type Idioma, type Tema } from './onboarding/pasos';
 
 interface OnboardingProps {
   accent: string;
+  language: Idioma;
+  theme: Tema;
+  onLanguageChange: (v: Idioma) => void;
+  onThemeChange: (v: Tema) => void;
+  onAccentChange: (c: string) => void;
+  onExport: () => void | Promise<void>;
+  onImport: () => void | Promise<void>;
   /** Se llama al terminar o saltar. El caller persiste onboardingCompleted: true. */
   onClose: () => void;
 }
 
-// Tutorial inicial (6.x del roadmap). Se muestra en la primera ejecución
-// (instalación virgen, sin onboardingCompleted en config) y se puede repetir
-// desde Ayuda → Acerca de → "Repetir tutorial". Los textos vienen de i18n.
-const STEP_COUNT = 5;
+/*
+ * Tutorial inicial (6.x del roadmap). Se muestra en la primera ejecución
+ * (instalación virgen, sin onboardingCompleted en config) y se puede repetir
+ * desde Ayuda → Acerca de → "Repetir tutorial". Los textos vienen de i18n.
+ *
+ * Los tres pasos con controles —idioma, apariencia y respaldo— van primero y
+ * último a propósito. El idioma abre porque **todo lo que viene después se lee
+ * en él**: dejarlo para los ajustes significaba que quien tuviera Windows en
+ * un idioma y quisiera el otro leyera el tutorial entero en el que no es suyo.
+ * El respaldo cierra porque importar una configuración existente solo tiene
+ * sentido antes de empezar a montar botones encima.
+ */
+const STEP_COUNT = 7;
 
-export function Onboarding({ accent, onClose }: OnboardingProps) {
+export function Onboarding({
+  accent, language, theme,
+  onLanguageChange, onThemeChange, onAccentChange, onExport, onImport, onClose,
+}: OnboardingProps) {
   // La paleta viene del contexto, no de la importacion: importarla fijaba
   // el tema oscuro y el modo claro no llegaba a esta pantalla.
   const VD = useTheme();
@@ -31,13 +51,26 @@ export function Onboarding({ accent, onClose }: OnboardingProps) {
     hint: t(`onb.${n}.hint`),
   };
 
+  // Lo interactivo de cada paso, si lo tiene. Un mapa y no una cadena de
+  // condiciones, por lo mismo que los formularios del editor: añadir un paso
+  // con controles es añadir una entrada.
+  const CONTROLES: Record<number, React.ReactNode> = {
+    1: <PasoIdioma valor={language} accent={accent} onChange={onLanguageChange} />,
+    2: <PasoApariencia tema={theme} accent={accent} onTema={onThemeChange} onAccent={onAccentChange} />,
+    7: <PasoRespaldo accent={accent} onExport={onExport} onImport={onImport} />,
+  };
+
   const next = () => (isLast ? onClose() : setStep((i) => i + 1));
   const prev = () => setStep((i) => Math.max(0, i - 1));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return; }
-      if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); next(); }
+      // Enter avanza, salvo cuando el foco está en un control del propio paso:
+      // ahí ya lo consume el botón, y avanzar además se llevaba por delante la
+      // elección que se acababa de hacer.
+      const enUnBoton = (e.target as HTMLElement)?.tagName === 'BUTTON';
+      if (e.key === 'ArrowRight' || (e.key === 'Enter' && !enUnBoton)) { e.preventDefault(); next(); }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
     };
     document.addEventListener('keydown', onKey);
@@ -67,6 +100,10 @@ export function Onboarding({ accent, onClose }: OnboardingProps) {
       <div
         style={{
           width: 'min(560px, 94vw)',
+          // Con la escala de interfaz al maximo la ventana minima deja unos
+          // 340 px utiles, y la tarjeta mide ~470: sin tope se sale por arriba
+          // y por abajo a la vez, y centrada no hay forma de alcanzar el boton.
+          maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
           background: VD.surface, border: `1px solid ${VD.borderStrong}`,
           borderRadius: VD.radius.lg, boxShadow: VD.shadow.modal,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
@@ -106,6 +143,7 @@ export function Onboarding({ accent, onClose }: OnboardingProps) {
               </span>
             </div>
           )}
+          {CONTROLES[n]}
         </div>
 
         {/* Indicadores de paso */}

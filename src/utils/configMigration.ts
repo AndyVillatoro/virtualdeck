@@ -107,14 +107,22 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
     from: 3, to: 4,
     apply: (c) => {
       // v3 → v4: i18n + onboarding. Los usuarios EXISTENTES no deben ver el
-      // onboarding (ya conocen la app), por eso onboardingCompleted: true aquí.
-      // Solo una instalación nueva (DEFAULT_CONFIG sin onboardingCompleted)
-      // dispara el tutorial. Idioma por defecto = detectar del sistema.
+      // tutorial (ya conocen la app); los nuevos sí.
+      //
+      // Distinguirlos por «tiene botones guardados» y no por «no trae el
+      // campo». Una instalación virgen no tiene archivo, y `loadConfig`
+      // devuelve `{}` para ese caso: un objeto sin `configVersion`, o sea
+      // exactamente lo que esta cadena toma por un config de v1. Con
+      // `?? true` esa migración marcaba el tutorial como visto **antes de
+      // enseñarlo**, así que no se ha mostrado nunca desde que existe. Un
+      // usuario de verdad siempre trae botones; el `{}` de una instalación
+      // nueva no trae ninguno.
+      const yaUsaba = Array.isArray(c.buttons) && c.buttons.length > 0;
       return {
         ...c,
         configVersion: 4,
         language: c.language ?? 'system',
-        onboardingCompleted: c.onboardingCompleted ?? true,
+        onboardingCompleted: c.onboardingCompleted ?? yaUsaba,
       };
     },
   },

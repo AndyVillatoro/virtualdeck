@@ -189,7 +189,7 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
                 color: language === opt ? effectiveAccent : VD.textDim,
               }}
             >
-              {opt === 'system' ? t('settings.language.system') : opt === 'es' ? 'ESPAÑOL' : 'ENGLISH'}
+              {t(`settings.language.${opt}`)}
             </button>
           ))}
         </div>
