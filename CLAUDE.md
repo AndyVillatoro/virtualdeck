@@ -83,6 +83,19 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `src/utils/useDeck.ts` — la configuración del deck y las 25 operaciones que la cambian
   (botones, páginas, perfiles, ajustes), con el historial de deshacer. `App` se queda con la
   vista y los avisos. `src/utils/configDefaults.ts` — la configuración de una instalación nueva.
+- `src/utils/pulsarBoton.ts` — **lo que pasa al pulsar un botón, en un solo sitio**. Estaba
+  escrito tres veces (principal, kiosko, disparador automático de `App`) y las tres habían
+  divergido: el grupo radio y el tope de 60 s solo en la principal, el gancho de scripts —y con
+  él «guardar la salida en una variable» y «mostrar la salida»— en ninguna de las automáticas,
+  y los errores de una acción disparada sola no se enseñaban en ninguna parte. Cada llamador se
+  queda con lo suyo: el indicador de «ejecutando», el registro lateral y el sonido.
+  **`toggledIds` entra como función, no como `Set`**: `ButtonCell` está memoizado con un
+  comparador que ignora los manejadores, así que una celda solo recibe uno nuevo cuando cambia
+  algo suyo (incluido su propio `toggled`). La celda que se pulsa conserva el manejador de su
+  primer render, con un `toggledIds` vacío — y por eso el grupo radio no funcionaba con el
+  ratón en ninguna pantalla, aunque la acción de apagar sí (esa celda ya había cambiado lo
+  suyo). Cualquier cosa que un manejador de celda lea del estado del padre tiene el mismo
+  problema: va por referencia.
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `adjust` (en `acciones/audio.ts`) sube o baja brillo/volumen **desde donde estén**, en vez
   de fijar un número. Para eso hay que leer primero: el núcleo nativo ya declaraba
