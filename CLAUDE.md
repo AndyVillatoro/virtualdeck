@@ -166,6 +166,18 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   visto **antes de enseñarlo**, y no salió nunca desde que existe. La condición correcta es
   «tiene botones guardados». `Hint.tsx` (mensaje flotante contextual descartable; usa `config.hintsDismissed` para no repetirse). Ambos i18n.
 - **PowerShell `param()`**: `runPS` (en `ps-helpers.ts`) detecta si el script empieza con `param(...)` y, en ese caso, inserta el prefix UTF-8 DESPUÉS del bloque param. PowerShell exige que `param()` sea la primera sentencia del script — meterle `chcp 65001` arriba lo rompe silenciosamente. Si modificás `runPS`, mantené ese parser.
+- **Barra de tareas y bandeja (NO volver a tocar sin leer esto)**: la ventana lleva
+  `skipTaskbar: true` **siempre**. VirtualDeck vive en la bandeja y su icono en la barra de
+  tareas es un duplicado. Una vez se cambió a «solo mientras se ve» por miedo a que una
+  ventana sin marco no se pudiera recuperar; no es cierto — Alt+Tab la lista, el clic en el
+  icono de la bandeja la trae y el menú tiene «Mostrar». Se midió enumerando los botones
+  reales de la barra por UI Automation, que es la única forma: en Windows `skipTaskbar` no
+  se refleja en los bits de estilo de la ventana (`WS_EX_APPWINDOW`/`TOOLWINDOW`), Electron
+  usa `ITaskbarList::DeleteTab`. El arranque con la sesión se registra con `--oculto`
+  (`fijarArranqueAutomatico` en `ipc/appIpc.ts`) y con esa marca la ventana se crea con
+  `show: false`: el renderer carga igual —de eso dependen los disparadores programados— pero
+  no se enseña. Quien ya tenía el inicio automático puesto lo tiene registrado sin la marca,
+  así que se reescribe en cada arranque.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
 
 ## 🔬 Sondas en el proceso principal: `require` no sirve
