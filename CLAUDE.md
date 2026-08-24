@@ -149,7 +149,18 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - **Audio cache**: `audioIpc.ts` cachea la lista de dispositivos 30 s. Invalida automáticamente al cambiar dispositivo default. Pasar `force=true` para forzar refresco.
 - **Multi-select**: Ctrl+clic en celdas para seleccionar múltiples botones. La barra de bulk-ops flota sobre la grilla. `selectedIds` se limpia al cambiar de página.
 - **Shuffle/repeat SMTC**: usan `TryChangeShuffleActiveAsync` / `TryChangeAutoRepeatModeAsync` de Windows.Media.Control. Requieren que haya una sesión SMTC activa.
-- **Macro**: grabación global via `uiohook-napi` (N-API — no requiere rebuild para Electron 33). Reproducción via un único script PowerShell generado dinámicamente (SendKeys + user32.dll mouse_event). El `.node` binario se desempaqueta fuera del asar (`asarUnpack` en package.json).
+- **Macro**: grabación global via `uiohook-napi` (N-API — no requiere rebuild para Electron 33).
+  Reproducción por `vd-core` (SendInput), con un script PowerShell de respaldo. El `.node` va
+  fuera del asar (`asarUnpack`). **El mapa de teclas se deriva de `UiohookKey`, no se escribe**:
+  uiohook entrega *scancodes* (`A` = 0x1E), no los códigos virtuales de Windows (`A` = 0x41), y
+  el mapa escrito a mano suponía lo segundo — grabar `abc1 Ctrl+C Alt+Tab F5 Enter` daba
+  `0 {DELETE} {DELETE} 8`. Los modificadores salen de `e.ctrlKey/altKey/shiftKey/metaKey` del
+  propio evento; sin ellos `Ctrl+C` se grababa como `c`. El formato en disco es `Ctrl+C` /
+  `{ENTER}`, que es lo que parsea `crates/vd-core/src/macros/keys.rs` y lo que se escribe a mano
+  en el editor. `escapeSendKeys` (solo el respaldo) **no toca los tramos ya entre llaves**: al
+  aplicarse sobre la cadena entera convertía `{ENTER}` en `{{ENTER}}`. Y los clics sobre la
+  propia ventana no se graban (`esNuestro` en `startRecording`): si no, toda macro acaba con un
+  clic en el botón de detener.
 - **Accent presets**: `ACCENT_PRESETS` en `design.ts` — 10 colores predefinidos. El color libre via `<input type="color">` sigue disponible.
 - **Tema claro/oscuro/sistema**: `ThemeProvider` en `src/utils/theme.tsx`. Selector en TitleBar → ⚙ → TEMA. **El color siempre sale de `useTheme()`**; importar la paleta `VD` de `design` la congela en oscuro y el fallo no se ve ni en `tsc` ni en el build — solo en pantalla, y solo si alguien prueba el tema claro en esa pantalla. Por eso hay una regla `no-restricted-imports` en `eslint.config.mjs` que lo prohíbe en todo `src/` salvo `theme.tsx`.
   Los estilos que antes eran constantes de módulo (`inputStyle`, `btnPrimary`, `inputStyleSettings`…) son ahora funciones `estilo*(VD)`, y cada componente se hace un alias local con el mismo nombre — así los ~100 usos siguen escritos igual.
