@@ -48,6 +48,10 @@ export function registerDialogIpc(win: BrowserWindow) {
   });
 
   ipcMain.handle('notify:show', (_e: any, title: string, body: string) => {
+    // `show()` no falla cuando el sistema tiene las notificaciones apagadas:
+    // devolvia true y el boton se daba por bien ejecutado. `isSupported()` es
+    // lo unico que distingue «no se puede» de «se mando».
+    if (!Notification.isSupported()) return false;
     try { new Notification({ title, body }).show(); return true; } catch { return false; }
   });
 }

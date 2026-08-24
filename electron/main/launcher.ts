@@ -1,7 +1,7 @@
 import { intentarNativo } from './native';
 import { exec, spawn } from 'child_process';
 import { shell } from 'electron';
-import { runPS, runPSBool } from './ps-helpers';
+import { runPS, runPSBool, injectUtf8Prefix } from './ps-helpers';
 
 export async function launchApp(appPath: string, args: string[] = []): Promise<boolean> {
   const r = intentarNativo('launchApp', (n) => n.launchApp(appPath, args));
@@ -25,30 +25,55 @@ export async function openShortcut(path: string): Promise<boolean> {
   try { await shell.openPath(path); return true; } catch { return false; }
 }
 
+/**
+ * El preambulo UTF-8, antes de decidir por que camino va el script.
+ *
+ * El nucleo nativo lanza `powershell -Command <script>` y lee la salida con
+ * `from_utf8_lossy`, pero **no inyecta el preambulo**: PowerShell escribe en la
+ * pagina de codigos de la consola, esos bytes no son UTF-8 validos y cada
+ * acento volvia como el caracter de reemplazo. Medido con la accion «script»
+ * que guarda la salida en una variable:
+ *
+ *   esperado       Hola ¿qué? Añadí más música
+ *   sin preambulo  Hola ?qu?? A?ad? m?s m?sica
+ *   con preambulo  Hola ¿qué? Añadí más música
+ *
+ * El arreglo de raiz esta en `crates/vd-core`, que ahora mismo no se puede
+ * recompilar. Inyectarlo aqui lo arregla con el `.node` que ya hay, y no le
+ * hace nada al camino de respaldo porque `injectUtf8Prefix` es idempotente.
+ *
+ * Solo para PowerShell: en `cmd` esas tres lineas no son sintaxis valida.
+ */
+function conUtf8(script: string, shell_: string): string {
+  return shell_ === 'powershell' ? injectUtf8Prefix(script) : script;
+}
+
 export async function runScript(script: string, shell_: string = 'powershell'): Promise<boolean> {
-  const r = intentarNativo('runScript', (n) => n.runScript(script, shell_).success);
+  const listo = conUtf8(script, shell_);
+  const r = intentarNativo('runScript', (n) => n.runScript(listo, shell_).success);
   if (r !== undefined) return r;
 
   // PS branch goes through the shared helper (tmp .ps1 + UTF-8 + -File). Other
   // shells fall back to direct exec — those are cmd one-liners from the user.
   if (shell_ === 'powershell') {
-    return runPSBool(script, { timeoutMs: 30000 });
+    return runPSBool(listo, { timeoutMs: 30000 });
   }
   return new Promise((resolve) => {
-    exec(script, { timeout: 30000 }, (err) => resolve(!err));
+    exec(listo, { timeout: 30000 }, (err) => resolve(!err));
   });
 }
 
 export async function runScriptCapture(script: string, shell_: string = 'powershell'): Promise<{ success: boolean; output: string }> {
-  const r = intentarNativo('runScriptCapture', (n) => n.runScript(script, shell_));
+  const listo = conUtf8(script, shell_);
+  const r = intentarNativo('runScriptCapture', (n) => n.runScript(listo, shell_));
   if (r !== undefined) return r;
 
   if (shell_ === 'powershell') {
-    const r = await runPS(script, { timeoutMs: 30000 });
+    const r = await runPS(listo, { timeoutMs: 30000 });
     return { success: r.ok, output: (r.stdout || r.stderr || '').trim() };
   }
   return new Promise((resolve) => {
-    exec(script, { timeout: 30000 }, (err, stdout, stderr) => {
+    exec(listo, { timeout: 30000 }, (err, stdout, stderr) => {
       resolve({ success: !err, output: (stdout || stderr || '').trim() });
     });
   });

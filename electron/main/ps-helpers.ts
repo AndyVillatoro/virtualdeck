@@ -27,6 +27,9 @@ export interface PSOptions {
   maxBufferBytes?: number;
 }
 
+/** La marca de orden de bytes, escrita con su escape para que se vea que está. */
+const BOM = '\ufeff';
+
 /**
  * Run a PowerShell script via tmp .ps1 + -File. Always prepends the UTF-8
  * preamble. Use `opts.args` + a `param(...)` block in the script to safely
@@ -46,7 +49,25 @@ export function runPS(script: string, opts: PSOptions = {}): Promise<PSResult> {
       // If the user script starts with one, inject the UTF-8 prefix AFTER it
       // instead of before. Otherwise PS bails with "param: term not recognized".
       const finalScript = injectUtf8Prefix(script);
-      writeFileSync(tmp, finalScript, 'utf-8');
+      // Con BOM. PowerShell 5.1 lee un `.ps1` sin BOM en la **página de códigos
+      // ANSI** del sistema, no en UTF-8, así que cualquier carácter no ASCII
+      // del cuerpo del script llegaba corrompido. Medido, con el mismo prefijo
+      // UTF-8 que se inyecta arriba:
+      //
+      //   esperado  Hola, ¿qué hora es? Añadí más música
+      //   sin BOM   Hola, Â¿quÃ© hora es? AÃ±adÃ­ mÃ¡s mÃºsica
+      //   con BOM   Hola, ¿qué hora es? Añadí más música
+      //
+      // Eso afectaba a todo texto del usuario que se interpole en un script:
+      // el de la acción «leer en voz alta» y el de «escribir texto», los dos
+      // en español la mitad de las veces. El prefijo de `chcp` arregla la
+      // **salida**, que es otra cosa, y por eso el fallo no se veía en los
+      // scripts que solo devuelven datos.
+      //
+      // El aviso de no usar BOM que había en las notas se comprobó y no se
+      // sostiene: `param(...)` con BOM delante se sigue reconociendo, y los
+      // dos scripts grandes (audio y SMTC) siguen dando el mismo resultado.
+      writeFileSync(tmp, BOM + finalScript, 'utf-8');
     } catch (e) {
       resolve({ stdout: '', stderr: String(e), ok: false });
       return;
@@ -95,7 +116,11 @@ export async function runPSBool(script: string, opts: PSOptions = {}): Promise<b
  * (which MUST be the first non-comment statement in PowerShell), inject the
  * prefix immediately AFTER the closing paren of param. Otherwise prepend.
  */
-function injectUtf8Prefix(script: string): string {
+export function injectUtf8Prefix(script: string): string {
+  // Idempotente: `runScript` ya lo inyecta antes de decidir si va por el
+  // nucleo nativo o por aqui, y sin esta guarda el `chcp` se ejecutaria dos
+  // veces en el camino de respaldo.
+  if (script.includes('[Console]::OutputEncoding = [System.Text.Encoding]::UTF8')) return script;
   // Skip leading whitespace + line comments to find the first real token.
   let i = 0;
   while (i < script.length) {

@@ -16,6 +16,23 @@ import { fijarIdioma } from './idioma';
 // which fixes black tiles and partial redraws on virtual monitors.
 app.disableHardwareAcceleration();
 
+/**
+ * La identidad con la que Windows atribuye las notificaciones.
+ *
+ * Tiene que ser el mismo `appId` que `package.json` le da a electron-builder,
+ * porque es el que el instalador NSIS graba en el acceso directo del menu de
+ * inicio, y Windows solo ensena el nombre y el icono de la aplicacion si los
+ * dos coinciden. Electron lo pone solo cuando se instala con Squirrel; con
+ * NSIS hay que llamarlo a mano, y no se estaba llamando: las notificaciones
+ * quedaban registradas como `electron.app.Electron` (comprobado en
+ * HKCU\...\Notifications\Settings), un identificador sin acceso directo.
+ *
+ * `scripts/check-ipc.mjs` comprueba que esta cadena y la de `package.json`
+ * no se separen.
+ */
+const APP_USER_MODEL_ID = 'com.virtualdeck.app';
+app.setAppUserModelId(APP_USER_MODEL_ID);
+
 // vd:// custom protocol for serving images from userData — must be registered before app ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'vd', privileges: { secure: true, standard: true, supportFetchAPI: true } },

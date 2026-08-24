@@ -51,6 +51,23 @@ for (const c of escuchados) {
   if (!emitidos.has(c)) problemas.push(`el preload escucha '${c}' y nadie lo emite`);
 }
 
+// El identificador con el que Windows atribuye las notificaciones. Vive en dos
+// sitios que no se hablan: `package.json` (de ahi lo saca el instalador NSIS
+// para el acceso directo del menu de inicio) y el proceso principal (que se lo
+// tiene que decir a Windows en tiempo de ejecucion). Si se separan, Windows
+// ensena las notificaciones sin el nombre ni el icono de la aplicacion, y eso
+// no se ve compilando ni ejecutando en desarrollo.
+{
+  const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
+  const enPkg = pkg.build?.appId;
+  const main = readFileSync('electron/main/index.ts', 'utf-8');
+  const m = main.match(/const APP_USER_MODEL_ID = '([^']+)'/);
+  if (!m) problemas.push('no encuentro APP_USER_MODEL_ID en electron/main/index.ts');
+  else if (m[1] !== enPkg) {
+    problemas.push(`APP_USER_MODEL_ID es '${m[1]}' y build.appId de package.json es '${enPkg}'`);
+  }
+}
+
 if (problemas.length) {
   console.error(`ipc: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  · ' + p);

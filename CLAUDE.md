@@ -128,7 +128,29 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - Estilo: respuestas cortas y directas; preguntar si no se sabe; dar opciones cuando aplique
 
 ## Notas técnicas
-- PowerShell scripts (audio.ts, media.ts) fuerzan UTF-8 con `chcp 65001` + `$OutputEncoding` + `[Console]::OutputEncoding`. No usar BOM — rompe el parsing de PS.
+- **Codificacion de PowerShell — dos problemas distintos, y el aviso viejo era falso.**
+  El prefijo `chcp 65001` + `$OutputEncoding` + `[Console]::OutputEncoding` arregla la
+  **salida**. La **entrada** —el texto no ASCII dentro del propio script— es otra cosa:
+  PowerShell 5.1 lee un `.ps1` sin BOM en la pagina de codigos ANSI, no en UTF-8. Medido:
+  `Hola, ¿qué hora es?` salia `Hola, Â¿quÃ© hora es?`. Por eso `runPS` escribe el temporal
+  **con BOM**. La nota que decia «no usar BOM — rompe el parsing de PS» se comprobo y no se
+  sostiene: un `param(...)` con BOM delante se sigue reconociendo, y los scripts de audio y
+  SMTC dan el mismo resultado con y sin el.
+  Ademas, el camino **nativo** (`vd-core`, `powershell -Command`) no inyectaba el prefijo y
+  leia la salida con `from_utf8_lossy`: cada acento volvia como caracter de reemplazo, y eso
+  afectaba a la accion «script» que guarda la salida en una variable. El arreglo de raiz esta
+  en `crates/vd-core` (que no se puede recompilar); mientras tanto `conUtf8()` en `launcher.ts`
+  inyecta el prefijo **antes** de elegir camino, asi que lo arregla con el `.node` que ya hay.
+  `injectUtf8Prefix` es idempotente para que no se aplique dos veces.
+- **Notificaciones y AppUserModelId**: `app.setAppUserModelId('com.virtualdeck.app')` se llama
+  al arrancar y **tiene que coincidir con `build.appId` de `package.json`**, que es el que el
+  instalador NSIS graba en el acceso directo del menu de inicio; Windows solo muestra el nombre
+  y el icono de la aplicacion si los dos cuadran. Electron lo pone solo con Squirrel, no con
+  NSIS: sin la llamada las notificaciones quedaban registradas como `electron.app.Electron`
+  (visible en `HKCU\...\CurrentVersion\Notifications\Settings`, que es el sitio donde se puede
+  comprobar si Windows acepto una notificacion — buscar el toast en pantalla no sirve, un toast
+  de control nativo tampoco aparece si hay un video a pantalla completa). `scripts/check-ipc.mjs`
+  cruza las dos cadenas.
 - `IPolicyConfig` COM: IID correcto es `F8679F50-850A-41CF-9C72-430F290290C8` (no confundir con CLSID `870AF99C-...`). El orden de métodos en la interfaz debe coincidir con la vtable real.
 - Widget `now-playing` no se aplica a botones de tipo `audio-device`: el editor deshabilita
   esa combinación (`PasoEstilo`) y `useDatosWidget` la descarta también.
