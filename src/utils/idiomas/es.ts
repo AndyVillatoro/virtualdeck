@@ -525,4 +525,11 @@ export const ES: Dict = {
   'rgb.preset.party': 'FIESTA',
   'rgb.preset.wave': 'OLA',
   'rgb.preset.strobe': 'ESTROBO',
+  'undo.clearMany': 'vaciar {n} botones',
+  'undo.reorder': 'reordenar botones',
+  'bulk.selected': '{n} SELECCIONADOS',
+  'bulk.copy': '⎘ COPIAR',
+  'bulk.partial': 'Solo cupieron {n} de {total}: la página de destino se quedó sin huecos.',
+  'icons.count': '{n} iconos · Dot-matrix 17×17 · Pasa el cursor para animar',
+  'rgb.uncalibrated': '{n} zonas ARGB sin tamaño guardado.',
 };

@@ -175,7 +175,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
           display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8, flexShrink: 0,
         }}>
           <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-            {displayed.length} icono{displayed.length !== 1 ? 's' : ''} · Dot-matrix 17×17 · Pasa el cursor para animar
+            {t('icons.count', { n: displayed.length })}
           </span>
           <div style={{ flex: 1 }} />
           <button onClick={onClose} style={{

@@ -129,8 +129,72 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     return moved;
   }, [withHistory, t]);
 
+  /**
+   * Vaciar varios botones de una vez.
+   *
+   * La barra de selección multiple llamaba a `clearButton` en un bucle, y cada
+   * llamada es **un paso de deshacer y un guardado en disco**: vaciar diez
+   * botones dejaba diez pasos que había que deshacer uno a uno, y escribía la
+   * configuración diez veces. Aquí es una sola cosa, que es como se siente.
+   */
+  const clearButtons = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+    const cuantos = new Set(ids);
+    withHistory(t('undo.clearMany', { n: ids.length }), (prev) => ({
+      ...prev,
+      buttons: prev.buttons.map((b) => (cuantos.has(b.id)
+        ? { id: b.id, page: b.page, label: '', icon: '', action: { type: 'none' as ActionType } }
+        : b)),
+    }));
+  }, [withHistory, t]);
+
+  /**
+   * Mover o copiar varios botones a otra página, en una sola operación.
+   *
+   * Devuelve cuántos cupieron: la página de destino puede quedarse sin huecos
+   * a mitad, y antes eso pasaba en silencio porque el bucle de la barra
+   * ignoraba el `false` que devolvía cada llamada.
+   */
+  const moveButtonsToPage = useCallback((ids: string[], targetPage: number, copy: boolean): number => {
+    if (ids.length === 0) return 0;
+    let movidos = 0;
+    withHistory(t(copy ? 'undo.copyBetweenPages' : 'undo.moveBetweenPages'), (prev) => {
+      if (targetPage < 0 || targetPage >= prev.pages.length) return prev;
+      const esHueco = (b: ButtonConfig) =>
+        b.page === targetPage && b.action.type === 'none'
+        && !b.label && !b.icon && !b.imageData && !b.brandIcon;
+      const huecos = prev.buttons.filter(esHueco);
+      // Los pares origen→hueco se deciden antes de tocar nada: así no se puede
+      // dar el caso de que un botón caiga en el hueco que acaba de dejar otro.
+      const pares: { origen: ButtonConfig; huecoId: string }[] = [];
+      for (const id of ids) {
+        const src = prev.buttons.find((b) => b.id === id);
+        if (!src || src.page === targetPage) continue;
+        const hueco = huecos[pares.length];
+        if (!hueco) break;
+        pares.push({ origen: src, huecoId: hueco.id });
+      }
+      if (pares.length === 0) return prev;
+      movidos = pares.length;
+      const porHueco = new Map(pares.map((p) => [p.huecoId, p.origen]));
+      const origenes = new Set(pares.map((p) => p.origen.id));
+      return {
+        ...prev,
+        buttons: prev.buttons.map((b) => {
+          const src = porHueco.get(b.id);
+          if (src) return { ...src, id: b.id, page: targetPage };
+          if (!copy && origenes.has(b.id)) {
+            return { id: b.id, page: b.page, label: '', icon: '', action: { type: 'none' as ActionType } };
+          }
+          return b;
+        }),
+      };
+    });
+    return movidos;
+  }, [withHistory, t]);
+
   const swapButtons = useCallback((idA: string, idB: string) => {
-    withHistory('reordenar botones', (prev) => {
+    withHistory(t('undo.reorder'), (prev) => {
       const a = prev.buttons.find((b) => b.id === idA);
       const b = prev.buttons.find((b) => b.id === idB);
       if (!a || !b) return prev;
@@ -318,6 +382,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     config, setConfig, loaded, setLoaded, t,
     withHistory, undo, saveConfig,
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
+    clearButtons, moveButtonsToPage,
     renamePage, addPage, deletePage, reorderPages, setPageGridSize,
     saveProfile, loadProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,

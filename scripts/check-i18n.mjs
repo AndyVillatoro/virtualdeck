@@ -131,6 +131,7 @@ const PALABRAS_SUELTAS = new Set([
   'salir', 'entrar', 'kiosko', 'activar', 'desactivar', 'conectar',
   'descargar', 'descarga', 'pudo', 'error de', 'importar', 'importacion',
   'secuencia', 'acciones', 'accion', 'opcional', 'funciona', 'atajos',
+  'copiar', 'reordenar', 'seleccionados', 'vaciar', 'botones',
   'ratón', 'raton', 'combinación', 'texto', 'reproduciendo', 'pausado',
   'sólido', 'solido', 'vacío', 'vacio',
 ]);
@@ -253,6 +254,19 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
     // Se quitan las etiquetas de por medio antes de mirar la linea suelta: un
     // parrafo con un `<strong>` dentro tiene `<` y `>`, y el filtro de abajo lo
     // descartaba entero. Asi se colo el aviso de LHM de la seccion de sensores.
+    // Texto que acompaña a una expresión en la misma línea: `{n} SELECCIONADOS`.
+    // El patrón de «línea suelta» lo descarta por llevar llaves, y el de
+    // `>texto<` no lo ve porque la etiqueta no está en esa línea. Asi se colo
+    // el rotulo de la barra de seleccion multiple.
+    for (const m of codigo.matchAll(/\}\s*([^<>{}\n]{3,})(?=$|<)/g)) {
+      const trozo = m[1].trim();
+      // Sin puntuación de código: detrás de un `}` hay tanto texto de interfaz
+      // como destructuring, imports y arrays de dependencias.
+      if (/[;=,'"`()[\]]/.test(trozo)) continue;
+      if (!/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(trozo)) continue;
+      sospechas.push(trozo);
+    }
+
     const suelto = codigo.replace(/<\/?[A-Za-z][^<>]*>/g, ' ').trim();
     // Se excluye lo que acaba en coma: es una propiedad de objeto partida en
     // varias líneas (`color,`), no un texto de la interfaz.

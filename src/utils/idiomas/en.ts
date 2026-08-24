@@ -516,4 +516,11 @@ export const EN: Dict = {
   'rgb.preset.party': 'PARTY',
   'rgb.preset.wave': 'WAVE',
   'rgb.preset.strobe': 'STROBE',
+  'undo.clearMany': 'clear {n} buttons',
+  'undo.reorder': 'reorder buttons',
+  'bulk.selected': '{n} SELECTED',
+  'bulk.copy': '⎘ COPY',
+  'bulk.partial': 'Only {n} of {total} fit: the target page ran out of empty slots.',
+  'icons.count': '{n} icons · 17×17 dot-matrix · Hover to animate',
+  'rgb.uncalibrated': '{n} ARGB zones with no saved size.',
 };

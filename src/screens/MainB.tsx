@@ -43,6 +43,8 @@ interface MainBProps {
   onPageReorder: (fromIdx: number, toIdx: number) => void;
   onPageSetGrid: (pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => void;
   onMoveButtonToPage: (buttonId: string, targetPage: number, copy: boolean) => boolean;
+  onMoveButtonsToPage: (ids: string[], targetPage: number, copy: boolean) => number;
+  onClearButtons: (ids: string[]) => void;
   onSaveProfile: (name: string) => void;
   onLoadProfile: (id: string) => void;
   onDeleteProfile: (id: string) => void;
@@ -88,7 +90,7 @@ export function MainB({
   onPageChange, onToggle, onFullscreen, onEditButton, onWallpaper, onRGB,
   onConfigChange, onDuplicateButton, onClearButton,
   onConfigExport, onConfigImport, onSwapButtons,
-  onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage,
+  onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
   onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
@@ -514,7 +516,7 @@ export function MainB({
               boxShadow: VD.shadow.menu, fontFamily: VD.mono,
             }}>
               <span style={{ fontSize: 9, color: VD.textDim, letterSpacing: 1, marginRight: 4 }}>
-                {selectedIds.size} SELECCIONADOS
+                {t('bulk.selected', { n: selectedIds.size })}
               </span>
 
               {/* Move-to-page picker */}
@@ -536,7 +538,13 @@ export function MainB({
               {bulkMoveTarget !== null && (
                 <button
                   onClick={() => {
-                    Array.from(selectedIds).forEach((id) => onMoveButtonToPage(id, bulkMoveTarget!, false));
+                    // Una sola operacion, no una por boton: antes cada una era
+                    // su propio paso de deshacer y su propio guardado.
+                    const ids = Array.from(selectedIds);
+                    const movidos = onMoveButtonsToPage(ids, bulkMoveTarget!, false);
+                    if (movidos < ids.length) {
+                      showToast(t('bulk.partial', { n: movidos, total: ids.length }));
+                    }
                     setSelectedIds(new Set()); setBulkMoveTarget(null);
                   }}
                   style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
@@ -545,16 +553,22 @@ export function MainB({
               {bulkMoveTarget !== null && (
                 <button
                   onClick={() => {
-                    Array.from(selectedIds).forEach((id) => onMoveButtonToPage(id, bulkMoveTarget!, true));
+                    // Una sola operacion, no una por boton: antes cada una era
+                    // su propio paso de deshacer y su propio guardado.
+                    const ids = Array.from(selectedIds);
+                    const movidos = onMoveButtonsToPage(ids, bulkMoveTarget!, true);
+                    if (movidos < ids.length) {
+                      showToast(t('bulk.partial', { n: movidos, total: ids.length }));
+                    }
                     setSelectedIds(new Set()); setBulkMoveTarget(null);
                   }}
                   style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-                >⎘ COPIAR</button>
+                >{t('bulk.copy')}</button>
               )}
 
               <button
                 onClick={() => {
-                  Array.from(selectedIds).forEach((id) => onClearButton(id));
+                  onClearButtons(Array.from(selectedIds));
                   setSelectedIds(new Set());
                 }}
                 style={{ padding: '4px 10px', background: 'none', border: `1px solid ${VD.danger}`, color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}

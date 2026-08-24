@@ -331,7 +331,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
         }}>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, letterSpacing: 1 }}>{t('rgb.calibPending')}</span>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim }}>
-            {uncalibratedCount} {uncalibratedCount === 1 ? 'zona ARGB' : 'zonas ARGB'} sin tamaño guardado.
+            {t('rgb.uncalibrated', { n: uncalibratedCount })}
           </span>
           <div style={{ flex: 1 }} />
           <button onClick={() => setShowCalibrator(true)} style={{ ...btnPrimary, borderColor: VD.warning, color: VD.warning }}>

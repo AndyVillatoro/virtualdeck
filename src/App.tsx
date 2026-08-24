@@ -123,6 +123,7 @@ export default function App() {
     config, setConfig, loaded, setLoaded, t,
     withHistory, undo, saveConfig,
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
+    clearButtons, moveButtonsToPage,
     renamePage, addPage, deletePage, reorderPages, setPageGridSize,
     saveProfile, loadProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
@@ -460,6 +461,8 @@ export default function App() {
           onPageReorder={reorderPages}
           onPageSetGrid={setPageGridSize}
           onMoveButtonToPage={moveButtonToPage}
+          onMoveButtonsToPage={moveButtonsToPage}
+          onClearButtons={clearButtons}
           soundOnPress={config.soundOnPress ?? true}
           soundProfile={config.soundProfile ?? 'click'}
           onSoundToggle={toggleSoundOnPress}
