@@ -16,7 +16,7 @@ import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
 import { useDeck } from './utils/useDeck';
-import { runActionSequence, executeAction } from './utils/actions';
+import { pulsarBoton } from './utils/pulsarBoton';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
 import type { ButtonConfig, DeckConfig, PageConfig } from './types';
 
@@ -218,6 +218,10 @@ export default function App() {
 
   // Toggle state for toggle-mode buttons (runtime only, not persisted)
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
+  // Igual que en las pantallas: lo leen manejadores creados en otro render.
+  const toggledRef = useRef(toggledIds);
+  toggledRef.current = toggledIds;
+
   const handleToggle = useCallback((id: string) => {
     setToggledIds((prev) => {
       const next = new Set(prev);
@@ -306,26 +310,12 @@ export default function App() {
     // una hora, por un sensor, por un atajo global— no da ninguna otra señal
     // de que ha pasado algo, que es justo cuando mas falta hace.
     if (config.soundOnPress ?? true) playSound(config.soundProfile ?? 'click');
-    if (btn.isToggle) {
-      const estaba = toggledIds.has(btn.id);
-      handleToggle(btn.id);
-      if (estaba && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-        const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t);
-        if (r.stateUpdate) updateState(r.stateUpdate as Record<string, string>);
-        return;
-      }
-    }
-    const acciones = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
-    const estadoBase = config.state ?? {};
-    const r = await runActionSequence(acciones, api, estadoBase, undefined, config.rgb?.profiles, t);
-    const nuevas = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== estadoBase[k]);
-    if (nuevas.length > 0) {
-      const cambio: Record<string, string> = {};
-      for (const k of nuevas) cambio[k] = r.stateUpdate[k];
-      updateState(cambio);
-    }
-  }, [api, config.state, config.rgb?.profiles, config.soundOnPress, config.soundProfile,
-      toggledIds, updateState, handleToggle, t]);
+    await pulsarBoton(btn, {
+      api, config, toggledIds: () => toggledRef.current, onToggle: handleToggle, onStateUpdate: updateState,
+      // Un fallo de una accion disparada sola no se veia en ninguna parte.
+      avisar: setImportError, t,
+    });
+  }, [api, config, handleToggle, updateState, t]);
 
   // Atajo global del sistema y menu de la bandeja: el proceso principal emite
   // button:trigger y aqui se ejecuta la cadena del boton.

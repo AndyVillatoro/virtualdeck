@@ -98,6 +98,7 @@ export const FIELDS_EN: Record<string, string> = {
   'Sin resultados': 'No results',
   'TIPO DE ACCIÓN': 'ACTION TYPE',
   '+ AÑADIR ACCIÓN ADICIONAL': '+ ADD EXTRA ACTION',
+  'BOTONES DE LA CARPETA': 'FOLDER BUTTONS',
   'Sin acción configurada.': 'No action configured.',
   'Buscar': 'Browse',
   'CMD (Símbolo del sistema)': 'CMD (Command Prompt)',

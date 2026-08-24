@@ -35,7 +35,7 @@ export function FormFolder(p: PropsFormulario) {
               ))}
             </div>
             <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block' }}>
-              BOTONES DE LA CARPETA ({folderButtons.length}/12)
+              {tf('BOTONES DE LA CARPETA')} ({folderButtons.length}/12)
             </DotLabel>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
               {Array.from({ length: 12 }, (_, i) => {

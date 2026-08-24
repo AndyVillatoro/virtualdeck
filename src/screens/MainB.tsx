@@ -4,7 +4,8 @@ import { useT } from '../utils/i18n';
 import { BarraLateral } from './main/BarraLateral';
 import { FolderOverlay, PageCtxItem } from './main/OverlayCarpeta';
 import { PestanasPagina } from './main/PestanasPagina';
-import { executeAction, runActionSequence, interpolate } from '../utils/actions';
+import { interpolate } from '../utils/actions';
+import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { logError } from '../utils/logger';
 import { TitleBar } from '../components/TitleBar';
 import { Wallpaper } from '../components/Wallpaper';
@@ -157,94 +158,48 @@ export function MainB({
     toastTimer.current = window.setTimeout(() => setToast(null), 6000);
   }, []);
 
-  const executeButton = useCallback(async (btn: ButtonConfig) => {
-    if (!api) return;
+  // Se asigna en cada render, no en un efecto: solo la leen los manejadores
+  // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
+  // que se creo la celda.
+  const toggledRef = useRef(toggledIds);
+  toggledRef.current = toggledIds;
 
-    // Folder abre overlay
-    if (btn.action.type === 'folder') {
-      setOpenFolderBtn(btn);
-      return;
-    }
+  const entorno = useCallback((): EntornoPulsacion => ({
+    api: api!,
+    config, toggledIds: () => toggledRef.current, onToggle, onStateUpdate,
+    avisar: showToast, t,
+  // `toggledIds` no va aqui: se lee por referencia. Dejarlo ademas recreaba
+  // el entorno en cada encendido, sin ninguna falta.
+  }), [api, config, onToggle, onStateUpdate, showToast, t]);
 
-    setRunningButtons((prev) => { const s = new Set(prev); s.add(btn.id); return s; });
-    // Hard ceiling so a hung action (webhook with no response, script in
-    // infinite loop) doesn't leave the button stuck in "running" forever. The
-    // underlying PS/exec calls have their own shorter timeouts in main; this
-    // is the safety net for renderer-side action paths (e.g. webhook fetch).
-    const HUNG_TIMEOUT_MS = 60000;
-    const withTimeout = <T extends { ok: boolean; error?: string; stateUpdate?: Record<string, unknown> }>(
-      p: Promise<T>,
-      fallback: T,
-    ): Promise<T> => Promise.race([p, new Promise<T>((resolve) => setTimeout(() => resolve(fallback), HUNG_TIMEOUT_MS))]);
-    try {
-
-    // Toggle: decide qué rama ejecutar
-    if (btn.isToggle) {
-      const wasToggled = toggledIds.has(btn.id);
-      onToggle(btn.id);
-      // Radio group: desactivar otros botones del mismo grupo al activar este
-      if (!wasToggled && btn.radioGroup) {
-        config.buttons
-          .filter((b) => b.radioGroup === btn.radioGroup && b.id !== btn.id && toggledIds.has(b.id))
-          .forEach((b) => onToggle(b.id));
-      }
-      if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-        const r = await withTimeout(
-          executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t),
-          { ok: false, error: t('act.err.timeout') },
-        );
-        if (!r.ok && r.error) showToast(r.error);
-        if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
-        return;
-      }
-    }
-
-    const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
-    const baseState = config.state ?? {};
-    const r = await withTimeout(runActionSequence(actionsToRun, api, baseState, {
-      runScript: async (script, shell) => {
-        const actionDef = actionsToRun.find(a => a.type === 'script' && a.script === script);
-        const needsCapture = actionDef?.showOutput || actionDef?.captureToVar;
-        if (needsCapture) {
-          try {
-            const out = await api.launch.scriptCapture(script, shell);
-            if (actionDef?.showOutput && out.output) showToast(out.output);
-            return { ok: out.success, output: out.output, error: out.success ? undefined : t('act.err.script') };
-          } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
-        }
-        try {
-          const ok = await api.launch.script(script, shell);
-          return { ok, error: ok ? undefined : t('act.err.script') };
-        } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
-      },
-    }, config.rgb?.profiles), { ok: false, error: t('act.err.timeout'), stateUpdate: {} });
-    // Diff state update vs baseState para sólo persistir lo nuevo.
-    const newKeys = Object.keys(r.stateUpdate ?? {}).filter((k) => r.stateUpdate![k] !== baseState[k]);
-    if (newKeys.length > 0 && r.stateUpdate) {
-      const update: Record<string, string> = {};
-      for (const k of newKeys) update[k] = r.stateUpdate[k] as string;
-      onStateUpdate(update);
-    }
+  /** Anota lo ejecutado en el registro lateral. Es lo unico propio de esta pantalla. */
+  const anotar = useCallback((etiqueta: string, tipo: string, ok: boolean, error?: string) => {
     setExecLog((prev) => [
-      { id: ++execLogIdRef.current, ts: Date.now(), label: btn.label || btn.action.type, actionType: btn.action.type, ok: r.ok, error: r.error },
+      { id: ++execLogIdRef.current, ts: Date.now(), label: etiqueta, actionType: tipo, ok, error },
       ...prev.slice(0, 99),
     ]);
-    if (!r.ok && r.error) { showToast(r.error); logError(`action:${btn.action.type}`, r.error, { label: btn.label }); }
+  }, []);
+
+  const executeButton = useCallback(async (btn: ButtonConfig) => {
+    if (!api) return;
+    // Una carpeta abre un overlay; no hay accion que ejecutar.
+    if (btn.action.type === 'folder') { setOpenFolderBtn(btn); return; }
+
+    setRunningButtons((prev) => { const s = new Set(prev); s.add(btn.id); return s; });
+    try {
+      const r = await pulsarBoton(btn, entorno());
+      anotar(btn.label || btn.action.type, r.tipo, r.ok, r.error);
+      if (!r.ok && r.error) logError(`action:${btn.action.type}`, r.error, { label: btn.label });
     } finally {
       setRunningButtons((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }
-  }, [api, t, toggledIds, onToggle, showToast, config.state, config.rgb?.profiles, onStateUpdate, config.buttons]);
+  }, [api, entorno, anotar]);
 
   const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
-    if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
-    const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles, t);
-    setExecLog((prev) => [
-      { id: ++execLogIdRef.current, ts: Date.now(), label: `⇓ ${btn.label || btn.longPressAction!.type}`, actionType: btn.longPressAction!.type, ok: r.ok, error: r.error },
-      ...prev.slice(0, 99),
-    ]);
-    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
-    if (!r.ok && r.error) showToast(r.error);
-  }, [api, t, config.state, config.rgb?.profiles, onStateUpdate, showToast]);
+    if (!api) return;
+    const r = await pulsacionLarga(btn, entorno());
+    if (r) anotar(`⇓ ${btn.label || r.tipo}`, r.tipo, r.ok, r.error);
+  }, [api, entorno, anotar]);
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;

@@ -11,7 +11,8 @@ import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
-import { executeAction, runActionSequence, interpolate } from '../utils/actions';
+import { interpolate } from '../utils/actions';
+import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { useNowPlaying } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
@@ -108,63 +109,32 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
     });
   }, []);
 
+  // Se asigna en cada render, no en un efecto: solo la leen los manejadores
+  // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
+  // que se creo la celda.
+  const toggledRef = useRef(toggledIds);
+  toggledRef.current = toggledIds;
+
+  const entorno = useCallback((): EntornoPulsacion => ({
+    api: window.electronAPI!,
+    config, toggledIds: () => toggledRef.current, onToggle: handleToggle, onStateUpdate,
+    avisar: setRuntimeError, t,
+  }), [config, handleToggle, onStateUpdate, t]);
+
   const executeLongPress = useCallback(async (btn: ButtonConfig) => {
-    const api = window.electronAPI;
-    if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
-    const r = await executeAction(btn.longPressAction, api, config.state, config.rgb?.profiles, t);
-    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
-    if (!r.ok && r.error) setRuntimeError(r.error);
-  }, [t, config.state, config.rgb?.profiles, onStateUpdate]);
+    if (!window.electronAPI) return;
+    await pulsacionLarga(btn, entorno());
+  }, [entorno]);
 
   const executeButton = useCallback(async (btn: ButtonConfig) => {
-    const api = window.electronAPI;
-    if (!api) return;
-
-    if (btn.isToggle) {
-      const wasToggled = toggledIds.has(btn.id);
-      handleToggle(btn.id);
-      if (wasToggled && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-        const r = await executeAction(btn.actionToggleOff, api, config.state, config.rgb?.profiles, t);
-        if (!r.ok && r.error) setRuntimeError(r.error);
-        if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
-        return;
-      }
-    }
-
+    if (!window.electronAPI) return;
     setEjecutando((prev) => new Set(prev).add(btn.id));
     try {
-    const actionsToRun = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
-    const baseState = config.state ?? {};
-    // Same scriptHooks shape as MainB so script actions with showOutput/captureToVar
-    // work in fullscreen — without this, capture/output were silently dropped.
-    const r = await runActionSequence(actionsToRun, api, baseState, {
-      runScript: async (script, shell) => {
-        const actionDef = actionsToRun.find(a => a.type === 'script' && a.script === script);
-        const needsCapture = actionDef?.showOutput || actionDef?.captureToVar;
-        if (needsCapture) {
-          try {
-            const out = await api.launch.scriptCapture(script, shell);
-            if (actionDef?.showOutput && out.output) setRuntimeError(out.output);
-            return { ok: out.success, output: out.output, error: out.success ? undefined : t('act.err.script') };
-          } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
-        }
-        try {
-          const ok = await api.launch.script(script, shell);
-          return { ok, error: ok ? undefined : t('act.err.script') };
-        } catch (e) { return { ok: false, error: `Error script: ${(e as Error).message}` }; }
-      },
-    }, config.rgb?.profiles);
-    const newKeys = Object.keys(r.stateUpdate).filter((k) => r.stateUpdate[k] !== baseState[k]);
-    if (newKeys.length > 0) {
-      const update: Record<string, string> = {};
-      for (const k of newKeys) update[k] = r.stateUpdate[k];
-      onStateUpdate(update);
-    }
-    if (!r.ok && r.error) setRuntimeError(r.error);
+      await pulsarBoton(btn, entorno());
     } finally {
       setEjecutando((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }
-  }, [t, toggledIds, handleToggle, config.state, config.rgb?.profiles, onStateUpdate]);
+  }, [entorno]);
 
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');

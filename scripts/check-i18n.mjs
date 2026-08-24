@@ -277,7 +277,11 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
     // de «línea suelta» la descarta, y el de `}texto` solo mira lo que va detrás.
     for (const m of codigo.matchAll(/(?:^|>)\s*([^<>{}\n]{3,}?)\s*(?=\{)/g)) {
       const trozo = m[1].trim();
-      if (/[;=,'"`()[\]]/.test(trozo)) continue;
+      // Aqui el parentesis **no** descalifica: un rotulo como
+      // `BOTONES DE LA CARPETA ({n}/12)` lo lleva, y con el filtro de siempre
+      // se colaba. Lo que descalifica es un parentesis pegado a un
+      // identificador, que es una llamada (`useMemo(`, `function f(`).
+      if (/[;=,'"`[\]]/.test(trozo) || /\w\(/.test(trozo)) continue;
       if (!/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(trozo)) continue;
       sospechas.push(trozo);
     }
