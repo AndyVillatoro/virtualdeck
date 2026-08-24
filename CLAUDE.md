@@ -71,6 +71,15 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `usePulsacionRaton` (ratón). El destello y el sonido salen **solo** de
   `destellar()`, dentro del hook de ratón; estaban copiados en tres sitios que leían
   las props en vez de las referencias, y el comparador del `memo` ignora esas props.
+- **Los botones se emparejan con los huecos POR POSICIÓN, nunca por id**
+  (`conHuecosCompletos` en `configDefaults.ts`). Al cargar se hacía por id, dando por hecho
+  que el id de un botón es `${página}-${hueco}`, y hay cuatro caminos donde no lo es:
+  `addPage` y `setPageGridSize` acuñan `p<timestamp>_<hueco>`, la importación de una página
+  también, y **borrar una página renumera `b.page` pero no los ids**. En los cuatro el `find`
+  fallaba y devolvía el hueco vacío: los botones seguían en el archivo y desaparecían de la
+  pantalla al reiniciar. Medido con dos páginas en el mismo arranque — la de ids canónicos
+  conservó sus cuatro etiquetas, la creada con «+» ninguna. Mientras borrar una página
+  renumere sin renumerar ids, **el id no puede codificar la posición**.
 - `src/utils/useDeck.ts` — la configuración del deck y las 25 operaciones que la cambian
   (botones, páginas, perfiles, ajustes), con el historial de deshacer. `App` se queda con la
   vista y los avisos. `src/utils/configDefaults.ts` — la configuración de una instalación nueva.
