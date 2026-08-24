@@ -42,6 +42,14 @@ function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
 
 const isDev = process.env.NODE_ENV === 'development';
 
+/**
+ * Arrancada por el inicio de sesión de Windows, no por el usuario.
+ *
+ * La marca la pone `setLoginItemSettings` al registrar el arranque automático
+ * (ver `appIpc`). No sirve `wasOpenedAtLogin`: solo existe en macOS.
+ */
+export const ARRANQUE_OCULTO = process.argv.includes('--oculto');
+
 export function createMainWindow(): BrowserWindow {
   const savedRaw = loadWindowState();
   const saved = savedRaw ? clampBoundsToDisplay(savedRaw) : null;
@@ -52,19 +60,17 @@ export function createMainWindow(): BrowserWindow {
     minWidth: 900, minHeight: 600,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
     icon: join(__dirname, '../../build/icon.png'),
-    // **Sí** en la barra de tareas.
+    // Nunca en la barra de tareas: VirtualDeck vive en la bandeja.
     //
-    // Antes se ocultaba porque la aplicación vive en la bandeja. Pero la ventana
-    // no tiene marco: si queda detrás de otra, no hay nada que la delate y no se
-    // puede recuperar más que por el icono de la bandeja — que es pequeño, está
-    // en el desplegable de iconos ocultos, y nadie recuerda que está ahí.
-    //
-    // El resultado práctico es indistinguible de que la aplicación no arranque.
-    //
-    // Pero solo **mientras se ve**: al esconderla a la bandeja se quita de la
-    // barra de tareas, que es lo que uno espera de una aplicación de bandeja.
-    // Los dos `setSkipTaskbar` de más abajo lo mantienen sincronizado.
-    skipTaskbar: false,
+    // Estuvo así desde el principio, y yo lo cambié a «solo mientras se ve»
+    // temiendo que una ventana sin marco y sin entrada en la barra no hubiera
+    // forma de recuperarla. Ese miedo era infundado: Alt+Tab la sigue listando,
+    // el clic en el icono de la bandeja la trae, y el menú de la bandeja tiene
+    // «Mostrar». Lo que sí sobraba era el icono duplicado.
+    skipTaskbar: true,
+    // Arranque con Windows: la ventana no se llega a crear visible. Hacerlo con
+    // `show: false` y no escondiéndola después evita que aparezca y desaparezca.
+    show: !ARRANQUE_OCULTO,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: true, contextIsolation: true, nodeIntegration: false,
@@ -181,14 +187,15 @@ export function createMainWindow(): BrowserWindow {
   // resultado es una aplicación que parece no arrancar, sin un solo error.
   //
   // `dom-ready` depende solo del documento, así que llega siempre.
-  // Solo sale en la barra de tareas cuando está a la vista. Escondida vive en
-  // la bandeja y nada más: tener las dos cosas a la vez confunde, porque el
-  // icono de la barra no la trae de vuelta si la ventana está oculta.
-  win.on('hide', () => { if (!win.isDestroyed()) win.setSkipTaskbar(true); });
-  win.on('show', () => { if (!win.isDestroyed()) win.setSkipTaskbar(false); });
-
   win.webContents.once('dom-ready', () => {
     if (win.isDestroyed()) return;
+    // Arrancada con la sesión: se queda cargada y escondida. El renderer ya
+    // corre —los disparadores programados y los sondeos dependen de eso— pero
+    // no se enseña nada hasta que se pida por la bandeja.
+    if (ARRANQUE_OCULTO) {
+      console.log(`[arranque] en bandeja, sin ventana, a los ${Math.round(process.uptime() * 1000)} ms`);
+      return;
+    }
     win.show();
     win.focus();
     // Cuanto tardo en verse algo. Sin un numero, "tarda en arrancar" no se

@@ -4,6 +4,7 @@ import { loadConfig } from './configManager';
 import { createMainWindow } from './windowManager';
 import { createTray, applyTriggerableConfig } from './trayManager';
 import { registerAllIpc } from './ipc';
+import { fijarArranqueAutomatico } from './ipc/appIpc';
 import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
@@ -39,6 +40,9 @@ function setupWindow() {
   // titulos de los dialogos de archivo.
   fijarIdioma((initialCfg as any)?.language);
   registerAllIpc(win, onQuit);
+  // Reescribir la entrada del registro de quien ya tenia el inicio automatico:
+  // la suya no lleva la marca de arrancar escondido y no se corrige sola.
+  if (app.getLoginItemSettings().openAtLogin) fijarArranqueAutomatico(true);
   createTray(win, onQuit);
   applyTriggerableConfig(win, initialCfg, onQuit);
 
