@@ -237,6 +237,11 @@ export interface Profile {
   pages: PageConfig[];
   buttons: ButtonConfig[];
   accent: string;
+  /**
+   * El fondo con el que se guardo. Opcional porque los perfiles de antes no lo
+   * traen: en esos se deja el que este puesto, que es lo que hacian.
+   */
+  wallpaper?: string;
 }
 
 export type SoundProfileId = 'click' | 'tick' | 'thud' | 'off';

@@ -41,10 +41,21 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   const t = useMemo(() => makeT(resolveLang(config.language)), [config.language]);
 
 
-  // Push current state to history then apply next
-  const withHistory = useCallback((label: string, updater: (prev: DeckConfig) => DeckConfig) => {
+  /**
+   * Apila el estado actual y aplica el siguiente.
+   *
+   * El rotulo puede llegar hecho o **calcularse a partir del estado anterior**
+   * (`rotulo`), que es lo que hace falta para decir «eliminar perfil "X"»: el
+   * nombre solo existe antes de borrarlo. Sin eso habria que buscarlo fuera,
+   * sobre una copia de `config` que puede ir un render por detras.
+   */
+  const withHistory = useCallback((
+    label: string,
+    updater: (prev: DeckConfig) => DeckConfig,
+    rotulo?: (prev: DeckConfig) => string,
+  ) => {
     setConfig((prev) => {
-      historyRef.current = [...historyRef.current.slice(-19), { config: prev, label }];
+      historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: rotulo ? rotulo(prev) : label }];
       const next = updater(prev);
       api?.config.save(next).catch(() => {});
       return next;
@@ -280,38 +291,73 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     });
   }, [withHistory]);
 
-  // Profile management
+  /*
+   * Perfiles: guardar, cargar y borrar una disposicion entera del deck.
+   *
+   * Las tres pasan por `withHistory` como todo lo demas. No lo hacian, y eso
+   * dejaba **borrar un perfil fuera del deshacer**: un clic de mas en la × y
+   * la unica copia de una disposicion entera se iba sin aviso ni vuelta atras,
+   * cuando borrar una pagina —que es menos— si se deshace.
+   */
+
+  /**
+   * Guardar con un nombre que ya existe **sobrescribe** ese perfil, no crea un
+   * segundo con el mismo nombre. Volver a guardar es la forma natural de
+   * actualizar uno, y antes dejaba dos filas identicas en la lista sin manera
+   * de saber cual era cual.
+   */
   const saveProfile = useCallback((name: string) => {
-    setConfig((prev) => {
+    const limpio = name.trim();
+    if (!limpio) return;
+    withHistory('', (prev) => {
+      const previos = prev.profiles ?? [];
+      const yaEsta = previos.find((p) => p.name.toLowerCase() === limpio.toLowerCase());
       const profile: Profile = {
-        id: `profile_${Date.now()}`,
-        name,
+        id: yaEsta?.id ?? `profile_${Date.now()}`,
+        name: limpio,
         pages: prev.pages,
         buttons: prev.buttons,
         accent: prev.accent,
+        // El fondo va con el resto del aspecto. Sin el, cargar un perfil
+        // devolvia su color de acento pero dejaba el fondo del anterior.
+        wallpaper: prev.wallpaper,
       };
-      const next = { ...prev, profiles: [...(prev.profiles ?? []), profile] };
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api]);
+      return {
+        ...prev,
+        profiles: yaEsta
+          ? previos.map((p) => (p.id === yaEsta.id ? profile : p))
+          : [...previos, profile],
+      };
+    }, (prev) => t(
+      (prev.profiles ?? []).some((p) => p.name.toLowerCase() === limpio.toLowerCase())
+        ? 'undo.updateProfile' : 'undo.saveProfile',
+      { nombre: limpio },
+    ));
+  }, [withHistory, t]);
 
   const loadProfile = useCallback((id: string) => {
     withHistory(t('undo.loadProfile'), (prev) => {
       const profile = prev.profiles?.find((p) => p.id === id);
       if (!profile) return prev;
-      return { ...prev, pages: profile.pages, buttons: profile.buttons, accent: profile.accent };
+      return {
+        ...prev,
+        pages: profile.pages,
+        buttons: profile.buttons,
+        accent: profile.accent,
+        wallpaper: profile.wallpaper ?? prev.wallpaper,
+      };
     });
     setActivePage(0);
   }, [withHistory, setActivePage, t]);
 
   const deleteProfile = useCallback((id: string) => {
-    setConfig((prev) => {
-      const next = { ...prev, profiles: (prev.profiles ?? []).filter((p) => p.id !== id) };
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api]);
+    withHistory('', (prev) => ({
+      ...prev,
+      profiles: (prev.profiles ?? []).filter((p) => p.id !== id),
+    }), (prev) => t('undo.deleteProfile', {
+      nombre: prev.profiles?.find((p) => p.id === id)?.name ?? '',
+    }));
+  }, [withHistory, t]);
 
   // UI scale handler
   const setUiScale = useCallback((scale: number) => {
