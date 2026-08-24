@@ -155,11 +155,11 @@ export function SensorsSection({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <button onClick={startLHM} disabled={spawning || status?.bundledRunning} style={miniBtnSettings(accent)}>
-            {spawning ? 'INICIANDO...' : status?.bundledRunning ? 'LHM ACTIVO' : 'INICIAR LHM'}
+            {t(spawning ? 'sensors.lhmStarting' : status?.bundledRunning ? 'sensors.lhmRunning' : 'sensors.lhmStart')}
           </button>
           {status?.bundledRunning && (
             <button onClick={stopLHM} style={{ ...miniBtnSettings(accent), color: VD.danger, borderColor: VD.danger }}>
-              DETENER LHM
+              {t('sensors.lhmStop')}
             </button>
           )}
           <button onClick={probe} disabled={testing} style={miniBtnSettings(accent)}>

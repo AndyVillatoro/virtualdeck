@@ -28,6 +28,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
   const api = window.electronAPI;
   const [recording, setRecording] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [vacia, setVacia] = useState(false);
   const recTimer = useRef<number | null>(null);
 
   // Poll recording state every 300 ms to reflect stop from external source
@@ -42,6 +43,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
 
   const startRec = useCallback(async () => {
     if (!api?.macro) return;
+    setVacia(false);
     await api.macro.startRecord();
     setRecording(true);
   }, [api]);
@@ -50,14 +52,18 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
     if (!api?.macro) return;
     const captured = await api.macro.stopRecord() as MacroStep[];
     setRecording(false);
-    if (captured && captured.length > 0) onChange(captured, repeat);
+    // Una grabación vacía no cambiaba nada y no decía nada: parecía que el
+    // grabador no funcionaba. Casi siempre es que solo se hizo clic aquí
+    // dentro, y esos clics se descartan a propósito.
+    if (captured && captured.length > 0) { setVacia(false); onChange(captured, repeat); }
+    else setVacia(true);
   }, [api, onChange, repeat]);
 
   const addStep = (type: MacroStepType) => {
     const defaults: Record<MacroStepType, Partial<MacroStep>> = {
       key:    { value: 'a', delayMs: 0 },
       hotkey: { value: 'Ctrl+C', delayMs: 0 },
-      text:   { value: 'Hola mundo', delayMs: 0 },
+      text:   { value: t('macro.textDefault'), delayMs: 0 },
       click:  { x: 0, y: 0, button: 0, delayMs: 0 },
       move:   { x: 0, y: 0, delayMs: 0 },
       delay:  { delayMs: 500 },
@@ -106,7 +112,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
               color: '#d95f5f', fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1,
             }}
-          >⏺ GRABAR</button>
+          >⏺ {t('macro.rec.start')}</button>
         ) : (
           <button
             onClick={stopRec}
@@ -115,11 +121,16 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
               color: '#ff8080', fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1, animation: 'vd-blink 0.8s step-end infinite',
             }}
-          >⏹ DETENER</button>
+          >⏹ {t('macro.rec.stop')}</button>
         )}
         {recording && (
           <span style={{ fontFamily: VD.mono, fontSize: 8, color: '#d95f5f', letterSpacing: 1 }}>
             {t('macro.recording')}
+          </span>
+        )}
+        {!recording && vacia && (
+          <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.4, maxWidth: 300 }}>
+            {t('macro.recEmpty')}
           </span>
         )}
         <div style={{ flex: 1 }} />

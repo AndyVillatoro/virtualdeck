@@ -134,6 +134,12 @@ const PALABRAS_SUELTAS = new Set([
   'copiar', 'reordenar', 'seleccionados', 'vaciar', 'botones',
   'ratón', 'raton', 'combinación', 'texto', 'reproduciendo', 'pausado',
   'sólido', 'solido', 'vacío', 'vacio',
+  // Los dos botones del grabador de macros. El patrón `>texto<` sí los veía;
+  // lo que fallaba es esta lista: «GRABAR» y «DETENER» son una sola palabra,
+  // sin acento, y la heurística las daba por buenas.
+  'grabar', 'grabando', 'detener', 'detenido', 'reproducir', 'pasos', 'paso',
+  // Los tres estados del boton de LibreHardwareMonitor, del mismo barrido.
+  'iniciar', 'iniciando', 'activo', 'salida',
 ]);
 
 // Los dos archivos de datos sembrados. Lo que hay aqui en espanol se **copia
@@ -166,6 +172,10 @@ function pareceEspanol(s) {
   // precisamente las que tiene que reconocer. `media.ts` casa así los títulos
   // de pestaña del navegador («y 3 páginas más»).
   if (/^\(\?[:=!]/.test(limpio) || /\\d\+/.test(limpio)) return false;
+  // Operadores: es código, no idioma. La `y` de «y» es además un nombre de
+  // variable de lo más normal, y por su culpa se marcaba como texto en español
+  // el trozo `= b.y && y` de una comprobación de coordenadas.
+  if (/(&&|\|\||[<>!=]=|\+\+|=>|\?\?)/.test(limpio)) return false;
   if (ACENTOS.test(limpio)) return true;
   // Frases cortas: basta una palabra inequívoca.
   // Se parte tambien por `:` y `;`: sin ellos «Rango: 75%» daba la palabra

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from '../../../utils/theme';
-import { useFieldText } from '../../../utils/i18n';
+import { useFieldText, useT } from '../../../utils/i18n';
 import { Field, Btn, estiloEntrada } from '../comunes';
 import type { PropsFormulario } from './base';
 
@@ -74,6 +74,7 @@ export function FormShortcut(p: PropsFormulario) {
 export function FormScript(p: PropsFormulario) {
   const VD = useTheme();
   const tf = useFieldText();
+  const t = useT();
   const inputStyle = estiloEntrada(VD);
   const { accent, action, setAction } = p;
   return (
@@ -105,7 +106,7 @@ export function FormScript(p: PropsFormulario) {
                 style={inputStyle}
               />
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                El stdout se guarda en la variable y se puede usar como {'{resultado_cpu}'} en otros pasos.
+                {t('editor.stdoutToVar', { ejemplo: '{resultado_cpu}' })}
               </div>
             </Field>
           </>

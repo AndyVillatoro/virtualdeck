@@ -25,7 +25,7 @@ export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerPageIpc(win);
   registerRgbIpc(win);
   registerSensorsIpc();
-  registerMacroIpc();
+  registerMacroIpc(win);
   registerLogIpc();
   registerUpdateIpc(win);
   registerFloatingBarIpc();

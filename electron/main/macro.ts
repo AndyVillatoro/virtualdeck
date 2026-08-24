@@ -38,9 +38,18 @@ function getUio() {
 let _recording = false;
 let _steps: MacroStep[] = [];
 let _lastTs = 0;
+let _esNuestro: ((x: number, y: number) => boolean) | null = null;
 
-/** Start capturing keyboard + mouse events globally. */
-export function startRecording(): void {
+/**
+ * Empieza a capturar teclado y ratón, globalmente.
+ *
+ * `esNuestro` dice si un punto de la pantalla cae sobre la propia ventana de
+ * VirtualDeck. Los clics ahí **no son parte de la macro**: son los de quien
+ * está manejando el grabador. Sin esto, toda macro grabada terminaba con un
+ * clic en las coordenadas del botón de detener — y al reproducirla, ese clic
+ * se repetía sobre lo que hubiera en ese punto.
+ */
+export function startRecording(esNuestro?: (x: number, y: number) => boolean): void {
   const uio = getUio();
   if (!uio) throw new Error(tm('macro.noUiohook'));
   if (_recording) return;
@@ -48,19 +57,32 @@ export function startRecording(): void {
   _recording = true;
   _steps = [];
   _lastTs = Date.now();
+  _esNuestro = esNuestro ?? null;
 
   uio.uIOhook.on('keydown', (e: any) => {
     if (!_recording) return;
+    const base = keycodeToSendKey(e.keycode);
+    // Un modificador suelto no es un paso: viaja pegado a la tecla siguiente.
+    if (!base) return;
     const now = Date.now();
     const delay = Math.max(0, now - _lastTs - 30);
     _lastTs = now;
-    const key = keycodeToSendKey(e.keycode);
-    if (!key) return;
-    _steps.push({ type: 'key', value: key, delayMs: delay });
+    // `Ctrl+C` y no `^c`: es el formato que documenta el núcleo nativo como el
+    // de disco, el que acepta también escrito a mano en el editor, y el único
+    // que se lee en la lista de pasos.
+    const mods = [
+      e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Win',
+    ].filter(Boolean) as string[];
+    _steps.push({
+      type: mods.length > 0 ? 'hotkey' : 'key',
+      value: mods.length > 0 ? `${mods.join('+')}+${base}` : base,
+      delayMs: delay,
+    });
   });
 
   uio.uIOhook.on('click', (e: any) => {
     if (!_recording) return;
+    if (_esNuestro?.(e.x, e.y)) return;
     const now = Date.now();
     const delay = Math.max(0, now - _lastTs - 30);
     _lastTs = now;
@@ -75,6 +97,7 @@ export function stopRecording(): MacroStep[] {
   const uio = getUio();
   if (!_recording) return _steps;
   _recording = false;
+  _esNuestro = null;
   if (uio) {
     try { uio.uIOhook.stop(); } catch {}
     try { uio.uIOhook.removeAllListeners(); } catch {}
@@ -182,10 +205,25 @@ function buildPlaybackScript(steps: MacroStep[], repeat: number): string {
 // SendKeys escaping helpers
 // ---------------------------------------------------------------------------
 
-/** Wrap SendKeys special characters in braces. */
+/**
+ * `Ctrl+C` → `^c`, `Enter` → `{ENTER}`, y lo que ya viene entre llaves se deja
+ * en paz.
+ *
+ * Lo último es el arreglo: los reemplazos se aplicaban sobre la cadena entera,
+ * así que un paso ya grabado como `{ENTER}` salía `{{ENTER}}` —y `{F5}` salía
+ * `{{F5}}`—, que en SendKeys es una llave literal seguida de basura. O sea que
+ * ninguna tecla con nombre se reproducía por este camino. Ahora la cadena se
+ * parte por los tramos entre llaves y solo se traduce lo de fuera.
+ */
 function escapeSendKeys(value: string): string {
-  // Common modifier shorthands the user might type
   return value
+    .split(/(\{[^{}]*\})/)
+    .map((tramo) => (tramo.startsWith('{') ? tramo : traducirNombres(tramo)))
+    .join('');
+}
+
+function traducirNombres(t: string): string {
+  return t
     .replace(/\bCtrl\+/gi, '^')
     .replace(/\bAlt\+/gi, '%')
     .replace(/\bShift\+/gi, '+')
@@ -213,31 +251,82 @@ function escapeSendKeysText(text: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// uiohook keycode → SendKeys string
-// uiohook-napi keycodes: https://github.com/nicholasdille/uiohook-napi/blob/main/src/uiohook.ts
+// Código de uiohook → nombre de tecla
 // ---------------------------------------------------------------------------
 
-const KEYCODE_MAP: Record<number, string> = {
-  // Letters (A-Z) are 0x41..0x5A in uiohook
-  0x41: 'a', 0x42: 'b', 0x43: 'c', 0x44: 'd', 0x45: 'e', 0x46: 'f',
-  0x47: 'g', 0x48: 'h', 0x49: 'i', 0x4A: 'j', 0x4B: 'k', 0x4C: 'l',
-  0x4D: 'm', 0x4E: 'n', 0x4F: 'o', 0x50: 'p', 0x51: 'q', 0x52: 'r',
-  0x53: 's', 0x54: 't', 0x55: 'u', 0x56: 'v', 0x57: 'w', 0x58: 'x',
-  0x59: 'y', 0x5A: 'z',
-  // Digits
-  0x30: '0', 0x31: '1', 0x32: '2', 0x33: '3', 0x34: '4',
-  0x35: '5', 0x36: '6', 0x37: '7', 0x38: '8', 0x39: '9',
-  // Special
-  0x0D: '{ENTER}', 0x09: '{TAB}', 0x1B: '{ESC}', 0x08: '{BACKSPACE}',
-  0x20: ' ', 0x2E: '{DELETE}',
-  0x26: '{UP}', 0x28: '{DOWN}', 0x25: '{LEFT}', 0x27: '{RIGHT}',
-  0x24: '{HOME}', 0x23: '{END}', 0x21: '{PGUP}', 0x22: '{PGDN}',
-  // F-keys
-  0x70: '{F1}', 0x71: '{F2}', 0x72: '{F3}', 0x73: '{F4}',
-  0x74: '{F5}', 0x75: '{F6}', 0x76: '{F7}', 0x77: '{F8}',
-  0x78: '{F9}', 0x79: '{F10}', 0x7A: '{F11}', 0x7B: '{F12}',
+/**
+ * El mapa se **deriva de `UiohookKey`**, la tabla que publica la propia
+ * librería. Antes estaba escrito a mano y suponía los códigos virtuales de
+ * Windows (`A` = 0x41), cuando uiohook entrega scancodes (`A` = 0x1E). Medido
+ * grabando `abc1` y `Ctrl+C`:
+ *
+ *   a (0x1E) descartado · b (0x30) guardado como «0» · c (0x2E) descartado
+ *   1 (0x02) descartado · Ctrl (0x1D) descartado · c descartado
+ *
+ * O sea: cinco de seis teclas perdidas y la sexta cambiada por otra. El
+ * grabador de macros no ha producido nunca una macro correcta. Escrito a mano
+ * volvería a pasar en cuanto la librería cambie un número; derivado, no puede.
+ */
+
+/** Nombres de `UiohookKey` que no siguen ningún patrón. */
+const NOMBRADAS: Record<string, string> = {
+  Backspace: '{BACKSPACE}', Tab: '{TAB}', Enter: '{ENTER}', NumpadEnter: '{ENTER}',
+  Escape: '{ESC}', Space: ' ', Insert: '{INSERT}', Delete: '{DELETE}',
+  PageUp: '{PGUP}', PageDown: '{PGDN}', End: '{END}', Home: '{HOME}',
+  ArrowLeft: '{LEFT}', ArrowUp: '{UP}', ArrowRight: '{RIGHT}', ArrowDown: '{DOWN}',
+  NumpadInsert: '{INSERT}', NumpadDelete: '{DELETE}',
+  NumpadPageUp: '{PGUP}', NumpadPageDown: '{PGDN}',
+  NumpadEnd: '{END}', NumpadHome: '{HOME}',
+  NumpadArrowLeft: '{LEFT}', NumpadArrowUp: '{UP}',
+  NumpadArrowRight: '{RIGHT}', NumpadArrowDown: '{DOWN}',
+  NumpadMultiply: '{MULTIPLY}', NumpadAdd: '{ADD}',
+  NumpadSubtract: '{SUBTRACT}', NumpadDivide: '{DIVIDE}', NumpadDecimal: '.',
+  Semicolon: ';', Equal: '=', Comma: ',', Minus: '-', Period: '.', Slash: '/',
+  Backquote: '`', BracketLeft: '[', Backslash: '\\', BracketRight: ']', Quote: "'",
 };
 
+/**
+ * Lo que se deja fuera a propósito, no por olvido.
+ *
+ * Los modificadores porque viajan pegados a la tecla siguiente; los tres
+ * bloqueos porque el reproductor no sabe pulsarlos y un paso que no hace nada
+ * es peor que no tenerlo.
+ */
+const EXCLUIDAS = new Set([
+  'Ctrl', 'CtrlRight', 'Alt', 'AltRight', 'Shift', 'ShiftRight', 'Meta', 'MetaRight',
+  'CapsLock', 'NumLock', 'ScrollLock', 'PrintScreen',
+]);
+
+let _mapa: Record<number, string> | null = null;
+
+function mapaTeclas(): Record<number, string> {
+  if (_mapa) return _mapa;
+  const uio = getUio();
+  const tabla: Record<string, number> = uio?.UiohookKey ?? {};
+  const m: Record<number, string> = {};
+  const sinCubrir: string[] = [];
+
+  for (const [nombre, codigo] of Object.entries(tabla)) {
+    if (typeof codigo !== 'number' || EXCLUIDAS.has(nombre)) continue;
+    let token: string | null = null;
+    if (/^[A-Z]$/.test(nombre)) token = nombre.toLowerCase();
+    else if (/^[0-9]$/.test(nombre)) token = nombre;
+    else if (/^Numpad[0-9]$/.test(nombre)) token = nombre.slice(-1);
+    else if (/^F([1-9]|1[0-9]|2[0-4])$/.test(nombre)) token = `{${nombre}}`;
+    else if (NOMBRADAS[nombre]) token = NOMBRADAS[nombre];
+
+    if (token === null) { sinCubrir.push(nombre); continue; }
+    // El primero gana: `Enter` antes que `NumpadEnter` si compartieran código.
+    if (m[codigo] === undefined) m[codigo] = token;
+  }
+
+  // Una actualización de la librería que añada teclas se ve aquí, y no en una
+  // macro grabada a la que le faltan pasos.
+  if (sinCubrir.length > 0) console.error('[macro] teclas sin mapear:', sinCubrir.join(', '));
+  _mapa = m;
+  return m;
+}
+
 function keycodeToSendKey(code: number): string | null {
-  return KEYCODE_MAP[code] ?? null;
+  return mapaTeclas()[code] ?? null;
 }

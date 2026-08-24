@@ -129,8 +129,8 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
               }} />
               <div style={{ flex: 1, fontFamily: VD.mono, fontSize: 9, color: VD.textDim, letterSpacing: 0.5 }}>
                 {rgbStatus?.connected
-                  ? `${rgbStatus.deviceCount} ${rgbStatus.deviceCount === 1 ? 'DEVICE' : 'DEVICES'}`
-                  : rgbStatus?.serverRunning ? 'SERVER ACTIVO' : 'DESCONECTADO'}
+                  ? `${rgbStatus.deviceCount} ${t(rgbStatus.deviceCount === 1 ? 'rgb.deviceOne' : 'rgb.deviceMany')}`
+                  : t(rgbStatus?.serverRunning ? 'rgb.serverUp' : 'rgb.disconnected')}
               </div>
               <span style={{ fontFamily: VD.mono, fontSize: 9, color: config.accent }}>→</span>
             </div>
