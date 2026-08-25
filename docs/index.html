@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VirtualDeck — Stream Deck por software para Windows</title>
+<meta name="description" content="Una cuadrícula de botones que ejecutan acciones: abrir aplicaciones, cambiar el audio, controlar la música, lanzar atajos y macros. Gratuito y 100 % local.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230f0f0f'/%3E%3Cg fill='%234a8ef0'%3E%3Crect x='2' y='2' width='4' height='4'/%3E%3Crect x='10' y='2' width='4' height='4'/%3E%3Crect x='2' y='10' width='4' height='4'/%3E%3Crect x='10' y='10' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f0f0f; --surface:#191919; --elevated:#222; --border:#2e2e2e;
+    --text:#dcdcdc; --dim:#8a8a8a; --muted:#555; --accent:#4a8ef0;
+    --accent-bg:rgba(74,142,240,0.12);
+    --font:"Inter",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--font);
+    line-height:1.65; -webkit-font-smoothing:antialiased;
+    background-image:
+      repeating-linear-gradient(0deg,#1a1a1a 0,#1a1a1a 1px,transparent 1px,transparent 22px),
+      repeating-linear-gradient(90deg,#1a1a1a 0,#1a1a1a 1px,transparent 1px,transparent 22px);
+  }
+  .env { max-width:940px; margin:0 auto; padding:0 24px; }
+  a { color:var(--accent); }
+
+  header { padding:72px 0 48px; text-align:center; }
+  .marca {
+    font-family:var(--mono); font-weight:700; font-size:clamp(28px,6vw,46px);
+    letter-spacing:6px; margin:0 0 6px;
+  }
+  .marca span { color:var(--accent); }
+  .lema { color:var(--dim); font-size:17px; margin:0 auto 8px; max-width:560px; }
+  .version {
+    font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--muted);
+  }
+
+  /* Rejilla decorativa: los botones del propio deck. */
+  .deck {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+    max-width:380px; margin:40px auto 8px;
+  }
+  .tile {
+    aspect-ratio:1; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; display:grid; place-items:center;
+    font-size:22px; transition:border-color .18s, transform .18s;
+  }
+  .tile:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .tile.on { border-color:var(--accent); background:var(--accent-bg); }
+
+  .acciones { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:34px 0 12px; }
+  .btn {
+    display:inline-block; padding:13px 26px; border-radius:6px; text-decoration:none;
+    font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    border:1px solid var(--border); color:var(--text); background:var(--elevated);
+    transition:border-color .18s, background .18s;
+  }
+  .btn:hover { border-color:var(--accent); }
+  .btn.principal { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.principal:hover { background:#3d7ad8; }
+  .meta { font-family:var(--mono); font-size:11px; color:var(--muted); text-align:center; }
+
+  .aviso {
+    max-width:640px; margin:28px auto 0; padding:12px 16px; border-radius:6px;
+    background:var(--surface); border:1px solid var(--border);
+    font-size:13px; color:var(--dim);
+  }
+  .aviso strong { color:var(--text); }
+
+  section { padding:56px 0; border-top:1px solid var(--border); }
+  h2 {
+    font-family:var(--mono); font-size:12px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--muted); margin:0 0 26px;
+  }
+  .cuadros { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+  .cuadro {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px;
+  }
+  .cuadro h3 { margin:0 0 8px; font-size:15px; }
+  .cuadro p { margin:0; font-size:14px; color:var(--dim); }
+
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  td { padding:9px 0; border-bottom:1px solid var(--border); vertical-align:top; }
+  td:first-child { font-family:var(--mono); font-size:12px; color:var(--muted); width:190px; padding-right:20px; }
+
+  footer {
+    padding:40px 0 60px; border-top:1px solid var(--border);
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    display:flex; gap:18px; flex-wrap:wrap; justify-content:space-between;
+  }
+  footer a { color:var(--muted); text-decoration:none; }
+  footer a:hover { color:var(--accent); }
+
+  .idioma { position:fixed; top:16px; right:16px; display:flex; gap:6px; z-index:5; }
+  .idioma button {
+    font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:6px 10px;
+    background:var(--surface); border:1px solid var(--border); color:var(--muted);
+    border-radius:4px; cursor:pointer;
+  }
+  .idioma button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+  [data-en] { display:none; }
+  html[lang="en"] [data-es] { display:none; }
+  html[lang="en"] [data-en] { display:revert; }
+
+  @media (prefers-reduced-motion:reduce) { .tile { transition:none; } }
+</style>
+</head>
+<body>
+
+<div class="idioma">
+  <button type="button" data-lang="es" aria-pressed="true">ES</button>
+  <button type="button" data-lang="en" aria-pressed="false">EN</button>
+</div>
+
+<header>
+  <div class="env">
+    <h1 class="marca">VIRTUAL<span>DECK</span></h1>
+    <p class="lema" data-es>Una cuadrícula de botones que ejecutan lo que usted quiera: abrir aplicaciones, cambiar el audio, controlar la música, lanzar atajos y macros. Para Windows.</p>
+    <p class="lema" data-en>A grid of buttons that runs whatever you want: open apps, switch audio, control music, fire shortcuts and macros. For Windows.</p>
+    <p class="version" data-es>Gratuito · Sin cuentas · 100 % local</p>
+    <p class="version" data-en>Free · No accounts · 100% local</p>
+
+    <div class="deck" aria-hidden="true">
+      <div class="tile on">🎧</div><div class="tile">🌐</div><div class="tile on">🎵</div><div class="tile">⚙️</div>
+      <div class="tile">📁</div><div class="tile on">🔊</div><div class="tile">⌨️</div><div class="tile">💡</div>
+      <div class="tile">🖥️</div><div class="tile">📸</div><div class="tile on">🌡️</div><div class="tile">⏱️</div>
+    </div>
+
+    <div class="acciones">
+      <a class="btn principal" id="descargar" href="https://github.com/AndyVillatoro/virtualdeck/releases/latest">
+        <span data-es>Descargar para Windows</span><span data-en>Download for Windows</span>
+      </a>
+      <a class="btn" href="https://github.com/AndyVillatoro/virtualdeck">
+        <span data-es>Código fuente</span><span data-en>Source code</span>
+      </a>
+    </div>
+    <p class="meta" id="detalle">Windows 10 / 11 · x64</p>
+
+    <div class="aviso">
+      <p style="margin:0" data-es><strong>El instalador no está firmado todavía.</strong> Windows mostrará un aviso de SmartScreen al abrirlo: pulse <em>Más información</em> y luego <em>Ejecutar de todas formas</em>. El certificado de firma está en camino.</p>
+      <p style="margin:0" data-en><strong>The installer is not signed yet.</strong> Windows will show a SmartScreen warning: click <em>More info</em>, then <em>Run anyway</em>. A signing certificate is on the way.</p>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="env">
+    <h2 data-es>Qué hace</h2><h2 data-en>What it does</h2>
+    <div class="cuadros">
+      <div class="cuadro">
+        <h3 data-es>36 tipos de acción</h3><h3 data-en>36 action types</h3>
+        <p data-es>Abrir programas, webs y carpetas, cambiar el dispositivo de audio, controlar la reproducción, ejecutar scripts, enviar webhooks, leer texto en voz alta, mover ventanas y más.</p>
+        <p data-en>Open programs, websites and folders, switch the audio device, control playback, run scripts, send webhooks, read text aloud, snap windows and more.</p>
+      </div>
+      <div class="cuadro">
+        <h3 data-es>Datos en vivo</h3><h3 data-en>Live data</h3>
+        <p data-es>Un botón puede mostrar el reloj, el clima, la música que suena, un sensor del equipo, una variable propia o una conversión de divisas — y seguir siendo un botón.</p>
+        <p data-en>A button can show the clock, the weather, what is playing, a hardware sensor, your own variable or a currency conversion — and still be a button.</p>
+      </div>
+      <div class="cuadro">
+        <h3 data-es>Macros y atajos</h3><h3 data-en>Macros and shortcuts</h3>
+        <p data-es>Grabe secuencias de teclas y clics, o envíe combinaciones sueltas. Cualquier botón puede llevar un atajo global del sistema.</p>
+        <p data-en>Record sequences of keys and clicks, or send single combinations. Any button can carry a system-wide hotkey.</p>
+      </div>
+      <div class="cuadro">
+        <h3 data-es>Pantalla completa y barra flotante</h3><h3 data-en>Fullscreen and floating bar</h3>
+        <p data-es>Úselo como panel dedicado en una tableta o un segundo monitor, con modo kiosko protegido por PIN. O deje una columna de botones flotando sobre el escritorio.</p>
+        <p data-en>Use it as a dedicated panel on a tablet or second monitor, with a PIN-locked kiosk mode. Or leave a column of tiles floating above the desktop.</p>
+      </div>
+      <div class="cuadro">
+        <h3 data-es>Sensores y RGB</h3><h3 data-en>Sensors and RGB</h3>
+        <p data-es>Lee temperaturas y cargas mediante LibreHardwareMonitor, que viene incluido, y controla la iluminación con OpenRGB: colores, modos, perfiles y 18 presets.</p>
+        <p data-en>Read temperatures and loads through the bundled LibreHardwareMonitor. Drive your lighting with OpenRGB: colours, modes, profiles and 18 presets.</p>
+      </div>
+      <div class="cuadro">
+        <h3 data-es>Se dispara solo</h3><h3 data-en>Fires on its own</h3>
+        <p data-es>Un botón puede ejecutarse a una hora, cuando un sensor cruza un umbral, desde el menú de la bandeja o con un atajo global, sin necesidad de tener la ventana delante.</p>
+        <p data-en>A button can run at a given time, when a sensor crosses a threshold, from the tray menu or via a global hotkey — with the window nowhere in sight.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="env">
+    <h2 data-es>Requisitos</h2><h2 data-en>Requirements</h2>
+    <table>
+      <tr><td>Windows</td><td data-es>10 o 11, 64 bits</td><td data-en>10 or 11, 64-bit</td></tr>
+      <tr><td data-es>Espacio</td><td data-en>Disk</td><td data-es>Unos 300 MB instalado</td><td data-en>About 300 MB installed</td></tr>
+      <tr><td data-es>Cuenta</td><td data-en>Account</td><td data-es>Ninguna. No hay nube: la configuración reside en un archivo del equipo.</td><td data-en>None. There is no cloud: your setup lives in a file on your machine.</td></tr>
+      <tr><td>OpenRGB</td><td data-es>Opcional, solo para la iluminación RGB</td><td data-en>Optional, only for RGB lighting</td></tr>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <div class="env" style="display:flex; gap:18px; flex-wrap:wrap; width:100%; justify-content:space-between; padding:0 24px;">
+    <span>VirtualDeck</span>
+    <span>
+      <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" data-es>Documentación</a>
+      <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" data-en>Documentation</a>
+      ·
+      <a href="https://github.com/AndyVillatoro/virtualdeck/issues" data-es>Reportar un fallo</a>
+      <a href="https://github.com/AndyVillatoro/virtualdeck/issues" data-en>Report a bug</a>
+      ·
+      <a href="https://github.com/AndyVillatoro/virtualdeck/blob/main/CHANGELOG.md">Changelog</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+// Idioma: se recuerda la elección y, la primera vez, se detecta la del navegador.
+(function () {
+  // `localStorage` puede lanzar —navegación privada estricta, un origen
+  // opaco— y sin este envoltorio la excepción se lleva por delante el resto
+  // del script: el selector de idioma se quedaba muerto, no a medias.
+  function recordado() { try { return localStorage.getItem('vd-lang'); } catch (e) { return null; } }
+  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch (e) { /* sin memoria, sigue funcionando */ } }
+
+  const delNavegador = (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
+  aplicar(recordado() || delNavegador);
+  document.querySelectorAll('.idioma button').forEach(function (b) {
+    b.addEventListener('click', function () { aplicar(b.dataset.lang); recordar(b.dataset.lang); });
+  });
+  function aplicar(l) {
+    document.documentElement.lang = l;
+    document.querySelectorAll('.idioma button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.lang === l));
+    });
+  }
+})();
+
+// El enlace apunta a la release más reciente aunque esta página no se toque.
+// Si la consulta falla —sin red, límite de la API— el enlace de arriba ya
+// funciona por sí solo: /releases/latest siempre lleva a la última.
+fetch('https://api.github.com/repos/AndyVillatoro/virtualdeck/releases/latest')
+  .then(function (r) { return r.ok ? r.json() : null; })
+  .then(function (d) {
+    if (!d) return;
+    const exe = (d.assets || []).find(function (a) { return a.name.endsWith('.exe'); });
+    if (exe) document.getElementById('descargar').href = exe.browser_download_url;
+    const mb = exe ? Math.round(exe.size / 1048576) : null;
+    document.getElementById('detalle').textContent =
+      'Windows 10 / 11 · x64 · ' + d.tag_name + (mb ? ' · ' + mb + ' MB' : '');
+  })
+  .catch(function () { /* el enlace de respaldo ya sirve */ });
+</script>
+</body>
+</html>
