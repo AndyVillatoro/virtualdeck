@@ -1,8 +1,101 @@
 # Changelog
 
-Todos los cambios notables de VirtualDeck se documentan acá.
+Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
+
+## [0.8.0] — 2026-08-24
+
+Otra tanda del mismo método, y esta vez tocó fondo: seis funciones anunciadas
+en la interfaz que no funcionaban, y en cuatro casos **no habían funcionado
+nunca**. La técnica que las encontró fue siempre la misma — cruzar lo que hace
+una pantalla contra lo que hace otra con el mismo botón — y en todos los casos
+la prueba se hizo con la aplicación abierta y con un control, no leyendo el
+código.
+
+### Fixed
+
+- **Los botones de una página añadida desaparecían al reiniciar.** Al cargar,
+  los botones guardados se emparejaban con sus huecos **por id**, dando por
+  hecho que el id de un botón es siempre `página-hueco`. Hay cuatro caminos en
+  los que no lo es: añadir una página con «+», agrandar la cuadrícula, importar
+  una página, y borrar una página (que renumera las páginas pero no los ids).
+  En los cuatro, los botones seguían en el archivo y desaparecían de la
+  pantalla. Ahora el emparejamiento es por posición, que es lo que se ve — y
+  con eso **los decks que ya estaban en disco recuperan sus botones al abrir**.
+- **El grupo radio no funcionaba con el ratón, en ninguna pantalla.** Encender
+  un botón del grupo dejaba encendidos los demás. La celda que se pulsa conserva
+  el manejador de su primer render, y con él una lista de encendidos vacía. Lo
+  disimulaba que la acción «al apagar» sí funcionase: esa celda ya había
+  cambiado algo suyo y tenía el manejador fresco.
+- **Las acciones con `{variable}` leían un valor caducado**, el de cuando se
+  dibujó la celda. Solo se salvaban los botones cuya **etiqueta** lleva llaves,
+  porque eso fuerza el redibujo — o sea que la función parecía ir bien justo en
+  el caso en que el valor se ve en el propio botón, y fallaba en los contadores
+  y en las acciones encadenadas.
+- **Un botón pulsado en la barra flotante no guardaba nada.** Un contador
+  pulsado ahí no contaba. La barra tenía su propia copia del gesto de pulsar y
+  descartaba el cambio de estado. Además el proceso principal solo avisaba de
+  los cambios a la barra, nunca al deck, así que lo que la barra guardaba se
+  perdía en cuanto el deck volvía a guardar.
+- **El grabador de macros nunca produjo una macro correcta.** El mapa de teclas
+  suponía los códigos virtuales de Windows y la librería entrega scancodes:
+  grabar `abc1 Ctrl+C Alt+Tab F5 Enter` daba cuatro pasos, tres de ellos teclas
+  que nadie pulsó. Tampoco se guardaban los modificadores, así que `Ctrl+C` se
+  grababa como `c`. El mapa se deriva ahora de la propia librería. Y toda macro
+  terminaba con un clic en el botón de detener, que al reproducirla caía sobre
+  lo que hubiera en ese punto de la pantalla.
+- **El tutorial de bienvenida no se había mostrado nunca.** La migración que
+  marca el tutorial como visto para los usuarios veteranos tomaba una
+  instalación virgen por un usuario antiguo, y lo descartaba antes de
+  enseñarlo.
+- **El texto con acentos se corrompía al pasar por PowerShell**, en los dos
+  sentidos: al entrar (los archivos temporales se escribían sin marca de
+  codificación) y al salir (el núcleo nativo leía la salida sin forzar UTF-8).
+  Afectaba a «leer en voz alta», «escribir texto» y a la salida de un script
+  guardada en una variable.
+- **El icono de la barra de tareas volvió a esconderse.** VirtualDeck vive en
+  la bandeja y su icono en la barra era un duplicado.
+- **Guardar, cargar y borrar un perfil quedaban fuera del deshacer.** Borrar
+  uno era irreversible; y peor, deshacer una acción anterior se llevaba por
+  delante un perfil guardado después. Guardar con un nombre existente ahora
+  sobrescribe en vez de duplicar, y el perfil guarda también el fondo.
+- **Vaciar o mover varios botones era una operación por botón**: diez pasos de
+  deshacer y diez escrituras en disco para una sola acción.
+- **El español estaba mezclado en tres registros**: voseo en el tutorial y los
+  avisos, tuteo en los ajustes y los errores, y regionalismos sueltos. Todo
+  pasa a neutro formal (usted), tanto en la aplicación como en la guía.
+- **Las notificaciones se registraban en Windows con una identidad que no
+  existe**, así que aparecían sin el nombre ni el icono de la aplicación.
+
+### Added
+
+- **El estado de los interruptores se comparte entre las tres pantallas** —
+  principal, kiosko y barra flotante — y sobrevive a reiniciar. Antes cada una
+  llevaba su propia cuenta.
+- **El tutorial pasa de 5 a 7 pasos y los nuevos hacen algo**: elegir idioma
+  (primero, porque todo lo que sigue se lee en él), tema y color de acento en
+  vivo, e importar una configuración existente antes de empezar.
+- **Arrancar con Windows entra directo a la bandeja**, sin abrir la ventana
+  delante de lo que estuvieras haciendo.
+- **Widget de conversión de divisas** con tasa diaria, 166 monedas, y la última
+  tasa guardada para seguir funcionando sin conexión.
+- **Botón que sube y baja** el brillo o el volumen desde donde estén, también
+  con la rueda del ratón sobre la celda.
+- **De 7 a 18 presets de RGB**, con brillo y velocidad propios.
+- **Mantener pulsado arrastra un botón a otra casilla**, que es la única forma
+  de reordenar con el dedo.
+
+### Changed
+
+- Lo que pasa al pulsar un botón vive ahora **en un solo sitio**. Estaba escrito
+  cuatro veces y cada copia perdía algo distinto: el grupo radio, el tope para
+  una acción colgada, la captura de salida de un script, los avisos de error o
+  el guardado de variables.
+- `Ctrl+K` busca en los quince campos de un botón, no solo en tres.
+- La auditoría de traducción tiene dos comprobaciones más: una para el registro
+  del español y otra para el texto pegado a una expresión. Entre las dos
+  encontraron una docena de textos vivos sin traducir.
 
 ## [0.7.0] — 2026-08-23
 

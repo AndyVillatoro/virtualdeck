@@ -1,6 +1,6 @@
 # VirtualDeck
 
-**Tu Stream Deck por software para Windows.** Una grilla de botones que disparan
+**Su Stream Deck por software para Windows.** Una cuadrícula de botones que ejecutan
 acciones: abrir apps, webs y carpetas, cambiar el audio, controlar la música,
 ejecutar atajos, macros y más. 100% local, gratis y sin cuentas.
 

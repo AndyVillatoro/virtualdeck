@@ -77,4 +77,4 @@ Independientemente del tipo, un botón puede tener:
 - `globalHotkey`: combinación de teclas registrada a nivel SO (ej. `Ctrl+Alt+1`). Funciona aunque VirtualDeck esté en background.
 - `inTrayMenu`: aparece en el menú contextual del tray.
 
-Ambos disparan la cadena del botón vía IPC `button:trigger`. Toggles, variables y demás efectos se aplican igual que un click en la grilla.
+Ambos ejecutan la cadena del botón mediante el canal IPC `button:trigger`. Los interruptores, las variables y los demás efectos se aplican igual que con un clic en la cuadrícula.

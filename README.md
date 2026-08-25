@@ -1,6 +1,6 @@
 # VirtualDeck
 
-**Tu Stream Deck por software para Windows.** Una grilla de botones configurables que
+**Su Stream Deck por software para Windows.** Una cuadrícula de botones configurables que
 disparan acciones: abrir apps, webs y carpetas, cambiar el dispositivo de audio,
 controlar la música, ejecutar atajos, scripts y macros, y más — todo con una identidad
 visual retro de matriz de puntos. 100% local, gratis y sin cuentas.
@@ -12,7 +12,7 @@ visual retro de matriz de puntos. 100% local, gratis y sin cuentas.
 ## Características
 
 - **Botones de acción** — apps, URLs, carpetas, atajos de teclado, scripts, audio, media, brillo, TTS, webhooks, macros y más.
-- **Páginas y grilla** configurables, con drag & drop dentro y entre páginas.
+- **Páginas y cuadrícula** configurables, con arrastrar y soltar dentro y entre páginas.
 - **Widgets en vivo** en los botones — reloj, clima, sensores del PC, música actual y variables.
 - **Variables y plantillas** — contadores e interpolación `{var}` en cualquier acción.
 - **Macros** de teclado/ratón con grabador global.

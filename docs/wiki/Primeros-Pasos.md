@@ -10,19 +10,19 @@
 
 ## Crear tu primer botón
 
-1. Hacé **clic en una celda vacía** de la grilla.
-2. Elegí el **tipo de acción** (abrir app, web, atajo, audio, macro…).
+1. Haga **clic en una celda vacía** de la cuadrícula.
+2. Elija el **tipo de acción** (abrir aplicación, web, atajo, audio, macro…).
 3. Completá la configuración de esa acción (por ejemplo, la ruta de la app o la URL).
-4. En la pestaña **Estilo** ponele etiqueta, ícono y colores.
-5. Guardá. Un **clic normal** ejecuta el botón; el **clic derecho** lo edita, duplica o limpia.
+4. En la pestaña **Estilo**, asígnele etiqueta, icono y colores.
+5. Guarde. Un **clic normal** ejecuta el botón; el **clic derecho** lo edita, duplica o vacía.
 
 > 💡 Mantené **Ctrl** y hacé clic para seleccionar varios botones a la vez.
 
 ## Páginas
 
-- Las pestañas de arriba son **páginas**. Cambiá entre ellas con las teclas **1-9** o deslizando.
-- Arrastrá un botón sobre la pestaña de otra página para **moverlo** ahí.
-- Cada página puede tener su propio tamaño de grilla.
+- Las pestañas de arriba son **páginas**. Cambie entre ellas con las teclas **1-9** o deslizando.
+- Arrastre un botón sobre la pestaña de otra página para **moverlo** allí.
+- Cada página puede tener su propio tamaño de cuadrícula.
 
 ## Pantalla completa
 

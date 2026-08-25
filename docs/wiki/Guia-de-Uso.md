@@ -6,9 +6,9 @@ Stream Deck virtual para Windows. Botones configurables que disparan apps, atajo
 
 ## Conceptos básicos
 
-- **Páginas**: hasta 8, cada una con grilla 3×3 o 4×4 (clic derecho sobre la pestaña).
+- **Páginas**: hasta 8, cada una con cuadrícula 3×3 o 4×4 (clic derecho sobre la pestaña).
 - **Botones**: cada celda dispara una *acción* (o una cadena de acciones).
-- **Perfiles**: snapshots completos de tu deck (páginas + botones + acento) que puedes guardar y restaurar.
+- **Perfiles**: copias completas del deck (páginas, botones, color de acento y fondo) que se pueden guardar y restaurar.
 - **Variables**: estado global persistente (`{nombre}`) interpolable en cualquier campo de acción.
 
 ## Atajos de teclado

@@ -8,7 +8,7 @@ LHM viene **embebido** en `resources/lhm/` — no necesitas instalarlo aparte.
 
 ## Configuración
 
-Abrí TitleBar → sección **SENSORES (LIBRE HARDWARE MONITOR)**:
+Abra la barra de título → sección **SENSORES (LIBRE HARDWARE MONITOR)**:
 
 | Opción | Qué hace |
 |---|---|
@@ -16,7 +16,7 @@ Abrí TitleBar → sección **SENSORES (LIBRE HARDWARE MONITOR)**:
 | **MOSTRAR WIDGET DE SENSORES** | Muestra/oculta los cards de sensores en sidebar y pantalla completa. Default: ON. |
 | **INICIAR LHM CON VIRTUALDECK** | Spawnea el LHM bundled al arrancar VirtualDeck. |
 | **INICIAR LHM COMO ADMINISTRADOR (UAC)** | Lanza LHM con elevación. **Necesario** si el web server (puerto 8085) no responde sin admin. |
-| **RUTA LHM** | Vacío = usa el bundled. Setear si tenés tu propia instalación. |
+| **RUTA LHM** | Vacío = usa el que viene incluido. Indíquela si tiene su propia instalación. |
 | **HOST / PUERTO** | Endpoint del web server de LHM (default `127.0.0.1:8085`). |
 | **CATEGORÍAS VISIBLES** | Filtra qué tipos de hardware se muestran. |
 
@@ -29,7 +29,7 @@ LHM expone su árbol de sensores en `http://127.0.0.1:8085/data.json` usando **`
 Tres alternativas:
 
 1. **Activar "INICIAR LHM COMO ADMINISTRADOR"** (más simple, prompt UAC en cada arranque).
-2. **Registrar URL ACL una sola vez** (cero UAC después). Botón **REGISTRAR URL ACL** en TitleBar → SENSORES: dispara 1 prompt UAC y deja la reserva permanente. Después podés desactivar "INICIAR LHM COMO ADMINISTRADOR" y LHM arrancará sin pedir admin.
+2. **Registrar la reserva URL ACL una sola vez** (sin más confirmaciones de UAC después). Botón **REGISTRAR URL ACL** en la barra de título → SENSORES: pide una confirmación de UAC y deja la reserva permanente. Después puede desactivar "INICIAR LHM COMO ADMINISTRADOR" y LHM arrancará sin pedir permisos de administrador.
 
    Equivalente manual (PowerShell como admin):
    ```powershell
@@ -54,7 +54,7 @@ Si tras 12 s seguís sin respuesta, el mensaje sugiere ejecutar como admin.
 
 ## Ocultar el widget
 
-Si no querés ver los cards de sensores en la UI (pero sí querés tenerlos disponibles para [acciones de sensor](Referencia-de-Acciones)), apagá **MOSTRAR WIDGET DE SENSORES**. Los cards desaparecen del sidebar y del panel izquierdo de pantalla completa, pero las lecturas siguen disponibles para botones que las usen.
+Si no quiere ver las fichas de sensores en la interfaz, pero sí necesita tenerlas disponibles para las [acciones de sensor](Referencia-de-Acciones), desactive **MOSTRAR WIDGET DE SENSORES**. Las fichas desaparecen de la barra lateral y del panel izquierdo de pantalla completa, pero las lecturas siguen disponibles para los botones que las usen.
 
 ---
 
