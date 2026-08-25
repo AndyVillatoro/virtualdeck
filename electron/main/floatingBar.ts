@@ -225,10 +225,21 @@ export function posicionActual(): { y: number } | null {
   return { y: ventana!.getBounds().y };
 }
 
-/** Reenvía la config nueva a la barra para que se redibuje sin recargarla. */
-export function avisarCambioDeConfig(data: unknown): void {
-  if (!barraAbierta()) return;
-  ventana!.webContents.send('config:changed', data);
+/**
+ * Reparte la configuración nueva a **las dos ventanas**.
+ *
+ * Antes solo iba a la barra: el deck le hablaba a la barra y la barra no le
+ * hablaba al deck. Con eso, todo lo que la barra guarda —su posición vertical,
+ * y ahora las variables que cambian sus botones— se perdía en cuanto el deck
+ * volvía a guardar, porque seguía teniendo en memoria la configuración de
+ * antes.
+ *
+ * Quien lo recibe **no vuelve a guardar**; solo adopta lo que la otra ventana
+ * puede cambiar. Sin esa regla esto sería un bucle.
+ */
+export function avisarCambioDeConfig(data: unknown, principal?: BrowserWindow): void {
+  if (barraAbierta()) ventana!.webContents.send('config:changed', data);
+  if (principal && !principal.isDestroyed()) principal.webContents.send('config:changed', data);
 }
 
 app.on('before-quit', () => { try { cerrarBarra(); } catch { /* ya cerrada */ } });

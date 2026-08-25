@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ButtonCell } from '../components/ButtonCell';
 import { ThemeProvider, useTheme } from '../utils/theme';
 import { LanguageProvider, useT } from '../utils/i18n';
-import { executeAction, runActionSequence, interpolate } from '../utils/actions';
+import { interpolate } from '../utils/actions';
+import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import type { ButtonConfig, DeckConfig, FloatingBarSettings } from '../types';
 
 /**
@@ -34,6 +35,15 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const [hover, setHover] = useState(false);
   const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
   const [encendidos, setEncendidos] = useState<Set<string>>(new Set());
+  /** Un aviso corto: un error de accion o la salida de un script. */
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  // Por referencia y no por cierre, por lo mismo que en el deck: la celda
+  // conserva el manejador de su primer render (ver `pulsarBoton`).
+  const configRef = useRef(config);
+  configRef.current = config;
+  const encendidosRef = useRef(encendidos);
+  encendidosRef.current = encendidos;
 
   const porId = new Map(config.buttons.map((b) => [b.id, b]));
 
@@ -62,47 +72,53 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   }, [api, barra.slots.length, tile, barra.y]);
 
   /**
-   * El mismo boton hace lo mismo aqui que en el deck.
+   * El mismo botón hace exactamente lo mismo aquí que en el deck.
    *
-   * Antes se llamaba a `executeAction(btn.action, ...)` a secas, y con eso la
-   * barra se saltaba dos cosas que el boton si tiene configuradas:
+   * Esta era la **cuarta** copia del gesto de pulsar, y la más delgada: sin
+   * grupo radio, sin tope para una acción colgada, sin el gancho de scripts
+   * —y por tanto sin «guardar la salida en una variable» ni «mostrar la
+   * salida»—, sin avisar de los errores y, sobre todo, **tirando el cambio de
+   * estado**: un botón contador pulsado desde la barra no contaba nada.
+   * Medido: tres pulsaciones desde la barra dejaban la variable en 0, y las
+   * mismas desde el deck la subían a 1 y 2.
    *
-   * - la **secuencia**: un boton con varias acciones ejecutaba solo la primera;
-   * - el **interruptor**: la accion «al apagar» no se ejecutaba nunca, porque
-   *   nada llevaba la cuenta de si estaba encendido.
-   *
-   * El encendido se guarda aqui, en la ventana de la barra. No se sincroniza
-   * con el deck —son dos ventanas y dos procesos de React— asi que un boton
-   * pulsado en la barra no sale encendido en el deck ni al reves. Compartirlo
-   * pide llevar el estado a la configuracion, que es otra decision.
+   * El encendido se guarda aquí, en la ventana de la barra. No se sincroniza
+   * con el deck —son dos ventanas y dos procesos de React— así que un botón
+   * pulsado en la barra no sale encendido en el deck ni al revés. Compartirlo
+   * pide llevar ese estado a la configuración, que es otra decisión.
    */
+  const entorno = useCallback((): EntornoPulsacion => ({
+    api: api!,
+    config: configRef.current,
+    toggledIds: () => encendidosRef.current,
+    onToggle: (id) => setEncendidos((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    }),
+    // La barra sí puede guardar: es el mismo camino por el que ya guarda su
+    // posición vertical. El proceso principal reparte el cambio al deck.
+    onStateUpdate: (cambio) => onGuardar({
+      ...configRef.current, state: { ...(configRef.current.state ?? {}), ...cambio },
+    }),
+    avisar: setAviso,
+    t,
+  }), [api, onGuardar, t]);
+
   const ejecutar = useCallback(async (btn: ButtonConfig) => {
     if (!api) return;
     setEjecutando((prev) => new Set(prev).add(btn.id));
     try {
-      if (btn.isToggle) {
-        const estaba = encendidos.has(btn.id);
-        setEncendidos((prev) => {
-          const s = new Set(prev);
-          if (estaba) s.delete(btn.id); else s.add(btn.id);
-          return s;
-        });
-        if (estaba && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-          await executeAction(btn.actionToggleOff, api, config.state ?? {}, config.rgb?.profiles ?? [], t);
-          return;
-        }
-      }
-      const acciones = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
-      await runActionSequence(acciones, api, config.state ?? {}, undefined, config.rgb?.profiles ?? [], t);
+      await pulsarBoton(btn, entorno());
     } finally {
       setEjecutando((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
     }
-  }, [api, config.state, config.rgb, encendidos, t]);
+  }, [api, entorno]);
 
-  const pulsacionLarga = useCallback(async (btn: ButtonConfig) => {
-    if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
-    await executeAction(btn.longPressAction, api, config.state ?? {}, config.rgb?.profiles ?? [], t);
-  }, [api, config.state, config.rgb, t]);
+  const pulsacionLargaBoton = useCallback(async (btn: ButtonConfig) => {
+    if (!api) return;
+    await pulsacionLarga(btn, entorno());
+  }, [api, entorno]);
 
   const cerrar = () => {
     // Se apaga en la configuración, no solo se cierra la ventana: si no,
@@ -129,6 +145,22 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
         WebkitAppRegion: 'drag',
       } as React.CSSProperties}
     >
+      {aviso && (
+        <div
+          onClick={() => setAviso(null)}
+          title={aviso}
+          style={{
+            // Sobre los tiles y sin empujarlos: la ventana mide su contenido y
+            // un aviso en el flujo la haria crecer y saltar de sitio.
+            position: 'absolute', right: MARGEN, top: MARGEN, maxWidth: 220, zIndex: 10,
+            background: VD.surface, border: `1px solid ${VD.danger}`, color: VD.text,
+            fontFamily: VD.mono, fontSize: 8, lineHeight: 1.4, padding: '5px 7px',
+            borderRadius: VD.radius.sm, cursor: 'pointer',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            WebkitAppRegion: 'no-drag',
+          } as React.CSSProperties}
+        >{aviso}</div>
+      )}
       {barra.slots.map((id, i) => {
         const btn = id ? porId.get(id) : undefined;
         return (
@@ -157,7 +189,7 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                   ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
                 } })}
                 onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none'
-                  ? () => pulsacionLarga(btn) : undefined}
+                  ? () => pulsacionLargaBoton(btn) : undefined}
               />
             ) : (
               // Hueco: solo un contorno tenue, y solo mientras el cursor está

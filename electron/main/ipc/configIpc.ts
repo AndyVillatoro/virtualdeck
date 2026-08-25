@@ -23,7 +23,7 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
     });
     // La barra flotante es otra ventana y no comparte el estado de React: si no
     // se le avisa, sigue mostrando los botones viejos hasta que se reabra.
-    avisarCambioDeConfig(data);
+    avisarCambioDeConfig(data, win);
     return true;
   });
 

@@ -185,6 +185,27 @@ export default function App() {
     });
   }, []);
 
+  /**
+   * Lo que la barra flotante cambia, adoptado aquí.
+   *
+   * Son dos ventanas con dos copias de la configuración, y hasta ahora el
+   * aviso solo iba en un sentido. Se adopta **solo** lo que la barra puede
+   * tocar —sus variables y su propia geometría— y **no se vuelve a guardar**:
+   * guardar aquí cerraría el bucle con el aviso que acaba de llegar.
+   */
+  useEffect(() => {
+    if (!api) return;
+    return api.bar.onConfigChanged((data) => {
+      const llegado = data as Partial<DeckConfig>;
+      setConfig((prev) => {
+        const mismoEstado = JSON.stringify(prev.state ?? {}) === JSON.stringify(llegado.state ?? {});
+        const mismaBarra = JSON.stringify(prev.floatingBar ?? null) === JSON.stringify(llegado.floatingBar ?? null);
+        if (mismoEstado && mismaBarra) return prev;
+        return { ...prev, state: llegado.state ?? prev.state, floatingBar: llegado.floatingBar ?? prev.floatingBar };
+      });
+    });
+  }, [api, setConfig]);
+
   // Marca el onboarding como completado (o saltado) y persiste el flag.
   const finishOnboarding = useCallback(() => {
     setShowOnboarding(false);
