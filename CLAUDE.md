@@ -96,6 +96,13 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   ratón en ninguna pantalla, aunque la acción de apagar sí (esa celda ya había cambiado lo
   suyo). Cualquier cosa que un manejador de celda lea del estado del padre tiene el mismo
   problema: va por referencia.
+- **La barra flotante es otra ventana con otra copia de la configuración.** El proceso
+  principal reparte `config:changed` a **las dos**, y quien lo recibe **no vuelve a guardar**:
+  solo adopta lo que la otra ventana puede cambiar (`state` y `floatingBar`). Sin esa regla
+  es un bucle. Antes el aviso iba solo a la barra, así que lo que la barra guardaba se perdía
+  en cuanto el deck volvía a guardar. La barra usa `pulsarBoton` como las otras tres pantallas;
+  su estado de encendido **no** se comparte con el deck (son dos procesos de React), y eso
+  sigue pendiente.
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `adjust` (en `acciones/audio.ts`) sube o baja brillo/volumen **desde donde estén**, en vez
   de fijar un número. Para eso hay que leer primero: el núcleo nativo ya declaraba
