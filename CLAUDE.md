@@ -96,6 +96,12 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   ratón en ninguna pantalla, aunque la acción de apagar sí (esa celda ya había cambiado lo
   suyo). Cualquier cosa que un manejador de celda lea del estado del padre tiene el mismo
   problema: va por referencia.
+- **El estado encendido/apagado de los interruptores vive en `config.toggledIds`**, no en el
+  estado de React: es lo único que ven las tres pantallas (principal, kiosko y la barra
+  flotante, que es otra ventana con otro React). Antes cada una llevaba su propia cuenta.
+  `toggleButton` (useDeck) lo escribe con el actualizador **funcional** — el grupo radio llama
+  varias veces seguidas y leyendo del cierre cada llamada pisaría a la anterior — y con el
+  mismo respiro de 400 ms que las variables. Como efecto buscado, sobrevive a reiniciar.
 - **La barra flotante es otra ventana con otra copia de la configuración.** El proceso
   principal reparte `config:changed` a **las dos**, y quien lo recibe **no vuelve a guardar**:
   solo adopta lo que la otra ventana puede cambiar (`state` y `floatingBar`). Sin esa regla
