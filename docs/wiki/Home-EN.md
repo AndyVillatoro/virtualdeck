@@ -11,7 +11,7 @@ macros and more. 100% local, free, no accounts.
 ## 📖 Documentation (English)
 
 - [Getting Started](Getting-Started) — install, create your first button, pages.
-- [Actions Reference](Actions-Reference) — what each action type does.
+- [Usage guide](Usage-Guide) · [Actions Reference](Actions-Reference) — what each action type does.
 - [Widgets & Variables](Widgets-and-Variables) — clock, weather, sensors, music, counters.
 - [Sensors & RGB](Sensors-and-RGB) — LibreHardwareMonitor and OpenRGB.
 - [Shortcuts & Macros](Shortcuts-and-Macros) — global hotkeys and the macro recorder.

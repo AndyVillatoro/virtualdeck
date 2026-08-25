@@ -12,6 +12,7 @@
 **English**
 - [Home](Home-EN)
 - [Getting Started](Getting-Started)
+- [Usage guide](Usage-Guide)
 - [Actions](Actions-Reference)
 - [Widgets & Variables](Widgets-and-Variables)
 - [Sensors & RGB](Sensors-and-RGB)

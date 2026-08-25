@@ -89,9 +89,9 @@ El botón "Documentación" apunta al wiki. Lo llenamos desde [docs/wiki/](wiki/R
 | 16 | `Home` / `_Sidebar` | Landing bilingüe + navegación. | ✅ |
 | 17 | Primeros pasos / Getting Started | Instalar, primer botón, páginas. | ✅ |
 | 18 | Guía de uso / Referencia de acciones / Sensores y RGB (ES) | Migradas desde `docs/`. | ✅ |
-| 19 | Versiones EN de las guías | Traducir guía, acciones, sensores. | ⬜ |
-| 20 | Widgets y variables (ES/EN) | Reloj, clima, sensores, música, variable. | ⬜ |
-| 21 | Atajos y macros (ES/EN) | Hotkeys globales, grabador de macros. | ⬜ |
+| 19 | Versiones EN de las guías | Guía de uso, acciones y sensores traducidas. | ✅ |
+| 20 | Widgets y variables (ES/EN) | Los seis widgets, variables, interruptores y grupos. | ✅ |
+| 21 | Atajos y macros (ES/EN) | Atajos, hotkeys globales, grabador y formato de macro. | ✅ |
 
 ## Bloque D — Features y pulido
 

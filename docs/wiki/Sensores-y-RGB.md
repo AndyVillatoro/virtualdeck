@@ -1,8 +1,8 @@
 # Sensores (LibreHardwareMonitor)
 
-VirtualDeck integra **LibreHardwareMonitor (LHM)** para mostrar temperaturas, cargas y velocidades de tu hardware (CPU/GPU/placa/RAM/almacenamiento) en el sidebar (modo normal) y en el panel izquierdo (modo pantalla completa).
+VirtualDeck integra **LibreHardwareMonitor (LHM)** para mostrar temperaturas, cargas y velocidades del hardware (CPU/GPU/placa/RAM/almacenamiento) en el sidebar (modo normal) y en el panel izquierdo (modo pantalla completa).
 
-LHM viene **embebido** en `resources/lhm/` — no necesitas instalarlo aparte.
+LHM viene **incluido** en `resources/lhm/`; no hace falta instalarlo aparte.
 
 ---
 
@@ -12,9 +12,9 @@ Abra la barra de título → sección **SENSORES (LIBRE HARDWARE MONITOR)**:
 
 | Opción | Qué hace |
 |---|---|
-| **HABILITADO** | Activa la lectura de sensores (poll cada 5 s al backend). |
-| **MOSTRAR WIDGET DE SENSORES** | Muestra/oculta los cards de sensores en sidebar y pantalla completa. Default: ON. |
-| **INICIAR LHM CON VIRTUALDECK** | Spawnea el LHM bundled al arrancar VirtualDeck. |
+| **HABILITADO** | Activa la lectura de sensores, con una consulta cada 5 s. |
+| **MOSTRAR WIDGET DE SENSORES** | Muestra u oculta las fichas de sensores en la barra lateral y en pantalla completa. Activado por omisión. |
+| **INICIAR LHM CON VIRTUALDECK** | Inicia el LHM incluido al arrancar VirtualDeck. |
 | **INICIAR LHM COMO ADMINISTRADOR (UAC)** | Lanza LHM con elevación. **Necesario** si el web server (puerto 8085) no responde sin admin. |
 | **RUTA LHM** | Vacío = usa el que viene incluido. Indíquela si tiene su propia instalación. |
 | **HOST / PUERTO** | Endpoint del web server de LHM (default `127.0.0.1:8085`). |
@@ -41,14 +41,14 @@ Tres alternativas:
 
 ## Diagnóstico
 
-- En TitleBar → SENSORES verás el estado:
+- En la barra de título → SENSORES se ve el estado:
   - `● LHM` verde = conectado y leyendo datos.
   - `○ OFFLINE` amarillo = habilitado pero el web server no responde.
   - `○ DISABLED` gris = la integración está apagada.
-- Botón **PROBAR** verifica el endpoint sin spawnear nada.
-- Botón **INICIAR LHM** spawnea + reintenta probe hasta 12 s (LHM tarda en cold start).
+- Botón **PROBAR**: comprueba el punto de acceso sin iniciar nada.
+- Botón **INICIAR LHM**: lo inicia y reintenta la comprobación hasta 12 s, porque el primer arranque de LHM es lento.
 
-Si tras 12 s seguís sin respuesta, el mensaje sugiere ejecutar como admin.
+Si tras 12 s sigue sin haber respuesta, el mensaje sugiere ejecutar la aplicación como administrador.
 
 ---
 
@@ -61,6 +61,6 @@ Si no quiere ver las fichas de sensores en la interfaz, pero sí necesita tenerl
 ## RGB (OpenRGB)
 
 La configuración RGB vive en su propia pantalla (botón **RGB** en la barra superior),
-no acá. VirtualDeck se conecta al SDK de **OpenRGB** para aplicar colores, modos y
-perfiles a dispositivos compatibles. Asegurate de tener OpenRGB corriendo con su
-servidor SDK habilitado.
+no aquí. VirtualDeck se conecta al SDK de **OpenRGB** para aplicar colores, modos y
+perfiles a los dispositivos compatibles. Es necesario tener OpenRGB en ejecución con
+su servidor SDK habilitado.

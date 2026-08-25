@@ -6,7 +6,7 @@ Stream Deck virtual para Windows. Botones configurables que disparan apps, atajo
 
 ## Conceptos básicos
 
-- **Páginas**: hasta 8, cada una con cuadrícula 3×3 o 4×4 (clic derecho sobre la pestaña).
+- **Páginas**: hasta 8, cada una con su propia cuadrícula, de 3 a 6 columnas y hasta 8 filas (clic derecho sobre la pestaña).
 - **Botones**: cada celda dispara una *acción* (o una cadena de acciones).
 - **Perfiles**: copias completas del deck (páginas, botones, color de acento y fondo) que se pueden guardar y restaurar.
 - **Variables**: estado global persistente (`{nombre}`) interpolable en cualquier campo de acción.
@@ -17,9 +17,9 @@ Stream Deck virtual para Windows. Botones configurables que disparan apps, atajo
 |-------|--------|
 | `Ctrl+K` | Búsqueda global de botones |
 | `Ctrl+Z` | Deshacer último cambio |
-| `1` … `8` | Saltar a página N |
+| `1` … `8` | Saltar a la página N (hasta las que existan) |
 | `Esc` | Salir de modal / fullscreen / kiosko |
-| `F11` o botón ⤢ | Modo pantalla completa |
+| Botón ⤢ | Modo pantalla completa |
 
 ## Editar un botón
 
