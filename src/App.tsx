@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MainB } from './screens/MainB';
 import { FullscreenB } from './screens/FullscreenB';
 import { EditorB } from './screens/EditorB';
@@ -127,7 +127,7 @@ export default function App() {
     renamePage, addPage, deletePage, reorderPages, setPageGridSize,
     saveProfile, loadProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
-    toggleSoundOnPress, setSoundProfile, setKioskPin, updateState,
+    toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,
   } = deck;
 
@@ -174,6 +174,10 @@ export default function App() {
       const s = migrated as Partial<DeckConfig>;
       if (s && s.buttons && s.buttons.length > 0) {
         const merged = conHuecosCompletos(s.pages || PAGES_DEFAULT, s.buttons);
+        // Los interruptores encendidos ahora se guardan; si un boton dejo de
+        // existir, su id se quedaria ahi para siempre.
+        const vivos = new Set(merged.map((b) => b.id));
+        s.toggledIds = (s.toggledIds ?? []).filter((id) => vivos.has(id));
         setConfig({ ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION });
       }
       setAutostart(as as boolean);
@@ -198,10 +202,16 @@ export default function App() {
     return api.bar.onConfigChanged((data) => {
       const llegado = data as Partial<DeckConfig>;
       setConfig((prev) => {
-        const mismoEstado = JSON.stringify(prev.state ?? {}) === JSON.stringify(llegado.state ?? {});
-        const mismaBarra = JSON.stringify(prev.floatingBar ?? null) === JSON.stringify(llegado.floatingBar ?? null);
-        if (mismoEstado && mismaBarra) return prev;
-        return { ...prev, state: llegado.state ?? prev.state, floatingBar: llegado.floatingBar ?? prev.floatingBar };
+        const igual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+        if (igual(prev.state, llegado.state)
+          && igual(prev.floatingBar, llegado.floatingBar)
+          && igual(prev.toggledIds, llegado.toggledIds)) return prev;
+        return {
+          ...prev,
+          state: llegado.state ?? prev.state,
+          floatingBar: llegado.floatingBar ?? prev.floatingBar,
+          toggledIds: llegado.toggledIds ?? prev.toggledIds,
+        };
       });
     });
   }, [api, setConfig]);
@@ -238,20 +248,17 @@ export default function App() {
   }, [api, autostart]);
 
   // Toggle state for toggle-mode buttons (runtime only, not persisted)
-  const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
+  // Los interruptores encendidos salen de la configuración, no de un estado
+  // propio: es lo único que la barra flotante —otra ventana, otro React— puede
+  // ver. `toggleButton` los escribe.
+  const toggledIds = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   // Igual que en las pantallas: lo leen manejadores creados en otro render.
   const configRef = useRef(config);
   configRef.current = config;
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
 
-  const handleToggle = useCallback((id: string) => {
-    setToggledIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
+  const handleToggle = toggleButton;
 
 
 
@@ -502,6 +509,7 @@ export default function App() {
           onExit={() => setView('main')}
           onSetKioskPin={setKioskPin}
           onStateUpdate={updateState}
+          onToggle={handleToggle}
         />
       )}
 

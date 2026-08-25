@@ -28,6 +28,8 @@ interface FullscreenBProps {
   /** Persiste el PIN del modo kiosko para próximas activaciones. */
   onSetKioskPin: (pin: string) => void;
   onStateUpdate: (update: Record<string, string>) => void;
+  /** Enciende o apaga un interruptor. Vive en la configuracion, compartido. */
+  onToggle: (id: string) => void;
 }
 
 function getSourceName(src: string): string {
@@ -44,7 +46,7 @@ function getSourceName(src: string): string {
   return parts[parts.length - 1]?.replace(/\.exe$/i, '') || '';
 }
 
-export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetKioskPin, onStateUpdate }: FullscreenBProps) {
+export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetKioskPin, onStateUpdate, onToggle }: FullscreenBProps) {
   // La paleta viene del contexto: importarla fijaba el tema oscuro y esta
   // pantalla se quedaba sin modo claro por completo.
   const VD = useTheme();
@@ -54,7 +56,10 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   const nowPlaying = useNowPlaying();
   const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [activePage, setActivePage] = useState(0);
-  const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
+  // Los interruptores llegan de arriba: viven en la configuracion para que la
+  // barra flotante los vea. Kiosko tenia los suyos, y con eso un boton
+  // encendido en la pantalla principal salia apagado al entrar aqui.
+  const toggledIds = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const errorTimer = useRef<number>();
 
@@ -101,13 +106,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
     return () => document.removeEventListener('keydown', onKey);
   }, [onExit, config.pages.length, kioskActive, pinPrompt]);
 
-  const handleToggle = useCallback((id: string) => {
-    setToggledIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
+  const handleToggle = onToggle;
 
   // Se asigna en cada render, no en un efecto: solo la leen los manejadores
   // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el

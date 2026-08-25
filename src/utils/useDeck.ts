@@ -33,6 +33,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   const historyRef = useRef<{ config: DeckConfig; label: string }[]>([]);
   /** Guarda el estado de las variables con un respiro, para no escribir en disco en cada tecla. */
   const stateSaveTimer = useRef<number>();
+  const toggleSaveTimer = useRef<number>();
 
   // El traductor sale de aqui y no llega por parametro: lo construye el idioma
   // de la propia configuracion, que es lo que este hook posee. Pasarlo desde
@@ -411,6 +412,29 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     });
   }, [api]);
 
+  /**
+   * Enciende o apaga un interruptor, en la configuración.
+   *
+   * Con el actualizador funcional a propósito: el grupo radio llama a esto
+   * varias veces seguidas —uno para encender, uno por cada compañero que hay
+   * que apagar— y leyendo `config` del cierre cada llamada pisaría a la
+   * anterior.
+   *
+   * Se escribe en disco con el mismo respiro que las variables: encender tres
+   * botones de un grupo radio son tres llamadas en el mismo instante y no hace
+   * falta escribir tres veces.
+   */
+  const toggleButton = useCallback((id: string) => {
+    setConfig((prev) => {
+      const encendidos = new Set(prev.toggledIds ?? []);
+      if (encendidos.has(id)) encendidos.delete(id); else encendidos.add(id);
+      const next = { ...prev, toggledIds: [...encendidos] };
+      clearTimeout(toggleSaveTimer.current);
+      toggleSaveTimer.current = window.setTimeout(() => api?.config.save(next).catch(() => {}), 400);
+      return next;
+    });
+  }, [api]);
+
   const updateState = useCallback((update: Record<string, string>) => {
     setConfig((prev) => {
       const next = { ...prev, state: { ...(prev.state ?? {}), ...update } };
@@ -432,7 +456,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     renamePage, addPage, deletePage, reorderPages, setPageGridSize,
     saveProfile, loadProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
-    toggleSoundOnPress, setSoundProfile, setKioskPin, updateState,
+    toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,
   };
 }

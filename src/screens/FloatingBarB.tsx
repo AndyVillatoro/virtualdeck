@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ButtonCell } from '../components/ButtonCell';
 import { ThemeProvider, useTheme } from '../utils/theme';
 import { LanguageProvider, useT } from '../utils/i18n';
@@ -34,7 +34,10 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const tile = barra.tileSize ?? 64;
   const [hover, setHover] = useState(false);
   const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
-  const [encendidos, setEncendidos] = useState<Set<string>>(new Set());
+  // Los interruptores salen de la configuracion, igual que en el deck: es lo
+  // unico que ven las dos ventanas. Antes la barra tenia los suyos y un boton
+  // encendido aqui salia apagado alli, y al reves.
+  const encendidos = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   /** Un aviso corto: un error de accion o la salida de un script. */
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -87,23 +90,39 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
    * pulsado en la barra no sale encendido en el deck ni al revés. Compartirlo
    * pide llevar ese estado a la configuración, que es otra decisión.
    */
+  /**
+   * Guarda un trozo de la configuración, sin perder el trozo anterior.
+   *
+   * Una sola pulsación puede cambiar dos cosas —el interruptor y una
+   * variable— y las dos leerían `configRef` antes de que React redibuje. Sin
+   * adelantar la referencia aquí, la segunda escritura borraría la primera.
+   */
+  const guardarParcial = useCallback((parche: Partial<DeckConfig>) => {
+    const siguiente = { ...configRef.current, ...parche };
+    configRef.current = siguiente;
+    onGuardar(siguiente);
+  }, [onGuardar]);
+
   const entorno = useCallback((): EntornoPulsacion => ({
     api: api!,
     config: configRef.current,
     toggledIds: () => encendidosRef.current,
-    onToggle: (id) => setEncendidos((prev) => {
-      const s = new Set(prev);
+    // Se lee de la referencia y no del cierre, para que el grupo radio -que
+    // llama a esto varias veces seguidas- no pise sus propios cambios.
+    onToggle: (id) => {
+      const s = new Set(encendidosRef.current);
       if (s.has(id)) s.delete(id); else s.add(id);
-      return s;
-    }),
+      encendidosRef.current = s;
+      guardarParcial({ toggledIds: [...s] });
+    },
     // La barra sí puede guardar: es el mismo camino por el que ya guarda su
     // posición vertical. El proceso principal reparte el cambio al deck.
-    onStateUpdate: (cambio) => onGuardar({
-      ...configRef.current, state: { ...(configRef.current.state ?? {}), ...cambio },
+    onStateUpdate: (cambio) => guardarParcial({
+      state: { ...(configRef.current.state ?? {}), ...cambio },
     }),
     avisar: setAviso,
     t,
-  }), [api, onGuardar, t]);
+  }), [api, guardarParcial, t]);
 
   const ejecutar = useCallback(async (btn: ButtonConfig) => {
     if (!api) return;

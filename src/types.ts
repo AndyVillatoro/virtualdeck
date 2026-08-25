@@ -257,6 +257,18 @@ export interface DeckConfig {
   soundProfile?: SoundProfileId;
   /** Modo kiosko: oculta UI no esencial y bloquea ESC con PIN en fullscreen. */
   kiosk?: { enabled: boolean; pin?: string };
+  /**
+   * Los botones de tipo interruptor que están encendidos ahora mismo.
+   *
+   * Vive en la configuración y no en el estado de React porque la barra
+   * flotante es **otra ventana con otro React**: era la única forma de que un
+   * botón pulsado en la barra saliera encendido en el deck y al revés.
+   *
+   * Efecto secundario buscado: sobrevive a reiniciar. Antes todo salía apagado
+   * al arrancar, y el primer toque de un interruptor que ya estaba encendido
+   * volvía a ejecutar la acción de encender en vez de la de apagar.
+   */
+  toggledIds?: string[];
   /** 1.2 — Variables persistentes interpolables como {nombre} en campos de acción. */
   state?: Record<string, string>;
   /** Schema version. Migra automáticamente al cargar — ver src/utils/configMigration.ts */
