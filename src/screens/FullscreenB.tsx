@@ -112,14 +112,22 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // Se asigna en cada render, no en un efecto: solo la leen los manejadores
   // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
   // que se creo la celda.
+  // Igual que `toggledIds`: la celda conserva el manejador de su primer render,
+  // asi que leer `config` del cierre daba el de entonces. Se notaba en las
+  // acciones que interpolan `{variable}`: una accion `n = vi-{m}` escribia el
+  // valor de `m` de cuando se dibujo la celda, no el de ahora. Solo se salvaban
+  // los botones cuya **etiqueta** lleva `{}`, porque eso si fuerza el redibujo.
+  const configRef = useRef(config);
+  configRef.current = config;
+
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
 
   const entorno = useCallback((): EntornoPulsacion => ({
     api: window.electronAPI!,
-    config, toggledIds: () => toggledRef.current, onToggle: handleToggle, onStateUpdate,
+    config: configRef.current, toggledIds: () => toggledRef.current, onToggle: handleToggle, onStateUpdate,
     avisar: setRuntimeError, t,
-  }), [config, handleToggle, onStateUpdate, t]);
+  }), [handleToggle, onStateUpdate, t]);
 
   const executeLongPress = useCallback(async (btn: ButtonConfig) => {
     if (!window.electronAPI) return;

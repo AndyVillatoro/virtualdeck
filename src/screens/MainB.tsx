@@ -161,16 +161,24 @@ export function MainB({
   // Se asigna en cada render, no en un efecto: solo la leen los manejadores
   // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
   // que se creo la celda.
+  // Igual que `toggledIds`: la celda conserva el manejador de su primer render,
+  // asi que leer `config` del cierre daba el de entonces. Se notaba en las
+  // acciones que interpolan `{variable}`: una accion `n = vi-{m}` escribia el
+  // valor de `m` de cuando se dibujo la celda, no el de ahora. Solo se salvaban
+  // los botones cuya **etiqueta** lleva `{}`, porque eso si fuerza el redibujo.
+  const configRef = useRef(config);
+  configRef.current = config;
+
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
 
   const entorno = useCallback((): EntornoPulsacion => ({
     api: api!,
-    config, toggledIds: () => toggledRef.current, onToggle, onStateUpdate,
+    config: configRef.current, toggledIds: () => toggledRef.current, onToggle, onStateUpdate,
     avisar: showToast, t,
   // `toggledIds` no va aqui: se lee por referencia. Dejarlo ademas recreaba
   // el entorno en cada encendido, sin ninguna falta.
-  }), [api, config, onToggle, onStateUpdate, showToast, t]);
+  }), [api, onToggle, onStateUpdate, showToast, t]);
 
   /** Anota lo ejecutado en el registro lateral. Es lo unico propio de esta pantalla. */
   const anotar = useCallback((etiqueta: string, tipo: string, ok: boolean, error?: string) => {

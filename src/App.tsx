@@ -219,6 +219,8 @@ export default function App() {
   // Toggle state for toggle-mode buttons (runtime only, not persisted)
   const [toggledIds, setToggledIds] = useState<Set<string>>(new Set());
   // Igual que en las pantallas: lo leen manejadores creados en otro render.
+  const configRef = useRef(config);
+  configRef.current = config;
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
 
@@ -311,11 +313,12 @@ export default function App() {
     // de que ha pasado algo, que es justo cuando mas falta hace.
     if (config.soundOnPress ?? true) playSound(config.soundProfile ?? 'click');
     await pulsarBoton(btn, {
-      api, config, toggledIds: () => toggledRef.current, onToggle: handleToggle, onStateUpdate: updateState,
+      api, config: configRef.current, toggledIds: () => toggledRef.current,
+      onToggle: handleToggle, onStateUpdate: updateState,
       // Un fallo de una accion disparada sola no se veia en ninguna parte.
       avisar: setImportError, t,
     });
-  }, [api, config, handleToggle, updateState, t]);
+  }, [api, handleToggle, updateState, t]);
 
   // Atajo global del sistema y menu de la bandeja: el proceso principal emite
   // button:trigger y aqui se ejecuta la cadena del boton.
