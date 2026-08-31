@@ -642,6 +642,8 @@ export interface ElectronAPI {
     resizeZone: (deviceId: number, zoneId: number, size: number) => Promise<boolean>;
     applyProfile: (profile: RGBProfile) => Promise<boolean>;
     smartPreset: (presetId: string) => Promise<boolean>;
+    /** Los presets con su color, leidos de la lista del proceso principal. */
+    presetList: () => Promise<Array<{ id: string; color: string }>>;
     pickFile: () => Promise<string | null>;
   };
   sensors: {

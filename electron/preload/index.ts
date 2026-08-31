@@ -133,6 +133,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('rgb:resizeZone', deviceId, zoneId, size),
     applyProfile: (profile: unknown) => ipcRenderer.invoke('rgb:applyProfile', profile),
     smartPreset: (presetId: string) => ipcRenderer.invoke('rgb:smartPreset', presetId),
+    presetList: (): Promise<Array<{ id: string; color: string }>> => ipcRenderer.invoke('rgb:presetList'),
     pickFile: () => ipcRenderer.invoke('rgb:pickFile'),
   },
   sensors: {

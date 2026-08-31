@@ -185,6 +185,7 @@ export const ES: Dict = {
   'rgb.allWhite': 'BLANCO TOTAL',
   'rgb.accentColor': 'COLOR ACENTO',
   'rgb.profiles': 'PERFILES RGB',
+  'rgb.presets': 'PRESETS',
   'rgb.noProfiles': 'Sin perfiles aún.',
   'rgb.apply': 'APLICAR',
   'rgb.save': 'GUARDAR',

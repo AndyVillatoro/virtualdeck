@@ -3,7 +3,7 @@ import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import {
-  StatusBadge, DeviceDetail, SaveProfileBar, CalibratorModal,
+  StatusBadge, DeviceDetail, SaveProfileBar, CalibratorModal, PresetsRapidos,
   estiloBotonPrimario, estiloBotonSecundario,
 } from './rgb/piezas';
 import { TitleBar } from '../components/TitleBar';
@@ -215,6 +215,21 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     return { id: `rgb_${Date.now()}`, name, devices: devs };
   };
 
+  /**
+   * Aplicar un preset desde el gestor.
+   *
+   * Tras aplicarlo se recargan los dispositivos: un preset cambia el modo, el
+   * color y a veces el brillo, y sin recargar el panel seguiria enseñando el
+   * estado de antes — y un perfil guardado justo despues capturaria eso.
+   */
+  const aplicarPreset = async (id: string) => {
+    const api = window.electronAPI;
+    if (!api) return;
+    const ok = await api.rgb.smartPreset(id);
+    if (!ok) { showToast(t('act.err.rgbPreset', { id })); return; }
+    await refresh();
+  };
+
   const saveProfile = (name: string) => {
     const prof = captureCurrentAsProfile(name);
     persistRGB((prev) => ({ ...prev, profiles: [...prev.profiles, prof] }));
@@ -403,6 +418,8 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 
         {/* Profiles */}
         <div style={{ width: 240, borderLeft: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
+          <PresetsRapidos accent={accent} activo={status.connected} onAplicar={aplicarPreset} />
+
           <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.profiles')}</DotLabel>
           <SaveProfileBar onSave={saveProfile} accent={accent} disabled={!status.connected} />
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>

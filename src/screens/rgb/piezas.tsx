@@ -433,3 +433,69 @@ function estiloModal(VD: VDTokens): React.CSSProperties {
     display: 'flex', flexDirection: 'column', overflow: 'hidden',
   };
 }
+
+/**
+ * Los presets, aplicables desde el propio gestor.
+ *
+ * Hasta ahora solo se llegaba a ellos creando un botón del deck: en la pantalla
+ * dedicada al RGB no había forma de probarlos, que es justo donde uno quiere
+ * verlos antes de decidir cuál poner en un botón.
+ *
+ * El color de cada uno se pide al proceso principal y no se copia aquí: la
+ * lista de verdad es `SMART_PRESETS`, y dos copias se separan.
+ */
+export function PresetsRapidos({ accent, activo, onAplicar }: {
+  accent: string;
+  activo: boolean;
+  onAplicar: (id: string) => void;
+}) {
+  const VD = useTheme();
+  const t = useT();
+  const [presets, setPresets] = useState<Array<{ id: string; color: string }>>([]);
+  const [ultimo, setUltimo] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    window.electronAPI?.rgb.presetList()
+      .then((l) => { if (vivo) setPresets(l); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+
+  if (presets.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>
+        {t('rgb.presets')}
+      </DotLabel>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        {presets.map((p) => (
+          <button
+            key={p.id}
+            disabled={!activo}
+            onClick={() => { setUltimo(p.id); onAplicar(p.id); }}
+            title={t(`rgb.preset.${p.id}`)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '3px 7px', cursor: activo ? 'pointer' : 'default',
+              background: ultimo === p.id ? VD.accentBg : VD.elevated,
+              border: `1px solid ${ultimo === p.id ? accent : VD.border}`,
+              borderRadius: VD.radius.sm, opacity: activo ? 1 : 0.45,
+              fontFamily: VD.mono, fontSize: 7, letterSpacing: 0.5,
+              color: ultimo === p.id ? accent : VD.textDim,
+            }}
+          >
+            {/* La muestra de color va con borde propio: un preset oscuro sobre
+                fondo oscuro no se distinguiria del hueco. */}
+            <span style={{
+              width: 8, height: 8, borderRadius: 2, flexShrink: 0,
+              background: p.color, border: `1px solid ${VD.border}`,
+            }} />
+            {t(`rgb.preset.${p.id}`)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

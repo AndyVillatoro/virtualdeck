@@ -455,6 +455,18 @@ export async function resizeZone(deviceId: number, zoneId: number, size: number)
   }
 }
 
+/**
+ * Los presets disponibles, con el color con el que pintan.
+ *
+ * Se lee de `SMART_PRESETS`, que es la lista de verdad. La pantalla podria
+ * llevar su propia copia de los colores, pero entonces habria dos y se
+ * separarian: `src/data/rgbPresets.ts` ya guarda solo los ids, y hay un
+ * guardian que comprueba que esa lista y esta no se desalineen.
+ */
+export function listaPresets(): Array<{ id: string; color: string }> {
+  return Object.entries(SMART_PRESETS).map(([id, p]) => ({ id, color: p.color }));
+}
+
 export async function applyProfile(profile: RGBProfile): Promise<boolean> {
   if (!client?.isConnected) return false;
   try {

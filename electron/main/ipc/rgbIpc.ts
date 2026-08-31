@@ -19,6 +19,7 @@ export function registerRgbIpc(win: BrowserWindow) {
   ipcMain.handle('rgb:setMode', (_e: any, id: number, m: string, c?: string, b?: number, s?: number) => rgb.setMode(id, m, c, b, s));
   ipcMain.handle('rgb:resizeZone', (_e: any, id: number, z: number, size: number) => rgb.resizeZone(id, z, size));
   ipcMain.handle('rgb:applyProfile', (_e: any, profile: any) => rgb.applyProfile(profile));
+  ipcMain.handle('rgb:presetList', () => rgb.listaPresets());
   ipcMain.handle('rgb:smartPreset', (_e: any, presetId: string) => rgb.applySmartPreset(presetId));
 
   ipcMain.handle('rgb:pickFile', async () => {
