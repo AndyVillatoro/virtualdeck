@@ -197,7 +197,11 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         position: 'relative', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
       }}>
-      <Wallpaper kind="dotgrid" />
+      {/* El fondo que el usuario eligio, no uno fijo. Estaba clavado a
+          `dotgrid`, asi que elegir CRT pintaba la viñeta en el deck y una
+          cuadricula de puntos en pantalla completa — justo el modo donde el
+          fondo mas se ve, porque ocupa la pantalla entera. */}
+      <Wallpaper kind={config.wallpaper} />
 
       {/* Top bar — oculta en modo kiosko */}
       {!kioskActive && (
