@@ -11,6 +11,7 @@ import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
+import { FolderOverlay } from './main/OverlayCarpeta';
 import { interpolate } from '../utils/actions';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { useNowPlaying } from '../utils/nowPlaying';
@@ -135,6 +136,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
 
   const executeButton = useCallback(async (btn: ButtonConfig) => {
     if (!window.electronAPI) return;
+    if (btn.action.type === 'folder') { setCarpetaAbierta(btn); return; }
     setEjecutando((prev) => new Set(prev).add(btn.id));
     try {
       await pulsarBoton(btn, entorno());
@@ -169,6 +171,10 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   // del dispositivo activo no se pintaba.
   const estadoSistema = useEstadoSistema(window.electronAPI);
   const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
+  // Kiosko no abria las carpetas: un boton de tipo carpeta no hacia **nada**,
+  // sin aviso. `pulsarBoton` devuelve OK para ese tipo porque quien lo abre es
+  // la pantalla, y aqui no habia quien.
+  const [carpetaAbierta, setCarpetaAbierta] = useState<ButtonConfig | null>(null);
 
   const clima = useClimaWidget(config.buttons.some((b) => b.widget === 'weather'), window.electronAPI);
   const divisas = useDivisas(config.buttons, window.electronAPI);
@@ -378,6 +384,17 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           </div>
         </div>
       </div>
+
+      {carpetaAbierta && (
+        <FolderOverlay
+          btn={carpetaAbierta}
+          accent={config.accent}
+          soundEnabled={soundOnPress}
+          soundProfile={soundProfile}
+          entorno={entorno}
+          onClose={() => setCarpetaAbierta(null)}
+        />
+      )}
     </div>
   );
 }

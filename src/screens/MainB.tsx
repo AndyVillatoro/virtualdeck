@@ -590,11 +590,8 @@ export function MainB({
           accent={config.accent}
           soundEnabled={soundOnPress}
           soundProfile={soundProfile}
-          state={config.state}
-          rgbProfiles={config.rgb?.profiles}
+          entorno={entorno}
           onClose={() => setOpenFolderBtn(null)}
-          onActionError={(msg) => showToast(msg)}
-          onStateUpdate={onStateUpdate}
         />
       )}
     </div>

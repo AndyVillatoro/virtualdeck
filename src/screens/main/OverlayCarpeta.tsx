@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { playSound } from '../../utils/sound';
-import { executeAction } from '../../utils/actions';
+import { ejecutarUna, type EntornoPulsacion } from '../../utils/pulsarBoton';
 import type { ButtonConfig, FolderButton, RGBProfile, SoundProfileId } from '../../types';
 
 /**
@@ -14,16 +14,14 @@ import type { ButtonConfig, FolderButton, RGBProfile, SoundProfileId } from '../
  * aqui. Se configuran en el editor del boton que los contiene.
  */
 
-export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, state, rgbProfiles, onClose, onActionError, onStateUpdate }: {
+export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, entorno, onClose }: {
   btn: ButtonConfig;
   accent: string;
   soundEnabled: boolean;
   soundProfile: SoundProfileId;
-  state?: Record<string, string>;
-  rgbProfiles?: RGBProfile[];
+  /** El mismo contexto que usa una celda del deck. Ver `pulsarBoton`. */
+  entorno: () => EntornoPulsacion;
   onClose: () => void;
-  onActionError: (msg: string) => void;
-  onStateUpdate: (update: Record<string, string>) => void;
 }) {
   const t = useT();
   const VD = useTheme();
@@ -41,11 +39,9 @@ export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, state, 
     setFlash(idx);
     setTimeout(() => setFlash(null), 300);
     if (soundEnabled) playSound(soundProfile);
-    // Pass state + RGB profiles so folder actions can interpolate {var} and
-    // resolve RGB profile references (same context the parent grid uses).
-    const r = await executeAction(fb.action, api, state, rgbProfiles);
-    if (r.stateUpdate) onStateUpdate(r.stateUpdate as Record<string, string>);
-    if (!r.ok && r.error) onActionError(r.error);
+    // El mismo camino que una celda del deck: con el gancho de scripts, el
+    // tope para una accion colgada y el aviso de error incluidos.
+    await ejecutarUna(fb.action, entorno());
     onClose();
   }
 

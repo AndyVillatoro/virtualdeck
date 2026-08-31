@@ -146,6 +146,37 @@ export async function pulsarBoton(
   return { ok: r.ok, error: r.error, tipo: btn.action.type };
 }
 
+/**
+ * Ejecuta **una** acción suelta con el contexto completo.
+ *
+ * La usan los botones de dentro de una carpeta, que no son botones del deck
+ * —no tienen id, ni interruptor, ni secuencia— pero sí necesitan lo demás.
+ *
+ * Antes llamaban a `executeAction` a secas, y ahí está la trampa: `script` es
+ * uno de los tipos que **resuelve el llamador**, así que `executeAction` lo
+ * daba por bueno y devolvía OK sin ejecutar nada. El sub-botón destellaba,
+ * sonaba, la carpeta se cerraba y el script no corría. Medido con el mismo
+ * script en un botón normal y en un sub-botón: el normal escribía su archivo y
+ * el sub-botón no.
+ */
+export async function ejecutarUna(
+  accion: ButtonConfig['action'], e: EntornoPulsacion,
+): Promise<ResultadoPulsacion> {
+  const base = e.config.state ?? {};
+  const r = await conPlazo(
+    runActionSequence([accion], e.api, base, ganchoScripts([accion], e), e.config.rgb?.profiles, e.t),
+    { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
+  );
+  const nuevas = Object.keys(r.stateUpdate ?? {}).filter((k) => r.stateUpdate![k] !== base[k]);
+  if (nuevas.length > 0 && r.stateUpdate) {
+    const cambio: Record<string, string> = {};
+    for (const k of nuevas) cambio[k] = r.stateUpdate[k] as string;
+    e.onStateUpdate(cambio);
+  }
+  if (!r.ok && r.error) e.avisar(r.error);
+  return { ok: r.ok, error: r.error, tipo: accion.type };
+}
+
 /** La acción alternativa de mantener pulsado. También compartida. */
 export async function pulsacionLarga(
   btn: ButtonConfig, e: EntornoPulsacion,
