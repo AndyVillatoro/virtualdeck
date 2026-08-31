@@ -22,6 +22,7 @@ export function HelpAboutPanel({
   const [platformInfo, setPlatformInfo] = useState<PlatformInfo | null>(null);
   const [showDonate, setShowDonate] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
+  const [sinRegistro, setSinRegistro] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
 
@@ -118,8 +119,23 @@ export function HelpAboutPanel({
           {/* Log */}
           <div style={{ display: 'flex', gap: 4 }}>
             <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.open()}>{t('help.openLog')}</button>
-            <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.export()}>{t('help.exportLog')}</button>
+            <button
+              style={{ ...linkBtn, flex: 1 }}
+              onClick={async () => {
+                // Se distingue «no hay registro» de «el usuario cancelo»: solo
+                // lo primero merece un aviso. Antes el boton no decia nada en
+                // ninguno de los dos casos, asi que en una instalacion limpia
+                // parecia roto.
+                const r = await api?.log.export();
+                setSinRegistro(r === 'sin-registro');
+              }}
+            >{t('help.exportLog')}</button>
           </div>
+          {sinRegistro && (
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
+              {t('help.noLog')}
+            </div>
+          )}
 
           {/* Repetir tutorial */}
           {onReplayOnboarding && (

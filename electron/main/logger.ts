@@ -81,23 +81,35 @@ export function readRecentLog(maxBytes = 64 * 1024): string {
 export function openLogInExplorer() {
   try {
     const p = getLogPath();
-    if (existsSync(p)) shell.showItemInFolder(p);
-    else shell.openPath(getLogsDir());
+    if (existsSync(p)) { shell.showItemInFolder(p); return; }
+    // Sin registro todavia no hay ni carpeta: `openPath` sobre algo que no
+    // existe falla en silencio. Se crea para que el explorador abra algo.
+    mkdirSync(getLogsDir(), { recursive: true });
+    shell.openPath(getLogsDir());
   } catch {}
 }
 
 /** Exporta el log vía save dialog. Devuelve true si se guardó. */
-export async function exportLog(): Promise<boolean> {
+/**
+ * Guarda una copia del registro donde el usuario diga.
+ *
+ * Devuelve **cuál** de los tres desenlaces ocurrió y no un booleano. Antes daba
+ * `false` tanto si el usuario cancelaba el diálogo como si no había registro
+ * que exportar, y la interfaz —que además ignoraba el valor— no podía
+ * distinguirlos. En una instalación limpia, sin ningún error todavía, el botón
+ * «Exportar registro» no hacía nada y no decía nada.
+ */
+export async function exportLog(): Promise<'ok' | 'cancelado' | 'sin-registro'> {
   try {
     const p = getLogPath();
-    if (!existsSync(p)) return false;
+    if (!existsSync(p)) return 'sin-registro';
     const { canceled, filePath } = await dialog.showSaveDialog({
       title: tm('dlg.exportLog'),
       defaultPath: `virtualdeck-log-${new Date().toISOString().slice(0, 10)}.txt`,
       filters: [{ name: tm('filter.text'), extensions: ['txt', 'log'] }],
     });
-    if (canceled || !filePath) return false;
+    if (canceled || !filePath) return 'cancelado';
     copyFileSync(p, filePath);
-    return true;
-  } catch { return false; }
+    return 'ok';
+  } catch { return 'cancelado'; }
 }

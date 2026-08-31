@@ -620,7 +620,8 @@ export interface ElectronAPI {
     write: (entry: { level: 'error' | 'warn' | 'info'; scope: string; message: string; meta?: unknown }) => Promise<void>;
     readRecent: (maxBytes?: number) => Promise<string>;
     open: () => Promise<void>;
-    export: () => Promise<boolean>;
+    /** 'sin-registro' = no hay nada que exportar todavia. */
+    export: () => Promise<'ok' | 'cancelado' | 'sin-registro'>;
   };
   update: {
     check: () => Promise<{ status: 'checking' | 'available' | 'not-available' | 'disabled' | 'error'; version?: string; error?: string }>;

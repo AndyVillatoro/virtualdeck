@@ -83,6 +83,7 @@ export const ES: Dict = {
   'help.donateIntro': 'VirtualDeck es gratuito. Si le resulta útil, puede apoyar su desarrollo:',
   'help.openLog': 'ABRIR REGISTRO',
   'help.exportLog': 'EXPORTAR REGISTRO',
+  'help.noLog': 'Todavía no hay registro que exportar: se crea cuando ocurre el primer error.',
   'help.replay': '🎓 REPETIR TUTORIAL',
   'help.credits': 'CRÉDITOS Y LICENCIAS',
   'help.bundled': ' (incluido)',

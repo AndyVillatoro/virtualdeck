@@ -77,6 +77,7 @@ export const EN: Dict = {
   'help.donateIntro': 'VirtualDeck is free. If it helps you, you can support its development:',
   'help.openLog': 'OPEN LOG',
   'help.exportLog': 'EXPORT LOG',
+  'help.noLog': 'There is no log to export yet: it is created when the first error happens.',
   'help.replay': '🎓 REPLAY TUTORIAL',
   'help.credits': 'CREDITS & LICENSES',
   'help.bundled': ' (bundled)',
