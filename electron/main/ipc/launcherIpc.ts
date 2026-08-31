@@ -1,4 +1,5 @@
 import { intentarNativo } from '../native';
+import { estadoActual } from '../estadoSistema';
 import { ipcMain, shell, BrowserWindow } from 'electron';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
@@ -40,4 +41,7 @@ export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:setVolume', (_e: any, percent: number) => setVolume(percent));
   ipcMain.handle('launch:snapWindow', (_e: any, position: string, processName?: string) => snapWindow(position, processName));
   ipcMain.handle('state:activeApps', () => getRunningProcesses());
+  // La foto actual, para que una ventana recien abierta no espere al primer
+  // tic. Los cambios llegan luego por el evento `estado:changed`.
+  ipcMain.handle('state:snapshot', () => estadoActual());
 }

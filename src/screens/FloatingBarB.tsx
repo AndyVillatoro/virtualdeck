@@ -3,6 +3,7 @@ import { ButtonCell } from '../components/ButtonCell';
 import { ThemeProvider, useTheme } from '../utils/theme';
 import { LanguageProvider, useT } from '../utils/i18n';
 import { interpolate } from '../utils/actions';
+import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import type { ButtonConfig, DeckConfig, FloatingBarSettings } from '../types';
 
@@ -40,6 +41,12 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const encendidos = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   /** Un aviso corto: un error de accion o la salida de un script. */
   const [aviso, setAviso] = useState<string | null>(null);
+  // El mismo estado que el deck, publicado por el proceso principal. Sin esto
+  // la barra ignoraba la visibilidad condicional -un boton con «solo si corre
+  // tal aplicacion» se veia siempre- y no marcaba el dispositivo de audio en
+  // uso. Los sensores van a null: la barra no los sondea, y esa condicion se
+  // ignora en vez de esconder el boton por falta de datos.
+  const estadoSistema = useEstadoSistema(api);
 
   // Por referencia y no por cierre, por lo mismo que en el deck: la celda
   // conserva el manejador de su primer render (ver `pulsarBoton`).
@@ -196,6 +203,8 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                 button={btn}
                 accent={config.accent ?? VD.accent}
                 toggled={encendidos.has(btn.id)}
+                isActive={botonActivo(btn, estadoSistema)}
+                isHidden={!botonVisible(btn, estadoSistema, null)}
                 isRunning={ejecutando.has(btn.id)}
                 resolvedLabel={btn.label.includes('{')
                   ? interpolate(btn.label, config.state ?? {}) : undefined}

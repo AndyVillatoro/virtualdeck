@@ -25,6 +25,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener('bar:moved', h);
     },
     /** Aviso de que la configuracion cambio. Devuelve la funcion para desuscribirse. */
+    /** Estado del sistema (audio por defecto, procesos, RGB), cada 5 s. */
+    onEstadoSistema: (cb: (data: unknown) => void) => {
+      const h = (_e: unknown, data: unknown) => cb(data);
+      ipcRenderer.on('estado:changed', h);
+      return () => ipcRenderer.removeListener('estado:changed', h);
+    },
     onConfigChanged: (cb: (data: unknown) => void) => {
       const h = (_e: unknown, data: unknown) => cb(data);
       ipcRenderer.on('config:changed', h);
@@ -113,6 +119,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   state: {
     activeApps: (): Promise<string[]> => ipcRenderer.invoke('state:activeApps'),
+    snapshot: (): Promise<unknown> => ipcRenderer.invoke('state:snapshot'),
   },
   rgb: {
     status: () => ipcRenderer.invoke('rgb:status'),

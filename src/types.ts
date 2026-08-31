@@ -634,6 +634,8 @@ export interface ElectronAPI {
   state: {
     /** Returns lowercase exe names (without .exe) of running processes. Polls every ~5 s from the UI. */
     activeApps: () => Promise<string[]>;
+    /** Foto actual del estado del sistema, para no esperar al primer tic. */
+    snapshot: () => Promise<unknown>;
   };
   rgb: {
     status: () => Promise<RGBStatus>;
@@ -675,6 +677,8 @@ export interface ElectronAPI {
   events: {
     onButtonTrigger: (handler: (buttonId: string) => void) => () => void;
     onRGBDevicesChanged: (handler: () => void) => () => void;
+    /** Estado del sistema publicado por el proceso principal cada 5 s. */
+    onEstadoSistema: (handler: (data: unknown) => void) => () => void;
   };
 }
 

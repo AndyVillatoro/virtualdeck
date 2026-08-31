@@ -1,10 +1,15 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import * as rgb from '../rgb';
 import { tm } from '../idioma';
+import { refrescarYa } from '../estadoSistema';
 
 export function registerRgbIpc(win: BrowserWindow) {
   rgb.setOnDeviceListUpdated(() => {
     if (!win.isDestroyed()) win.webContents.send('rgb:devicesChanged');
+    // Y un tic del estado fuera de turno: la insignia de RGB tardaria hasta
+    // cinco segundos en enterarse. El hook de la pantalla hacia esto mismo
+    // cuando el sondeo vivia alli.
+    refrescarYa();
   });
 
   ipcMain.handle('rgb:status', () => rgb.status());

@@ -10,6 +10,7 @@ import * as rgb from './rgb';
 import * as sensors from './sensors';
 import { abrirBarra } from './floatingBar';
 import { fijarIdioma } from './idioma';
+import { arrancarSondeo, pararSondeo } from './estadoSistema';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -60,6 +61,9 @@ function setupWindow() {
   // Reescribir la entrada del registro de quien ya tenia el inicio automatico:
   // la suya no lleva la marca de arrancar escondido y no se corrige sola.
   if (app.getLoginItemSettings().openAtLogin) fijarArranqueAutomatico(true);
+  // El sondeo del estado del sistema vive aqui y se reparte a las dos
+  // ventanas: la barra flotante es otra y antes no lo tenia.
+  arrancarSondeo();
   createTray(win, onQuit);
   applyTriggerableConfig(win, initialCfg, onQuit);
 
@@ -141,6 +145,7 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  pararSondeo();
   try { rgb.killServer(); } catch {}
   try { sensors.killLHM(); } catch {}
 });
