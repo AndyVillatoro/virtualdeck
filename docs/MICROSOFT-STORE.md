@@ -69,7 +69,12 @@ imposible porque el directorio de instalación es de solo lectura. Los sensores
 habrían dejado de funcionar y no se podía saber leyendo código.
 
 **Se quitó del empaquetado.** LHM pasa a instalarlo el usuario, igual que
-OpenRGB. Además de desbloquear el MSIX, el instalador baja de 88 a unos 69 MB.
+OpenRGB.
+
+El instalador baja de **87,6 a 80,2 MB**. Bastante menos de lo que sugieren los
+19 MB de la carpeta: dentro del instalador va comprimida, así que el ahorro real
+son 7,4 MB. Se midió compilando, porque restar tamaños en crudo da un número
+que no es.
 
 Lo que había que compensar: la copia empaquetada traía el servidor web ya
 activado, y una instalación propia lo trae apagado. La interfaz lo explica y
