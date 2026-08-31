@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VirtualDeck — Política de privacidad</title>
+<meta name="description" content="Qué datos maneja VirtualDeck y qué sale del equipo. Sin cuentas, sin telemetría.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230f0f0f'/%3E%3Cg fill='%234a8ef0'%3E%3Crect x='2' y='2' width='4' height='4'/%3E%3Crect x='10' y='2' width='4' height='4'/%3E%3Crect x='2' y='10' width='4' height='4'/%3E%3Crect x='10' y='10' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f0f0f; --surface:#191919; --border:#2e2e2e;
+    --text:#dcdcdc; --dim:#9a9a9a; --muted:#555; --accent:#4a8ef0;
+    --font:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--font);
+    line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .env { max-width:760px; margin:0 auto; padding:0 24px; }
+  a { color:var(--accent); }
+  header { padding:56px 0 28px; border-bottom:1px solid var(--border); }
+  .marca { font-family:var(--mono); font-weight:700; font-size:16px; letter-spacing:4px; margin:0 0 20px; }
+  .marca a { color:var(--text); text-decoration:none; }
+  .marca span { color:var(--accent); }
+  h1 { font-size:26px; margin:0 0 6px; }
+  .fecha { font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:1px; }
+  h2 { font-size:17px; margin:38px 0 10px; }
+  p, li { color:var(--dim); font-size:15px; }
+  li { margin-bottom:7px; }
+  strong { color:var(--text); }
+  .destacado {
+    background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
+    border-radius:6px; padding:16px 18px; margin:22px 0;
+  }
+  .destacado p { margin:0; color:var(--text); }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin:14px 0; }
+  th, td { padding:9px 10px 9px 0; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; color:var(--dim); }
+  th { font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; font-weight:400; }
+  footer { margin-top:52px; padding:26px 0 60px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--muted); }
+  footer a { color:var(--muted); text-decoration:none; }
+  .idioma { position:fixed; top:16px; right:16px; display:flex; gap:6px; z-index:5; }
+  .idioma button {
+    font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:6px 10px;
+    background:var(--surface); border:1px solid var(--border); color:var(--muted);
+    border-radius:4px; cursor:pointer;
+  }
+  .idioma button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+  [data-en] { display:none; }
+  html[lang="en"] [data-es] { display:none; }
+  html[lang="en"] [data-en] { display:revert; }
+</style>
+</head>
+<body>
+
+<div class="idioma">
+  <button type="button" data-lang="es" aria-pressed="true">ES</button>
+  <button type="button" data-lang="en" aria-pressed="false">EN</button>
+</div>
+
+<header>
+  <div class="env">
+    <p class="marca"><a href="./">VIRTUAL<span>DECK</span></a></p>
+    <h1 data-es>Política de privacidad</h1>
+    <h1 data-en>Privacy policy</h1>
+    <p class="fecha" data-es>Última actualización: 24 de agosto de 2026 · Versión 0.8.0</p>
+    <p class="fecha" data-en>Last updated: 24 August 2026 · Version 0.8.0</p>
+  </div>
+</header>
+
+<main class="env">
+
+  <div class="destacado">
+    <p data-es><strong>Resumen:</strong> VirtualDeck no tiene cuentas, no recoge estadísticas de uso y no envía su configuración a ningún sitio. Todo lo que configura se guarda en un archivo de su equipo. Las únicas conexiones que hace son las que usted activa: el clima, las divisas y la comprobación de actualizaciones.</p>
+    <p data-en><strong>In short:</strong> VirtualDeck has no accounts, collects no usage statistics and never uploads your setup anywhere. Everything you configure is stored in a file on your own machine. The only connections it makes are the ones you turn on: weather, currency rates and the update check.</p>
+  </div>
+
+  <h2 data-es>Qué guarda, y dónde</h2>
+  <h2 data-en>What it stores, and where</h2>
+  <p data-es>Toda su configuración —páginas, botones, acciones, perfiles, variables, ajustes— vive en un único archivo JSON dentro de la carpeta de datos de la aplicación en su equipo. No hay servidor, no hay copia en la nube y no hay sincronización. Si desinstala la aplicación y borra esa carpeta, no queda nada en ninguna parte.</p>
+  <p data-en>Your whole setup — pages, buttons, actions, profiles, variables, settings — lives in a single JSON file inside the application's data folder on your machine. There is no server, no cloud copy and no sync. If you uninstall the app and delete that folder, nothing remains anywhere.</p>
+
+  <h2 data-es>El grabador de macros y su teclado</h2>
+  <h2 data-en>The macro recorder and your keyboard</h2>
+  <p data-es>VirtualDeck permite grabar macros: secuencias de teclas y clics que después se reproducen. Para eso, y <strong>solo mientras usted está grabando</strong>, la aplicación escucha las pulsaciones del teclado y del ratón del sistema.</p>
+  <p data-en>VirtualDeck lets you record macros: sequences of keys and clicks to be replayed later. To do that, and <strong>only while you are recording</strong>, the application listens to system-wide keyboard and mouse input.</p>
+  <ul data-es>
+    <li>La captura empieza <strong>únicamente</strong> cuando usted pulsa el botón GRABAR, y termina cuando pulsa DETENER. No hay ninguna otra forma de activarla.</li>
+    <li>Mientras graba, un indicador parpadea en pantalla.</li>
+    <li>Lo capturado se guarda como los pasos de esa macro, dentro de su archivo de configuración local.</li>
+    <li><strong>Nada de lo capturado se transmite.</strong> No se envía a ningún servidor, ni al autor, ni a terceros.</li>
+    <li>Puede ver, editar y borrar cada paso grabado desde el propio editor.</li>
+  </ul>
+  <ul data-en>
+    <li>Capture starts <strong>only</strong> when you press the RECORD button, and ends when you press STOP. There is no other way to activate it.</li>
+    <li>While recording, an indicator blinks on screen.</li>
+    <li>What is captured is stored as that macro's steps, inside your local configuration file.</li>
+    <li><strong>Nothing captured is ever transmitted.</strong> Not to any server, not to the author, not to third parties.</li>
+    <li>You can view, edit and delete every recorded step from the editor itself.</li>
+  </ul>
+
+  <h2 data-es>Conexiones a internet</h2>
+  <h2 data-en>Internet connections</h2>
+  <p data-es>La aplicación funciona entera sin conexión. Estas son todas las conexiones que puede hacer, y qué las provoca:</p>
+  <p data-en>The application works entirely offline. These are all the connections it can make, and what triggers each:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th data-es>Cuándo</th><th data-en>When</th>
+        <th data-es>A dónde</th><th data-en>Where to</th>
+        <th data-es>Qué se envía</th><th data-en>What is sent</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-es>Al usar un botón con el widget del clima</td>
+        <td data-en>When using a button with the weather widget</td>
+        <td>ipapi.co · ip-api.com · ipwho.is</td>
+        <td data-es><strong>Su dirección IP</strong>, para deducir la ciudad. Es inherente a cualquier petición web.</td>
+        <td data-en><strong>Your IP address</strong>, to infer the city. This is inherent to any web request.</td>
+      </tr>
+      <tr>
+        <td data-es>Lo mismo, a continuación</td>
+        <td data-en>The same, right after</td>
+        <td>api.open-meteo.com</td>
+        <td data-es>Coordenadas aproximadas para pedir la previsión. Sin identificador de usuario.</td>
+        <td data-en>Approximate coordinates to request the forecast. No user identifier.</td>
+      </tr>
+      <tr>
+        <td data-es>Al usar un botón con el widget de divisas</td>
+        <td data-en>When using a button with the currency widget</td>
+        <td>open.er-api.com</td>
+        <td data-es>El código de la moneda de origen. Una vez al día.</td>
+        <td data-en>The source currency code. Once a day.</td>
+      </tr>
+      <tr>
+        <td data-es>Al comprobar si hay una versión nueva</td>
+        <td data-en>When checking for a new version</td>
+        <td>github.com</td>
+        <td data-es>Nada más que la propia petición.</td>
+        <td data-en>Nothing beyond the request itself.</td>
+      </tr>
+      <tr>
+        <td data-es>Si usted configura un botón de tipo «webhook»</td>
+        <td data-en>If you configure a "webhook" button</td>
+        <td data-es>La dirección que usted escriba</td>
+        <td data-en>The address you type</td>
+        <td data-es>Lo que usted haya puesto en ese botón. Usted decide el destino y el contenido.</td>
+        <td data-en>Whatever you put in that button. You choose the destination and the contents.</td>
+      </tr>
+      <tr>
+        <td data-es>Si activa los sensores de hardware</td>
+        <td data-en>If you enable hardware sensors</td>
+        <td data-es>Su propio equipo (127.0.0.1)</td>
+        <td data-en>Your own machine (127.0.0.1)</td>
+        <td data-es>Nada sale del equipo.</td>
+        <td data-en>Nothing leaves your machine.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p data-es>Los widgets del clima y de divisas solo se conectan si usted crea un botón que los use. Si no lo hace, esas peticiones no ocurren nunca.</p>
+  <p data-en>The weather and currency widgets only connect if you create a button that uses them. If you do not, those requests never happen.</p>
+
+  <h2 data-es>Lo que no hacemos</h2>
+  <h2 data-en>What we do not do</h2>
+  <ul data-es>
+    <li>No hay cuentas de usuario ni registro.</li>
+    <li>No hay analítica, telemetría ni informes de uso, ni siquiera anónimos.</li>
+    <li>No hay publicidad ni rastreadores.</li>
+    <li>No se vende ni se comparte ningún dato, porque no se recoge ninguno.</li>
+    <li>No se leen sus archivos, salvo los que usted elija expresamente al configurar un botón o al importar una configuración.</li>
+  </ul>
+  <ul data-en>
+    <li>There are no user accounts and no sign-up.</li>
+    <li>There is no analytics, telemetry or usage reporting, not even anonymous.</li>
+    <li>There are no ads and no trackers.</li>
+    <li>No data is sold or shared, because none is collected.</li>
+    <li>Your files are not read, other than those you explicitly pick when configuring a button or importing a configuration.</li>
+  </ul>
+
+  <h2 data-es>Permisos del sistema y para qué se usan</h2>
+  <h2 data-en>System permissions and what they are for</h2>
+  <table>
+    <tbody>
+      <tr>
+        <td data-es>Escucha de teclado y ratón</td><td data-en>Keyboard and mouse listening</td>
+        <td data-es>Grabar macros. Solo mientras se graba.</td>
+        <td data-en>Recording macros. Only while recording.</td>
+      </tr>
+      <tr>
+        <td data-es>Simular teclas y clics</td><td data-en>Simulating keys and clicks</td>
+        <td data-es>Reproducir macros y enviar atajos de teclado.</td>
+        <td data-en>Replaying macros and sending keyboard shortcuts.</td>
+      </tr>
+      <tr>
+        <td data-es>Lanzar programas</td><td data-en>Launching programs</td>
+        <td data-es>Los que usted configure en un botón.</td>
+        <td data-en>The ones you configure on a button.</td>
+      </tr>
+      <tr>
+        <td data-es>Cambiar el dispositivo de audio</td><td data-en>Switching the audio device</td>
+        <td data-es>La acción de cambiar la salida de sonido, cuando usted pulsa ese botón.</td>
+        <td data-en>The switch-output action, when you press that button.</td>
+      </tr>
+      <tr>
+        <td data-es>Permisos de administrador</td><td data-en>Administrator rights</td>
+        <td data-es>Opcional. Solo si activa los sensores de hardware, que lo necesitan para leerlos. Se le pedirá con el aviso de Windows.</td>
+        <td data-en>Optional. Only if you enable hardware sensors, which need them to be read. Windows will prompt you.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 data-es>Menores</h2>
+  <h2 data-en>Children</h2>
+  <p data-es>VirtualDeck no está dirigido a menores de 13 años y no recoge datos de nadie, de ninguna edad.</p>
+  <p data-en>VirtualDeck is not directed at children under 13, and collects no data from anyone, of any age.</p>
+
+  <h2 data-es>Cambios</h2>
+  <h2 data-en>Changes</h2>
+  <p data-es>Si esta política cambia, la fecha de arriba lo reflejará y el cambio quedará registrado en el historial público del proyecto.</p>
+  <p data-en>If this policy changes, the date above will reflect it and the change will be recorded in the project's public history.</p>
+
+  <h2 data-es>Contacto</h2>
+  <h2 data-en>Contact</h2>
+  <p data-es>Preguntas o dudas: <a href="https://github.com/AndyVillatoro/virtualdeck/issues">abra una incidencia en el repositorio</a>. VirtualDeck es de código abierto: puede comprobar por sí mismo todo lo que aquí se afirma.</p>
+  <p data-en>Questions: <a href="https://github.com/AndyVillatoro/virtualdeck/issues">open an issue on the repository</a>. VirtualDeck is open source: you can verify every claim on this page yourself.</p>
+
+</main>
+
+<footer class="env">
+  <a href="./" data-es>← Volver</a>
+  <a href="./" data-en>← Back</a>
+  ·
+  <a href="https://github.com/AndyVillatoro/virtualdeck">GitHub</a>
+</footer>
+
+<script>
+(function () {
+  function recordado() { try { return localStorage.getItem('vd-lang'); } catch (e) { return null; } }
+  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch (e) { /* sin memoria, sigue funcionando */ } }
+  const delNavegador = (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
+  aplicar(recordado() || delNavegador);
+  document.querySelectorAll('.idioma button').forEach(function (b) {
+    b.addEventListener('click', function () { aplicar(b.dataset.lang); recordar(b.dataset.lang); });
+  });
+  function aplicar(l) {
+    document.documentElement.lang = l;
+    document.querySelectorAll('.idioma button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.lang === l));
+    });
+  }
+})();
+</script>
+</body>
+</html>
