@@ -421,7 +421,15 @@ export interface RGBDeviceInfo {
   activeMode: number;
   zones: RGBZoneInfo[];
   modes: RGBModeInfo[];
-  /** Colores actuales por LED (hex #RRGGBB), uno por LED en orden. */
+  /**
+   * Colores actuales por LED (hex #RRGGBB), uno por LED en orden.
+   *
+   * **No refleja el color de los modos que pintan «por modo»** (Static,
+   * Breathing…): en esos el color vive en el modo, no en el array por LED. Se
+   * comprobó mirando las luces: al cambiar de preset el color cambia de verdad
+   * y este array se queda igual. No es un fallo; solo sirve para los modos
+   * per-LED, como Direct.
+   */
   colors: string[];
   ledNames: string[];
   /**
