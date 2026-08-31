@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ACCENT_PRESETS } from '../../design';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
@@ -257,6 +257,10 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
 
     <div style={{ height: 1, background: VD.border }} />
 
+    <AjusteTactil accent={effectiveAccent} />
+
+    <div style={{ height: 1, background: VD.border }} />
+
     {/* Profiles */}
     <div>
       <SettingLabel>{t('set.profiles')}</SettingLabel>
@@ -309,5 +313,42 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
 
     <HelpAboutPanel accent={effectiveAccent} onReplayOnboarding={onReplayOnboarding} />
   </div>
+  );
+}
+
+/**
+ * Botón que abre la herramienta de Windows para decir qué monitor es táctil.
+ *
+ * Sin ese mapeo, en un equipo con varias pantallas el tacto de la tableta mueve
+ * el cursor en el monitor equivocado y el deck no responde donde se toca. No es
+ * algo que VirtualDeck pueda resolver por su cuenta: el mapeo lo guarda Windows.
+ *
+ * Va en los ajustes y no como acción de un botón a propósito: es una
+ * configuración de una sola vez, y hace falta **antes** de poder pulsar nada en
+ * la pantalla que se va a usar.
+ */
+function AjusteTactil({ accent }: { accent: string }) {
+  const VD = useTheme();
+  const t = useT();
+  const [fallo, setFallo] = useState(false);
+  return (
+    <div>
+      <SettingLabel>{t('set.tablet')}</SettingLabel>
+      <button
+        onClick={async () => {
+          const ok = await window.electronAPI?.app.tabletSettings();
+          setFallo(ok === false);
+        }}
+        style={{
+          width: '100%', marginTop: 6, padding: '6px 10px',
+          background: VD.accentBg, border: `1px solid ${accent}`, color: accent,
+          fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+          cursor: 'pointer', borderRadius: VD.radius.sm,
+        }}
+      >{t('set.tabletOpen')}</button>
+      <div style={{ fontFamily: VD.mono, fontSize: 8, color: fallo ? VD.danger : VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
+        {fallo ? t('set.tabletFailed') : t('set.tabletHelp')}
+      </div>
+    </div>
   );
 }

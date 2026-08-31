@@ -61,18 +61,19 @@ hace que arranque en la bandeja hay que resolverla de otra forma — por ejemplo
 detectando el arranque por StartupTask, o guardando la intención en la
 configuración.
 
-### 2.3 LibreHardwareMonitor incluido — **el riesgo que hay que medir primero**
+### 2.3 LibreHardwareMonitor — **resuelto, ya no es un riesgo**
 
-`resources/lhm/` queda dentro del paquete, y **el directorio de instalación es de
-solo lectura**. Si LHM escribe su configuración o sus logs junto a su propio
-`.exe` —que es lo habitual—, fallaría al arrancar y **los sensores no
-funcionarían en la versión de la Store**.
+Era el mayor riesgo de esta lista: `resources/lhm/` iba dentro del paquete y LHM
+**escribe su configuración junto a su propio `.exe`**, cosa que en MSIX es
+imposible porque el directorio de instalación es de solo lectura. Los sensores
+habrían dejado de funcionar y no se podía saber leyendo código.
 
-No está confirmado: depende de qué escriba LHM exactamente. **Es lo primero que
-hay que probar con el paquete instalado**, antes de invertir en lo demás.
+**Se quitó del empaquetado.** LHM pasa a instalarlo el usuario, igual que
+OpenRGB. Además de desbloquear el MSIX, el instalador baja de 88 a unos 69 MB.
 
-Si falla, la salida conocida es copiar `resources/lhm/` a una carpeta escribible
-en el primer arranque y lanzarlo desde ahí.
+Lo que había que compensar: la copia empaquetada traía el servidor web ya
+activado, y una instalación propia lo trae apagado. La interfaz lo explica y
+enlaza la descarga, en vez de limitarse a no funcionar.
 
 ### 2.4 Dónde vive la configuración — **no requiere trabajo**
 
@@ -168,8 +169,9 @@ aspects may need context:
    control surface.
 
 OPTIONAL ELEVATION
-   The hardware-sensor feature bundles LibreHardwareMonitor, which needs
-   administrator rights to read certain sensors. Elevation is requested through
+   The hardware-sensor feature can start LibreHardwareMonitor, a separate
+   open-source tool the user installs themselves (it is NOT bundled with this
+   app), which needs administrator rights to read certain sensors. Elevation is requested through
    the standard Windows UAC prompt, only if the user enables that feature, and
    the app is fully functional without it.
 
@@ -200,8 +202,8 @@ The application collects no personal data whatsoever.
 3. Sacar `identityName` y `publisher` de Partner Center.
 4. Compilar un `appx` de prueba, firmarlo con certificado autofirmado e
    instalarlo.
-5. **Probar los sensores** (§2.3). Es lo que puede tumbar la funcionalidad y lo
-   único que no se puede predecir leyendo código.
+5. Probar el resto con el paquete instalado. El riesgo de los sensores ya no
+   existe: LHM se dejó fuera del paquete (§2.3).
 6. Probar el arranque automático (§2.2) y que no aparezca el actualizador (§2.1).
 7. Enviar, con las notas de §4 pegadas literalmente.
 
@@ -216,4 +218,4 @@ The application collects no personal data whatsoever.
 - [ ] Target `appx` en `package.json`.
 - [ ] Rama de compilación que desactiva el actualizador.
 - [ ] Extensión `windows.startupTask` en el manifiesto.
-- [ ] Prueba de LHM desde una carpeta de solo lectura.
+- [x] LHM fuera del paquete — el riesgo de solo lectura desaparece.

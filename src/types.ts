@@ -599,6 +599,8 @@ export interface ElectronAPI {
     setZoom: (factor: number) => Promise<void>;
     getZoom: () => Promise<number>;
     getVersion: () => Promise<string>;
+    /** Abre «Configuracion de la tableta» de Windows. false = no se pudo. */
+    tabletSettings: () => Promise<boolean>;
     platformInfo: () => Promise<PlatformInfo>;
   };
   log: {
@@ -645,7 +647,8 @@ export interface ElectronAPI {
     probe: () => Promise<{ ok: boolean; count: number; error?: string }>;
     spawnLHM: (customPath?: string, elevated?: boolean) => Promise<{ ok: boolean; error?: string }>;
     killLHM: () => Promise<void>;
-    bundledPath: () => Promise<string | null>;
+    /** LHM encontrado en una ruta de instalacion habitual, o null. */
+    knownPath: () => Promise<string | null>;
     registerUrlAcl: (port?: number) => Promise<{ ok: boolean; error?: string; url: string }>;
   };
   macro: {

@@ -89,6 +89,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setZoom: (factor: number): Promise<void> => ipcRenderer.invoke('app:setZoom', factor),
     getZoom: (): Promise<number> => ipcRenderer.invoke('app:getZoom'),
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
+    tabletSettings: (): Promise<boolean> => ipcRenderer.invoke('app:tabletSettings'),
     platformInfo: (): Promise<unknown> => ipcRenderer.invoke('app:platformInfo'),
   },
   log: {
@@ -143,7 +144,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     probe: (): Promise<{ ok: boolean; count: number; error?: string }> => ipcRenderer.invoke('sensors:probe'),
     spawnLHM: (customPath?: string, elevated?: boolean): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('sensors:spawnLHM', customPath, elevated),
     killLHM: (): Promise<void> => ipcRenderer.invoke('sensors:killLHM'),
-    bundledPath: (): Promise<string | null> => ipcRenderer.invoke('sensors:bundledPath'),
+    knownPath: (): Promise<string | null> => ipcRenderer.invoke('sensors:knownPath'),
     registerUrlAcl: (port?: number): Promise<{ ok: boolean; error?: string; url: string }> => ipcRenderer.invoke('sensors:registerUrlAcl', port),
   },
   macro: {

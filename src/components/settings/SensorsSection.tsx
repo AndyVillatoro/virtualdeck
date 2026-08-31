@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { SensorsSettings, SensorsStatus, SensorCategory } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
+import { LINKS } from '../../data/links';
 
 const SENSOR_CATEGORIES: Array<{ id: SensorCategory; label: string }> = [
   { id: 'cpu', label: 'CPU' },
@@ -29,6 +30,14 @@ export function SensorsSection({
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [spawning, setSpawning] = useState(false);
+  // Si LHM esta instalado en una ruta habitual, se dice y no hace falta que
+  // el usuario la escriba. Se consulta una vez, al abrir los ajustes.
+  const [rutaDetectada, setRutaDetectada] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    window.electronAPI?.sensors.knownPath().then((r) => { if (vivo) setRutaDetectada(r); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
   const [registeringAcl, setRegisteringAcl] = useState(false);
 
   const enabledCats = new Set(config.categories ?? ['cpu', 'gpu', 'mainboard', 'memory', 'storage']);
@@ -107,6 +116,24 @@ export function SensorsSection({
             placeholder="C:\\…\\LibreHardwareMonitor.exe"
             style={{ ...inputStyleSettings, marginTop: 4 }}
           />
+          {/* VirtualDeck ya no empaqueta LHM. Sin estas dos frases, quien no lo
+              tenga solo ve que los sensores «no funcionan»: el servidor web de
+              LHM viene apagado de fábrica y no hay forma de adivinarlo. */}
+          {!config.lhmPath?.trim() && !rutaDetectada && (
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
+              {t('sensors.lhmMissing')}{' '}
+              <a
+                href={LINKS.lhm}
+                onClick={(e) => { e.preventDefault(); window.electronAPI?.launch.url(LINKS.lhm); }}
+                style={{ color: accent, cursor: 'pointer' }}
+              >{t('sensors.lhmDownload')}</a>
+            </div>
+          )}
+          {rutaDetectada && !config.lhmPath?.trim() && (
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
+              {t('sensors.lhmFound', { ruta: rutaDetectada })}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: 6 }}>

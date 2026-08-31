@@ -4,7 +4,14 @@ VirtualDeck integrates **LibreHardwareMonitor (LHM)** to show your hardware's
 temperatures, loads and speeds (CPU, GPU, motherboard, RAM, storage) in the
 sidebar and in the left panel of fullscreen mode.
 
-LHM ships **bundled** in `resources/lhm/`; there is nothing extra to install.
+**LHM is not bundled**: you install it separately, like OpenRGB. It was removed
+from the package because it writes its configuration next to its own executable,
+which prevents packaging the app for the Microsoft Store, where the install
+directory is read-only.
+
+After installing it there is **one step you cannot skip**: LHM ships with its web
+server switched off. Open it and enable **Options → Remote Web Server → Run**, on
+port 8085. Without that, VirtualDeck receives no data.
 
 ---
 
@@ -16,9 +23,9 @@ Open the title bar → **SENSORS (LIBRE HARDWARE MONITOR)** section:
 |---|---|
 | **ENABLED** | Turns sensor reading on, polling every 5 s. |
 | **SHOW SENSOR WIDGET** | Shows or hides the sensor cards in the sidebar and in fullscreen. On by default. |
-| **START LHM WITH VIRTUALDECK** | Starts the bundled LHM when VirtualDeck launches. |
+| **START LHM WITH VIRTUALDECK** | Starts LHM when VirtualDeck launches, using the path below. |
 | **START LHM AS ADMINISTRATOR (UAC)** | Launches LHM elevated. **Required** if the web server on port 8085 does not answer without admin rights. |
-| **LHM PATH** | Empty = use the bundled one. Set it if you have your own installation. |
+| **LHM PATH** | Path to `LibreHardwareMonitor.exe`. Auto-detected if installed in a common folder. |
 | **HOST / PORT** | LHM's web server endpoint (default `127.0.0.1:8085`). |
 | **VISIBLE CATEGORIES** | Filters which kinds of hardware are shown. |
 

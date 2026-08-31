@@ -76,13 +76,6 @@
     ],
     "extraResources": [
       {
-        "from": "resources/lhm",
-        "to": "lhm",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
         "from": "build/icon.png",
         "to": "icon.png"
       },

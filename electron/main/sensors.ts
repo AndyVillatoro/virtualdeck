@@ -254,22 +254,39 @@ export async function probe(): Promise<{ ok: boolean; count: number; error?: str
   }
 }
 
-// Returns the bundled LHM executable path. In dev: <project>/resources/lhm.
-// In packaged builds: process.resourcesPath/lhm (electron-builder ships it
-// there via the extraResources config in package.json).
-export function bundledExePath(): string | null {
-  const candidates = [
-    join(process.resourcesPath || '', 'lhm', 'LibreHardwareMonitor.exe'),
-    join(app.getAppPath(), '..', 'resources', 'lhm', 'LibreHardwareMonitor.exe'),
-    join(app.getAppPath(), 'resources', 'lhm', 'LibreHardwareMonitor.exe'),
-  ];
-  for (const p of candidates) if (p && existsSync(p)) return p;
+/**
+ * Busca LibreHardwareMonitor donde suele instalarse.
+ *
+ * VirtualDeck **ya no lo empaqueta**. Lo traía —19 MB de un instalador de 88—
+ * y se quitó por tres motivos:
+ *
+ * - LHM **escribe su configuración junto a su propio .exe**. En un paquete MSIX
+ *   el directorio de instalación es de solo lectura, así que ahí no arrancaría.
+ * - La carpeta `resources/lhm/` estaba en `.gitignore`: quien clonara el
+ *   repositorio y compilara obtenía un instalador **sin** LHM, sin saberlo.
+ * - Es coherente con OpenRGB, que siempre fue cosa del usuario.
+ *
+ * Lo que sí se pierde: la copia empaquetada traía el servidor web ya activado.
+ * Con una instalación propia hay que encenderlo a mano una vez, y por eso la
+ * interfaz lo explica en vez de limitarse a fallar.
+ *
+ * Si no aparece en ninguna ruta conocida, el usuario indica la suya.
+ */
+export function rutaLHMConocida(): string | null {
+  const posibles = [
+    process.env['ProgramFiles'], process.env['ProgramFiles(x86)'],
+    process.env['LOCALAPPDATA'] ? join(process.env['LOCALAPPDATA'], 'Programs') : null,
+  ].filter(Boolean) as string[];
+  for (const base of posibles) {
+    const p = join(base, 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe');
+    if (existsSync(p)) return p;
+  }
   return null;
 }
 
 export async function spawnLHM(customPath?: string, elevated = false): Promise<{ ok: boolean; error?: string }> {
   if (lhmProc && !lhmProc.killed) return { ok: true };
-  const exe = customPath || bundledExePath();
+  const exe = customPath || rutaLHMConocida();
   if (!exe || !existsSync(exe)) return { ok: false, error: 'LibreHardwareMonitor.exe no encontrado' };
   const cwd = exe.substring(0, exe.lastIndexOf('\\')) || undefined;
   try {

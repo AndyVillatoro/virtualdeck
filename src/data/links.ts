@@ -10,6 +10,11 @@ export const LINKS = {
   docs: 'https://github.com/AndyVillatoro/virtualdeck/wiki',
   releases: 'https://github.com/AndyVillatoro/virtualdeck/releases',
 
+  // Herramientas de terceros que VirtualDeck usa pero **no** empaqueta: las
+  // instala el usuario. LHM lo traiamos dentro y se quito (ver `sensors.ts`).
+  lhm: 'https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases',
+  openrgb: 'https://openrgb.org/',
+
   // Donaciones — TODO: reemplazar con las cuentas reales cuando existan.
   kofi: 'https://ko-fi.com/andyvillatoro',           // TODO: confirmar handle
   githubSponsors: 'https://github.com/sponsors/AndyVillatoro', // TODO: activar Sponsors

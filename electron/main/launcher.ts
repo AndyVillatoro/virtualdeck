@@ -48,6 +48,44 @@ function conUtf8(script: string, shell_: string): string {
   return shell_ === 'powershell' ? injectUtf8Prefix(script) : script;
 }
 
+/**
+ * Abre «Configuración de la tableta» del Panel de control.
+ *
+ * Es la herramienta donde Windows pregunta **cuál de los monitores responde al
+ * tacto**. Hace falta en cuanto hay más de una pantalla: sin ese mapeo, tocar
+ * la tableta mueve el cursor en el monitor equivocado, y VirtualDeck en modo
+ * kiosko sobre una pantalla táctil se vuelve inservible. No es algo que
+ * VirtualDeck pueda arreglar por su cuenta: el mapeo lo guarda Windows.
+ *
+ * `control /name Microsoft.TabletPCSettings` es el nombre canónico; comprobado
+ * en el registro, resuelve a
+ * `rundll32 shell32.dll,Control_RunDLL tabletpc.cpl @1`. Ese es el respaldo por
+ * si `control.exe` no acepta el nombre en alguna edición de Windows.
+ *
+ * Si el equipo no tiene digitalizador, la herramienta puede no existir; por eso
+ * se devuelve si abrió o no, en vez de fallar en silencio.
+ */
+export async function abrirAjustesTactiles(): Promise<boolean> {
+  const intentos: [string, string[]][] = [
+    ['control.exe', ['/name', 'Microsoft.TabletPCSettings']],
+    ['rundll32.exe', ['shell32.dll,Control_RunDLL', 'tabletpc.cpl', '@1']],
+  ];
+  for (const [cmd, args] of intentos) {
+    const ok = await new Promise<boolean>((resolve) => {
+      try {
+        const hijo = spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: false });
+        hijo.on('error', () => resolve(false));
+        // `control.exe` termina en cuanto delega en el panel, asi que no se
+        // puede esperar a su codigo de salida: si no ha fallado al arrancar,
+        // se da por bueno.
+        setTimeout(() => resolve(true), 400);
+      } catch { resolve(false); }
+    });
+    if (ok) return true;
+  }
+  return false;
+}
+
 export async function runScript(script: string, shell_: string = 'powershell'): Promise<boolean> {
   const listo = conUtf8(script, shell_);
   const r = intentarNativo('runScript', (n) => n.runScript(listo, shell_).success);

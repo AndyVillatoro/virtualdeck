@@ -246,6 +246,21 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `show: false`: el renderer carga igual —de eso dependen los disparadores programados— pero
   no se enseña. Quien ya tenía el inicio automático puesto lo tiene registrado sin la marca,
   así que se reescribe en cada arranque.
+- **LibreHardwareMonitor NO se empaqueta.** Lo hacía (`extraResources` → `resources/lhm/`,
+  19 MB) y se quitó: LHM **escribe su configuración junto a su propio `.exe`**, lo que en un
+  paquete MSIX es imposible —el directorio de instalación es de solo lectura— y habría dejado
+  los sensores muertos en la versión de la Store. Además la carpeta estaba en `.gitignore`, así
+  que quien clonara y compilara obtenía un instalador sin LHM sin enterarse. Ahora lo instala
+  el usuario, como OpenRGB. `rutaLHMConocida()` lo busca en las rutas habituales; si no está,
+  la sección de sensores enlaza la descarga y **explica que hay que activar Options → Remote
+  Web Server → Run**, que es lo que la copia empaquetada traía hecho y nadie adivinaría.
+- **`app:tabletSettings`** abre «Configuración de la tableta» de Windows, que es donde se dice
+  **cuál de los monitores responde al tacto**. Con varias pantallas, sin ese mapeo el tacto
+  mueve el cursor en el monitor equivocado y el deck no responde donde se toca; no es algo que
+  VirtualDeck pueda arreglar, el mapeo lo guarda Windows. Va en los ajustes y no como acción de
+  un botón: hace falta **antes** de poder pulsar nada. `control /name Microsoft.TabletPCSettings`
+  con `rundll32 ... tabletpc.cpl @1` de respaldo — comprobado en el registro que el nombre
+  canónico resuelve a ese comando.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
 
 ## 🔬 Sondas en el proceso principal: `require` no sirve
