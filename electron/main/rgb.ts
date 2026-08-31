@@ -32,7 +32,7 @@ export interface RGBDeviceInfo {
   id: number; name: string; type: number; typeLabel: string;
   vendor?: string; description: string; activeMode: number;
   zones: RGBZoneInfo[]; modes: RGBModeInfo[];
-  colors: string[]; ledNames: string[];
+  colors: string[]; ledNames: string[]; brightness?: number;
 }
 export interface RGBProfile {
   id: string; name: string;
@@ -141,7 +141,27 @@ function deviceToInfo(d: Device): RGBDeviceInfo {
     })),
     colors: d.colors.map(rgbToHex),
     ledNames: d.leds.map((l) => l.name),
+    brightness: brilloDelModoActivo(d),
   };
+}
+
+/**
+ * El brillo del modo activo, en 0–100.
+ *
+ * Cada modo tiene su propio rango (`brightnessMin`..`brightnessMax`), distinto
+ * entre dispositivos, así que el valor crudo no significa nada fuera de su
+ * modo. Se normaliza aquí porque es lo que espera `applyProfile` al restaurarlo,
+ * y así el perfil guardado no depende del rango del aparato que lo grabó.
+ *
+ * Devuelve `undefined` si el modo no admite brillo, que no es lo mismo que cero.
+ */
+function brilloDelModoActivo(d: Device): number | undefined {
+  const m = d.modes.find((x) => x.id === d.activeMode);
+  if (!m || m.brightness === undefined) return undefined;
+  const min = m.brightnessMin ?? 0;
+  const max = m.brightnessMax ?? 0;
+  if (max <= min) return undefined;
+  return Math.round(((m.brightness - min) / (max - min)) * 100);
 }
 
 // Build a correctly-sized RGBColor[] for a mode, all set to the given hex color.

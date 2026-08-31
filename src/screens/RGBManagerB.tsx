@@ -204,6 +204,11 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
       }
       devs[d.name] = {
         mode: activeMode?.name ?? 'Direct',
+        // El brillo tambien: `RGBDeviceState` lo declara y `applyProfile` lo
+        // restaura, pero **nadie lo estaba guardando**, asi que siempre llegaba
+        // undefined. Se notaba aplicando un preset que baja el brillo y
+        // guardandolo como perfil: al volver a aplicarlo, el brillo no volvia.
+        brightness: d.brightness,
         zones,
       };
     }

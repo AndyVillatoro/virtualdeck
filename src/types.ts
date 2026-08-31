@@ -424,6 +424,11 @@ export interface RGBDeviceInfo {
   /** Colores actuales por LED (hex #RRGGBB), uno por LED en orden. */
   colors: string[];
   ledNames: string[];
+  /**
+   * Brillo del modo activo en 0-100, ya normalizado por el proceso principal.
+   * `undefined` si el modo no admite brillo — que no es lo mismo que cero.
+   */
+  brightness?: number;
 }
 
 export interface RGBStatus {
