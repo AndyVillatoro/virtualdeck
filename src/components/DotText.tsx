@@ -51,10 +51,18 @@ export function DotText({
   // Se reduce el tamaño del punto hasta que el texto quepa. La tarjeta que lo
   // contiene recorta lo que sobresale, así que sin esto un título largo se lee
   // a medias y no hay forma de saber qué decía.
+  //
+  // El hueco entre puntos se encoge **con** el punto. Dejarlo fijo hacia que a
+  // partir de cierto largo la separacion pesara mas que las letras y el texto
+  // siguiera sin caber ni al tamano minimo: «WIDGETS Y PANTALLA COMPLETA» se
+  // quedaba en «...COMPLE» con el titulo ya encogido del todo. Y como recortar
+  // no da ningun aviso, el titulo salia a medias y parecia el texto correcto.
   let tamano = dotSize;
+  let hueco = gap;
   if (maxWidth && maxWidth > 0) {
-    while (tamano > DOT_MINIMO && anchoDe(chars.length, tamano, gap) > maxWidth) {
+    while (tamano > DOT_MINIMO && anchoDe(chars.length, tamano, hueco) > maxWidth) {
       tamano -= 0.5;
+      hueco = gap * (tamano / dotSize);
     }
   }
 
@@ -64,7 +72,14 @@ export function DotText({
   const apagado = density > 0 ? VD.border : 'transparent';
 
   return (
-    <div style={{ display: 'inline-flex', gap: tamano + gap * 2, alignItems: 'center', ...style }}>
+    <div style={{
+      display: 'inline-flex', alignItems: 'center',
+      columnGap: tamano + hueco * 2, rowGap: tamano * 2,
+      // Ultimo recurso: si ni al minimo cabe, se parte en varias lineas. Es
+      // feo, pero se lee entero; recortado no.
+      flexWrap: maxWidth ? 'wrap' : 'nowrap', maxWidth,
+      ...style,
+    }}>
       {chars.map((ch, i) => {
         const g = GLYPHS_5x7[ch] || GLYPHS_5x7[' '];
         return (
@@ -74,7 +89,7 @@ export function DotText({
               display: 'grid',
               gridTemplateRows: `repeat(7, ${tamano}px)`,
               gridTemplateColumns: `repeat(5, ${tamano}px)`,
-              gap,
+              gap: hueco,
             }}
           >
             {g.map((row, r) =>
