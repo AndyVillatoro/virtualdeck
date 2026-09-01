@@ -7,6 +7,7 @@ import { getWeather } from '../weather';
 import { obtenerTasas } from '../divisas';
 import { avisarCambioDeConfig } from '../floatingBar';
 import { tm, fijarIdioma } from '../idioma';
+import * as remoto from '../servidorLocal';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
@@ -23,9 +24,20 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
     });
     // La barra flotante es otra ventana y no comparte el estado de React: si no
     // se le avisa, sigue mostrando los botones viejos hasta que se reabra.
+    // El servidor local se enciende, se apaga o cambia de puerto aqui: si se
+    // dejara para el siguiente arranque, el interruptor de los ajustes no
+    // haria nada visible y pareceria roto.
+    const rCfg = (data as any)?.remote;
+    if (rCfg?.enabled) remoto.aplicar(rCfg, win);
+    else remoto.parar();
     avisarCambioDeConfig(data, win);
     return true;
   });
+
+  // Estado del servidor local, para que los ajustes puedan decir si esta
+  // escuchando de verdad y en que direccion se le llega desde el telefono.
+  ipcMain.handle('remote:status', () => remoto.estado());
+  ipcMain.handle('remote:newToken', () => remoto.nuevoToken());
 
   ipcMain.handle('config:listBackups', () => listBackups());
   ipcMain.handle('config:restoreBackup', (_e: any, filename: string) => restoreBackup(filename));

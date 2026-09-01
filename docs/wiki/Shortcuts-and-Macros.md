@@ -73,6 +73,41 @@ mouse.
 
 ---
 
+## Local server (HTTP)
+
+For anything that already speaks HTTP — Home Assistant, a script on another
+machine, another panel — there is a built-in server. **It ships disabled**:
+turn it on in ⚙ → *LOCAL SERVER (HTTP)*, which also generates the token.
+
+| Route | What it does |
+|---|---|
+| `GET /api/ping` | Checks it is alive. No token needed |
+| `GET /api/buttons` | Lists buttons that have an action: id, label, page |
+| `GET /api/press/<id>` | Presses that button |
+| `GET /api/press?label=<label>` | Presses the first one with that label |
+| `GET /api/page/<n>` | Switches page |
+
+**The token goes in the `X-VD-Token` header, never in the address.** Any web
+page you visit can cause a request to `127.0.0.1` just by embedding an image,
+and if the token travelled in the URL, guessing it once would be enough. A
+custom header forces the browser to ask permission first, and VirtualDeck does
+not grant it.
+
+```bash
+curl -H "X-VD-Token: YOUR_TOKEN" http://127.0.0.1:8787/api/press/0-3
+```
+
+### Opening it to the local network
+
+With *ALLOW LOCAL NETWORK* off, the server only answers this computer. On, it
+answers anyone on your network holding the token.
+
+Be clear about what that means: **the connection is not encrypted** and a
+button can run scripts. Fine for a home network; not for a shared or public
+one.
+
+---
+
 ## Macros
 
 A macro is a list of steps: keys, clicks, mouse movements, wheel and pauses.

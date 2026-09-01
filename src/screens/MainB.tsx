@@ -262,6 +262,8 @@ export function MainB({
           sensorsConfig={config.sensors ?? { enabled: false, host: '127.0.0.1', port: 8085 }}
           sensorsStatus={sensorStatus}
           onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
+          remoteConfig={config.remote ?? { enabled: false, port: 8787, token: '', allowLan: false }}
+          onRemoteConfigChange={(remote) => onConfigChange({ ...config, remote })}
           onConfigExport={onConfigExport}
           onConfigImport={onConfigImport}
           onAccentChange={(color) => onConfigChange({ ...config, accent: color })}

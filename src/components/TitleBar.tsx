@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
-import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, SoundProfileId } from '../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId } from '../types';
 import { PanelAjustes } from './settings/PanelAjustes';
 import { Hint } from './Hint';
 import { useT } from '../utils/i18n';
@@ -35,6 +35,8 @@ interface TitleBarProps {
   onRGBConfigChange?: (next: RGBSettings) => void;
   // Sensors integration (LibreHardwareMonitor)
   sensorsConfig?: SensorsSettings;
+  remoteConfig?: RemoteSettings;
+  onRemoteConfigChange?: (next: RemoteSettings) => void;
   sensorsStatus?: SensorsStatus | null;
   onSensorsConfigChange?: (next: SensorsSettings) => void;
   // 4.x — UI scale + theme
@@ -78,6 +80,8 @@ export function TitleBar({
   rgbConfig,
   onRGBConfigChange,
   sensorsConfig,
+  remoteConfig,
+  onRemoteConfigChange,
   sensorsStatus,
   onSensorsConfigChange,
   uiScale = 1,
@@ -217,6 +221,8 @@ export function TitleBar({
           onRGBConfigChange={onRGBConfigChange}
           rgbStatus={rgbStatus}
           sensorsConfig={sensorsConfig}
+          remoteConfig={remoteConfig}
+          onRemoteConfigChange={onRemoteConfigChange}
           onSensorsConfigChange={onSensorsConfigChange}
           sensorsStatus={sensorsStatus}
           profiles={profiles}

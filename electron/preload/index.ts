@@ -45,6 +45,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listBackups: (): Promise<BackupInfo[]> => ipcRenderer.invoke('config:listBackups'),
     restoreBackup: (filename: string): Promise<object | null> => ipcRenderer.invoke('config:restoreBackup', filename),
   },
+  // 1.4 — servidor local. `status` dice si esta escuchando de verdad; los
+  // ajustes en disco dicen solo lo que se pidio.
+  remote: {
+    status: (): Promise<RemoteStatus> => ipcRenderer.invoke('remote:status'),
+    newToken: (): Promise<string> => ipcRenderer.invoke('remote:newToken'),
+  },
   audio: {
     list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),
     setDefault: (deviceId: string): Promise<boolean> => ipcRenderer.invoke('audio:setDefault', deviceId),
@@ -186,5 +192,7 @@ interface NowPlayingResult { title: string; artist: string; status: string; sour
 interface AudioDevice { id: string; name: string; isDefault: boolean; }
 interface BackupInfo { filename: string; timestamp: number; sizeBytes: number; }
 interface WeatherResult { temp: number; code: number; city: string; country: string; }
+interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
+interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
 interface BarGeometry { huecos: number; lado: 'left' | 'right'; tile: number; y: number | null; }
 interface MediaDiagnosticResult { ok: boolean; stage: string; stdout: string; stderr: string; }

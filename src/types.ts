@@ -281,6 +281,8 @@ export interface DeckConfig {
   theme?: 'dark' | 'light' | 'system';
   /** 5.x — Sensores de hardware vía LibreHardwareMonitor HTTP. */
   sensors?: SensorsSettings;
+  /** 1.4 — servidor local para mandar sobre el deck por HTTP. Viene apagado. */
+  remote?: RemoteSettings;
   /**
    * 5.x — Modo de las celdas en la grilla.
    * - 'square' (default): cuadradas estrictas, deja margen si el área no
@@ -332,6 +334,15 @@ export interface FloatingBarSettings {
   y?: number | null;
   /** Lado del tile en px, 40 – 120. Default 64. */
   tileSize?: number;
+}
+
+export interface RemoteSettings {
+  enabled: boolean;
+  port: number;
+  /** Se genera solo la primera vez que se activa. Sin token no arranca. */
+  token: string;
+  /** false = solo este equipo. true = cualquiera en la red local. */
+  allowLan: boolean;
 }
 
 export interface SensorsSettings {
@@ -561,6 +572,10 @@ export interface ElectronAPI {
     import: () => Promise<object | null>;
     listBackups: () => Promise<BackupInfo[]>;
     restoreBackup: (filename: string) => Promise<object | null>;
+  };
+  remote: {
+    status: () => Promise<{ corriendo: boolean; port: number; lan: string[] }>;
+    newToken: () => Promise<string>;
   };
   audio: {
     list: () => Promise<AudioDevice[]>;

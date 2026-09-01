@@ -12,6 +12,7 @@ import { abrirBarra } from './floatingBar';
 import { fijarIdioma } from './idioma';
 import { arrancarSondeo, pararSondeo } from './estadoSistema';
 import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
+import * as remoto from './servidorLocal';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -99,6 +100,13 @@ function setupWindow() {
     });
   }
 
+  // Servidor local, si el usuario lo dejo activado. Viene apagado de fabrica.
+  const remotoCfg = (initialCfg as any)?.remote;
+  if (remotoCfg?.enabled) {
+    const r = remoto.aplicar(remotoCfg, win);
+    if (!r.ok) console.error('[remoto] no arranco:', r.error);
+  }
+
   // Apply sensors config from disk so first poll uses the user's host/port.
   const sensorsCfg = (initialCfg as any)?.sensors;
   if (sensorsCfg) {
@@ -180,6 +188,7 @@ app.whenReady().then(() => {
 app.on('before-quit', () => {
   isQuitting = true;
   pararSondeo();
+  remoto.parar();
   try { rgb.killServer(); } catch {}
   try { sensors.killLHM(); } catch {}
 });

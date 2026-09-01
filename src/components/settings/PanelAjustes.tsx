@@ -5,9 +5,10 @@ import { useT } from '../../utils/i18n';
 import { SOUND_PROFILES, playSound } from '../../utils/sound';
 import { RGBSection } from './RGBSection';
 import { SensorsSection } from './SensorsSection';
+import { RemoteSection } from './RemoteSection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
-import type { Profile, RGBSettings, RGBStatus, SensorsSettings, SensorsStatus, SoundProfileId } from '../../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId } from '../../types';
 
 /**
  * El desplegable de la rueda dentada.
@@ -42,6 +43,8 @@ interface Props {
   rgbStatus?: RGBStatus | null;
   sensorsConfig?: SensorsSettings;
   onSensorsConfigChange?: (next: SensorsSettings) => void;
+  remoteConfig?: RemoteSettings;
+  onRemoteConfigChange?: (next: RemoteSettings) => void;
   sensorsStatus?: SensorsStatus | null;
   profiles: Profile[];
   onSaveProfile?: (name: string) => void;
@@ -55,7 +58,7 @@ interface Props {
   onCerrar: () => void;
 }
 
-export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
+export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, remoteConfig, onRemoteConfigChange, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
   const VD = useTheme();
   const t = useT();
 
@@ -252,6 +255,13 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
           status={sensorsStatus ?? null}
           onChange={onSensorsConfigChange}
         />
+      </>
+    )}
+
+    {onRemoteConfigChange && remoteConfig && (
+      <>
+        <div style={{ height: 1, background: VD.border }} />
+        <RemoteSection accent={effectiveAccent} config={remoteConfig} onChange={onRemoteConfigChange} />
       </>
     )}
 

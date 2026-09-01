@@ -75,6 +75,41 @@ el ratón.
 
 ---
 
+## Servidor local (HTTP)
+
+Para lo que ya habla HTTP —Home Assistant, un script en otro equipo, otro
+panel— hay un servidor propio. **Viene apagado**: se activa en ⚙ →
+*SERVIDOR LOCAL (HTTP)*, que también genera el token.
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/ping` | Comprueba que está vivo. No pide token |
+| `GET /api/buttons` | Lista los botones con acción: id, etiqueta y página |
+| `GET /api/press/<id>` | Pulsa ese botón |
+| `GET /api/press?label=<etiqueta>` | Pulsa el primero con esa etiqueta |
+| `GET /api/page/<n>` | Cambia de página |
+
+**El token va en la cabecera `X-VD-Token`, nunca en la dirección.** No es un
+capricho: cualquier página web que visite puede provocar una petición a
+`127.0.0.1` con solo poner una imagen, y si el token viajara en la URL bastaría
+con acertarlo. Una cabecera propia obliga al navegador a pedir permiso antes, y
+VirtualDeck no lo da.
+
+```bash
+curl -H "X-VD-Token: SU_TOKEN" http://127.0.0.1:8787/api/press/0-3
+```
+
+### Abrirlo a la red local
+
+Con *PERMITIR LA RED LOCAL* desactivado, el servidor solo responde a este
+equipo. Activado, responde a cualquiera de su red que tenga el token.
+
+Conviene saber exactamente qué significa eso: **la conexión no va cifrada** y
+un botón puede ejecutar scripts. Es adecuado para una red doméstica; no lo es
+para una red compartida o pública.
+
+---
+
 ## Macros
 
 Una macro es una lista de pasos: teclas, clics, movimientos del ratón, rueda y

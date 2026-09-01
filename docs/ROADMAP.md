@@ -100,7 +100,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | # | Apartado | Objetivo | Estado |
 |---|----------|----------|--------|
 | 22 | 1.3 Acciones encadenadas | El motor ya lo hacia; faltaban los mandos. Espera, repetir y «solo si OK» por paso en el editor. | ✅ 2026-08-31 |
-| 23 | 1.4 Disparadores externos | 🚧 Hotkey global ✅, deep-link `virtualdeck://` ✅ (+ candado de instancia unica). Falta la llamada HTTP local. | 🚧 |
+| 23 | 1.4 Disparadores externos | Hotkey global, deep-link `virtualdeck://` y servidor HTTP local con token (apagado de fabrica). | ✅ 2026-08-31 |
 | 24 | 6.1 Galería de perfiles | Repo público de perfiles ([spec](galeria.md)). | ⬜ |
 | 25 | 1.1 Mando móvil | Controlar el deck desde el teléfono (red local). | ⬜ |
 | 26 | 5.3/5.4 Pulido sensorial | Ya estaba hecho: pulso radial de 320 ms (`vd-flash-pulse`) + 4 perfiles de sonido. Verificado en pantalla. | ✅ 2026-08-31 |
