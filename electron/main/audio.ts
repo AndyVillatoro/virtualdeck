@@ -1,4 +1,5 @@
 import { nucleo } from './native';
+import { tm } from './idioma';
 import { runPS } from './ps-helpers';
 
 export interface AudioDevice {
@@ -111,7 +112,7 @@ public class VDAudio {
                 IPropertyStore store; dev.OpenPropertyStore(0, out store);
                 PropVariant pv = new PropVariant(); var key = FriendlyName;
                 store.GetValue(ref key, out pv);
-                string name = Marshal.PtrToStringAuto(pv.pointerValue) ?? "Desconocido";
+                string name = Marshal.PtrToStringAuto(pv.pointerValue) ?? "";
                 result.Add(new string[]{ id, name, id == defId ? "true" : "false" });
             }
         } catch (Exception ex) {
@@ -211,7 +212,9 @@ foreach ($d in $devices) { Write-Output "$($d[0])|$($d[1])|$($d[2])" }
     const parts = line.split('|');
     return {
       id: parts[0]?.trim() ?? '',
-      name: parts[1]?.trim() ?? 'Dispositivo',
+      // El nombre lo pone Windows; si falta, el rotulo de respaldo va en el
+      // idioma de la aplicacion y no fijo en espanol.
+      name: parts[1]?.trim() || tm('audio.unnamedDevice'),
       isDefault: parts[2]?.trim() === 'true',
     };
   }).filter((d) => d.id !== '__ERROR__');

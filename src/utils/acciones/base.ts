@@ -72,7 +72,7 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     case 'webhook':     return a.webhookUrl ? `Webhook ${a.webhookMethod ?? 'GET'} ${a.webhookUrl}` : t('act.lbl.webhook');
     case 'tts':         return t('act.lbl.tts');
     case 'region-capture': return t('act.lbl.capture');
-    case 'rgb-color':   return `RGB color ${a.rgbColor ?? ''}`.trim();
+    case 'rgb-color':   return a.rgbColor ? `${t('act.lbl.rgbColor')} ${a.rgbColor}` : t('act.lbl.rgbColor');
     case 'rgb-mode':    return a.rgbMode ? `${t('act.lbl.rgbMode')} "${a.rgbMode}"` : t('act.lbl.rgbMode');
     case 'rgb-profile': return a.rgbProfileName ? `${t('act.lbl.rgbProfile')} "${a.rgbProfileName}"` : t('act.lbl.rgbProfile');
     case 'rgb-preset':   return a.rgbPresetId ? `${t('act.lbl.rgbPreset')} "${a.rgbPresetId}"` : t('act.lbl.rgbPreset');

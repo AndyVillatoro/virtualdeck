@@ -579,7 +579,7 @@ export function BrandIconEditor({
                 />
                 <button
                   onClick={() => setPrimaryColor(activeColor)}
-                  title="Definir como color principal (#)"
+                  title={t('icon.setPrimary')}
                   style={{
                     padding: '5px 8px', border: `1px solid ${hexEq(activeColor, primaryColor) ? accent : VD.border}`,
                     background: hexEq(activeColor, primaryColor) ? VD.accentBg : 'transparent',

@@ -141,7 +141,7 @@ export function FormRgbProfile(p: PropsFormulario) {
                 onChange={(e) => setAction((a) => ({ ...a, rgbProfileName: e.target.value }))}
                 style={inputStyle}
               >
-                <option value="">— Selecciona un perfil —</option>
+                <option value="">{t('rgb.pickProfile')}</option>
                 {rgbProfiles.map((p) => (
                   <option key={p.id} value={p.name}>{p.name}</option>
                 ))}

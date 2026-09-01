@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { useLang } from '../../utils/i18n';
-import { wxInfo } from '../WeatherWidget';
+import { wxEmoji } from '../WeatherWidget';
 import { findSensor } from '../../utils/sensors';
 import type { ButtonConfig, Sensor, TasasDivisa, TipoWidget } from '../../types';
 
@@ -76,7 +76,7 @@ const CONSTRUCTORES: Record<TipoWidget, (b: ButtonConfig, f: Fuentes) => DatosWi
 
   'weather': (_b, f) => {
     if (!f.clima) return null;
-    const [emoji] = wxInfo(f.clima.code);
+    const emoji = wxEmoji(f.clima.code);
     return { line1: `${emoji} ${f.clima.temp}°`, line2: f.clima.city };
   },
 

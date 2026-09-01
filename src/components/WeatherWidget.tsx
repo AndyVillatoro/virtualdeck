@@ -9,40 +9,39 @@ interface WeatherData {
   country: string;
 }
 
-// WMO weather interpretation codes → [emoji, short label]
-const WX_CODES: Record<number, [string, string]> = {
-  0:  ['☀', 'Despejado'],
-  1:  ['🌤', 'Mayorm. desp.'],
-  2:  ['⛅', 'Parcial. nub.'],
-  3:  ['☁', 'Cubierto'],
-  45: ['🌫', 'Niebla'],
-  48: ['🌫', 'Niebla c/escar.'],
-  51: ['🌦', 'Llovizna leve'],
-  53: ['🌦', 'Llovizna mod.'],
-  55: ['🌧', 'Llovizna fuerte'],
-  61: ['🌧', 'Lluvia leve'],
-  63: ['🌧', 'Lluvia moderada'],
-  65: ['🌧', 'Lluvia fuerte'],
-  71: ['❄', 'Nieve leve'],
-  73: ['❄', 'Nieve moderada'],
-  75: ['❄', 'Nieve fuerte'],
-  77: ['❄', 'Granizo fino'],
-  80: ['🌦', 'Chubascos lev.'],
-  81: ['🌧', 'Chubascos mod.'],
-  82: ['🌧', 'Chubascos fuer.'],
-  85: ['❄', 'Nieve chubascos'],
-  95: ['⛈', 'Tormenta'],
-  96: ['⛈', 'Tormenta/granizo'],
-  99: ['⛈', 'Tormenta fuerte'],
+/**
+ * Codigos WMO -> emoji. El **texto** de cada condicion ya no vive aqui: es una
+ * clave de diccionario (`wx.<codigo>`), porque las veintitres estaban escritas
+ * en espanol dentro del componente y con la aplicacion en ingles el tooltip
+ * decia «Parcial. nub.». La comprobacion de i18n no las veia: son palabras
+ * sueltas, sin acentos, dentro de un mapa de objeto.
+ */
+const WX_EMOJI: Record<number, string> = {
+  0: '☀', 1: '🌤', 2: '⛅', 3: '☁',
+  45: '🌫', 48: '🌫',
+  51: '🌦', 53: '🌦', 55: '🌧',
+  61: '🌧', 63: '🌧', 65: '🌧',
+  71: '❄', 73: '❄', 75: '❄', 77: '❄',
+  80: '🌦', 81: '🌧', 82: '🌧', 85: '❄',
+  95: '⛈', 96: '⛈', 99: '⛈',
 };
 
-export function wxInfo(code: number): [string, string] {
-  // Round down to nearest known code bucket
-  const found = WX_CODES[code];
-  if (found) return found;
-  // Fallback: try floor to decade
-  const decade = Math.floor(code / 10) * 10;
-  return WX_CODES[decade] ?? ['🌡', 'Desconocido'];
+/** El codigo exacto, o el de su decena; si tampoco, ninguno. */
+function codigoConocido(code: number): number | null {
+  if (WX_EMOJI[code] !== undefined) return code;
+  const decena = Math.floor(code / 10) * 10;
+  return WX_EMOJI[decena] !== undefined ? decena : null;
+}
+
+export function wxEmoji(code: number): string {
+  const c = codigoConocido(code);
+  return c === null ? '🌡' : WX_EMOJI[c];
+}
+
+/** Clave de diccionario con el nombre de la condicion. */
+export function wxClave(code: number): string {
+  const c = codigoConocido(code);
+  return c === null ? 'wx.unknown' : `wx.${c}`;
 }
 
 export function WeatherWidget() {
@@ -77,11 +76,12 @@ export function WeatherWidget() {
     return () => window.clearInterval(timerRef.current);
   }, []);
 
-  const [emoji, desc] = weather ? wxInfo(weather.code) : ['🌡', ''];
+  const emoji = weather ? wxEmoji(weather.code) : '🌡';
+  const desc = weather ? t(wxClave(weather.code)) : '';
 
   return (
     <div
-      title={weather ? `${weather.city}, ${weather.country} — ${desc}` : 'Cargando clima...'}
+      title={weather ? `${weather.city}, ${weather.country} — ${desc}` : t('weather.loading')}
       style={{
         background: VD.elevated, border: `1px solid ${VD.border}`,
         borderRadius: VD.radius.md, padding: '8px 10px',

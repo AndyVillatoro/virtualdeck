@@ -134,7 +134,7 @@ export async function playMacro(
   const script = buildPlaybackScript(steps, Math.max(1, repeat));
   const r = await runPS(script, { timeoutMs: 120_000 });
   if (!r.ok && r.stderr) console.error('[macro] playback error:', r.stderr.slice(0, 500));
-  return r.ok ? { ok: true } : { ok: false, error: r.stderr?.slice(0, 300) || 'Error desconocido' };
+  return r.ok ? { ok: true } : { ok: false, error: r.stderr?.slice(0, 300) || tm('macro.unknownError') };
 }
 
 // ---------------------------------------------------------------------------

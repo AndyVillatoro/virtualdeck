@@ -24,7 +24,7 @@ type Clave =
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
-  | 'currency.badCode';
+  | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError';
 
 const ES: Record<Clave, string> = {
   'tray.show': 'Mostrar VirtualDeck',
@@ -50,6 +50,8 @@ const ES: Record<Clave, string> = {
   'sensors.uacCancelled': 'UAC cancelado por el usuario',
   'sensors.netshCode': 'netsh terminó con código',
   'currency.badCode': 'Moneda no válida:',
+  'audio.unnamedDevice': 'Dispositivo sin nombre',
+  'macro.unknownError': 'Error desconocido',
 };
 
 const EN: Record<Clave, string> = {
@@ -76,6 +78,8 @@ const EN: Record<Clave, string> = {
   'sensors.uacCancelled': 'UAC cancelled by the user',
   'sensors.netshCode': 'netsh exited with code',
   'currency.badCode': 'Invalid currency:',
+  'audio.unnamedDevice': 'Unnamed device',
+  'macro.unknownError': 'Unknown error',
 };
 
 let actual: Record<Clave, string> = ES;

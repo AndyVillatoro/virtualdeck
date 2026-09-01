@@ -143,6 +143,10 @@ const PALABRAS_SUELTAS = new Set([
   // El rotulo del menu de pagina. El patron nuevo si lo veia; lo que faltaba
   // era la palabra aqui.
   'grilla', 'cuadricula', 'cuadrícula', 'pagina', 'página', 'paginas', 'páginas',
+  // Del gestor RGB, encontradas al dividir la pantalla y no leyendo el código:
+  // «CALIBRAR» es una sola palabra en su propia línea, sin acento.
+  'calibrar', 'calibrando', 'zona', 'zonas', 'dispositivo', 'dispositivos',
+  'lanzar', 'desconocido', 'sobrescribir', 'sobrescrito',
 ]);
 
 // Los dos archivos de datos sembrados. Lo que hay aqui en espanol se **copia
@@ -164,7 +168,7 @@ const PERMITIDOS = new Set([
 ]);
 
 function pareceEspanol(s) {
-  const limpio = s.trim();
+  let limpio = s.trim();
   if (limpio.length < 3 || PERMITIDOS.has(limpio)) return false;
   if (/^[\s\d\W]*$/.test(limpio)) return false;          // solo símbolos o números
   if (/^(https?:|[A-Za-z]:[\\/]|\.{0,2}\/)/.test(limpio)) return false;  // URL o ruta
@@ -175,16 +179,28 @@ function pareceEspanol(s) {
   // precisamente las que tiene que reconocer. `media.ts` casa así los títulos
   // de pestaña del navegador («y 3 páginas más»).
   if (/^\(\?[:=!]/.test(limpio) || /\\d\+/.test(limpio)) return false;
+  // De una plantilla se mira **solo el texto**, no lo que interpola. Antes se
+  // evaluaba entera, así que cualquier operador dentro de un `${}` la
+  // descalificaba por la regla de abajo: «No se pudo lanzar OpenRGB: ${e ??
+  // 'x'}» moría por el `??`, y `editar "${b.label || b.type}"` por el `||`.
+  // Tres textos vivos se colaron por ahí con la auditoría en verde, y los
+  // encontró el usuario mirando la aplicación en inglés.
+  const soloTexto = limpio.replace(/\$\{[^{}]*\}/g, ' ').trim();
+  if (soloTexto.length < 3) return false;
   // Operadores: es código, no idioma. La `y` de «y» es además un nombre de
   // variable de lo más normal, y por su culpa se marcaba como texto en español
   // el trozo `= b.y && y` de una comprobación de coordenadas.
-  if (/(&&|\|\||[<>!=]=|\+\+|=>|\?\?)/.test(limpio)) return false;
+  if (/(&&|\|\||[<>!=]=|\+\+|=>|\?\?)/.test(soloTexto)) return false;
+  limpio = soloTexto;
   if (ACENTOS.test(limpio)) return true;
   // Frases cortas: basta una palabra inequívoca.
   // Se parte tambien por `:` y `;`: sin ellos «Rango: 75%» daba la palabra
   // «rango:», que no esta en la lista, y el texto pasaba.
+  // El tope era de 4 palabras y dejaba pasar «No se pudo lanzar OpenRGB: …»,
+  // que son 5. Subirlo a 6 no añade ningún falso positivo en este repo y
+  // recupera las frases de error, que son justo las más largas.
   const palabras = limpio.split(/[\s·/,.;:…]+/).filter(Boolean);
-  if (palabras.length <= 4 && palabras.some((p) => PALABRAS_SUELTAS.has(p.toLowerCase()))) return true;
+  if (palabras.length <= 6 && palabras.some((p) => PALABRAS_SUELTAS.has(p.toLowerCase()))) return true;
   return (limpio.match(PALABRAS_ES) ?? []).length >= 2;
 }
 
@@ -282,6 +298,21 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
       // se colaba. Lo que descalifica es un parentesis pegado a un
       // identificador, que es una llamada (`useMemo(`, `function f(`).
       if (/[;=,'"`[\]]/.test(trozo) || /\w\(/.test(trozo)) continue;
+      // Una cabecera de bucle o de condición también es «texto antes de un
+      // `{`»: `for (const m of preset.tryModes) {`. Lleva espacio antes del
+      // paréntesis, así que el filtro de llamada no la ve.
+      if (/\b(for|if|while|switch|else|try|catch|function|return|const|let|var)\b/.test(trozo)) continue;
+      if (!/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(trozo)) continue;
+      sospechas.push(trozo);
+    }
+    // Texto **entre** dos expresiones: `{n} ZONA{n === 1 ? '' : 'S'}`. El
+    // patrón de arriba solo mira lo que precede a un `{`, y el de abajo solo lo
+    // que sigue a un `}` hasta el final de línea; el trozo del medio no lo veía
+    // ninguno de los cinco. Por ahí salía «KEYBOARD · 3 ZONAS · 104 LEDS» con
+    // la aplicación en inglés.
+    for (const m of codigo.matchAll(/\}\s*([^<>{}\n]{3,}?)\s*(?=\{)/g)) {
+      const trozo = m[1].trim();
+      if (/[;=,'"`()[\]]/.test(trozo)) continue;
       if (!/[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(trozo)) continue;
       sospechas.push(trozo);
     }
@@ -351,9 +382,63 @@ const REGISTRO = [
   }
 }
 
-if (problemas.length) {
-  console.error(`i18n: ${problemas.length} problema(s)\n`);
-  for (const p of problemas) console.error('  · ' + p);
+// 6. Lo que se dibuja con la fuente de puntos tiene que existir en la fuente.
+//
+// `GLYPHS_5x7` no es un alfabeto completo, y `DotText` cae a un **espacio en
+// blanco** cuando no encuentra la letra (`GLYPHS_5x7[ch] || GLYPHS_5x7[' ']`).
+// Faltaban B, J, Q, Z y `&`, así que el título del paso 4 del tutorial se leía
+// «SUS OTONES», y en inglés «BACKUP & HELP» salía «ACKUP  HELP». No lo veía
+// nada: no es un texto sin traducir, es un carácter que no está en un mapa de
+// datos, y la palabra se reescribe sola sin ningún aviso.
+//
+// Solo se comprueban las claves que de verdad pasan por `DotText`. Abajo se
+// verifica que no haya aparecido una llamada nueva sin declararla aquí: si la
+// hay, esta lista se queda corta y el fallo vuelve en silencio.
+const CLAVES_EN_PUNTOS = [/^onb\.\d+\.title$/];
+const DOTTEXT_DECLARADOS = new Set([
+  'src/components/Onboarding.tsx',   // el título de cada paso — texto libre
+  'src/screens/FullscreenB.tsx',     // hora y minutos — solo dígitos
+  'src/screens/main/BarraLateral.tsx', // el reloj — solo dígitos
+]);
+{
+  const design = readFileSync('src/design.ts', 'utf-8');
+  const bloque = design.slice(design.indexOf('GLYPHS_5x7'));
+  const glifos = new Set(
+    [...bloque.slice(0, bloque.indexOf('\n};')).matchAll(/'((?:[^'\\]|\\.)*)':\s*\[/g)].map((m) => m[1]),
+  );
+  if (glifos.size < 10) problemas.push('puntos: no pude leer GLYPHS_5x7 de src/design.ts');
+
+  // `DotText` quita las tildes antes de dibujar y pasa a mayúsculas: se
+  // comprueba exactamente lo que va a buscar en el mapa.
+  const comoLoBusca = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+
+  for (const [nombre, ruta] of Object.entries(DICCIONARIOS)) {
+    if (nombre === 'FIELDS_EN') continue;
+    const fuente = readFileSync(ruta, 'utf-8');
+    for (const m of fuente.matchAll(/^\s*'([^']+)':\s*'((?:[^'\\]|\\.)*)',/gm)) {
+      if (!CLAVES_EN_PUNTOS.some((re) => re.test(m[1]))) continue;
+      const faltan = [...new Set([...comoLoBusca(m[2])].filter((c) => !glifos.has(c)))];
+      if (faltan.length) {
+        problemas.push(`puntos: ${nombre} "${m[1]}" usa ${faltan.map((c) => `«${c}»`).join(', ')}, que no está en GLYPHS_5x7 — se dibujaría como un hueco`);
+      }
+    }
+  }
+
+  for (const ruta of archivos(RAIZ)) {
+    const rel = ruta.split(sep).join('/');
+    if (!readFileSync(ruta, 'utf-8').includes('<DotText')) continue;
+    if (!DOTTEXT_DECLARADOS.has(rel)) {
+      problemas.push(`puntos: ${rel} usa <DotText> y no está declarado en DOTTEXT_DECLARADOS — si dibuja texto libre, hay que añadir su clave a CLAVES_EN_PUNTOS`);
+    }
+  }
+}
+
+// Un mismo texto lo pueden ver dos patrones a la vez (el de `>texto<` y el de
+// literal suelto, por ejemplo). Se informa una vez.
+const unicos = [...new Set(problemas)];
+if (unicos.length) {
+  console.error(`i18n: ${unicos.length} problema(s)\n`);
+  for (const p of unicos) console.error('  · ' + p);
   process.exit(1);
 }
 console.log(`i18n: ok — ES/EN ${ES.size} claves, FIELDS_EN ${CAMPOS.size} textos`);
