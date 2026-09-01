@@ -66,7 +66,7 @@ Cerrado. Quedó además cubierto el proceso principal, que no estaba en la lista
 
 | # | Apartado | Objetivo | Estado |
 |---|----------|----------|--------|
-| 11 | `EditorB` | Dividir por sección (ActionStep / StyleStep / IconStep / TriggersStep). | ⬜ |
+| 11 | `EditorB` | Vista previa y los tres efectos de carga fuera (`editor/VistaPrevia`, `useCatalogos`, `useCapturaHotkey`, `usePegarImagen`). 605 → 485 líneas, complejidad 21 → bajo el límite. | ✅ 2026-08-31 |
 | 12 | `TitleBar` | Extraído a `settings/PanelAjustes` + `RGBSection`/`SensorsSection`. | ✅ |
 | 13 | `MainB` | Rejilla, panel lateral, pestañas, widgets y disparadores fuera. 815 → 618 líneas. | ✅ |
 | 14 | `RGBManagerB` | Lista de dispositivos y panel de perfiles fuera (`rgb/ListaDispositivos`, `rgb/PanelPerfiles`). 478 → 450 líneas, complejidad 20 → bajo el límite. | ✅ 2026-08-31 |

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData';
 import {
   accionInicial, estiloInicial, widgetInicial, visibilidadInicial, disparadoresInicial,
@@ -13,10 +13,9 @@ import { DotLabel } from '../components/DotLabel';
 // arrastrar el bundle de marcas al árbol inicial cuando el usuario no abre el modal.
 const BrandIconPicker = lazy(() => import('../components/BrandIconPicker').then(m => ({ default: m.BrandIconPicker })));
 const BrandIconEditor = lazy(() => import('../components/BrandIconEditor').then(m => ({ default: m.BrandIconEditor })));
-import { ButtonCell } from '../components/ButtonCell';
 import { Glyph57Editor } from '../components/Glyph57Editor';
-import { useT, useFieldText } from '../utils/i18n';
-import type { AudioDevice, ButtonConfig, RGBDeviceInfo, RGBProfile } from '../types';
+import { useT } from '../utils/i18n';
+import type { ButtonConfig, RGBProfile } from '../types';
 
 interface EditorBProps {
   button: ButtonConfig;
@@ -28,13 +27,17 @@ interface EditorBProps {
 }
 
 // Claves i18n de los pasos (el texto se resuelve con t() en render).
+import { VistaPrevia } from './editor/VistaPrevia';
+import { useCatalogos } from './editor/useCatalogos';
+import { useCapturaHotkey } from './editor/useCapturaHotkey';
+import { usePegarImagen } from './editor/usePegarImagen';
+
 const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
 
 
 export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
   const VD = useTheme();
   const t = useT();
-  const tf = useFieldText();
   const api = window.electronAPI;
   // Los valores de partida salen de `valoresIniciales`: alli estan todos los
   // `?? ''` que antes vivian aqui dentro, uno por campo.
@@ -92,87 +95,30 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const [sensorTriggerVal, setSensorTriggerVal] = useState(dis.sensorTriggerVal);
   const [sensorTriggerCooldown, setSensorTriggerCooldown] = useState(dis.sensorTriggerCooldown);
   // Sensor list shared by widget/visibility/trigger pickers.
-  const [sensorList, setSensorList] = useState<import('../types').Sensor[]>([]);
   // 2.1 — Glifo 5×7 personalizado (7 enteros bitmask)
   const [customGlyph57, setCustomGlyph57] = useState(est.customGlyph57);
   const [showGlyphEditor, setShowGlyphEditor] = useState(false);
-  const [audioDevices, setAudioDevices] = useState<AudioDevice[]>([]);
-  const [loadingDevices, setLoadingDevices] = useState(false);
-  const [audioError, setAudioError] = useState<string | null>(null);
-  const [rgbDevices, setRgbDevices] = useState<RGBDeviceInfo[]>([]);
-  const [rgbConnected, setRgbConnected] = useState(false);
   const [presetCategory, setPresetCategory] = useState<ButtonPreset['category']>('APPS');
   const [presetSearch, setPresetSearch] = useState('');
   const [capturing, setCapturing] = useState(false);
   const [folderButtons, setFolderButtons] = useState(ini.folderButtons);
-  const captureRef = useRef(false);
 
-  const loadAudioDevices = () => {
-    if (!api) return;
-    setLoadingDevices(true);
-    setAudioError(null);
-    api.audio.list().then((devs) => {
-      setAudioDevices(devs);
-      setLoadingDevices(false);
-    }).catch(() => {
-      setAudioError(tf('No se pudo obtener la lista. Compruebe que el audio esté activo o reinicie la aplicación.'));
-      setLoadingDevices(false);
-    });
-  };
+  const {
+    audioDevices, loadingDevices, audioError, loadAudioDevices, rgbDevices, rgbConnected, sensorList,
+  } = useCatalogos(action.type, step, `${widget}|${visibleIfSensorId}|${sensorTriggerId}`);
 
+  // Lo unico que quedaba en aquel efecto y no era cargar una lista: un boton
+  // de audio no puede llevar el widget de reproduccion, y al cambiar el tipo
+  // sobre un boton ya guardado se quedaba puesto.
   useEffect(() => {
-    if (action.type === 'audio-device' && audioDevices.length === 0 && api) {
-      loadAudioDevices();
-    }
-    // Auto-clear conflicting widget so a previously-saved button doesn't keep
-    // an incompatible widget after the user switches to Audio.
-    if (action.type === 'audio-device' && widget === 'now-playing') {
-      setWidget(undefined);
-    }
-  }, [action.type, step, widget]);
+    if (action.type === 'audio-device' && widget === 'now-playing') setWidget(undefined);
+  }, [action.type, widget]);
 
-  // Cargar lista de devices RGB cuando el usuario configure una acción rgb-*.
-  useEffect(() => {
-    if (!api) return;
-    if (action.type !== 'rgb-color' && action.type !== 'rgb-mode') return;
-    api.rgb.status().then((s) => {
-      setRgbConnected(s.connected);
-      if (s.connected) api.rgb.listDevices().then((d) => setRgbDevices(d)).catch(() => {});
-    }).catch(() => {});
-  }, [action.type, step]);
-
-  // Load LHM sensor catalog when the editor opens and refresh whenever the
-  // user touches a sensor-driven control. Cheap (LHM cache in main is 1.5 s)
-  // and ensures the picker is populated as soon as the user reaches step 2.
-  useEffect(() => {
-    if (!api?.sensors) return;
-    api.sensors.list().then(setSensorList).catch(() => {});
-  }, [widget, visibleIfSensorId, sensorTriggerId, step]);
-
-  // Hotkey capture
-  useEffect(() => {
-    if (!capturing) return;
-    captureRef.current = true;
-    const onKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const parts: string[] = [];
-      if (e.ctrlKey) parts.push('Ctrl');
-      if (e.altKey) parts.push('Alt');
-      if (e.shiftKey) parts.push('Shift');
-      const main = e.key;
-      if (!['Control', 'Alt', 'Shift', 'Meta'].includes(main)) {
-        parts.push(main.length === 1 ? main.toUpperCase() : main);
-      }
-      if (parts.length > 0 && !['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
-        setAction(a => ({ ...a, hotkey: parts.join('+') }));
-        setCapturing(false);
-        captureRef.current = false;
-      }
-    };
-    window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [capturing]);
+  useCapturaHotkey(
+    capturing,
+    (combo) => setAction((a) => ({ ...a, hotkey: combo })),
+    () => setCapturing(false),
+  );
 
   // Sync folderButtons into action when they change
   //
@@ -267,37 +213,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
     if (data) setImageData(data);
   };
 
-  // 2.4 — pegar imagen desde portapapeles. Listen at document level mientras el
-  // editor está abierto. El handler ignora pastes en inputs de texto (editar
-  // label/url) para no interferir con el paste textual.
-  useEffect(() => {
-    if (!api) return;
-    const onPaste = async (e: ClipboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (let i = 0; i < items.length; i++) {
-        const it = items[i];
-        if (it.type.startsWith('image/')) {
-          e.preventDefault();
-          const blob = it.getAsFile();
-          if (!blob) return;
-          const reader = new FileReader();
-          reader.onload = async () => {
-            const dataUrl = reader.result as string;
-            const url = await api.dialog.saveClipboardImage(dataUrl);
-            if (url) setImageData(url);
-          };
-          reader.readAsDataURL(blob);
-          return;
-        }
-      }
-    };
-    document.addEventListener('paste', onPaste);
-    return () => document.removeEventListener('paste', onPaste);
-  }, [api]);
+  usePegarImagen(setImageData);
 
   const accent = VD.accent;
 
@@ -351,56 +267,20 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
         {/* Body */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-          {/* Preview */}
-          <div style={{
-            width: 200, borderRight: `1px solid ${VD.border}`, padding: 24,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            background: VD.bg, flexShrink: 0, gap: 14,
-          }}>
-            <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('ed.preview')}</DotLabel>
-            {/* Celda viva — el mismo ButtonCell de la grilla, refleja cada cambio en tiempo real */}
-            <div style={{
-              width: 120, height: 120, display: 'grid',
-              pointerEvents: 'none', userSelect: 'none',
-            }}>
-              <ButtonCell
-                button={{
-                  id: button.id, page: button.page,
-                  label, sublabel, icon,
-                  imageData: imageData || undefined,
-                  brandIcon: brandIcon || undefined,
-                  brandIconAlwaysAnimate,
-                  brandIconCustomBitmap,
-                  brandIconCustomColor,
-                  brandIconCustomPalette,
-                  customGlyph57,
-                  bgColor: bgColor || undefined,
-                  fgColor: fgColor || undefined,
-                  action,
-                  actions: extraActions.length > 0 ? [action, ...extraActions] : undefined,
-                  isToggle,
-                }}
-                accent={accent}
-                toggled={false}
-                soundEnabled={false}
-                onEdit={() => {}}
-                onExecute={() => {}}
-              />
-            </div>
-            {isToggle && (
-              <div style={{ fontFamily: VD.mono, fontSize: 9, color: accent, textAlign: 'center' }}>
-                {t('ed.toggleMode')}
-              </div>
-            )}
-            {extraActions.length > 0 && (
-              <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center' }}>
-                + {extraActions.length} {extraActions.length > 1 ? tf('acciones adicionales') : tf('acción adicional')}
-              </div>
-            )}
-            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center', lineHeight: 1.6 }}>
-              {t('editor.previewHint')}<br />{t('editor.previewHint2')}
-            </div>
-          </div>
+          <VistaPrevia
+            id={button.id}
+            page={button.page}
+            accent={accent}
+            action={action}
+            extraActions={extraActions}
+            isToggle={isToggle}
+            campos={{
+              label, sublabel, icon, imageData, brandIcon,
+              brandIconAlwaysAnimate, brandIconCustomBitmap,
+              brandIconCustomColor, brandIconCustomPalette,
+              customGlyph57, bgColor, fgColor,
+            }}
+          />
 
           {/* Form */}
           {/* `key={step}` fuerza a React a crear un contenedor nuevo en cada
