@@ -99,11 +99,11 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 
 | # | Apartado | Objetivo | Estado |
 |---|----------|----------|--------|
-| 22 | 1.3 Acciones encadenadas | Delay por paso, condicional, bucles. | ⬜ |
+| 22 | 1.3 Acciones encadenadas | El motor ya lo hacia; faltaban los mandos. Espera, repetir y «solo si OK» por paso en el editor. | ✅ 2026-08-31 |
 | 23 | 1.4 Disparadores externos | Hotkey global / deep-link / HTTP local. | ⬜ |
 | 24 | 6.1 Galería de perfiles | Repo público de perfiles ([spec](galeria.md)). | ⬜ |
 | 25 | 1.1 Mando móvil | Controlar el deck desde el teléfono (red local). | ⬜ |
-| 26 | 5.3/5.4 Pulido sensorial | Animación de press + sonidos seleccionables. | ⬜ |
+| 26 | 5.3/5.4 Pulido sensorial | Ya estaba hecho: pulso radial de 320 ms (`vd-flash-pulse`) + 4 perfiles de sonido. Verificado en pantalla. | ✅ 2026-08-31 |
 | 27 | Botón ± para brillo y volumen | Acción `adjust`: sube o baja desde donde esté. Rueda del ratón sobre la celda, o dos botones. Cuatro presets sembrados. | ✅ 2026-08-23 |
 | 28 | Widget de divisas | Conversión entre dos monedas, tasa diaria de `open.er-api.com`, cacheada. | ✅ 2026-08-23 |
 | 29 | Más presets RGB | De 7 a 18, con brillo y velocidad por preset. Sin motor de animación: se decidió ir por presets prehechos. | ✅ 2026-08-23 |

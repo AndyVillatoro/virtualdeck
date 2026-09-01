@@ -239,6 +239,64 @@ export function BranchActionRow({ action, onChange, accent }: { action: ButtonAc
   );
 }
 
+/**
+ * Los tres modificadores de un paso de la secuencia: cuánto esperar antes,
+ * cuántas veces repetirlo y si depende de que el paso anterior fuera bien.
+ *
+ * `runActionSequence` leía `delayMs`, `repeat` y `onlyIfPrevOk` desde el
+ * principio —el motor de 1.3 estaba entero— pero **el editor no ofrecía
+ * ninguna forma de ponerlos**: los tres campos existían en `ButtonAction`, se
+ * guardaban si alguien editaba el JSON a mano, y por la interfaz eran
+ * inalcanzables. Un motor sin mando no es una función, es código muerto que
+ * pasa las comprobaciones.
+ */
+function ModificadoresPaso({ action, onChange }: { action: ButtonAction; onChange: (a: ButtonAction) => void }) {
+  const VD = useTheme();
+  const t = useT();
+  const num: React.CSSProperties = {
+    width: 52, background: VD.bg, border: `1px solid ${VD.border}`,
+    padding: '2px 5px', color: VD.text, fontFamily: VD.mono, fontSize: 9,
+    outline: 'none', borderRadius: VD.radius.sm,
+  };
+  const rotulo: React.CSSProperties = { fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 };
+  const soloSiOk = !!action.onlyIfPrevOk;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', paddingLeft: 22 }}>
+      <span style={rotulo}>{t('ed.seq.delay')}</span>
+      <input
+        type="number" min={0} step={50}
+        // Vacío = el valor por defecto (150 ms entre pasos). Escribir un 0
+        // explícito es distinto: quita la espera del todo.
+        value={action.delayMs ?? ''}
+        placeholder="150"
+        title={t('ed.seq.delayTitle')}
+        onChange={(e) => onChange({ ...action, delayMs: e.target.value === '' ? undefined : Math.max(0, parseInt(e.target.value, 10) || 0) })}
+        style={num}
+      />
+      <span style={rotulo}>{t('ed.seq.repeat')}</span>
+      <input
+        type="number" min={1} max={99}
+        value={action.repeat ?? ''}
+        placeholder="1"
+        title={t('ed.seq.repeatTitle')}
+        onChange={(e) => onChange({ ...action, repeat: e.target.value === '' ? undefined : Math.min(99, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
+        style={num}
+      />
+      <button
+        onClick={() => onChange({ ...action, onlyIfPrevOk: soloSiOk ? undefined : true })}
+        title={t('ed.seq.onlyIfOkTitle')}
+        style={{
+          padding: '2px 8px', background: soloSiOk ? VD.accentBg : 'transparent',
+          border: `1px solid ${soloSiOk ? VD.accent : VD.border}`,
+          color: soloSiOk ? VD.accent : VD.textMuted,
+          fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+          cursor: 'pointer', borderRadius: VD.radius.sm,
+        }}
+      >{t('ed.seq.onlyIfOk')}</button>
+    </div>
+  );
+}
+
 export function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonAction; onChange: (a: ButtonAction) => void; onRemove: () => void }) {
   const VD = useTheme();
   const miniInputStyle = estiloEntradaMini(VD);
@@ -247,7 +305,8 @@ export function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonA
   const meta = ACTION_TYPES.find(a => a.type === action.type);
   const Icon = meta?.Icon ?? IconNone;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '6px 10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '6px 10px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <Icon size={14} color={VD.textDim} strokeWidth={1.5} />
       <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, minWidth: 64 }}>{meta ? tr(meta.label) : ''}</span>
       {action.type === 'app' && (
@@ -288,6 +347,8 @@ export function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonA
       )}
       <div style={{ flex: 1 }} />
       <button onClick={onRemove} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>×</button>
+    </div>
+    <ModificadoresPaso action={action} onChange={onChange} />
     </div>
   );
 }
