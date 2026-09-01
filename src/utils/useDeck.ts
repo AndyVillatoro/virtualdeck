@@ -81,11 +81,11 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   }, [api, t]);
 
   const updateButton = useCallback((updated: ButtonConfig) => {
-    withHistory(`editar "${updated.label || updated.action.type}"`, (prev) => ({
+    withHistory(t('undo.edit', { nombre: updated.label || updated.action.type }), (prev) => ({
       ...prev,
       buttons: prev.buttons.map((b) => b.id === updated.id ? updated : b),
     }));
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   const duplicateButton = useCallback((id: string) => {
     withHistory(t('undo.duplicate'), (prev) => {
@@ -219,7 +219,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
         }),
       };
     });
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   // Page management
   const renamePage = useCallback((id: string, name: string) => {
@@ -275,7 +275,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
 
   // Set grid size for a page (extends to 5×5, 6×6, and rectangular gridRows)
   const setPageGridSize = useCallback((pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => {
-    withHistory(`cambiar grilla a ${gs}×${gridRows ?? gs}`, (prev) => {
+    withHistory(t('undo.gridSize', { tam: `${gs}×${gridRows ?? gs}` }), (prev) => {
       const pageIdx = prev.pages.findIndex((p) => p.id === pageId);
       if (pageIdx < 0) return prev;
       const needed = gs * (gridRows ?? gs);
@@ -290,7 +290,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
         buttons: extra.length > 0 ? [...prev.buttons, ...extra] : prev.buttons,
       };
     });
-  }, [withHistory]);
+  }, [withHistory, t]);
 
   /*
    * Perfiles: guardar, cargar y borrar una disposicion entera del deck.

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { VDTokens } from '../design';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import {
@@ -7,7 +6,6 @@ import {
   estiloBotonPrimario, estiloBotonSecundario,
 } from './rgb/piezas';
 import { TitleBar } from '../components/TitleBar';
-import { ColorPicker } from '../components/ColorPicker';
 import { DotLabel } from '../components/DotLabel';
 import type {
   DeckConfig, RGBDeviceInfo, RGBProfile, RGBSettings, RGBStatus, RGBDeviceState,
@@ -89,7 +87,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     try {
       if (rgbCfg.spawnOnStart && rgbCfg.openrgbPath && !status.serverRunning) {
         const r = await api.rgb.spawnServer(rgbCfg.openrgbPath);
-        if (!r.ok) showToast(`No se pudo lanzar OpenRGB: ${r.error ?? 'desconocido'}`);
+        if (!r.ok) showToast(t('rgb.spawnFailed', { error: r.error ?? t('sensors.unknown') }));
       }
       const s = await api.rgb.connect(rgbCfg.host, rgbCfg.port);
       setStatus(s);
@@ -230,10 +228,28 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     await refresh();
   };
 
+  /**
+   * Guardar con un nombre que ya existe **sobrescribe** ese perfil.
+   *
+   * Antes se anadia siempre, asi que volver a guardar —que es la forma natural
+   * de actualizar un perfil despues de retocar los colores— dejaba dos filas
+   * con el mismo nombre y ninguna manera de distinguirlas: la lista muestra el
+   * nombre, y el id que las separa no se ve. Es el mismo fallo que ya se
+   * corrigio en los perfiles del deck (`useDeck.saveProfile`); aqui no.
+   *
+   * Se conserva el id del perfil previo a proposito: `startupProfileId` apunta
+   * por id, y acunar uno nuevo desmarcaba el perfil de arranque sin decirlo.
+   */
   const saveProfile = (name: string) => {
     const prof = captureCurrentAsProfile(name);
-    persistRGB((prev) => ({ ...prev, profiles: [...prev.profiles, prof] }));
-    showToast(t('rgb.profileSaved', { nombre: name }));
+    persistRGB((prev) => {
+      const previo = prev.profiles.find((p) => p.name.toLowerCase() === name.toLowerCase());
+      if (!previo) return { ...prev, profiles: [...prev.profiles, prof] };
+      const actualizado = { ...prof, id: previo.id };
+      return { ...prev, profiles: prev.profiles.map((p) => p.id === previo.id ? actualizado : p) };
+    });
+    const yaEstaba = rgbCfg.profiles.some((p) => p.name.toLowerCase() === name.toLowerCase());
+    showToast(t(yaEstaba ? 'rgb.profileUpdated' : 'rgb.profileSaved', { nombre: name }));
   };
 
   const applyProfile = async (id: string) => {
