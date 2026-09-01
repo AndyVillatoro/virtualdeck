@@ -43,6 +43,36 @@ the toggle, the radio group, the action chain and the variables.
 
 ---
 
+## `virtualdeck://` links
+
+Anything that can open a URL can press a deck button: a desktop shortcut, a
+Windows scheduled task, a `.bat` file, or another application.
+
+| Link | What it does |
+|---|---|
+| `virtualdeck://press/<id>` | Presses the button with that id |
+| `virtualdeck://press?label=Spotify` | Presses the first button with that label |
+| `virtualdeck://page/2` | Switches to page 2 (the first one is 1) |
+| `virtualdeck://show` | Brings the window to the front |
+
+Label lookup **ignores case and accents**: `musica` finds a button named
+"Música".
+
+From a console or a `.bat`:
+
+```bat
+start "" "virtualdeck://press?label=Streaming Mode"
+```
+
+If VirtualDeck was not running, the link starts it and then runs the command.
+If it was, the second copy closes itself and hands the command to the one
+already running: **there is never more than one VirtualDeck at a time**.
+
+A button triggered by a link does exactly the same as one pressed with the
+mouse.
+
+---
+
 ## Macros
 
 A macro is a list of steps: keys, clicks, mouse movements, wheel and pauses.

@@ -44,6 +44,37 @@ secuencia de acciones y las variables.
 
 ---
 
+## Enlaces `virtualdeck://`
+
+Cualquier cosa que sepa abrir una URL puede pulsar un botón del deck: un acceso
+directo del escritorio, una tarea programada de Windows, un archivo `.bat`, o
+incluso otra aplicación.
+
+| Enlace | Qué hace |
+|---|---|
+| `virtualdeck://press/<id>` | Pulsa el botón con ese identificador |
+| `virtualdeck://press?label=Spotify` | Pulsa el primer botón con esa etiqueta |
+| `virtualdeck://page/2` | Cambia a la página 2 (la primera es la 1) |
+| `virtualdeck://show` | Trae la ventana al frente |
+
+La búsqueda por etiqueta **no distingue mayúsculas ni acentos**: `musica`
+encuentra un botón llamado «Música».
+
+Desde una consola o un `.bat`:
+
+```bat
+start "" "virtualdeck://press?label=Modo Streaming"
+```
+
+Si VirtualDeck no estaba abierto, el enlace lo abre y después ejecuta la orden.
+Si ya lo estaba, la segunda copia se cierra sola y le pasa la orden a la que ya
+corría: **nunca hay dos VirtualDeck a la vez**.
+
+Un botón disparado por enlace hace exactamente lo mismo que si se pulsara con
+el ratón.
+
+---
+
 ## Macros
 
 Una macro es una lista de pasos: teclas, clics, movimientos del ratón, rueda y

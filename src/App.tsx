@@ -358,6 +358,15 @@ export default function App() {
     });
   }, [api, config.buttons, dispararBoton]);
 
+  // `virtualdeck://page/<n>`. El indice llega ya en base 0 y se acota aqui:
+  // el enlace lo escribe una persona y puede pedir una pagina que no existe.
+  useEffect(() => {
+    if (!api?.events) return;
+    return api.events.onNavPage((i) => {
+      if (i >= 0 && i < config.pages.length) setActivePage(i);
+    });
+  }, [api, config.pages.length]);
+
   const { sensors: sensorList } = useSensors();
   useDisparadores({ botones: config.buttons, sensores: sensorList, disparar: dispararBoton });
 

@@ -11,6 +11,7 @@ import * as sensors from './sensors';
 import { abrirBarra } from './floatingBar';
 import { fijarIdioma } from './idioma';
 import { arrancarSondeo, pararSondeo } from './estadoSistema';
+import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -38,6 +39,21 @@ app.setAppUserModelId(APP_USER_MODEL_ID);
 protocol.registerSchemesAsPrivileged([
   { scheme: 'vd', privileges: { secure: true, standard: true, supportFetchAPI: true } },
 ]);
+
+/**
+ * Una sola copia de VirtualDeck.
+ *
+ * Hacía falta para los enlaces `virtualdeck://` —Windows arranca el ejecutable
+ * otra vez con la URL como argumento, y sin candado eso abriría un segundo
+ * deck en lugar de pulsar el botón— pero el fallo ya existía sin ellos: dos
+ * instancias son **dos escritores del mismo `deck-config.json`**, y la última
+ * en guardar se lleva por delante lo que hizo la otra. También salían dos
+ * iconos en la bandeja.
+ *
+ * Se pide antes de nada: si otra copia manda, esta se va sin montar nada.
+ */
+const soyElPrimero = app.requestSingleInstanceLock();
+if (!soyElPrimero) app.quit();
 
 let isQuitting = false;
 
@@ -137,6 +153,24 @@ app.whenReady().then(() => {
 
   const win = setupWindow();
   setTimeout(() => autoCheckOnStartup(win), 8000);
+
+  // 1.4 — enlaces `virtualdeck://`. La segunda copia no llega hasta aquí: se
+  // cierra arriba, y Windows le entrega la URL a esta por `second-instance`.
+  registrarEsquema();
+  app.on('second-instance', (_e, argv) => {
+    const url = urlEnArgumentos(argv);
+    if (url) atender(url, win);
+    else { win.show(); win.focus(); }
+  });
+  // Y el caso en el que la aplicación **no** estaba abierta: Windows la
+  // arranca con la URL en los argumentos. Se espera a que el renderer esté
+  // listo, porque `button:trigger` se pierde si se manda antes.
+  const urlDeArranque = urlEnArgumentos(process.argv);
+  if (urlDeArranque) {
+    win.webContents.once('did-finish-load', () => {
+      setTimeout(() => atender(urlDeArranque, win), 600);
+    });
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) setupWindow();

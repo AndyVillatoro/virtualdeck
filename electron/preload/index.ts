@@ -168,6 +168,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.on('button:trigger', listener);
       return () => ipcRenderer.removeListener('button:trigger', listener);
     },
+    // 1.4 — `virtualdeck://page/<n>`: cambiar de pagina desde fuera.
+    onNavPage: (handler: (indice: number) => void): (() => void) => {
+      const listener = (_e: unknown, i: number) => handler(i);
+      ipcRenderer.on('nav:page', listener);
+      return () => ipcRenderer.removeListener('nav:page', listener);
+    },
     onRGBDevicesChanged: (handler: () => void): (() => void) => {
       const listener = () => handler();
       ipcRenderer.on('rgb:devicesChanged', listener);

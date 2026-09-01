@@ -677,6 +677,7 @@ export interface ElectronAPI {
   };
   events: {
     onButtonTrigger: (handler: (buttonId: string) => void) => () => void;
+    onNavPage: (handler: (indice: number) => void) => () => void;
     onRGBDevicesChanged: (handler: () => void) => () => void;
     /** Estado del sistema publicado por el proceso principal cada 5 s. */
     onEstadoSistema: (handler: (data: unknown) => void) => () => void;
