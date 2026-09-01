@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import {
-  StatusBadge, DeviceDetail, SaveProfileBar, CalibratorModal, PresetsRapidos,
+  StatusBadge, DeviceDetail, CalibratorModal,
   estiloBotonPrimario, estiloBotonSecundario,
 } from './rgb/piezas';
+import { ListaDispositivos } from './rgb/ListaDispositivos';
+import { PanelPerfiles } from './rgb/PanelPerfiles';
 import { TitleBar } from '../components/TitleBar';
-import { DotLabel } from '../components/DotLabel';
 import type {
   DeckConfig, RGBDeviceInfo, RGBProfile, RGBSettings, RGBStatus, RGBDeviceState,
 } from '../types';
@@ -371,47 +372,22 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
           </span>
           <div style={{ flex: 1 }} />
           <button onClick={() => setShowCalibrator(true)} style={{ ...btnPrimary, borderColor: VD.warning, color: VD.warning }}>
-            CALIBRAR
+            {t('rgb.calibrate')}
           </button>
         </div>
       )}
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-        {/* Device list */}
-        <div style={{ width: 240, borderRight: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
-          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.devices')}</DotLabel>
-          {devices.length === 0 && (
-            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
-              {status.connected ? t('rgb.noDevices') : t('rgb.connectToSee')}
-            </div>
-          )}
-          {devices.map((d) => (
-            <div
-              key={d.id}
-              onClick={() => setSelectedId(d.id)}
-              style={{
-                padding: '8px 10px', marginBottom: 4, cursor: 'pointer',
-                background: selectedId === d.id ? VD.accentBg : VD.elevated,
-                border: `1px solid ${selectedId === d.id ? accent : VD.border}`,
-                borderRadius: VD.radius.md,
-              }}
-            >
-              <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 0.5 }}>{d.name}</div>
-              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 3, letterSpacing: 1 }}>
-                {d.typeLabel.toUpperCase()} · {d.zones.length} ZONA{d.zones.length === 1 ? '' : 'S'} · {d.colors.length} LEDS
-              </div>
-            </div>
-          ))}
-
-          {status.connected && devices.length > 0 && (
-            <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px solid ${VD.border}` }}>
-              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.quickActions')}</DotLabel>
-              <button onClick={allOff} disabled={busy} style={{ ...btnSecondary, width: '100%', marginBottom: 4 }}>{t('rgb.allOff')}</button>
-              <button onClick={() => allColor('#ffffff')} disabled={busy} style={{ ...btnSecondary, width: '100%', marginBottom: 4 }}>{t('rgb.allWhite')}</button>
-              <button onClick={() => allColor(accent)} disabled={busy} style={{ ...btnSecondary, width: '100%' }}>{t('rgb.accentColor')}</button>
-            </div>
-          )}
-        </div>
+        <ListaDispositivos
+          devices={devices}
+          selectedId={selectedId}
+          accent={accent}
+          conectado={status.connected}
+          ocupado={busy}
+          onSelect={setSelectedId}
+          onTodoApagado={allOff}
+          onTodoColor={allColor}
+        />
 
         {/* Detail */}
         <div style={{ flex: 1, padding: 16, overflowY: 'auto' }}>
@@ -432,37 +408,17 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
           )}
         </div>
 
-        {/* Profiles */}
-        <div style={{ width: 240, borderLeft: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
-          <PresetsRapidos accent={accent} activo={status.connected} onAplicar={aplicarPreset} />
-
-          <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.profiles')}</DotLabel>
-          <SaveProfileBar onSave={saveProfile} accent={accent} disabled={!status.connected} />
-          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {rgbCfg.profiles.length > 0 && (
-              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginBottom: 4 }}>
-                {t('rgb.startupHint')}
-              </div>
-            )}
-            {rgbCfg.profiles.length === 0 && (
-              <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '4px 0' }}>
-                {t('rgb.noProfiles')}
-              </div>
-            )}
-            {rgbCfg.profiles.map((p) => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
-                <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                <button
-                  onClick={() => toggleStartupProfile(p.id)}
-                  title={t(rgbCfg.startupProfileId === p.id ? 'rgb.startupOn' : 'rgb.startupOff')}
-                  style={{ background: 'none', border: 'none', fontSize: 11, lineHeight: 1, cursor: 'pointer', padding: '0 2px', color: rgbCfg.startupProfileId === p.id ? accent : VD.textMuted }}
-                >{rgbCfg.startupProfileId === p.id ? '◉' : '○'}</button>
-                <button onClick={() => applyProfile(p.id)} disabled={!status.connected} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('rgb.apply')}</button>
-                <button onClick={() => deleteProfile(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
-              </div>
-            ))}
-          </div>
-        </div>
+        <PanelPerfiles
+          accent={accent}
+          conectado={status.connected}
+          profiles={rgbCfg.profiles}
+          startupProfileId={rgbCfg.startupProfileId}
+          onAplicarPreset={aplicarPreset}
+          onGuardar={saveProfile}
+          onAplicar={applyProfile}
+          onBorrar={deleteProfile}
+          onAlternarArranque={toggleStartupProfile}
+        />
       </div>
 
       {showCalibrator && (

@@ -69,7 +69,7 @@ Cerrado. Quedó además cubierto el proceso principal, que no estaba en la lista
 | 11 | `EditorB` | Dividir por sección (ActionStep / StyleStep / IconStep / TriggersStep). | ⬜ |
 | 12 | `TitleBar` | Extraído a `settings/PanelAjustes` + `RGBSection`/`SensorsSection`. | ✅ |
 | 13 | `MainB` | Rejilla, panel lateral, pestañas, widgets y disparadores fuera. 815 → 618 líneas. | ✅ |
-| 14 | `RGBManagerB` | Separar lista de dispositivos / editor de perfil / presets. | ⬜ |
+| 14 | `RGBManagerB` | Lista de dispositivos y panel de perfiles fuera (`rgb/ListaDispositivos`, `rgb/PanelPerfiles`). 478 → 450 líneas, complejidad 20 → bajo el límite. | ✅ 2026-08-31 |
 | 15 | `utils/actions.ts` | Dividido en `utils/acciones/` (una familia por archivo) + guardián de cobertura. | ✅ |
 
 ### Limpieza continua de código muerto (knip)
