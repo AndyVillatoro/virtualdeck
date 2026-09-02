@@ -1,4 +1,5 @@
 import { app, BrowserWindow } from 'electron';
+import { resolve } from 'node:path';
 import { loadConfig } from './configManager';
 
 /**
@@ -108,6 +109,11 @@ export function atender(url: string, win: BrowserWindow | null): { ok: boolean; 
  * enlace arrancaría un Electron vacío.
  */
 export function registrarEsquema(): void {
-  if (app.isPackaged) app.setAsDefaultProtocolClient(ESQUEMA);
-  else app.setAsDefaultProtocolClient(ESQUEMA, process.execPath, [process.argv[1]]);
+  if (app.isPackaged) return void app.setAsDefaultProtocolClient(ESQUEMA);
+  // `resolve`, no `process.argv[1]` tal cual: lanzado como `npx electron .` ese
+  // argumento es un punto, y Windows abre el enlace **desde otro directorio**.
+  // Con la ruta relativa el registro apunta a un proyecto que no existe desde
+  // ahi, y el enlace no hace nada. Medido: con `.` no pasaba nada, con la ruta
+  // completa el boton se dispara.
+  app.setAsDefaultProtocolClient(ESQUEMA, process.execPath, [resolve(process.argv[1] ?? '.')]);
 }
