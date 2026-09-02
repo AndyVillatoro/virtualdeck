@@ -8,6 +8,16 @@ export interface NowPlaying {
   status: 'Playing' | 'Paused' | 'Stopped' | 'Unknown';
   source: string;
   thumbnail?: string;
+  /**
+   * Que admite **esta** sesion, segun ella misma.
+   *
+   * No todas las fuentes hacen todo: un video suelto de YouTube en Edge
+   * declara `next=False prev=False shuffle=False repeat=False`, y el sistema
+   * acepta la orden y no pasa nada. Sin esto la interfaz enseña cuatro botones
+   * que en ese caso no hacen nada y no lo dicen. Ausente = no se sabe (camino
+   * nativo o version vieja), y entonces se enseñan todos.
+   */
+  controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
 }
 
 export type MediaCommand = 'play-pause' | 'next' | 'prev' | 'stop';
@@ -96,7 +106,9 @@ if ($null -eq $best) { Write-Output 'NONE|||'; exit }
 $src = if ($best.S.SourceAppUserModelId) { $best.S.SourceAppUserModelId } else { '' }
 $title = if ($best.P.Title) { $best.P.Title } else { '' }
 $artist = if ($best.P.Artist) { $best.P.Artist } else { '' }
-Write-Output "$title|$artist|$($best.St)|$src"
+$c = $best.S.GetPlaybackInfo().Controls
+$caps = "$($c.IsNextEnabled)/$($c.IsPreviousEnabled)/$($c.IsShuffleEnabled)/$($c.IsRepeatEnabled)"
+Write-Output "$title|$artist|$($best.St)|$src|$caps"
 `.trim();
 
 const THUMB_SCRIPT = `
@@ -377,7 +389,7 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
     if (!r.ok) {
       if (r.stderr) logErrorOnce('smtc-quick', r.stderr);
     } else if (r.stdout && !r.stdout.startsWith('NONE') && !r.stdout.startsWith('ERR')) {
-      const [title, artist, status, source] = r.stdout.split('|');
+      const [title, artist, status, source, caps] = r.stdout.split('|');
       const titleStr = title?.trim() ?? '';
       const artistStr = artist?.trim() ?? '';
       if (titleStr || artistStr) {
@@ -407,6 +419,15 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
             ? status.trim() : 'Unknown') as NowPlaying['status'],
           source: source?.trim() ?? '',
           thumbnail: _thumbData || undefined,
+          // Llegan como 'True/False/True/False'; si el script es de una version
+          // anterior no viene el campo y se deja sin definir, que significa
+          // «no se sabe» y no «no se puede».
+          controls: caps ? {
+            next: caps.split('/')[0]?.trim() === 'True',
+            prev: caps.split('/')[1]?.trim() === 'True',
+            shuffle: caps.split('/')[2]?.trim() === 'True',
+            repeat: caps.split('/')[3]?.trim() === 'True',
+          } : undefined,
         };
       }
     } else if (r.stdout.startsWith('NONE')) {

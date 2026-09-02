@@ -207,6 +207,15 @@ export function IconMediaPlay(p: VDIconProps) {
   </Ico>;
 }
 
+/** Nota musical. Hueco de la caratula cuando no hay imagen. */
+export function IconMusic(p: VDIconProps) {
+  return <Ico {...p}>
+    <path d="M9 18V5l10-2v13"/>
+    <circle cx="6" cy="18" r="3" className="fill-stroke"/>
+    <circle cx="16" cy="16" r="3" className="fill-stroke"/>
+  </Ico>;
+}
+
 export function IconMediaPause(p: VDIconProps) {
   return <Ico {...p}>
     <rect x="8" y="5" width="2.5" height="14" rx="1" className="fill-stroke"/>

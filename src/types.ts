@@ -504,6 +504,8 @@ interface WeatherInfo {
 }
 
 export interface NowPlaying {
+  /** Que admite la fuente. Ausente = no se sabe; se enseñan todos. */
+  controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
   title: string;
   artist: string;
   status: 'Playing' | 'Paused' | 'Stopped' | 'Unknown';

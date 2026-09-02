@@ -590,6 +590,7 @@ export function MainB({
               isPlaying={isPlaying}
               sourceName={sourceName}
               showToast={showToast}
+              ocultarMusica={panelMusica.enabled}
             />
           )}
 

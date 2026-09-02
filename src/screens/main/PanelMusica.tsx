@@ -3,7 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import {
-  IconMediaPlay, IconMediaPause, IconMediaSkipBack, IconMediaSkipForward,
+  IconMediaPlay, IconMediaPause, IconMediaSkipBack, IconMediaSkipForward, IconMusic,
 } from '../../components/VDIcon';
 import type { NowPlaying, ElectronAPI } from '../../types';
 
@@ -51,23 +51,31 @@ export function PanelMusica({
     ? { borderRight: `1px solid ${VD.border}` }
     : { borderLeft: `1px solid ${VD.border}` };
 
+  // Lo que la fuente dice que admite. Sin dato (camino nativo) se enseña todo:
+  // mejor un boton que quiza no haga nada que esconder uno que si funciona.
+  const puede = nowPlaying.controls;
+
   const control = (
     key: 'prev' | 'play-pause' | 'next',
     Icon: typeof IconMediaPlay,
     titulo: string,
     lado_: number,
     principal: boolean,
+    activo = true,
   ) => (
     <button
       key={key}
-      title={titulo}
+      title={activo ? titulo : t('media.unsupported', { que: titulo })}
       aria-label={titulo}
-      onClick={() => api?.media.control(key)}
+      disabled={!activo}
+      onClick={() => { if (activo) api?.media.control(key); }}
       style={{
         width: lado_, height: lado_, flexShrink: 0,
+        opacity: activo ? 1 : 0.35,
+        cursor: activo ? 'pointer' : 'not-allowed',
         background: principal ? VD.accentBg : VD.elevated,
         border: `1px solid ${principal ? accent : VD.border}`,
-        borderRadius: VD.radius.lg, cursor: 'pointer',
+        borderRadius: VD.radius.lg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         // Sin esto, mantener el dedo sobre el botón selecciona el icono y
         // Windows saca el menú de copiar en mitad de la canción.
@@ -109,8 +117,13 @@ export function PanelMusica({
         overflow: 'hidden', position: 'relative',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ opacity: 0.25 }}>
-          {isPlaying ? <IconMediaPlay size={64} color={VD.textMuted} /> : <IconMediaPause size={64} color={VD.textMuted} />}
+        {/* Un icono neutro, no play/pausa: ahi arriba significaba una cosa
+            («esta sonando») y en el boton de abajo la contraria («pulsa para
+            pausar»), con lo que la misma pantalla enseñaba dos triangulos que
+            querian decir cosas distintas. El estado lo dicen el punto y el
+            texto, que no se prestan a confusion. */}
+        <div style={{ opacity: 0.22 }}>
+          <IconMusic size={64} color={VD.textMuted} />
         </div>
         {nowPlaying.thumbnail && (
           <img
@@ -151,28 +164,37 @@ export function PanelMusica({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-        {control('prev', IconMediaSkipBack, t('media.prev'), LADO_SECUNDARIO, false)}
+        {control('prev', IconMediaSkipBack, t('media.prev'), LADO_SECUNDARIO, false, puede?.prev !== false)}
         {control('play-pause', isPlaying ? IconMediaPause : IconMediaPlay, t('media.playPause'), LADO_PRINCIPAL, true)}
-        {control('next', IconMediaSkipForward, t('media.next'), LADO_SECUNDARIO, false)}
+        {control('next', IconMediaSkipForward, t('media.next'), LADO_SECUNDARIO, false, puede?.next !== false)}
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
         {([
-          { key: 'shuffle' as const, texto: t('media.shuffle') },
-          { key: 'repeat' as const, texto: t('media.repeat') },
-        ]).map(({ key, texto }) => (
+          { key: 'shuffle' as const, texto: t('media.shuffle'), activo: puede?.shuffle !== false },
+          { key: 'repeat' as const, texto: t('media.repeat'), activo: puede?.repeat !== false },
+        ]).map(({ key, texto, activo }) => (
           <button
             key={key}
-            onClick={() => (key === 'shuffle' ? api?.media.shuffle() : api?.media.repeat())}
+            disabled={!activo}
+            title={activo ? texto : t('media.unsupported', { que: texto })}
+            onClick={() => { if (!activo) return; if (key === 'shuffle') api?.media.shuffle(); else api?.media.repeat(); }}
             style={{
               flex: 1, height: 40, background: VD.elevated,
               border: `1px solid ${VD.border}`, borderRadius: VD.radius.md,
               color: VD.textMuted, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-              cursor: 'pointer', touchAction: 'manipulation',
+              opacity: activo ? 1 : 0.35, cursor: activo ? 'pointer' : 'not-allowed',
+              touchAction: 'manipulation',
             }}
           >{texto}</button>
         ))}
       </div>
+
+      {puede && !puede.next && !puede.prev && (
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
+          {t('media.noSkip', { fuente: sourceName || '?' })}
+        </div>
+      )}
     </div>
   );
 }

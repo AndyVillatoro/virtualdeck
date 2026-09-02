@@ -347,6 +347,8 @@ export const EN: Dict = {
   'set.musicPanelHint': 'Appears next to the grid only while something is playing, with large cover art and finger-sized buttons.',
   'panel.music': 'MUSIC',
   'music.hide': 'Hide the panel',
+  'media.unsupported': '{que} — the source does not support it',
+  'media.noSkip': '{fuente} does not support skipping tracks for this playback. That is a limit of the app that is playing, not of the deck.',
   'media.shuffle': 'SHUFFLE',
   'media.repeat': 'REPEAT',
   'ui.left': 'LEFT',

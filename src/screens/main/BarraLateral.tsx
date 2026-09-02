@@ -43,12 +43,14 @@ interface Props {
   showLog: boolean;
   setShowLog: React.Dispatch<React.SetStateAction<boolean>>;
   nowPlaying: NowPlayingInfo;
+  /** El panel de musica ya enseña todo esto, y en grande. */
+  ocultarMusica?: boolean;
   isPlaying: boolean;
   sourceName: string;
   showToast: (s: string) => void;
 }
 
-export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgbStatus, onRGB, execLog, setExecLog, showLog, setShowLog, nowPlaying, isPlaying, sourceName, showToast }: Props) {
+export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgbStatus, onRGB, execLog, setExecLog, showLog, setShowLog, nowPlaying, isPlaying, sourceName, showToast, ocultarMusica }: Props) {
   const VD = useTheme();
   const t = useT();
   const lang = useLang();
@@ -171,7 +173,10 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
             )}
           </div>
 
-          {/* Now Playing */}
+          {/* Now Playing. Se calla si esta el panel de musica: la misma
+              cancion dos veces en la misma pantalla, una de ellas con botones
+              que no se pueden pulsar con el dedo, es peor que no tenerla. */}
+          {!ocultarMusica && (
           <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}`, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.playing')}</DotLabel>
@@ -263,6 +268,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
               <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>{t('panel.noMedia')}</div>
             )}
           </div>
+          )}
         </div>
   );
 }

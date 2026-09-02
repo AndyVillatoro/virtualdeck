@@ -356,6 +356,8 @@ export const ES: Dict = {
   'set.musicPanelHint': 'Aparece al lado de la cuadricula solo cuando hay algo sonando, con la caratula grande y botones pensados para el dedo.',
   'panel.music': 'MUSICA',
   'music.hide': 'Ocultar el panel',
+  'media.unsupported': '{que} — la fuente no lo admite',
+  'media.noSkip': '{fuente} no admite pasar de pista en esta reproduccion. Es una limitacion de la aplicacion que suena, no del deck.',
   'media.shuffle': 'ALEATORIO',
   'media.repeat': 'REPETIR',
   'ui.left': 'IZQUIERDA',
