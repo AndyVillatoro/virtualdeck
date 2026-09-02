@@ -38,6 +38,7 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   // escuchando de verdad y en que direccion se le llega desde el telefono.
   ipcMain.handle('remote:status', () => remoto.estado());
   ipcMain.handle('remote:newToken', () => remoto.nuevoToken());
+  ipcMain.handle('remote:pairCode', () => remoto.nuevoCodigo());
 
   ipcMain.handle('config:listBackups', () => listBackups());
   ipcMain.handle('config:restoreBackup', (_e: any, filename: string) => restoreBackup(filename));

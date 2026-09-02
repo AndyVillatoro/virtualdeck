@@ -576,6 +576,8 @@ export interface ElectronAPI {
   remote: {
     status: () => Promise<{ corriendo: boolean; port: number; lan: string[] }>;
     newToken: () => Promise<string>;
+    /** Codigo de seis cifras para emparejar el telefono. Caduca a los 5 min. */
+    pairCode: () => Promise<string>;
   };
   audio: {
     list: () => Promise<AudioDevice[]>;

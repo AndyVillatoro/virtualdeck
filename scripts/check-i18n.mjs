@@ -160,6 +160,19 @@ const DATOS_SEMBRADOS = new Set([
   'src/data/brandIcons.ts',
 ]);
 
+// Archivos que **llevan su propio diccionario ES/EN dentro**, porque no pueden
+// usar ninguno de los dos de la aplicación. Hoy solo el mando móvil: es una
+// página que se sirve a un teléfono, y el idioma que manda ahí es el del
+// teléfono, no el del equipo.
+//
+// No es una exención en blanco. Se saltan del barrido de texto, pero a cambio
+// se comprueba abajo que las dos mitades de su diccionario tengan **las mismas
+// claves**: si alguien añade una frase en español y se olvida de la inglesa,
+// sigue fallando.
+const TRADUCEN_APARTE = new Map([
+  ['electron/main/paginaMando.ts', 'TEXTOS'],
+]);
+
 const PERMITIDOS = new Set([
   'VirtualDeck',
   // `color` es igual en los dos idiomas. En minuscula ademas casi siempre es
@@ -210,6 +223,7 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
   let enConsola = false;
   let enComentario = false;
   if (rel === I18N || rel === IDIOMA_MAIN || Object.values(DICCIONARIOS).includes(rel)) continue;
+  if (TRADUCEN_APARTE.has(rel)) continue;
   // Se parte por `\r?\n`, no por `\n`: los archivos del repo están en CRLF, y
   // partiendo solo por `\n` cada línea queda terminada en `\r`. Eso rompe el
   // recorte de comentarios —el `$` de `/\/\/.*$/` no cruza el `\r`— así que las
@@ -380,6 +394,26 @@ const REGISTRO = [
       if (m) problemas.push(`registro ES: "${m[0]}" (${motivo}) — linea ${i + 1} de los diccionarios`);
     }
   }
+}
+
+// 5 bis. Los diccionarios que viven fuera de `src/utils/idiomas/`.
+//
+// Lo que se salta del barrido de arriba paga este peaje: las dos mitades tienen
+// que tener exactamente las mismas claves. Sin esto, «se traduce aparte» sería
+// otra forma de decir «aquí no mira nadie».
+for (const [ruta, nombre] of TRADUCEN_APARTE) {
+  const fuente = readFileSync(ruta, 'utf-8');
+  const bloque = fuente.slice(fuente.indexOf(`const ${nombre}`));
+  const mitades = {};
+  for (const m of bloque.matchAll(/^\s{2}(es|en):\s*\{([\s\S]*?)^\s{2}\},/gm)) {
+    mitades[m[1]] = new Set([...m[2].matchAll(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*:/gm)].map((k) => k[1]));
+  }
+  if (!mitades.es || !mitades.en) {
+    problemas.push(`${ruta}: no encuentro las mitades 'es' y 'en' de ${nombre}`);
+    continue;
+  }
+  for (const k of mitades.es) if (!mitades.en.has(k)) problemas.push(`${ruta}: '${k}' está en es y falta en en`);
+  for (const k of mitades.en) if (!mitades.es.has(k)) problemas.push(`${ruta}: '${k}' está en en y falta en es`);
 }
 
 // 6. Lo que se dibuja con la fuente de puntos tiene que existir en la fuente.

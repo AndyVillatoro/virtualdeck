@@ -4,6 +4,7 @@ import { networkInterfaces } from 'node:os';
 import type { BrowserWindow } from 'electron';
 import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
+import { paginaMando } from './paginaMando';
 
 /**
  * El servidor local: mandar sobre el deck por HTTP.
@@ -58,6 +59,38 @@ let servidor: Server | null = null;
 let ventana: BrowserWindow | null = null;
 let ajustes: AjustesRemoto = { ...REMOTO_POR_DEFECTO };
 
+/**
+ * El emparejamiento del teléfono (1.1), con un código de seis cifras.
+ *
+ * La alternativa era un enlace con el token dentro, o un QR que lo llevara.
+ * Las dos dejan el token en el historial del navegador del teléfono y en
+ * cualquier captura que alguien mande para pedir ayuda. Así el teléfono
+ * escribe solo `http://<ip>:<puerto>` —que es corto— y el token cruza una vez,
+ * a cambio de un código que caduca.
+ *
+ * Seis cifras son un millón de posibilidades, pero eso solo basta si no se
+ * puede probar en bucle: el código dura cinco minutos, admite cinco intentos y
+ * desaparece al acertar.
+ */
+const PAREJA_MS = 5 * 60 * 1000;
+const PAREJA_INTENTOS = 5;
+let pareja: { codigo: string; caduca: number; intentos: number } | null = null;
+
+export function nuevoCodigo(): string {
+  const n = randomBytes(4).readUInt32BE(0) % 1000000;
+  pareja = { codigo: String(n).padStart(6, '0'), caduca: Date.now() + PAREJA_MS, intentos: 0 };
+  return pareja.codigo;
+}
+
+function canjear(codigo: string): string | null {
+  if (!pareja) return null;
+  if (Date.now() > pareja.caduca) { pareja = null; return null; }
+  if (++pareja.intentos > PAREJA_INTENTOS) { pareja = null; return null; }
+  if (codigo !== pareja.codigo) return null;
+  pareja = null;
+  return ajustes.token;
+}
+
 /** Las direcciones IPv4 de este equipo en la red local. */
 export function direccionesLan(): string[] {
   const salida: string[] = [];
@@ -110,18 +143,63 @@ function listaDeBotones(): Array<{ id: string; label: string; page: number }> {
     .map((b) => ({ id: b.id, label: b.label ?? '', page: b.page ?? 0 }));
 }
 
+/**
+ * El cuerpo de un POST, con tope.
+ *
+ * El tope no es paranoia de manual: sin él, cualquiera que llegue al puerto
+ * puede tener al proceso principal acumulando memoria con una petición que no
+ * termina nunca. Un código de emparejamiento son treinta bytes.
+ */
+function leerCuerpo(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve) => {
+    let datos = '';
+    req.on('data', (trozo) => {
+      datos += trozo;
+      if (datos.length > 1024) { datos = ''; req.destroy(); resolve(''); }
+    });
+    req.on('end', () => resolve(datos));
+    req.on('error', () => resolve(''));
+  });
+}
+
 function manejar(req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(req.url ?? '/', 'http://localhost');
 
   if (!hostAceptable(req.headers.host)) return responder(res, 403, { ok: false, error: 'host no permitido' });
-  // Una petición con `Origin` viene de una página web. Ninguna de las nuestras
-  // lo es todavía; cuando el mando móvil exista, se servirá de aquí mismo y
-  // tampoco mandará `Origin` a su propio origen en una petición simple.
-  if (req.headers.origin) return responder(res, 403, { ok: false, error: 'origen no permitido' });
+  // Una petición con `Origin` viene de una página web. Solo se acepta el de la
+  // nuestra —el mando móvil, servido desde aquí mismo—; cualquier otro es una
+  // página de otro sitio hablando con tu equipo.
+  const origen = req.headers.origin;
+  if (origen && origen !== `http://${req.headers.host}`) {
+    return responder(res, 403, { ok: false, error: 'origen no permitido' });
+  }
+
+  // El mando móvil. Se sirve sin token: es solo la carcasa, y lo primero que
+  // hace es pedir el código de emparejamiento.
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    const html = paginaMando();
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Length': Buffer.byteLength(html),
+      'Cache-Control': 'no-store',
+    });
+    return void res.end(html);
+  }
 
   // `ping` no pide token: es como se comprueba desde la interfaz que el
   // servidor esta vivo, y no dice nada que no sea publico.
   if (url.pathname === '/api/ping') return responder(res, 200, { ok: true, app: 'VirtualDeck' });
+
+  // Emparejar tampoco: es justo lo que hace el teléfono cuando aún no tiene
+  // token. `canjear` gasta un intento aunque el código no exista.
+  if (url.pathname === '/api/pair' && req.method === 'POST') {
+    return void leerCuerpo(req).then((cuerpo) => {
+      let codigo = '';
+      try { codigo = String(JSON.parse(cuerpo).code ?? ''); } catch { /* cuerpo ilegible */ }
+      const token = canjear(codigo.trim());
+      responder(res, token ? 200 : 401, token ? { ok: true, token } : { ok: false, error: 'codigo invalido' });
+    });
+  }
 
   const token = req.headers['x-vd-token'];
   if (!tokenValido(Array.isArray(token) ? token[0] : token)) {
@@ -171,6 +249,8 @@ export function aplicar(nuevos: AjustesRemoto, win: BrowserWindow | null): { ok:
 }
 
 export function parar(): void {
+  // Un codigo de emparejamiento no debe sobrevivir a apagar el servidor.
+  pareja = null;
   if (!servidor) return;
   try { servidor.close(); } catch { /* ya estaba cerrado */ }
   servidor = null;

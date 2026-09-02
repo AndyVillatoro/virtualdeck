@@ -97,6 +97,25 @@ not grant it.
 curl -H "X-VD-Token: YOUR_TOKEN" http://127.0.0.1:8787/api/press/0-3
 ```
 
+### The phone remote
+
+The server also serves a page meant for a phone. With *ALLOW LOCAL NETWORK*
+turned on:
+
+1. In VirtualDeck, ⚙ → *LOCAL SERVER* → **PAIR PHONE**. A six-digit code and
+   the address to type appear.
+2. On the phone, open that address (`http://<ip>:8787`) and type the code.
+3. The button grid shows up. Tapping one lights its border if the deck ran it,
+   or turns it red if something failed.
+
+Pairing **never puts the token in a link**: the phone types a short address and
+the code crosses once. A link carrying the token would have stayed in the
+browser history and in any screenshot. The code lasts five minutes, allows five
+attempts, and is spent once it works.
+
+To unpair a phone: **NEW TOKEN** in settings. Any paired phone will ask for a
+code again next time.
+
 ### Opening it to the local network
 
 With *ALLOW LOCAL NETWORK* off, the server only answers this computer. On, it

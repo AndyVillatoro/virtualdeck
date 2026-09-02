@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   remote: {
     status: (): Promise<RemoteStatus> => ipcRenderer.invoke('remote:status'),
     newToken: (): Promise<string> => ipcRenderer.invoke('remote:newToken'),
+    pairCode: (): Promise<string> => ipcRenderer.invoke('remote:pairCode'),
   },
   audio: {
     list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),

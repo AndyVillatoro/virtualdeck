@@ -99,6 +99,25 @@ VirtualDeck no lo da.
 curl -H "X-VD-Token: SU_TOKEN" http://127.0.0.1:8787/api/press/0-3
 ```
 
+### El mando móvil
+
+El servidor sirve también una página pensada para el teléfono. Con
+*PERMITIR LA RED LOCAL* activado:
+
+1. En VirtualDeck, ⚙ → *SERVIDOR LOCAL* → **EMPAREJAR TELÉFONO**. Sale un
+   código de seis cifras y la dirección que hay que escribir.
+2. En el teléfono, abra esa dirección (`http://<ip>:8787`) y escriba el código.
+3. La rejilla de botones aparece. Al tocar uno, el borde se enciende si el deck
+   lo ejecutó y se pone rojo si algo falló.
+
+El emparejamiento **no manda el token en ningún enlace**: el teléfono escribe
+una dirección corta y el código cruza una vez. Un enlace con el token dentro
+habría quedado en el historial del navegador y en cualquier captura de pantalla.
+El código dura cinco minutos, admite cinco intentos y se gasta al acertar.
+
+Para desemparejar un teléfono: **NUEVO TOKEN** en los ajustes. Cualquier
+teléfono emparejado vuelve a pedir código la próxima vez.
+
 ### Abrirlo a la red local
 
 Con *PERMITIR LA RED LOCAL* desactivado, el servidor solo responde a este

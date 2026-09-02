@@ -27,6 +27,9 @@ export function RemoteSection({
 
   const [estado, setEstado] = useState<{ corriendo: boolean; port: number; lan: string[] } | null>(null);
   const [verToken, setVerToken] = useState(false);
+  const [codigo, setCodigo] = useState<string | null>(null);
+  const [caduca, setCaduca] = useState(0);
+  const [ahora, setAhora] = useState(Date.now());
 
   // El estado real, no el que se pidió: si el puerto está ocupado el servidor
   // no arranca, y sin esto los ajustes seguirían diciendo «activado».
@@ -38,6 +41,17 @@ export function RemoteSection({
     const id = window.setInterval(refrescar, 3000);
     return () => window.clearInterval(id);
   }, [refrescar]);
+
+  // El código caduca a los cinco minutos y el aviso lo dice: dejarlo en
+  // pantalla después sería enseñar un código que ya no sirve.
+  useEffect(() => {
+    if (!codigo) return;
+    const id = window.setInterval(() => {
+      setAhora(Date.now());
+      if (Date.now() > caduca) setCodigo(null);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [codigo, caduca]);
 
   /** Activar por primera vez acuña el token: sin él el servidor no arranca. */
   const alternar = async () => {
@@ -81,6 +95,33 @@ export function RemoteSection({
             />
           </div>
         </div>
+
+        {/* 1.1 — el mando movil. El telefono escribe la direccion (corta) y
+            teclea este codigo; el token cruza una vez y se queda alli. */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <button
+            onClick={async () => {
+              const c = await api?.remote?.pairCode();
+              if (c) { setCodigo(c); setCaduca(Date.now() + 5 * 60 * 1000); }
+            }}
+            disabled={!estado?.corriendo}
+            style={miniBtn(accent)}
+          >{t('set.remotePair')}</button>
+          {codigo && (
+            <span style={{ fontFamily: VD.mono, fontSize: 16, letterSpacing: 4, color: accent, userSelect: 'text' }}>
+              {codigo}
+            </span>
+          )}
+        </div>
+        {codigo && (
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6, userSelect: 'text' }}>
+            {t('set.remotePairHint', {
+              url: `http://${estado?.lan?.[0] ?? '127.0.0.1'}:${config.port}`,
+              min: Math.max(0, Math.ceil((caduca - ahora) / 60000)),
+            })}
+            {!config.allowLan && <><br />{t('set.remotePairNeedsLan')}</>}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button onClick={regenerar} style={miniBtn(accent)}>{t('set.remoteNewToken')}</button>
