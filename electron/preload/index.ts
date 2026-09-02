@@ -1,7 +1,22 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { TasasDivisa } from '../../src/types';
+import type {
+  ElectronAPI, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory,
+} from '../../src/types';
 
-contextBridge.exposeInMainWorld('electronAPI', {
+/**
+ * El puente, comprobado contra el tipo que ve la pantalla.
+ *
+ * Antes esto era un objeto suelto: `ElectronAPI` describia lo que la interfaz
+ * cree que existe y el preload construia otra cosa, **sin que nada cruzara las
+ * dos**. `check-ipc.mjs` compara los nombres de canal, no las firmas, asi que
+ * un tipo de retorno mal puesto pasaba entero — le paso a `log.export`, que se
+ * cambio de `boolean` a tres estados en un sitio y no en el otro, y solo se
+ * vio en pantalla.
+ *
+ * Con `satisfies` el compilador exige que cada metodo exista, devuelva lo que
+ * dice y que no sobre ninguno.
+ */
+const api = {
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
@@ -25,12 +40,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener('bar:moved', h);
     },
     /** Aviso de que la configuracion cambio. Devuelve la funcion para desuscribirse. */
-    /** Estado del sistema (audio por defecto, procesos, RGB), cada 5 s. */
-    onEstadoSistema: (cb: (data: unknown) => void) => {
-      const h = (_e: unknown, data: unknown) => cb(data);
-      ipcRenderer.on('estado:changed', h);
-      return () => ipcRenderer.removeListener('estado:changed', h);
-    },
     onConfigChanged: (cb: (data: unknown) => void) => {
       const h = (_e: unknown, data: unknown) => cb(data);
       ipcRenderer.on('config:changed', h);
@@ -61,7 +70,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setDefault: (deviceId: string): Promise<boolean> => ipcRenderer.invoke('audio:setDefault', deviceId),
   },
   media: {
-    nowPlaying: (): Promise<NowPlayingResult | null> => ipcRenderer.invoke('media:nowPlaying'),
+    nowPlaying: (): Promise<NowPlaying | null> => ipcRenderer.invoke('media:nowPlaying'),
     control: (cmd: 'play-pause' | 'next' | 'prev' | 'stop'): Promise<boolean> => ipcRenderer.invoke('media:control', cmd),
     shuffle: (): Promise<boolean> => ipcRenderer.invoke('media:shuffle'),
     repeat: (): Promise<boolean> => ipcRenderer.invoke('media:repeat'),
@@ -107,19 +116,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getZoom: (): Promise<number> => ipcRenderer.invoke('app:getZoom'),
     getVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
     tabletSettings: (): Promise<boolean> => ipcRenderer.invoke('app:tabletSettings'),
-    platformInfo: (): Promise<unknown> => ipcRenderer.invoke('app:platformInfo'),
+    platformInfo: (): Promise<PlatformInfo> => ipcRenderer.invoke('app:platformInfo'),
   },
   log: {
     write: (entry: object): Promise<void> => ipcRenderer.invoke('log:write', entry),
     readRecent: (maxBytes?: number): Promise<string> => ipcRenderer.invoke('log:readRecent', maxBytes),
     open: (): Promise<void> => ipcRenderer.invoke('log:open'),
-    export: (): Promise<boolean> => ipcRenderer.invoke('log:export'),
+    // Tres desenlaces, no un `boolean`: cancelar y «no hay registro» no son lo
+    // mismo, y el aviso de la pantalla depende de distinguirlos.
+    export: (): Promise<'ok' | 'cancelado' | 'sin-registro'> => ipcRenderer.invoke('log:export'),
   },
   update: {
-    check: (): Promise<unknown> => ipcRenderer.invoke('update:check'),
+    check: (): Promise<EstadoActualizacion> => ipcRenderer.invoke('update:check'),
     quitAndInstall: (): Promise<void> => ipcRenderer.invoke('update:quitAndInstall'),
-    onStatus: (handler: (s: unknown) => void): (() => void) => {
-      const listener = (_e: unknown, s: unknown) => handler(s);
+    onStatus: (handler: (s: AvisoActualizacion) => void): (() => void) => {
+      const listener = (_e: unknown, s: AvisoActualizacion) => handler(s);
       ipcRenderer.on('update:status', listener);
       return () => ipcRenderer.removeListener('update:status', listener);
     },
@@ -155,10 +166,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pickFile: () => ipcRenderer.invoke('rgb:pickFile'),
   },
   sensors: {
-    list: (force?: boolean): Promise<unknown[]> => ipcRenderer.invoke('sensors:list', force),
-    get: (id: string): Promise<unknown | null> => ipcRenderer.invoke('sensors:get', id),
-    status: (): Promise<unknown> => ipcRenderer.invoke('sensors:status'),
-    configure: (opts: { host?: string; port?: number; enabled?: boolean; categories?: string[] }): Promise<unknown> =>
+    list: (force?: boolean): Promise<Sensor[]> => ipcRenderer.invoke('sensors:list', force),
+    get: (id: string): Promise<Sensor> => ipcRenderer.invoke('sensors:get', id),
+    status: (): Promise<SensorsStatus> => ipcRenderer.invoke('sensors:status'),
+    configure: (opts: { host?: string; port?: number; enabled?: boolean; categories?: SensorCategory[] }): Promise<SensorsStatus> =>
       ipcRenderer.invoke('sensors:configure', opts),
     probe: (): Promise<{ ok: boolean; count: number; error?: string }> => ipcRenderer.invoke('sensors:probe'),
     spawnLHM: (customPath?: string, elevated?: boolean): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('sensors:spawnLHM', customPath, elevated),
@@ -185,15 +196,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.on('nav:page', listener);
       return () => ipcRenderer.removeListener('nav:page', listener);
     },
+    /**
+     * Estado del sistema (salida de audio, procesos, RGB), cada 5 s.
+     *
+     * Estaba colgado de `bar`, no de `events`, que es donde lo busca
+     * `estadoSistema.ts`. Como la llamada va con `?.`, no fallaba: **no se
+     * suscribia nadie**, y el estado se quedaba congelado en el primer
+     * `snapshot()`.
+     */
+    onEstadoSistema: (handler: (data: unknown) => void): (() => void) => {
+      const listener = (_e: unknown, data: unknown) => handler(data);
+      ipcRenderer.on('estado:changed', listener);
+      return () => ipcRenderer.removeListener('estado:changed', listener);
+    },
     onRGBDevicesChanged: (handler: () => void): (() => void) => {
       const listener = () => handler();
       ipcRenderer.on('rgb:devicesChanged', listener);
       return () => ipcRenderer.removeListener('rgb:devicesChanged', listener);
     },
   },
-});
+} satisfies ElectronAPI;
 
-interface NowPlayingResult { title: string; artist: string; status: string; source: string; thumbnail?: string; }
+contextBridge.exposeInMainWorld('electronAPI', api);
+
 interface AudioDevice { id: string; name: string; isDefault: boolean; }
 interface BackupInfo { filename: string; timestamp: number; sizeBytes: number; }
 interface WeatherResult { temp: number; code: number; city: string; country: string; }
@@ -201,6 +226,8 @@ interface GalleryEntry { id: string; label: string; author?: string; description
 interface RiskSummary { botones: number; scripts: string[]; programas: string[]; atajosGlobales: string[] }
 type GalleryManifest = { ok: true; profiles: GalleryEntry[] } | { ok: false; error: string };
 type GalleryProfile = { ok: true; perfil: unknown; riesgo: RiskSummary } | { ok: false; error: string };
+type EstadoActualizacion = { status: 'disabled' | 'error' | 'checking' | 'available' | 'not-available'; version?: string; error?: string };
+type AvisoActualizacion = { status: 'error' | 'available' | 'downloaded'; version?: string; error?: string };
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
 interface BarGeometry { huecos: number; lado: 'left' | 'right'; tile: number; y: number | null; }
