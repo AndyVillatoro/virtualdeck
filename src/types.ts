@@ -336,6 +336,24 @@ export interface FloatingBarSettings {
   tileSize?: number;
 }
 
+/** Una entrada del `manifest.json` de la galeria de perfiles. */
+export interface EntradaGaleria {
+  id: string;
+  label: string;
+  author?: string;
+  description?: string;
+  url: string;
+  tags?: string[];
+}
+
+/** Lo que un perfil descargado va a ejecutar, para poder enseñarlo antes. */
+export interface ResumenRiesgo {
+  botones: number;
+  scripts: string[];
+  programas: string[];
+  atajosGlobales: string[];
+}
+
 export interface RemoteSettings {
   enabled: boolean;
   port: number;
@@ -578,6 +596,13 @@ export interface ElectronAPI {
     newToken: () => Promise<string>;
     /** Codigo de seis cifras para emparejar el telefono. Caduca a los 5 min. */
     pairCode: () => Promise<string>;
+  };
+  gallery: {
+    // Un solo objeto y no una union discriminada: el tsconfig va con
+    // `strict: false` y ahi TypeScript no estrecha `{ok:true}|{ok:false}`,
+    // asi que `r.error` daba error de compilacion en la pantalla.
+    manifest: (url: string) => Promise<{ ok: boolean; profiles?: EntradaGaleria[]; error?: string }>;
+    profile: (url: string) => Promise<{ ok: boolean; perfil?: unknown; riesgo?: ResumenRiesgo; error?: string }>;
   };
   audio: {
     list: () => Promise<AudioDevice[]>;

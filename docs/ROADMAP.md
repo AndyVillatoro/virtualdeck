@@ -101,7 +101,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 |---|----------|----------|--------|
 | 22 | 1.3 Acciones encadenadas | El motor ya lo hacia; faltaban los mandos. Espera, repetir y «solo si OK» por paso en el editor. | ✅ 2026-08-31 |
 | 23 | 1.4 Disparadores externos | Hotkey global, deep-link `virtualdeck://` y servidor HTTP local con token (apagado de fabrica). | ✅ 2026-08-31 |
-| 24 | 6.1 Galería de perfiles | Repo público de perfiles ([spec](galeria.md)). | ⬜ |
+| 24 | 6.1 Galería de perfiles | Importar desde URL con aviso de lo que el perfil ejecuta. Falta **crear el repo público**, que es decisión del dueño ([spec](galeria.md)). | 🚧 |
 | 25 | 1.1 Mando móvil | Página servida por el servidor local, con emparejamiento por código de seis cifras. | ✅ 2026-08-31 |
 | 26 | 5.3/5.4 Pulido sensorial | Ya estaba hecho: pulso radial de 320 ms (`vd-flash-pulse`) + 4 perfiles de sonido. Verificado en pantalla. | ✅ 2026-08-31 |
 | 27 | Botón ± para brillo y volumen | Acción `adjust`: sube o baja desde donde esté. Rueda del ratón sobre la celda, o dos botones. Cuatro presets sembrados. | ✅ 2026-08-23 |

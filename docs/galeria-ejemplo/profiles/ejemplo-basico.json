@@ -1,0 +1,10 @@
+{
+  "pages": [{ "id": "p1", "name": "Ejemplo", "gridSize": 4 }],
+  "buttons": [
+    { "id": "0-0", "page": 0, "label": "Reloj", "icon": "", "widget": "clock", "action": { "type": "none" } },
+    { "id": "0-1", "page": 0, "label": "Clima", "icon": "", "widget": "weather", "action": { "type": "none" } },
+    { "id": "0-2", "page": 0, "label": "Play", "icon": "", "action": { "type": "media-play" } },
+    { "id": "0-3", "page": 0, "label": "Silencio", "icon": "", "action": { "type": "volume-mute" } }
+  ],
+  "accent": "#4a8ef0"
+}

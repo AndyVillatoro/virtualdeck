@@ -37,6 +37,7 @@ interface TitleBarProps {
   sensorsConfig?: SensorsSettings;
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
+  onImportarDeGaleria?: (p: Profile) => void;
   sensorsStatus?: SensorsStatus | null;
   onSensorsConfigChange?: (next: SensorsSettings) => void;
   // 4.x — UI scale + theme
@@ -82,6 +83,7 @@ export function TitleBar({
   sensorsConfig,
   remoteConfig,
   onRemoteConfigChange,
+  onImportarDeGaleria,
   sensorsStatus,
   onSensorsConfigChange,
   uiScale = 1,
@@ -223,6 +225,7 @@ export function TitleBar({
           sensorsConfig={sensorsConfig}
           remoteConfig={remoteConfig}
           onRemoteConfigChange={onRemoteConfigChange}
+          onImportarDeGaleria={onImportarDeGaleria}
           onSensorsConfigChange={onSensorsConfigChange}
           sensorsStatus={sensorsStatus}
           profiles={profiles}

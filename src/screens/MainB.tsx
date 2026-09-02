@@ -264,6 +264,7 @@ export function MainB({
           onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
           remoteConfig={config.remote ?? { enabled: false, port: 8787, token: '', allowLan: false }}
           onRemoteConfigChange={(remote) => onConfigChange({ ...config, remote })}
+          onImportarDeGaleria={(p) => onConfigChange({ ...config, profiles: [...(config.profiles ?? []), p] })}
           onConfigExport={onConfigExport}
           onConfigImport={onConfigImport}
           onAccentChange={(color) => onConfigChange({ ...config, accent: color })}

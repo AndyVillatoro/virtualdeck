@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "profiles": [
+    {
+      "id": "ejemplo-basico",
+      "label": "Ejemplo basico",
+      "author": "@AndyVillatoro",
+      "description": "Cuatro botones para ver como se ve un perfil de la galeria. No ejecuta scripts.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/profiles/ejemplo-basico.json",
+      "tags": ["ejemplo"]
+    }
+  ]
+}

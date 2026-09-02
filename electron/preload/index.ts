@@ -52,6 +52,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     newToken: (): Promise<string> => ipcRenderer.invoke('remote:newToken'),
     pairCode: (): Promise<string> => ipcRenderer.invoke('remote:pairCode'),
   },
+  gallery: {
+    manifest: (url: string): Promise<GalleryManifest> => ipcRenderer.invoke('gallery:manifest', url),
+    profile: (url: string): Promise<GalleryProfile> => ipcRenderer.invoke('gallery:profile', url),
+  },
   audio: {
     list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),
     setDefault: (deviceId: string): Promise<boolean> => ipcRenderer.invoke('audio:setDefault', deviceId),
@@ -193,6 +197,10 @@ interface NowPlayingResult { title: string; artist: string; status: string; sour
 interface AudioDevice { id: string; name: string; isDefault: boolean; }
 interface BackupInfo { filename: string; timestamp: number; sizeBytes: number; }
 interface WeatherResult { temp: number; code: number; city: string; country: string; }
+interface GalleryEntry { id: string; label: string; author?: string; description?: string; url: string; tags?: string[] }
+interface RiskSummary { botones: number; scripts: string[]; programas: string[]; atajosGlobales: string[] }
+type GalleryManifest = { ok: true; profiles: GalleryEntry[] } | { ok: false; error: string };
+type GalleryProfile = { ok: true; perfil: unknown; riesgo: RiskSummary } | { ok: false; error: string };
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
 interface BarGeometry { huecos: number; lado: 'left' | 'right'; tile: number; y: number | null; }

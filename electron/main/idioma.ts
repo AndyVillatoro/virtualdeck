@@ -24,7 +24,8 @@ type Clave =
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
-  | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError';
+  | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
+  | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject';
 
 const ES: Record<Clave, string> = {
   'tray.show': 'Mostrar VirtualDeck',
@@ -52,6 +53,10 @@ const ES: Record<Clave, string> = {
   'currency.badCode': 'Moneda no válida:',
   'audio.unnamedDevice': 'Dispositivo sin nombre',
   'macro.unknownError': 'Error desconocido',
+  'gal.badUrl': 'Direccion no permitida (debe ser https y publica)',
+  'gal.tooBig': 'El archivo es demasiado grande',
+  'gal.badManifest': 'El manifiesto no trae una lista de perfiles',
+  'gal.notObject': 'El perfil descargado no es un objeto',
 };
 
 const EN: Record<Clave, string> = {
@@ -80,6 +85,10 @@ const EN: Record<Clave, string> = {
   'currency.badCode': 'Invalid currency:',
   'audio.unnamedDevice': 'Unnamed device',
   'macro.unknownError': 'Unknown error',
+  'gal.badUrl': 'Address not allowed (must be https and public)',
+  'gal.tooBig': 'The file is too large',
+  'gal.badManifest': 'The manifest has no profile list',
+  'gal.notObject': 'The downloaded profile is not an object',
 };
 
 let actual: Record<Clave, string> = ES;

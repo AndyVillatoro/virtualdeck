@@ -8,6 +8,7 @@ import { obtenerTasas } from '../divisas';
 import { avisarCambioDeConfig } from '../floatingBar';
 import { tm, fijarIdioma } from '../idioma';
 import * as remoto from '../servidorLocal';
+import * as galeria from '../galeria';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
@@ -39,6 +40,11 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('remote:status', () => remoto.estado());
   ipcMain.handle('remote:newToken', () => remoto.nuevoToken());
   ipcMain.handle('remote:pairCode', () => remoto.nuevoCodigo());
+
+  // 6.1 — galeria de perfiles. La descarga va aqui porque la CSP del renderer
+  // solo deja conectar con `self` y los dos servicios del clima.
+  ipcMain.handle('gallery:manifest', (_e: any, url: string) => galeria.manifiesto(url));
+  ipcMain.handle('gallery:profile', (_e: any, url: string) => galeria.perfil(url));
 
   ipcMain.handle('config:listBackups', () => listBackups());
   ipcMain.handle('config:restoreBackup', (_e: any, filename: string) => restoreBackup(filename));
