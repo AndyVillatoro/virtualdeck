@@ -38,6 +38,8 @@ interface TitleBarProps {
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
   onImportarDeGaleria?: (p: Profile) => void;
+  musicPanel?: { enabled: boolean; side: 'left' | 'right' };
+  onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
   onSensorsConfigChange?: (next: SensorsSettings) => void;
   // 4.x — UI scale + theme
@@ -84,6 +86,8 @@ export function TitleBar({
   remoteConfig,
   onRemoteConfigChange,
   onImportarDeGaleria,
+  musicPanel,
+  onMusicPanelChange,
   sensorsStatus,
   onSensorsConfigChange,
   uiScale = 1,
@@ -226,6 +230,8 @@ export function TitleBar({
           remoteConfig={remoteConfig}
           onRemoteConfigChange={onRemoteConfigChange}
           onImportarDeGaleria={onImportarDeGaleria}
+          musicPanel={musicPanel}
+          onMusicPanelChange={onMusicPanelChange}
           onSensorsConfigChange={onSensorsConfigChange}
           sensorsStatus={sensorsStatus}
           profiles={profiles}

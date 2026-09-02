@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { BarraLateral } from './main/BarraLateral';
+import { PanelMusica } from './main/PanelMusica';
 import { FolderOverlay, PageCtxItem } from './main/OverlayCarpeta';
 import { PestanasPagina } from './main/PestanasPagina';
 import { interpolate } from '../utils/actions';
@@ -102,6 +103,9 @@ export function MainB({
   const setNowPlayingActive = useNowPlayingActivation();
   const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [showSidebar, setShowSidebar] = useState(true);
+  // El panel de musica. Viene apagado: quien no lo quiera no pierde 300 px de
+  // rejilla, y quien lo encienda lo ve aparecer solo cuando hay algo sonando.
+  const panelMusica = config.musicPanel ?? { enabled: false, side: 'right' as const };
   const [renamingPageId, setRenamingPageId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [pageContextMenu, setPageContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -134,7 +138,12 @@ export function MainB({
   useEffect(() => { setSelectedIds(new Set()); }, [activePage]);
 
   // Pausar el polling de nowPlaying cuando la sidebar está oculta (no hay consumidor visible).
-  useEffect(() => { setNowPlayingActive(showSidebar); }, [showSidebar, setNowPlayingActive]);
+  // El sondeo de reproduccion cuesta un PowerShell por tic, asi que solo corre
+  // si hay algo que lo enseñe. Antes miraba **solo** la barra lateral; con la
+  // barra escondida y el panel de musica encendido, el panel se quedaba sin
+  // datos y no aparecia nunca.
+  const necesitaMedia = showSidebar || panelMusica.enabled;
+  useEffect(() => { setNowPlayingActive(necesitaMedia); }, [necesitaMedia, setNowPlayingActive]);
 
   useEffect(() => {
     const t = setInterval(() => setClock(new Date()), 1000);
@@ -265,6 +274,8 @@ export function MainB({
           remoteConfig={config.remote ?? { enabled: false, port: 8787, token: '', allowLan: false }}
           onRemoteConfigChange={(remote) => onConfigChange({ ...config, remote })}
           onImportarDeGaleria={(p) => onConfigChange({ ...config, profiles: [...(config.profiles ?? []), p] })}
+          musicPanel={panelMusica}
+          onMusicPanelChange={(musicPanel) => onConfigChange({ ...config, musicPanel })}
           onConfigExport={onConfigExport}
           onConfigImport={onConfigImport}
           onAccentChange={(color) => onConfigChange({ ...config, accent: color })}
@@ -389,6 +400,20 @@ export function MainB({
         })()}
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
+          {/* El panel de musica, si toca por la izquierda. Va fuera de la
+              rejilla y no encima: tapar botones para enseñar la cancion seria
+              cambiar una cosa por otra. */}
+          {panelMusica.enabled && panelMusica.side === 'left' && (
+            <PanelMusica
+              nowPlaying={nowPlaying}
+              isPlaying={isPlaying}
+              sourceName={sourceName}
+              accent={config.accent}
+              api={api}
+              lado="left"
+              onCerrar={() => onConfigChange({ ...config, musicPanel: { ...panelMusica, enabled: false } })}
+            />
+          )}
           {/* Hints contextuales (uno a la vez): deck vacío → "creá tu primer
               botón"; deck con botones → tip de búsqueda Ctrl+K. Descartables. */}
           {onDismissHint && !hasConfiguredButtons && (
@@ -565,6 +590,18 @@ export function MainB({
               isPlaying={isPlaying}
               sourceName={sourceName}
               showToast={showToast}
+            />
+          )}
+
+          {panelMusica.enabled && panelMusica.side === 'right' && (
+            <PanelMusica
+              nowPlaying={nowPlaying}
+              isPlaying={isPlaying}
+              sourceName={sourceName}
+              accent={config.accent}
+              api={api}
+              lado="right"
+              onCerrar={() => onConfigChange({ ...config, musicPanel: { ...panelMusica, enabled: false } })}
             />
           )}
 

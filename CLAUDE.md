@@ -118,6 +118,21 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que
   resuelve `runActionSequence`: script, folder, branch, countdown). **No hay `default: return OK`**:
   un tipo sin manejador devuelve error, y `scripts/check-acciones.mjs` lo detecta antes de ejecutar. El mismo script comprueba que **cada tipo tenga formulario** en el editor: `media-shuffle`, `media-repeat` y `rgb-preset` estaban en el selector sin entrada en `FORMULARIOS`, y el paso 2 salía en blanco aunque el botón funcionase al pulsarlo.
+- `src/screens/main/PanelMusica.tsx` — el panel de música (300 px) al lado de la
+  rejilla, con carátula grande y botones de 64/78 px. Sale **solo cuando hay algo
+  sonando** y viene apagado. La franja de la barra lateral se queda: cabe en cualquier
+  sitio, pero sus botones miden ~25 px de alto y con el dedo se fallan.
+- **La carátula solo existe con el núcleo nativo.** `crates/vd-core` la lee bien; el
+  camino de respaldo en PowerShell **no puede**: `OpenReadAsync()` devuelve un
+  `IAsyncOperationWithProgress` que PowerShell 5.1 **no proyecta** —llega como
+  `System.__ComObject` y `AsTask` lo rechaza—. Medido con seis estrategias distintas
+  (reflexión con y sin `$progressType`, casteo al genérico cerrado,
+  `GetTypedObjectForIUnknown`, `GetResults()` a pelo, y C# con `Add-Type`, que no
+  puede referenciar un `.winmd`): todas fallan. La de un solo genérico completa la
+  tarea pero devuelve otro `__ComObject` sin `.Size`. **No es un fallo del código de
+  la aplicación**; si no hay núcleo, no hay carátula. Y en esta máquina el núcleo no
+  carga porque **Smart App Control** (`VerifiedAndReputablePolicyState = 1`) bloquea
+  el `.node` sin firmar: otra consecuencia de no tener certificado, y esta silenciosa.
 - `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
 - `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
 - `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC

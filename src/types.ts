@@ -284,6 +284,13 @@ export interface DeckConfig {
   /** 1.4 — servidor local para mandar sobre el deck por HTTP. Viene apagado. */
   remote?: RemoteSettings;
   /**
+   * El panel de musica de la pantalla principal.
+   *
+   * Solo se dibuja cuando hay algo sonando: un panel de 300 px vacio se come
+   * un tercio de la rejilla a cambio de nada.
+   */
+  musicPanel?: { enabled: boolean; side: 'left' | 'right' };
+  /**
    * 5.x — Modo de las celdas en la grilla.
    * - 'square' (default): cuadradas estrictas, deja margen si el área no
    *   tiene la misma proporción que la grilla.

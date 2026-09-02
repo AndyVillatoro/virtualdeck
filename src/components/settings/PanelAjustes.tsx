@@ -47,6 +47,8 @@ interface Props {
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
   onImportarDeGaleria?: (p: Profile) => void;
+  musicPanel?: { enabled: boolean; side: 'left' | 'right' };
+  onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
   profiles: Profile[];
   onSaveProfile?: (name: string) => void;
@@ -60,7 +62,7 @@ interface Props {
   onCerrar: () => void;
 }
 
-export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, remoteConfig, onRemoteConfigChange, onImportarDeGaleria, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
+export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, remoteConfig, onRemoteConfigChange, onImportarDeGaleria, musicPanel, onMusicPanelChange, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
   const VD = useTheme();
   const t = useT();
 
@@ -264,6 +266,42 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
       <>
         <div style={{ height: 1, background: VD.border }} />
         <RemoteSection accent={effectiveAccent} config={remoteConfig} onChange={onRemoteConfigChange} />
+      </>
+    )}
+
+    {onMusicPanelChange && musicPanel && (
+      <>
+        <div style={{ height: 1, background: VD.border }} />
+        <div>
+          <SettingLabel>{t('set.musicPanel')}</SettingLabel>
+          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <ToggleRow
+              label={t('set.enabled')}
+              value={musicPanel.enabled}
+              accent={effectiveAccent}
+              onClick={() => onMusicPanelChange({ ...musicPanel, enabled: !musicPanel.enabled })}
+            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['left', 'right'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onMusicPanelChange({ ...musicPanel, side: s })}
+                  style={{
+                    flex: 1, padding: '5px 8px',
+                    background: musicPanel.side === s ? VD.accentBg : 'transparent',
+                    border: `1px solid ${musicPanel.side === s ? effectiveAccent : VD.border}`,
+                    color: musicPanel.side === s ? effectiveAccent : VD.textMuted,
+                    fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+                    cursor: 'pointer', borderRadius: VD.radius.sm,
+                  }}
+                >{t(s === 'left' ? 'ui.left' : 'ui.right')}</button>
+              ))}
+            </div>
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
+              {t('set.musicPanelHint')}
+            </div>
+          </div>
+        </div>
       </>
     )}
 
