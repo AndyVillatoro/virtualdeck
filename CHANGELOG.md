@@ -4,6 +4,100 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.9.0] — 2026-09-01
+
+La versión en la que el deck deja de estar encerrado en su ventana: se le puede
+mandar desde un acceso directo, desde cualquier cosa que hable HTTP, y desde el
+teléfono. Y otra vez el mismo patrón en lo demás — de los cinco apartados
+pendientes del roadmap, **dos ya estaban hechos o a medias sin que nadie lo
+supiera**: uno terminado y sin marcar, y otro con el motor entero escrito y sin
+un solo control en el editor.
+
+### Added
+
+- **Enlaces `virtualdeck://`.** Cualquier cosa que sepa abrir una URL puede
+  pulsar un botón: un acceso directo del escritorio, una tarea programada, un
+  `.bat`, otra aplicación. `press/<id>`, `press?label=…`, `page/<n>` y `show`.
+  La búsqueda por etiqueta ignora mayúsculas y acentos, porque el enlace lo
+  escribe una persona y perder la orden por una tilde no ayuda a nadie.
+- **Servidor HTTP local**, apagado de fábrica. Para lo que ya habla HTTP —Home
+  Assistant, un script en otro equipo—. El token va en la cabecera
+  `X-VD-Token`, **nunca en la dirección**: cualquier página web puede provocar
+  una petición a `127.0.0.1` con solo poner una imagen, y con el token en la URL
+  bastaría con acertarlo. También se rechaza cualquier `Origin` ajeno y se
+  comprueba la cabecera `Host`. Lo que no hay es cifrado, y la interfaz lo dice
+  con esas palabras.
+- **El deck en el teléfono.** Una página servida por ese mismo servidor.
+  El emparejamiento va con un código de seis cifras que caduca a los cinco
+  minutos, admite cinco intentos y se gasta al acertar: un enlace o un QR con el
+  token dentro habría quedado en el historial del navegador del teléfono y en
+  cualquier captura que alguien mande para pedir ayuda. Para desemparejar,
+  «nuevo token».
+- **Espera, repetir y «solo si OK» por paso** en las acciones encadenadas.
+  El motor leía los tres desde hacía tiempo; lo que no había era ninguna forma
+  de ponerlos que no fuera editar el JSON a mano.
+- **Importar un perfil desde una URL**, con lo que ese perfil va a ejecutar
+  delante: cada programa que abre, cada script con su texto completo, y los
+  atajos globales que registrará. Un perfil no son datos, es código que se
+  ejecutará al pulsar un botón. Se importa como perfil, nunca como
+  configuración, así que el deck montado no se toca.
+
+### Fixed
+
+- **El título del paso 4 del tutorial se leía «SUS OTONES».** A la fuente de
+  puntos le faltaban `B`, `J`, `Q`, `Z` y `&`, y cuando no encuentra una letra
+  la dibuja como un hueco: la palabra se reescribe sola sin ningún aviso. En
+  inglés era peor — «BACKUP & HELP» salía «ACKUP  HELP».
+- **El título del paso 6 se cortaba a media palabra.** El texto se encogía hasta
+  el mínimo pero el hueco entre puntos se quedaba fijo, así que a partir de
+  cierto largo no cabía de ninguna manera. Ahora encogen los dos, y si aun así
+  no cabe se parte en varias líneas en vez de recortarse.
+- **Guardar un perfil RGB con un nombre que ya existía creaba un duplicado.**
+  Volver a guardar es cómo se actualiza un perfil, y dejaba dos filas idénticas
+  sin forma de distinguirlas. Es el mismo fallo que ya se había corregido en los
+  perfiles del deck y que aquí seguía intacto.
+- **«Exportar registro» no hacía nada en una instalación limpia**, y sin
+  decirlo: sin errores todavía no existe el archivo, y la interfaz ignoraba el
+  resultado.
+- **Seis textos en español con la aplicación en inglés**, entre ellos las 23
+  condiciones del widget de clima, que estaban escritas dentro del componente.
+  Con la interfaz en inglés el globo decía «Parcial. nub.».
+- **Ya no se pueden abrir dos VirtualDeck a la vez.** Dos copias son dos
+  escritores del mismo archivo de configuración, y la última en guardar se
+  llevaba por delante lo que hizo la otra.
+- El fondo del modo kiosko estaba fijo en el código y no era el elegido.
+- La barra flotante ignoraba la visibilidad condicional de los botones.
+- Un sub-botón de carpeta con un script no hacía nada, y en kiosko las carpetas
+  no abrían.
+- Un perfil RGB guardado perdía el brillo.
+- El recorte de la URL en el reporte de fallos se rompía con un título entre
+  paréntesis.
+
+### Changed
+
+- **LibreHardwareMonitor ya no viene dentro del instalador.** Escribe su
+  configuración junto a su propio `.exe`, cosa imposible en un paquete de la
+  Store, donde el directorio de instalación es de solo lectura: habría dejado
+  los sensores muertos sin manera de saberlo. Ahora lo instala el usuario, como
+  OpenRGB, y la interfaz explica que hay que activarle el servidor web. El
+  instalador baja de 87,6 a 80,2 MB.
+- Un botón para abrir «Configuración de la tableta» de Windows, que es donde se
+  dice **qué monitor responde al tacto**. Hace falta antes de poder pulsar nada,
+  así que va en los ajustes y no como acción de un botón.
+- Los 18 presets RGB se pueden aplicar desde el propio gestor.
+- El editor y el gestor RGB repartidos en piezas (roadmap #11 y #14): con eso
+  queda cerrado el bloque de deuda estructural.
+- El guardián de traducciones gana una sexta comprobación —que lo que se dibuja
+  con la fuente de puntos exista en la fuente— y se le tapan dos huecos de forma
+  por los que se colaban textos sin traducir. Los cuatro detectores nuevos se
+  probaron **volviendo a meter el fallo**.
+
+### Documentación
+
+- Página de descarga y política de privacidad, listas para publicar.
+- Guía de envío a la Microsoft Store, con las notas para el revisor en inglés.
+- Seis páginas del wiki que el menú prometía y no existían.
+
 ## [0.8.0] — 2026-08-24
 
 Otra tanda del mismo método, y esta vez tocó fondo: seis funciones anunciadas
