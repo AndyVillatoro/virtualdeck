@@ -4,6 +4,35 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.9.1] — 2026-09-01
+
+Un parche pequeño con una razón concreta: la versión 0.9.0 dejó dos textos que
+**habían dejado de ser verdad** cuando LibreHardwareMonitor salió del
+instalador, y uno de ellos daba una instrucción equivocada.
+
+Salieron abriendo la aplicación en inglés y recorriéndola pantalla por
+pantalla, con las seis comprobaciones automáticas en verde. Ninguno de los tres
+es del tipo que esas comprobaciones pueden ver.
+
+### Fixed
+
+- **«LHM viene incluido en VirtualDeck… abra VirtualDeck como administrador».**
+  Ya no viene incluido, y el que necesita permisos de administrador es
+  LibreHardwareMonitor, no VirtualDeck. Seguir esa frase no arreglaba nada.
+  Ahora dice lo que hay: LHM se instala aparte, como OpenRGB, y es LHM el que
+  hay que abrir como administrador.
+- **«RUTA LHM (vacío = bundled)».** Vacío ya no significa «el que viene
+  incluido» sino «se busca en las rutas habituales».
+- **«OTROS»** entre CPU, GPU y RAM, con la aplicación en inglés. Las seis
+  categorías de sensores estaban escritas a mano y cuatro son siglas iguales en
+  los dos idiomas, así que la lista parecía inofensiva.
+- **Los rótulos del selector de iconos de marca**, en español con la
+  interfaz en inglés: los seis títulos de grupo, el «Todos» de la primera
+  pestaña y dos etiquetas que no son marcas sino herramientas de Windows.
+- **La ruta del proyecto iba relativa al registrar `virtualdeck://`.** Solo
+  afectaba a quien ejecuta desde el código fuente, pero ahí el enlace no hacía
+  nada.
+
 ## [0.9.0] — 2026-09-01
 
 La versión en la que el deck deja de estar encerrado en su ventana: se le puede
