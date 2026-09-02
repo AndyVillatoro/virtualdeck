@@ -5,13 +5,16 @@ import type { SensorsSettings, SensorsStatus, SensorCategory } from '../../types
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 import { LINKS } from '../../data/links';
 
-const SENSOR_CATEGORIES: Array<{ id: SensorCategory; label: string }> = [
+// Cuatro de las seis son siglas iguales en los dos idiomas; la sexta no, y
+// estaba escrita en espanol: con la aplicacion en ingles salia «OTROS» entre
+// CPU, GPU y RAM. Ahora la etiqueta sale del diccionario cuando hay clave.
+const SENSOR_CATEGORIES: Array<{ id: SensorCategory; label?: string; clave?: string }> = [
   { id: 'cpu', label: 'CPU' },
   { id: 'gpu', label: 'GPU' },
   { id: 'mainboard', label: 'MAINBOARD' },
   { id: 'memory', label: 'RAM' },
   { id: 'storage', label: 'SSD/HDD' },
-  { id: 'other', label: 'OTROS' },
+  { id: 'other', clave: 'sensors.catOther' },
 ];
 
 export function SensorsSection({
@@ -174,7 +177,7 @@ export function SensorsSection({
                     fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
                     cursor: 'pointer', borderRadius: VD.radius.sm,
                   }}
-                >{c.label}</button>
+                >{c.label ?? t(c.clave!)}</button>
               );
             })}
           </div>

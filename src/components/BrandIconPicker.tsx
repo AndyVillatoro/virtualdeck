@@ -12,10 +12,36 @@ interface BrandIconPickerProps {
   accent: string;
 }
 
+/**
+ * Los rotulos en espanol que enseña este selector.
+ *
+ * Se indexan por **posicion** y por **clave del icono**, no por el texto
+ * espanol: usar la cadena como llave habria dejado «Diseño y Produccion»
+ * escrito aqui dentro, que es exactamente lo que el guardian de i18n busca, y
+ * con razon — una lista de textos en espanol dentro de un componente es como
+ * empezo el problema del widget de clima.
+ *
+ * `brandIcons.ts` esta en los datos sembrados del guardian porque su contenido
+ * **se copia dentro del boton** del usuario. El titulo del grupo y estas dos
+ * etiquetas no se copian, solo se enseñan, y por eso quedaban fuera de todo.
+ */
+const CLAVES_GRUPO = [
+  'brand.g.all', 'brand.g.design', 'brand.g.streaming', 'brand.g.dev',
+  'brand.g.productivity', 'brand.g.media', 'brand.g.system',
+];
+/** Las dos etiquetas que no son marcas, sino herramientas de Windows. */
+const CLAVES_ICONO: Record<string, string> = {
+  settings: 'brand.i.settings',
+  controlpanel: 'brand.i.controlPanel',
+};
+
 const ALL_GROUPS = [{ title: 'Todos', items: [] as [string, string, string][] }, ...BRAND_ICON_GROUPS];
 
 export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIconPickerProps) {
   const t = useT();
+  /** El grupo va por posicion; el icono, por su clave. Lo demas es marca. */
+  const rotuloGrupo = (i: number, titulo: string) => (CLAVES_GRUPO[i] ? t(CLAVES_GRUPO[i]) : titulo);
+  const rotuloIcono = (clave: string, etiqueta: string) => (CLAVES_ICONO[clave] ? t(CLAVES_ICONO[clave]) : etiqueta);
   const VD = useTheme();
   const [search, setSearch] = useState('');
   const [groupTitle, setGroupTitle] = useState('Todos');
@@ -81,7 +107,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
             display: 'flex', gap: 2, padding: '8px 12px',
             borderBottom: `1px solid ${VD.border}`, flexWrap: 'wrap', flexShrink: 0,
           }}>
-            {ALL_GROUPS.map((g) => (
+            {ALL_GROUPS.map((g, i) => (
               <button
                 key={g.title}
                 onClick={() => setGroupTitle(g.title)}
@@ -94,7 +120,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
                   cursor: 'pointer', borderRadius: VD.radius.sm,
                 }}
               >
-                {g.title.toUpperCase()}
+                {rotuloGrupo(i, g.title).toUpperCase()}
               </button>
             ))}
           </div>
@@ -134,7 +160,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
                 onClick={() => { onSelect(icon.key); onClose(); }}
                 onMouseEnter={() => setHoveredKey(icon.key)}
                 onMouseLeave={() => setHoveredKey(null)}
-                title={icon.label}
+                title={rotuloIcono(icon.key, icon.label)}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   justifyContent: 'center', gap: 5, cursor: 'pointer',
@@ -156,7 +182,7 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
                   letterSpacing: 0.5, textAlign: 'center',
                   maxWidth: 66, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
-                  {icon.label}
+                  {rotuloIcono(icon.key, icon.label)}
                 </div>
                 {isSelected && (
                   <div style={{
