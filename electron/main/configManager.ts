@@ -22,15 +22,32 @@ const BACKUP_COOLDOWN_MS = 5 * 60 * 1000;
 const BACKUP_RETAIN = 5;
 let lastBackupAt = 0;
 
-function rotateBackup(configPath: string) {
+/**
+ * Copia de seguridad rotatoria, con enfriamiento.
+ *
+ * `forzar` salta ese enfriamiento, y hay un caso en que es obligatorio:
+ * **restaurar**. Restaurar sobrescribe lo que hay ahora, o sea que es
+ * justamente el momento en el que más falta hace una copia de lo que se va a
+ * tirar — y era el único momento en el que el enfriamiento podía impedirla.
+ * Con una copia hecha hacía menos de cinco minutos, restaurar borraba la
+ * configuración actual sin dejar rastro de ella.
+ */
+function rotateBackup(configPath: string, forzar = false) {
   const now = Date.now();
-  if (now - lastBackupAt < BACKUP_COOLDOWN_MS) return;
+  if (!forzar && now - lastBackupAt < BACKUP_COOLDOWN_MS) return;
   if (!existsSync(configPath)) return;
   try {
     const dir = getBackupsDir();
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     const ts = new Date().toISOString().replace(/[:.]/g, '-').replace(/T/, '_').slice(0, 19);
-    copyFileSync(configPath, join(dir, `deck-config-${ts}.json`));
+    // El nombre solo llega al segundo. Dos copias dentro del mismo segundo
+    // —que es lo que pasa al restaurar justo después de guardar— se pisarían
+    // la una a la otra, y la que se pierde es la que se acaba de hacer.
+    let destino = join(dir, `deck-config-${ts}.json`);
+    for (let n = 2; existsSync(destino) && n < 100; n++) {
+      destino = join(dir, `deck-config-${ts}-${n}.json`);
+    }
+    copyFileSync(configPath, destino);
     lastBackupAt = now;
     const files = readdirSync(dir)
       .filter((f) => f.startsWith('deck-config-') && f.endsWith('.json'))
@@ -41,12 +58,12 @@ function rotateBackup(configPath: string) {
   } catch {}
 }
 
-export function saveConfig(data: object) {
+export function saveConfig(data: object, forzarCopia = false) {
   try {
     const dir = app.getPath('userData');
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     const configPath = getConfigPath();
-    rotateBackup(configPath);
+    rotateBackup(configPath, forzarCopia);
     writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf-8');
   } catch {}
 }
@@ -72,7 +89,8 @@ export function restoreBackup(filename: string): object | null {
     const full = join(getBackupsDir(), filename);
     if (!existsSync(full)) return null;
     const data = JSON.parse(readFileSync(full, 'utf-8'));
-    saveConfig(data);
+    // `true`: copia obligatoria de lo que hay ahora, antes de pisarlo.
+    saveConfig(data, true);
     return data;
   } catch { return null; }
 }

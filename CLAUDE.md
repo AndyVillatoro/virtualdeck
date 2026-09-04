@@ -109,9 +109,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   principal reparte `config:changed` a **las dos**, y quien lo recibe **no vuelve a guardar**:
   solo adopta lo que la otra ventana puede cambiar (`state` y `floatingBar`). Sin esa regla
   es un bucle. Antes el aviso iba solo a la barra, así que lo que la barra guardaba se perdía
-  en cuanto el deck volvía a guardar. La barra usa `pulsarBoton` como las otras tres pantallas;
-  su estado de encendido **no** se comparte con el deck (son dos procesos de React), y eso
-  sigue pendiente.
+  en cuanto el deck volvía a guardar. La barra usa `pulsarBoton` como las otras tres pantallas,
+  y **su estado de encendido sí se comparte con el deck**, en los dos sentidos: medido
+  encendiendo desde cada una y comprobando el borde de acento en la otra y el
+  `toggledIds` del archivo. (Esta nota decía lo contrario y estaba desactualizada.)
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `adjust` (en `acciones/audio.ts`) sube o baja brillo/volumen **desde donde estén**, en vez
   de fijar un número. Para eso hay que leer primero: el núcleo nativo ya declaraba
