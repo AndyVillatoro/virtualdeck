@@ -186,6 +186,11 @@ export default function App() {
       // existentes, así que solo los nuevos ven el tutorial.
       if (s.onboardingCompleted !== true) setShowOnboarding(true);
       setLoaded(true);
+      // Si el archivo estaba ilegible, decirlo. Sin esto el deck sale vacío y
+      // parece que se ha borrado solo — que es justo lo que el usuario piensa.
+      api.config.damaged().then((ruta) => {
+        if (ruta) setImportError(t('config.damaged', { ruta }));
+      }).catch(() => {});
     });
   }, []);
 

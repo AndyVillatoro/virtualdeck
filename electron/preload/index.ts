@@ -48,6 +48,7 @@ const api = {
   },
   config: {
     load: (): Promise<object> => ipcRenderer.invoke('config:load'),
+    damaged: (): Promise<string | null> => ipcRenderer.invoke('config:damaged'),
     save: (data: object): Promise<boolean> => ipcRenderer.invoke('config:save', data),
     export: (): Promise<boolean> => ipcRenderer.invoke('config:export'),
     import: (): Promise<object | null> => ipcRenderer.invoke('config:import'),

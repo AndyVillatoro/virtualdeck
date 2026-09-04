@@ -10,12 +10,53 @@ function getBackupsDir() {
   return join(app.getPath('userData'), 'backups');
 }
 
+/**
+ * La ruta donde quedó guardado un `deck-config.json` ilegible, si lo hubo.
+ *
+ * `null` mientras no pase, que es lo normal.
+ */
+let rutaDanado: string | null = null;
+
+export function configDanado(): string | null {
+  return rutaDanado;
+}
+
+/**
+ * Carga la configuración; `{}` si no hay ninguna.
+ *
+ * **Un archivo ilegible no es lo mismo que un archivo ausente**, y aquí se
+ * devolvía `{}` para los dos. Con eso, un `deck-config.json` cortado a la mitad
+ * —un corte de luz mientras se escribe— salía como un deck vacío, sin decir
+ * nada, y **la primera vez que el usuario tocaba algo se guardaba encima**.
+ * Medido: cuatro botones desaparecidos, ninguna copia utilizable y ni un aviso.
+ *
+ * Ahora el archivo roto se aparta antes de que nada lo pise, con un nombre que
+ * la rotación de copias no borra, y quien pregunte puede saber que pasó.
+ */
 export function loadConfig(): object {
+  const p = getConfigPath();
+  if (!existsSync(p)) return {};
   try {
-    const p = getConfigPath();
-    if (existsSync(p)) return JSON.parse(readFileSync(p, 'utf-8'));
-  } catch {}
-  return {};
+    return JSON.parse(readFileSync(p, 'utf-8'));
+  } catch {
+    rutaDanado = apartarDanado(p);
+    return {};
+  }
+}
+
+/** Guarda el archivo ilegible aparte. Devuelve dónde quedó, o `null`. */
+function apartarDanado(configPath: string): string | null {
+  try {
+    const dir = getBackupsDir();
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').replace(/T/, '_').slice(0, 19);
+    // El prefijo es distinto **a propósito**: `listBackups` y la rotación solo
+    // miran los `deck-config-*`, así que esto no sale en la lista de copias
+    // (no serviría para restaurar: no se puede leer) ni lo borra la rotación.
+    const destino = join(dir, `config-danado-${ts}.json`);
+    copyFileSync(configPath, destino);
+    return destino;
+  } catch { return null; }
 }
 
 const BACKUP_COOLDOWN_MS = 5 * 60 * 1000;

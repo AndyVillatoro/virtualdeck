@@ -316,6 +316,7 @@ export const EN: Dict = {
   'set.enabled': 'ENABLED',
   'set.rgbSpawn': 'LAUNCH OPENRGB ON START',
   'set.rgbAuto': 'AUTO-CONNECT',
+  'config.damaged': 'The configuration could not be read: the file was damaged. A copy was saved to {ruta}. If you had buttons, restore them from Settings → Backups before carrying on.',
   'set.gallery': 'PROFILE GALLERY',
   'gal.load': 'LOAD',
   'gal.loading': 'LOADING...',

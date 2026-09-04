@@ -1,6 +1,6 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { readFileSync, writeFileSync } from 'fs';
-import { loadConfig, saveConfig, listBackups, restoreBackup } from '../configManager';
+import { loadConfig, saveConfig, listBackups, restoreBackup, configDanado } from '../configManager';
 import { applyTriggerableConfig } from '../trayManager';
 import * as sensors from '../sensors';
 import { getWeather } from '../weather';
@@ -12,6 +12,9 @@ import * as galeria from '../galeria';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
+  // Si el archivo estaba ilegible, aqui esta donde quedo apartado. La pantalla
+  // lo pregunta despues de cargar para poder avisar.
+  ipcMain.handle('config:damaged', () => configDanado());
 
   ipcMain.handle('config:save', (_e: any, data: object) => {
     saveConfig(data);

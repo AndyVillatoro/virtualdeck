@@ -594,6 +594,8 @@ export interface ElectronAPI {
   };
   config: {
     load: () => Promise<object>;
+    /** Ruta donde quedo el `deck-config.json` ilegible, si lo hubo. */
+    damaged: () => Promise<string | null>;
     save: (data: object) => Promise<boolean>;
     export: () => Promise<boolean>;
     import: () => Promise<object | null>;
