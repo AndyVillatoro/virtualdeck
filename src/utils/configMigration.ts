@@ -25,6 +25,11 @@ const ACTION_TYPES = new Set([
   'window-snap', 'branch', 'countdown',
   // 5.x — media extendido + macros
   'media-shuffle', 'media-repeat', 'macro',
+  // Faltaba, y no era inocuo: un deck con botones ± de brillo o volumen
+  // —cuatro de los presets sembrados lo son— se **rechazaba entero** al
+  // importarlo, con un «botón N inválido» que no decía por qué.
+  // `scripts/check-acciones.mjs` cruza ahora esta lista con `ActionType`.
+  'adjust',
 ]);
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -140,4 +145,43 @@ export function migrateConfig(raw: any): any {
   }
   current.configVersion = version;
   return current;
+}
+
+/**
+ * Repara la configuración que se lee del disco para que no tumbe la pantalla.
+ *
+ * `validateConfig` sirve para lo que **entra de fuera**: ahí rechazar es lo
+ * correcto, porque hay un archivo bueno detrás. Para lo que ya está en disco
+ * no vale, porque rechazar significaría tirar el trabajo del usuario.
+ *
+ * Y no hacer nada tampoco valía: un `pages` que no fuera un array reventaba el
+ * primer `config.pages.map(...)`, React se desmontaba entero y quedaba **una
+ * ventana en blanco**, sin un mensaje ni forma de llegar a los ajustes. Medido
+ * con un `pages: "esto no es un array"`: `TypeError: config.pages.map is not a
+ * function` y el `<div id="root">` vacío.
+ *
+ * Así que se arregla lo mínimo para poder arrancar y se dice qué se tocó. Lo
+ * que estuviera bien se respeta: aquí no se descarta nada que se pueda usar.
+ */
+export function sanearConfig(raw: unknown): { config: Partial<DeckConfig>; reparado: string[] } {
+  const reparado: string[] = [];
+  const c = (isObject(raw) ? { ...raw } : {}) as Partial<DeckConfig> & Record<string, unknown>;
+  if (!isObject(raw)) reparado.push('config');
+
+  const paginas = Array.isArray(c.pages) ? c.pages.filter(isPage) : [];
+  if (!Array.isArray(c.pages) || paginas.length !== c.pages.length) reparado.push('pages');
+  if (paginas.length === 0) {
+    // Sin ninguna página utilizable no hay donde poner los botones. Se pone una
+    // y los botones se reparten por posición, como en cualquier otra carga.
+    c.pages = [{ id: 'main', name: 'Main' }];
+    if (!reparado.includes('pages')) reparado.push('pages');
+  } else {
+    c.pages = paginas;
+  }
+
+  const botones = Array.isArray(c.buttons) ? c.buttons.filter(isButton) : [];
+  if (!Array.isArray(c.buttons) || botones.length !== c.buttons.length) reparado.push('buttons');
+  c.buttons = botones;
+
+  return { config: c, reparado };
 }

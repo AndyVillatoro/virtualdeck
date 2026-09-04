@@ -10,7 +10,7 @@ import { Onboarding } from './components/Onboarding';
 import { NowPlayingProvider } from './utils/nowPlaying';
 import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
-import { migrateConfig, validateConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
+import { migrateConfig, validateConfig, sanearConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
 import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
@@ -171,7 +171,11 @@ export default function App() {
       api.app.getAutostart().catch(() => false),
     ]).then(([saved, as]) => {
       const migrated = migrateConfig(saved);
-      const s = migrated as Partial<DeckConfig>;
+      // Se sanea antes de tocarlo: un `pages` con la forma rota reventaba el
+      // primer `.map` y dejaba la ventana **en blanco**, sin mensaje ni forma
+      // de llegar a los ajustes para arreglarlo.
+      const { config: s, reparado } = sanearConfig(migrated);
+      if (reparado.length > 0) setImportError(t('config.repaired', { partes: reparado.join(', ') }));
       if (s && s.buttons && s.buttons.length > 0) {
         const merged = conHuecosCompletos(s.pages || PAGES_DEFAULT, s.buttons);
         // Los interruptores encendidos ahora se guardan; si un boton dejo de

@@ -316,6 +316,7 @@ export const EN: Dict = {
   'set.enabled': 'ENABLED',
   'set.rgbSpawn': 'LAUNCH OPENRGB ON START',
   'set.rgbAuto': 'AUTO-CONNECT',
+  'config.repaired': 'The configuration had malformed parts ({partes}) and they were repaired so the app could open. Check your pages and buttons; if something is missing, restore a backup from Settings.',
   'config.damaged': 'The configuration could not be read: the file was damaged. A copy was saved to {ruta}. If you had buttons, restore them from Settings → Backups before carrying on.',
   'set.gallery': 'PROFILE GALLERY',
   'gal.load': 'LOAD',

@@ -325,6 +325,7 @@ export const ES: Dict = {
   'set.enabled': 'HABILITADO',
   'set.rgbSpawn': 'LANZAR OPENRGB AL ARRANCAR',
   'set.rgbAuto': 'AUTOCONECTAR',
+  'config.repaired': 'La configuracion tenia partes con la forma dañada ({partes}) y se han reparado para poder abrir. Revise sus paginas y botones; si falta algo, restaure una copia desde Ajustes.',
   'config.damaged': 'No se pudo leer la configuracion: el archivo estaba dañado. Se guardo una copia en {ruta}. Si tenia botones, restaurelos desde Ajustes → Copias de seguridad antes de seguir trabajando.',
   'set.gallery': 'GALERIA DE PERFILES',
   'gal.load': 'CARGAR',

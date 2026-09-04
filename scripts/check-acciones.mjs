@@ -109,6 +109,30 @@ for (const id of idsMain) {
   if (!idsRend.has(id)) problemas.push(`el preset RGB '${id}' existe en SMART_PRESETS y el editor no lo ofrece`);
 }
 
+// La lista de tipos válidos que usa el validador de configuraciones.
+//
+// Está escrita a mano y se quedó atrás: le faltaba `adjust`, con lo que un deck
+// con botones ± de brillo o volumen —cuatro de los presets sembrados lo son— se
+// rechazaba **entero** al importarlo, y en la carga se borraban esos botones.
+// Un tipo nuevo no puede volver a olvidarse aquí.
+{
+  const fuenteMig = readFileSync('src/utils/configMigration.ts', 'utf-8');
+  const bloque = fuenteMig.match(/const ACTION_TYPES = new Set\(\[([\s\S]*?)\]\);/);
+  if (!bloque) {
+    problemas.push('no encuentro ACTION_TYPES en configMigration.ts');
+  } else {
+    const validos = new Set([...bloque[1].matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]));
+    for (const tipo of declarados) {
+      if (!validos.has(tipo)) {
+        problemas.push(`'${tipo}' es un tipo de accion y falta en ACTION_TYPES — importar un deck que lo use se rechazaria entero`);
+      }
+    }
+    for (const tipo of validos) {
+      if (!declarados.has(tipo)) problemas.push(`'${tipo}' esta en ACTION_TYPES y ya no es un tipo de accion`);
+    }
+  }
+}
+
 if (problemas.length) {
   console.error(`acciones: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  · ' + p);
