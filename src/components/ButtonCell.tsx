@@ -1,11 +1,13 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { VD_ACTION_ICONS, IconNone, type VDIconProps } from './VDIcon';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
-import { BrandIconDisplay } from './BrandIconDisplay';
 import { ContenidoCentral } from './celda/ContenidoCentral';
 import { Insignias } from './celda/Insignias';
-import { usePulsacionTactil, EVENTO_SOBRE, EVENTO_FUERA, EVENTO_SOLTAR } from './celda/usePulsacionTactil';
+import { usePulsacionTactil } from './celda/usePulsacionTactil';
+import { useArrastreCelda } from './celda/useArrastreCelda';
+import { CapasDeFondo } from './celda/CapasDeFondo';
+import { RotuloCelda } from './celda/RotuloCelda';
+import { derivarCelda } from './celda/derivados';
 import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
@@ -44,8 +46,6 @@ interface ButtonCellProps {
   showContextMenu?: boolean;
 }
 
-const ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION_ICONS;
-
 function ButtonCellInner({
   button, accent, toggled = false, isActive = false, isHidden = false, isRunning = false,
   isSelected = false,
@@ -57,7 +57,6 @@ function ButtonCellInner({
   const VD = useTheme();
   const t = useT();
   const [hovered, setHovered] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   // Callback refs: memo comparator ignores handler identity, so we keep fresh
@@ -65,15 +64,14 @@ function ButtonCellInner({
   // fueron con `usePulsacionRaton`, que ahora es el unico que lo dispara.
   const onLongPressRef = useRef(onLongPress);
   const onExecuteRef = useRef(onExecute);
-  const onDropRef = useRef(onDrop);
   const onAdjustWheelRef = useRef(onAdjustWheel);
   onLongPressRef.current = onLongPress;
   onExecuteRef.current = onExecute;
-  onDropRef.current = onDrop;
   onAdjustWheelRef.current = onAdjustWheel;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
-  const isEmpty = button.action.type === 'none' && !button.label && !button.icon && !button.imageData && !button.brandIcon;
+  const { isEmpty, displayLabel, ActionIcon, iconColor, multiCount, titulo } =
+    derivarCelda(button, { accent, toggled, resolvedLabel, VD, t });
 
   const hasLongPress = !isEmpty && !!onLongPress;
 
@@ -85,16 +83,17 @@ function ButtonCellInner({
   });
   const { pressed, flash, destellar } = raton;
 
+  const arrastre = useArrastreCelda({
+    ref: cellRef, idBoton: button.id, onDragStart, onDragEnd, onDrop,
+    alEmpezarArrastre: raton.alEmpezarArrastre, setPressed: raton.setPressed,
+  });
+  const { dragOver } = arrastre;
+
   // 5.3 — el pulso radial reemplaza el flash de fondo plano. La celda mantiene
   // su bg estable durante la ejecución; la "ondita" se renderiza encima como overlay.
   const estado = { toggled, dragOver, pressed, hovered, flash, isEmpty, bgPropio: button.bgColor };
   const bg = colorDeFondo(estado, VD);
   const borderColor = colorDeBorde(estado, VD, accent);
-
-  const displayLabel = resolvedLabel ?? (button.label || (button.action.type !== 'none' ? button.action.type.replace(/-/g, ' ').toUpperCase() : ''));
-  const ActionIcon = ACTION_ICONS[button.action.type] ?? IconNone;
-  const iconColor = isEmpty ? VD.textMuted : (button.fgColor || (toggled ? accent : VD.text));
-  const multiCount = button.actions && button.actions.length > 1 ? button.actions.length : 0;
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -126,26 +125,6 @@ function ButtonCellInner({
     alPulsar: useCallback(() => onExecuteRef.current?.(), []),
   })
 
-  // El otro extremo del arrastre tactil: esta celda como destino.
-  useEffect(() => {
-    const el = cellRef.current;
-    if (!el) return;
-    const sobre = () => setDragOver(true);
-    const fuera = () => setDragOver(false);
-    const soltar = (e: Event) => {
-      setDragOver(false);
-      onDropRef.current?.((e as CustomEvent<string>).detail);
-    };
-    el.addEventListener(EVENTO_SOBRE, sobre);
-    el.addEventListener(EVENTO_FUERA, fuera);
-    el.addEventListener(EVENTO_SOLTAR, soltar);
-    return () => {
-      el.removeEventListener(EVENTO_SOBRE, sobre);
-      el.removeEventListener(EVENTO_FUERA, fuera);
-      el.removeEventListener(EVENTO_SOLTAR, soltar);
-    };
-  }, []);
-
   // Botón oculto por visibilidad condicional: placeholder inerte. Va DESPUÉS de
   // todos los hooks (Rules of Hooks: no se pueden llamar tras un return temprano).
   if (isHidden) {
@@ -162,7 +141,7 @@ function ButtonCellInner({
       <div
         ref={cellRef}
         className="vd-btn"
-        title={isEmpty ? t('cell.tipEmpty') : t('cell.tipFilled', { etiqueta: displayLabel })}
+        title={titulo}
         draggable={!isEmpty}
         onClick={raton.alClic}
         onContextMenu={raton.alMenuContextual}
@@ -176,38 +155,7 @@ function ButtonCellInner({
         onMouseUp={raton.alSubirOSalir}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); raton.alSubirOSalir(); }}
-        onDragStart={(e) => {
-          raton.alEmpezarArrastre();
-          e.dataTransfer.effectAllowed = 'move';
-          // El estandar exige adjuntar datos para que el arrastre arranque.
-          // Sin esto, Chromium inicia el gesto pero no lo trata como un
-          // arrastre con carga: el drop no llega y el boton nunca se mueve.
-          e.dataTransfer.setData('text/plain', button.id);
-          onDragStart?.();
-        }}
-        onDragEnd={() => {
-          onDragEnd?.();
-          setDragOver(false);
-          raton.setPressed(false);
-        }}
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          // El id viaja dentro del propio arrastre, no en un estado de React.
-          //
-          // Esta celda esta memoizada y el comparador ignora los handlers a
-          // proposito, asi que `onDrop` sigue siendo el que se creo antes de
-          // empezar a arrastrar: si leyera el id del estado del padre, veria
-          // el valor viejo (null) y el drop no haria nada. Eso es exactamente
-          // lo que pasaba.
-          onDrop?.(e.dataTransfer.getData('text/plain'));
-        }}
+        {...arrastre.props}
         style={{
           background: bg,
           border: `1px solid ${borderColor}`,
@@ -249,26 +197,7 @@ function ButtonCellInner({
         {/* Ejecución en curso — anillo pulsante */}
         {isRunning && <span className="vd-running-ring" />}
 
-        {/* Brand icon as full-bleed animated background */}
-        {button.brandIcon && !button.imageData && (
-          <BrandIconDisplay
-            iconKey={button.brandIcon}
-            customBitmap={button.brandIconCustomBitmap}
-            customColor={button.brandIconCustomColor}
-            customPalette={button.brandIconCustomPalette}
-            animated={toggled || (button.brandIconAlwaysAnimate ?? false)}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', borderRadius: VD.radius.md }}
-          />
-        )}
-
-        {button.imageData && (
-          <img
-            src={button.imageData}
-            alt=""
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
-            draggable={false}
-          />
-        )}
+        <CapasDeFondo button={button} toggled={toggled} />
 
         {/* Center stack — icon or live widget. The label is rendered separately as a bottom banner. */}
         <div style={{
@@ -285,34 +214,8 @@ function ButtonCellInner({
           />
         </div>
 
-        {/* Label banner — pinned at the bottom, always rendered when there's a label
-             (even when a widget is showing) so the user's button name remains visible. */}
         {displayLabel && (
-          <div style={{
-            position: 'absolute', left: 0, right: 0, bottom: 0,
-            padding: '3px 6px 4px',
-            background: (button.imageData || button.brandIcon)
-              ? 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 60%)'
-              : 'rgba(0,0,0,0.35)',
-            fontFamily: VD.mono,
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: 0.4,
-            color: (button.imageData || button.brandIcon)
-              ? '#fff'
-              : (button.fgColor || (toggled ? accent : VD.text)),
-            textShadow: (button.imageData || button.brandIcon) ? '0 1px 2px rgba(0,0,0,0.9)' : 'none',
-            textTransform: 'uppercase',
-            lineHeight: 1.2,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            textAlign: 'center',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}>
-            {displayLabel}
-          </div>
+          <RotuloCelda texto={displayLabel} button={button} accent={accent} toggled={toggled} />
         )}
 
       </div>

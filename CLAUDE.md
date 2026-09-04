@@ -44,7 +44,10 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `comunes.tsx` (`Field`, `Btn`, los sub-selectores
   y las funciones de estilo que comparten los pasos), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
   `EditorB.tsx` se queda con el estado y el armado de la pantalla.
-- `src/components/ButtonCell.tsx` — celda de botón: estructura, gestos y estado (~370 líneas)
+- `src/components/ButtonCell.tsx` — celda de botón: estructura y estado (~260 líneas).
+  El arrastre (los dos extremos, ratón y dedo) está en `celda/useArrastreCelda`; lo que
+  la celda deduce del botón —vacía, etiqueta, icono, color, título— en `celda/derivados.ts`,
+  que es una función pura y se puede leer sin el render delante.
 - `src/components/rejilla/RejillaBotones.tsx` — la rejilla de botones, compartida por
   `MainB` y `FullscreenB`. Encaja las casillas en el hueco (`square` = casillas cuadradas,
   `fill` = ocupar todo) y las coloca; **cada pantalla arma su propia celda** vía la prop
