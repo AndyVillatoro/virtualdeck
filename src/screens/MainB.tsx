@@ -507,7 +507,9 @@ export function MainB({
               boxShadow: VD.shadow.menu, fontFamily: VD.mono,
             }}>
               <span style={{ fontSize: 9, color: VD.textDim, letterSpacing: 1, marginRight: 4 }}>
-                {t('bulk.selected', { n: selectedIds.size })}
+                {/* En español «1 SELECCIONADOS» chirría, y con una sola celda
+                    marcada es el caso más frecuente. */}
+                {selectedIds.size === 1 ? t('bulk.selectedOne') : t('bulk.selected', { n: selectedIds.size })}
               </span>
 
               {/* Move-to-page picker */}

@@ -646,6 +646,7 @@ export const EN: Dict = {
   'undo.updateProfile': 'overwrite profile "{nombre}"',
   'undo.deleteProfile': 'delete profile "{nombre}"',
   'bulk.selected': '{n} SELECTED',
+  'bulk.selectedOne': '1 SELECTED',
   'bulk.copy': '⎘ COPY',
   'bulk.partial': 'Only {n} of {total} fit: the target page ran out of empty slots.',
   'icons.count': '{n} icons · 17×17 dot-matrix · Hover to animate',
