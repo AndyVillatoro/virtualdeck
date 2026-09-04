@@ -39,9 +39,17 @@ export function loadConfig(): object {
   try {
     return JSON.parse(readFileSync(p, 'utf-8'));
   } catch {
-    rutaDanado = apartarDanado(p);
+    // Una sola copia por avería. `loadConfig` se llama varias veces al
+    // arrancar —el proceso principal para la bandeja y los sensores, y la
+    // pantalla por su cuenta— y sin esto salía un `config-danado-` por llamada.
+    rutaDanado = rutaDanado ?? apartarDanado(p);
     return {};
   }
+}
+
+/** ¿El archivo de configuración se puede leer? */
+function esLegible(ruta: string): boolean {
+  try { JSON.parse(readFileSync(ruta, 'utf-8')); return true; } catch { return false; }
 }
 
 /** Guarda el archivo ilegible aparte. Devuelve dónde quedó, o `null`. */
@@ -77,6 +85,12 @@ function rotateBackup(configPath: string, forzar = false) {
   const now = Date.now();
   if (!forzar && now - lastBackupAt < BACKUP_COOLDOWN_MS) return;
   if (!existsSync(configPath)) return;
+  // Copiar un archivo que no se puede leer no es una copia de seguridad: es
+  // basura con nombre de copia, y sale en la lista de restaurar como si
+  // sirviera. Restaurarla vuelve a romper la configuración. Pasaba de verdad —
+  // al arrancar con un `deck-config.json` cortado, el primer guardado hacía una
+  // «copia» ilegible y la ofrecía junto a las buenas.
+  if (!esLegible(configPath)) return;
   try {
     const dir = getBackupsDir();
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
