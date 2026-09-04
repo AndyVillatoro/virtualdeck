@@ -424,25 +424,48 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
    * botones de un grupo radio son tres llamadas en el mismo instante y no hace
    * falta escribir tres veces.
    */
+  /**
+   * Guardado con respiro, pero **escribiendo ya la primera vez**.
+   *
+   * El respiro existe para que pulsar diez veces un contador no escriba diez
+   * archivos. Con solo respiro, sin embargo, un cambio suelto se quedaba 400 ms
+   * en el aire: pulsar un contador y cerrar la aplicación en ese rato **perdía
+   * el incremento**. Medido — el archivo seguía con `n = 0`.
+   *
+   * Escribir al principio del respiro y no solo al final quita ese hueco en el
+   * caso normal (un cambio, una escritura inmediata) y conserva el ahorro en el
+   * caso que lo motivó: diez pulsaciones seguidas siguen siendo dos escrituras,
+   * no diez.
+   */
+  const guardarConRespiro = useCallback((
+    reloj: React.MutableRefObject<number | undefined>,
+    next: DeckConfig,
+  ) => {
+    if (reloj.current === undefined) api?.config.save(next).catch(() => {});
+    clearTimeout(reloj.current);
+    reloj.current = window.setTimeout(() => {
+      reloj.current = undefined;
+      api?.config.save(next).catch(() => {});
+    }, 400);
+  }, [api]);
+
   const toggleButton = useCallback((id: string) => {
     setConfig((prev) => {
       const encendidos = new Set(prev.toggledIds ?? []);
       if (encendidos.has(id)) encendidos.delete(id); else encendidos.add(id);
       const next = { ...prev, toggledIds: [...encendidos] };
-      clearTimeout(toggleSaveTimer.current);
-      toggleSaveTimer.current = window.setTimeout(() => api?.config.save(next).catch(() => {}), 400);
+      guardarConRespiro(toggleSaveTimer, next);
       return next;
     });
-  }, [api]);
+  }, [guardarConRespiro]);
 
   const updateState = useCallback((update: Record<string, string>) => {
     setConfig((prev) => {
       const next = { ...prev, state: { ...(prev.state ?? {}), ...update } };
-      clearTimeout(stateSaveTimer.current);
-      stateSaveTimer.current = window.setTimeout(() => api?.config.save(next).catch(() => {}), 400);
+      guardarConRespiro(stateSaveTimer, next);
       return next;
     });
-  }, [api]);
+  }, [guardarConRespiro]);
 
   const toggleAlwaysOnTop = useCallback(() => {
     saveConfig({ ...config, alwaysOnTop: !config.alwaysOnTop });
