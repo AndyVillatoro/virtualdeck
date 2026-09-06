@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { DotLabel } from '../../components/DotLabel';
 import {
   IconMediaPlay, IconMediaPause, IconMediaSkipBack, IconMediaSkipForward, IconMusic,
@@ -45,14 +46,17 @@ export function PanelMusica({
 }) {
   const VD = useTheme();
   const t = useT();
+  // Antes del `return` de abajo: los hooks tienen que llamarse siempre en el
+  // mismo orden, y este panel se desmonta en cuanto deja de sonar algo.
+  const refrescarMedios = useNowPlayingRefresh();
   if (!nowPlaying) return null;
 
   const borde = lado === 'left'
     ? { borderRight: `1px solid ${VD.border}` }
     : { borderLeft: `1px solid ${VD.border}` };
 
-  // Lo que la fuente dice que admite. Sin dato (camino nativo) se enseña todo:
-  // mejor un boton que quiza no haga nada que esconder uno que si funciona.
+  // Lo que la fuente dice que admite. Sin dato se enseña todo: mejor un boton
+  // que quiza no haga nada que esconder uno que si funciona.
   const puede = nowPlaying.controls;
 
   const control = (
@@ -68,7 +72,7 @@ export function PanelMusica({
       title={activo ? titulo : t('media.unsupported', { que: titulo })}
       aria-label={titulo}
       disabled={!activo}
-      onClick={() => { if (activo) api?.media.control(key); }}
+      onClick={() => { if (activo) api?.media.control(key).then(refrescarMedios); }}
       style={{
         width: lado_, height: lado_, flexShrink: 0,
         opacity: activo ? 1 : 0.35,

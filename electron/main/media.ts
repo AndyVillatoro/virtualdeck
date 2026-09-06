@@ -111,6 +111,67 @@ $caps = "$($c.IsNextEnabled)/$($c.IsPreviousEnabled)/$($c.IsShuffleEnabled)/$($c
 Write-Output "$title|$artist|$($best.St)|$src|$caps"
 `.trim();
 
+/**
+ * Solo lo que la sesion **admite**, sin pedir la pista.
+ *
+ * Existe porque el nucleo nativo devuelve titulo, artista, estado, fuente y
+ * caratula, pero **no** las capacidades: `controls` sale siempre `undefined`
+ * por ese camino, que es el que corre cuando el `.node` carga. El resultado es
+ * que la interfaz enseña los cuatro botones habilitados y, en un video suelto
+ * de YouTube, ninguno hace nada y nadie lo dice. Medido en esta maquina con un
+ * video en Edge: `False/False/False/False`.
+ *
+ * Lo arreglaria el propio nucleo, pero no se puede recompilar. Asi que se
+ * pregunta aparte, y **una vez por cancion**, no en cada tick: medido en 239 ms,
+ * que es asumible una vez por pista y no lo seria cuatro veces por segundo.
+ *
+ * No usa `TryGetMediaPropertiesAsync`: esa es la llamada que puede no volver
+ * nunca si hay una sesion a medio cerrar. `GetPlaybackInfo()` es sincrona.
+ */
+const CAPS_SCRIPT = `
+${PREAMBLE}
+if ($null -eq $mgr) { Write-Output 'ERR'; exit }
+$s = $mgr.GetCurrentSession()
+if ($null -eq $s) { Write-Output 'NONE'; exit }
+$c = $s.GetPlaybackInfo().Controls
+Write-Output "$($c.IsNextEnabled)/$($c.IsPreviousEnabled)/$($c.IsShuffleEnabled)/$($c.IsRepeatEnabled)"
+`.trim();
+
+/** La pista de la que se conocen las capacidades, y cuales son. */
+let _capsTrack = '';
+let _capsData: NowPlaying['controls'];
+const _pendingCaps = new Set<string>();
+
+function pedirControles(trackKey: string) {
+  _capsTrack = trackKey;
+  _capsData = undefined;
+  if (_pendingCaps.has(trackKey)) return;
+  _pendingCaps.add(trackKey);
+  runPS(CAPS_SCRIPT).then((r) => {
+    // Si ya cambio de pista, estas capacidades son de la anterior.
+    if (trackKey !== _capsTrack) return;
+    if (!r.ok || !r.stdout || r.stdout.startsWith('ERR') || r.stdout.startsWith('NONE')) return;
+    _capsData = parsearControles(r.stdout.trim());
+    if (_cache.data && `${_cache.data.title}|${_cache.data.artist}` === trackKey) {
+      _cache.data = { ..._cache.data, controls: _capsData };
+    }
+  }).catch(() => {}).finally(() => { _pendingCaps.delete(trackKey); });
+}
+
+/**
+ * La pista del nucleo, con las capacidades que el nucleo no trae.
+ *
+ * En el primer tick de una cancion nueva todavia no se saben, y entonces se
+ * devuelve sin ellas — que significa «no se sabe» y la interfaz enseña todos
+ * los botones. Llegan un cuarto de segundo despues.
+ */
+function conControles(np: NowPlaying): NowPlaying {
+  if (np.controls) return np;
+  const key = `${np.title}|${np.artist}`;
+  if (key !== _capsTrack) pedirControles(key);
+  return _capsData ? { ...np, controls: _capsData } : np;
+}
+
 const THUMB_SCRIPT = `
 ${PREAMBLE}
 if ($null -eq $mgr) { Write-Output ''; exit }
@@ -457,8 +518,10 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
   const ttl = hayNucleo() ? 1000 : 4000;
   if (Date.now() - _cache.ts < ttl) return _cache.data;
   {
-    const nativo = intentarNativo('getNowPlaying', (n) => n.getNowPlaying());
-    if (nativo !== undefined) {
+    const crudo = intentarNativo('getNowPlaying', (n) => n.getNowPlaying());
+    if (crudo !== undefined) {
+      // El nucleo no devuelve `controls`; se piden aparte, una vez por cancion.
+      const nativo = crudo ? conControles(crudo) : crudo;
       _cache.ts = Date.now();
       _cache.data = nativo;
       // `lastValid` conserva lo último que sí tenía contenido: al pasar de una
@@ -543,7 +606,21 @@ if ($result) { Write-Output 'OK' } else { Write-Output 'FAIL' }
 
 // Control de medios — usa SMTC nativo cuando hay sesión, sino cae a SendKeys.
 // El fallback SendKeys lo hace el caller (electron/main/index.ts) si esto devuelve false.
+/**
+ * Olvida lo ultimo que se supo, para que la siguiente pregunta sea de verdad.
+ *
+ * Se llama despues de cada orden (pausar, siguiente, aleatorio, repetir). Sin
+ * esto, la pantalla vuelve a preguntar y la cache le contesta con el estado de
+ * **antes** de la orden: al pausar, el icono se quedaba en «reproduciendo».
+ * La cache dura 1 s con nucleo nativo y 4 s sin el, y el sondeo del widget es
+ * cada 5 s, asi que el retraso podia llegar a los nueve segundos.
+ */
+function olvidarCache() {
+  _cache.ts = 0;
+}
+
 export async function controlMedia(cmd: MediaCommand): Promise<boolean> {
+  olvidarCache();
   const nativo = intentarNativo('controlMedia', (n) => n.controlMedia(cmd));
   if (nativo !== undefined) return nativo;
 
@@ -556,6 +633,7 @@ export async function controlMedia(cmd: MediaCommand): Promise<boolean> {
 }
 
 export async function shuffleMedia(): Promise<boolean> {
+  olvidarCache();
   const nativo = intentarNativo('shuffleMedia', (n) => n.shuffleMedia());
   if (nativo !== undefined) return nativo;
 
@@ -565,6 +643,7 @@ export async function shuffleMedia(): Promise<boolean> {
 }
 
 export async function repeatMedia(): Promise<boolean> {
+  olvidarCache();
   const nativo = intentarNativo('repeatMedia', (n) => n.repeatMedia());
   if (nativo !== undefined) return nativo;
 

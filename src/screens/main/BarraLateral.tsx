@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useLang } from '../../utils/i18n';
+import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { DotLabel } from '../../components/DotLabel';
 import { DotText } from '../../components/DotText';
 import { SensorCard, groupSensorsByHardware } from '../../components/SensorPanel';
 import { WeatherWidget } from '../../components/WeatherWidget';
 import { IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward } from '../../components/VDIcon';
-import type { DeckConfig, ElectronAPI, RGBStatus, Sensor, SensorsStatus } from '../../types';
+import type { DeckConfig, ElectronAPI, NowPlaying, RGBStatus, Sensor, SensorsStatus } from '../../types';
 
 /**
  * El panel de la derecha: reloj, clima, sensores, estado del RGB, registro de
@@ -28,7 +29,10 @@ interface EntradaRegistro {
   error?: string;
 }
 
-type NowPlayingInfo = { title: string; artist: string; status: string; source: string; thumbnail?: string } | null;
+// El tipo bueno vive en `types.ts`. Aqui habia una copia escrita a mano, mas
+// estrecha: no tenia `controls`, asi que la franja no podia saber si la fuente
+// admite anterior o siguiente aunque el dato llegara.
+type NowPlayingInfo = NowPlaying | null;
 
 interface Props {
   config: DeckConfig;
@@ -53,6 +57,7 @@ interface Props {
 export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgbStatus, onRGB, execLog, setExecLog, showLog, setShowLog, nowPlaying, isPlaying, sourceName, showToast, ocultarMusica }: Props) {
   const VD = useTheme();
   const t = useT();
+  const refrescarMedios = useNowPlayingRefresh();
   const lang = useLang();
   // Memoizados: son dependencia de un `useMemo` y de un `useEffect`, y sin
   // referencia estable los harian recalcular en cada render.
@@ -238,30 +243,44 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                 {/* Media controls — Lucide icons, matching app design */}
                 <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
                   {([
-            { key: 'prev',       Icon: IconMediaSkipBack,                          title: t('media.prev') },
-                    { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: t('media.playPause') },
-                    { key: 'next',       Icon: IconMediaSkipForward,                       title: t('media.next') },
-                  ] as const).map(({ key, Icon, title }) => (
+                    { key: 'prev',       Icon: IconMediaSkipBack,                          title: t('media.prev'),      admite: nowPlaying.controls?.prev },
+                    { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: t('media.playPause'), admite: undefined },
+                    { key: 'next',       Icon: IconMediaSkipForward,                       title: t('media.next'),      admite: nowPlaying.controls?.next },
+                  ] as const).map(({ key, Icon, title, admite }) => {
+                    // Lo mismo que hace el panel de musica, que aqui faltaba: si la
+                    // fuente dice que no admite anterior o siguiente, el boton no se
+                    // enseña como si funcionara. Un video suelto de YouTube declara
+                    // `False` en los dos, y pulsarlos no hacia nada ni lo decia.
+                    // Sin dato (`undefined`) es «no se sabe» y se deja habilitado.
+                    const activo = admite !== false;
+                    return (
                     <button
                       key={key}
-                      title={title}
+                      title={activo ? title : t('media.unsupported', { que: title })}
+                      disabled={!activo}
                       onClick={() => {
                         // Usa SMTC nativo (TrySkipNext/Previous/TogglePlayPause); cae a SendKeys si falla.
-                        api?.media.control(key as 'play-pause' | 'next' | 'prev');
+                        if (!activo) return;
+                        // Preguntar de nuevo enseguida: si no, el icono se queda
+                        // en «reproduciendo» hasta el siguiente sondeo (5 s).
+                        api?.media.control(key as 'play-pause' | 'next' | 'prev').then(refrescarMedios);
                       }}
                       style={{
                         flex: 1, padding: '6px 0',
                         background: VD.elevated, border: `1px solid ${VD.border}`,
-                        cursor: 'pointer', borderRadius: VD.radius.md,
+                        cursor: activo ? 'pointer' : 'not-allowed',
+                        opacity: activo ? 1 : 0.35,
+                        borderRadius: VD.radius.md,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         transition: 'background 0.1s, border-color 0.1s',
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
+                      onMouseEnter={(e) => { if (activo) (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
                     >
                       <Icon size={13} color={VD.textDim} />
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
