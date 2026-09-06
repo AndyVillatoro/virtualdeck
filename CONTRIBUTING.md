@@ -449,7 +449,15 @@ Comprar un cert EV/estándar (DigiCert, Sectigo) y apuntar `certificateFile` al 
 ### Distribución sin firma
 Documentar el "Más información → Ejecutar de todas formas" del SmartScreen. WinGet/Scoop reducen fricción aunque no eliminan el warning.
 
-> El auto-update (`electron-updater` + GitHub Releases) ya está activo desde v0.4.0.
+> **Auto-update**: el código está desde la v0.4.0, pero **no funcionó hasta la
+> v0.9.2**. Ninguna publicación subía el `latest.yml` que `electron-updater` pide
+> de la última release: la comprobación daba 404 y no pasaba nada, sin avisar.
+> Toda release tiene que subir `latest.yml` y el `.blockmap` junto al `.exe`.
+>
+> **La firma no tiene nada que ver con esto**, ni con poder publicar: la v0.9.2
+> está distribuida sin firmar y se instala. Lo único que compra un certificado es
+> quitar el aviso de SmartScreen. Y para la Microsoft Store no hace falta: el
+> paquete MSIX lo firma Microsoft al aceptarlo.
 
 ---
 
