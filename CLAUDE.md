@@ -155,7 +155,13 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   VirtualDeck no manda fotogramas. Cada uno lleva color, una lista de modos a intentar (de
   lo específico a lo genérico, acabando siempre en `static`/`direct`) y opcionalmente
   brillo y velocidad. `scripts/check-acciones.mjs` cruza esa lista con
-  `src/data/rgbPresets.ts`: si se separan, el botón no haría nada y no habría error
+  `src/data/rgbPresets.ts`: si se separan, el botón no haría nada y no habría error.
+  **Y las cuatro acciones RGB decían que sí sin haber hecho nada**: `setDeviceColor(-1)` y
+  `setMode(-1)` recorrían `devicesCache` tirando el resultado de cada uno, con la lista vacía
+  —OpenRGB sin administrador no detecta casi nada— el bucle no daba ni una vuelta;
+  `applyProfile` guarda los dispositivos **por nombre**, así que renombrar una placa o
+  importar el perfil de otro equipo hacía que se saltara todo. Cierto solo si algún
+  dispositivo lo aceptó; que a uno de cinco le falte el modo sigue sin ser error
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
@@ -242,7 +248,12 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `0 {DELETE} {DELETE} 8`. Los modificadores salen de `e.ctrlKey/altKey/shiftKey/metaKey` del
   propio evento; sin ellos `Ctrl+C` se grababa como `c`. El formato en disco es `Ctrl+C` /
   `{ENTER}`, que es lo que parsea `crates/vd-core/src/macros/keys.rs` y lo que se escribe a mano
-  en el editor. `escapeSendKeys` (solo el respaldo) **no toca los tramos ya entre llaves**: al
+  en el editor. Y lo escapado para SendKeys todavía tiene que entrar en una **cadena de
+  PowerShell entre comillas dobles**, donde mandan otros tres caracteres: sin `paraPS`,
+  `precio $100` salía «precio  USD», un `"` reventaba el script entero y **`$env:USERNAME`
+  se evaluaba** — o sea que un paso de texto, que son datos, ejecutaba código, y una macro
+  importada de la galería dejaba de ser «teclea esto». El camino nativo no tiene nada de
+  esto: los pasos viajan como JSON. `escapeSendKeys` (solo el respaldo) **no toca los tramos ya entre llaves**: al
   aplicarse sobre la cadena entera convertía `{ENTER}` en `{{ENTER}}`. Y los clics sobre la
   propia ventana no se graban (`esNuestro` en `startRecording`): si no, toda macro acaba con un
   clic en el botón de detener.
