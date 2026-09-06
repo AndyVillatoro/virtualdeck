@@ -159,3 +159,61 @@ export function injectUtf8Prefix(script: string): string {
   // Insert the prefix on its own line right after the param() closing paren.
   return script.slice(0, j) + '\r\n' + PS_UTF8_PREFIX + script.slice(j);
 }
+
+/**
+ * Ejecuta un script de `cmd`, en un archivo temporal.
+ *
+ * Antes iba por `exec(script)`, que le entrega la cadena entera a
+ * `cmd.exe /c`. Con eso pasaban dos cosas, medidas las dos:
+ *
+ *   echo uno\necho dos              ->  «uno»       (la segunda linea se pierde)
+ *   set X=valor\necho %X%\necho fin ->  «»          (nada, y decia que fue bien)
+ *   echo Añadí más                  ->  «A?ad? m?s»
+ *
+ * O sea: de un script de varias lineas **solo corria la primera**, y el resto
+ * desaparecia sin un solo aviso. El editor ofrece `cmd` con un area de texto de
+ * varias lineas, asi que no es un caso raro.
+ *
+ * Con un `.bat` de verdad se ejecutan todas. `chcp 65001` arregla los acentos —
+ * es el equivalente del prefijo de PowerShell, que en `cmd` no es sintaxis
+ * valida—. Y **sin BOM**: `cmd` no lo reconoce y lo escupe en la primera linea.
+ */
+export function runCmd(script: string, opts: PSOptions = {}): Promise<PSResult> {
+  return new Promise((resolve) => {
+    let stdout = '';
+    let stderr = '';
+    let resolved = false;
+    let timer: NodeJS.Timeout | null = null;
+    const maxBuf = opts.maxBufferBytes ?? 1024 * 1024;
+    const tmp = join(tmpdir(), `vd_cmd_${Date.now()}_${Math.random().toString(36).slice(2)}.bat`);
+
+    try {
+      // `@echo off` para que no salgan las ordenes mezcladas con su salida.
+      const contenido = '@echo off\r\nchcp 65001 > nul\r\n' + script.replace(/\r?\n/g, '\r\n') + '\r\n';
+      writeFileSync(tmp, contenido, 'utf-8');
+    } catch (e) {
+      resolve({ stdout: '', stderr: String(e), ok: false });
+      return;
+    }
+
+    const finalize = (ok: boolean) => {
+      if (resolved) return;
+      resolved = true;
+      if (timer) clearTimeout(timer);
+      try { unlinkSync(tmp); } catch {}
+      resolve({ stdout: stdout.trim(), stderr: stderr.trim(), ok });
+    };
+
+    const child = spawn('cmd.exe', ['/d', '/s', '/c', tmp], { windowsHide: true });
+    child.stdout.setEncoding('utf-8');
+    child.stderr.setEncoding('utf-8');
+    child.stdout.on('data', (d: string) => { if (stdout.length < maxBuf) stdout += d; });
+    child.stderr.on('data', (d: string) => { if (stderr.length < maxBuf) stderr += d; });
+    child.on('close', (code) => finalize(code === 0));
+    child.on('error', () => finalize(false));
+
+    if (opts.timeoutMs && opts.timeoutMs > 0) {
+      timer = setTimeout(() => { try { child.kill(); } catch {} finalize(false); }, opts.timeoutMs);
+    }
+  });
+}

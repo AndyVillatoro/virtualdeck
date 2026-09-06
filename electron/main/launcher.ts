@@ -1,7 +1,7 @@
 import { intentarNativo } from './native';
 import { exec, spawn } from 'child_process';
 import { shell } from 'electron';
-import { runPS, runPSBool, injectUtf8Prefix } from './ps-helpers';
+import { runPS, runPSBool, runCmd, injectUtf8Prefix } from './ps-helpers';
 
 /**
  * Lanza un programa. Camino de respaldo cuando no hay nucleo nativo.
@@ -118,14 +118,12 @@ export async function runScript(script: string, shell_: string = 'powershell'): 
   const r = intentarNativo('runScript', (n) => n.runScript(listo, shell_).success);
   if (r !== undefined) return r;
 
-  // PS branch goes through the shared helper (tmp .ps1 + UTF-8 + -File). Other
-  // shells fall back to direct exec — those are cmd one-liners from the user.
-  if (shell_ === 'powershell') {
-    return runPSBool(listo, { timeoutMs: 30000 });
-  }
-  return new Promise((resolve) => {
-    exec(listo, { timeout: 30000 }, (err) => resolve(!err));
-  });
+  // Los dos van por su ayudante, que escribe un archivo temporal. El comentario
+  // que habia aqui decia que los de `cmd` son «one-liners del usuario»; el
+  // editor ofrece un area de texto de varias lineas, y de esas solo corria la
+  // primera.
+  if (shell_ === 'powershell') return runPSBool(listo, { timeoutMs: 30000 });
+  return (await runCmd(listo, { timeoutMs: 30000 })).ok;
 }
 
 export async function runScriptCapture(script: string, shell_: string = 'powershell'): Promise<{ success: boolean; output: string }> {
@@ -137,11 +135,11 @@ export async function runScriptCapture(script: string, shell_: string = 'powersh
     const r = await runPS(listo, { timeoutMs: 30000 });
     return { success: r.ok, output: (r.stdout || r.stderr || '').trim() };
   }
-  return new Promise((resolve) => {
-    exec(listo, { timeout: 30000 }, (err, stdout, stderr) => {
-      resolve({ success: !err, output: (stdout || stderr || '').trim() });
-    });
-  });
+  // `cmd` va por `runCmd`, que escribe un `.bat` de verdad. Con `exec(script)`
+  // —que le pasa la cadena entera a `cmd /c`— de un script de varias lineas
+  // **solo corria la primera**, y los acentos volvian rotos.
+  const r2 = await runCmd(listo, { timeoutMs: 30000 });
+  return { success: r2.ok, output: (r2.stdout || r2.stderr || '').trim() };
 }
 
 export async function setBrightness(level: number): Promise<boolean> {
