@@ -325,6 +325,7 @@ export const EN: Dict = {
   'gal.failed': 'Could not load: {error}',
   'gal.empty': 'That manifest has no valid profiles.',
   'gal.notADeck': 'That file does not look like a deck: it has no pages or no buttons.',
+  'gal.unknownTypes': 'This profile uses actions this version does not know ({tipos}). Its buttons would do nothing. Update VirtualDeck, or ask the author for a compatible profile.',
   'gal.warn': 'A profile is not just data. What you see below will run on your computer when you press those buttons. Review it before importing.',
   'gal.counts': 'It brings {n} buttons.',
   'gal.launches': 'It opens these programs or files:',

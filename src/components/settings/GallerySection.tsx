@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { EntradaGaleria, ResumenRiesgo, Profile } from '../../types';
 import { SettingLabel, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
+import { tiposDesconocidos } from '../../utils/configMigration';
 
 /**
  * La galería de perfiles (6.1): traerse el deck de otra persona.
@@ -57,6 +58,10 @@ export function GallerySection({
     if (!elegido) return;
     const p = elegido.perfil as { pages?: unknown; buttons?: unknown; accent?: string; wallpaper?: unknown };
     if (!Array.isArray(p.pages) || !Array.isArray(p.buttons)) { setError(t('gal.notADeck')); return; }
+    // Que tenga la forma de un deck no basta: un tipo de accion que esta
+    // aplicacion no conoce entra igual y falla al pulsar el boton, uno por uno.
+    const malos = tiposDesconocidos(p.buttons);
+    if (malos.length > 0) { setError(t('gal.unknownTypes', { tipos: malos.join(', ') })); return; }
     onImportar({
       id: `gal_${elegido.entrada.id}_${Date.now()}`,
       name: elegido.entrada.label,

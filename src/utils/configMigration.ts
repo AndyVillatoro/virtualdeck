@@ -219,3 +219,37 @@ export function sanearConfig(raw: unknown): { config: Partial<DeckConfig>; repar
 
   return { config: c, reparado };
 }
+
+/**
+ * Los tipos de accion de un perfil que la aplicacion **no sabe ejecutar**.
+ *
+ * La galeria no pasaba por `validateConfig` —solo miraba que `pages` y
+ * `buttons` fueran listas— aunque la documentacion dijera que si. Un perfil
+ * con un tipo inventado se importaba entero y sus botones fallaban al
+ * pulsarlos, uno por uno, sin que nada lo hubiera avisado antes. El propio
+ * ejemplo que venia en el repositorio traia dos (`media-play` y `volume-mute`,
+ * que no existen).
+ *
+ * Devuelve la lista sin repetidos, para poder decir **cuales** son.
+ */
+export function tiposDesconocidos(botones: unknown): string[] {
+  if (!Array.isArray(botones)) return [];
+  const malos = new Set<string>();
+  const mirar = (a: unknown) => {
+    if (!isObject(a)) return;
+    if (typeof a.type === 'string' && !ACTION_TYPES.has(a.type)) malos.add(a.type);
+    // Las anidadas cuentan igual: una rama o un temporizador con un tipo
+    // inventado falla del mismo modo, solo que mas tarde.
+    for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
+      for (const sub of (Array.isArray(a[clave]) ? a[clave] as unknown[] : [])) mirar(sub);
+    }
+  };
+  for (const b of botones) {
+    if (!isObject(b)) continue;
+    mirar(b.action);
+    for (const a of (Array.isArray(b.actions) ? b.actions as unknown[] : [])) mirar(a);
+    mirar(b.actionToggleOff);
+    mirar(b.longPressAction);
+  }
+  return [...malos];
+}

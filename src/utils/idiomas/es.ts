@@ -334,6 +334,7 @@ export const ES: Dict = {
   'gal.failed': 'No se pudo cargar: {error}',
   'gal.empty': 'Ese manifiesto no trae ningun perfil valido.',
   'gal.notADeck': 'Ese archivo no parece un deck: le faltan las paginas o los botones.',
+  'gal.unknownTypes': 'Este perfil usa acciones que esta version no conoce ({tipos}). Sus botones no harian nada. Actualice VirtualDeck o pida al autor un perfil compatible.',
   'gal.warn': 'Un perfil no son solo datos. Lo que aparece abajo se ejecutara en su equipo cuando pulse esos botones. Reviselo antes de importar.',
   'gal.counts': 'Trae {n} botones.',
   'gal.launches': 'Abre estos programas o archivos:',
