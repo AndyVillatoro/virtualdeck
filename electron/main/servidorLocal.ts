@@ -227,10 +227,26 @@ function conEnlace(res: ServerResponse, enlace: string): void {
   responder(res, r.ok ? 200 : 404, r);
 }
 
-/** Arranca o para el servidor según los ajustes. Idempotente. */
+/**
+ * Arranca o para el servidor según los ajustes.
+ *
+ * **Idempotente de verdad, y eso importa.** Se llama en cada guardado de la
+ * configuración —y se guarda al pulsar un interruptor, al cambiar una variable,
+ * al reordenar—, así que antes el servidor se reiniciaba constantemente. Y
+ * `parar()` borra el código de emparejamiento: enseñabas el código, pulsabas un
+ * botón mientras el teléfono lo tecleaba, y el código ya no valía. Medido con
+ * control: canjear sin tocar nada devolvía 200, y tras un solo guardado, 401.
+ *
+ * Solo se reinicia si cambia **dónde escucha**. El token no hace falta que lo
+ * haga: se lee de `ajustes` en cada petición.
+ */
 export function aplicar(nuevos: AjustesRemoto, win: BrowserWindow | null): { ok: boolean; error?: string } {
+  const previos = ajustes;
+  const estaba = !!servidor;
   ajustes = { ...REMOTO_POR_DEFECTO, ...nuevos };
   ventana = win;
+  const mismoSitio = previos.port === ajustes.port && previos.allowLan === ajustes.allowLan;
+  if (estaba && ajustes.enabled && mismoSitio) return { ok: true };
   parar();
   if (!ajustes.enabled) return { ok: true };
   if (!ajustes.token) return { ok: false, error: 'sin token' };
