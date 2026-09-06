@@ -84,6 +84,7 @@ export const EN: Dict = {
   'help.upd.ready': 'Update {version} ready — restart to apply.',
   'help.upd.downloading': 'Downloading update {version}…',
   'help.upd.error': 'Could not check for updates.',
+  'help.upd.store': 'This copy came from the Microsoft Store: the Store delivers its updates.',
   'help.upd.disabled': 'Auto-update not available in this build (dev mode).',
   'help.upd.checkError': 'Error checking for updates.',
   'help.upd.checking': 'Checking for updates…',

@@ -26,7 +26,9 @@
     "check": "tsc --noEmit && depcruise src electron && eslint . && node scripts/check-i18n.mjs && node scripts/check-acciones.mjs && node scripts/check-ipc.mjs && node scripts/check-wiki.mjs && node scripts/check-perfiles.mjs docs/galeria-ejemplo/profiles",
     "lint:i18n": "node scripts/check-i18n.mjs",
     "lint:acciones": "node scripts/check-acciones.mjs",
-    "lint:wiki": "node scripts/check-wiki.mjs"
+    "lint:wiki": "node scripts/check-wiki.mjs",
+    "build:store": "electron-vite build && electron-builder --win appx",
+    "build:appx-icons": "node scripts/generate-appx-assets.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.3",
@@ -106,6 +108,19 @@
       "shortcutName": "VirtualDeck",
       "uninstallDisplayName": "VirtualDeck ${version}",
       "deleteAppDataOnUninstall": false
+    },
+    "appx": {
+      "applicationId": "VirtualDeck",
+      "identityName": "CubeCode.VirtualDeck",
+      "publisher": "CN=93305558-E31B-4038-90C7-98609F235071",
+      "publisherDisplayName": "CubeCode",
+      "displayName": "VirtualDeck",
+      "backgroundColor": "#0f0f0f",
+      "showNameOnTiles": true,
+      "languages": [
+        "es-ES",
+        "en-US"
+      ]
     }
   }
 }

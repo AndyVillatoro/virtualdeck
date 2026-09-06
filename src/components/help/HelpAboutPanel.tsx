@@ -50,6 +50,9 @@ export function HelpAboutPanel({
     try {
       const r: any = await api.update.check();
       if (r.status === 'disabled') setUpdateMsg(t('help.upd.disabled'));
+      // La version de la Store no se actualiza sola: lo hace la Store. Hay que
+      // decirlo, no dejar el boton en silencio como si se hubiera colgado.
+      else if (r.status === 'store') setUpdateMsg(t('help.upd.store'));
       else if (r.status === 'error') setUpdateMsg(t('help.upd.checkError'));
       else setUpdateMsg(t('help.upd.checking'));
     } finally { setChecking(false); }

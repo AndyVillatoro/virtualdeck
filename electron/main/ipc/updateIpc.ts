@@ -9,6 +9,23 @@ import { logError } from '../logger';
 let autoUpdater: any = null;
 let wired = false;
 
+/**
+ * ¿Estamos corriendo como paquete de la Microsoft Store (MSIX)?
+ *
+ * Electron pone `process.windowsStore` a `true` solo en ese caso, y a
+ * `undefined` en cualquier otro. Se mira **en ejecución** y no con una variable
+ * de compilación a propósito: con una variable habría dos compilaciones y la
+ * posibilidad de publicar la equivocada, que es un fallo que no se ve hasta que
+ * la Store rechaza el paquete —o peor, hasta que lo acepta—.
+ *
+ * La Store **prohíbe** que una aplicación se actualice por su cuenta: las
+ * actualizaciones las reparte ella. Un paquete que se descargue un `.exe` y lo
+ * ejecute se rechaza en la revisión.
+ */
+function esDeLaStore(): boolean {
+  return process.windowsStore === true;
+}
+
 async function loadUpdater(): Promise<any> {
   if (autoUpdater) return autoUpdater;
   try {
@@ -30,6 +47,7 @@ function wireEvents(win: BrowserWindow, up: any) {
 /** Chequeo automático al arranque (llamado desde index.ts). Silencioso. */
 export async function autoCheckOnStartup(win: BrowserWindow) {
   if (process.env.NODE_ENV === 'development') return;
+  if (esDeLaStore()) return;
   const up = await loadUpdater();
   if (!up) return;
   wireEvents(win, up);
@@ -40,6 +58,9 @@ export async function autoCheckOnStartup(win: BrowserWindow) {
 export function registerUpdateIpc(win: BrowserWindow) {
   ipcMain.handle('update:check', async () => {
     if (process.env.NODE_ENV === 'development') return { status: 'disabled' };
+    // En la Store el botón «buscar actualizaciones» tiene que decir que no,
+    // no quedarse callado: si no, parece que la comprobación se colgó.
+    if (esDeLaStore()) return { status: 'store' };
     const up = await loadUpdater();
     if (!up) return { status: 'disabled' };
     wireEvents(win, up);
@@ -54,6 +75,7 @@ export function registerUpdateIpc(win: BrowserWindow) {
   });
 
   ipcMain.handle('update:quitAndInstall', async () => {
+    if (esDeLaStore()) return;
     const up = await loadUpdater();
     if (!up) return;
     try { up.quitAndInstall(); } catch (e: any) { logError('update:install', String(e?.message ?? e)); }

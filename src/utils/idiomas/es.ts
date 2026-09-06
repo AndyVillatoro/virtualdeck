@@ -90,6 +90,7 @@ export const ES: Dict = {
   'help.upd.ready': 'Actualización {version} lista: reinicie para aplicarla.',
   'help.upd.downloading': 'Descargando actualización {version}…',
   'help.upd.error': 'No se pudo buscar actualizaciones.',
+  'help.upd.store': 'Esta copia viene de la Microsoft Store: las actualizaciones las reparte la Store.',
   'help.upd.disabled': 'La actualización automática no está disponible en esta compilación (modo desarrollo).',
   'help.upd.checkError': 'Error al buscar actualizaciones.',
   'help.upd.checking': 'Buscando actualizaciones…',

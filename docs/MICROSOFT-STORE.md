@@ -110,6 +110,48 @@ Se ha decidido **no migrar**. Es una instalación nueva y se reconfigura.
 `identityName` y `publisher` **tienen que salir literalmente de Partner Center**;
 inventarlos hace que la Store rechace el paquete sin explicar por qué.
 
+**Ya están puestos** (2026-09-05), tal cual los dio Partner Center:
+`CubeCode.VirtualDeck`, `CN=93305558-E31B-4038-90C7-98609F235071`, `CubeCode`.
+Comprobados dentro del `.appx` generado, no solo en `package.json`.
+
+### Los iconos: sin `build/appx/` el paquete sale con los de Microsoft
+
+Si no existe esa carpeta, electron-builder mete **sus propias imágenes de
+ejemplo** (`SampleAppx.150x150.png` y compañía) y **no dice nada**: el paquete se
+construye limpio y la aplicación aparece en el menú de inicio con un icono
+generico. Se vio leyendo el `mapping.txt` que genera, no por ningún aviso.
+
+`npm run build:appx-icons` los deriva del mismo `build/icon.png` que usa todo lo
+demás, sobre `#0f0f0f` — los mosaicos de Windows no son transparentes, y un PNG
+con alfa saldría sobre el color de acento del usuario.
+
+### `makeappx.exe` no arranca — el empaquetado falla con `spawn UNKNOWN`
+
+electron-builder 24 trae su propio `makeappx.exe` de 2018, y en Windows 11
+(26200) **no arranca**. El error que enseña es solo `spawn UNKNOWN`; el motivo
+de verdad está en el registro de eventos de Windows, en `SideBySide`:
+
+> No se encontró el ensamblado dependiente
+> `Microsoft.Windows.Build.Appx.AppxPackaging.dll`
+
+La carpeta del vendor trae los `.manifest` de esos ensamblados privados **sin las
+DLL que describen**. No es la caché corrupta: se borró entera, se volvió a bajar
+y falla igual. Tampoco es Smart App Control.
+
+El apaño, comprobado: dejar que electron-builder prepare el montaje —hasta ahí
+llega bien— y empaquetar con el `makeappx.exe` del **SDK de Windows**, que sí
+funciona:
+
+```powershell
+npm run build:store   # falla al final; deja dist\__appx-x64\ preparado
+& "C:\Program Files (x86)\Windows Kitsin.0.26100.0d\makeappx.exe" `
+    pack /f dist\__appx-x64\mapping.txt /p dist\VirtualDeck-X.Y.Z.appx /o
+```
+
+Hay que llamarlo **por su ruta del SDK**: copiado a otra carpeta falla igual.
+Resultado comprobado el 2026-09-05: 116,5 MB, 121 entradas, el núcleo nativo
+dentro (`app/resources/app.asar.unpacked/native/vd-core.node`) y los 7 iconos.
+
 Para probar en local hace falta **firmar con un certificado autofirmado** e
 instalarlo como raíz de confianza. Solo para sideload: el paquete que se sube a
 la Store lo firma Microsoft.
@@ -220,7 +262,18 @@ The application collects no personal data whatsoever.
       con el detalle del grabador de macros y de cada conexión de red.
 - [x] Página de descarga (`docs/index.html`).
 - [x] Notas para el revisor, en inglés (§4).
-- [ ] Target `appx` en `package.json`.
-- [ ] Rama de compilación que desactiva el actualizador.
-- [ ] Extensión `windows.startupTask` en el manifiesto.
+- [x] Target `appx` en `package.json`, con los valores reales de Partner Center.
+- [x] Iconos del paquete (`build/appx/`, generados desde el icono del proyecto).
+- [x] Un `.appx` construido y verificado por dentro.
+- [x] Actualizador desactivado en la Store — **sin rama de compilación**: se mira
+      `process.windowsStore` en ejecución, que Electron pone a `true` solo en el
+      paquete MSIX. Con una variable de compilación habría dos builds y la
+      posibilidad de publicar la equivocada. El botón «buscar actualizaciones»
+      lo dice en vez de quedarse callado.
+- [ ] Extensión `windows.startupTask` en el manifiesto. **Sigue pendiente, y no
+      es solo escribirla**: la extensión no acepta argumentos, así que el
+      `--oculto` que usa la versión de GitHub no vale, y Electron no expone en
+      Windows la forma de saber si el arranque lo hizo el sistema
+      (`wasOpenedAtLogin` es solo de macOS). Hace falta decidir el
+      comportamiento antes de escribir código.
 - [x] LHM fuera del paquete — el riesgo de solo lectura desaparece.
