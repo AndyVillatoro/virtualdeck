@@ -352,7 +352,16 @@ Ver **[CONTRIBUTING.md](CONTRIBUTING.md)** (sección Release). Resumen:
 4. Commit `chore(release): bump X -> Y`.
 5. Tag `vX.Y.Z` y push.
 6. `npm run build:installer`.
-7. `gh release create vX.Y.Z dist/VirtualDeck-Setup-X.Y.Z.exe`.
+7. `gh release create vX.Y.Z dist/VirtualDeck-Setup-X.Y.Z.exe dist/latest.yml dist/VirtualDeck-Setup-X.Y.Z.exe.blockmap`.
+   **El `latest.yml` no es opcional.** electron-updater (proveedor GitHub) pide
+   ese archivo de la última publicación para saber que hay algo nuevo y para
+   comprobar el sha512; sin él la comprobación devuelve 404 y **la
+   actualización automática no funciona, sin decir nada**. Ninguna de las
+   publicaciones hasta la 0.9.2 lo llevaba: la actualización automática figuraba
+   como hecha en el roadmap y nunca funcionó. El `.blockmap` es el que permite
+   descargar solo lo que cambió en vez de los 80 MB enteros.
+   Comprobar después:
+   `curl -sL https://github.com/AndyVillatoro/virtualdeck/releases/latest/download/latest.yml`
 
 ### Si algo se rompe en runtime
 - Audio: console.error con prefix `[audio]` (DevTools del main process).

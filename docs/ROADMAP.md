@@ -31,7 +31,10 @@ Auditoría sobre el código (no solo el doc):
   drag entre páginas, toast de undo, celda viva de preview, backups, toasts de error.
 - **Iteración 3 (diferencial): ✅ 1.2 Variables** (interpolación `{var}`, `set-var`/
   `incr-var`, persistencia, `branch`, widget `variable`).
-- **Iteración 4 (comunidad): 🟡** — auto-update ✅, docs ✅, firma documentada ✅;
+- **Iteración 4 (comunidad): 🟡** — auto-update ✅ (**el código estaba desde el
+  principio, pero no funcionaba**: ninguna publicación subía el `latest.yml` que
+  electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
+  en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
 - **Publicado:** hasta **v0.5.1**. **v0.6.0** y **v0.7.0** están etiquetadas y con
   instalador construido, pero **sin publicar** (decisión pendiente: Microsoft Store en vez
