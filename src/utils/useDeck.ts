@@ -254,8 +254,15 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
         .map((b) => b.page > pageIdx ? { ...b, page: b.page - 1 } : b);
       return { ...prev, pages: newPages, buttons: newButtons };
     });
-    setActivePage((p) => Math.max(0, p > 0 ? p - 1 : 0));
-  }, [withHistory, setActivePage, t]);
+    // A donde se va la vista depende de **cual** se borro, y el `id` no
+    // llegaba hasta aqui: se restaba uno siempre. Las paginas se borran desde
+    // el menu de cualquier pestana, no solo de la abierta, asi que borrar una
+    // posterior a la que estabas viendo te cambiaba de pagina sin motivo.
+    const idx = config.pages.findIndex((pg) => pg.id === id);
+    if (idx >= 0 && config.pages.length > 1) {
+      setActivePage((p) => (idx > p ? p : Math.max(0, p - 1)));
+    }
+  }, [withHistory, setActivePage, config.pages, t]);
 
   // Reorder pages by drag-and-drop
   const reorderPages = useCallback((fromIdx: number, toIdx: number) => {
@@ -270,7 +277,12 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
       const buttons = prev.buttons.map((b) => ({ ...b, page: idxMap.get(b.page) ?? b.page }));
       return { ...prev, pages, buttons };
     });
-    setActivePage(toIdx);
+    // Seguir a la pagina que se estaba viendo, no saltar a la arrastrada.
+    setActivePage((p) => {
+      if (p === fromIdx) return toIdx;
+      const q = p > fromIdx ? p - 1 : p;
+      return q >= toIdx ? q + 1 : q;
+    });
   }, [withHistory, setActivePage, t]);
 
   // Set grid size for a page (extends to 5×5, 6×6, and rectangular gridRows)
