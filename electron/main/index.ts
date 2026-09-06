@@ -4,7 +4,7 @@ import { loadConfig } from './configManager';
 import { createMainWindow } from './windowManager';
 import { createTray, applyTriggerableConfig } from './trayManager';
 import { registerAllIpc } from './ipc';
-import { fijarArranqueAutomatico } from './ipc/appIpc';
+import { fijarArranqueAutomatico, migrarArranqueAutomatico } from './ipc/appIpc';
 import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
@@ -77,6 +77,10 @@ function setupWindow() {
   registerAllIpc(win, onQuit);
   // Reescribir la entrada del registro de quien ya tenia el inicio automatico:
   // la suya no lleva la marca de arrancar escondido y no se corrige sola.
+  //
+  // La migracion va **antes**: mientras la entrada este con el nombre viejo,
+  // esta condicion es `false` y la reescritura no llega a ejecutarse nunca.
+  migrarArranqueAutomatico();
   if (app.getLoginItemSettings().openAtLogin) fijarArranqueAutomatico(true);
   // El sondeo del estado del sistema vive aqui y se reparte a las dos
   // ventanas: la barra flotante es otra y antes no lo tenia.
