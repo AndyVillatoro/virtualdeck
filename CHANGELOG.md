@@ -4,6 +4,61 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.9.2] — 2026-09-05
+
+Una tanda entera de arreglos de **pérdida de datos** y del panel de música.
+Ninguno se buscó por un reporte: salieron de recorrer los caminos por los que
+entra o sale un archivo, y de cruzar lo que la aplicación *declara* con lo que
+*hace*. Cinco de ellos podían dejar al usuario sin sus botones.
+
+### Fixed
+
+- **Restaurar una copia de seguridad podía borrar la configuración actual sin
+  dejar rastro.** La copia previa —la de lo que estás a punto de pisar— se
+  saltaba si había una hecha hacía menos de cinco minutos, que es justo el caso
+  normal. Ahora restaurar la fuerza siempre.
+- **Un archivo de configuración ilegible salía como un deck vacío**, sin decir
+  nada, y el primer cambio lo sobreescribía. Un corte de luz a mitad de un
+  guardado bastaba. Ahora el archivo roto se aparta antes de que nada lo pise,
+  con un nombre que la rotación de copias no borra, y se avisa en pantalla.
+- **Se hacían «copias de seguridad» de archivos que no se podían leer**, y
+  salían en la lista de restaurar junto a las buenas. Restaurar una de esas
+  volvía a romper la configuración.
+- **Una configuración con la forma dañada dejaba la ventana en blanco.** Un
+  `pages` que no fuera una lista reventaba el primer render: ni mensaje, ni
+  rejilla, ni forma de llegar a los ajustes para arreglarlo. Ahora se repara lo
+  mínimo para poder abrir y se dice qué se tocó.
+- **Un `gridSize` fuera de rango creaba 9801 botones en una sola página** y una
+  rejilla de 99 columnas imposible de usar. El acotado existía, pero solo en la
+  importación de una página suelta: importar la configuración entera y cargarla
+  del disco no pasaban por ahí.
+- **Importar un deck con botones ± de brillo o volumen se rechazaba entero.**
+  La lista de tipos válidos del validador estaba escrita a mano y le faltaba
+  `adjust` — y cuatro de los botones de ejemplo son de ese tipo. En la práctica:
+  exportar tu propia configuración y volver a importarla fallaba.
+- **Exportar releía el archivo del disco**, y ese archivo devuelve vacío cuando
+  no se puede leer. O sea que el día en que la configuración se corrompe —que
+  es cuando le das a «exportar» para salvar lo que queda— salía un archivo vacío
+  diciendo que había ido bien.
+- **Un cambio suelto podía quedarse 400 ms sin escribir y perderse** si cerrabas
+  la aplicación justo después.
+- **Los botones de anterior y siguiente de la música no hacían nada y no lo
+  decían.** La aplicación ya sabía preguntar qué admite cada fuente, pero por el
+  camino rápido esa información no llegaba nunca. Un vídeo suelto de YouTube
+  declara que no admite ninguno de los dos. Ahora salen deshabilitados y con el
+  motivo.
+- **Al pulsar pausa, el icono seguía diciendo «reproduciendo»** hasta cinco
+  segundos. Ahora cambia en 400 ms.
+- **«1 SELECCIONADOS»** en la barra de selección múltiple.
+
+### Changed
+
+- Un `powershell.exe` menos cada cuatro segundos: había dos llamadas idénticas
+  seguidas para leer los títulos de ventana, y la segunda solo se alcanzaba
+  cuando la primera ya había devuelto vacío.
+- El **wiki bilingüe está publicado**: 14 páginas, siete parejas español/inglés.
+  Es lo que abre el botón «Documentación».
+
 ## [0.9.1] — 2026-09-01
 
 Un parche pequeño con una razón concreta: la versión 0.9.0 dejó dos textos que
