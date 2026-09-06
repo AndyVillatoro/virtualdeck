@@ -27,3 +27,4 @@ skills-lock.json
 target/
 # El .node compilado — se genera con `npm run build:native`
 native/
+_cdp.mjs
