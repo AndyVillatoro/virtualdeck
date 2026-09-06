@@ -195,10 +195,20 @@ export function sanearPagina(p: PageConfig): { pagina: PageConfig; tocada: boole
 export function sanearConfig(raw: unknown): { config: Partial<DeckConfig>; reparado: string[] } {
   const reparado: string[] = [];
   const c = (isObject(raw) ? { ...raw } : {}) as Partial<DeckConfig> & Record<string, unknown>;
-  if (!isObject(raw)) reparado.push('config');
+  // `{}` es «no hay archivo», que es normal. Lo que no lo es: un archivo que
+  // existe y no contiene un objeto.
+  if (!isObject(raw) && raw !== undefined && raw !== null) reparado.push('config');
+
+  // **Ausente no es roto.** Una instalacion nueva no tiene archivo y `loadConfig`
+  // devuelve `{}`: sin esta distincion, el primer arranque de todo el mundo
+  // saludaba con «la configuracion venia con la forma dañada». Solo se avisa de
+  // lo que estaba **presente y mal**, que es lo unico que el usuario puede haber
+  // perdido.
+  const traiaPaginas = c.pages !== undefined;
+  const traiaBotones = c.buttons !== undefined;
 
   const utiles = Array.isArray(c.pages) ? c.pages.filter(isPage) : [];
-  if (!Array.isArray(c.pages) || utiles.length !== c.pages.length) reparado.push('pages');
+  if (traiaPaginas && (!Array.isArray(c.pages) || utiles.length !== c.pages.length)) reparado.push('pages');
   // Una rejilla fuera de rango no invalida la pagina —los botones que tenga son
   // buenos— pero si se deja pasar crea miles de huecos. Se acota y se avisa.
   const saneadas = utiles.map(sanearPagina);
@@ -208,13 +218,13 @@ export function sanearConfig(raw: unknown): { config: Partial<DeckConfig>; repar
     // Sin ninguna página utilizable no hay donde poner los botones. Se pone una
     // y los botones se reparten por posición, como en cualquier otra carga.
     c.pages = [{ id: 'main', name: 'Main' }];
-    if (!reparado.includes('pages')) reparado.push('pages');
+    if (traiaPaginas && !reparado.includes('pages')) reparado.push('pages');
   } else {
     c.pages = paginas;
   }
 
   const botones = Array.isArray(c.buttons) ? c.buttons.filter(isButton) : [];
-  if (!Array.isArray(c.buttons) || botones.length !== c.buttons.length) reparado.push('buttons');
+  if (traiaBotones && (!Array.isArray(c.buttons) || botones.length !== c.buttons.length)) reparado.push('buttons');
   c.buttons = botones;
 
   return { config: c, reparado };
