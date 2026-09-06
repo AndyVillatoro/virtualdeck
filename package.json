@@ -120,7 +120,8 @@
       "languages": [
         "es-ES",
         "en-US"
-      ]
+      ],
+      "customExtensionsPath": "build/appx/extensions.xml"
     }
   }
 }
