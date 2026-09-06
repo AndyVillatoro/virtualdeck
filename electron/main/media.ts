@@ -352,6 +352,96 @@ async function fallbackFromWindows(): Promise<NowPlaying | null> {
   };
 }
 
+/**
+ * Pide la caratula de una pista, una sola vez, en segundo plano.
+ *
+ * La descarga tarda mucho mas que la consulta de la pista, asi que no se espera:
+ * cuando llega se mete en la cache y el siguiente tick del widget ya la enseña.
+ */
+function pedirCaratula(trackKey: string) {
+  _thumbTrack = trackKey;
+  _thumbData = '';
+  if (_pendingThumbs.has(trackKey)) return;
+  const fetchP = runPS(THUMB_SCRIPT).then((tr) => {
+    // Si el usuario ya cambio de pista, esta caratula es de la anterior.
+    if (trackKey !== _thumbTrack) return;
+    if (tr.ok && tr.stdout && tr.stdout.startsWith('data:')) {
+      _thumbData = tr.stdout;
+      if (_cache.data && `${_cache.data.title}|${_cache.data.artist}` === trackKey) {
+        _cache.data = { ..._cache.data, thumbnail: tr.stdout };
+      }
+    }
+  }).finally(() => { _pendingThumbs.delete(trackKey); });
+  _pendingThumbs.set(trackKey, fetchP);
+}
+
+/** Los cuatro `True/False` que dice SMTC sobre lo que la sesion admite. */
+function parsearControles(caps: string | undefined): NowPlaying['controls'] {
+  // Si el script es de una version anterior no viene el campo, y entonces se
+  // deja sin definir: eso significa «no se sabe», que no es «no se puede».
+  if (!caps) return undefined;
+  const p = caps.split('/');
+  const si = (i: number) => p[i]?.trim() === 'True';
+  return { next: si(0), prev: si(1), shuffle: si(2), repeat: si(3) };
+}
+
+const ESTADOS: NowPlaying['status'][] = ['Playing', 'Paused', 'Stopped', 'Unknown'];
+
+/**
+ * La linea que devuelve QUICK_SCRIPT, convertida en una pista.
+ *
+ * `null` si no trae ni titulo ni artista, que es como SMTC dice «hay sesion
+ * pero no sabe que suena».
+ */
+function parsearPista(stdout: string): NowPlaying | null {
+  const [title, artist, status, source, caps] = stdout.split('|');
+  const titleStr = title?.trim() ?? '';
+  const artistStr = artist?.trim() ?? '';
+  if (!titleStr && !artistStr) return null;
+
+  const trackKey = `${titleStr}|${artistStr}`;
+  if (trackKey !== _thumbTrack) pedirCaratula(trackKey);
+
+  const est = status?.trim() ?? '';
+  return {
+    title: titleStr,
+    artist: artistStr,
+    status: (ESTADOS as string[]).includes(est) ? (est as NowPlaying['status']) : 'Unknown',
+    source: source?.trim() ?? '',
+    thumbnail: _thumbData || undefined,
+    controls: parsearControles(caps),
+  };
+}
+
+/**
+ * Le pregunta a SMTC por PowerShell que suena.
+ *
+ * Devuelve dos cosas distintas a proposito. `pista` es lo que suena, y
+ * `contesto` es si SMTC **funciono**: un 'NONE' es una respuesta valida —«no
+ * hay nada sonando»— y no lo mismo que un error del script. De esa diferencia
+ * depende que se caiga o no al plan B de leer titulos de ventana.
+ */
+async function consultarSmtc(): Promise<{ pista: NowPlaying | null; contesto: boolean }> {
+  try {
+    const r = await runPS(QUICK_SCRIPT);
+    if (!r.ok) {
+      if (r.stderr) logErrorOnce('smtc-quick', r.stderr);
+      return { pista: null, contesto: false };
+    }
+    if (r.stdout.startsWith('NONE')) return { pista: null, contesto: true };
+    if (r.stdout.startsWith('ERR')) {
+      logErrorOnce('smtc-quick', `script error: ${r.stdout}${r.stderr ? ' / stderr: ' + r.stderr : ''}`);
+      return { pista: null, contesto: false };
+    }
+    if (!r.stdout) return { pista: null, contesto: false };
+    const pista = parsearPista(r.stdout);
+    return { pista, contesto: pista !== null };
+  } catch (e) {
+    logErrorOnce('smtc-exception', String(e));
+    return { pista: null, contesto: false };
+  }
+}
+
 export async function getNowPlaying(): Promise<NowPlaying | null> {
   // Camino nativo: SMTC por WinRT, en proceso y con tipos verificados. Aqui
   // desaparece el bloque marcado «NO tocar» de mas arriba — la reflexion para
@@ -382,62 +472,7 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
   if (Date.now() - _cache.ts < 4000) return _cache.data;
   _cache.ts = Date.now();
 
-  let smtc: NowPlaying | null = null;
-  let smtcWorked = false;
-  try {
-    const r = await runPS(QUICK_SCRIPT);
-    if (!r.ok) {
-      if (r.stderr) logErrorOnce('smtc-quick', r.stderr);
-    } else if (r.stdout && !r.stdout.startsWith('NONE') && !r.stdout.startsWith('ERR')) {
-      const [title, artist, status, source, caps] = r.stdout.split('|');
-      const titleStr = title?.trim() ?? '';
-      const artistStr = artist?.trim() ?? '';
-      if (titleStr || artistStr) {
-        smtcWorked = true;
-        const trackKey = `${titleStr}|${artistStr}`;
-        if (trackKey !== _thumbTrack) {
-          _thumbTrack = trackKey;
-          _thumbData = '';
-          if (!_pendingThumbs.has(trackKey)) {
-            const fetchP = runPS(THUMB_SCRIPT).then((tr) => {
-              // Stale-result guard: only commit if the user is still on this track.
-              if (trackKey !== _thumbTrack) return;
-              if (tr.ok && tr.stdout && tr.stdout.startsWith('data:')) {
-                _thumbData = tr.stdout;
-                if (_cache.data && `${_cache.data.title}|${_cache.data.artist}` === trackKey) {
-                  _cache.data = { ..._cache.data, thumbnail: tr.stdout };
-                }
-              }
-            }).finally(() => { _pendingThumbs.delete(trackKey); });
-            _pendingThumbs.set(trackKey, fetchP);
-          }
-        }
-        smtc = {
-          title: titleStr,
-          artist: artistStr,
-          status: (['Playing','Paused','Stopped','Unknown'].includes(status?.trim() ?? '')
-            ? status.trim() : 'Unknown') as NowPlaying['status'],
-          source: source?.trim() ?? '',
-          thumbnail: _thumbData || undefined,
-          // Llegan como 'True/False/True/False'; si el script es de una version
-          // anterior no viene el campo y se deja sin definir, que significa
-          // «no se sabe» y no «no se puede».
-          controls: caps ? {
-            next: caps.split('/')[0]?.trim() === 'True',
-            prev: caps.split('/')[1]?.trim() === 'True',
-            shuffle: caps.split('/')[2]?.trim() === 'True',
-            repeat: caps.split('/')[3]?.trim() === 'True',
-          } : undefined,
-        };
-      }
-    } else if (r.stdout.startsWith('NONE')) {
-      smtcWorked = true;
-    } else if (r.stdout.startsWith('ERR')) {
-      logErrorOnce('smtc-quick', `script error: ${r.stdout}${r.stderr ? ' / stderr: ' + r.stderr : ''}`);
-    }
-  } catch (e) {
-    logErrorOnce('smtc-exception', String(e));
-  }
+  const { pista: smtc, contesto: smtcWorked } = await consultarSmtc();
 
   if (smtc) {
     _cache.data = smtc;
@@ -459,13 +494,17 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
   // SMTC errored (e.g. Edge doesn't register): always re-query window titles
   // so a switched tab/video shows up. The previous code only fell through here
   // on first run, then returned the stale lastValid forever.
-  {
-    const fb = await fallbackFromWindows();
-    if (fb) {
-      _cache.data = fb;
-      _cache.lastValid = fb;
-      return fb;
-    }
+  //
+  // Y se pregunta **una sola vez**. Habia una segunda llamada identica al final
+  // de la funcion, alcanzable solo cuando esta ya habia devuelto vacio: un
+  // `powershell.exe` de mas —medido: 405 ms solo el arranque con `Add-Type`—
+  // cada cuatro segundos, en el caso que ya habia fallado. Quedo de cuando se
+  // añadio este bloque delante y no se quito el de detras.
+  const fb = await fallbackFromWindows();
+  if (fb) {
+    _cache.data = fb;
+    _cache.lastValid = fb;
+    return fb;
   }
 
   if (_cache.lastValid) {
@@ -473,10 +512,8 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
     return _cache.lastValid;
   }
 
-  const fb = await fallbackFromWindows();
-  _cache.data = fb;
-  if (fb) _cache.lastValid = fb;
-  return fb;
+  _cache.data = null;
+  return null;
 }
 
 // Shuffle toggle vía SMTC — invierte el estado actual de shuffle.

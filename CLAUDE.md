@@ -134,9 +134,18 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   `GetTypedObjectForIUnknown`, `GetResults()` a pelo, y C# con `Add-Type`, que no
   puede referenciar un `.winmd`): todas fallan. La de un solo genérico completa la
   tarea pero devuelve otro `__ComObject` sin `.Size`. **No es un fallo del código de
-  la aplicación**; si no hay núcleo, no hay carátula. Y en esta máquina el núcleo no
-  carga porque **Smart App Control** (`VerifiedAndReputablePolicyState = 1`) bloquea
-  el `.node` sin firmar: otra consecuencia de no tener certificado, y esta silenciosa.
+  la aplicación**; si no hay núcleo, no hay carátula.
+  **Y sí hay núcleo en esta máquina.** La nota anterior decía que Smart App Control
+  bloqueaba el `.node` sin firmar y que por eso no había carátulas; se midió el
+  2026-09-05 y no se sostiene. Con `VerifiedAndReputablePolicyState = 1` —o sea, SAC
+  encendido— el `require('./native/vd-core.node')` **carga** y expone sus funciones,
+  `media.nowPlaying()` contesta en 0–5 ms (un `powershell.exe` tarda 405 ms solo en
+  arrancar) y devuelve `thumbnail` como `data:image/png`, que es lo que el camino de
+  PowerShell no puede hacer de ninguna manera. La carátula se ve en pantalla, 43×43
+  en la franja lateral. Lo que SAC sí bloquea es **compilar**: los proc-macro recién
+  generados (`darling_macro-*.dll`, os error 4551) no tienen reputación. Son dos
+  cosas distintas que estaban dichas como una. **Las carátulas no dependen del
+  certificado.**
 - `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
 - `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
 - `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC
