@@ -22,7 +22,7 @@
 
 ---
 
-## Estado general (2026-08-23)
+## Estado general (2026-09-06)
 
 Auditoría sobre el código (no solo el doc):
 
@@ -36,15 +36,22 @@ Auditoría sobre el código (no solo el doc):
   electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
   en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
-- **Publicado:** hasta **v0.5.1**. **v0.6.0** y **v0.7.0** están etiquetadas y con
-  instalador construido, pero **sin publicar** (decisión pendiente: Microsoft Store en vez
-  de release de GitHub).
+- **Publicado:** hasta **v0.9.4** en GitHub Releases, con `latest.yml` y `.blockmap`
+  —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
+  separado (ítem 30).
 - **i18n profundo (Bloque A): ✅ todo**, incluido lo que no estaba en la lista — el
   **proceso principal** (bandeja y diálogos) y los módulos que no son componentes.
   512 claves ES/EN. Con una salvedad que conviene no olvidar: la auditoría es una
   heurística, y esta sesión encontró textos con ella en verde **abriendo la app en
   inglés**. «Auditoría limpia» no es «todo traducido».
 - **Código muerto: ✅** knip en cero (eran ~97 exports y 17 tipos).
+- **Guardianes de `npm run check`: seis.** i18n, tipos de acción, canales IPC, wiki,
+  campos del editor y perfiles de la galería. Cada uno nació de un fallo que llegó a
+  la máquina del usuario con la compilación en verde.
+- **Lecciones de la ronda de auditoría (0.9.4):** *un camino que no se ejecuta nunca
+  se pudre sin que nadie lo note, y a quien le toca es justo quien no puede
+  diagnosticarlo* — de ahí `VD_SIN_NUCLEO=1`. Y *devolver éxito sin haber hecho nada
+  es peor que fallar*, porque no deja rastro que seguir.
 
 ---
 
@@ -114,6 +121,10 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 27 | Botón ± para brillo y volumen | Acción `adjust`: sube o baja desde donde esté. Rueda del ratón sobre la celda, o dos botones. Cuatro presets sembrados. | ✅ 2026-08-23 |
 | 28 | Widget de divisas | Conversión entre dos monedas, tasa diaria de `open.er-api.com`, cacheada. | ✅ 2026-08-23 |
 | 29 | Más presets RGB | De 7 a 18, con brillo y velocidad por preset. Sin motor de animación: se decidió ir por presets prehechos. | ✅ 2026-08-23 |
+| 30 | Microsoft Store (MSIX) | Paquete con iconos propios, `virtualdeck://` declarado en el manifiesto y arranque con la sesión. Falta la ficha de la tienda, que es del dueño. | 🚧 |
+| 31 | Auditoría de caminos de respaldo | `VD_SIN_NUCLEO=1` para arrancar ignorando el núcleo nativo. Sin él ese código no se ejecuta nunca y se pudre; cinco fallos de la 0.9.4 salieron de ahí. | ✅ 2026-09-06 |
+| 32 | Auditoría «dice que sí sin hacer nada» | Barrido de las acciones que devuelven éxito con la lista vacía o sin encontrar nada: RGB, enlaces, lanzador. | ✅ 2026-09-06 |
+| 33 | Integridad de la configuración | Escritura atómica (temporal + renombre con reintentos) y rotación de copias por fecha, no por nombre. | ✅ 2026-09-06 |
 
 ---
 
@@ -189,3 +200,8 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
   tiempo de instalación y bugs en Windows).
 - **No multiplicar la paleta.** Los tokens de `src/design.ts` son la fuente de verdad.
 - **No romper la firma dot-matrix.** Es lo que distingue a VirtualDeck.
+- **No devolver éxito por defecto.** Un bucle sobre una lista vacía, un `find` que no
+  encuentra nada o un `default:` que responde «ok» dejan al usuario sin nada que
+  mirar. Si no se hizo nada, se dice.
+- **No dar por buena una función con dos caminos habiendo probado uno.** Con el núcleo
+  nativo cargado el respaldo no se ejecuta jamás: `VD_SIN_NUCLEO=1`.

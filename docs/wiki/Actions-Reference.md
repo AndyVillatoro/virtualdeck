@@ -29,7 +29,7 @@ Any string field described as *accepts {variables}* is interpolated with
 
 | Type | Fields | Description |
 |---|---|---|
-| `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Runs a script. Can show stdout in a toast and/or store it in a variable. |
+| `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Runs a script. Can show stdout in a toast and/or store it in a variable. Both interpreters accept multiple lines and accented text. |
 | `audio-device` | `deviceId`, `deviceName?` | Switches the default output device. |
 | `volume-set` | `volumePercent` (0–100) | Sets the master volume to an exact percentage. |
 | `volume-up` / `volume-down` / `mute` | — | Media keys. |
@@ -96,7 +96,7 @@ These need OpenRGB — see [Sensors & RGB](Sensors-and-RGB).
 | Type | Fields | Description |
 |---|---|---|
 | `branch` | `branchVar`, `branchOp`, `branchValue`, `branchThen`, `branchElse?` | Compares a variable and runs one branch or the other. Operators: `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`, `empty`, `not-empty`. |
-| `countdown` | `timerDelay` (ms), `timerActions` | Waits, then runs a sub-sequence. |
+| `countdown` | `timerDelay` (ms), `timerActions` | Waits, then runs a sub-sequence. Pick the action in the editor’s **WHEN DONE** field; without it the button waits and does nothing. Up to one hour. |
 
 ## Folder (sub-deck)
 

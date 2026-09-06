@@ -4,6 +4,67 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.9.4] — 2026-09-06
+
+Una ronda entera de auditoría: doce arreglos, todos medidos con un control al
+lado. Ninguno se veía mirando la aplicación — unos vivían en caminos que solo se
+recorren cuando falta el núcleo nativo o cuando algo ya ha ido mal, y otros
+decían que habían funcionado sin haber hecho nada.
+
+### Fixed
+
+- **Guardar la configuración no era atómico.** El archivo se vaciaba y luego se
+  volvía a llenar, así que un corte de luz o un cierre forzado justo ahí dejaba
+  el `deck-config.json` a medias — que es exactamente el destrozo que el resto
+  del módulo se dedica a recoger. Medido con un lector comprobando el archivo
+  mientras se guardaba cuarenta veces: **22 estados ilegibles con la escritura
+  de antes, ninguno ahora**. Se escribe a un temporal y se renombra encima, con
+  reintentos porque en Windows el renombre falla si el antivirus tiene el
+  archivo abierto.
+- **La rotación de copias de seguridad borraba la más reciente.** Ordenaba por
+  nombre, y el sufijo que distingue dos copias del mismo segundo invierte ese
+  orden. Con siete guardados seguidos conservaba la primera y tiraba la última.
+- **Un paso de texto de una macro podía ejecutar código.** Sin el núcleo nativo,
+  la reproducción pasa por PowerShell, y el texto se metía en el script sin
+  escapar: `precio $100` se escribía «precio  USD», unas comillas rompían la
+  macro entera y `$env:USERNAME` **se evaluaba** en vez de teclearse. Una macro
+  importada de la galería dejaba de ser «teclea esto».
+- **De un script de `cmd` solo se ejecutaba la primera línea**, y los acentos
+  salían rotos. Ahora se escribe un `.bat` de verdad, como ya se hacía con
+  PowerShell.
+- **Sin núcleo nativo no se podía abrir nada instalado en una ruta con
+  espacios** — o sea, casi cualquier programa — y la acción decía que había ido
+  bien.
+- **Cuatro acciones RGB decían que sí sin haber hecho nada:** poner color y poner
+  modo «en todos» con la lista de dispositivos vacía —lo que ocurre cuando
+  OpenRGB corre sin permisos de administrador—, aplicar un preset en esa misma
+  situación, y aplicar un perfil guardado en otro equipo o con una placa
+  renombrada, que se saltaba todos los dispositivos y daba por hecho el trabajo.
+- **Borrar o mover una página te cambiaba la que estabas viendo.** Las dos
+  operaciones se hacen desde el menú de cualquier pestaña y ninguna miraba
+  dónde estabas: borrar la página 4 desde la 1 te dejaba en la 0, y arrastrar
+  una pestaña te llevaba a ella aunque estuvieras en otra.
+- **Un botón de temporizador esperaba y no hacía nada.** El editor no tenía
+  dónde decir qué acción ejecutar al terminar la cuenta atrás. Se añadió el
+  campo, y el límite sube de un minuto a una hora.
+- **El código de emparejamiento del mando móvil moría al pulsar cualquier
+  botón**: el servidor local se reiniciaba en cada guardado de la configuración,
+  y reiniciarlo borra el código.
+- **Una instalación nueva saludaba diciendo que su configuración venía dañada.**
+- **Pedir por enlace una página que no existe** (`virtualdeck://page/9` en un
+  deck de tres) contestaba que sí. Por HTTP eso lo lee una automatización.
+- **Los errores de enlace salían en español con la aplicación en inglés**, y
+  también el «falta la ruta a OpenRGB.exe».
+
+### Changed
+
+- El interruptor `VD_SIN_NUCLEO=1` permite arrancar la aplicación ignorando el
+  núcleo nativo. Con el `.node` cargado esos caminos no se ejecutan nunca y se
+  pudren sin que nadie lo note; quien no tiene núcleo es justo quien no puede
+  diagnosticarlo. Cinco de los fallos de esta versión salieron de ahí.
+- `npm run check` corre ahora seis guardianes: se suman el de campos de acción
+  (que cada campo del editor lo lea alguien) y el de perfiles de la galería.
+
 ## [0.9.3] — 2026-09-06
 
 Preparativos de la Microsoft Store, y dos fallos del arranque con Windows que

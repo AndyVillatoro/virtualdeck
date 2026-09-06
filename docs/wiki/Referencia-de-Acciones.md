@@ -26,7 +26,7 @@ Cualquier campo string que mencione "*acepta {variables}*" es interpolado en run
 
 | Tipo | Campos | Descripción |
 |------|--------|-------------|
-| `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?` | Ejecuta script. Si `showOutput`, captura stdout y lo muestra en toast. |
+| `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Ejecuta un script. Puede mostrar la salida en un aviso y/o guardarla en una variable. Los dos intérpretes admiten varias líneas y acentos. |
 | `audio-device` | `deviceId`, `deviceName?` | Cambia dispositivo de salida por defecto. |
 | `volume-set` | `volumePercent` (0–100) | Establece volumen master a un porcentaje exacto. |
 | `volume-up` / `volume-down` / `mute` | — | Teclas multimedia. |
@@ -88,7 +88,7 @@ Requieren OpenRGB — ver [Sensores y RGB](Sensores-y-RGB).
 | Tipo | Campos | Descripción |
 |------|--------|-------------|
 | `branch` | `branchVar`, `branchOp`, `branchValue`, `branchThen`, `branchElse?` | Compara una variable y ejecuta una rama u otra. Operadores: `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`, `empty`, `not-empty`. |
-| `countdown` | `timerDelay` (ms), `timerActions` | Espera y luego ejecuta una sub-secuencia. |
+| `countdown` | `timerDelay` (ms), `timerActions` | Espera y luego ejecuta una sub-secuencia. La acción del final se elige en el campo **AL TERMINAR** del editor; sin ella el botón espera y no hace nada. Hasta una hora. |
 
 ## Media extendido
 
