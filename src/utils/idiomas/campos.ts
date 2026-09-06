@@ -40,6 +40,8 @@ export const FIELDS_EN: Record<string, string> = {
   'PROCESO A AJUSTAR (opcional — vacío = ventana activa)': 'PROCESS TO SNAP (optional — empty = active window)',
   'CONDICIÓN: SI {variable}': 'CONDITION: IF {variable}',
   'ENTONCES (acción si VERDADERO)': 'THEN (action if TRUE)',
+  'AL TERMINAR (qué hace cuando se cumple el tiempo)': 'WHEN IT ENDS (what runs once the time is up)',
+  'Espera este tiempo y después ejecuta la acción de abajo. El botón queda libre mientras tanto.': 'Waits this long, then runs the action below. The button stays usable meanwhile.',
   'SI NO (acción si FALSO — opcional)': 'ELSE (action if FALSE — optional)',
   'TIEMPO DE ESPERA (milisegundos)': 'WAIT TIME (milliseconds)',
   'PASOS DE LA MACRO': 'MACRO STEPS',

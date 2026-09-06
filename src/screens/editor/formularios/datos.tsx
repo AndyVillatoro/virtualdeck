@@ -175,11 +175,19 @@ export function FormBranch(p: PropsFormulario) {
   );
 }
 
+/** «1,5 s» hasta el minuto; «25 min» a partir de ahi. Un pomodoro en ms no se lee. */
+function legibleMs(ms: number): string {
+  if (ms < 60000) return `= ${(ms / 1000).toFixed(1)}s`;
+  const min = Math.floor(ms / 60000);
+  const seg = Math.round((ms % 60000) / 1000);
+  return seg === 0 ? `= ${min} min` : `= ${min} min ${seg}s`;
+}
+
 export function FormCountdown(p: PropsFormulario) {
   const VD = useTheme();
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
-  const { action, setAction } = p;
+  const { accent, action, setAction } = p;
   return (
     <>
           <>
@@ -187,18 +195,33 @@ export function FormCountdown(p: PropsFormulario) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <input
                   type="number"
-                  min={100} max={60000} step={100}
+                  min={100} max={3600000} step={100}
                   value={action.timerDelay ?? 1000}
-                  onChange={(e) => setAction((a) => ({ ...a, timerDelay: Math.max(100, parseInt(e.target.value) || 1000) }))}
+                  onChange={(e) => setAction((a) => ({ ...a, timerDelay: Math.min(3600000, Math.max(100, parseInt(e.target.value) || 1000)) }))}
                   style={inputStyle}
                 />
                 <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim, flexShrink: 0 }}>
-                  = {((action.timerDelay ?? 1000) / 1000).toFixed(1)}s
+                  {legibleMs(action.timerDelay ?? 1000)}
                 </span>
               </div>
               <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                {tf('Pausa la secuencia este tiempo antes de continuar con la siguiente acción.')}
+                {tf('Espera este tiempo y después ejecuta la acción de abajo. El botón queda libre mientras tanto.')}
               </div>
+            </Field>
+            <Field label={tf("AL TERMINAR (qué hace cuando se cumple el tiempo)")}>
+              {/*
+                Esto **no existia**. El formulario solo ofrecia el retardo, y
+                `timerActions` —lo unico que el temporizador ejecuta al acabar—
+                no se podia rellenar desde ninguna pantalla. Un temporizador
+                hecho aqui esperaba y no hacia nada, diciendo que habia ido
+                bien. `scripts/check-campos.mjs` cruza ahora los campos que lee
+                el ejecutor con los que alguna pantalla escribe.
+              */}
+              <BranchActionRow
+                action={action.timerActions?.[0] ?? { type: 'none' }}
+                onChange={(a) => setAction((prev) => ({ ...prev, timerActions: a.type !== 'none' ? [a] : [] }))}
+                accent={accent}
+              />
             </Field>
           </>
     </>
