@@ -3,15 +3,42 @@ import { exec, spawn } from 'child_process';
 import { shell } from 'electron';
 import { runPS, runPSBool, injectUtf8Prefix } from './ps-helpers';
 
+/**
+ * Lanza un programa. Camino de respaldo cuando no hay nucleo nativo.
+ *
+ * **Sin `shell: true`.** Lo tenia, y con eso la ruta pasaba por `cmd.exe`, que
+ * la parte por los espacios. Medido con un ejecutable en
+ * `...\carpeta con espacios\mi app.exe`:
+ *
+ *   shell: true   ->  «"C:\Users\..." no se reconoce como un comando»
+ *   shell: false  ->  arranca
+ *
+ * O sea que **cualquier programa en `C:\Program Files\...`** —la mayoria— no se
+ * abria por este camino. Y el `resolve(true)` era incondicional: el fallo pasa
+ * en el proceso hijo, asi que el boton decia que habia ido bien y no pasaba
+ * nada. Sin `shell`, Node entrecomilla los argumentos por su cuenta, y ademas
+ * desaparece la puerta que abria: con `cmd` de por medio, un `&` o un `|` en la
+ * ruta o en los argumentos —los trae quien escribio el perfil, que puede no ser
+ * el usuario— se ejecutaban como ordenes.
+ *
+ * Los `.bat` y `.cmd` **si** necesitan interprete: Node ya no los lanza
+ * directamente. Ahi se llama a `cmd.exe /c` con la ruta como argumento aparte,
+ * que Node entrecomilla igualmente.
+ */
 export async function launchApp(appPath: string, args: string[] = []): Promise<boolean> {
   const r = intentarNativo('launchApp', (n) => n.launchApp(appPath, args));
   if (r !== undefined) return r;
 
   return new Promise((resolve) => {
     try {
-      const child = spawn(appPath, args, { detached: true, stdio: 'ignore', shell: true });
-      child.unref();
-      resolve(true);
+      const esLote = /\.(bat|cmd)$/i.test(appPath.trim());
+      const child = esLote
+        ? spawn('cmd.exe', ['/c', appPath, ...args], { detached: true, stdio: 'ignore', windowsHide: true })
+        : spawn(appPath, args, { detached: true, stdio: 'ignore' });
+      // `spawn` no lanza al fallar: avisa por el evento. Sin esto, «no existe
+      // ese programa» se contaba como exito.
+      child.on('error', () => resolve(false));
+      child.on('spawn', () => { child.unref(); resolve(true); });
     } catch {
       resolve(false);
     }

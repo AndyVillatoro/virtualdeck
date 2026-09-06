@@ -293,6 +293,23 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
   canónico resuelve a ese comando.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
 
+## 🧪 `VD_SIN_NUCLEO=1` — probar los caminos de respaldo
+
+Con el `.node` cargado, **el código de respaldo no se ejecuta nunca**, y por eso
+se pudre sin que nadie lo note. Ahí vivió un `spawn(..., { shell: true })` en
+`launchApp` que impedía abrir cualquier programa instalado en una ruta con
+espacios —o sea, casi todos— **diciendo además que había ido bien**. Quien no
+tiene núcleo es justamente quien no puede diagnosticarlo.
+
+```bash
+VD_SIN_NUCLEO=1 ./dist/win-unpacked/VirtualDeck.exe
+```
+
+La primera línea del registro lo confirma. Conviene pasar por aquí antes de dar
+por buena cualquier función que tenga las dos vías.
+
+---
+
 ## 🔬 Sondas en el proceso principal: `require` no sirve
 
 electron-vite empaqueta todo el proceso principal en **un solo `out/main/index.js`**,

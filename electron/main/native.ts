@@ -130,6 +130,21 @@ let cargado: NucleoNativo | null | undefined;
 export function nucleo(): NucleoNativo | null {
   if (cargado !== undefined) return cargado;
 
+  // `VD_SIN_NUCLEO=1` finge que no hay nucleo, para poder ejercitar los caminos
+  // de respaldo.
+  //
+  // No es un capricho de pruebas: **es la razon por la que se pudren**. En una
+  // maquina con el `.node` cargado, ese codigo no corre nunca, y ahi vivio sin
+  // que nadie lo notara un `spawn(..., { shell: true })` que impedia abrir
+  // cualquier programa instalado en una ruta con espacios —o sea, casi todos—
+  // diciendo ademas que habia ido bien. Quien no tiene nucleo es justamente
+  // quien no puede diagnosticarlo.
+  if (process.env.VD_SIN_NUCLEO === '1') {
+    console.log('[nativo] desactivado por VD_SIN_NUCLEO=1 — se usaran los caminos de respaldo');
+    cargado = null;
+    return null;
+  }
+
   const requerir = createRequire(import.meta.url);
   for (const ruta of rutasCandidatas()) {
     if (!existsSync(ruta)) continue;

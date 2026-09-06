@@ -84,3 +84,32 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     default:               return a.type;
   }
 }
+
+/**
+ * Parte una linea de argumentos respetando las comillas.
+ *
+ * `split(' ')` partia `"C:\Mis Documentos.txt"` en dos argumentos, asi que
+ * cualquier ruta con un espacio llegaba rota al programa. Y desde que el
+ * lanzador no usa `cmd`, cada argumento se entrecomilla por separado, con lo
+ * que los trozos ni siquiera se volvian a juntar.
+ *
+ * Se admiten comillas dobles, que es lo que la gente escribe. Las comillas
+ * delimitan y no forman parte del argumento.
+ */
+export function partirArgumentos(linea: string): string[] {
+  const salida: string[] = [];
+  let actual = '';
+  let dentro = false;
+  let hayAlgo = false;
+  for (const ch of linea) {
+    if (ch === '"') { dentro = !dentro; hayAlgo = true; continue; }
+    if (!dentro && /\s/.test(ch)) {
+      if (hayAlgo) { salida.push(actual); actual = ''; hayAlgo = false; }
+      continue;
+    }
+    actual += ch;
+    hayAlgo = true;
+  }
+  if (hayAlgo) salida.push(actual);
+  return salida;
+}

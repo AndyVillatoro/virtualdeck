@@ -1,11 +1,11 @@
-import { OK, fail, interpolate, actionLabel, type Manejador } from './base';
+import { OK, fail, interpolate, actionLabel, partirArgumentos, type Manejador } from './base';
 
 /** Abrir cosas del sistema: programas, enlaces, accesos directos, ventanas. */
 export const LANZAR: Record<string, Manejador> = {
   'app': async ({ action, api, state, t }) => {
     const path = interpolate(action.appPath, state);
     if (!path) return fail(t('act.err.noAppPath'));
-    const args = interpolate(action.appArgs, state).split(' ').filter(Boolean);
+    const args = partirArgumentos(interpolate(action.appArgs, state));
     const ok = await api.launch.app(path, args);
     return ok ? OK : fail(t('act.err.launch', { que: actionLabel(action, t) }));
   },
