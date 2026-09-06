@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import { resolve } from 'node:path';
 import { loadConfig } from './configManager';
+import { tm } from './idioma';
 
 /**
  * Disparar un botón desde fuera de VirtualDeck, con un enlace.
@@ -81,8 +82,8 @@ export function urlEnArgumentos(argv: string[]): string | null {
  */
 export function atender(url: string, win: BrowserWindow | null): { ok: boolean; error?: string } {
   const orden = interpretar(url);
-  if (!orden) return { ok: false, error: 'enlace no reconocido' };
-  if (!win || win.isDestroyed()) return { ok: false, error: 'sin ventana' };
+  if (!orden) return { ok: false, error: tm('enlace.noReconocido') };
+  if (!win || win.isDestroyed()) return { ok: false, error: tm('enlace.sinVentana') };
 
   if (orden.tipo === 'show') {
     win.show();
@@ -98,12 +99,12 @@ export function atender(url: string, win: BrowserWindow | null): { ok: boolean; 
     // que pida la pagina 9 de un deck de tres se quedaba con que habia ido bien.
     const cfg = loadConfig() as { pages?: unknown[] };
     const total = cfg?.pages?.length ?? 0;
-    if (orden.n > total) return { ok: false, error: `no hay ninguna pagina ${orden.n}` };
+    if (orden.n > total) return { ok: false, error: tm('enlace.sinPagina', { n: String(orden.n) }) };
     win.webContents.send('nav:page', orden.n - 1);
     return { ok: true };
   }
   const id = resolverId(orden);
-  if (!id) return { ok: false, error: `no hay ningun boton "${orden.id ?? orden.label}"` };
+  if (!id) return { ok: false, error: tm('enlace.sinBoton', { que: orden.id ?? orden.label ?? '' }) };
   win.webContents.send('button:trigger', id);
   return { ok: true };
 }

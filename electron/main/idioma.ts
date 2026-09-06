@@ -23,7 +23,7 @@ type Clave =
   | 'filter.images' | 'filter.text'
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
-  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
+  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
   | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject';
 
@@ -48,6 +48,10 @@ const ES: Record<Clave, string> = {
   'media.noArtist': '(sin artista)',
   'rgb.onlyDirect': 'solo ofrece Direct, el color se perderá al cerrar OpenRGB.',
   'rgb.sinRuta': 'Falta la ruta a OpenRGB.exe',
+  'enlace.noReconocido': 'enlace no reconocido',
+  'enlace.sinVentana': 'sin ventana',
+  'enlace.sinPagina': 'no hay ninguna página {n}',
+  'enlace.sinBoton': 'no hay ningún botón «{que}»',
   'sensors.disabled': 'Sensores deshabilitados',
   'sensors.uacCancelled': 'UAC cancelado por el usuario',
   'sensors.netshCode': 'netsh terminó con código',
@@ -81,6 +85,10 @@ const EN: Record<Clave, string> = {
   'media.noArtist': '(no artist)',
   'rgb.onlyDirect': 'only offers Direct; the color is lost when OpenRGB closes.',
   'rgb.sinRuta': 'The path to OpenRGB.exe is missing',
+  'enlace.noReconocido': 'link not recognised',
+  'enlace.sinVentana': 'no window',
+  'enlace.sinPagina': 'there is no page {n}',
+  'enlace.sinBoton': 'there is no button “{que}”',
   'sensors.disabled': 'Sensors disabled',
   'sensors.uacCancelled': 'UAC cancelled by the user',
   'sensors.netshCode': 'netsh exited with code',
@@ -105,6 +113,13 @@ export function fijarIdioma(pref: string | undefined) {
   actual = app.getLocale().toLowerCase().startsWith('es') ? ES : EN;
 }
 
-export function tm(clave: Clave): string {
-  return actual[clave];
+/**
+ * El texto de la clave, con `{variable}` sustituida si se pasan valores — igual
+ * que el `t()` del renderer. Sin esto, cualquier error que lleve un dato dentro
+ * se escribia como plantilla suelta en espanol y se saltaba la traduccion.
+ */
+export function tm(clave: Clave, vars?: Record<string, string>): string {
+  const texto = actual[clave];
+  if (!vars) return texto;
+  return texto.replace(/\{(\w+)\}/g, (todo, n) => vars[n] ?? todo);
 }
