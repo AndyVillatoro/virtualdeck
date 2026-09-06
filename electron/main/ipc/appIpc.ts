@@ -16,6 +16,29 @@ import * as os from 'os';
  */
 export function fijarArranqueAutomatico(activado: boolean) {
   app.setLoginItemSettings({ openAtLogin: activado, args: ['--oculto'] });
+  if (activado) entrecomillarRuta();
+}
+
+/**
+ * Pone comillas a la ruta del ejecutable en la entrada del registro.
+ *
+ * Electron la escribe **sin comillas**. Comprobado con una ruta con espacios:
+ * `C:\Users\...\code proyects\...\VirtualDeck.exe --oculto`. Y el instalador
+ * deja elegir la carpeta, asi que cualquiera puede acabar en una con espacios.
+ *
+ * Windows entonces prueba las interpretaciones por orden: primero
+ * `C:\Users\andyf\code.exe` y solo despues el ejecutable de verdad. Funciona de
+ * casualidad, mientras no exista un ejecutable con ese nombre — que es la clase
+ * de fallo de «ruta sin comillas» de toda la vida.
+ */
+function entrecomillarRuta() {
+  if (process.platform !== 'win32' || !process.execPath.includes(' ')) return;
+  try {
+    execFileSync('reg', [
+      'add', CLAVE_RUN, '/v', 'com.virtualdeck.app', '/t', 'REG_SZ',
+      '/d', `"${process.execPath}" --oculto`, '/f',
+    ], { stdio: 'pipe' });
+  } catch {}
 }
 
 /**
