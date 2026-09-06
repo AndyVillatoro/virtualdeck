@@ -4,6 +4,48 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.9.3] — 2026-09-06
+
+Preparativos de la Microsoft Store, y dos fallos del arranque con Windows que
+salieron mientras se probaba el paquete.
+
+### Fixed
+
+- **El arranque con Windows se quedaba huérfano.** Windows nombra esa entrada
+  con el identificador de la aplicación, y ese identificador cambió al añadir
+  las notificaciones con nombre propio. Desde entonces la entrada que ya
+  existía dejó de encontrarse: **el interruptor de los ajustes decía «apagado»
+  mientras la aplicación sí arrancaba con Windows**, la corrección que debía
+  hacer que arrancase escondida no llegaba a ejecutarse nunca, y volver a
+  encenderlo habría dejado dos entradas y dos arranques a la vez. Ahora se
+  detecta la entrada antigua al arrancar y se sustituye por la correcta.
+- **La ruta del ejecutable iba sin comillas** en esa misma entrada. Si instaló
+  VirtualDeck en una carpeta con espacios, Windows probaba antes otras rutas
+  parciales que la de verdad.
+
+### Added
+
+- **Paquete para la Microsoft Store (MSIX).** Con los iconos propios de la
+  aplicación, el enlace `virtualdeck://` declarado —sin eso los disparadores
+  externos no existirían en esa versión— y el arranque con la sesión.
+  La actualización automática queda desactivada ahí, porque las
+  actualizaciones las reparte la Store; el botón de buscar actualizaciones lo
+  dice en vez de quedarse callado.
+- **Galería de perfiles publicada**, con cuatro perfiles: Esencial, Trabajo,
+  Streaming y RGB.
+
+### Security
+
+- **El aviso de «esto es lo que este perfil va a ejecutar» no veía casi nada.**
+  Solo miraba las acciones de primer nivel: un script metido dentro de un
+  temporizador, de una rama, de una carpeta o de la acción de mantener pulsado
+  **no aparecía en la lista**. Medido con un perfil de prueba que llevaba uno en
+  cada sitio: enseñaba 1 de 5. Ahora enseña los 5, y también las direcciones a
+  las que un perfil mandaría datos.
+- **La galería no comprobaba los tipos de acción.** Un perfil con acciones que
+  esta versión no conoce se importaba entero y sus botones fallaban al
+  pulsarlos, uno a uno. Ahora se rechaza diciendo cuáles son.
+
 ## [0.9.2] — 2026-09-05
 
 Una tanda entera de arreglos de **pérdida de datos** y del panel de música.

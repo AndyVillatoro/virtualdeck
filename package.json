@@ -1,6 +1,6 @@
 {
   "name": "virtualdeck",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "VirtualDeck – Stream Deck alternativo para Windows",
   "main": "out/main/index.js",
   "private": true,
