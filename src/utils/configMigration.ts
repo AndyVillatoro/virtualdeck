@@ -148,6 +148,35 @@ export function migrateConfig(raw: any): any {
 }
 
 /**
+ * Las dimensiones de rejilla que la interfaz sabe manejar.
+ *
+ * No es un detalle cosmetico: `conHuecosCompletos` crea `gridSize * gridRows`
+ * botones por pagina. Medido con un `gridSize: 99` sin acotar, que es lo que
+ * un archivo importado o editado a mano puede traer: **9801 botones** en una
+ * sola pagina, contra 16 del control, y una rejilla de 99 columnas que no se
+ * puede usar ni deshacer desde la interfaz.
+ *
+ * El acotado estaba escrito **solo dentro de la importacion de una pagina
+ * suelta**. La importacion de la configuracion entera y la carga desde disco
+ * no pasaban por ahi, asi que el mismo archivo hacia el mismo destrozo por
+ * los otros dos caminos. Por eso vive aqui y lo usan los tres.
+ */
+const COLUMNAS = [3, 4, 5, 6];
+const FILAS_MAX = 8;
+
+export function sanearPagina(p: PageConfig): { pagina: PageConfig; tocada: boolean } {
+  const cols = COLUMNAS.includes(Number(p.gridSize)) ? (Number(p.gridSize) as 3 | 4 | 5 | 6) : undefined;
+  const filasCrudas = Number(p.gridRows);
+  const filas = Number.isFinite(filasCrudas) && filasCrudas >= 1 && filasCrudas <= FILAS_MAX
+    ? Math.round(filasCrudas) : undefined;
+  // `undefined` es un valor legitimo en los dos: significa «la de por defecto».
+  // Solo cuenta como tocada la pagina que traia algo y no valia.
+  const tocada = (p.gridSize !== undefined && cols === undefined)
+    || (p.gridRows !== undefined && filas === undefined);
+  return { pagina: { ...p, gridSize: cols, gridRows: filas }, tocada };
+}
+
+/**
  * Repara la configuración que se lee del disco para que no tumbe la pantalla.
  *
  * `validateConfig` sirve para lo que **entra de fuera**: ahí rechazar es lo
@@ -168,8 +197,13 @@ export function sanearConfig(raw: unknown): { config: Partial<DeckConfig>; repar
   const c = (isObject(raw) ? { ...raw } : {}) as Partial<DeckConfig> & Record<string, unknown>;
   if (!isObject(raw)) reparado.push('config');
 
-  const paginas = Array.isArray(c.pages) ? c.pages.filter(isPage) : [];
-  if (!Array.isArray(c.pages) || paginas.length !== c.pages.length) reparado.push('pages');
+  const utiles = Array.isArray(c.pages) ? c.pages.filter(isPage) : [];
+  if (!Array.isArray(c.pages) || utiles.length !== c.pages.length) reparado.push('pages');
+  // Una rejilla fuera de rango no invalida la pagina —los botones que tenga son
+  // buenos— pero si se deja pasar crea miles de huecos. Se acota y se avisa.
+  const saneadas = utiles.map(sanearPagina);
+  const paginas = saneadas.map((x) => x.pagina);
+  if (saneadas.some((x) => x.tocada) && !reparado.includes('pages')) reparado.push('pages');
   if (paginas.length === 0) {
     // Sin ninguna página utilizable no hay donde poner los botones. Se pone una
     // y los botones se reparten por posición, como en cualquier otra carga.

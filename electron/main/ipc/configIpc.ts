@@ -52,14 +52,25 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:listBackups', () => listBackups());
   ipcMain.handle('config:restoreBackup', (_e: any, filename: string) => restoreBackup(filename));
 
-  ipcMain.handle('config:export', async () => {
+  // La configuracion la manda **la pantalla**, no se relee del disco.
+  //
+  // Con `loadConfig()` se exportaba lo que hubiera en el archivo, y `loadConfig`
+  // devuelve `{}` cuando el archivo no se puede leer. O sea: justo el dia en que
+  // la configuracion se corrompe —que es exactamente cuando uno le da a
+  // «exportar» para salvar lo que queda— salia un archivo con `{}` dentro y la
+  // interfaz decia que habia ido bien. Lo que la pantalla tiene en memoria es lo
+  // que el usuario esta viendo, y es lo unico que vale la pena guardar.
+  ipcMain.handle('config:export', async (_e: any, data?: object) => {
+    const aEscribir = data ?? loadConfig();
+    // Un objeto vacio no es una configuracion: mejor decirlo que escribirlo.
+    if (!aEscribir || Object.keys(aEscribir).length === 0) return false;
     const r = await dialog.showSaveDialog(win, {
       title: tm('dlg.exportConfig'),
       defaultPath: 'virtualdeck-config.json',
       filters: [{ name: 'JSON', extensions: ['json'] }],
     });
     if (r.canceled || !r.filePath) return false;
-    try { writeFileSync(r.filePath, JSON.stringify(loadConfig(), null, 2), 'utf-8'); return true; }
+    try { writeFileSync(r.filePath, JSON.stringify(aEscribir, null, 2), 'utf-8'); return true; }
     catch { return false; }
   });
 

@@ -10,7 +10,7 @@ import { Onboarding } from './components/Onboarding';
 import { NowPlayingProvider } from './utils/nowPlaying';
 import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
-import { migrateConfig, validateConfig, sanearConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
+import { migrateConfig, validateConfig, sanearConfig, sanearPagina, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
 import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
@@ -301,14 +301,13 @@ export default function App() {
       const newIdx = prev.pages.length;
       // La rejilla viene del archivo y hay que acotarla: un `gridSize: 99` en
       // el JSON pasaba tal cual y creaba una pagina de 99 columnas que no se
-      // puede usar ni deshacer desde la interfaz.
-      const cols = [3, 4, 5, 6].includes(Number(imported.page!.gridSize))
-        ? (Number(imported.page!.gridSize) as 3 | 4 | 5 | 6) : 4;
-      const filasCrudas = Number(imported.page!.gridRows);
-      const filas = Number.isFinite(filasCrudas) && filasCrudas >= 1 && filasCrudas <= 8
-        ? Math.round(filasCrudas) : cols;
+      // puede usar ni deshacer desde la interfaz. `sanearPagina` es la misma
+      // que usan la carga del disco y la importacion de la configuracion
+      // entera, que es donde faltaba.
+      const { pagina: acotada } = sanearPagina(imported.page!);
+      const cols = acotada.gridSize ?? 4;
       const newPage: PageConfig = {
-        ...imported.page!, gridSize: cols, gridRows: filas,
+        ...acotada, gridSize: cols, gridRows: acotada.gridRows ?? cols,
         id: `page_${Date.now()}`,
         name: (imported.page!.name || t('page.importedName')).toUpperCase(),
       };
@@ -379,7 +378,10 @@ export default function App() {
   const { sensors: sensorList } = useSensors();
   useDisparadores({ botones: config.buttons, sensores: sensorList, disparar: dispararBoton });
 
-  const handleConfigExport = useCallback(async () => { await api?.config.export(); }, [api]);
+  // Se manda `config`, lo que hay en pantalla, y no se deja que el proceso
+  // principal lo relea del disco: si el archivo estuviera ilegible saldria un
+  // export con `{}` diciendo que fue bien.
+  const handleConfigExport = useCallback(async () => { await api?.config.export(config); }, [api, config]);
 
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -390,7 +392,10 @@ export default function App() {
       setImportError(t('import.rejected', { motivo: v.error ?? t('import.badShape') }));
       return false;
     }
-    const s = v.config;
+    // `validateConfig` mira los tipos, no los rangos: un `gridSize: 99` pasaba
+    // entero y `conHuecosCompletos` creaba 9801 botones en esa pagina. El
+    // acotado existia **solo** en la importacion de una pagina suelta.
+    const s = { ...v.config, pages: v.config.pages.map((p) => sanearPagina(p).pagina) };
     const merged = conHuecosCompletos(s.pages, s.buttons);
     const final = { ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION };
     setConfig(final);
