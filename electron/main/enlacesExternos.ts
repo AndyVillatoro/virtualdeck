@@ -92,6 +92,13 @@ export function atender(url: string, win: BrowserWindow | null): { ok: boolean; 
   if (orden.tipo === 'page') {
     // El renderer numera desde 0; el enlace, desde 1, que es lo que se ve en
     // las pestañas.
+    //
+    // La pagina se comprueba **aqui tambien**, y no solo en el renderer que la
+    // acota: por HTTP esto contesta 200, y una automatizacion de Home Assistant
+    // que pida la pagina 9 de un deck de tres se quedaba con que habia ido bien.
+    const cfg = loadConfig() as { pages?: unknown[] };
+    const total = cfg?.pages?.length ?? 0;
+    if (orden.n > total) return { ok: false, error: `no hay ninguna pagina ${orden.n}` };
     win.webContents.send('nav:page', orden.n - 1);
     return { ok: true };
   }
