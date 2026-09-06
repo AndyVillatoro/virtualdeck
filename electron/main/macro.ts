@@ -166,13 +166,13 @@ function buildPlaybackScript(steps: MacroStep[], repeat: number): string {
         case 'key':
         case 'hotkey': {
           const k = escapeSendKeys(step.value ?? '');
-          if (k) lines.push(`[System.Windows.Forms.SendKeys]::SendWait("${k}")`);
+          if (k) lines.push(`[System.Windows.Forms.SendKeys]::SendWait("${paraPS(k)}")`);
           break;
         }
         case 'text': {
           // SendWait with literal text — each char that needs escaping is wrapped
           const chunks = escapeSendKeysText(step.value ?? '');
-          if (chunks) lines.push(`[System.Windows.Forms.SendKeys]::SendWait("${chunks}")`);
+          if (chunks) lines.push(`[System.Windows.Forms.SendKeys]::SendWait("${paraPS(chunks)}")`);
           break;
         }
         case 'click': {
@@ -243,6 +243,24 @@ function traducirNombres(t: string): string {
     .replace(/\bEnd\b/gi, '{END}')
     .replace(/\bPgUp\b/gi, '{PGUP}')
     .replace(/\bPgDn\b/gi, '{PGDN}');
+}
+
+/**
+ * Lo escapado para SendKeys todavía tiene que **entrar en una cadena de
+ * PowerShell entre comillas dobles**, y ahí mandan otros tres caracteres.
+ * Sin este paso, medido generando el script y ejecutándolo:
+ *
+ *   precio $100 USD  →  «precio  USD»      `$1` se expande a nada
+ *   dijo "hola"      →  error de sintaxis  la macro entera no se reproduce
+ *   a`b              →  «ab»              la tilde es el escape de PS
+ *   $env:USERNAME    →  «andyf»           se evalúa en vez de escribirse
+ *
+ * Lo último es lo grave: un paso de texto es datos, y por aquí `$(...)`
+ * ejecuta — una macro importada de la galería dejaba de ser «teclea esto».
+ * El camino nativo no tiene nada de esto: los pasos viajan como JSON.
+ */
+function paraPS(t: string): string {
+  return t.replace(/`/g, '``').replace(/"/g, '`"').replace(/\$/g, '`$');
 }
 
 /** Escape literal text for SendWait (escapes {+^%~()} → wrapped in braces). */
