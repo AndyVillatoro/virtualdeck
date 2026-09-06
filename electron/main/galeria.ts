@@ -33,6 +33,8 @@ export interface ResumenRiesgo {
   scripts: string[];
   programas: string[];
   atajosGlobales: string[];
+  /** Direcciones a las que el perfil mandaria datos al pulsar un boton. */
+  webhooks: string[];
 }
 
 /**
@@ -91,21 +93,46 @@ export async function manifiesto(url: string): Promise<{ ok: true; profiles: Ent
  * treinta scripts, se ven los treinta.
  */
 export function resumirRiesgo(perfil: unknown): ResumenRiesgo {
-  const botones = (perfil as { buttons?: Array<{ action?: Record<string, unknown>; actions?: Array<Record<string, unknown>>; globalHotkey?: string }> })?.buttons ?? [];
+  const botones = (perfil as { buttons?: Array<Record<string, unknown>> })?.buttons ?? [];
   const scripts: string[] = [];
   const programas: string[] = [];
   const atajosGlobales: string[] = [];
-  for (const b of botones) {
-    if (b.globalHotkey) atajosGlobales.push(String(b.globalHotkey));
-    for (const a of [b.action, ...(b.actions ?? [])]) {
-      if (!a) continue;
-      if (a.type === 'script' && a.script) scripts.push(String(a.script));
-      if ((a.type === 'app' || a.type === 'shortcut') && (a.appPath || a.shortcutPath)) {
-        programas.push(String(a.appPath ?? a.shortcutPath));
-      }
+  const webhooks: string[] = [];
+
+  /**
+   * Una accion puede llevar otras dentro, y hay que entrar en todas.
+   *
+   * Antes se miraban solo `action` y `actions`. Medido con un perfil de prueba
+   * que llevaba dos scripts —uno suelto y otro dentro de un `countdown`—: se
+   * enseñaba **uno**. O sea que bastaba con meter el script dentro de un
+   * temporizador, una rama, una carpeta o la accion de mantener pulsado para
+   * que no saliera en la lista. Y esa lista es lo unico que separa «importar un
+   * perfil» de «ejecutar codigo de un desconocido».
+   */
+  const mirar = (a: unknown, hondura = 0): void => {
+    if (!a || typeof a !== 'object' || hondura > 8) return;
+    const x = a as Record<string, any>;
+    if (x.type === 'script' && x.script) scripts.push(String(x.script));
+    if ((x.type === 'app' || x.type === 'shortcut') && (x.appPath || x.shortcutPath)) {
+      programas.push(String(x.appPath ?? x.shortcutPath));
     }
+    if (x.type === 'webhook' && x.webhookUrl) webhooks.push(String(x.webhookUrl));
+    for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
+      for (const sub of (Array.isArray(x[clave]) ? x[clave] : [])) mirar(sub, hondura + 1);
+    }
+    // Los botones de una carpeta llevan su propia accion, y ahi cabe cualquier cosa.
+    for (const fb of (Array.isArray(x.folderButtons) ? x.folderButtons : [])) mirar(fb?.action, hondura + 1);
+  };
+
+  for (const b of botones) {
+    if (!b || typeof b !== 'object') continue;
+    if (b.globalHotkey) atajosGlobales.push(String(b.globalHotkey));
+    mirar(b.action);
+    for (const a of (Array.isArray(b.actions) ? b.actions : [])) mirar(a);
+    mirar(b.actionToggleOff);
+    mirar(b.longPressAction);
   }
-  return { botones: botones.length, scripts, programas, atajosGlobales };
+  return { botones: botones.length, scripts, programas, atajosGlobales, webhooks };
 }
 
 export async function perfil(url: string): Promise<{ ok: true; perfil: unknown; riesgo: ResumenRiesgo } | { ok: false; error: string }> {

@@ -359,6 +359,8 @@ export interface ResumenRiesgo {
   scripts: string[];
   programas: string[];
   atajosGlobales: string[];
+  /** Direcciones a las que el perfil mandaria datos al pulsar un boton. */
+  webhooks?: string[];
 }
 
 export interface RemoteSettings {

@@ -339,6 +339,7 @@ export const ES: Dict = {
   'gal.counts': 'Trae {n} botones.',
   'gal.launches': 'Abre estos programas o archivos:',
   'gal.runs': 'Ejecuta estos scripts:',
+  'gal.sends': 'Manda datos a estas direcciones al pulsar:',
   'gal.hotkeys': 'Registra estos atajos globales: {list}',
   'gal.nothingRisky': 'No lanza programas ni ejecuta scripts.',
   'gal.import': 'IMPORTAR COMO PERFIL',

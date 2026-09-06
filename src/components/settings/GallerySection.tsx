@@ -135,10 +135,16 @@ export function GallerySection({
                 ))}
               </div>
             )}
+            {(elegido.riesgo.webhooks?.length ?? 0) > 0 && (
+              <div style={menudo}>
+                {t('gal.sends')}
+                {elegido.riesgo.webhooks!.map((w, i) => <div key={i} style={{ color: VD.textDim }}>· {w}</div>)}
+              </div>
+            )}
             {elegido.riesgo.atajosGlobales.length > 0 && (
               <div style={menudo}>{t('gal.hotkeys', { list: elegido.riesgo.atajosGlobales.join(', ') })}</div>
             )}
-            {elegido.riesgo.scripts.length === 0 && elegido.riesgo.programas.length === 0 && (
+            {elegido.riesgo.scripts.length === 0 && elegido.riesgo.programas.length === 0 && (elegido.riesgo.webhooks?.length ?? 0) === 0 && (
               <div style={menudo}>{t('gal.nothingRisky')}</div>
             )}
             <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
