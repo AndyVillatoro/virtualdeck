@@ -84,6 +84,10 @@ Correr `npm run lint:dead` y eliminar lo confirmado, de a poco. (`electron-updat
 
 El botón "Documentación" apunta al wiki. Lo llenamos desde [docs/wiki/](wiki/README.md).
 
+**Publicado el 2026-09-05**: las 14 páginas están en vivo en
+`github.com/AndyVillatoro/virtualdeck/wiki`. Comprobado que responden.
+`docs/wiki/` sigue siendo el borrador: se edita ahí y se republica.
+
 | # | Página | Objetivo | Estado |
 |---|--------|----------|--------|
 | 16 | `Home` / `_Sidebar` | Landing bilingüe + navegación. | ✅ |

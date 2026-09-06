@@ -26,12 +26,21 @@ Sensores-y-RGB.md         ← ES (LHM + OpenRGB)
 
 1. Crear la primera página del wiki desde la web (Settings → Features → Wikis,
    luego "Create the first page") para que exista el repo `*.wiki.git`.
-2. Clonarlo y copiar estas páginas:
+   **Ya está hecho**: el wiki se publicó el 2026-09-05 con las 14 páginas.
+2. Clonarlo y copiar estas páginas — **todas menos este `README.md`**, que son
+   las instrucciones de staging y en el wiki saldría como una página más:
    ```bash
    git clone https://github.com/AndyVillatoro/virtualdeck.wiki.git
-   cp docs/wiki/*.md virtualdeck.wiki/
-   cd virtualdeck.wiki && git add . && git commit -m "docs: actualizar wiki" && git push
+   for f in docs/wiki/*.md; do
+     [ "$(basename "$f")" = "README.md" ] && continue
+     cp "$f" virtualdeck.wiki/
+   done
+   cd virtualdeck.wiki && git add -A && git commit -m "docs: actualizar wiki" && git push
    ```
+   Antes de copiar, comprobar que no haya páginas que existan **solo** en el
+   wiki publicado: si alguien editó una desde la web, `git add -A` no la borra,
+   pero conviene traérsela a `docs/wiki/` para que el borrador no se quede
+   atrás.
 3. Los enlaces internos del wiki usan el **nombre de página** (sin `.md`):
    `[[Primeros-Pasos]]` o `[Texto](Primeros-Pasos)`.
 
