@@ -23,7 +23,7 @@ type Clave =
   | 'filter.images' | 'filter.text'
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
-  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
+  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
   | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject';
 
@@ -47,6 +47,7 @@ const ES: Record<Clave, string> = {
   'media.untitled': '(sin título)',
   'media.noArtist': '(sin artista)',
   'rgb.onlyDirect': 'solo ofrece Direct, el color se perderá al cerrar OpenRGB.',
+  'rgb.sinRuta': 'Falta la ruta a OpenRGB.exe',
   'sensors.disabled': 'Sensores deshabilitados',
   'sensors.uacCancelled': 'UAC cancelado por el usuario',
   'sensors.netshCode': 'netsh terminó con código',
@@ -79,6 +80,7 @@ const EN: Record<Clave, string> = {
   'media.untitled': '(untitled)',
   'media.noArtist': '(no artist)',
   'rgb.onlyDirect': 'only offers Direct; the color is lost when OpenRGB closes.',
+  'rgb.sinRuta': 'The path to OpenRGB.exe is missing',
   'sensors.disabled': 'Sensors disabled',
   'sensors.uacCancelled': 'UAC cancelled by the user',
   'sensors.netshCode': 'netsh exited with code',

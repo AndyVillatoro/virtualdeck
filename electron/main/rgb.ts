@@ -230,7 +230,7 @@ export async function disconnect(): Promise<void> {
 
 export async function spawnServer(exePath?: string): Promise<{ ok: boolean; error?: string }> {
   if (serverProc && !serverProc.killed) return { ok: true };
-  if (!exePath) return { ok: false, error: 'Falta la ruta a OpenRGB.exe' };
+  if (!exePath) return { ok: false, error: tm('rgb.sinRuta') };
   try {
     const args = ['--server', '--server-port', String(port)];
     const child = spawn(exePath, args, { detached: false, stdio: 'ignore', windowsHide: true });
@@ -284,8 +284,13 @@ export async function setDeviceColor(
   if (!client?.isConnected) return false;
   try {
     if (deviceId < 0) {
-      for (const d of devicesCache) await setDeviceColor(d.id, color, duradero);
-      return true;
+      // Se tiraba el resultado de cada uno y se devolvia `true` a secas: sin
+      // ningun dispositivo detectado —OpenRGB sin administrador no ve casi
+      // nada— el boton decia que habia pintado. Basta con que uno lo acepte;
+      // que a otro le falte el modo no es un error que valga la pena enseñar.
+      let alguno = false;
+      for (const d of devicesCache) if (await setDeviceColor(d.id, color, duradero)) alguno = true;
+      return alguno;
     }
     const dev = devicesCache.find((d) => d.id === deviceId);
     const rawDev = devicesRaw.find((d) => d.deviceId === deviceId);
@@ -415,8 +420,9 @@ export async function setMode(
   if (!client?.isConnected) return false;
   try {
     if (deviceId < 0) {
-      for (const d of devicesCache) await setMode(d.id, mode, color, brightness, speed);
-      return true;
+      let alguno = false;
+      for (const d of devicesCache) if (await setMode(d.id, mode, color, brightness, speed)) alguno = true;
+      return alguno;
     }
     const dev = devicesCache.find((d) => d.id === deviceId);
     const rawDev = devicesRaw.find((d) => d.deviceId === deviceId);
@@ -471,10 +477,15 @@ export async function applyProfile(profile: RGBProfile): Promise<boolean> {
   if (!client?.isConnected) return false;
   try {
     let okAll = true;
+    // Un perfil guarda los dispositivos **por nombre**. Si se cambio el equipo,
+    // se renombro una placa o simplemente no hay nada conectado, el bucle se
+    // saltaba todo y devolvia `true`: el boton de perfil decia que se aplico.
+    let alguno = false;
     for (const rawDev of devicesRaw) {
       const devInfo = devicesCache.find((d) => d.id === rawDev.deviceId);
       const state = profile.devices[rawDev.name];
       if (!state || !devInfo) continue;
+      alguno = true;
 
       const rawMode = rawDev.modes.find((x) => x.name.toLowerCase() === state.mode.toLowerCase());
       if (rawMode) {
@@ -497,7 +508,7 @@ export async function applyProfile(profile: RGBProfile): Promise<boolean> {
         } catch { okAll = false; }
       }
     }
-    return okAll;
+    return okAll && alguno;
   } catch (e) {
     lastError = (e as Error).message;
     return false;
@@ -594,10 +605,12 @@ export async function applySmartPreset(presetId: string): Promise<boolean> {
   if (!preset) return false;
 
   let success = true;
+  let alguno = false;
 
   for (const rawDev of devicesRaw) {
     const devInfo = devicesCache.find((d) => d.id === rawDev.deviceId);
     if (!devInfo) continue;
+    alguno = true;
 
     try {
       let applied = false;
@@ -629,7 +642,7 @@ export async function applySmartPreset(presetId: string): Promise<boolean> {
     } catch { success = false; }
   }
 
-  return success;
+  return success && alguno;
 }
 
 export function setOnDeviceListUpdated(cb: (() => void) | null) {
