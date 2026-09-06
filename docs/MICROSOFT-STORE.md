@@ -256,6 +256,30 @@ The application collects no personal data whatsoever.
 
 ---
 
+## 6.5. Lo que se comprobó con el paquete instalado (0.9.3)
+
+Instalado de verdad, firmado con un certificado de prueba, y medido:
+
+| Qué | Resultado |
+|---|---|
+| Identidad | `CubeCode.VirtualDeck` · `CN=93305558-…` · 0.9.3.0 |
+| Argumento del arranque | El proceso recibe `--oculto`. `uap10:Parameters` **funciona** |
+| Tarea de inicio | Registrada y habilitada (`State = 2`) tras el primer arranque |
+| Enlace `virtualdeck://` | Registrado; invocarlo **arranca el paquete** con la URL |
+| Actualizador | `update.check()` devuelve `status: 'store'` — desactivado de verdad |
+| Configuración | **Aislada** en `%LOCALAPPDATA%\Packages\<familia>\LocalCache\Roamingirtualdeck`. La ruta que ve el proceso es la de siempre, pero Windows la redirige: la versión de la Store **no comparte** la configuración con la de GitHub |
+
+Ojo con `Win32_StartupCommand`: devuelve valores **cacheados**. Aquí enseñó una
+entrada del registro que ya no existía. Para el arranque automático hay que leer
+la clave directamente.
+
+**Lo único que falta por comprobar** es que la ventana no aparezca al iniciar
+sesión. El argumento llega, y `windowManager` crea la ventana con
+`show: !ARRANQUE_OCULTO`, pero eso solo se ve cerrando sesión y volviendo a
+entrar.
+
+---
+
 ## 7. Lo que ya está listo
 
 - [x] Política de privacidad publicable y veraz (`docs/privacidad.html`),
@@ -270,10 +294,12 @@ The application collects no personal data whatsoever.
       paquete MSIX. Con una variable de compilación habría dos builds y la
       posibilidad de publicar la equivocada. El botón «buscar actualizaciones»
       lo dice en vez de quedarse callado.
-- [ ] Extensión `windows.startupTask` en el manifiesto. **Sigue pendiente, y no
-      es solo escribirla**: la extensión no acepta argumentos, así que el
-      `--oculto` que usa la versión de GitHub no vale, y Electron no expone en
-      Windows la forma de saber si el arranque lo hizo el sistema
-      (`wasOpenedAtLogin` es solo de macOS). Hace falta decidir el
-      comportamiento antes de escribir código.
+- [x] Extensión `windows.startupTask` en el manifiesto, **con el argumento**.
+      `desktop:StartupTask` no acepta argumentos, pero el `desktop:Extension`
+      que lo contiene sí: `uap10:Parameters`. Medido en una máquina real: el
+      proceso recibe `--oculto` al iniciar sesión.
+- [x] Enlace `virtualdeck://` declarado en el manifiesto. **Sin esto no
+      existiría en la versión de la Store**: el registro que hace
+      `setAsDefaultProtocolClient` está virtualizado dentro del paquete y
+      Windows no lo mira. El punto 23 entero del roadmap dependía de ello.
 - [x] LHM fuera del paquete — el riesgo de solo lectura desaparece.
