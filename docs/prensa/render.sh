@@ -51,7 +51,13 @@ rm -rf "$CUADROS"; mkdir -p "$CUADROS"
   [data-vd-hero] *{animation-play-state:paused !important}
 </style>
 HTML
-  cat "$AQUI/hero.svg"
+  # El SVG apaga sus animaciones bajo `prefers-reduced-motion: reduce`, y
+  # **Edge/Chromium en headless dice que si**: sin esto los 360 fotogramas
+  # salen identicos, con el fotograma quieto de la pulsacion. Aqui se rompe la
+  # consulta a proposito — un valor que no existe nunca coincide — para que las
+  # animaciones corran y `--seek` pueda moverlas. **El hero.svg entregado no se
+  # toca**: su respeto por reduced-motion es cosa suya y sigue intacto.
+  sed 's/prefers-reduced-motion: reduce/prefers-reduced-motion: solo-para-el-render/' "$AQUI/hero.svg"
   cat <<'HTML'
 <script>
   const q = new URLSearchParams(location.search);
@@ -68,6 +74,22 @@ HTML
 EXTRA=()
 [ "$(id -u)" = "0" ] && EXTRA+=(--no-sandbox)
 
+# La ruta local, en la forma de URL que entiende el navegador.
+#
+# En Git Bash sobre Windows, `$PWD` es `/c/Users/...`, que **no es una ruta de
+# Windows**: el navegador la busca tal cual y devuelve ERR_FILE_NOT_FOUND. Y
+# este guion no se enteraba — la captura de una pagina de error es un PNG
+# perfectamente valido, asi que el `[ -s ]` de mas abajo pasaba, ffmpeg
+# encodeaba 360 pantallas de error y el guion imprimia «Listo». De ahi
+# tambien la comprobacion de fotogramas distintos que hay tras el bucle.
+url_de() {
+  local ruta="$1"
+  # `cygpath -m` da `C:/Users/...`; en Linux no existe y la ruta ya vale.
+  command -v cygpath >/dev/null 2>&1 && ruta="$(cygpath -m "$ruta")"
+  printf 'file:///%s' "$(printf '%s' "$ruta" | sed -e 's|^/||' -e 's| |%20|g')"
+}
+BASE_URL="$(url_de "$CUADROS/cuadro.html")"
+
 TEMA="${TEMA:-dark}"
 echo "Dibujando $TOTAL fotogramas (tema $TEMA)…"
 for i in $(seq 0 $((TOTAL - 1))); do
@@ -76,13 +98,29 @@ for i in $(seq 0 $((TOTAL - 1))); do
     --force-color-profile=srgb --window-size=1920,1120 \
     --virtual-time-budget=1500 \
     --screenshot="$(printf '%s/f%04d.png' "$CUADROS" "$i")" \
-    "file://$CUADROS/cuadro.html?t=$T&tema=$TEMA" >/dev/null 2>&1 \
+    "$BASE_URL?t=$T&tema=$TEMA" >/dev/null 2>&1 \
     || { echo; echo "Chromium fallo en el fotograma $i. Repetilo sin >/dev/null para ver por que." >&2; exit 1; }
   [ -s "$(printf '%s/f%04d.png' "$CUADROS" "$i")" ] \
     || { echo; echo "El fotograma $i salio vacio." >&2; exit 1; }
   printf '\r  %d/%d' "$((i + 1))" "$TOTAL"
 done
 echo
+
+# Que los fotogramas sean **distintos entre si**.
+#
+# Que el PNG no este vacio no dice nada: una pagina de error del navegador es
+# un PNG valido de 1920x1120, y sale igual para cualquier `t`. Si tres
+# fotogramas repartidos por el bucle son identicos, o la pagina no cargo o el
+# `--seek` no llego — y en los dos casos el video no sirve.
+if [ "$TOTAL" -ge 3 ]; then
+  h() { md5sum "$(printf '%s/f%04d.png' "$CUADROS" "$1")" | cut -d' ' -f1; }
+  if [ "$(h 0)" = "$(h $((TOTAL / 2)))" ] && [ "$(h 0)" = "$(h $((TOTAL - 1)))" ]; then
+    echo "Los fotogramas salen todos iguales: la pagina no se dibujo." >&2
+    echo "  Mira uno: $CUADROS/f0000.png" >&2
+    echo "  URL que se uso: $BASE_URL" >&2
+    exit 1
+  fi
+fi
 
 # 1920×1080 exactos, H.264, 12 s (el máximo de la Store son 60 s).
 # El `crop` no es cosmetico: Chromium en headless descuenta ~40 px de la ventana
