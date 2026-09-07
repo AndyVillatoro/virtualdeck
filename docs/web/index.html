@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VirtualDeck — un Stream Deck en la pantalla que ya tiene</title>
+<meta name="description" content="Alternativa libre a Stream Deck para Windows. Botones táctiles para lanzar apps, controlar música, audio, RGB y macros. Gratis y de código abierto.">
+<meta property="og:title" content="VirtualDeck">
+<meta property="og:description" content="Un Stream Deck en la pantalla que ya tiene. Windows, gratis, código abierto.">
+<meta property="og:type" content="website">
+<style>
+:root{
+  --fondo:#0a0a0c; --panel:#111114; --borde:#1e1e24;
+  --texto:#e8e8ea; --tenue:#9a9aa4; --apagado:#63636d;
+  --acento:#4a9eff; --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:light){
+  :root{--fondo:#f6f6f8;--panel:#ffffff;--borde:#e2e2e8;--texto:#16161a;--tenue:#55555f;--apagado:#8a8a94}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--texto);font-family:var(--mono);line-height:1.65;
+  -webkit-font-smoothing:antialiased}
+.env{max-width:940px;margin:0 auto;padding:0 24px}
+a{color:var(--acento)}
+
+header{padding:80px 0 56px;text-align:center;border-bottom:1px solid var(--borde)}
+.puntos{display:grid;grid-template-columns:repeat(4,10px);gap:6px;justify-content:center;margin-bottom:28px}
+.puntos i{width:10px;height:10px;background:var(--acento);border-radius:1px;opacity:.25;
+  animation:late 2.6s infinite}
+@keyframes late{0%,100%{opacity:.2}50%{opacity:1}}
+h1{font-size:clamp(30px,6vw,52px);letter-spacing:.16em;margin:0 0 14px;font-weight:600}
+.sub{color:var(--tenue);font-size:15px;max-width:600px;margin:0 auto 34px}
+.botones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;padding:13px 26px;border:1px solid var(--acento);color:var(--acento);
+  text-decoration:none;font-size:12px;letter-spacing:.12em;border-radius:2px;transition:.15s}
+.btn:hover{background:var(--acento);color:var(--fondo)}
+.btn.plano{border-color:var(--borde);color:var(--tenue)}
+.btn.plano:hover{background:var(--borde);color:var(--texto)}
+.nota{margin-top:18px;font-size:11px;color:var(--apagado)}
+
+section{padding:60px 0;border-bottom:1px solid var(--borde)}
+h2{font-size:12px;letter-spacing:.2em;color:var(--apagado);margin:0 0 28px;font-weight:500}
+.rejilla{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.tarjeta{background:var(--panel);border:1px solid var(--borde);border-radius:3px;padding:20px}
+.tarjeta h3{margin:0 0 8px;font-size:13px;letter-spacing:.06em;font-weight:600}
+.tarjeta p{margin:0;font-size:12.5px;color:var(--tenue)}
+.marca{display:inline-block;width:7px;height:7px;background:var(--acento);margin-bottom:12px;border-radius:1px}
+
+ul.lista{list-style:none;padding:0;margin:0;font-size:13px;color:var(--tenue)}
+ul.lista li{padding:10px 0;border-bottom:1px solid var(--borde);display:flex;gap:14px;flex-wrap:wrap}
+ul.lista li:last-child{border:0}
+ul.lista b{color:var(--texto);font-weight:600;flex:0 0 auto;min-width:190px}
+code{background:var(--panel);border:1px solid var(--borde);border-radius:2px;padding:1px 5px;font-size:12px}
+
+pre{background:var(--panel);border:1px solid var(--borde);border-radius:3px;padding:16px;
+  overflow-x:auto;font-size:12px;color:var(--tenue);margin:0;line-height:1.7}
+footer{padding:44px 0 60px;text-align:center;font-size:11px;color:var(--apagado)}
+footer p{margin-top:14px}
+@media (prefers-reduced-motion:reduce){.puntos i{animation:none;opacity:.6}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="env">
+    <div class="puntos" aria-hidden="true"></div>
+    <h1>VIRTUALDECK</h1>
+    <p class="sub">Un Stream Deck en la pantalla que ya tiene. Botones táctiles para lanzar
+      programas, controlar la música, el audio, las luces RGB y las macros — sin comprar
+      hardware.</p>
+    <div class="botones">
+      <a class="btn" href="https://github.com/AndyVillatoro/virtualdeck/releases/latest">DESCARGAR PARA WINDOWS</a>
+      <a class="btn plano" href="https://github.com/AndyVillatoro/virtualdeck">CÓDIGO FUENTE</a>
+    </div>
+    <p class="nota">Gratis y de código abierto · Windows 10 y 11</p>
+  </div>
+</header>
+
+<section>
+  <div class="env">
+    <h2>QUÉ HACE</h2>
+    <div class="rejilla">
+      <div class="tarjeta"><span class="marca"></span><h3>Lanza lo que sea</h3>
+        <p>Programas, páginas, carpetas, scripts de PowerShell o CMD, atajos de teclado y macros grabadas.</p></div>
+      <div class="tarjeta"><span class="marca"></span><h3>Controla el sonido</h3>
+        <p>Cambia el dispositivo de salida, fija el volumen a un porcentaje exacto, o lo sube y baja desde donde esté.</p></div>
+      <div class="tarjeta"><span class="marca"></span><h3>Lo que suena</h3>
+        <p>Carátula, título y controles reales del reproductor — no teclas multimedia a ciegas.</p></div>
+      <div class="tarjeta"><span class="marca"></span><h3>Luces RGB</h3>
+        <p>Por OpenRGB: color, modo y 18 ambientes prehechos, con calibrador de zonas y pintado LED a LED.</p></div>
+      <div class="tarjeta"><span class="marca"></span><h3>Sensores en pantalla</h3>
+        <p>Temperatura, carga y consumo. Un botón puede dispararse solo al cruzar un umbral.</p></div>
+      <div class="tarjeta"><span class="marca"></span><h3>Widgets</h3>
+        <p>Reloj, clima, divisas, sensores y variables propias, dentro de la propia casilla.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="env">
+    <h2>Y ALGUNAS QUE NO ESPERA</h2>
+    <ul class="lista">
+      <li><b>Modo kiosko</b><span>A pantalla completa, sin barra y con PIN para salir. Para una tableta vieja colgada en la pared.</span></li>
+      <li><b>Mando desde el móvil</b><span>El teléfono abre una página servida por el propio deck. Se empareja con un código de seis cifras que caduca a los cinco minutos.</span></li>
+      <li><b>Un deck manda sobre otro</b><span>El portátil pulsa botones del equipo de sobremesa por la red local.</span></li>
+      <li><b>Disparadores externos</b><span>Enlaces <code>virtualdeck://</code> y una API HTTP con token: desde un <code>.bat</code>, el Programador de tareas o Home Assistant.</span></li>
+      <li><b>Galería de perfiles</b><span>Decks completos hechos por otros — y antes de importar se le enseña todo lo que ese perfil ejecutará y teclará en su equipo.</span></li>
+      <li><b>Español e inglés</b><span>Incluidos el menú de la bandeja y los mensajes de error, que es donde suelen quedarse a medias.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="env">
+    <h2>MANDARLE DESDE FUERA</h2>
+    <pre>:: desde un .bat, un acceso directo o el Programador de tareas
+start virtualdeck://press/Spotify
+start virtualdeck://page/2
+
+:: o por HTTP, con el token de sus ajustes
+curl -H "X-VD-Token: SU_TOKEN" http://192.168.1.50:8787/api/press/Spotify</pre>
+  </div>
+</section>
+
+<footer>
+  <div class="env">
+    <a href="https://github.com/AndyVillatoro/virtualdeck">GitHub</a> ·
+    <a href="https://github.com/AndyVillatoro/virtualdeck/wiki">Documentación</a> ·
+    <a href="https://github.com/AndyVillatoro/virtualdeck/releases">Versiones</a> ·
+    <a href="https://github.com/AndyVillatoro/virtualdeck/issues">Reportar un fallo</a>
+    <p>Hecho por CubeCode · Licencia MIT</p>
+  </div>
+</footer>
+
+<script>
+// La retícula late en desorden, como el icono de la aplicación.
+var r = document.querySelector('.puntos');
+for (var i = 0; i < 16; i++) {
+  var p = document.createElement('i');
+  p.style.animationDelay = (Math.random() * 2.6).toFixed(2) + 's';
+  r.appendChild(p);
+}
+</script>
+</body>
+</html>
