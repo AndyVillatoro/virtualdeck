@@ -17,6 +17,17 @@ import { tiposDesconocidos } from '../../utils/configMigration';
  * Se importa **como perfil**, no como configuración: el deck que ya tienes no
  * se toca, y para probarlo hay que cargarlo a mano desde la lista de perfiles.
  */
+/**
+ * La galería que mantiene el proyecto. Se lee igual que cualquier otra: por
+ * `manifest.json`, y pasando por el mismo aviso de lo que el perfil ejecuta.
+ * Tener una por defecto no la convierte en de fiar — solo ahorra teclearla.
+ *
+ * Va por `raw.githubusercontent.com` y no por Pages: el repo no tiene Pages
+ * activado, y el archivo crudo se sirve igual sin depender de eso.
+ */
+const GALERIA_OFICIAL =
+  'https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/manifest.json';
+
 export function GallerySection({
   accent, onImportar,
 }: {
@@ -35,10 +46,12 @@ export function GallerySection({
   const [lista, setLista] = useState<EntradaGaleria[] | null>(null);
   const [elegido, setElegido] = useState<{ entrada: EntradaGaleria; perfil: unknown; riesgo: ResumenRiesgo } | null>(null);
 
-  const cargar = async () => {
-    if (!api?.gallery || !url.trim()) return;
+  const cargar = async (dir?: string) => {
+    const donde = (dir ?? url).trim();
+    if (!api?.gallery || !donde) return;
+    if (dir) setUrl(dir);
     setCargando(true); setError(null); setLista(null); setElegido(null);
-    const r = await api.gallery.manifest(url.trim());
+    const r = await api.gallery.manifest(donde);
     setCargando(false);
     if (!r.ok || !r.profiles) { setError(t('gal.failed', { error: r.error ?? '?' })); return; }
     if (r.profiles.length === 0) { setError(t('gal.empty')); return; }
@@ -87,10 +100,13 @@ export function GallerySection({
             placeholder="https://…/manifest.json"
             style={{ ...inputStyleSettings, flex: 1 }}
           />
-          <button onClick={cargar} disabled={cargando || !url.trim()} style={miniBtn(accent)}>
+          <button onClick={() => cargar()} disabled={cargando || !url.trim()} style={miniBtn(accent)}>
             {t(cargando ? 'gal.loading' : 'gal.load')}
           </button>
         </div>
+        <button onClick={() => cargar(GALERIA_OFICIAL)} disabled={cargando} style={{ ...miniBtn(accent), alignSelf: 'flex-start' }}>
+          {t('gal.official')}
+        </button>
         <div style={menudo}>{t('gal.hint')}</div>
         {error && <div style={{ ...menudo, color: VD.danger }}>{error}</div>}
 
@@ -141,10 +157,18 @@ export function GallerySection({
                 {elegido.riesgo.webhooks!.map((w, i) => <div key={i} style={{ color: VD.textDim }}>· {w}</div>)}
               </div>
             )}
+            {(elegido.riesgo.teclas?.length ?? 0) > 0 && (
+              <div style={menudo}>
+                {t('gal.types')}
+                {elegido.riesgo.teclas!.map((k, i) => (
+                  <div key={i} style={{ color: VD.danger, wordBreak: 'break-all' }}>· {k}</div>
+                ))}
+              </div>
+            )}
             {elegido.riesgo.atajosGlobales.length > 0 && (
               <div style={menudo}>{t('gal.hotkeys', { list: elegido.riesgo.atajosGlobales.join(', ') })}</div>
             )}
-            {elegido.riesgo.scripts.length === 0 && elegido.riesgo.programas.length === 0 && (elegido.riesgo.webhooks?.length ?? 0) === 0 && (
+            {elegido.riesgo.scripts.length === 0 && elegido.riesgo.programas.length === 0 && (elegido.riesgo.webhooks?.length ?? 0) === 0 && (elegido.riesgo.teclas?.length ?? 0) === 0 && (
               <div style={menudo}>{t('gal.nothingRisky')}</div>
             )}
             <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>

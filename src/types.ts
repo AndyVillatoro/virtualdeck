@@ -361,6 +361,15 @@ export interface ResumenRiesgo {
   atajosGlobales: string[];
   /** Direcciones a las que el perfil mandaria datos al pulsar un boton. */
   webhooks?: string[];
+  /**
+   * Lo que el perfil **teclea o pulsa** en el equipo: atajos, texto y macros.
+   *
+   * No estaba, y era el agujero grande de esta pantalla: una macro que hace
+   * `Win+R` -> `powershell -c "irm ... | iex"` -> `Enter` es ejecutar codigo
+   * de un desconocido, y el resumen salia entero vacio con el aviso diciendo
+   * «no lanza programas ni ejecuta scripts».
+   */
+  teclas?: string[];
 }
 
 export interface RemoteSettings {

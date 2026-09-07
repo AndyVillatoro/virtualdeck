@@ -35,6 +35,8 @@ export interface ResumenRiesgo {
   atajosGlobales: string[];
   /** Direcciones a las que el perfil mandaria datos al pulsar un boton. */
   webhooks: string[];
+  /** Lo que el perfil teclea o pulsa: atajos, texto y macros. Teclear es ejecutar. */
+  teclas: string[];
 }
 
 /**
@@ -98,6 +100,7 @@ export function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   const programas: string[] = [];
   const atajosGlobales: string[] = [];
   const webhooks: string[] = [];
+  const teclas: string[] = [];
 
   /**
    * Una accion puede llevar otras dentro, y hay que entrar en todas.
@@ -117,6 +120,16 @@ export function resumirRiesgo(perfil: unknown): ResumenRiesgo {
       programas.push(String(x.appPath ?? x.shortcutPath));
     }
     if (x.type === 'webhook' && x.webhookUrl) webhooks.push(String(x.webhookUrl));
+    // Teclear tambien es ejecutar: `Win+R` y un comando abre lo que sea.
+    if (x.type === 'hotkey' && x.hotkey) teclas.push(String(x.hotkey));
+    if (x.type === 'type-text' && x.typeText) teclas.push(`"${String(x.typeText)}"`);
+    if (x.type === 'macro' && Array.isArray(x.macroSteps)) {
+      for (const paso of x.macroSteps) {
+        const v = paso?.value;
+        if (paso?.type === 'hotkey' || paso?.type === 'key') { if (v) teclas.push(String(v)); }
+        else if (paso?.type === 'text' && v) teclas.push(`"${String(v)}"`);
+      }
+    }
     for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
       for (const sub of (Array.isArray(x[clave]) ? x[clave] : [])) mirar(sub, hondura + 1);
     }
@@ -132,7 +145,7 @@ export function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     mirar(b.actionToggleOff);
     mirar(b.longPressAction);
   }
-  return { botones: botones.length, scripts, programas, atajosGlobales, webhooks };
+  return { botones: botones.length, scripts, programas, atajosGlobales, webhooks, teclas };
 }
 
 export async function perfil(url: string): Promise<{ ok: true; perfil: unknown; riesgo: ResumenRiesgo } | { ok: false; error: string }> {

@@ -167,6 +167,15 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
 - `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
 - `electron/main/ipc/` — handlers IPC organizados por dominio (audio, media, macro, config, etc.)
+- `electron/main/galeria.ts` — traerse el deck de otra persona. `resumirRiesgo` es lo
+  **único** que separa «importar un perfil» de «ejecutar código de un desconocido», y hay
+  que mirarlo entero: no basta con recorrer `action`, porque un script escondido en un
+  `countdown`, una rama, una carpeta o el «mantener pulsado» no salía en la lista. Y
+  **teclear es ejecutar**: `hotkey`, `type-text` y los pasos de una macro no se contaban,
+  así que un perfil cuyo botón hace `Win+R` → `powershell -c "irm … | iex"` → `Enter`
+  daba el resumen entero vacío y la pantalla decía «no lanza programas ni ejecuta
+  scripts». Medido con ese perfil exacto. Un tipo de acción nuevo que toque el sistema
+  hay que añadirlo aquí, o el aviso miente por omisión.
 - `electron/main/divisas.ts` — las tasas de cambio del widget de divisas. Va en el proceso
   principal por lo mismo que la descarga de perfiles: la CSP del renderer solo deja
   conectar con `self` y los dos servicios del clima. Fuente `open.er-api.com` (gratis, sin
