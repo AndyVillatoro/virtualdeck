@@ -4,10 +4,19 @@
 // hay: `npm i` no instala un cliente de CDP, y añadir uno solo para esto
 // mete una dependencia de desarrollo en el árbol de todo el mundo.
 
-export async function conectar(puerto = 9222) {
+/**
+ * @param elegir Con qué página quedarse cuando hay más de una. La barra
+ *   flotante es **otra ventana de Electron con el mismo bundle**, y se
+ *   distingue por el hash `#barra` de su dirección; sin este filtro,
+ *   `find(type === 'page')` devolvía la que le tocara.
+ */
+export async function conectar(puerto = 9222, elegir = (t) => !t.url.includes('#barra')) {
   const lista = await (await fetch(`http://127.0.0.1:${puerto}/json/list`)).json();
-  const pagina = lista.find((t) => t.type === 'page');
-  if (!pagina) throw new Error('no hay ninguna página en el depurador');
+  const paginas = lista.filter((t) => t.type === 'page');
+  const pagina = paginas.find(elegir);
+  if (!pagina) {
+    throw new Error(`ninguna página del depurador encaja (hay ${paginas.length}: ${paginas.map((t) => t.url).join(', ')})`);
+  }
   const ws = new WebSocket(pagina.webSocketDebuggerUrl);
   await new Promise((ok, mal) => { ws.onopen = ok; ws.onerror = mal; });
 

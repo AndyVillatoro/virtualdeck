@@ -213,4 +213,44 @@ export const ESCENAS = [
     config: base({ pages: [paginaDeck], buttons: DECK }),
     pasos: [{ hacer: 'abrirGaleriaConRiesgo' }],
   },
+  {
+    archivo: '07-barra-flotante.png',
+    titulo: 'La barra flotante, por encima de la ventana de debajo',
+    ancho: 1280, alto: 720, escala: 1.5,
+    // Esta es la única con dos ventanas, y por eso pide dos cosas que las
+    // demás no:
+    //
+    // · La pantalla de X mide **exactamente** lo que la vista, y la ventana
+    //   del deck se siembra ocupándola entera (`ventana`). El proceso
+    //   principal coloca la barra con `screen.getPrimaryDisplay().workArea`,
+    //   así que si la pantalla no coincide con lo que se fotografía, la
+    //   columna sale pegada a un borde que no está en la imagen.
+    // · `compuesta` le dice al guion que junte las dos ventanas por sus
+    //   coordenadas reales. Ver `capturarCompuesta` en `capturar.mjs`.
+    pantalla: { ancho: 1280, alto: 720 },
+    ventana: { x: 0, y: 0, width: 1280, height: 720 },
+    compuesta: true,
+    config: base({
+      pages: [paginaDeck], buttons: DECK, toggledIds: ['0-0', '0-12'],
+      // Seis tiles, y ninguno con widget: la barra no sondea los datos en
+      // vivo —no importa `useDatosWidget`—, así que un botón de reloj o de
+      // sensor saldría ahí con el icono de su acción y no con su lectura.
+      // Casillas de la rejilla hasta el borde: así la columna flotante queda
+      // claramente **encima de botones**, que es lo que hay que ver.
+      tileMode: 'fill',
+      // 80 px y no los 64 de fábrica: a 64 las etiquetas de dos palabras se
+      // cortan («SILENC…», «LUZ JU…») y en una captura eso se lee como un
+      // defecto. Sigue dentro del rango que admite la aplicación (40–120).
+      floatingBar: {
+        enabled: true,
+        slots: ['0-0', '0-2', '0-5', '0-10', '0-11', '0-12'],
+        side: 'right', tileSize: 80, y: null, opacity: 0.9,
+      },
+    }),
+    // La barra lateral del deck se recoge: con ella puesta, la columna
+    // flotante caía justo encima de las tarjetas de sensores y los números
+    // salían cortados por la mitad, que parece un fallo de dibujado en vez de
+    // una ventana por delante de otra.
+    pasos: [{ hacer: 'clicEnTitulo', titulo: 'Ocultar panel' }, { hacer: 'esperar', ms: 900 }],
+  },
 ];

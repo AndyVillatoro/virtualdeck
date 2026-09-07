@@ -6,7 +6,7 @@ montado en un editor de imágenes. Se regenera con:
 ```bash
 npm run build                       # las capturas salen de out/, no de dev
 node scripts/prensa/caratula.mjs    # la carátula de la pista (una vez)
-node scripts/prensa/capturar.mjs    # las seis capturas + el icono
+node scripts/prensa/capturar.mjs    # las siete capturas + el icono
 node scripts/prensa/capturar.mjs 03 05   # o solo algunas, por su número
 ```
 
@@ -23,6 +23,7 @@ salga a 1920×1080, así que si la Store rechaza una imagen no es por el tamaño
 | `04-barra-lateral.png` | Una página de 5×4 hecha de widgets en vivo, con la barra lateral leyendo reloj, clima, cinco piezas de hardware y el estado del RGB. | 1920×1080 PNG |
 | `05-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
 | `06-galeria.png` | La galería de perfiles con el aviso de riesgo desplegado: lo que un perfil descargado va a ejecutar, antes de importarlo. | 1920×1080 PNG |
+| `07-barra-flotante.png` | La barra flotante: una columna de seis tiles pegada al borde del monitor, por delante de la ventana de debajo. Se ve el deck a través de los huecos entre tiles, y los dos interruptores encendidos salen marcados en los dos sitios. | 1920×1080 PNG |
 | `icono-mosaico-300.png` | El icono de mosaico. No es una captura: es `build/icon.svg` centrado sobre el fondo del tema. | 300×300 PNG exactos |
 | `fuentes/` | Los datos de los que tira una de las capturas. Ver más abajo. | — |
 
@@ -31,11 +32,16 @@ salga a 1920×1080, así que si la Store rechaza una imagen no es por el tamaño
 - **PNG a 1920×1080.** El mínimo son 1366×768; se usa 1080p porque se ve mejor
   en la ficha y porque permite recortar después sin perder nitidez.
 - **Lo importante, en los dos tercios de arriba.** La Store superpone su propio
-  texto en el tercio inferior. En las seis, el asunto de la captura cae por
-  encima de la línea de los 720 px. Con una excepción que hay que saber: en
-  `03-kiosko.png` la **franja de reproducción está abajo**, porque es donde la
-  dibuja la aplicación. No se puede subir sin falsear la pantalla; el mensaje
-  principal —las casillas grandes— se lee entero por arriba.
+  texto en el tercio inferior. En las siete, el asunto de la captura cae por
+  encima de la línea de los 720 px. Con dos salvedades que hay que saber, y que
+  no se pueden arreglar sin falsear la pantalla:
+
+  - En `03-kiosko.png` la **franja de reproducción está abajo**, porque es donde
+    la dibuja la aplicación. El mensaje principal —las casillas grandes— se lee
+    entero por arriba.
+  - En `07-barra-flotante.png` la columna **va de arriba abajo**: el proceso
+    principal la centra en el monitor. Los tres primeros tiles quedan por
+    encima de la línea, y con eso ya se entiende qué es.
 - **Sin logotipos, sin marcos, sin texto de marketing.** Son capturas limpias
   de la ventana, sin nada añadido encima.
 - **Sin contrastes extremos.** Fondo `dotgrid` en todas: es la trama de puntos
@@ -54,6 +60,7 @@ Esto se revisó mirando cada imagen a tamaño completo, no por deducción.
 | `04-barra-lateral.png` | no aparece | ninguna | carátula generada | no aparece |
 | `05-rgb.png` | no aparece | los dispositivos salen sin número de serie (el emulador lo manda vacío) | no sale carátula | no aparece; la ubicación de cada dispositivo es un bus `I2C`/`HID`, no una dirección de red |
 | `06-galeria.png` | no aparece | ninguna: el perfil «Streaming» de la galería no abre programas, solo manda atajos | carátula generada | no aparece; la única dirección visible es la de la galería del proyecto |
+| `07-barra-flotante.png` | no aparece | ninguna | no sale carátula (la barra no dibuja widgets) | no aparece |
 
 Dos cosas más que no estaban en la lista y conviene decidir a conciencia:
 
@@ -97,6 +104,25 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`, salvo el
 - **Galería.** Es la del proyecto, la de verdad: se pulsa «GALERÍA DEL
   PROYECTO» y se abre uno de los perfiles publicados. La dirección que sale en
   la captura es la real y los perfiles son los que hay.
+- **La barra flotante — dos ventanas en una imagen, y una salvedad.** La barra
+  **es otra ventana de Electron**, así que no sale en la captura del deck:
+  `Page.captureScreenshot` fotografía un documento, no la pantalla. Y en la
+  máquina donde se sacaron estas capturas no hay con qué fotografiar la pantalla
+  entera —ni `import`, ni `xwd`, ni `ffmpeg`—, así que el guion junta las dos
+  ventanas **por sus coordenadas reales**: pide a cada una su propia captura y
+  superpone la de la barra en el `screenX`/`screenY` que la propia ventana
+  declara. No es un montaje libre, es lo que hace el compositor del sistema: la
+  ventana de la barra es transparente y lo único opaco son los tiles, así que se
+  captura con fondo transparente y se pega con su canal alfa. Por eso se ve el
+  deck a través de los huecos.
+
+  **La salvedad:** lo que hay debajo es el propio VirtualDeck, no otra
+  aplicación. En esta máquina no hay ningún programa de Windows que poner
+  detrás. Sirve para lo que tiene que servir —se ve que es una ventana por
+  delante de otra, pegada al borde del monitor, con sus interruptores
+  compartidos— pero si querés la foto sobre OBS o un navegador, hay que sacarla
+  en Windows: `VD_MEDIOS_FIJOS` aparte, la escena no necesita nada especial.
+
 - **Reproducción — la única excepción.** La franja de música necesita una sesión
   de medios de Windows (SMTC), que es una API del sistema y no tiene cable que
   enchufar. Así que hay un módulo nuevo, `electron/main/mediosFijos.ts`, que

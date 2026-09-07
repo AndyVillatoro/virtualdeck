@@ -114,6 +114,10 @@ const buscarPorTexto = (texto, etiqueta = '*') => `() => [...document.querySelec
 const buscarCasillaVacia = `() => [...document.querySelectorAll('[title]')]
   .find((e) => (e.getAttribute('title') ?? '').startsWith('Clic para configurar'))`;
 
+/** Por su `title`, para los botones que solo llevan un símbolo dentro. */
+const buscarPorTitulo = (titulo) => `() => [...document.querySelectorAll('[title]')]
+  .find((e) => e.offsetParent !== null && (e.getAttribute('title') ?? '') === ${JSON.stringify(titulo)})`;
+
 async function clicPorBuscador(cdp, buscador, queEs) {
   const r = await rectangulo(cdp, buscador);
   if (!r) throw new Error(`no encuentro ${queEs} en la pantalla`);
@@ -175,6 +179,7 @@ async function abrirGaleriaConRiesgo(cdp) {
 async function ejecutarPaso(cdp, paso) {
   if (paso.hacer === 'esperar') return dormir(paso.ms);
   if (paso.hacer === 'clicEnTexto') return clicPorBuscador(cdp, buscarPorTexto(paso.texto, 'button'), `«${paso.texto}»`);
+  if (paso.hacer === 'clicEnTitulo') return clicPorBuscador(cdp, buscarPorTitulo(paso.titulo), `«${paso.titulo}»`);
   if (paso.hacer === 'clicEnCasillaVacia') return clicPorBuscador(cdp, buscarCasillaVacia, 'una casilla vacía');
   if (paso.hacer === 'abrirGaleriaConRiesgo') return abrirGaleriaConRiesgo(cdp);
   throw new Error(`paso desconocido: ${paso.hacer}`);
@@ -212,9 +217,17 @@ async function capturar(escena, entorno) {
   await esperarPuertoLibre();
   const datos = mkdtempSync(join(tmpdir(), 'vd-prensa-ud-'));
   writeFileSync(join(datos, 'deck-config.json'), JSON.stringify(escena.config, null, 2));
+  // `windowManager` lee este archivo al arrancar. Se siembra cuando la escena
+  // necesita que la ventana ocupe una medida concreta de la pantalla, que es el
+  // caso de la barra flotante: el proceso principal la coloca contra el borde
+  // del monitor, no contra el borde de la ventana del deck.
+  if (escena.ventana) {
+    writeFileSync(join(datos, 'window-state.json'), JSON.stringify(escena.ventana));
+  }
 
+  const pantalla = escena.pantalla ?? { ancho: 1600, alto: 1000 };
   const hijo = spawn('xvfb-run', [
-    '-a', '-s', '-screen 0 1600x1000x24',
+    '-a', '-s', `-screen 0 ${pantalla.ancho}x${pantalla.alto}x24`,
     'npx', 'electron', '.',
     '--no-sandbox',
     `--user-data-dir=${datos}`,
@@ -239,7 +252,8 @@ async function capturar(escena, entorno) {
     await apartarCursor(cdp);
 
     const { data } = await cdp.enviar('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
-    const png = Buffer.from(data, 'base64');
+    let png = Buffer.from(data, 'base64');
+    if (escena.compuesta) png = await conBarraFlotante(png, escena);
     mkdirSync(SALIDA, { recursive: true });
     writeFileSync(join(SALIDA, escena.archivo), png);
     cdp.cerrar();
@@ -248,6 +262,59 @@ async function capturar(escena, entorno) {
     matarGrupo(hijo);
     await esperarPuertoLibre();
     rmSync(datos, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Pega la barra flotante encima del deck, en las coordenadas donde está.
+ *
+ * La barra **es otra ventana de Electron**, así que no sale en la captura de la
+ * página del deck: `Page.captureScreenshot` fotografía un documento, no la
+ * pantalla. Y aquí no hay con qué fotografiar la pantalla entera —ni `import`,
+ * ni `xwd`, ni `ffmpeg`— así que se juntan las dos ventanas por sus
+ * coordenadas reales.
+ *
+ * No es un montaje libre: es lo que hace el compositor del sistema. La ventana
+ * de la barra es **transparente** y lo único opaco son los tiles (ver
+ * `src/main.tsx`, que le quita el fondo a `html`, `body` y `#root`), así que se
+ * captura con fondo transparente y se superpone con su canal alfa. La posición
+ * y el tamaño salen de la propia ventana, no de una cuenta repetida aquí: el
+ * proceso principal la coloca con `posicion()` en `floatingBar.ts` y luego la
+ * barra se mide y pide su tamaño exacto con `bar.fit`.
+ */
+async function conBarraFlotante(deckPng, escena) {
+  const sharp = (await import('sharp')).default;
+  const cdp = await conectar(PUERTO_CDP, (t) => t.url.includes('#barra'));
+  try {
+    const caja = await evaluar(cdp, `({
+      x: window.screenX, y: window.screenY,
+      ancho: window.innerWidth, alto: window.innerHeight,
+    })`);
+    if (!caja.ancho || !caja.alto) throw new Error('la ventana de la barra flotante no tiene tamaño');
+
+    // Su propio tamaño y la escala de la escena: así los tiles quedan a la
+    // misma escala que la ventana de debajo. Cambiar el ancho o el alto aquí
+    // la relayoutaría y dejaría de ser la barra que hay en pantalla.
+    await cdp.enviar('Emulation.setDeviceMetricsOverride', {
+      width: caja.ancho, height: caja.alto,
+      deviceScaleFactor: escena.escala, mobile: false,
+    });
+    await cdp.enviar('Emulation.setDefaultBackgroundColorOverride', {
+      color: { r: 0, g: 0, b: 0, a: 0 },
+    });
+    await dormir(600);
+    const { data } = await cdp.enviar('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+
+    return sharp(deckPng)
+      .composite([{
+        input: Buffer.from(data, 'base64'),
+        left: Math.round(caja.x * escena.escala),
+        top: Math.round(caja.y * escena.escala),
+      }])
+      .png()
+      .toBuffer();
+  } finally {
+    cdp.cerrar();
   }
 }
 
