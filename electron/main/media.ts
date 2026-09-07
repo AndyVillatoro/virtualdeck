@@ -1,4 +1,5 @@
 import { hayNucleo, intentarNativo } from './native';
+import { medioFijo } from './mediosFijos';
 import { runPS as runPSShared } from './ps-helpers';
 import { tm } from './idioma';
 
@@ -504,6 +505,12 @@ async function consultarSmtc(): Promise<{ pista: NowPlaying | null; contesto: bo
 }
 
 export async function getNowPlaying(): Promise<NowPlaying | null> {
+  // Capturas de prensa: con `VD_MEDIOS_FIJOS` puesta, la pista sale de ese
+  // archivo y no de SMTC. Sin la variable esto es `null` y no cambia nada.
+  // El por qué está entero en `mediosFijos.ts`.
+  const fijo = medioFijo();
+  if (fijo) return fijo;
+
   // Camino nativo: SMTC por WinRT, en proceso y con tipos verificados. Aqui
   // desaparece el bloque marcado «NO tocar» de mas arriba — la reflexion para
   // convertir el IAsyncOperation en un Task de .NET existia porque PowerShell

@@ -346,6 +346,13 @@ Reglas que afectan al diseño de las capturas:
 - **Las imágenes se suben por idioma, aunque sean las mismas.** Con ficha en
   español e inglés, hay que subirlas dos veces.
 
+Las imágenes ya están hechas y **se vuelven a generar solas**: seis capturas a
+1920×1080 y el mosaico de 300×300, en [`docs/prensa/`](prensa/README.md). Salen
+de la aplicación corriendo (`node scripts/prensa/capturar.mjs`), no de un editor
+de imágenes, así que después de cambiar la interfaz se rehacen en un comando en
+vez de a mano. Ese README dice de dónde sale cada dato que se ve y lleva el
+repaso de privacidad captura por captura.
+
 ### 5.5. Resumen operativo
 
 | Campo | Qué poner |
