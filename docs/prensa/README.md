@@ -37,9 +37,34 @@ salga a 1920×1080, así que si la Store rechaza una imagen no es por el tamaño
 | `04-barra-lateral.png` | Una página de 5×4 hecha de widgets en vivo, con la barra lateral leyendo reloj, clima, cinco piezas de hardware y el estado del RGB. | 1920×1080 PNG |
 | `05-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
 | `06-galeria.png` | La galería de perfiles con el aviso de riesgo desplegado: lo que un perfil descargado va a ejecutar, antes de importarlo. | 1920×1080 PNG |
-| `07-barra-flotante.png` | La barra flotante: una columna de seis tiles pegada al borde del monitor, por delante de **otra aplicación** (Autodesk Fusion). Se ve Fusion a través de los huecos entre tiles, y va al tamaño que ocupa de verdad en una pantalla de 1920×1080: 104 px. | 1920×1080 PNG |
 | `icono-mosaico-300.png` | El icono de mosaico. No es una captura: es `build/icon.svg` centrado sobre el fondo del tema. | 300×300 PNG exactos |
 | `fuentes/` | Las entradas de las que tiran dos capturas: la pista y la carátula de la franja de música, y la captura de escritorio sobre la que va la barra flotante. Ver más abajo. | — |
+
+### La ficha en inglés, y la que no va a la Store
+
+**`fuera-de-la-store/barra-flotante.png`** era la 07. Salió de la secuencia
+numerada a propósito: la ventana de debajo es Autodesk Fusion, o sea interfaz y
+marca de un tercero. La política 11.2 exige que el contenido sea propio o
+licenciado y la 10.1.1 prohíbe inducir a error sobre la relación con otros
+productos — con Fusion ocupando el 90% de la imagen eso no es teórico. Como
+captura de tienda rinde poco de todos modos: el producto es una tira estrecha a
+la derecha. **Para la web sí vale**: es la única prueba de que la barra flota
+por encima de otra aplicación de verdad.
+
+**La tanda en inglés** se saca con `VD_PRENSA_IDIOMA=en` y va a `docs/prensa/en/`
+— la Store pide las imágenes una vez por idioma, y con una sola carpeta la
+segunda tanda pisaba la primera. Cambiar `language` **no basta**: las etiquetas
+de los botones son datos que siembra `escenas.mjs`, así que hay una tabla `EN`
+que las traduce, y **revienta si falta una** en vez de dejar la captura con los
+dos idiomas mezclados.
+
+**Este guion corre en Linux.** Se porto lo que se pudo a Windows — los nombres
+por `--host-resolver-rules` en vez de `/etc/hosts` (que ahi pide
+administrador), sin `xvfb`, `taskkill /T` para cerrar el arbol de procesos, y el
+borrado del temporal ya no puede tumbar la tanda. Lo que **no** funciona todavia
+en Windows es el espejo de `fonts.googleapis.com`: la aplicacion arranca y se
+queja de que no cargaron las fuentes. Las capturas en ingles hay que sacarlas en
+Linux hasta que eso se resuelva.
 
 ### Lo que pide la Store, y cómo queda
 

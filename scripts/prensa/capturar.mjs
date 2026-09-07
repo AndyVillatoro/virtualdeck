@@ -3,6 +3,8 @@
  *
  *   node scripts/prensa/capturar.mjs            # las seis, a docs/prensa/
  *   node scripts/prensa/capturar.mjs 03 05      # solo esas
+ *   VD_PRENSA_IDIOMA=en node scripts/prensa/capturar.mjs   # la tanda en ingles,
+ *                                                          # a docs/prensa/en/
  *
  * Cómo funciona, y por qué así:
  *
@@ -21,20 +23,29 @@
  *   estado de la ventana y los interruptores encendidos se guardan en disco, y
  *   reutilizarlo arrastraría lo de la escena anterior.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, appendFileSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { conectar, evaluar, dormir } from './cdp.mjs';
 import { arrancarTodo, certificado, precalentar, HOSTS } from './servicios.mjs';
-import { ESCENAS } from './escenas.mjs';
+import { ESCENAS, IDIOMA } from './escenas.mjs';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const RAIZ = join(AQUI, '..', '..');
-const SALIDA = join(RAIZ, 'docs', 'prensa');
-const FUENTES = join(SALIDA, 'fuentes');
+const PRENSA = join(RAIZ, 'docs', 'prensa');
+/**
+ * El inglés va a su propia carpeta.
+ *
+ * La ficha de la Store pide las imágenes **una vez por idioma**, así que hacen
+ * falta las dos tandas a la vez. Con una sola carpeta, correr esto en inglés
+ * pisaba las de español sin avisar.
+ */
+const SALIDA = IDIOMA === 'en' ? join(PRENSA, 'en') : PRENSA;
+const FUENTES = join(PRENSA, 'fuentes');
 const PUERTO_CDP = 9333;
+if (!existsSync(SALIDA)) mkdirSync(SALIDA, { recursive: true });
 
 /**
  * La galería del proyecto, la misma dirección que rellena el botón «GALERÍA
@@ -57,7 +68,30 @@ const GALERIA = 'https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gal
 // terminar, salga bien o mal.
 const MARCA = '# virtualdeck-capturas';
 
+const WINDOWS = process.platform === 'win32';
+/**
+ * El binario de Electron, no `npx`. Con `shell: true` el PID que devuelve
+ * `spawn` es el del shell, no el de Electron, y al cerrar se quedaba todo el
+ * arbol vivo aguantando el puerto de depuracion.
+ */
+const ELECTRON_EXE = join(RAIZ, 'node_modules', 'electron', 'dist', 'electron.exe');
+
+/**
+ * Que los nombres del clima y de la galería caigan en 127.0.0.1.
+ *
+ * En Linux se añaden a `/etc/hosts` y se quitan al terminar. **En Windows no**:
+ * ese archivo vive en `System32\drivers\etc` y editarlo pide administrador, así
+ * que se le pasa a Chromium `--host-resolver-rules`, que hace lo mismo **solo
+ * para esa copia** y no deja nada que limpiar. De las dos, es la buena: sin
+ * permisos, sin cambio global, y sin riesgo de dejar el `hosts` a medias si el
+ * guion se corta por el camino.
+ */
+function reglasDeNombres() {
+  return `MAP ${HOSTS.join(' 127.0.0.1, MAP ')} 127.0.0.1`;
+}
+
 function ponerHosts() {
+  if (WINDOWS) return () => {};
   const antes = readFileSync('/etc/hosts', 'utf-8');
   if (antes.includes(MARCA)) return () => {};
   appendFileSync('/etc/hosts', `\n${HOSTS.map((h) => `127.0.0.1 ${h} ${MARCA}`).join('\n')}\n`);
@@ -209,8 +243,40 @@ async function esperarPuertoLibre() {
   throw new Error(`el puerto ${PUERTO_CDP} sigue ocupado; queda una copia de VirtualDeck corriendo`);
 }
 
+/**
+ * Cerrar la copia y **todo lo que colgaba de ella**.
+ *
+ * En Linux basta con matar el grupo. En Windows no hay grupos de procesos: un
+ * Electron abre cuatro o cinco hijos (GPU, red, cada renderer) y matar solo al
+ * primero deja el resto vivo — con el puerto de depuración cogido, asi que la
+ * escena siguiente se caia con «el puerto 9333 sigue ocupado». `taskkill /T`
+ * se lleva el arbol entero.
+ */
 function matarGrupo(hijo) {
+  if (WINDOWS) {
+    try { spawnSync('taskkill', ['/PID', String(hijo.pid), '/T', '/F'], { stdio: 'ignore' }); } catch {}
+    try { hijo.kill(); } catch {}
+    return;
+  }
   try { process.kill(-hijo.pid, 'SIGKILL'); } catch { try { hijo.kill('SIGKILL'); } catch {} }
+}
+
+/**
+ * Borra el directorio de datos de la copia. **Sin poder tumbar la ejecucion.**
+ *
+ * En Windows los archivos siguen abiertos un rato despues de que el proceso
+ * muera, asi que `rmSync` daba `EPERM` — y al estar en un `finally`, esa
+ * excepcion **sustituia al error de verdad** y no habia forma de ver por que
+ * habia fallado la escena. Un temporal que se queda en `%TEMP%` no es motivo
+ * para tirar una tanda de capturas: se reintenta un poco y, si no se puede, se
+ * avisa y se sigue.
+ */
+async function borrarTemporal(ruta) {
+  for (let i = 0; i < 5; i++) {
+    try { rmSync(ruta, { recursive: true, force: true }); return; }
+    catch { await dormir(400); }
+  }
+  console.warn(`  (no se pudo borrar ${ruta} — queda en el temporal)`);
 }
 
 async function capturar(escena, entorno) {
@@ -226,16 +292,24 @@ async function capturar(escena, entorno) {
   }
 
   const pantalla = escena.pantalla ?? { ancho: 1600, alto: 1000 };
-  const hijo = spawn('xvfb-run', [
-    '-a', '-s', `-screen 0 ${pantalla.ancho}x${pantalla.alto}x24`,
-    'npx', 'electron', '.',
+  const deElectron = [
+    '.',
     '--no-sandbox',
     `--user-data-dir=${datos}`,
     `--remote-debugging-port=${PUERTO_CDP}`,
     // Solo para el certificado local de `servicios.mjs`. Afecta a esta copia
     // suelta y a nada más: no se toca la comprobación de `galeria.ts`.
     '--ignore-certificate-errors',
-  ], { cwd: RAIZ, env: entorno, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  ];
+  // En Windows hay pantalla de verdad: ni xvfb ni tamaño que fingir. Y los
+  // nombres se redirigen por línea de órdenes en vez de en el archivo `hosts`.
+  const hijo = WINDOWS
+    ? spawn(ELECTRON_EXE, [...deElectron, `--host-resolver-rules=${reglasDeNombres()}`],
+        { cwd: RAIZ, env: entorno, stdio: ['ignore', 'pipe', 'pipe'] })
+    : spawn('xvfb-run', [
+        '-a', '-s', `-screen 0 ${pantalla.ancho}x${pantalla.alto}x24`,
+        'npx', 'electron', ...deElectron,
+      ], { cwd: RAIZ, env: entorno, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 
   let registro = '';
   hijo.stdout.on('data', (d) => { registro += d; });
@@ -264,7 +338,7 @@ async function capturar(escena, entorno) {
   } finally {
     matarGrupo(hijo);
     await esperarPuertoLibre();
-    rmSync(datos, { recursive: true, force: true });
+    await borrarTemporal(datos);
   }
 }
 

@@ -11,6 +11,8 @@
  * las imágenes de la Store se suben una vez por idioma de todos modos.
  */
 
+import { PUERTO_LHM, PUERTO_RGB } from './servicios.mjs';
+
 const ACENTO = '#4a8ef0';
 
 /** Lo que comparten todas: sensores y RGB apuntando a los servicios locales. */
@@ -24,7 +26,7 @@ function base(extra = {}) {
     accent: ACENTO,
     wallpaper: 'dotgrid',
     theme: 'dark',
-    language: 'es',
+    language: IDIOMA,
     tileMode: 'square',
     uiScale: 1,
     soundOnPress: true,
@@ -34,16 +36,16 @@ function base(extra = {}) {
     // pedir uno nuevo. 2468 no protege nada: es una captura.
     kiosk: { enabled: true, pin: '2468' },
     sensors: {
-      enabled: true, host: '127.0.0.1', port: 8085, showWidget: true,
+      enabled: true, host: '127.0.0.1', port: PUERTO_LHM, showWidget: true,
       spawnOnStart: false, spawnElevated: false,
       categories: ['cpu', 'gpu', 'mainboard', 'memory', 'storage'],
     },
     rgb: {
-      enabled: true, host: '127.0.0.1', port: 6742,
+      enabled: true, host: '127.0.0.1', port: PUERTO_RGB,
       autoConnect: true, spawnOnStart: false,
       profiles: [
-        { id: 'rgbp_directo', name: 'En directo', devices: {} },
-        { id: 'rgbp_noche', name: 'Noche', devices: {} },
+        { id: 'rgbp_directo', name: L('En directo'), devices: {} },
+        { id: 'rgbp_noche', name: L('Noche'), devices: {} },
       ],
       // Sin esto el gestor RGB sale con el aviso «calibración pendiente» en la
       // franja de arriba, que es justo la parte de la captura que la Store no
@@ -65,7 +67,60 @@ const C = {
   violeta: '#1f1a33', rojo: '#2c1717', gris: '#1c1c1c', teal: '#0f2724',
 };
 
-const b = (slot, o) => ({ id: `0-${slot}`, page: 0, label: '', icon: '', ...o });
+/**
+ * Las etiquetas en inglés, para la ficha en inglés.
+ *
+ * Cambiar `language: 'en'` **no basta**: eso traduce la interfaz de la
+ * aplicación, pero las etiquetas de los botones son datos que siembra este
+ * archivo. Sin esta tabla salía la interfaz en inglés con los botones en
+ * español, que se lee peor que cualquiera de los dos idiomas puros.
+ *
+ * La clave es la etiqueta española. También traduce los sufijos de los widgets
+ * de sensor y los nombres de los botones dentro de una carpeta, que son
+ * etiquetas igual aunque no lo parezcan.
+ */
+const EN = {
+  'EN VIVO': 'LIVE', 'CÁMARA 2': 'CAM 2', 'SILENCIAR': 'MUTE MIC', 'HORA': 'CLOCK',
+  'ANTERIOR': 'PREV', 'PAUSA': 'PAUSE', 'SIGUIENTE': 'NEXT', 'SONANDO': 'NOW PLAYING',
+  'VOL −': 'VOL −', 'VOL +': 'VOL +', 'MUDO': 'MUTE', 'CASCOS': 'HEADSET',
+  'LUZ JUEGO': 'GAME LIGHT', 'LUZ CINE': 'MOVIE LIGHT', 'CPU': 'CPU', 'MÁS': 'MORE',
+  'CÓDIGO': 'CODE', 'NOTAS': 'NOTES',
+  'CLIMA': 'WEATHER', 'GPU': 'GPU', 'PLACA': 'BOARD', 'CARGA': 'LOAD', 'RAM': 'RAM',
+  'SSD': 'SSD', 'VENT': 'FAN', 'VATIOS': 'WATTS', 'TOMAS': 'TAKES', 'LUCES': 'LIGHTS',
+  'STREAM': 'STREAM', 'RPM': 'RPM', 'CPU W': 'CPU W',
+  // Nombres de página y de perfil RGB: también son datos sembrados.
+  'MESA': 'DESK', 'LUCES': 'LIGHTS', 'En directo': 'Live', 'Noche': 'Night',
+  // Textos de la **interfaz** en los que los pasos hacen clic. En inglés el
+  // botón dice otra cosa y el paso no encontraría nada: se vio con «KIOSKO»,
+  // que en inglés es «KIOSK», y la captura habría salido sin entrar en kiosko.
+  'KIOSKO': 'KIOSK', 'MOSTRAR': 'SHOW',
+};
+
+/** El idioma con el que se siembra. Lo pone `capturar.mjs` por entorno. */
+export const IDIOMA = process.env.VD_PRENSA_IDIOMA === 'en' ? 'en' : 'es';
+
+/**
+ * Traduce una etiqueta si toca. **Revienta si falta**, en vez de dejarla en
+ * español: una captura con los dos idiomas mezclados es justo lo que se quiere
+ * evitar, y en silencio no se nota hasta tenerla subida.
+ */
+function L(texto) {
+  if (IDIOMA === 'es' || !texto) return texto;
+  const t = EN[texto];
+  if (t === undefined) throw new Error(`falta la traduccion de «${texto}» en EN (escenas.mjs)`);
+  return t;
+}
+
+const b = (slot, o) => {
+  const x = { id: `0-${slot}`, page: 0, label: '', icon: '', ...o };
+  if (x.label) x.label = L(x.label);
+  if (x.sensorWidget?.suffix) x.sensorWidget = { ...x.sensorWidget, suffix: L(x.sensorWidget.suffix) };
+  if (x.varWidget?.suffix) x.varWidget = { ...x.varWidget, suffix: L(x.varWidget.suffix) };
+  if (Array.isArray(x.action?.folderButtons)) {
+    x.action = { ...x.action, folderButtons: x.action.folderButtons.map((f) => ({ ...f, label: L(f.label) })) };
+  }
+  return x;
+};
 
 // ── Escena 1: el deck lleno ───────────────────────────────────────────────
 const DECK = [
@@ -127,8 +182,8 @@ const MESA = [
   b(19, { label: 'LUCES',   icon: '💡',            bgColor: C.gris,  isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'work' } }),
 ];
 
-const paginaDeck = { id: 'main', name: 'STREAM', gridSize: 4, gridRows: 4 };
-const paginaMesa = { id: 'main', name: 'MESA', gridSize: 5, gridRows: 4 };
+const paginaDeck = { id: 'main', name: L('STREAM'), gridSize: 4, gridRows: 4 };
+const paginaMesa = { id: 'main', name: L('MESA'), gridSize: 5, gridRows: 4 };
 
 /**
  * Las seis escenas.
@@ -172,14 +227,14 @@ export const ESCENAS = [
     // Dos páginas para que el selector de la columna izquierda enseñe para
     // qué está: con una sola salía una barra suelta con un «1» dentro.
     config: base({
-      pages: [paginaDeck, { id: 'p2', name: 'LUCES', gridSize: 4, gridRows: 4 }],
+      pages: [paginaDeck, { id: 'p2', name: L('LUCES'), gridSize: 4, gridRows: 4 }],
       buttons: DECK, toggledIds: ['0-0', '0-13'],
       tileMode: 'fill',
     }),
     pasos: [
       { hacer: 'clicEnTexto', texto: '⤢' },
       { hacer: 'esperar', ms: 900 },
-      { hacer: 'clicEnTexto', texto: 'KIOSKO' },
+      { hacer: 'clicEnTexto', texto: L('KIOSKO') },
       { hacer: 'esperar', ms: 900 },
     ],
   },
@@ -202,7 +257,7 @@ export const ESCENAS = [
       { hacer: 'esperar', ms: 1800 },
       // El pintor LED a LED: llena la columna del medio y es lo que ningún
       // programa de deck de la competencia trae.
-      { hacer: 'clicEnTexto', texto: 'MOSTRAR' },
+      { hacer: 'clicEnTexto', texto: L('MOSTRAR') },
       { hacer: 'esperar', ms: 900 },
     ],
   },
@@ -214,8 +269,18 @@ export const ESCENAS = [
     pasos: [{ hacer: 'abrirGaleriaConRiesgo' }],
   },
   {
-    archivo: '07-barra-flotante.png',
-    titulo: 'La barra flotante, por encima de la ventana de debajo',
+    // **Esta no va a la Store**, y por eso sale de la secuencia numerada: la
+    // ventana de debajo es Autodesk Fusion, o sea interfaz y marca de un
+    // tercero. La politica 11.2 exige que el contenido sea propio o
+    // licenciado, y la 10.1.1 prohibe inducir a error sobre la relacion con
+    // otros productos — con Fusion ocupando el 90% de la imagen, eso no es
+    // teorico. Como captura de tienda rinde poco de todos modos: el producto
+    // es una tira estrecha a la derecha.
+    //
+    // Se conserva porque para la web **si** vale: es la unica prueba de que la
+    // barra flota de verdad por encima de otra aplicacion.
+    archivo: 'fuera-de-la-store/barra-flotante.png',
+    titulo: 'La barra flotante, por encima de la ventana de debajo (solo para la web)',
     ancho: 1280, alto: 720, escala: 1.5,
     // Esta es la única con dos ventanas, y por eso pide dos cosas que las
     // demás no:

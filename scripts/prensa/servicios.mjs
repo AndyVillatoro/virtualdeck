@@ -127,6 +127,20 @@ export function arrancarLHM(puerto = 8085) {
 // tipografía de reserva del sistema —parecida de lejos, distinta de cerca— y
 // la aplicación instalada en Windows sí carga las de Google.
 
+/**
+ * Los puertos de los servicios de mentira, cambiables por entorno.
+ *
+ * Los de fabrica son los de siempre — 8085 para LibreHardwareMonitor y 6742
+ * para OpenRGB— porque son los que espera la aplicación sin configurar. Pero
+ * si quien saca las capturas tiene **su** OpenRGB abierto, el puerto está
+ * cogido y el guion se cae con EADDRINUSE. Antes que pedirle que lo cierre
+ * —apagándole las luces— se cambian los dos aquí y en la escena:
+ *
+ *   VD_PRENSA_PUERTO_RGB=6743 node scripts/prensa/capturar.mjs
+ */
+export const PUERTO_LHM = Number(process.env.VD_PRENSA_PUERTO_LHM) || 8085;
+export const PUERTO_RGB = Number(process.env.VD_PRENSA_PUERTO_RGB) || 6742;
+
 export const HOSTS = [
   'ipapi.co', 'api.open-meteo.com',
   'fonts.googleapis.com', 'fonts.gstatic.com', 'raw.githubusercontent.com',
@@ -233,8 +247,8 @@ export async function precalentar(urls) {
 
 export async function arrancarTodo(tls) {
   const servidores = [
-    await arrancarLHM(8085),
-    await arrancarOpenRGB(6742),
+    await arrancarLHM(PUERTO_LHM),
+    await arrancarOpenRGB(PUERTO_RGB),
     await arrancarHttps(tls, 443),
   ];
   return { parar: () => servidores.forEach((s) => { try { s.close(); } catch {} }) };
