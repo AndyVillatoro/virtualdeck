@@ -120,8 +120,26 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`, salvo el
   aplicación. En esta máquina no hay ningún programa de Windows que poner
   detrás. Sirve para lo que tiene que servir —se ve que es una ventana por
   delante de otra, pegada al borde del monitor, con sus interruptores
-  compartidos— pero si querés la foto sobre OBS o un navegador, hay que sacarla
-  en Windows: `VD_MEDIOS_FIJOS` aparte, la escena no necesita nada especial.
+  compartidos— pero para la foto sobre la aplicación que sea, hay que traer una
+  captura del escritorio hecha en Windows y pasarla con `--fondo`:
+
+  ```bash
+  node scripts/prensa/capturar.mjs 07 --fondo=docs/prensa/fuentes/escritorio.png
+  ```
+
+  Con `--fondo` la escena cambia de geometría: la pantalla pasa a 1920×1080 y la
+  escala a **1**. Es a propósito. Una captura de escritorio viene de una pantalla
+  de verdad, así que la columna tiene que salir **al tamaño que ocupa en ella**
+  —104 px de ancho—; con la vista de 1280×720 a 1,5 que usan las otras seis
+  saldría un 50 % más ancha, y el tamaño real es justo lo que esta captura tiene
+  que dejar claro. La imagen del fondo se recorta a `cover` hasta 1920×1080,
+  porque las coordenadas de la barra están en esa pantalla.
+
+  Dos cosas que revisar en la captura de escritorio **antes** de usarla, y que
+  el guion no puede comprobar por vos: que no lleve tu nombre ni tu usuario a la
+  vista (una pantalla de inicio con «Hola, <nombre>» o el nombre de la cuenta en
+  una barra lateral), y que la interfaz de la otra aplicación se pueda publicar
+  —es marca de un tercero dentro de una imagen de la ficha—.
 
 - **Reproducción — la única excepción.** La franja de música necesita una sesión
   de medios de Windows (SMTC), que es una API del sistema y no tiene cable que

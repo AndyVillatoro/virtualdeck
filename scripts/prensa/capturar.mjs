@@ -253,7 +253,10 @@ async function capturar(escena, entorno) {
 
     const { data } = await cdp.enviar('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     let png = Buffer.from(data, 'base64');
-    if (escena.compuesta) png = await conBarraFlotante(png, escena);
+    if (escena.compuesta) {
+      const fondo = escena.fondo ? await fondoDeEscritorio(escena) : png;
+      png = await conBarraFlotante(fondo, escena);
+    }
     mkdirSync(SALIDA, { recursive: true });
     writeFileSync(join(SALIDA, escena.archivo), png);
     cdp.cerrar();
@@ -266,7 +269,28 @@ async function capturar(escena, entorno) {
 }
 
 /**
- * Pega la barra flotante encima del deck, en las coordenadas donde está.
+ * La captura de escritorio sobre la que va la barra, ajustada a la pantalla.
+ *
+ * Se recorta y escala a la medida **exacta** de la pantalla de X con la que se
+ * arrancó la escena, porque las coordenadas de la barra están en esa pantalla:
+ * si la imagen midiera otra cosa, la columna caería descolocada. `cover`
+ * recorta lo que sobre en vez de deformar, que en una interfaz se nota
+ * enseguida.
+ */
+async function fondoDeEscritorio(escena) {
+  const sharp = (await import('sharp')).default;
+  const { ancho, alto } = escena.pantalla;
+  const original = await sharp(escena.fondo).metadata();
+  if (original.width < ancho) {
+    process.stdout.write(
+      `  aviso: el fondo mide ${original.width}×${original.height} y hay que ampliarlo a ${ancho}×${alto}; va a salir blando\n`,
+    );
+  }
+  return sharp(escena.fondo).resize(ancho, alto, { fit: 'cover' }).png().toBuffer();
+}
+
+/**
+ * Pega la barra flotante encima del fondo, en las coordenadas donde está.
  *
  * La barra **es otra ventana de Electron**, así que no sale en la captura de la
  * página del deck: `Page.captureScreenshot` fotografía un documento, no la
@@ -282,7 +306,7 @@ async function capturar(escena, entorno) {
  * proceso principal la coloca con `posicion()` en `floatingBar.ts` y luego la
  * barra se mide y pide su tamaño exacto con `bar.fit`.
  */
-async function conBarraFlotante(deckPng, escena) {
+async function conBarraFlotante(fondoPng, escena) {
   const sharp = (await import('sharp')).default;
   const cdp = await conectar(PUERTO_CDP, (t) => t.url.includes('#barra'));
   try {
@@ -305,7 +329,7 @@ async function conBarraFlotante(deckPng, escena) {
     await dormir(600);
     const { data } = await cdp.enviar('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
 
-    return sharp(deckPng)
+    return sharp(fondoPng)
       .composite([{
         input: Buffer.from(data, 'base64'),
         left: Math.round(caja.x * escena.escala),
@@ -389,12 +413,46 @@ async function icono300() {
 
 // ── Programa ──────────────────────────────────────────────────────────────
 
+/**
+ * `--fondo=<ruta>`: la captura de escritorio sobre la que va la barra flotante.
+ *
+ * Sin ella, la escena 07 pone debajo la ventana del propio VirtualDeck, que es
+ * lo único que hay en la máquina donde se generan estas imágenes. Con una
+ * captura de otra aplicación —hecha en Windows, donde la barra se usa de
+ * verdad— la escena se rehace sobre ella:
+ *
+ *     node scripts/prensa/capturar.mjs 07 --fondo=docs/prensa/fuentes/escritorio.png
+ *
+ * Y ahí cambia la geometría: la pantalla pasa a medir 1920×1080 y la escala a 1,
+ * porque la captura de escritorio es de una pantalla de verdad y la barra tiene
+ * que salir **al tamaño que ocupa en ella**. Con la vista de 1280×720 a 1,5 —lo
+ * que usan las otras seis— la columna saldría medio 50 % más ancha de lo que es,
+ * que es justo lo que esta captura tiene que dejar claro.
+ */
+function aplicarFondo(escenas, ruta) {
+  if (!existsSync(ruta)) throw new Error(`no existe el fondo: ${ruta}`);
+  const compuestas = escenas.filter((e) => e.compuesta);
+  if (compuestas.length === 0) throw new Error('--fondo solo sirve para la escena de la barra flotante (07)');
+  return escenas.map((e) => (e.compuesta
+    ? {
+      ...e,
+      fondo: ruta,
+      ancho: 1920, alto: 1080, escala: 1,
+      pantalla: { ancho: 1920, alto: 1080 },
+      ventana: { x: 0, y: 0, width: 1920, height: 1080 },
+    }
+    : e));
+}
+
 async function main() {
-  const pedidas = process.argv.slice(2);
-  const escenas = pedidas.length
+  const argumentos = process.argv.slice(2);
+  const fondo = argumentos.find((a) => a.startsWith('--fondo='))?.slice('--fondo='.length);
+  const pedidas = argumentos.filter((a) => !a.startsWith('--'));
+  let escenas = pedidas.length
     ? ESCENAS.filter((e) => pedidas.some((p) => e.archivo.startsWith(p)))
     : ESCENAS;
   if (escenas.length === 0) throw new Error(`ninguna escena coincide con ${pedidas.join(', ')}`);
+  if (fondo) escenas = aplicarFondo(escenas, fondo);
 
   mkdirSync(FUENTES, { recursive: true });
   const tls = certificado();
