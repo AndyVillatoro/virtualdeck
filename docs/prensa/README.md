@@ -23,9 +23,9 @@ salga a 1920×1080, así que si la Store rechaza una imagen no es por el tamaño
 | `04-barra-lateral.png` | Una página de 5×4 hecha de widgets en vivo, con la barra lateral leyendo reloj, clima, cinco piezas de hardware y el estado del RGB. | 1920×1080 PNG |
 | `05-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
 | `06-galeria.png` | La galería de perfiles con el aviso de riesgo desplegado: lo que un perfil descargado va a ejecutar, antes de importarlo. | 1920×1080 PNG |
-| `07-barra-flotante.png` | La barra flotante: una columna de seis tiles pegada al borde del monitor, por delante de la ventana de debajo. Se ve el deck a través de los huecos entre tiles, y los dos interruptores encendidos salen marcados en los dos sitios. | 1920×1080 PNG |
+| `07-barra-flotante.png` | La barra flotante: una columna de seis tiles pegada al borde del monitor, por delante de **otra aplicación** (Autodesk Fusion). Se ve Fusion a través de los huecos entre tiles, y va al tamaño que ocupa de verdad en una pantalla de 1920×1080: 104 px. | 1920×1080 PNG |
 | `icono-mosaico-300.png` | El icono de mosaico. No es una captura: es `build/icon.svg` centrado sobre el fondo del tema. | 300×300 PNG exactos |
-| `fuentes/` | Los datos de los que tira una de las capturas. Ver más abajo. | — |
+| `fuentes/` | Las entradas de las que tiran dos capturas: la pista y la carátula de la franja de música, y la captura de escritorio sobre la que va la barra flotante. Ver más abajo. | — |
 
 ## Lo que pide la Store, y cómo queda
 
@@ -60,7 +60,7 @@ Esto se revisó mirando cada imagen a tamaño completo, no por deducción.
 | `04-barra-lateral.png` | no aparece | ninguna | carátula generada | no aparece |
 | `05-rgb.png` | no aparece | los dispositivos salen sin número de serie (el emulador lo manda vacío) | no sale carátula | no aparece; la ubicación de cada dispositivo es un bus `I2C`/`HID`, no una dirección de red |
 | `06-galeria.png` | no aparece | ninguna: el perfil «Streaming» de la galería no abre programas, solo manda atajos | carátula generada | no aparece; la única dirección visible es la de la galería del proyecto |
-| `07-barra-flotante.png` | no aparece | ninguna | no sale carátula (la barra no dibuja widgets) | no aparece |
+| `07-barra-flotante.png` | no aparece: el recorte por la derecha se lleva las iniciales del avatar de Fusion, y la captura es de un diseño abierto, no de la pantalla de inicio que saluda por el nombre | ninguna; el único texto propio es `MagsafeCaraJimny`, el nombre de una pieza | no sale carátula (la barra no dibuja widgets) | no aparece |
 
 Dos cosas más que no estaban en la lista y conviene decidir a conciencia:
 
@@ -74,6 +74,13 @@ Dos cosas más que no estaban en la lista y conviene decidir a conciencia:
   real tiene encima y no hay logotipo ajeno pegado sobre la captura, pero son
   marcas de terceros dentro de la imagen. Si querés evitarlo del todo, cambiá
   `brandIcon` por `icon` con un emoji en `scripts/prensa/escenas.mjs`.
+- **La interfaz de Autodesk en la 07.** Es lo mismo pero más grande: media
+  captura es la ventana de otra empresa. Enseñar una utilidad que se superpone
+  encima de la aplicación sobre la que se usa es corriente, y no hay nada
+  añadido ni retocado, pero es material comercial tuyo con marca ajena dentro.
+  Si preferís no depender de eso, sirve cualquier otra captura de escritorio con
+  `--fondo` —un explorador de archivos, el navegador, el editor de código— y la
+  imagen se rehace en un comando.
 
 ## De dónde sale cada dato que se ve
 
@@ -104,42 +111,50 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`, salvo el
 - **Galería.** Es la del proyecto, la de verdad: se pulsa «GALERÍA DEL
   PROYECTO» y se abre uno de los perfiles publicados. La dirección que sale en
   la captura es la real y los perfiles son los que hay.
-- **La barra flotante — dos ventanas en una imagen, y una salvedad.** La barra
-  **es otra ventana de Electron**, así que no sale en la captura del deck:
+- **La barra flotante — dos ventanas en una imagen.** La barra **es otra ventana
+  de Electron**, así que no sale en la captura de la de debajo:
   `Page.captureScreenshot` fotografía un documento, no la pantalla. Y en la
-  máquina donde se sacaron estas capturas no hay con qué fotografiar la pantalla
-  entera —ni `import`, ni `xwd`, ni `ffmpeg`—, así que el guion junta las dos
-  ventanas **por sus coordenadas reales**: pide a cada una su propia captura y
-  superpone la de la barra en el `screenX`/`screenY` que la propia ventana
-  declara. No es un montaje libre, es lo que hace el compositor del sistema: la
-  ventana de la barra es transparente y lo único opaco son los tiles, así que se
-  captura con fondo transparente y se pega con su canal alfa. Por eso se ve el
-  deck a través de los huecos.
+  máquina donde se generan estas imágenes no hay con qué fotografiar la pantalla
+  entera —ni `import`, ni `xwd`, ni `ffmpeg` con `x11grab`—, así que el guion
+  junta las dos capas **por sus coordenadas reales**: pide a la barra su propia
+  captura y la superpone en el `screenX`/`screenY` que la propia ventana declara.
 
-  **La salvedad:** lo que hay debajo es el propio VirtualDeck, no otra
-  aplicación. En esta máquina no hay ningún programa de Windows que poner
-  detrás. Sirve para lo que tiene que servir —se ve que es una ventana por
-  delante de otra, pegada al borde del monitor, con sus interruptores
-  compartidos— pero para la foto sobre la aplicación que sea, hay que traer una
-  captura del escritorio hecha en Windows y pasarla con `--fondo`:
+  No es un montaje libre, es lo que hace el compositor del sistema: la ventana de
+  la barra es transparente y lo único opaco son los tiles, así que se captura con
+  fondo transparente y se pega con su canal alfa. Por eso en la imagen **se ve
+  Fusion a través de los huecos** entre tiles, que es la prueba de que es una
+  ventana por delante de otra y no un panel.
+
+  Lo de debajo es `fuentes/escritorio-fusion.png`, una captura de escritorio de
+  verdad —Autodesk Fusion en Windows, 3823×2053 porque es una pantalla 4K al
+  200 %—. Se pasa con `--fondo`:
 
   ```bash
-  node scripts/prensa/capturar.mjs 07 --fondo=docs/prensa/fuentes/escritorio.png
+  node scripts/prensa/capturar.mjs 07 --fondo=docs/prensa/fuentes/escritorio-fusion.png
   ```
 
-  Con `--fondo` la escena cambia de geometría: la pantalla pasa a 1920×1080 y la
-  escala a **1**. Es a propósito. Una captura de escritorio viene de una pantalla
+  Con `--fondo` la escena cambia de geometría a propósito: la pantalla pasa a
+  1920×1080 y la escala a **1**. Una captura de escritorio viene de una pantalla
   de verdad, así que la columna tiene que salir **al tamaño que ocupa en ella**
-  —104 px de ancho—; con la vista de 1280×720 a 1,5 que usan las otras seis
-  saldría un 50 % más ancha, y el tamaño real es justo lo que esta captura tiene
-  que dejar claro. La imagen del fondo se recorta a `cover` hasta 1920×1080,
-  porque las coordenadas de la barra están en esa pantalla.
+  —104 px de ancho, el 5,4 % del ancho de la pantalla—; con la vista de 1280×720
+  a 1,5 que usan las otras seis saldría un 50 % más ancha, y ese tamaño real es
+  justo lo que esta captura tiene que dejar claro.
 
-  Dos cosas que revisar en la captura de escritorio **antes** de usarla, y que
-  el guion no puede comprobar por vos: que no lleve tu nombre ni tu usuario a la
-  vista (una pantalla de inicio con «Hola, <nombre>» o el nombre de la cuenta en
-  una barra lateral), y que la interfaz de la otra aplicación se pueda publicar
-  —es marca de un tercero dentro de una imagen de la ficha—.
+  El fondo se escala a 1920×1080 recortando **por la derecha**. Una pantalla de
+  Windows sin la barra de tareas no da 16:9 exacto (aquí 1,862), así que sobran
+  91 px de ancho. Recortando por el centro se come el borde del panel izquierdo
+  de Fusion y deja el cubo de navegación partido por la mitad, que parece un
+  dibujado roto. Recortando solo por la derecha, el panel izquierdo queda entero
+  y lo que se va es la franja del borde —donde va la columna— y, de paso, las
+  iniciales del avatar de la cuenta.
+
+  **Si se cambia la captura de escritorio**, dos cosas que el guion no puede
+  comprobar: que no lleve nombre ni usuario a la vista —la pantalla de inicio de
+  Fusion dice «Hola, <nombre>» y trae el nombre del equipo en el panel
+  izquierdo, así que hay que sacarla con un diseño abierto, no en el inicio— y
+  que la interfaz de la otra aplicación se pueda publicar, porque es marca de un
+  tercero dentro de una imagen de la ficha. Sobre esto último, ver la nota de más
+  abajo.
 
 - **Reproducción — la única excepción.** La franja de música necesita una sesión
   de medios de Windows (SMTC), que es una API del sistema y no tiene cable que

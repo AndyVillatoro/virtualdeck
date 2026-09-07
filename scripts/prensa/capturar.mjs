@@ -271,11 +271,19 @@ async function capturar(escena, entorno) {
 /**
  * La captura de escritorio sobre la que va la barra, ajustada a la pantalla.
  *
- * Se recorta y escala a la medida **exacta** de la pantalla de X con la que se
- * arrancó la escena, porque las coordenadas de la barra están en esa pantalla:
- * si la imagen midiera otra cosa, la columna caería descolocada. `cover`
- * recorta lo que sobre en vez de deformar, que en una interfaz se nota
- * enseguida.
+ * Se escala a la medida **exacta** de la pantalla de X con la que se arrancó la
+ * escena, porque las coordenadas de la barra están en esa pantalla: si la
+ * imagen midiera otra cosa, la columna caería descolocada.
+ *
+ * `cover` recorta lo que sobre en vez de deformar —en una interfaz una imagen
+ * estirada se nota a la primera— y recorta **por la derecha** (`position:
+ * 'left'`), no por el centro. Con una captura de escritorio eso importa: una
+ * pantalla de Windows sin la barra de tareas no da 16:9 exacto, así que sobra
+ * ancho. Recortando por el centro se come el borde del panel izquierdo de la
+ * otra aplicación y se queda a medias el cubo de navegación de la derecha, que
+ * parece un dibujado roto. Recortando solo por la derecha, el panel de la
+ * izquierda queda entero y lo que se va es la franja del borde derecho, que es
+ * justo donde va la columna flotante.
  */
 async function fondoDeEscritorio(escena) {
   const sharp = (await import('sharp')).default;
@@ -286,7 +294,10 @@ async function fondoDeEscritorio(escena) {
       `  aviso: el fondo mide ${original.width}×${original.height} y hay que ampliarlo a ${ancho}×${alto}; va a salir blando\n`,
     );
   }
-  return sharp(escena.fondo).resize(ancho, alto, { fit: 'cover' }).png().toBuffer();
+  return sharp(escena.fondo)
+    .resize(ancho, alto, { fit: 'cover', position: 'left' })
+    .png()
+    .toBuffer();
 }
 
 /**
