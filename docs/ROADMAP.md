@@ -36,7 +36,7 @@ Auditoría sobre el código (no solo el doc):
   electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
   en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
-- **Publicado:** hasta **v0.9.4** en GitHub Releases, con `latest.yml` y `.blockmap`
+- **Publicado:** hasta **v0.10.0** en GitHub Releases, con `latest.yml` y `.blockmap`
   —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
   separado (ítem 30).
 - **i18n profundo (Bloque A): ✅ todo**, incluido lo que no estaba en la lista — el
@@ -48,7 +48,7 @@ Auditoría sobre el código (no solo el doc):
 - **Guardianes de `npm run check`: seis.** i18n, tipos de acción, canales IPC, wiki,
   campos del editor y perfiles de la galería. Cada uno nació de un fallo que llegó a
   la máquina del usuario con la compilación en verde.
-- **Lecciones de la ronda de auditoría (0.9.4):** *un camino que no se ejecuta nunca
+- **Lecciones de la ronda de auditoría (0.9.4 y 0.10.0):** *un camino que no se ejecuta nunca
   se pudre sin que nadie lo note, y a quien le toca es justo quien no puede
   diagnosticarlo* — de ahí `VD_SIN_NUCLEO=1`. Y *devolver éxito sin haber hecho nada
   es peor que fallar*, porque no deja rastro que seguir.
@@ -125,6 +125,8 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 31 | Auditoría de caminos de respaldo | `VD_SIN_NUCLEO=1` para arrancar ignorando el núcleo nativo. Sin él ese código no se ejecuta nunca y se pudre; cinco fallos de la 0.9.4 salieron de ahí. | ✅ 2026-09-06 |
 | 32 | Auditoría «dice que sí sin hacer nada» | Barrido de las acciones que devuelven éxito con la lista vacía o sin encontrar nada: RGB, enlaces, lanzador. | ✅ 2026-09-06 |
 | 33 | Integridad de la configuración | Escritura atómica (temporal + renombre con reintentos) y rotación de copias por fecha, no por nombre. | ✅ 2026-09-06 |
+| 34 | Mando entre decks | Accion `remote`: un deck pulsa botones de otro por el servidor local que ya existia. Medido con dos VirtualDeck a la vez. | ✅ 2026-09-06 |
+| 35 | Pagina de promocion | `docs/index.html`, bilingue, servible por Pages desde `main` / `/docs`. Falta activarlo en Settings, que es del dueño. | 🚧 |
 
 ---
 
@@ -205,3 +207,9 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
   mirar. Si no se hizo nada, se dice.
 - **No dar por buena una función con dos caminos habiendo probado uno.** Con el núcleo
   nativo cargado el respaldo no se ejecuta jamás: `VD_SIN_NUCLEO=1`.
+- **No marcar ✅ sin haber abierto la aplicación.** El PIN de kiosko (5.5) figuró como
+  hecho durante meses y no protegía nada; `rgb-preset` tenía manejador, formulario y
+  presets, y no se podía elegir. Los dos compilaban y pasaban todos los guardianes.
+  Se manejan la interfaz por CDP con `Input.dispatchMouseEvent` — los eventos
+  sintéticos React los ignora — sembrando `onboardingCompleted:true` en el perfil,
+  porque si no el tutorial tapa la ventana.

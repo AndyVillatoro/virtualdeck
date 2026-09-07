@@ -4,6 +4,57 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.10.0] — 2026-09-06
+
+Un deck ya puede mandar sobre otro, la galería de perfiles queda cerrada, y el
+PIN del modo kiosko empieza a servir para algo — llevaba meses dado por hecho y
+no protegía nada.
+
+### Added
+
+- **Un deck manda sobre otro de la red.** Acción «Mando remoto»: se le da la
+  dirección del otro equipo, su token y qué botón pulsar allí. Es la otra mitad
+  del servidor local que ya existía, por la misma API que usan el mando móvil y
+  Home Assistant. El portátil pulsa botones del equipo de sobremesa.
+- **La galería del proyecto, con un botón.** Cuatro perfiles publicados
+  —Esencial, Streaming, Trabajo y RGB— que se abren sin teclear ninguna
+  dirección. Pegar la de cualquier otra galería sigue funcionando igual.
+- **Página de promoción**, servible por GitHub Pages.
+
+### Fixed
+
+- **El PIN del modo kiosko no protegía nada.** ESC devolvía a la pantalla
+  principal sin preguntar, y cerrar el propio diálogo del PIN también salía: hay
+  dos manejadores de teclado y el que no sabe del kiosko corría primero. Medido
+  con los cinco pasos —activar, ESC, PIN malo, ESC del diálogo, PIN bueno—, que
+  ahora se comportan como deben.
+- **El aviso de la galería no miraba lo que el perfil teclea.** Contaba scripts,
+  programas y webhooks, pero no los atajos, el texto ni los pasos de una macro
+  — y **teclear es ejecutar**: un botón que hace `Win+R`, escribe un comando y
+  pulsa `Enter` daba el resumen entero vacío, con la pantalla diciendo «no lanza
+  programas ni ejecuta scripts».
+- **Un tipo de acción entero no se podía elegir.** «RGB Preset» tenía manejador,
+  formulario y doce botones sembrados, pero faltaba en la lista del editor: no se
+  podía crear uno, y al abrir uno que ya existía el primer paso salía sin nada
+  marcado, así que un clic en otro tipo se llevaba la acción por delante.
+- **`virtualdeck://press/Spotify` no hacía nada.** Una etiqueta sin espacios ni
+  acentos parecía un identificador interno, y por ahí no existía. Ahora se busca
+  también por etiqueta — lo que arregla además los accesos directos, los `.bat`
+  y las automatizaciones que ya estuvieran escritas así.
+- **La página pública decía que LibreHardwareMonitor venía incluido**, y se dejó
+  de empaquetar hace tiempo.
+
+### Changed
+
+- Cuando el otro equipo no contesta, el aviso dice **por qué** (apagado, nombre
+  que no resuelve, puerto cerrado) en vez de un «fetch failed» que no ayuda.
+- `npm run check:galeria` revisa los perfiles **publicados**, bajando el
+  manifiesto. Hasta ahora el guardián solo miraba el ejemplo del repositorio y
+  los cuatro de verdad no los revisaba nadie. Va aparte de `npm run check`: una
+  comprobación de compilación no puede depender de que haya red.
+- El guardián de acciones comprueba también que cada tipo se pueda **elegir** en
+  el editor, no solo que tenga manejador y formulario.
+
 ## [0.9.4] — 2026-09-06
 
 Una ronda entera de auditoría: doce arreglos, todos medidos con un control al
