@@ -15,16 +15,23 @@ export const LINKS = {
   lhm: 'https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases',
   openrgb: 'https://openrgb.org/',
 
-  // Donaciones — TODO: reemplazar con las cuentas reales cuando existan.
-  kofi: 'https://ko-fi.com/andyvillatoro',           // TODO: confirmar handle
-  githubSponsors: 'https://github.com/sponsors/AndyVillatoro', // TODO: activar Sponsors
-  paypal: 'https://paypal.me/andyvillatoro',          // TODO: confirmar handle
+  // Donaciones. Cuenta real, cobra por PayPal.
+  //
+  // **GitHub Sponsors se quito, y no por pereza.** Exige Stripe Connect con la
+  // region de residencia igual a la de la cuenta bancaria, y Stripe no opera en
+  // Honduras (en America Latina solo Brasil y Mexico). El enlace que habia
+  // mandaba a una pagina que no acepta patrocinios: un boton que no lleva a
+  // ninguna parte es peor que no tenerlo.
+  //
+  // PayPal directo tampoco esta **todavia**: PayPal.me si existe en Honduras,
+  // pero el enlace hay que reclamarlo en paypal.com/paypalme/grab. Cuando lo
+  // haya, se añade aqui y una entrada en `DONATION_LINKS`. Mientras tanto Ko-fi
+  // ya cobra por PayPal, asi que el camino existe igual.
+  kofi: 'https://ko-fi.com/cubecode',
 } as const;
 
-export type DonationLink = { id: 'kofi' | 'githubSponsors' | 'paypal'; label: string; url: string };
+export type DonationLink = { id: 'kofi' | 'paypal'; label: string; url: string };
 
 export const DONATION_LINKS: DonationLink[] = [
   { id: 'kofi', label: 'Ko-fi', url: LINKS.kofi },
-  { id: 'githubSponsors', label: 'GitHub Sponsors', url: LINKS.githubSponsors },
-  { id: 'paypal', label: 'PayPal', url: LINKS.paypal },
 ];

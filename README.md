@@ -45,6 +45,14 @@ npm run build:installer  # genera dist/VirtualDeck-Setup-{version}.exe
 
 Ver [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo completo.
 
+## Apoyar el proyecto
+
+VirtualDeck es gratuito y seguirá siéndolo: no hay versión de pago ni funciones
+bajo llave, y **donar no desbloquea nada**. Si le resulta útil y quiere aportar,
+[**♥ Ko-fi**](https://ko-fi.com/cubecode).
+
+Reportar un fallo o contar para qué lo usa ayuda igual de bien.
+
 ## Licencia
 
 Ver [CONTRIBUTING.md](CONTRIBUTING.md) y los créditos en la app (Ayuda → Acerca de).
