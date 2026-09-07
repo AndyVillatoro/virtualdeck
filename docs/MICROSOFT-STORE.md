@@ -212,8 +212,24 @@ aspects may need context:
    Buttons can launch executables and run PowerShell/CMD scripts, because that is
    the purpose of the product: automating what the user already does manually.
    Only commands the user typed into the editor are executed. The app does not
-   download, generate or fetch code from anywhere, and there is no remote
-   control surface.
+   download, generate or execute code fetched from anywhere.
+
+4. OPTIONAL LOCAL HTTP SERVER (off by default)
+   The user can enable a small HTTP server so their phone, a .bat file or a home
+   automation system can press buttons remotely. It is worth stating plainly
+   what this is, because it is the one feature that opens a listening socket:
+   - It is DISABLED by default and never turns itself on.
+   - It binds to 127.0.0.1 unless the user explicitly allows the local network.
+   - Every endpoint except a liveness ping requires a 24-byte random token sent
+     in a custom header, compared in constant time. Requests carrying any
+     Origin header are rejected, and the Host header is checked, so a web page
+     cannot reach it via DNS rebinding.
+   - The phone pairs with a 6-digit code that expires in 5 minutes and allows
+     5 attempts.
+   - It serves only the app's own remote-control page and the button API. It is
+     not a general-purpose web server and exposes no files.
+   The endpoints it exposes press buttons the same user already configured, so
+   it grants no capability the user does not already have locally.
 
 OPTIONAL ELEVATION
    The hardware-sensor feature can start LibreHardwareMonitor, a separate
@@ -221,6 +237,15 @@ OPTIONAL ELEVATION
    app), which needs administrator rights to read certain sensors. Elevation is requested through
    the standard Windows UAC prompt, only if the user enables that feature, and
    the app is fully functional without it.
+
+DONATION LINKS (third-party purchase API disclosure, policy 10.8.2)
+   Settings contains two links that open the user's browser at ko-fi.com and
+   paypal.me so they can donate voluntarily. Nothing is sold, nothing is
+   unlocked, and no digital goods or services are given in return; the
+   application is fully functional and identical whether or not anyone donates.
+   No payment or financial information is ever entered into or handled by the
+   app. We are declaring this here as the use of a secure third-party purchase
+   API, per policy 10.8.2.
 
 The application collects no personal data whatsoever.
 ```
