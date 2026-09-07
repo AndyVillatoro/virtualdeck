@@ -18,6 +18,7 @@ const DIR = 'src/utils/acciones';
 const FORMULARIOS = 'src/screens/editor/formularios/index.tsx';
 const PRESETS_RENDERER = 'src/data/rgbPresets.ts';
 const PRESETS_MAIN = 'electron/main/rgb.ts';
+const ACTION_DATA = 'src/screens/editor/actionData.ts';
 
 // ── tipos declarados ──────────────────────────────────────────────────────
 const fuenteTipos = readFileSync(TIPOS, 'utf-8');
@@ -87,6 +88,24 @@ for (const tipo of conFormulario) {
   if (!declarados.has(tipo)) problemas.push(`'${tipo}' tiene formulario pero no está en ActionType`);
 }
 
+// Y el paso **1**: el tipo tiene que poder elegirse.
+//
+// `rgb-preset` tenia manejador, formulario y doce botones sembrados, y no
+// estaba en `ACTION_TYPES`: no se podia crear uno desde el editor, y al abrir
+// uno que ya existia —de los presets, o llegado en un perfil de la galeria—
+// el paso 1 salia **sin ningun tipo marcado**. Se vio abriendo la aplicacion,
+// no compilando: las tres comprobaciones de arriba lo daban por bueno.
+const fuenteSelector = readFileSync(ACTION_DATA, 'utf-8');
+const enElSelector = new Set(
+  [...fuenteSelector.slice(fuenteSelector.indexOf('ACTION_TYPES'))
+    .matchAll(/\{ type: '([a-z-]+)',\s+label:/g)].map((m) => m[1]),
+);
+for (const tipo of declarados) {
+  if (!enElSelector.has(tipo)) {
+    problemas.push(`'${tipo}' no está en ACTION_TYPES — no se puede elegir en el paso 1 del editor`);
+  }
+}
+
 // Los presets RGB que ofrece el editor tienen que existir en el proceso
 // principal. `applySmartPreset` devuelve false para un id desconocido: el
 // boton no hace **nada** y no hay error en ninguna parte.
@@ -141,5 +160,5 @@ if (problemas.length) {
 console.log(
   `acciones: ok — ${declarados.size} tipos, ${implementados.size} con manejador, ` +
   `${porElLlamador.size} los resuelve quien llama, ${conFormulario.size} con formulario, ` +
-  `${idsRend.size} presets RGB`,
+  `${idsRend.size} presets RGB, ${enElSelector.size} elegibles en el paso 1`,
 );

@@ -160,6 +160,7 @@ export const ES: Dict = {
   'act.rgb-color.label': 'RGB Color', 'act.rgb-color.desc': 'Pinta un color sólido en un dispositivo RGB',
   'act.rgb-mode.label': 'RGB Modo', 'act.rgb-mode.desc': 'Cambia el modo/efecto RGB (Direct, Breathing, etc.)',
   'act.rgb-profile.label': 'RGB Perfil', 'act.rgb-profile.desc': 'Aplica un perfil RGB guardado',
+  'act.rgb-preset.label': 'RGB Preset', 'act.rgb-preset.desc': 'Aplica uno de los 18 ambientes prehechos (Gaming, Cine, Trabajo…)',
   'act.window-snap.label': 'Snap Ventana', 'act.window-snap.desc': 'Mueve y redimensiona una ventana a un cuadrante',
   'act.branch.label': 'Si / Si no', 'act.branch.desc': 'Ejecuta acción A o B según el valor de una variable',
   'act.countdown.label': 'Temporizador', 'act.countdown.desc': 'Espera N ms y luego ejecuta una acción',

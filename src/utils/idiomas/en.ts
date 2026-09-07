@@ -151,6 +151,7 @@ export const EN: Dict = {
   'act.rgb-color.label': 'RGB Color', 'act.rgb-color.desc': 'Paint a solid color on an RGB device',
   'act.rgb-mode.label': 'RGB Mode', 'act.rgb-mode.desc': 'Change the RGB mode/effect (Direct, Breathing, etc.)',
   'act.rgb-profile.label': 'RGB Profile', 'act.rgb-profile.desc': 'Apply a saved RGB profile',
+  'act.rgb-preset.label': 'RGB Preset', 'act.rgb-preset.desc': 'Apply one of the 18 ready-made moods (Gaming, Cinema, Work…)',
   'act.window-snap.label': 'Snap Window', 'act.window-snap.desc': 'Move and resize a window to a quadrant',
   'act.branch.label': 'If / Else', 'act.branch.desc': 'Run action A or B based on a variable value',
   'act.countdown.label': 'Timer', 'act.countdown.desc': 'Wait N ms then run an action',
