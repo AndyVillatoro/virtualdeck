@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { SettingLabel } from '../settings/settingHelpers';
-import { LINKS, DONATION_LINKS } from '../../data/links';
+import { LINKS } from '../../data/links';
 import { CREDITS } from './credits';
 import { buildIssueUrl } from '../../utils/bugReport';
 import type { PlatformInfo } from '../../types';
@@ -20,7 +20,6 @@ export function HelpAboutPanel({
   const [expanded, setExpanded] = useState(false);
   const [version, setVersion] = useState('');
   const [platformInfo, setPlatformInfo] = useState<PlatformInfo | null>(null);
-  const [showDonate, setShowDonate] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
   const [sinRegistro, setSinRegistro] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
@@ -96,27 +95,10 @@ export function HelpAboutPanel({
             <button style={linkBtn} onClick={checkUpdates} disabled={checking}>
               {checking ? t('help.checking') : t('help.check')}
             </button>
-            <button style={{ ...linkBtn, borderColor: accent, color: accent }} onClick={() => setShowDonate((v) => !v)}>
-              {t('help.support')}
-            </button>
           </div>
 
           {updateMsg && (
             <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, lineHeight: 1.4 }}>{updateMsg}</div>
-          )}
-
-          {/* Popover de donaciones */}
-          {showDonate && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, background: VD.elevated, borderRadius: VD.radius.sm, border: `1px solid ${VD.border}` }}>
-              <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.4 }}>
-                {t('help.donateIntro')}
-              </div>
-              {DONATION_LINKS.map((d) => (
-                <button key={d.id} style={{ ...linkBtn, textAlign: 'left' }} onClick={() => open(d.url)}>
-                  ♥ {d.label}
-                </button>
-              ))}
-            </div>
           )}
 
           {/* Log */}

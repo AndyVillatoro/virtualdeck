@@ -663,4 +663,6 @@ export const EN: Dict = {
   'act.err.remote': 'The other machine refused the order: {error}',
   'act.remote.label': 'Remote control',
   'act.remote.desc': 'Press a button on another VirtualDeck on the network',
+  'set.support': '♥ SUPPORT THE PROJECT',
+  'help.donateFree': 'It is free and stays free: donating unlocks nothing.',
 };

@@ -672,4 +672,6 @@ export const ES: Dict = {
   'act.err.remote': 'El otro equipo no acepto la orden: {error}',
   'act.remote.label': 'Mando remoto',
   'act.remote.desc': 'Pulsa un boton de otro VirtualDeck de la red',
+  'set.support': '♥ APOYAR EL PROYECTO',
+  'help.donateFree': 'Es gratuito y seguirá siéndolo: donar no desbloquea nada.',
 };

@@ -9,6 +9,7 @@ import { RemoteSection } from './RemoteSection';
 import { GallerySection } from './GallerySection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
+import { SoporteSection } from './SoporteSection';
 import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId } from '../../types';
 
 /**
@@ -365,6 +366,10 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
         </div>
       )}
     </div>
+
+    <div style={{ height: 1, background: VD.border }} />
+
+    <SoporteSection accent={effectiveAccent} />
 
     <div style={{ height: 1, background: VD.border }} />
 

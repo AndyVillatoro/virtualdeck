@@ -114,6 +114,7 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `src/design.ts` | Tokens (color, radius, shadow, glifos). Fuente de verdad visual. | ✅ |
 | `src/types.ts` | Tipos compartidos renderer↔main. | ✅ |
 | `src/data/links.ts` | Enlaces externos (repo, docs, donaciones). | ✅ |
+| `src/components/settings/SoporteSection.tsx` | El apartado «Apoyar el proyecto» de los ajustes. | ✅ |
 | `src/data/brandIcons.ts` | Catálogo de íconos de marca. | ✅ |
 
 ---
