@@ -4,6 +4,46 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [0.11.0] — 2026-09-07
+
+Preparativos de la Microsoft Store, y los enlaces de donación que llevaban meses
+publicados sin apuntar a ninguna parte.
+
+### Added
+
+- **Apartado «Apoyar el proyecto»** en los ajustes, con Ko-fi y PayPal a la
+  vista. Antes estaba dentro de «Ayuda y acerca de», detrás de un botón que
+  abría un desplegable: cuatro clics. Ahora es uno.
+
+  No hay nada en la barra de título, ni avisos, ni nada en la rejilla, y no
+  insiste si lo cierra. Un deck se deja abierto todo el día y lo que molesta una
+  vez, molesta cien.
+
+  **Donar no desbloquea nada** y no va a desbloquearlo: además de ser lo justo,
+  la política 10.8.2 de la Store obliga a usar su sistema de compras en cuanto el
+  usuario recibe algo a cambio.
+
+### Fixed
+
+- **Los tres enlaces de donación estaban muertos** y se estaban publicando igual.
+  Uno no existía, otro mandaba a una página que no acepta patrocinios y el
+  tercero nunca se confirmó. Ahora son dos, comprobados con un navegador de
+  verdad — el código HTTP no sirve para esto: Ko-fi responde 403 a los bots y
+  PayPal responde 200 aunque el usuario no exista.
+- **GitHub Sponsors se quita.** Exige Stripe con la región de residencia igual a
+  la del banco, y Stripe no opera en Honduras. No era un ajuste pendiente.
+- **Las notas para el revisor de la Store decían «no hay superficie de mando
+  remoto»**, y desde la 0.10.0 eso es falso. Un revisor que abra la aplicación
+  ve el puerto. Ahora se explica entero.
+
+### Changed
+
+- `docs/MICROSOFT-STORE.md` lleva la lista de comprobación del envío leída de la
+  documentación oficial: las seis secciones con sus campos obligatorios, qué
+  declaraciones marcar —y cuál **no**: la de accesibilidad es una promesa
+  concreta que no se ha probado— y los tamaños exactos de imagen.
+- La página de promoción y el README llevan los enlaces de apoyo.
+
 ## [0.10.0] — 2026-09-06
 
 Un deck ya puede mandar sobre otro, la galería de perfiles queda cerrada, y el
