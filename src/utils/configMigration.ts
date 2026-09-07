@@ -19,7 +19,7 @@ const ACTION_TYPES = new Set([
   'mute', 'brightness', 'clipboard', 'type-text', 'kill-process',
   'volume-set', 'folder', 'notify',
   // 1.2 / 1.5 / 2.1
-  'set-var', 'incr-var', 'webhook', 'tts', 'region-capture',
+  'set-var', 'incr-var', 'webhook', 'remote', 'tts', 'region-capture',
   // 2.x / 3.x / 4.x
   'rgb-color', 'rgb-mode', 'rgb-profile', 'rgb-preset',
   'window-snap', 'branch', 'countdown',

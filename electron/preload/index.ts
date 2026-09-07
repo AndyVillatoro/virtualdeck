@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
-  ElectronAPI, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory,
-} from '../../src/types';
+  ElectronAPI, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota } from '../../src/types';
 
 /**
  * El puente, comprobado contra el tipo que ve la pantalla.
@@ -61,6 +60,7 @@ const api = {
     status: (): Promise<RemoteStatus> => ipcRenderer.invoke('remote:status'),
     newToken: (): Promise<string> => ipcRenderer.invoke('remote:newToken'),
     pairCode: (): Promise<string> => ipcRenderer.invoke('remote:pairCode'),
+    send: (o: OrdenRemota): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('remote:send', o),
   },
   gallery: {
     manifest: (url: string): Promise<GalleryManifest> => ipcRenderer.invoke('gallery:manifest', url),

@@ -25,6 +25,7 @@ export type ActionType =
   | 'incr-var'
   // 1.5 — Tipos nuevos
   | 'webhook'
+  | 'remote'
   | 'tts'
   | 'region-capture'
   // 2.x — RGB (OpenRGB SDK)
@@ -81,6 +82,14 @@ export interface ButtonAction {
   varDelta?: number;
   // 1.5 — Tipos nuevos
   webhookUrl?: string;
+  /** Otro VirtualDeck al que mandar (tipo 'remote'): «192.168.1.50» o con puerto. */
+  remoteHost?: string;
+  /** El token del OTRO equipo, el de sus ajustes de servidor local. */
+  remoteToken?: string;
+  /** Id o etiqueta del boton a pulsar alli. */
+  remoteButton?: string;
+  /** O una pagina, empezando en 1. Si esta puesta, manda esto y no el boton. */
+  remotePage?: number;
   webhookMethod?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   webhookHeaders?: string; // JSON string
   webhookBody?: string;
@@ -372,6 +381,15 @@ export interface ResumenRiesgo {
   teclas?: string[];
 }
 
+/** Lo que hace falta para mandar sobre otro VirtualDeck. */
+export interface OrdenRemota {
+  host: string;
+  port?: number;
+  token: string;
+  boton?: string;
+  pagina?: number;
+}
+
 export interface RemoteSettings {
   enabled: boolean;
   port: number;
@@ -618,6 +636,8 @@ export interface ElectronAPI {
     newToken: () => Promise<string>;
     /** Codigo de seis cifras para emparejar el telefono. Caduca a los 5 min. */
     pairCode: () => Promise<string>;
+    /** Pulsa un boton de OTRO VirtualDeck por su servidor local. */
+    send: (o: OrdenRemota) => Promise<{ ok: boolean; error?: string }>;
   };
   gallery: {
     // Un solo objeto y no una union discriminada: el tsconfig va con

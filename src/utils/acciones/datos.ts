@@ -2,6 +2,26 @@ import { OK, fail, interpolate, type Manejador } from './base';
 
 /** Variables del deck y llamadas HTTP. */
 export const DATOS: Record<string, Manejador> = {
+  /**
+   * Pulsar un boton de **otro** VirtualDeck.
+   *
+   * Sale por el proceso principal (`mandoRemoto.ts`) porque la CSP de la
+   * pantalla no deja conectar con la red local. El error que devuelve el otro
+   * equipo se pasa tal cual: alli ya se distingue «no existe ese boton» de
+   * «token invalido», y traducirlo dos veces seria que los dos se separen.
+   */
+  'remote': async ({ action, api, state, t }) => {
+    if (!action.remoteHost) return fail(t('act.err.noRemoteHost'));
+    if (!action.remoteToken) return fail(t('act.err.noRemoteToken'));
+    const r = await api.remote.send({
+      host: interpolate(action.remoteHost, state),
+      token: action.remoteToken,
+      boton: action.remoteButton ? interpolate(action.remoteButton, state) : undefined,
+      pagina: action.remotePage,
+    });
+    return r.ok ? OK : fail(t('act.err.remote', { error: r.error ?? '?' }));
+  },
+
   'set-var': ({ action, state, t }) => {
     if (!action.varName) return fail(t('act.err.noVar'));
     const value = interpolate(action.varValue ?? '', state);

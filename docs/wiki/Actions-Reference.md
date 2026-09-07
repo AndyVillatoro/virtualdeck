@@ -71,6 +71,7 @@ Variables are read as `{name}` in any string field of any other action.
 | Type | Fields | Description |
 |---|---|---|
 | `webhook` | `webhookUrl`, `webhookMethod?` (default `POST`), `webhookHeaders?` (JSON string), `webhookBody?` | Generic HTTP request. Headers and body accept `{variables}`. |
+| `remote` | `remoteHost`, `remoteToken`, `remoteButton?`, `remotePage?` | Presses a button on **another** VirtualDeck on the network. The token is the other machine's (its settings → local server), which must have it on with LAN access allowed. Plain HTTP, no encryption. |
 | `tts` | `ttsText` | Reads the text aloud. Accepts variables. |
 | `region-capture` | — | Opens the native region-capture tool (`Win+Shift+S`). The clip lands in the clipboard. |
 

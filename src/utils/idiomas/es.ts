@@ -667,4 +667,9 @@ export const ES: Dict = {
   'bulk.partial': 'Solo cupieron {n} de {total}: la página de destino se quedó sin huecos libres.',
   'icons.count': '{n} iconos · Dot-matrix 17×17 · Pase el cursor por encima para animarlos',
   'rgb.uncalibrated': '{n} zonas ARGB sin tamaño guardado.',
+  'act.err.noRemoteHost': 'Falta el equipo al que mandar.',
+  'act.err.noRemoteToken': 'Falta el token del otro equipo.',
+  'act.err.remote': 'El otro equipo no acepto la orden: {error}',
+  'act.remote.label': 'Mando remoto',
+  'act.remote.desc': 'Pulsa un boton de otro VirtualDeck de la red',
 };

@@ -658,4 +658,9 @@ export const EN: Dict = {
   'bulk.partial': 'Only {n} of {total} fit: the target page ran out of empty slots.',
   'icons.count': '{n} icons · 17×17 dot-matrix · Hover to animate',
   'rgb.uncalibrated': '{n} ARGB zones with no saved size.',
+  'act.err.noRemoteHost': 'No machine to send to.',
+  'act.err.noRemoteToken': "The other machine's token is missing.",
+  'act.err.remote': 'The other machine refused the order: {error}',
+  'act.remote.label': 'Remote control',
+  'act.remote.desc': 'Press a button on another VirtualDeck on the network',
 };

@@ -57,6 +57,7 @@ Las variables se leen como `{nombre}` en cualquier campo de tipo string en otras
 | Tipo | Campos | Descripción |
 |------|--------|-------------|
 | `webhook` | `webhookUrl`, `webhookMethod?` (default `POST`), `webhookHeaders?` (JSON string), `webhookBody?` | HTTP request genérico. Headers y body aceptan `{variables}`. |
+| `remote` | `remoteHost`, `remoteToken`, `remoteButton?`, `remotePage?` | Pulsa un botón de **otro** VirtualDeck de la red. El token es el del otro equipo (sus ajustes → servidor local), que debe tenerlo encendido y con la red local permitida. Va por HTTP sin cifrar. |
 | `tts` | `ttsText` | Reproduce el texto en voz alta (Windows SpeechSynthesizer vía PowerShell). Acepta variables. |
 | `region-capture` | — | Abre la herramienta nativa de captura de región (Win+Shift+S). El recorte queda en el portapapeles. |
 

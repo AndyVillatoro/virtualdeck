@@ -1,6 +1,6 @@
 import { FormNone, FormApp, FormWeb, FormShortcut, FormScript } from './basicos';
 import { FormAudioDevice, FormHotkey, FormClipboard, FormTypeText, FormKillProcess, FormVolumeSet, FormBrightness, FormAdjust, FormNotify, FormTts, FormRegionCapture, FormMediaPlayPause, FormWindowSnap } from './sistema';
-import { FormSetVar, FormIncrVar, FormWebhook, FormBranch, FormCountdown } from './datos';
+import { FormSetVar, FormIncrVar, FormWebhook, FormRemote, FormBranch, FormCountdown } from './datos';
 import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb';
 import { FormFolder, FormMacro } from './compuestos';
 import type { PropsFormulario } from './base';
@@ -29,6 +29,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'set-var': FormSetVar,
   'incr-var': FormIncrVar,
   'webhook': FormWebhook,
+  'remote': FormRemote,
   'tts': FormTts,
   'region-capture': FormRegionCapture,
   'rgb-color': FormRgbColor,

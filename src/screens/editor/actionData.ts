@@ -51,6 +51,7 @@ export const ACTION_TYPES: { type: ActionType; label: string; Icon: React.Compon
   { type: 'rgb-mode',         label: 'act.rgb-mode.label',         Icon: IconNotify,          desc: 'act.rgb-mode.desc' },
   { type: 'rgb-profile',      label: 'act.rgb-profile.label',      Icon: IconNotify,          desc: 'act.rgb-profile.desc' },
   { type: 'rgb-preset',       label: 'act.rgb-preset.label',       Icon: IconNotify,          desc: 'act.rgb-preset.desc' },
+  { type: 'remote',           label: 'act.remote.label',           Icon: IconNotify,          desc: 'act.remote.desc' },
   { type: 'window-snap',      label: 'act.window-snap.label',      Icon: IconScript,          desc: 'act.window-snap.desc' },
   { type: 'branch',           label: 'act.branch.label',           Icon: IconNotify,          desc: 'act.branch.desc' },
   { type: 'countdown',        label: 'act.countdown.label',        Icon: IconScript,          desc: 'act.countdown.desc' },

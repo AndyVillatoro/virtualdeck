@@ -120,6 +120,8 @@ export function resumirRiesgo(perfil: unknown): ResumenRiesgo {
       programas.push(String(x.appPath ?? x.shortcutPath));
     }
     if (x.type === 'webhook' && x.webhookUrl) webhooks.push(String(x.webhookUrl));
+    // Mandar sobre otro equipo tambien es salir a la red, y con un token dentro.
+    if (x.type === 'remote' && x.remoteHost) webhooks.push(`${String(x.remoteHost)} (otro VirtualDeck)`);
     // Teclear tambien es ejecutar: `Win+R` y un comando abre lo que sea.
     if (x.type === 'hotkey' && x.hotkey) teclas.push(String(x.hotkey));
     if (x.type === 'type-text' && x.typeText) teclas.push(`"${String(x.typeText)}"`);

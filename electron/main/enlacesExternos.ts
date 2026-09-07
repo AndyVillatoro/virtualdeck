@@ -65,10 +65,17 @@ export function interpretar(url: string): Orden | null {
 function resolverId(orden: Extract<Orden, { tipo: 'press' }>): string | null {
   const cfg = loadConfig() as { buttons?: Array<{ id: string; label?: string }> };
   const botones = cfg?.buttons ?? [];
-  if (orden.id) return botones.some((b) => b.id === orden.id) ? orden.id : null;
   const normal = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  const buscado = normal(orden.label ?? '');
-  return botones.find((b) => b.label && normal(b.label) === buscado)?.id ?? null;
+  const porEtiqueta = (q: string) => botones.find((b) => b.label && normal(b.label) === normal(q))?.id ?? null;
+  // Por id primero y **por etiqueta si no**, en la misma ruta.
+  //
+  // El id de un boton es `p1-0`; lo que una persona escribe en un `.bat` o en
+  // un acceso directo es el nombre que ve. `virtualdeck://press/Spotify` no
+  // hacia nada, porque «Spotify» no tiene espacios ni acentos y por tanto
+  // parecia un id. Cualquier cliente —el enlace, el mando remoto, Home
+  // Assistant— tropezaba con lo mismo, y el error decia la verdad sin ser util.
+  if (orden.id) return (botones.some((b) => b.id === orden.id) ? orden.id : null) ?? porEtiqueta(orden.id);
+  return porEtiqueta(orden.label ?? '');
 }
 
 /** Saca la primera URL del esquema que haya en los argumentos de la línea de órdenes. */

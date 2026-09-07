@@ -187,4 +187,10 @@ export const FIELDS_EN: Record<string, string> = {
   'VOLUMEN': 'VOLUME',
   'Con la rueda del ratón encima del botón también funciona: arriba suma, abajo resta. Un valor negativo hace que la pulsación baje.':
     'The mouse wheel over the button works too: up adds, down subtracts. A negative value makes the press lower it.',
+  'EQUIPO (IP O NOMBRE, CON PUERTO SI NO ES 8787)': 'MACHINE (IP OR NAME, WITH PORT IF NOT 8787)',
+  'TOKEN DEL OTRO EQUIPO (SUS AJUSTES → SERVIDOR LOCAL)': "THE OTHER MACHINE'S TOKEN (ITS SETTINGS → LOCAL SERVER)",
+  'Pegue aqui el token que muestra el otro VirtualDeck': 'Paste the token the other VirtualDeck shows',
+  'BOTON ALLI (ID O ETIQUETA, ACEPTA {variables})': 'BUTTON THERE (ID OR LABEL, ACCEPTS {variables})',
+  'O IR A LA PAGINA N (VACIO = PULSAR EL BOTON DE ARRIBA)': 'OR GO TO PAGE N (EMPTY = PRESS THE BUTTON ABOVE)',
+  'El otro equipo tiene que tener el servidor local encendido y permitir la red local. Va por HTTP sin cifrar: quien este en esa red y vea el trafico, ve el token.': 'The other machine needs its local server on, with LAN access allowed. It travels over plain HTTP: anyone on that network who can see the traffic sees the token.',
 };

@@ -64,6 +64,63 @@ export function FormIncrVar(p: PropsFormulario) {
   );
 }
 
+/**
+ * Mandar sobre otro VirtualDeck.
+ *
+ * El token es **el del otro equipo** — sale de sus ajustes, no de los de aquí —,
+ * y esa confusión es lo único que hace fallar esto en la practica, asi que lo
+ * dice la etiqueta y no solo la documentacion.
+ */
+export function FormRemote(p: PropsFormulario) {
+  const VD = useTheme();
+  const tf = useFieldText();
+  const inputStyle = estiloEntrada(VD);
+  const { action, setAction } = p;
+  return (
+    <>
+      <Field label={tf("EQUIPO (IP O NOMBRE, CON PUERTO SI NO ES 8787)")}>
+        <input
+          value={action.remoteHost ?? ''}
+          onChange={(e) => setAction((a) => ({ ...a, remoteHost: e.target.value }))}
+          placeholder="192.168.1.50"
+          style={inputStyle}
+        />
+      </Field>
+      <Field label={tf("TOKEN DEL OTRO EQUIPO (SUS AJUSTES → SERVIDOR LOCAL)")}>
+        <input
+          value={action.remoteToken ?? ''}
+          onChange={(e) => setAction((a) => ({ ...a, remoteToken: e.target.value }))}
+          placeholder={tf("Pegue aqui el token que muestra el otro VirtualDeck")}
+          style={inputStyle}
+        />
+      </Field>
+      <Field label={tf("BOTON ALLI (ID O ETIQUETA, ACEPTA {variables})")}>
+        <input
+          value={action.remoteButton ?? ''}
+          onChange={(e) => setAction((a) => ({ ...a, remoteButton: e.target.value, remotePage: undefined }))}
+          placeholder="Spotify"
+          style={inputStyle}
+        />
+      </Field>
+      <Field label={tf("O IR A LA PAGINA N (VACIO = PULSAR EL BOTON DE ARRIBA)")}>
+        <input
+          type="number"
+          min={1}
+          value={action.remotePage ?? ''}
+          onChange={(e) => setAction((a) => ({
+            ...a,
+            remotePage: e.target.value === '' ? undefined : Math.max(1, parseInt(e.target.value, 10) || 1),
+          }))}
+          style={inputStyle}
+        />
+      </Field>
+      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6 }}>
+        {tf("El otro equipo tiene que tener el servidor local encendido y permitir la red local. Va por HTTP sin cifrar: quien este en esa red y vea el trafico, ve el token.")}
+      </div>
+    </>
+  );
+}
+
 export function FormWebhook(p: PropsFormulario) {
   const VD = useTheme();
   const tf = useFieldText();
