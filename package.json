@@ -17,6 +17,7 @@
     "preview": "electron-vite preview",
     "build:win": "electron-builder --win --dir",
     "build:icon": "node scripts/generate-icon.js",
+    "build:hero": "node scripts/generate-hero.mjs",
     "build:native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native.ps1",
     "build:installer": "npm run build:icon && electron-vite build && electron-builder --win nsis",
     "typecheck": "tsc --noEmit",

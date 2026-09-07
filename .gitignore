@@ -29,3 +29,8 @@ target/
 native/
 _cdp.mjs
 
+
+# Salida de docs/prensa/render.sh (se regenera, no se versiona)
+docs/prensa/hero.mp4
+docs/prensa/miniatura.png
+docs/prensa/.cuadros/

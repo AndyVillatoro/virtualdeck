@@ -336,6 +336,14 @@ que se pone y no se discute:
 | Superhéroe 16:9 | 1920×1080 o 3840×2160 PNG | Opcional. Sin texto encima |
 | Tráiler | MP4/MOV **1920×1080**, ≤2 GB, ≤60 s | Opcional, y pide miniatura PNG 1920×1080 aparte |
 
+El tráiler y su miniatura salen de `docs/prensa/hero.svg` (la animación de la
+retícula de puntos, 12 s en bucle): `bash docs/prensa/render.sh` deja
+`hero.mp4` a 1920×1080 H.264 y `miniatura.png` a 1920×1080. Ver
+`docs/prensa/README.md`. La composición va **centrada**, así que en la
+miniatura el borde inferior de la rejilla queda dentro del tercio de abajo que
+la Store puede tapar; el nombre y el botón pulsado, que es lo que hay que leer,
+quedan en el medio.
+
 Reglas que afectan al diseño de las capturas:
 
 - **Lo importante en los dos tercios de arriba.** El tercio inferior puede
@@ -356,6 +364,7 @@ Reglas que afectan al diseño de las capturas:
 | Idiomas | es-ES, en-US — la app está traducida a los dos |
 | Capturas | Mínimo 1, recomendable 4-6: la rejilla, el editor, pantalla completa, el gestor RGB |
 | Declaración de datos | «No recoge datos» — es cierto y hay que sostenerlo |
+| Tráiler + miniatura | `bash docs/prensa/render.sh` (ver `docs/prensa/README.md`) |
 
 ---
 

@@ -1,0 +1,528 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080"
+     data-vd-hero="" role="img" aria-labelledby="titulo">
+<title id="titulo">VirtualDeck — la retícula de puntos compone el nombre, se reordena en una rejilla de 4×4 botones y uno se pulsa.</title>
+<defs>
+  <radialGradient id="destello">
+    <stop offset="0%" stop-color="var(--vd-accent)"/>
+    <stop offset="55%" stop-color="var(--vd-accent)" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<style>
+[data-vd-hero]{
+  /* Tema claro por defecto; los tokens son los de src/design.ts. */
+  --vd-bg:#f0f0f0; --vd-dot:#1a1a1a; --vd-accent:#4a8ef0;
+  --seek:0s;
+}
+@media (prefers-color-scheme: dark){
+  [data-vd-hero]:not([data-theme='light']){ --vd-bg:#0f0f0f; --vd-dot:#dcdcdc; }
+}
+[data-vd-hero][data-theme='dark']{ --vd-bg:#0f0f0f; --vd-dot:#dcdcdc; }
+[data-vd-hero][data-theme='light']{ --vd-bg:#f0f0f0; --vd-dot:#1a1a1a; }
+
+[data-vd-hero] .bg{ fill:var(--vd-bg); }
+
+[data-vd-hero] .d{
+  fill:var(--vd-dot);
+  /* Sin esto el origen de la escala sería el centro del viewBox (960,540) y la
+     onda tiraría de cada punto hacia el medio: en SVG el transform-box es
+     view-box, no la caja del elemento. */
+  transform-origin:0 0;
+  /* Estado base = fotograma de la pulsación. Es lo que se ve con
+     prefers-reduced-motion, cuando las animaciones no corren. */
+  translate:var(--gx) var(--gy);
+  opacity:.95;
+  animation:
+    vd-mover 12s ease-in-out calc(0s - var(--seek)) infinite,
+    vd-onda  12s ease-out    calc(var(--wd) - var(--seek)) infinite;
+}
+/* animation-fill-mode: backwards deja el 0 % puesto durante el retardo del
+   tono: sin eso, los
+   puntos asomarían a opacidad plena durante el escalonado del encendido. */
+[data-vd-hero] .l{ animation-name:vd-mover, vd-onda, vd-tinta; }
+[data-vd-hero] .a{ animation-name:vd-mover, vd-onda, vd-trama; }
+[data-vd-hero] .l, [data-vd-hero] .a{
+  animation-duration:12s, 12s, 12s;
+  animation-timing-function:ease-in-out, ease-out, linear;
+  animation-delay:calc(0s - var(--seek)), calc(var(--wd) - var(--seek)), calc(var(--od) - var(--seek));
+  animation-iteration-count:infinite, infinite, infinite;
+  animation-fill-mode:none, none, backwards;
+}
+
+[data-vd-hero] .destello{
+  fill:url(#destello);
+  transform-origin:0 0;
+  opacity:.6; scale:1.5;
+  animation:vd-destello 12s ease-out calc(0s - var(--seek)) infinite;
+}
+[data-vd-hero] .marca{
+  fill:var(--vd-accent);
+  transform-origin:0 0;
+  opacity:1;
+  animation:vd-marca 12s linear calc(0s - var(--seek)) infinite;
+}
+
+/* 0-3 s componer / 3-6 s reordenar / 6-9 s pulsar / 9-12 s disolver. */
+@keyframes vd-mover{
+  0%,4%    { translate:var(--sx) var(--sy); }
+  24%,25%  { translate:var(--lx) var(--ly); }
+  44%,75%  { translate:var(--gx) var(--gy); }
+  95%,100% { translate:var(--ex) var(--ey); }
+}
+@keyframes vd-tinta{
+  0%,4%    { opacity:0; }
+  21%,25%  { opacity:1; }
+  44%,78%  { opacity:.95; }
+  93%,100% { opacity:0; }
+}
+/* Los puntos apagados son la trama de la matriz mientras hay texto (el
+   apagado de DotText) y pasan a ser puntos del boton en la rejilla. */
+@keyframes vd-trama{
+  0%,4%    { opacity:0; }
+  21%,25%  { opacity:.13; }
+  44%,78%  { opacity:.95; }
+  93%,100% { opacity:0; }
+}
+/* Una sola pulsación por ciclo: 0,08 Hz, muy por debajo del límite de 3 Hz. */
+@keyframes vd-onda{
+  0%,51%   { scale:1; }
+  53%      { scale:2.1; }
+  57%,100% { scale:1; }
+}
+/* Mismos numeros que vd-flash-radial en src/index.css. */
+@keyframes vd-destello{
+  0%,49.5% { opacity:0;   scale:.25; }
+  50%      { opacity:.95; scale:.25; }
+  54%      { opacity:.55; }
+  60%      { opacity:0;   scale:2.4; }
+  100%     { opacity:0;   scale:2.4; }
+}
+@keyframes vd-marca{
+  0%,49%   { opacity:0; }
+  52%,72%  { opacity:1; }
+  76%,100% { opacity:0; }
+}
+
+/* Accesibilidad: nada de movimiento, se queda el fotograma de la pulsación
+   (el estado base de cada clase de arriba). El último fotograma del bucle está
+   en negro — quieto no diría nada. */
+@media (prefers-reduced-motion: reduce){
+  [data-vd-hero] .d,
+  [data-vd-hero] .destello,
+  [data-vd-hero] .marca{ animation:none; }
+}
+</style>
+<rect class="bg" width="1920" height="1080"/>
+<g>
+<circle class="d l" r="8.5" style="--sx:761.6px;--sy:807.1px;--lx:135px;--ly:463px;--gx:528px;--gy:108px;--ex:1196.9px;--ey:150.4px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:975.9px;--sy:465.9px;--lx:157px;--ly:463px;--gx:756px;--gy:108px;--ex:1341px;--ey:663px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:765px;--sy:105.8px;--lx:179px;--ly:463px;--gx:984px;--gy:108px;--ex:180px;--ey:663.5px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:972.9px;--sy:904.9px;--lx:201px;--ly:463px;--gx:1212px;--gy:108px;--ex:1204.7px;--ey:762px;--od:0s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:611.8px;--sy:697.9px;--lx:223px;--ly:463px;--gx:528px;--gy:336px;--ex:1452.6px;--ey:516px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:137.7px;--sy:485.3px;--lx:135px;--ly:485px;--gx:756px;--gy:336px;--ex:1748.2px;--ey:63px;--od:0.3s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:44.5px;--sy:343.2px;--lx:157px;--ly:485px;--gx:984px;--gy:336px;--ex:93.4px;--ey:874.7px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1067.4px;--sy:495.2px;--lx:179px;--ly:485px;--gx:1212px;--gy:336px;--ex:709.1px;--ey:264.1px;--od:0s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:609.7px;--sy:520.8px;--lx:201px;--ly:485px;--gx:528px;--gy:564px;--ex:1617.8px;--ey:592.8px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:744.1px;--sy:700.2px;--lx:223px;--ly:485px;--gx:756px;--gy:564px;--ex:444.2px;--ey:330.4px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1766.2px;--sy:1011.9px;--lx:135px;--ly:507px;--gx:984px;--gy:564px;--ex:691.6px;--ey:712.6px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1280.8px;--sy:167.2px;--lx:157px;--ly:507px;--gx:1212px;--gy:564px;--ex:627.8px;--ey:745.9px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:904.7px;--sy:529.3px;--lx:179px;--ly:507px;--gx:528px;--gy:792px;--ex:383px;--ey:672.5px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1369.8px;--sy:735.5px;--lx:201px;--ly:507px;--gx:756px;--gy:792px;--ex:1847.8px;--ey:205.1px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1381.7px;--sy:914px;--lx:223px;--ly:507px;--gx:984px;--gy:792px;--ex:1033.4px;--ey:306px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1047.5px;--sy:929.5px;--lx:135px;--ly:529px;--gx:1212px;--gy:792px;--ex:595.1px;--ey:104.5px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1221px;--sy:466.6px;--lx:157px;--ly:529px;--gx:558px;--gy:108px;--ex:147.5px;--ey:297.1px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1007.1px;--sy:842.2px;--lx:179px;--ly:529px;--gx:786px;--gy:108px;--ex:1583.3px;--ey:625.2px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1809.2px;--sy:778.6px;--lx:201px;--ly:529px;--gx:1014px;--gy:108px;--ex:344.2px;--ey:778.3px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:870.9px;--sy:458.4px;--lx:223px;--ly:529px;--gx:1242px;--gy:108px;--ex:639.6px;--ey:405.3px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1594.8px;--sy:198.3px;--lx:135px;--ly:551px;--gx:558px;--gy:336px;--ex:560.1px;--ey:301.8px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1380.5px;--sy:965.1px;--lx:157px;--ly:551px;--gx:786px;--gy:336px;--ex:1855px;--ey:780px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1142px;--sy:855.8px;--lx:179px;--ly:551px;--gx:1014px;--gy:336px;--ex:201.4px;--ey:148.9px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1389.1px;--sy:134.7px;--lx:201px;--ly:551px;--gx:1242px;--gy:336px;--ex:1419.6px;--ey:494.5px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:88.2px;--sy:543.8px;--lx:223px;--ly:551px;--gx:558px;--gy:564px;--ex:291.1px;--ey:969.6px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1545.7px;--sy:897.2px;--lx:135px;--ly:573px;--gx:786px;--gy:564px;--ex:1335.2px;--ey:246.9px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:701.2px;--sy:753.4px;--lx:157px;--ly:573px;--gx:1014px;--gy:564px;--ex:637.2px;--ey:378.9px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:781.8px;--sy:1032.9px;--lx:179px;--ly:573px;--gx:1242px;--gy:564px;--ex:1200.8px;--ey:772px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:324.2px;--sy:1039.2px;--lx:201px;--ly:573px;--gx:558px;--gy:792px;--ex:1856.5px;--ey:499.4px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1829.8px;--sy:368.1px;--lx:223px;--ly:573px;--gx:786px;--gy:792px;--ex:1629.3px;--ey:278.7px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1556.7px;--sy:856.9px;--lx:135px;--ly:595px;--gx:1014px;--gy:792px;--ex:1083px;--ey:868.8px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1062.4px;--sy:290.2px;--lx:157px;--ly:595px;--gx:1242px;--gy:792px;--ex:106.4px;--ey:383.1px;--od:0.1s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:435.7px;--sy:353px;--lx:179px;--ly:595px;--gx:588px;--gy:108px;--ex:1623.4px;--ey:879.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1529.2px;--sy:382.5px;--lx:201px;--ly:595px;--gx:816px;--gy:108px;--ex:1115.8px;--ey:184.8px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1741.4px;--sy:1022.8px;--lx:223px;--ly:595px;--gx:1044px;--gy:108px;--ex:1816.6px;--ey:673.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:772px;--sy:538.2px;--lx:289px;--ly:463px;--gx:1272px;--gy:108px;--ex:1433.2px;--ey:58px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1075.3px;--sy:868.5px;--lx:311px;--ly:463px;--gx:588px;--gy:336px;--ex:1354.7px;--ey:705.6px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:507.9px;--sy:897.4px;--lx:333px;--ly:463px;--gx:816px;--gy:336px;--ex:134.4px;--ey:84.9px;--od:0.2s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:1384.7px;--sy:735.3px;--lx:355px;--ly:463px;--gx:1044px;--gy:336px;--ex:1445px;--ey:637.5px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1815.8px;--sy:748.2px;--lx:377px;--ly:463px;--gx:1272px;--gy:336px;--ex:331.9px;--ey:703.8px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1150.9px;--sy:868.9px;--lx:289px;--ly:485px;--gx:588px;--gy:564px;--ex:99px;--ey:283.3px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:841.4px;--sy:217.4px;--lx:311px;--ly:485px;--gx:816px;--gy:564px;--ex:1135.3px;--ey:467.6px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:252px;--sy:851.1px;--lx:333px;--ly:485px;--gx:1044px;--gy:564px;--ex:434.1px;--ey:489.5px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:80.2px;--sy:770.4px;--lx:355px;--ly:485px;--gx:1272px;--gy:564px;--ex:594.9px;--ey:89.3px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:875.5px;--sy:387.3px;--lx:377px;--ly:485px;--gx:588px;--gy:792px;--ex:1148.8px;--ey:771.3px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:813.6px;--sy:696.5px;--lx:289px;--ly:507px;--gx:816px;--gy:792px;--ex:1702.8px;--ey:172.2px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:392.8px;--sy:922.6px;--lx:311px;--ly:507px;--gx:1044px;--gy:792px;--ex:612.7px;--ey:876.7px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1182px;--sy:76.8px;--lx:333px;--ly:507px;--gx:1272px;--gy:792px;--ex:188.4px;--ey:67.5px;--od:0s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:931.8px;--sy:952px;--lx:355px;--ly:507px;--gx:618px;--gy:108px;--ex:1234.6px;--ey:536.3px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:716.9px;--sy:877.7px;--lx:377px;--ly:507px;--gx:846px;--gy:108px;--ex:84px;--ey:679.5px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1787.2px;--sy:885.4px;--lx:289px;--ly:529px;--gx:1074px;--gy:108px;--ex:503.9px;--ey:608.6px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:244.5px;--sy:289.8px;--lx:311px;--ly:529px;--gx:1302px;--gy:108px;--ex:74.6px;--ey:656.8px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:182.6px;--sy:795.3px;--lx:333px;--ly:529px;--gx:618px;--gy:336px;--ex:305.6px;--ey:756.3px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:603px;--sy:395.7px;--lx:355px;--ly:529px;--gx:846px;--gy:336px;--ex:1319.8px;--ey:211px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:249.4px;--sy:117.1px;--lx:377px;--ly:529px;--gx:1074px;--gy:336px;--ex:1237.4px;--ey:454.5px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:860.5px;--sy:405.9px;--lx:289px;--ly:551px;--gx:1302px;--gy:336px;--ex:1840.6px;--ey:414.5px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1799.7px;--sy:538.4px;--lx:311px;--ly:551px;--gx:618px;--gy:564px;--ex:135.9px;--ey:60.9px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1743px;--sy:992.4px;--lx:333px;--ly:551px;--gx:846px;--gy:564px;--ex:56.1px;--ey:182.6px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:313.7px;--sy:178.9px;--lx:355px;--ly:551px;--gx:1074px;--gy:564px;--ex:450.7px;--ey:635.4px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1608.3px;--sy:831.9px;--lx:377px;--ly:551px;--gx:1302px;--gy:564px;--ex:1521.4px;--ey:204px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1382.7px;--sy:569.6px;--lx:289px;--ly:573px;--gx:618px;--gy:792px;--ex:982.5px;--ey:471.7px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:917.3px;--sy:921px;--lx:311px;--ly:573px;--gx:846px;--gy:792px;--ex:687.4px;--ey:681px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:791px;--sy:342.1px;--lx:333px;--ly:573px;--gx:1074px;--gy:792px;--ex:1126.1px;--ey:902.4px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1873px;--sy:714.2px;--lx:355px;--ly:573px;--gx:1302px;--gy:792px;--ex:1324.7px;--ey:946.2px;--od:0.2s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1229.4px;--sy:308.3px;--lx:377px;--ly:573px;--gx:648px;--gy:108px;--ex:743.1px;--ey:219.9px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1346.5px;--sy:507px;--lx:289px;--ly:595px;--gx:876px;--gy:108px;--ex:262.3px;--ey:471.8px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:103.5px;--sy:418.1px;--lx:311px;--ly:595px;--gx:1104px;--gy:108px;--ex:1394.6px;--ey:967.8px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1038.4px;--sy:547.8px;--lx:333px;--ly:595px;--gx:1332px;--gy:108px;--ex:1429.3px;--ey:979.1px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:926px;--sy:700.4px;--lx:355px;--ly:595px;--gx:648px;--gy:336px;--ex:741.3px;--ey:422.5px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:674.5px;--sy:172.3px;--lx:377px;--ly:595px;--gx:876px;--gy:336px;--ex:830.7px;--ey:856.5px;--od:0s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:792.1px;--sy:998.5px;--lx:443px;--ly:463px;--gx:1104px;--gy:336px;--ex:1177.2px;--ey:798.3px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:759.2px;--sy:550.2px;--lx:465px;--ly:463px;--gx:1332px;--gy:336px;--ex:130.3px;--ey:226.8px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:498.2px;--sy:625.8px;--lx:487px;--ly:463px;--gx:648px;--gy:564px;--ex:83.3px;--ey:301.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1006.2px;--sy:187px;--lx:509px;--ly:463px;--gx:876px;--gy:564px;--ex:1410.5px;--ey:279.5px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:693.6px;--sy:816.2px;--lx:531px;--ly:463px;--gx:1104px;--gy:564px;--ex:1553.6px;--ey:85.9px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:982px;--sy:806.7px;--lx:443px;--ly:485px;--gx:1332px;--gy:564px;--ex:1581.1px;--ey:460.3px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:755.8px;--sy:770.5px;--lx:465px;--ly:485px;--gx:648px;--gy:792px;--ex:830.8px;--ey:731.6px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1788px;--sy:78.2px;--lx:487px;--ly:485px;--gx:876px;--gy:792px;--ex:1770.1px;--ey:546.6px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1592.4px;--sy:563px;--lx:509px;--ly:485px;--gx:1104px;--gy:792px;--ex:1470.9px;--ey:103.5px;--od:0s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1340px;--sy:865.6px;--lx:531px;--ly:485px;--gx:1332px;--gy:792px;--ex:337.7px;--ey:952.6px;--od:0.1s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1738.2px;--sy:864.5px;--lx:443px;--ly:507px;--gx:678px;--gy:108px;--ex:1867px;--ey:432.3px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1536.2px;--sy:410.6px;--lx:465px;--ly:507px;--gx:906px;--gy:108px;--ex:140.8px;--ey:57.1px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:294.6px;--sy:344.6px;--lx:487px;--ly:507px;--gx:1134px;--gy:108px;--ex:68.6px;--ey:624px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1299.3px;--sy:428.1px;--lx:509px;--ly:507px;--gx:1362px;--gy:108px;--ex:1544px;--ey:194.1px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:342.9px;--sy:704.9px;--lx:531px;--ly:507px;--gx:678px;--gy:336px;--ex:760.9px;--ey:728.5px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1739.3px;--sy:564.9px;--lx:443px;--ly:529px;--gx:906px;--gy:336px;--ex:1251.5px;--ey:375.6px;--od:0.2s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:1200.5px;--sy:647.6px;--lx:465px;--ly:529px;--gx:1134px;--gy:336px;--ex:98.8px;--ey:930.1px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1206.8px;--sy:332.8px;--lx:487px;--ly:529px;--gx:1362px;--gy:336px;--ex:1060.1px;--ey:185.9px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1694.6px;--sy:436.8px;--lx:509px;--ly:529px;--gx:678px;--gy:564px;--ex:471.3px;--ey:578.4px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1060.1px;--sy:779.8px;--lx:531px;--ly:529px;--gx:906px;--gy:564px;--ex:1037.6px;--ey:424px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1250.3px;--sy:202.9px;--lx:443px;--ly:551px;--gx:1134px;--gy:564px;--ex:126.4px;--ey:995.9px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:330px;--sy:969.3px;--lx:465px;--ly:551px;--gx:1362px;--gy:564px;--ex:1666.4px;--ey:296px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1471.4px;--sy:700.3px;--lx:487px;--ly:551px;--gx:678px;--gy:792px;--ex:1029.5px;--ey:817.7px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:897.6px;--sy:398.9px;--lx:509px;--ly:551px;--gx:906px;--gy:792px;--ex:1212.7px;--ey:839.4px;--od:0.3s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1708.4px;--sy:193.2px;--lx:531px;--ly:551px;--gx:1134px;--gy:792px;--ex:1493.1px;--ey:94.1px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1808.6px;--sy:450.7px;--lx:443px;--ly:573px;--gx:1362px;--gy:792px;--ex:63.9px;--ey:114.5px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1326.7px;--sy:399.2px;--lx:465px;--ly:573px;--gx:708px;--gy:108px;--ex:171.3px;--ey:871px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1528px;--sy:339.8px;--lx:487px;--ly:573px;--gx:936px;--gy:108px;--ex:1473.1px;--ey:569.9px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:308.3px;--sy:413.3px;--lx:509px;--ly:573px;--gx:1164px;--gy:108px;--ex:554px;--ey:117.9px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1593.3px;--sy:743.4px;--lx:531px;--ly:573px;--gx:1392px;--gy:108px;--ex:489.3px;--ey:472.4px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1687.3px;--sy:524.5px;--lx:443px;--ly:595px;--gx:708px;--gy:336px;--ex:1579.3px;--ey:270.3px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1011.7px;--sy:380.9px;--lx:465px;--ly:595px;--gx:936px;--gy:336px;--ex:1072.3px;--ey:1032.8px;--od:0.1s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1602.1px;--sy:397.1px;--lx:487px;--ly:595px;--gx:1164px;--gy:336px;--ex:731.7px;--ey:743.2px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1590.3px;--sy:303.7px;--lx:509px;--ly:595px;--gx:1392px;--gy:336px;--ex:1548.1px;--ey:543.9px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:812.1px;--sy:429.1px;--lx:531px;--ly:595px;--gx:708px;--gy:564px;--ex:1127.8px;--ey:1033.8px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1450.1px;--sy:285.4px;--lx:597px;--ly:463px;--gx:936px;--gy:564px;--ex:703.7px;--ey:521.2px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:498.6px;--sy:163.7px;--lx:619px;--ly:463px;--gx:1164px;--gy:564px;--ex:441.9px;--ey:740.5px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:225.1px;--sy:628px;--lx:641px;--ly:463px;--gx:1392px;--gy:564px;--ex:1451.3px;--ey:296.3px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1293.5px;--sy:824.9px;--lx:663px;--ly:463px;--gx:708px;--gy:792px;--ex:1563.4px;--ey:175.9px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1018px;--sy:429.2px;--lx:685px;--ly:463px;--gx:936px;--gy:792px;--ex:459.4px;--ey:532px;--od:0s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:233.5px;--sy:586.7px;--lx:597px;--ly:485px;--gx:1164px;--gy:792px;--ex:102.8px;--ey:270.8px;--od:0s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1020.7px;--sy:676.9px;--lx:619px;--ly:485px;--gx:1392px;--gy:792px;--ex:168.9px;--ey:62.9px;--od:0.2s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1376px;--sy:464.3px;--lx:641px;--ly:485px;--gx:708px;--gy:138px;--ex:823.9px;--ey:567.6px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:528.8px;--sy:307.1px;--lx:663px;--ly:485px;--gx:936px;--gy:138px;--ex:814px;--ey:439.8px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1490.1px;--sy:834.2px;--lx:685px;--ly:485px;--gx:1164px;--gy:138px;--ex:250.4px;--ey:710.3px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:290.4px;--sy:811.9px;--lx:597px;--ly:507px;--gx:1392px;--gy:138px;--ex:1690.6px;--ey:242.8px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:750.4px;--sy:233.3px;--lx:619px;--ly:507px;--gx:708px;--gy:366px;--ex:1721.7px;--ey:705.3px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:717.1px;--sy:261.8px;--lx:641px;--ly:507px;--gx:936px;--gy:366px;--ex:495.6px;--ey:694.3px;--od:0.3s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1607.5px;--sy:49.7px;--lx:663px;--ly:507px;--gx:1164px;--gy:366px;--ex:916.6px;--ey:700.6px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:362px;--sy:298px;--lx:685px;--ly:507px;--gx:1392px;--gy:366px;--ex:1634.8px;--ey:597.2px;--od:0.3s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1203.5px;--sy:1014.6px;--lx:597px;--ly:529px;--gx:708px;--gy:594px;--ex:1063.6px;--ey:426.7px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1500.8px;--sy:296.2px;--lx:619px;--ly:529px;--gx:936px;--gy:594px;--ex:1865.4px;--ey:686.5px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1255.7px;--sy:843px;--lx:641px;--ly:529px;--gx:1164px;--gy:594px;--ex:760.2px;--ey:854.6px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:778.4px;--sy:841.8px;--lx:663px;--ly:529px;--gx:1392px;--gy:594px;--ex:1129.7px;--ey:432.7px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1424.1px;--sy:636.2px;--lx:685px;--ly:529px;--gx:708px;--gy:822px;--ex:1424.2px;--ey:434.4px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1819.6px;--sy:49.3px;--lx:597px;--ly:551px;--gx:936px;--gy:822px;--ex:425.9px;--ey:80.3px;--od:0.3s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1876.1px;--sy:400.2px;--lx:619px;--ly:551px;--gx:1164px;--gy:822px;--ex:746.9px;--ey:185px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:220.5px;--sy:748px;--lx:641px;--ly:551px;--gx:1392px;--gy:822px;--ex:1528.4px;--ey:771.3px;--od:0.1s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:305.6px;--sy:671px;--lx:663px;--ly:551px;--gx:708px;--gy:168px;--ex:1631.7px;--ey:874.1px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1578.6px;--sy:437.9px;--lx:685px;--ly:551px;--gx:936px;--gy:168px;--ex:566.6px;--ey:496.2px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:410px;--sy:332.4px;--lx:597px;--ly:573px;--gx:1164px;--gy:168px;--ex:168.5px;--ey:786px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:231px;--sy:166.4px;--lx:619px;--ly:573px;--gx:1392px;--gy:168px;--ex:264.4px;--ey:932.4px;--od:0s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1288.9px;--sy:50.3px;--lx:641px;--ly:573px;--gx:708px;--gy:396px;--ex:124.3px;--ey:727.6px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1820.5px;--sy:464.3px;--lx:663px;--ly:573px;--gx:936px;--gy:396px;--ex:1752.2px;--ey:272.1px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1878.5px;--sy:549.4px;--lx:685px;--ly:573px;--gx:1164px;--gy:396px;--ex:576.4px;--ey:1010.3px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:568.5px;--sy:840.1px;--lx:597px;--ly:595px;--gx:1392px;--gy:396px;--ex:699.4px;--ey:329.6px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:78.1px;--sy:748.1px;--lx:619px;--ly:595px;--gx:708px;--gy:624px;--ex:903.9px;--ey:183.2px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:242.1px;--sy:637.9px;--lx:641px;--ly:595px;--gx:936px;--gy:624px;--ex:559.8px;--ey:402.1px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:316.5px;--sy:689.3px;--lx:663px;--ly:595px;--gx:1164px;--gy:624px;--ex:1063px;--ey:56.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1796.5px;--sy:89.3px;--lx:685px;--ly:595px;--gx:1392px;--gy:624px;--ex:1847.1px;--ey:768.5px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:918.2px;--sy:1001.1px;--lx:751px;--ly:463px;--gx:708px;--gy:852px;--ex:1822.7px;--ey:226.6px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1696.8px;--sy:876.1px;--lx:773px;--ly:463px;--gx:936px;--gy:852px;--ex:292.4px;--ey:502.3px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1172.9px;--sy:161.1px;--lx:795px;--ly:463px;--gx:1164px;--gy:852px;--ex:52.6px;--ey:346.3px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:197.1px;--sy:103.7px;--lx:817px;--ly:463px;--gx:1392px;--gy:852px;--ex:1608px;--ey:45.7px;--od:0.2s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:930.9px;--sy:438.2px;--lx:839px;--ly:463px;--gx:708px;--gy:198px;--ex:1132.5px;--ey:152.2px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1047.1px;--sy:452.3px;--lx:751px;--ly:485px;--gx:936px;--gy:198px;--ex:1098.1px;--ey:332.8px;--od:0s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1859.8px;--sy:209.5px;--lx:773px;--ly:485px;--gx:1164px;--gy:198px;--ex:1202.9px;--ey:281.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:608.2px;--sy:693.5px;--lx:795px;--ly:485px;--gx:1392px;--gy:198px;--ex:967.1px;--ey:522.6px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:131px;--sy:338.6px;--lx:817px;--ly:485px;--gx:708px;--gy:426px;--ex:1585.3px;--ey:68.2px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:881.7px;--sy:279.9px;--lx:839px;--ly:485px;--gx:936px;--gy:426px;--ex:1857.1px;--ey:50.2px;--od:0.1s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:1061.5px;--sy:443.5px;--lx:751px;--ly:507px;--gx:1164px;--gy:426px;--ex:1422.5px;--ey:351.4px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:237px;--sy:684.8px;--lx:773px;--ly:507px;--gx:1392px;--gy:426px;--ex:84px;--ey:163.9px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:900px;--sy:778.1px;--lx:795px;--ly:507px;--gx:708px;--gy:654px;--ex:941.1px;--ey:415.6px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:528.9px;--sy:830.7px;--lx:817px;--ly:507px;--gx:936px;--gy:654px;--ex:984.4px;--ey:299.4px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:782.7px;--sy:999.7px;--lx:839px;--ly:507px;--gx:1164px;--gy:654px;--ex:1812.6px;--ey:924.3px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1744.2px;--sy:983.7px;--lx:751px;--ly:529px;--gx:1392px;--gy:654px;--ex:64.2px;--ey:710px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1170.4px;--sy:961.8px;--lx:773px;--ly:529px;--gx:708px;--gy:882px;--ex:1412.3px;--ey:235.6px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1615.2px;--sy:233.5px;--lx:795px;--ly:529px;--gx:936px;--gy:882px;--ex:650.7px;--ey:285.1px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1221.1px;--sy:496.6px;--lx:817px;--ly:529px;--gx:1164px;--gy:882px;--ex:421px;--ey:718.7px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1661.8px;--sy:496.8px;--lx:839px;--ly:529px;--gx:1392px;--gy:882px;--ex:1000.8px;--ey:153px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1137.6px;--sy:114.6px;--lx:751px;--ly:551px;--gx:708px;--gy:228px;--ex:1154px;--ey:233.4px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:755.9px;--sy:472.7px;--lx:773px;--ly:551px;--gx:936px;--gy:228px;--ex:855.1px;--ey:996.9px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:931.9px;--sy:417.4px;--lx:795px;--ly:551px;--gx:1164px;--gy:228px;--ex:1058.5px;--ey:693.4px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:374.7px;--sy:701.3px;--lx:817px;--ly:551px;--gx:1392px;--gy:228px;--ex:1548.8px;--ey:822.8px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1756.9px;--sy:96.6px;--lx:839px;--ly:551px;--gx:708px;--gy:456px;--ex:1447.8px;--ey:788.4px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1495.6px;--sy:949.8px;--lx:751px;--ly:573px;--gx:936px;--gy:456px;--ex:1173.6px;--ey:260.4px;--od:0s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:670.7px;--sy:252.3px;--lx:773px;--ly:573px;--gx:1164px;--gy:456px;--ex:1810.9px;--ey:429.2px;--od:0s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:681.8px;--sy:178.1px;--lx:795px;--ly:573px;--gx:1392px;--gy:456px;--ex:541px;--ey:794px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1118.7px;--sy:260.7px;--lx:817px;--ly:573px;--gx:708px;--gy:684px;--ex:573.2px;--ey:543.3px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:845.7px;--sy:276.1px;--lx:839px;--ly:573px;--gx:936px;--gy:684px;--ex:83.3px;--ey:790.6px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:693.3px;--sy:440.5px;--lx:751px;--ly:595px;--gx:1164px;--gy:684px;--ex:822px;--ey:200.5px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1625.9px;--sy:65.2px;--lx:773px;--ly:595px;--gx:1392px;--gy:684px;--ex:1509.1px;--ey:1033.7px;--od:0s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1299.5px;--sy:729.6px;--lx:795px;--ly:595px;--gx:708px;--gy:912px;--ex:459.9px;--ey:557.6px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1856.6px;--sy:307px;--lx:817px;--ly:595px;--gx:936px;--gy:912px;--ex:172.8px;--ey:100.5px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1524.7px;--sy:537px;--lx:839px;--ly:595px;--gx:1164px;--gy:912px;--ex:183.6px;--ey:362.1px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1318.9px;--sy:531.7px;--lx:905px;--ly:463px;--gx:1392px;--gy:912px;--ex:1009.7px;--ey:971.1px;--od:0.2s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1369.2px;--sy:658.2px;--lx:927px;--ly:463px;--gx:708px;--gy:258px;--ex:825.8px;--ey:93.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:999.6px;--sy:97.9px;--lx:949px;--ly:463px;--gx:936px;--gy:258px;--ex:1652px;--ey:928.5px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:620.1px;--sy:78.1px;--lx:971px;--ly:463px;--gx:1164px;--gy:258px;--ex:1664.4px;--ey:849.2px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1777.7px;--sy:669.4px;--lx:993px;--ly:463px;--gx:1392px;--gy:258px;--ex:572.9px;--ey:830.8px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1718.7px;--sy:51.8px;--lx:905px;--ly:485px;--gx:708px;--gy:486px;--ex:533.2px;--ey:731.9px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:75.4px;--sy:60.6px;--lx:927px;--ly:485px;--gx:936px;--gy:486px;--ex:103.6px;--ey:285.9px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:373.4px;--sy:679.4px;--lx:949px;--ly:485px;--gx:1164px;--gy:486px;--ex:510px;--ey:842.9px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:248.8px;--sy:721.8px;--lx:971px;--ly:485px;--gx:1392px;--gy:486px;--ex:818.1px;--ey:743.1px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1434.1px;--sy:699.8px;--lx:993px;--ly:485px;--gx:708px;--gy:714px;--ex:833.2px;--ey:908.7px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:295.6px;--sy:323.7px;--lx:905px;--ly:507px;--gx:936px;--gy:714px;--ex:927.2px;--ey:403.1px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1462.7px;--sy:908.4px;--lx:927px;--ly:507px;--gx:1164px;--gy:714px;--ex:668.8px;--ey:485.8px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:551.3px;--sy:713.3px;--lx:949px;--ly:507px;--gx:1392px;--gy:714px;--ex:1151.7px;--ey:858.8px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:117.6px;--sy:789.8px;--lx:971px;--ly:507px;--gx:708px;--gy:942px;--ex:685.9px;--ey:620px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1271.7px;--sy:1021.9px;--lx:993px;--ly:507px;--gx:936px;--gy:942px;--ex:1287.4px;--ey:936.9px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1396.2px;--sy:803.1px;--lx:905px;--ly:529px;--gx:1164px;--gy:942px;--ex:527.2px;--ey:667.2px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1038.1px;--sy:242.2px;--lx:927px;--ly:529px;--gx:1392px;--gy:942px;--ex:1215.4px;--ey:276.2px;--od:0.1s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1434.6px;--sy:722.1px;--lx:949px;--ly:529px;--gx:708px;--gy:288px;--ex:504.1px;--ey:495.3px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:975px;--sy:643.6px;--lx:971px;--ly:529px;--gx:936px;--gy:288px;--ex:1404.2px;--ey:944.7px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1125.8px;--sy:237.3px;--lx:993px;--ly:529px;--gx:1164px;--gy:288px;--ex:474.1px;--ey:561.5px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:664.1px;--sy:853.2px;--lx:905px;--ly:551px;--gx:1392px;--gy:288px;--ex:887.6px;--ey:448.4px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1576.2px;--sy:736.6px;--lx:927px;--ly:551px;--gx:708px;--gy:516px;--ex:476.3px;--ey:844.2px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1572.4px;--sy:540px;--lx:949px;--ly:551px;--gx:936px;--gy:516px;--ex:116.7px;--ey:757.7px;--od:0.3s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:86.8px;--sy:790.5px;--lx:971px;--ly:551px;--gx:1164px;--gy:516px;--ex:600.8px;--ey:177.9px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:43px;--sy:64.1px;--lx:993px;--ly:551px;--gx:1392px;--gy:516px;--ex:230.1px;--ey:650px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:49.3px;--sy:645.8px;--lx:905px;--ly:573px;--gx:708px;--gy:744px;--ex:83.2px;--ey:774.7px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1662.2px;--sy:274.5px;--lx:927px;--ly:573px;--gx:936px;--gy:744px;--ex:1698.4px;--ey:436.3px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1030.2px;--sy:730.6px;--lx:949px;--ly:573px;--gx:1164px;--gy:744px;--ex:598.9px;--ey:156.1px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:518.1px;--sy:626.9px;--lx:971px;--ly:573px;--gx:1392px;--gy:744px;--ex:681.7px;--ey:703.6px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1797.3px;--sy:753.5px;--lx:993px;--ly:573px;--gx:708px;--gy:972px;--ex:719.7px;--ey:985.3px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:799.8px;--sy:206.4px;--lx:905px;--ly:595px;--gx:936px;--gy:972px;--ex:1382.2px;--ey:179.5px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1116.4px;--sy:532px;--lx:927px;--ly:595px;--gx:1164px;--gy:972px;--ex:1041.6px;--ey:584.2px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1150.2px;--sy:417.1px;--lx:949px;--ly:595px;--gx:1392px;--gy:972px;--ex:1156.5px;--ey:553.6px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1304.8px;--sy:1029.4px;--lx:971px;--ly:595px;--gx:678px;--gy:288px;--ex:302.4px;--ey:1034.9px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:994.4px;--sy:242.2px;--lx:993px;--ly:595px;--gx:906px;--gy:288px;--ex:668.4px;--ey:541.7px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:437.1px;--sy:682.6px;--lx:1059px;--ly:463px;--gx:1134px;--gy:288px;--ex:1251.3px;--ey:648.2px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:559.2px;--sy:742.2px;--lx:1081px;--ly:463px;--gx:1362px;--gy:288px;--ex:1389px;--ey:65.4px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1057.3px;--sy:823.1px;--lx:1103px;--ly:463px;--gx:678px;--gy:516px;--ex:725.2px;--ey:324.1px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:281.1px;--sy:437.3px;--lx:1125px;--ly:463px;--gx:906px;--gy:516px;--ex:52.3px;--ey:363.3px;--od:0.3s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:255.4px;--sy:98.7px;--lx:1147px;--ly:463px;--gx:1134px;--gy:516px;--ex:743.6px;--ey:744.2px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1480.7px;--sy:198.2px;--lx:1059px;--ly:485px;--gx:1362px;--gy:516px;--ex:1727.8px;--ey:252.7px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:972.6px;--sy:266.8px;--lx:1081px;--ly:485px;--gx:678px;--gy:744px;--ex:1428.3px;--ey:553.4px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1045.1px;--sy:587.6px;--lx:1103px;--ly:485px;--gx:906px;--gy:744px;--ex:1791px;--ey:357.7px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:349.7px;--sy:754.8px;--lx:1125px;--ly:485px;--gx:1134px;--gy:744px;--ex:1258.7px;--ey:322.1px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:640.7px;--sy:213px;--lx:1147px;--ly:485px;--gx:1362px;--gy:744px;--ex:768.2px;--ey:934.8px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1311px;--sy:354.4px;--lx:1059px;--ly:507px;--gx:678px;--gy:972px;--ex:543.8px;--ey:158.3px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:791.5px;--sy:890.2px;--lx:1081px;--ly:507px;--gx:906px;--gy:972px;--ex:578.4px;--ey:853.2px;--od:0s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1122.5px;--sy:941.4px;--lx:1103px;--ly:507px;--gx:1134px;--gy:972px;--ex:861.8px;--ey:147px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1515.1px;--sy:1023.9px;--lx:1125px;--ly:507px;--gx:1362px;--gy:972px;--ex:1828.9px;--ey:461.2px;--od:0.2s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1076.9px;--sy:615.7px;--lx:1147px;--ly:507px;--gx:648px;--gy:288px;--ex:312.3px;--ey:285.5px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1379.4px;--sy:385.4px;--lx:1059px;--ly:529px;--gx:876px;--gy:288px;--ex:568.3px;--ey:395.6px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:788.1px;--sy:105.2px;--lx:1081px;--ly:529px;--gx:1104px;--gy:288px;--ex:1061.8px;--ey:425.8px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:588.8px;--sy:626.1px;--lx:1103px;--ly:529px;--gx:1332px;--gy:288px;--ex:537.2px;--ey:516.2px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1595.9px;--sy:681.7px;--lx:1125px;--ly:529px;--gx:648px;--gy:516px;--ex:1146.7px;--ey:759.7px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1312.6px;--sy:191.8px;--lx:1147px;--ly:529px;--gx:876px;--gy:516px;--ex:295.9px;--ey:72.1px;--od:0.3s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:1250px;--sy:916.5px;--lx:1059px;--ly:551px;--gx:1104px;--gy:516px;--ex:1152.9px;--ey:486.9px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1689.6px;--sy:936.8px;--lx:1081px;--ly:551px;--gx:1332px;--gy:516px;--ex:747.9px;--ey:890.9px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:676px;--sy:56px;--lx:1103px;--ly:551px;--gx:648px;--gy:744px;--ex:269.2px;--ey:910.3px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1205.4px;--sy:795.8px;--lx:1125px;--ly:551px;--gx:876px;--gy:744px;--ex:1491px;--ey:864.3px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1088.3px;--sy:1030.9px;--lx:1147px;--ly:551px;--gx:1104px;--gy:744px;--ex:1176.3px;--ey:532.3px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1380.9px;--sy:174.5px;--lx:1059px;--ly:573px;--gx:1332px;--gy:744px;--ex:1562.9px;--ey:941.5px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:795.7px;--sy:895.7px;--lx:1081px;--ly:573px;--gx:648px;--gy:972px;--ex:1015.3px;--ey:685.3px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1453.1px;--sy:677.1px;--lx:1103px;--ly:573px;--gx:876px;--gy:972px;--ex:1832.6px;--ey:478.8px;--od:0s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1864px;--sy:539.3px;--lx:1125px;--ly:573px;--gx:1104px;--gy:972px;--ex:511.7px;--ey:176.7px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1483.8px;--sy:181.7px;--lx:1147px;--ly:573px;--gx:1332px;--gy:972px;--ex:1658.4px;--ey:677.1px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1402.5px;--sy:472.5px;--lx:1059px;--ly:595px;--gx:618px;--gy:288px;--ex:361.2px;--ey:608.5px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1792.5px;--sy:231.1px;--lx:1081px;--ly:595px;--gx:846px;--gy:288px;--ex:789.6px;--ey:891.6px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:365.6px;--sy:316.9px;--lx:1103px;--ly:595px;--gx:1074px;--gy:288px;--ex:1290.1px;--ey:359.8px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1610px;--sy:228px;--lx:1125px;--ly:595px;--gx:1302px;--gy:288px;--ex:1643.4px;--ey:221.4px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:118.4px;--sy:405.7px;--lx:1147px;--ly:595px;--gx:618px;--gy:516px;--ex:1347px;--ey:983.7px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1329.7px;--sy:80.8px;--lx:1213px;--ly:463px;--gx:846px;--gy:516px;--ex:934.3px;--ey:704.8px;--od:0.1s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:896.8px;--sy:655.3px;--lx:1235px;--ly:463px;--gx:1074px;--gy:516px;--ex:295px;--ey:488.2px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1445.6px;--sy:142.3px;--lx:1257px;--ly:463px;--gx:1302px;--gy:516px;--ex:1317.6px;--ey:102.6px;--od:0.3s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:946.9px;--sy:984.1px;--lx:1279px;--ly:463px;--gx:618px;--gy:744px;--ex:115.2px;--ey:680.1px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:877.7px;--sy:642.5px;--lx:1301px;--ly:463px;--gx:846px;--gy:744px;--ex:70.9px;--ey:425.7px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1512.3px;--sy:869.6px;--lx:1213px;--ly:485px;--gx:1074px;--gy:744px;--ex:1146.3px;--ey:1004px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1456.6px;--sy:776.7px;--lx:1235px;--ly:485px;--gx:1302px;--gy:744px;--ex:681.2px;--ey:525.7px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:605.5px;--sy:997.6px;--lx:1257px;--ly:485px;--gx:618px;--gy:972px;--ex:600.4px;--ey:566.5px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:98.9px;--sy:886.7px;--lx:1279px;--ly:485px;--gx:846px;--gy:972px;--ex:692.1px;--ey:146px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:896.8px;--sy:333.9px;--lx:1301px;--ly:485px;--gx:1074px;--gy:972px;--ex:1427.3px;--ey:866px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1833.4px;--sy:93.6px;--lx:1213px;--ly:507px;--gx:1302px;--gy:972px;--ex:1157.7px;--ey:661.4px;--od:0s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:499.4px;--sy:751.3px;--lx:1235px;--ly:507px;--gx:588px;--gy:288px;--ex:709.7px;--ey:377.7px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1526.4px;--sy:736.1px;--lx:1257px;--ly:507px;--gx:816px;--gy:288px;--ex:1431.8px;--ey:552px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1327px;--sy:275.2px;--lx:1279px;--ly:507px;--gx:1044px;--gy:288px;--ex:1846.5px;--ey:267.1px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1528px;--sy:362.2px;--lx:1301px;--ly:507px;--gx:1272px;--gy:288px;--ex:350.2px;--ey:161.9px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:528.2px;--sy:1019.2px;--lx:1213px;--ly:529px;--gx:588px;--gy:516px;--ex:1479.8px;--ey:651.4px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:91.9px;--sy:795.5px;--lx:1235px;--ly:529px;--gx:816px;--gy:516px;--ex:936.8px;--ey:739.2px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:220.4px;--sy:278.9px;--lx:1257px;--ly:529px;--gx:1044px;--gy:516px;--ex:1748.4px;--ey:194.9px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1829px;--sy:429.1px;--lx:1279px;--ly:529px;--gx:1272px;--gy:516px;--ex:1347.7px;--ey:799.2px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1872px;--sy:138px;--lx:1301px;--ly:529px;--gx:588px;--gy:744px;--ex:554.5px;--ey:197.4px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1500px;--sy:586.4px;--lx:1213px;--ly:551px;--gx:816px;--gy:744px;--ex:679.4px;--ey:211.7px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1590.3px;--sy:167.7px;--lx:1235px;--ly:551px;--gx:1044px;--gy:744px;--ex:1168.4px;--ey:715.2px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:918.6px;--sy:948.4px;--lx:1257px;--ly:551px;--gx:1272px;--gy:744px;--ex:735.2px;--ey:933.9px;--od:0s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1140.1px;--sy:1039.1px;--lx:1279px;--ly:551px;--gx:588px;--gy:972px;--ex:836.1px;--ey:847.1px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:200.2px;--sy:74.4px;--lx:1301px;--ly:551px;--gx:816px;--gy:972px;--ex:1150.1px;--ey:426.5px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1343.8px;--sy:538.6px;--lx:1213px;--ly:573px;--gx:1044px;--gy:972px;--ex:571.5px;--ey:331.3px;--od:0s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:154.8px;--sy:345.6px;--lx:1235px;--ly:573px;--gx:1272px;--gy:972px;--ex:1393.2px;--ey:593.2px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1567.9px;--sy:239.2px;--lx:1257px;--ly:573px;--gx:558px;--gy:288px;--ex:161.6px;--ey:45.8px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:97.1px;--sy:166.2px;--lx:1279px;--ly:573px;--gx:786px;--gy:288px;--ex:912.5px;--ey:56.6px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:340.8px;--sy:748.8px;--lx:1301px;--ly:573px;--gx:1014px;--gy:288px;--ex:1530.3px;--ey:742.2px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:835.6px;--sy:948.5px;--lx:1213px;--ly:595px;--gx:1242px;--gy:288px;--ex:169.6px;--ey:1023.9px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1173.4px;--sy:690.5px;--lx:1235px;--ly:595px;--gx:558px;--gy:516px;--ex:1093.4px;--ey:685.4px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1673.6px;--sy:345.9px;--lx:1257px;--ly:595px;--gx:786px;--gy:516px;--ex:1397px;--ey:108.6px;--od:0.2s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:1834px;--sy:818.9px;--lx:1279px;--ly:595px;--gx:1014px;--gy:516px;--ex:635.9px;--ey:615.7px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1525.1px;--sy:287.9px;--lx:1301px;--ly:595px;--gx:1242px;--gy:516px;--ex:721.2px;--ey:533.6px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:325.2px;--sy:442px;--lx:1367px;--ly:463px;--gx:558px;--gy:744px;--ex:828.1px;--ey:550.7px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1114.6px;--sy:674.9px;--lx:1389px;--ly:463px;--gx:786px;--gy:744px;--ex:614.7px;--ey:314.7px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:842.2px;--sy:225.7px;--lx:1411px;--ly:463px;--gx:1014px;--gy:744px;--ex:887.9px;--ey:64.3px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:350px;--sy:452.2px;--lx:1433px;--ly:463px;--gx:1242px;--gy:744px;--ex:1173.4px;--ey:409.3px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:299.8px;--sy:266.7px;--lx:1455px;--ly:463px;--gx:558px;--gy:972px;--ex:1867.4px;--ey:490.1px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:695.3px;--sy:632.7px;--lx:1367px;--ly:485px;--gx:786px;--gy:972px;--ex:1619.1px;--ey:266.5px;--od:0.3s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:525.3px;--sy:296.4px;--lx:1389px;--ly:485px;--gx:1014px;--gy:972px;--ex:227.8px;--ey:146.3px;--od:0s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:714.8px;--sy:468.3px;--lx:1411px;--ly:485px;--gx:1242px;--gy:972px;--ex:1551.8px;--ey:430.4px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1360px;--sy:134.9px;--lx:1433px;--ly:485px;--gx:528px;--gy:288px;--ex:271.5px;--ey:928.4px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1413.9px;--sy:490.2px;--lx:1455px;--ly:485px;--gx:756px;--gy:288px;--ex:858.3px;--ey:548.5px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:701px;--sy:387.9px;--lx:1367px;--ly:507px;--gx:984px;--gy:288px;--ex:921.1px;--ey:258.3px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1474.3px;--sy:923.1px;--lx:1389px;--ly:507px;--gx:1212px;--gy:288px;--ex:361.7px;--ey:889.3px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:624.8px;--sy:534px;--lx:1411px;--ly:507px;--gx:528px;--gy:516px;--ex:1698.6px;--ey:117.4px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:494.9px;--sy:708.2px;--lx:1433px;--ly:507px;--gx:756px;--gy:516px;--ex:1403.6px;--ey:680.4px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1524.1px;--sy:986px;--lx:1455px;--ly:507px;--gx:984px;--gy:516px;--ex:303.4px;--ey:1010.1px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1027.8px;--sy:966.7px;--lx:1367px;--ly:529px;--gx:1212px;--gy:516px;--ex:95.4px;--ey:924.7px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:976.5px;--sy:55.8px;--lx:1389px;--ly:529px;--gx:528px;--gy:744px;--ex:1504.6px;--ey:355px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:291.5px;--sy:448.9px;--lx:1411px;--ly:529px;--gx:756px;--gy:744px;--ex:179.9px;--ey:623.8px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1409.3px;--sy:513.8px;--lx:1433px;--ly:529px;--gx:984px;--gy:744px;--ex:1611px;--ey:493px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1766.6px;--sy:170.9px;--lx:1455px;--ly:529px;--gx:1212px;--gy:744px;--ex:1732.4px;--ey:81.7px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:579.2px;--sy:673.2px;--lx:1367px;--ly:551px;--gx:528px;--gy:972px;--ex:181.6px;--ey:712.9px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:237.7px;--sy:611.1px;--lx:1389px;--ly:551px;--gx:756px;--gy:972px;--ex:1654.2px;--ey:452.9px;--od:0s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:815.9px;--sy:627.1px;--lx:1411px;--ly:551px;--gx:984px;--gy:972px;--ex:1087.4px;--ey:148.9px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:902.4px;--sy:321.6px;--lx:1433px;--ly:551px;--gx:1212px;--gy:972px;--ex:948.9px;--ey:696.4px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:187.8px;--sy:748.8px;--lx:1455px;--ly:551px;--gx:528px;--gy:258px;--ex:610.3px;--ey:276.4px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1352.9px;--sy:469.6px;--lx:1367px;--ly:573px;--gx:756px;--gy:258px;--ex:1039.4px;--ey:704.1px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:451.3px;--sy:119.1px;--lx:1389px;--ly:573px;--gx:984px;--gy:258px;--ex:982.7px;--ey:296.3px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:204.2px;--sy:526.5px;--lx:1411px;--ly:573px;--gx:1212px;--gy:258px;--ex:1084.7px;--ey:139.4px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:154.2px;--sy:781.6px;--lx:1433px;--ly:573px;--gx:528px;--gy:486px;--ex:1210.7px;--ey:966.3px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1057.4px;--sy:265.2px;--lx:1455px;--ly:573px;--gx:756px;--gy:486px;--ex:1014.1px;--ey:683.9px;--od:0.3s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:1069.8px;--sy:77.5px;--lx:1367px;--ly:595px;--gx:984px;--gy:486px;--ex:825.6px;--ey:640.5px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1842.2px;--sy:450px;--lx:1389px;--ly:595px;--gx:1212px;--gy:486px;--ex:939.7px;--ey:923.2px;--od:0.2s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:341.4px;--sy:546px;--lx:1411px;--ly:595px;--gx:528px;--gy:714px;--ex:1142.5px;--ey:399.7px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1225.4px;--sy:131.6px;--lx:1433px;--ly:595px;--gx:756px;--gy:714px;--ex:179.8px;--ey:125.8px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:275.3px;--sy:806.8px;--lx:1455px;--ly:595px;--gx:984px;--gy:714px;--ex:93.7px;--ey:384.9px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:86.3px;--sy:127.5px;--lx:1521px;--ly:463px;--gx:1212px;--gy:714px;--ex:1863px;--ey:860.5px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1359.9px;--sy:307.4px;--lx:1543px;--ly:463px;--gx:528px;--gy:942px;--ex:827.3px;--ey:763.1px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1028.7px;--sy:988.4px;--lx:1565px;--ly:463px;--gx:756px;--gy:942px;--ex:962.4px;--ey:899.9px;--od:0.3s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:649.2px;--sy:392.4px;--lx:1587px;--ly:463px;--gx:984px;--gy:942px;--ex:628.6px;--ey:324.1px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:527.2px;--sy:967.2px;--lx:1609px;--ly:463px;--gx:1212px;--gy:942px;--ex:1818.3px;--ey:313.6px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d l" r="8.5" style="--sx:1790.6px;--sy:324.2px;--lx:1521px;--ly:485px;--gx:528px;--gy:228px;--ex:1260.1px;--ey:818.9px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:474.3px;--sy:992.6px;--lx:1543px;--ly:485px;--gx:756px;--gy:228px;--ex:252.8px;--ey:347.8px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1615.1px;--sy:886px;--lx:1565px;--ly:485px;--gx:984px;--gy:228px;--ex:1687px;--ey:363.3px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1089.9px;--sy:141.4px;--lx:1587px;--ly:485px;--gx:1212px;--gy:228px;--ex:275px;--ey:427.9px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1305.8px;--sy:1030.9px;--lx:1609px;--ly:485px;--gx:528px;--gy:456px;--ex:406.7px;--ey:169.8px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1794.8px;--sy:176.6px;--lx:1521px;--ly:507px;--gx:756px;--gy:456px;--ex:796.7px;--ey:727.2px;--od:0.3s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1123.4px;--sy:440.2px;--lx:1543px;--ly:507px;--gx:984px;--gy:456px;--ex:99.7px;--ey:913.1px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1799.6px;--sy:185.7px;--lx:1565px;--ly:507px;--gx:1212px;--gy:456px;--ex:980px;--ey:220.2px;--od:0.1s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:301.7px;--sy:319px;--lx:1587px;--ly:507px;--gx:528px;--gy:684px;--ex:1021.3px;--ey:724.3px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:153.4px;--sy:616.4px;--lx:1609px;--ly:507px;--gx:756px;--gy:684px;--ex:405.7px;--ey:117.1px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1385.8px;--sy:906.1px;--lx:1521px;--ly:529px;--gx:984px;--gy:684px;--ex:1420px;--ey:591.5px;--od:0s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:95.2px;--sy:413.3px;--lx:1543px;--ly:529px;--gx:1212px;--gy:684px;--ex:1428.6px;--ey:67px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:419.4px;--sy:891.9px;--lx:1565px;--ly:529px;--gx:528px;--gy:912px;--ex:50.2px;--ey:373.8px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:332.6px;--sy:894.7px;--lx:1587px;--ly:529px;--gx:756px;--gy:912px;--ex:1787.2px;--ey:627.8px;--od:0.3s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1768.8px;--sy:293.4px;--lx:1609px;--ly:529px;--gx:984px;--gy:912px;--ex:1489.8px;--ey:880.8px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1757px;--sy:263px;--lx:1521px;--ly:551px;--gx:1212px;--gy:912px;--ex:339.1px;--ey:992.4px;--od:0.2s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1653.4px;--sy:53.8px;--lx:1543px;--ly:551px;--gx:528px;--gy:198px;--ex:265.5px;--ey:748.2px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:186.1px;--sy:1012.3px;--lx:1565px;--ly:551px;--gx:756px;--gy:198px;--ex:1819.9px;--ey:617.1px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:483.8px;--sy:388.4px;--lx:1587px;--ly:551px;--gx:984px;--gy:198px;--ex:1120.5px;--ey:710.4px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:293.7px;--sy:1011.2px;--lx:1609px;--ly:551px;--gx:1212px;--gy:198px;--ex:1657.2px;--ey:775.9px;--od:0.3s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1277.3px;--sy:697.2px;--lx:1521px;--ly:573px;--gx:528px;--gy:426px;--ex:325.5px;--ey:627.9px;--od:0.2s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:936.8px;--sy:720.1px;--lx:1543px;--ly:573px;--gx:756px;--gy:426px;--ex:114px;--ey:787.3px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1696.1px;--sy:832.6px;--lx:1565px;--ly:573px;--gx:984px;--gy:426px;--ex:1333.6px;--ey:100.8px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:956.4px;--sy:130px;--lx:1587px;--ly:573px;--gx:1212px;--gy:426px;--ex:1063.4px;--ey:526.2px;--od:0.3s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1016.2px;--sy:684.1px;--lx:1609px;--ly:573px;--gx:528px;--gy:654px;--ex:1351.9px;--ey:1021.5px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1769px;--sy:893.7px;--lx:1521px;--ly:595px;--gx:756px;--gy:654px;--ex:1057.9px;--ey:371.8px;--od:0.2s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1697.1px;--sy:49.5px;--lx:1543px;--ly:595px;--gx:984px;--gy:654px;--ex:1107.7px;--ey:400.1px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:199.8px;--sy:184.7px;--lx:1565px;--ly:595px;--gx:1212px;--gy:654px;--ex:742.5px;--ey:777.6px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1804.9px;--sy:466.4px;--lx:1587px;--ly:595px;--gx:528px;--gy:882px;--ex:118.2px;--ey:487px;--od:0.2s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:782.5px;--sy:159.1px;--lx:1609px;--ly:595px;--gx:756px;--gy:882px;--ex:937.5px;--ey:236.9px;--od:0.3s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1272.5px;--sy:646.6px;--lx:1675px;--ly:463px;--gx:984px;--gy:882px;--ex:976.6px;--ey:676.9px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:532.4px;--sy:256px;--lx:1697px;--ly:463px;--gx:1212px;--gy:882px;--ex:1051.3px;--ey:70.5px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:1457.9px;--sy:227.2px;--lx:1719px;--ly:463px;--gx:528px;--gy:168px;--ex:1279.3px;--ey:513.2px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:917px;--sy:726px;--lx:1741px;--ly:463px;--gx:756px;--gy:168px;--ex:1217.4px;--ey:893.6px;--od:0s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:820.3px;--sy:235.1px;--lx:1763px;--ly:463px;--gx:984px;--gy:168px;--ex:500.5px;--ey:771.6px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d l" r="8.5" style="--sx:1049.9px;--sy:73.4px;--lx:1675px;--ly:485px;--gx:1212px;--gy:168px;--ex:1351.1px;--ey:412.1px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:432.8px;--sy:937.1px;--lx:1697px;--ly:485px;--gx:528px;--gy:396px;--ex:87.3px;--ey:266.1px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:392.5px;--sy:59.7px;--lx:1719px;--ly:485px;--gx:756px;--gy:396px;--ex:386.2px;--ey:910.5px;--od:0.3s;--wd:0s"/>
+<circle class="d l" r="8.5" style="--sx:386.5px;--sy:489px;--lx:1741px;--ly:485px;--gx:984px;--gy:396px;--ex:1569px;--ey:57.2px;--od:0.1s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1590.4px;--sy:743.6px;--lx:1763px;--ly:485px;--gx:1212px;--gy:396px;--ex:342.5px;--ey:152.1px;--od:0.3s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1638.3px;--sy:81.9px;--lx:1675px;--ly:507px;--gx:528px;--gy:624px;--ex:1879.4px;--ey:718.1px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1218.1px;--sy:981.1px;--lx:1697px;--ly:507px;--gx:756px;--gy:624px;--ex:175.7px;--ey:245.6px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1305.6px;--sy:983.4px;--lx:1719px;--ly:507px;--gx:984px;--gy:624px;--ex:869.4px;--ey:748.1px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1465px;--sy:316.4px;--lx:1741px;--ly:507px;--gx:1212px;--gy:624px;--ex:1401.4px;--ey:1004px;--od:0.1s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1798.2px;--sy:511.9px;--lx:1763px;--ly:507px;--gx:528px;--gy:852px;--ex:342.1px;--ey:811.1px;--od:0s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:727.4px;--sy:373.8px;--lx:1675px;--ly:529px;--gx:756px;--gy:852px;--ex:52.2px;--ey:838.5px;--od:0.1s;--wd:0.4s"/>
+<circle class="d l" r="8.5" style="--sx:1542.3px;--sy:166px;--lx:1697px;--ly:529px;--gx:984px;--gy:852px;--ex:1777.1px;--ey:130.4px;--od:0.3s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:187.6px;--sy:716.5px;--lx:1719px;--ly:529px;--gx:1212px;--gy:852px;--ex:218.5px;--ey:500.9px;--od:0.3s;--wd:0.5700000000000001s"/>
+<circle class="d a" r="8.5" style="--sx:170.7px;--sy:174.2px;--lx:1741px;--ly:529px;--gx:528px;--gy:138px;--ex:1264.9px;--ey:453.5px;--od:0.2s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:791.5px;--sy:819px;--lx:1763px;--ly:529px;--gx:756px;--gy:138px;--ex:1535px;--ey:444.6px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:255.4px;--sy:537.5px;--lx:1675px;--ly:551px;--gx:984px;--gy:138px;--ex:1726.4px;--ey:532.4px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1029.3px;--sy:958.4px;--lx:1697px;--ly:551px;--gx:1212px;--gy:138px;--ex:1245.4px;--ey:90.3px;--od:0s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:383.2px;--sy:192.9px;--lx:1719px;--ly:551px;--gx:528px;--gy:366px;--ex:557.3px;--ey:1038.5px;--od:0.3s;--wd:0.2s"/>
+<circle class="d a" r="8.5" style="--sx:1662.7px;--sy:325.3px;--lx:1741px;--ly:551px;--gx:756px;--gy:366px;--ex:1751px;--ey:482.4px;--od:0.2s;--wd:0s"/>
+<circle class="d a" r="8.5" style="--sx:1503.2px;--sy:115.2px;--lx:1763px;--ly:551px;--gx:984px;--gy:366px;--ex:521.7px;--ey:546.2px;--od:0.3s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1483px;--sy:210px;--lx:1675px;--ly:573px;--gx:1212px;--gy:366px;--ex:794.8px;--ey:448.6px;--od:0.3s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:413.6px;--sy:797.6px;--lx:1697px;--ly:573px;--gx:528px;--gy:594px;--ex:978px;--ey:708.5px;--od:0.1s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:743.2px;--sy:202.9px;--lx:1719px;--ly:573px;--gx:756px;--gy:594px;--ex:966.8px;--ey:914.3px;--od:0.1s;--wd:0.2s"/>
+<circle class="d l" r="8.5" style="--sx:1722.2px;--sy:921px;--lx:1741px;--ly:573px;--gx:984px;--gy:594px;--ex:757.4px;--ey:814.2px;--od:0.3s;--wd:0.27999999999999997s"/>
+<circle class="d a" r="8.5" style="--sx:1108.5px;--sy:748.7px;--lx:1763px;--ly:573px;--gx:1212px;--gy:594px;--ex:244.5px;--ey:1024px;--od:0.1s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1758.7px;--sy:462.7px;--lx:1675px;--ly:595px;--gx:528px;--gy:822px;--ex:1314px;--ey:859.4px;--od:0s;--wd:0.45s"/>
+<circle class="d a" r="8.5" style="--sx:1381.5px;--sy:881.7px;--lx:1697px;--ly:595px;--gx:756px;--gy:822px;--ex:266px;--ey:199.6px;--od:0.2s;--wd:0.4s"/>
+<circle class="d a" r="8.5" style="--sx:1313px;--sy:239.8px;--lx:1719px;--ly:595px;--gx:984px;--gy:822px;--ex:1857.6px;--ey:417.2px;--od:0.2s;--wd:0.45s"/>
+<circle class="d l" r="8.5" style="--sx:1183.9px;--sy:771.2px;--lx:1763px;--ly:595px;--gx:1212px;--gy:822px;--ex:1143.3px;--ey:187.3px;--od:0.2s;--wd:0.5700000000000001s"/>
+</g>
+<circle class="destello" r="111.6" style="translate:846px 426px"/>
+<g>
+<circle class="marca" r="8.5" style="translate:756px 336px"/>
+<circle class="marca" r="8.5" style="translate:786px 336px"/>
+<circle class="marca" r="8.5" style="translate:816px 336px"/>
+<circle class="marca" r="8.5" style="translate:846px 336px"/>
+<circle class="marca" r="8.5" style="translate:876px 336px"/>
+<circle class="marca" r="8.5" style="translate:906px 336px"/>
+<circle class="marca" r="8.5" style="translate:936px 336px"/>
+<circle class="marca" r="8.5" style="translate:936px 366px"/>
+<circle class="marca" r="8.5" style="translate:936px 396px"/>
+<circle class="marca" r="8.5" style="translate:936px 426px"/>
+<circle class="marca" r="8.5" style="translate:936px 456px"/>
+<circle class="marca" r="8.5" style="translate:936px 486px"/>
+<circle class="marca" r="8.5" style="translate:936px 516px"/>
+<circle class="marca" r="8.5" style="translate:906px 516px"/>
+<circle class="marca" r="8.5" style="translate:876px 516px"/>
+<circle class="marca" r="8.5" style="translate:846px 516px"/>
+<circle class="marca" r="8.5" style="translate:816px 516px"/>
+<circle class="marca" r="8.5" style="translate:786px 516px"/>
+<circle class="marca" r="8.5" style="translate:756px 516px"/>
+<circle class="marca" r="8.5" style="translate:756px 486px"/>
+<circle class="marca" r="8.5" style="translate:756px 456px"/>
+<circle class="marca" r="8.5" style="translate:756px 426px"/>
+<circle class="marca" r="8.5" style="translate:756px 396px"/>
+<circle class="marca" r="8.5" style="translate:756px 366px"/>
+</g>
+</svg>
