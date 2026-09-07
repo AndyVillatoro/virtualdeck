@@ -256,12 +256,34 @@ aunque los paquetes individuales digan «validado».
 Tres vienen **marcadas de fábrica** y hay que revisarlas, no dejarlas por
 inercia:
 
-- *«permite compras sin usar el comercio de Microsoft»* — **desmarcar**.
-  VirtualDeck no vende nada. Si algún día se añade un enlace de donación dentro
-  de la aplicación, esta casilla vuelve a la conversación.
+- *«permite compras sin usar el comercio de Microsoft»* — **marcar**, y decirlo
+  también en las notas de certificación. Ver 5.2.1: hay enlaces de donación
+  dentro de la aplicación y la política obliga a declararlo.
 - *«instalable en unidades alternativas»* — dejar marcada, no estorba.
 - *«Windows puede incluir sus datos en copias de OneDrive»* — dejar marcada: la
   configuración es un JSON pequeño y que se respalde solo es a favor del usuario.
+
+### 5.2.1. Los enlaces de donación, y por qué hay que declararlos
+
+La política 10.8.2 (versión 7.19, leída el 2026-09-07) dice, literal, que para
+recibir **donaciones voluntarias** hay que usar «the Microsoft payment request
+API or a secure third-party purchase API» — y que **si el usuario recibe algo a
+cambio** (funciones extra, quitar anuncios) entonces **obliga** a la API de
+compra de la Store.
+
+Para VirtualDeck eso se traduce en dos reglas:
+
+1. **La donación no puede dar nada a cambio.** Ni una función, ni un tema, ni
+   quitar nada. Hoy es así y tiene que seguir siéndolo: en cuanto el botón de
+   donar desbloquee algo, la vía de PayPal deja de estar permitida.
+2. **Hay que declararlo en Partner Center.** La misma política: *«You must note
+   the use of a secure third-party purchase API in Partner Center during the
+   submission process.»* Se hace marcando la casilla de declaraciones y
+   repitiéndolo en las notas de certificación, que no cuesta nada.
+
+Lo que **no** hace falta es una cuenta de empresa: 10.8.3 solo la exige si el
+producto **necesita** información financiera para funcionar. Un enlace que abre
+el navegador no es eso.
 
 **No marcar «probado para cumplir las directrices de accesibilidad».** Es una
 promesa concreta —contraste 4.5:1, navegación completa por teclado, probado con
