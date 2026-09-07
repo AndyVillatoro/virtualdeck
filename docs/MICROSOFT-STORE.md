@@ -229,6 +229,78 @@ The application collects no personal data whatsoever.
 
 ## 5. Ficha de la Store
 
+> Leído de la documentación oficial el 2026-09-07
+> ([crear el envío](https://learn.microsoft.com/es-mx/windows/apps/publish/publish-your-app/msix/create-app-submission),
+> [propiedades](https://learn.microsoft.com/es-mx/windows/apps/publish/publish-your-app/msix/enter-app-properties),
+> [declaraciones](https://learn.microsoft.com/es-mx/windows/apps/publish/publish-your-app/msix/product-declarations),
+> [imágenes](https://learn.microsoft.com/es-mx/windows/apps/publish/publish-your-app/msix/screenshots-and-images)).
+
+### 5.1. Las seis secciones del envío, y qué es obligatorio
+
+El envío se hace desde **Iniciar presentación** en la página de la aplicación.
+No hay que seguir el orden; sí hay que completarlas todas. Partner Center marca
+una sección como incompleta hasta que **todos** sus campos obligatorios estén,
+aunque los paquetes individuales digan «validado».
+
+| Sección | Obligatorio | Para VirtualDeck |
+|---|---|---|
+| **Precios y disponibilidad** | Mercados, audiencia, detectabilidad, calendario, precio base | Todos los mercados · pública · detectable · cuanto antes · **gratis** |
+| **Propiedades** | Categoría · privacidad si toca | `Utilidades y herramientas` · la URL de privacidad **sí** hace falta (ver 5.3) |
+| **Clasificaciones por edad** | Todas las preguntas | Cuestionario IARC, sin contenido sensible → 3+ |
+| **Paquetes** | Al menos un paquete | El `.msix` de `npm run build:store` |
+| **Descripciones de la Store** | Descripción · **al menos una captura** · logotipo | Ver 5.4 y 5.5 |
+| **Opciones de envío** | Solo si se declaran funcionalidades restringidas | Aquí van las notas de §4 |
+
+### 5.2. Declaraciones de producto — cuáles marcar
+
+Tres vienen **marcadas de fábrica** y hay que revisarlas, no dejarlas por
+inercia:
+
+- *«permite compras sin usar el comercio de Microsoft»* — **desmarcar**.
+  VirtualDeck no vende nada. Si algún día se añade un enlace de donación dentro
+  de la aplicación, esta casilla vuelve a la conversación.
+- *«instalable en unidades alternativas»* — dejar marcada, no estorba.
+- *«Windows puede incluir sus datos en copias de OneDrive»* — dejar marcada: la
+  configuración es un JSON pequeño y que se respalde solo es a favor del usuario.
+
+**No marcar «probado para cumplir las directrices de accesibilidad».** Es una
+promesa concreta —contraste 4.5:1, navegación completa por teclado, probado con
+Narrador y alto contraste— y VirtualDeck no se ha probado así. Declararlo sin
+haberlo hecho trae reseñas malas y es faltar a la verdad.
+
+No aplican: IA generativa, lápiz y tinta, grabación de juego.
+
+### 5.3. La política de privacidad, aunque no se recoja nada
+
+La documentación dice que es obligatoria si la aplicación **accede, recopila o
+transmite** información personal, y que **Microsoft puede exigirla igualmente
+según las funcionalidades que declare el paquete** — y que si falta, la
+certificación falla. VirtualDeck sale a internet (clima, divisas, galería), así
+que se pone y no se discute:
+
+`https://andyvillatoro.github.io/virtualdeck/privacidad.html` — ya está en pie.
+
+### 5.4. Imágenes: los números exactos
+
+| Recurso | Tamaño | ¿Obligatorio? |
+|---|---|---|
+| **Captura de escritorio** | **1366×768 o mayor**, PNG, hasta 50 MB | **Sí, al menos una.** Recomiendan 4-6 |
+| **Icono de mosaico 1:1** | **300×300** PNG | Muy recomendado. Si no se sube, la Store usa el del paquete |
+| Superhéroe 16:9 | 1920×1080 o 3840×2160 PNG | Opcional. Sin texto encima |
+| Tráiler | MP4/MOV **1920×1080**, ≤2 GB, ≤60 s | Opcional, y pide miniatura PNG 1920×1080 aparte |
+
+Reglas que afectan al diseño de las capturas:
+
+- **Lo importante en los dos tercios de arriba.** El tercio inferior puede
+  quedar tapado por superposiciones de la propia Store.
+- **Sin logotipos ni mensajes de marketing encima.** Capturas, no carteles.
+- Nada de contrastes extremos que estropeen el texto que la Store superpone.
+- Hasta 10 capturas de escritorio. Se muestran en el orden en que se suban.
+- **Las imágenes se suben por idioma, aunque sean las mismas.** Con ficha en
+  español e inglés, hay que subirlas dos veces.
+
+### 5.5. Resumen operativo
+
 | Campo | Qué poner |
 |---|---|
 | Categoría | Utilidades y herramientas |
@@ -237,6 +309,41 @@ The application collects no personal data whatsoever.
 | Idiomas | es-ES, en-US — la app está traducida a los dos |
 | Capturas | Mínimo 1, recomendable 4-6: la rejilla, el editor, pantalla completa, el gestor RGB |
 | Declaración de datos | «No recoge datos» — es cierto y hay que sostenerlo |
+
+---
+
+## 5.6. Donaciones desde Honduras
+
+Comprobado el 2026-09-07, porque explica por qué «las otras opciones no
+funcionan» y no es culpa de la configuración:
+
+**Stripe no opera en Honduras.** En América Latina solo cubre Brasil y México
+([stripe.com/global](https://stripe.com/global)). Y de ahí se cae todo lo demás
+en cadena:
+
+| Plataforma | Por qué no | ¿Sirve? |
+|---|---|---|
+| GitHub Sponsors | Exige Stripe Connect con la región de residencia **igual** a la del banco | No, salvo con *fiscal host* — y eso solo se elige **al registrarse**, no después |
+| Ko-fi | Solo acepta Stripe o PayPal | Sí, **con PayPal** |
+| Buy Me a Coffee | Igual | Sí, con PayPal |
+| Patreon | Paga por **Payoneer** fuera de EE. UU., 190+ países | Sí |
+| Microsoft Store | Paga por PayPal, ACH/SEPA o transferencia | Sí, PayPal llega en un día hábil |
+
+Conclusión: **no falta una plataforma, falta Stripe.** PayPal y Payoneer son las
+dos vías reales, y encima de ellas se puede poner la presentación que se quiera.
+
+Recomendación, de menos a más trabajo:
+
+1. **Ko-fi con PayPal.** Un enlace decente en vez de un botón de PayPal suelto,
+   sin comisión de la plataforma, y el donante paga con tarjeta sin abrir cuenta.
+   Media hora de trabajo.
+2. **Payoneer**, si hace falta cobrar de sitios que no pagan por PayPal. Opera en
+   Honduras. Es lo que destraba Patreon.
+3. **Patreon** solo si se quiere algo recurrente. Para una utilidad gratuita
+   suele rendir menos que un enlace de propina bien puesto.
+
+Lo que **no** conviene: pelearse con GitHub Sponsors. No es un ajuste mal
+puesto, es que el país no está.
 
 ---
 
