@@ -36,7 +36,7 @@ Auditoría sobre el código (no solo el doc):
   electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
   en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
-- **Publicado:** hasta **v0.10.0** en GitHub Releases, con `latest.yml` y `.blockmap`
+- **Publicado:** hasta **v0.11.0** en GitHub Releases, con `latest.yml` y `.blockmap`
   —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
   separado (ítem 30).
 - **i18n profundo (Bloque A): ✅ todo**, incluido lo que no estaba en la lista — el
@@ -127,6 +127,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 33 | Integridad de la configuración | Escritura atómica (temporal + renombre con reintentos) y rotación de copias por fecha, no por nombre. | ✅ 2026-09-06 |
 | 34 | Mando entre decks | Accion `remote`: un deck pulsa botones de otro por el servidor local que ya existia. Medido con dos VirtualDeck a la vez. | ✅ 2026-09-06 |
 | 35 | Pagina de promocion | `docs/index.html`, bilingue, servible por Pages desde `main` / `/docs`. Falta activarlo en Settings, que es del dueño. | 🚧 |
+| 36 | Donaciones | Ko-fi y PayPal reales, apartado propio en los ajustes. GitHub Sponsors fuera: Stripe no opera en Honduras. | ✅ 2026-09-07 |
 
 ---
 

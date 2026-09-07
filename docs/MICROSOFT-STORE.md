@@ -142,11 +142,26 @@ El apaño, comprobado: dejar que electron-builder prepare el montaje —hasta ah
 llega bien— y empaquetar con el `makeappx.exe` del **SDK de Windows**, que sí
 funciona:
 
+**Desde PowerShell, no desde Git Bash.** Git Bash convierte `/f` y `/p` en rutas
+y `makeappx` contesta `Unknown command line option: "F:/"`, que parece un error
+de sintaxis y no lo es.
+
 ```powershell
 npm run build:store   # falla al final; deja dist\__appx-x64\ preparado
-& "C:\Program Files (x86)\Windows Kitsin.0.26100.0d\makeappx.exe" `
-    pack /f dist\__appx-x64\mapping.txt /p dist\VirtualDeck-X.Y.Z.appx /o
+& "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\makeappx.exe" `
+    pack /f "dist\__appx-x64\mapping.txt" /p "dist\VirtualDeck-X.Y.Z.appx" /o
 ```
+
+Antes de subirlo, abrir el manifiesto que quedo montado
+(`dist\__appx-x64\AppxManifest.xml`) y comprobar cuatro cosas: son las que se
+pierden en silencio y no se notan hasta tener la aplicacion instalada.
+
+| Que | Se busca en el manifiesto |
+|---|---|
+| La version | `Version="X.Y.Z.0"` |
+| El enlace `virtualdeck://` | `windows.protocol` |
+| El arranque escondido | `windows.startupTask` y `--oculto` |
+| Los iconos propios | que los PNG salgan de `build/appx/`, no `SampleAppx` |
 
 Hay que llamarlo **por su ruta del SDK**: copiado a otra carpeta falla igual.
 Resultado comprobado el 2026-09-05: 116,5 MB, 121 entradas, el núcleo nativo
@@ -353,6 +368,45 @@ de imágenes, así que después de cambiar la interfaz se rehacen en un comando 
 vez de a mano. Ese README dice de dónde sale cada dato que se ve y lleva el
 repaso de privacidad captura por captura.
 
+### 5.4.1. Lo que se aprendio rellenando el formulario de verdad (2026-09-07)
+
+Cosas que la documentacion no dice y el formulario no explica:
+
+**«Propiedades: incompleta» sin decir por que.** La causa fue **Modo de
+presentacion → PC**, marcado por error. Esa casilla significa «esta experiencia
+esta disenada para una **visualizacion envolvente de Windows Mixed Reality**», no
+«funciona en un PC». Al marcarla, Partner Center exige declarar el casco de
+realidad mixta como hardware minimo o recomendado, y hasta que no lo haces la
+seccion se queda incompleta. **Dejar las dos casillas sin marcar.**
+
+**Familias de dispositivos: solo «Escritorio de Windows 10/11».** El manifiesto
+declara `TargetDeviceFamily Name="Windows.Desktop"`, asi que en Xbox, Surface Hub
+(«Equipo de Windows 10» en la traduccion) o HoloLens («Realidad Mixta») no se
+puede instalar de ninguna manera. Marcarlas no anade alcance: promete
+disponibilidad donde el paquete no entra.
+
+**Subcategoria: ninguna.** «Utilidades y herramientas» solo tiene dos
+—*Copia de seguridad y gestion* y *Administradores de archivos*— y ninguna
+describe esto. La subcategoria es **opcional**; poner «Administradores de
+archivos» seria mentir sobre lo que hace. Como categoria **secundaria**,
+*Productividad* si encaja. Y en los ejemplos de la propia categoria aparece
+«controles remotos», que es exactamente esto.
+
+**«Compatible con la entrada de lapiz y tinta»: no marcar.** Es para
+experiencias de entintado —anotar, dibujar a mano, Windows Ink—. Que un lapiz
+funcione porque el sistema lo traduce a tacto no es lo que declara esa casilla.
+
+**Requisitos del sistema: usar la columna «Recomendado», no «Minimo».** Lo que
+se pone en minimo hace que la Store avise al cliente antes de descargar y le
+**impida puntuar la aplicacion**. Lo recomendado no avisa.
+
+**`runFullTrust` pide justificacion aparte, y el campo es corto.** Partner Center
+detecta la capacidad restringida y abre un cuadro obligatorio en **Opciones de
+envio → Funcionalidades restringidas**. Ahi **no cabe** el texto de \u00a74: se corta
+alrededor de los 500 caracteres. Va la version breve de \u00a74.1; el texto largo va
+en **Notas para la certificacion**, que en esa pagina es un enlace a
+*informacion de pruebas adicional*, otra pagina distinta.
+
 ### 5.5. Resumen operativo
 
 | Campo | Qué poner |
@@ -363,6 +417,18 @@ repaso de privacidad captura por captura.
 | Idiomas | es-ES, en-US — la app está traducida a los dos |
 | Capturas | Mínimo 1, recomendable 4-6: la rejilla, el editor, pantalla completa, el gestor RGB |
 | Declaración de datos | «No recoge datos» — es cierto y hay que sostenerlo |
+
+---
+
+## 4.1. `runFullTrust`: la version corta, para el cuadro de Partner Center
+
+El cuadro de **Funcionalidades restringidas** corta alrededor de los 500
+caracteres. Esta version cabe, y pone lo decisivo en la primera frase por si
+acaso:
+
+```text
+VirtualDeck needs runFullTrust because every action it performs uses Win32 APIs unavailable to AppContainer apps: CreateProcess to launch the user's programs, SendInput for keyboard shortcuts and macros, PowerShell/CMD for the user's own scripts, and IPolicyConfig to switch the default audio device. Only commands the user typed into the editor are executed; nothing is downloaded or generated. Source: github.com/AndyVillatoro/virtualdeck
+```
 
 ---
 
