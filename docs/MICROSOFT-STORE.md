@@ -142,11 +142,26 @@ El apaño, comprobado: dejar que electron-builder prepare el montaje —hasta ah
 llega bien— y empaquetar con el `makeappx.exe` del **SDK de Windows**, que sí
 funciona:
 
+**Desde PowerShell, no desde Git Bash.** Git Bash convierte `/f` y `/p` en rutas
+y `makeappx` contesta `Unknown command line option: "F:/"`, que parece un error
+de sintaxis y no lo es.
+
 ```powershell
 npm run build:store   # falla al final; deja dist\__appx-x64\ preparado
-& "C:\Program Files (x86)\Windows Kitsin.0.26100.0d\makeappx.exe" `
-    pack /f dist\__appx-x64\mapping.txt /p dist\VirtualDeck-X.Y.Z.appx /o
+& "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\makeappx.exe" `
+    pack /f "dist\__appx-x64\mapping.txt" /p "dist\VirtualDeck-X.Y.Z.appx" /o
 ```
+
+Antes de subirlo, abrir el manifiesto que quedo montado
+(`dist\__appx-x64\AppxManifest.xml`) y comprobar cuatro cosas: son las que se
+pierden en silencio y no se notan hasta tener la aplicacion instalada.
+
+| Que | Se busca en el manifiesto |
+|---|---|
+| La version | `Version="X.Y.Z.0"` |
+| El enlace `virtualdeck://` | `windows.protocol` |
+| El arranque escondido | `windows.startupTask` y `--oculto` |
+| Los iconos propios | que los PNG salgan de `build/appx/`, no `SampleAppx` |
 
 Hay que llamarlo **por su ruta del SDK**: copiado a otra carpeta falla igual.
 Resultado comprobado el 2026-09-05: 116,5 MB, 121 entradas, el núcleo nativo
