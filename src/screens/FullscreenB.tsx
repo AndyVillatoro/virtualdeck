@@ -95,16 +95,26 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (pinPrompt) { setPinPrompt(null); return; }
-        if (kioskActive) { e.preventDefault(); requestExitKiosk(); return; }
+        // `stopImmediatePropagation`, y en fase de **captura**: `App` tiene su
+        // propio manejador de ESC con `if (view === 'fullscreen') setView('main')`,
+        // que no sabe nada del kiosko. Se registra antes, asi que corria primero
+        // y **el PIN no protegia nada**: ESC devolvia a la pantalla principal sin
+        // preguntar, y cerrar el propio dialogo del PIN tambien salia del kiosko.
+        // `preventDefault` no bastaba — no detiene a los demas oyentes—, y
+        // detener la propagacion desde la fase de burbuja llega tarde.
+        if (pinPrompt) { e.preventDefault(); e.stopImmediatePropagation(); setPinPrompt(null); return; }
+        if (kioskActive) { e.preventDefault(); e.stopImmediatePropagation(); requestExitKiosk(); return; }
         onExit();
         return;
       }
+      // Con el dialogo del PIN abierto, las cifras son el PIN y no un cambio de
+      // pagina; y en captura, ademas, se las quitariamos al propio campo.
+      if (pinPrompt || (e.target as HTMLElement)?.tagName === 'INPUT') return;
       const num = parseInt(e.key);
       if (!isNaN(num) && num >= 1 && num <= config.pages.length) setActivePage(num - 1);
     };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
   }, [onExit, config.pages.length, kioskActive, pinPrompt]);
 
   const handleToggle = onToggle;

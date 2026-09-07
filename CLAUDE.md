@@ -23,6 +23,14 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 - `build/` — app icon (`icon.ico`, `icon.png`, `icon.svg`) generado por `scripts/generate-icon.js`
 - `scripts/generate-icon.js` — renderiza icono dot-matrix SVG → PNG → ICO (requiere `sharp`)
 - `src/screens/` — pantallas: `MainB`, `EditorB`, `FullscreenB`, `RGBManagerB`, `WallpaperB`
+- **Dos manejadores de teclado sobre `document`, y el de `App` corre primero.** `App`
+  registra el suyo al montarse y `FullscreenB` el suyo después, así que en fase de burbuja
+  el de `App` gana. Su rama `if (view === 'fullscreen') setView('main')` no sabe nada del
+  kiosko: **el PIN no protegía nada** — ESC devolvía a la principal sin preguntar, y
+  cerrar el propio diálogo del PIN también salía. `preventDefault` no basta (no detiene a
+  los demás oyentes) y detener la propagación desde burbuja llega tarde: `FullscreenB`
+  escucha en **captura** y llama a `stopImmediatePropagation`. Medido con los cinco pasos:
+  activar, ESC, PIN malo, ESC del diálogo, PIN bueno.
 - `src/screens/fullscreen/` — `PinKiosko` (el PIN que bloquea la salida del modo kiosko,
   con su estado y su comprobación) y `SonandoAhora` (la franja de reproducción de abajo).
 - `src/screens/rgb/piezas.tsx` — las piezas del gestor RGB: insignia de estado, detalle de
