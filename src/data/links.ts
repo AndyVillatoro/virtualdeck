@@ -23,15 +23,16 @@ export const LINKS = {
   // mandaba a una pagina que no acepta patrocinios: un boton que no lleva a
   // ninguna parte es peor que no tenerlo.
   //
-  // PayPal directo tampoco esta **todavia**: PayPal.me si existe en Honduras,
-  // pero el enlace hay que reclamarlo en paypal.com/paypalme/grab. Cuando lo
-  // haya, se añade aqui y una entrada en `DONATION_LINKS`. Mientras tanto Ko-fi
-  // ya cobra por PayPal, asi que el camino existe igual.
+  // Los dos cobran al final por PayPal; se dejan los dos porque no cuestan lo
+  // mismo al que dona: Ko-fi acepta tarjeta sin abrir cuenta y deja poner un
+  // importe sugerido; PayPal directo es un clic menos para quien ya la tiene.
   kofi: 'https://ko-fi.com/cubecode',
+  paypal: 'https://paypal.me/cubecode',
 } as const;
 
 export type DonationLink = { id: 'kofi' | 'paypal'; label: string; url: string };
 
 export const DONATION_LINKS: DonationLink[] = [
   { id: 'kofi', label: 'Ko-fi', url: LINKS.kofi },
+  { id: 'paypal', label: 'PayPal', url: LINKS.paypal },
 ];

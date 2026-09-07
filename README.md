@@ -49,7 +49,7 @@ Ver [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo completo.
 
 VirtualDeck es gratuito y seguirá siéndolo: no hay versión de pago ni funciones
 bajo llave, y **donar no desbloquea nada**. Si le resulta útil y quiere aportar,
-[**♥ Ko-fi**](https://ko-fi.com/cubecode).
+[**♥ Ko-fi**](https://ko-fi.com/cubecode) o [**PayPal**](https://paypal.me/cubecode).
 
 Reportar un fallo o contar para qué lo usa ayuda igual de bien.
 
