@@ -1,7 +1,9 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { networkInterfaces } from 'node:os';
-import type { BrowserWindow } from 'electron';
+import { networkInterfaces, hostname } from 'node:os';
+import { createReadStream, existsSync } from 'node:fs';
+import { join, normalize } from 'node:path';
+import { app, type BrowserWindow } from 'electron';
 import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
 import { paginaMando } from './paginaMando';
@@ -92,22 +94,67 @@ function canjear(codigo: string): string | null {
 }
 
 /** Las direcciones IPv4 de este equipo en la red local. */
+/**
+ * Puntuación de prioridad para ordenar interfaces de red.
+ * Prioriza adaptadores físicos de red local (Ethernet, Wi-Fi con 192.168.x / 10.x)
+ * y desplaza al final VPNs (Tailscale 100.64+, ZeroTier) y virtuales (WSL, Hyper-V, VirtualBox).
+ */
+function puntuarInterfaz(nombre: string, ip: string): number {
+  const n = nombre.toLowerCase();
+  if (/tailscale|zerotier|wireguard|openvpn|tun|tap/i.test(n) || ip.startsWith('100.')) return 10;
+  if (/vethernet|hyper-v|wsl|docker|virtualbox|vbox|vmware/i.test(n)) return 20;
+  if (ip.startsWith('169.254.')) return 5;
+
+  if (/wi-fi|wifi|wlan|inal[aá]mbric/i.test(n)) {
+    return ip.startsWith('192.168.') ? 100 : 90;
+  }
+  if (/ethernet|red local|conparam|conexi[oó]n de red|eth\d|en\d/i.test(n)) {
+    return ip.startsWith('192.168.') ? 95 : 85;
+  }
+
+  if (ip.startsWith('192.168.')) return 80;
+  if (ip.startsWith('10.')) return 70;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return 65;
+
+  return 50;
+}
+
+/** Las direcciones IPv4 de este equipo en la red local, ordenadas por relevancia. */
 export function direccionesLan(): string[] {
-  const salida: string[] = [];
-  for (const lista of Object.values(networkInterfaces())) {
+  const candidatos: Array<{ nombre: string; ip: string; puntos: number }> = [];
+  const interfaces = networkInterfaces();
+  for (const [nombre, lista] of Object.entries(interfaces)) {
     for (const i of lista ?? []) {
-      if (i.family === 'IPv4' && !i.internal) salida.push(i.address);
+      if (i.family === 'IPv4' && !i.internal && i.address) {
+        candidatos.push({
+          nombre,
+          ip: i.address,
+          puntos: puntuarInterfaz(nombre, i.address),
+        });
+      }
     }
   }
-  return salida;
+
+  candidatos.sort((a, b) => b.puntos - a.puntos);
+  return candidatos.map((c) => c.ip);
 }
 
 /** ¿La cabecera `Host` apunta a este equipo y a nuestro puerto? */
 function hostAceptable(host: string | undefined): boolean {
   if (!host) return false;
-  const nombre = host.replace(/:\d+$/, '').replace(/^\[|\]$/g, '');
+  const nombre = host.replace(/:\d+$/, '').replace(/^\[|\]$/g, '').toLowerCase().trim();
   if (nombre === 'localhost' || nombre === '127.0.0.1' || nombre === '::1') return true;
-  return ajustes.allowLan && direccionesLan().includes(nombre);
+  if (!ajustes.allowLan) return false;
+
+  // Comprobar si coincide con alguna de las IPs locales del equipo
+  if (direccionesLan().some((ip) => ip.toLowerCase() === nombre)) return true;
+
+  // Comprobar hostname y variantes mDNS (.local)
+  const h = hostname().toLowerCase().trim();
+  if (nombre === h || nombre === `${h}.local` || nombre === 'virtualdeck.local') return true;
+  if (nombre.startsWith(`${h}.`)) return true;
+
+  return false;
 }
 
 /**
@@ -135,12 +182,60 @@ function responder(res: ServerResponse, codigo: number, cuerpo: unknown): void {
   res.end(texto);
 }
 
+export interface BotonMandoMovil {
+  id: string;
+  label: string;
+  sublabel?: string;
+  page: number;
+  bgColor?: string;
+  fgColor?: string;
+  icon?: string;
+  imageData?: string;
+  customGlyph57?: number[];
+  brandIcon?: string;
+}
+
 /** Los botones que se pueden pulsar, para que el cliente sepa qué pedir. */
-function listaDeBotones(): Array<{ id: string; label: string; page: number }> {
-  const cfg = loadConfig() as { buttons?: Array<{ id: string; label?: string; page?: number; action?: { type: string } }> };
+function listaDeBotones(): BotonMandoMovil[] {
+  const cfg = loadConfig() as {
+    buttons?: Array<{
+      id: string;
+      label?: string;
+      sublabel?: string;
+      page?: number;
+      action?: { type: string };
+      bgColor?: string;
+      fgColor?: string;
+      icon?: string;
+      imageData?: string;
+      customGlyph57?: number[];
+      brandIcon?: string;
+    }>;
+  };
   return (cfg?.buttons ?? [])
     .filter((b) => b.action && b.action.type !== 'none')
-    .map((b) => ({ id: b.id, label: b.label ?? '', page: b.page ?? 0 }));
+    .map((b) => {
+      let imageData = b.imageData;
+      if (imageData && imageData.startsWith('vd://images/')) {
+        const file = imageData.slice('vd://images/'.length);
+        imageData = `/media/images/${encodeURIComponent(file)}`;
+      } else if (imageData && imageData.startsWith('vd://')) {
+        const file = imageData.slice('vd://'.length);
+        imageData = `/media/images/${encodeURIComponent(file.replace(/^images[/\\]/, ''))}`;
+      }
+      return {
+        id: b.id,
+        label: b.label ?? '',
+        sublabel: b.sublabel,
+        page: b.page ?? 0,
+        bgColor: b.bgColor,
+        fgColor: b.fgColor,
+        icon: b.icon,
+        imageData,
+        customGlyph57: b.customGlyph57,
+        brandIcon: b.brandIcon,
+      };
+    });
 }
 
 /**
@@ -170,8 +265,15 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
   // nuestra —el mando móvil, servido desde aquí mismo—; cualquier otro es una
   // página de otro sitio hablando con tu equipo.
   const origen = req.headers.origin;
-  if (origen && origen !== `http://${req.headers.host}`) {
-    return responder(res, 403, { ok: false, error: 'origen no permitido' });
+  if (origen) {
+    try {
+      const origHost = new URL(origen).host;
+      if (!hostAceptable(origHost)) {
+        return responder(res, 403, { ok: false, error: 'origen no permitido' });
+      }
+    } catch {
+      return responder(res, 403, { ok: false, error: 'origen no permitido' });
+    }
   }
 
   // El mando móvil. Se sirve sin token: es solo la carcasa, y lo primero que
@@ -184,6 +286,36 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
       'Cache-Control': 'no-store',
     });
     return void res.end(html);
+  }
+
+  // 1.1 — Servir imágenes y GIFs de botones para el mando móvil web.
+  if (url.pathname.startsWith('/media/images/')) {
+    const filename = decodeURIComponent(url.pathname.slice('/media/images/'.length)).replace(/\\/g, '/');
+    if (filename.includes('..') || filename.includes('/')) {
+      return responder(res, 403, { ok: false, error: 'denegado' });
+    }
+    const imagesDir = join(app.getPath('userData'), 'images');
+    const filePath = normalize(join(imagesDir, filename));
+    if (!filePath.startsWith(imagesDir) || !existsSync(filePath)) {
+      return responder(res, 404, { ok: false, error: 'no existe' });
+    }
+    const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+    const mimes: Record<string, string> = {
+      gif: 'image/gif',
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      webp: 'image/webp',
+      svg: 'image/svg+xml',
+      ico: 'image/x-icon',
+    };
+    const contentType = mimes[ext] ?? 'application/octet-stream';
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=86400',
+    });
+    createReadStream(filePath).pipe(res);
+    return;
   }
 
   // `ping` no pide token: es como se comprueba desde la interfaz que el
@@ -272,6 +404,24 @@ export function parar(): void {
   servidor = null;
 }
 
-export function estado(): { corriendo: boolean; port: number; lan: string[] } {
-  return { corriendo: !!servidor, port: ajustes.port, lan: ajustes.allowLan ? direccionesLan() : [] };
+export interface EstadoRemoto {
+  corriendo: boolean;
+  port: number;
+  lan: string[];
+  ipPrincipal?: string;
+  hostname?: string;
+  mdnsUrl?: string;
+}
+
+export function estado(): EstadoRemoto {
+  const ips = ajustes.allowLan ? direccionesLan() : [];
+  const h = hostname().trim();
+  return {
+    corriendo: !!servidor,
+    port: ajustes.port,
+    lan: ips,
+    ipPrincipal: ips[0] ?? '127.0.0.1',
+    hostname: h,
+    mdnsUrl: `http://${h.toLowerCase()}.local:${ajustes.port}`,
+  };
 }

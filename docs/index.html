@@ -3,274 +3,1074 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VirtualDeck — Stream Deck por software para Windows</title>
-<meta name="description" content="Una cuadrícula de botones que ejecutan acciones: abrir aplicaciones, cambiar el audio, controlar la música, lanzar atajos y macros. Gratuito y 100 % local.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230f0f0f'/%3E%3Cg fill='%234a8ef0'%3E%3Crect x='2' y='2' width='4' height='4'/%3E%3Crect x='10' y='2' width='4' height='4'/%3E%3Crect x='2' y='10' width='4' height='4'/%3E%3Crect x='10' y='10' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E">
+<title>VirtualDeck — Stream Deck interactivo para Windows</title>
+<meta name="description" content="Una cuadrícula de botones para controlar música, audio, atajos, macros, programas y luces RGB en cualquier monitor o tableta. Gratuito, 100% local y sin cuentas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23070809' rx='3'/%3E%3Cg fill='%234a8ef0'%3E%3Crect x='3' y='3' width='4' height='4' rx='1'/%3E%3Crect x='9' y='3' width='4' height='4' rx='1'/%3E%3Crect x='3' y='9' width='4' height='4' rx='1'/%3E%3Crect x='9' y='9' width='4' height='4' rx='1'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0f0f0f; --surface:#191919; --elevated:#222; --border:#2e2e2e;
-    --text:#dcdcdc; --dim:#8a8a8a; --muted:#555; --accent:#4a8ef0;
-    --accent-bg:rgba(74,142,240,0.12);
-    --font:"Inter",system-ui,sans-serif;
-    --mono:"JetBrains Mono",ui-monospace,monospace;
+    --bg: #070809;
+    --surface: #111316;
+    --elevated: #181b20;
+    --border: #23272e;
+    --border-hover: #373e4a;
+    --text: #e2e4e9;
+    --dim: #9096a2;
+    --muted: #5a606d;
+    --accent: #4a8ef0;
+    --accent-glow: rgba(74, 142, 240, 0.28);
+    --accent-bg: rgba(74, 142, 240, 0.12);
+    --neon-green: #10b981;
+    --neon-amber: #f59e0b;
+    --font: "Inter", system-ui, -apple-system, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
   }
-  * { box-sizing:border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    margin:0; background:var(--bg); color:var(--text); font-family:var(--font);
-    line-height:1.65; -webkit-font-smoothing:antialiased;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
     background-image:
-      repeating-linear-gradient(0deg,#1a1a1a 0,#1a1a1a 1px,transparent 1px,transparent 22px),
-      repeating-linear-gradient(90deg,#1a1a1a 0,#1a1a1a 1px,transparent 1px,transparent 22px);
+      radial-gradient(circle at 50% -10%, rgba(74,142,240,0.14) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 32px);
   }
-  .env { max-width:940px; margin:0 auto; padding:0 24px; }
-  a { color:var(--accent); }
+  .env { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--accent); text-decoration: none; transition: color .18s; }
+  a:hover { color: #72a8f8; }
 
-  header { padding:72px 0 48px; text-align:center; }
+  /* Selector de idioma y barra superior */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(7, 8, 9, 0.85); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .top-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-weight: 700; font-size: 15px; letter-spacing: 2px;
+  }
+  .top-brand span { color: var(--accent); }
+  .top-links { display: flex; align-items: center; gap: 18px; }
+  .top-links a { font-family: var(--mono); font-size: 12px; color: var(--dim); letter-spacing: 1px; }
+  .top-links a:hover { color: var(--text); }
+  .idioma-bar { display: flex; gap: 4px; }
+  .idioma-bar button {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 1px; padding: 5px 9px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 4px; cursor: pointer; transition: all .18s;
+  }
+  .idioma-bar button[aria-pressed="true"] {
+    border-color: var(--accent); color: var(--accent); background: var(--accent-bg);
+  }
+
+  /* Hero */
+  header { padding: 110px 0 40px; text-align: center; }
+  .badge-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 20px; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    background: var(--surface); border: 1px solid var(--border); color: var(--dim);
+    margin-bottom: 16px;
+  }
+  .badge-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
   .marca {
-    font-family:var(--mono); font-weight:700; font-size:clamp(28px,6vw,46px);
-    letter-spacing:6px; margin:0 0 6px;
+    font-family: var(--mono); font-weight: 700; font-size: clamp(32px, 7vw, 54px);
+    letter-spacing: 6px; margin: 0 0 12px; text-shadow: 0 0 35px rgba(74, 142, 240, 0.3);
   }
-  .marca span { color:var(--accent); }
-  .lema { color:var(--dim); font-size:17px; margin:0 auto 8px; max-width:560px; }
-  .version {
-    font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--muted);
+  .marca span { color: var(--accent); }
+  .lema {
+    color: var(--dim); font-size: clamp(16px, 3.2vw, 19px); margin: 0 auto 12px; max-width: 620px;
+    font-weight: 400;
+  }
+  .version-tag {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 2.5px; color: var(--muted);
+    margin-bottom: 28px; text-transform: uppercase;
   }
 
-  /* Rejilla decorativa: los botones del propio deck. */
-  .deck {
-    display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
-    max-width:380px; margin:40px auto 8px;
+  /* Escenario 3D */
+  .stage-3d-wrap {
+    position: relative; max-width: 760px; height: 450px; margin: 0 auto 32px;
+    background: radial-gradient(circle at 50% 50%, #15181f 0%, #0c0d10 80%);
+    border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
+    overflow: hidden; cursor: grab;
   }
-  .tile {
-    aspect-ratio:1; background:var(--surface); border:1px solid var(--border);
-    border-radius:8px; display:grid; place-items:center;
-    font-size:22px; transition:border-color .18s, transform .18s;
+  .stage-3d-wrap:active { cursor: grabbing; }
+  #deck-3d-canvas { width: 100%; height: 100%; display: block; outline: none; }
+  .stage-overlay {
+    position: absolute; bottom: 14px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    pointer-events: none; z-index: 5;
   }
-  .tile:hover { border-color:var(--accent); transform:translateY(-2px); }
-  .tile.on { border-color:var(--accent); background:var(--accent-bg); }
+  .stage-tip {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: rgba(10, 11, 14, 0.7); backdrop-filter: blur(8px);
+    padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);
+    pointer-events: auto;
+  }
+  .stage-hud {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    background: rgba(10, 11, 14, 0.85); backdrop-filter: blur(8px);
+    padding: 6px 12px; border-radius: 6px; border: 1px solid var(--accent-glow);
+    display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity .25s;
+  }
+  .stage-hud.active { opacity: 1; }
+  .stage-audio-toggle {
+    background: rgba(10, 11, 14, 0.7); border: 1px solid rgba(255,255,255,0.06);
+    color: var(--dim); padding: 6px 10px; border-radius: 6px; cursor: pointer;
+    font-family: var(--mono); font-size: 11px; pointer-events: auto; transition: all .18s;
+  }
+  .stage-audio-toggle:hover { color: var(--text); border-color: var(--border-hover); }
 
-  .acciones { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:34px 0 12px; }
+  /* Fallback 2D si WebGL no está disponible */
+  .deck-fallback {
+    display: none; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    max-width: 440px; margin: 30px auto; padding: 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .deck-fallback.show { display: grid; }
+  .deck-fallback .tile {
+    aspect-ratio: 1; background: var(--elevated); border: 1px solid var(--border);
+    border-radius: 8px; display: grid; place-items: center; font-size: 24px;
+    transition: transform .18s, border-color .18s; cursor: pointer;
+  }
+  .deck-fallback .tile:hover { transform: translateY(-3px); border-color: var(--accent); }
+
+  /* Acciones y Badges CTA */
+  .acciones {
+    display: flex; gap: 14px; justify-content: center; align-items: center;
+    flex-wrap: wrap; margin: 24px 0 16px;
+  }
+  .btn-store {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 10px 22px; border-radius: 8px;
+    background: #000; border: 1px solid #333; color: #fff;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+    transition: transform .18s, border-color .18s, background .18s;
+  }
+  .btn-store:hover {
+    border-color: #555; background: #111; transform: translateY(-2px); color: #fff;
+  }
+  .store-icon { width: 22px; height: 22px; flex-shrink: 0; }
+  .store-text { display: flex; flex-direction: column; text-align: left; line-height: 1.15; }
+  .store-sub { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; font-family: var(--mono); }
+  .store-main { font-size: 15px; font-weight: 600; color: #fff; }
+
   .btn {
-    display:inline-block; padding:13px 26px; border-radius:6px; text-decoration:none;
-    font-family:var(--mono); font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
-    border:1px solid var(--border); color:var(--text); background:var(--elevated);
-    transition:border-color .18s, background .18s;
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 13px 24px; border-radius: 8px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+    border: 1px solid var(--border); color: var(--text); background: var(--elevated);
+    transition: all .18s; font-weight: 600;
   }
-  .btn:hover { border-color:var(--accent); }
-  .btn.principal { background:var(--accent); border-color:var(--accent); color:#fff; }
-  .btn.principal:hover { background:#3d7ad8; }
-  .meta { font-family:var(--mono); font-size:11px; color:var(--muted); text-align:center; }
+  .btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .btn.principal {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .btn.principal:hover { background: #3d7ad8; color: #fff; }
+  .btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .meta-detail { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; }
 
-  .aviso {
-    max-width:640px; margin:28px auto 0; padding:12px 16px; border-radius:6px;
-    background:var(--surface); border:1px solid var(--border);
-    font-size:13px; color:var(--dim);
+  /* Galería interactiva de capturas */
+  section { padding: 68px 0; border-top: 1px solid var(--border); }
+  .sec-header { margin-bottom: 36px; text-align: center; }
+  h2.sec-title {
+    font-family: var(--mono); font-size: 13px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 10px;
   }
-  .aviso strong { color:var(--text); }
+  p.sec-sub { font-size: 22px; font-weight: 600; color: var(--text); }
 
-  section { padding:56px 0; border-top:1px solid var(--border); }
-  h2 {
-    font-family:var(--mono); font-size:12px; letter-spacing:3px; text-transform:uppercase;
-    color:var(--muted); margin:0 0 26px;
+  .gallery-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.6);
   }
-  .cuadros { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+  .gallery-tabs {
+    display: flex; gap: 2px; background: rgba(0,0,0,0.3); padding: 8px;
+    overflow-x: auto; border-bottom: 1px solid var(--border);
+  }
+  .gallery-tab {
+    padding: 9px 16px; border-radius: 6px; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 1px; background: transparent; border: 1px solid transparent;
+    color: var(--dim); cursor: pointer; white-space: nowrap; transition: all .18s;
+  }
+  .gallery-tab:hover { color: var(--text); background: var(--elevated); }
+  .gallery-tab.active {
+    background: var(--elevated); border-color: var(--border-hover); color: var(--accent); font-weight: 600;
+  }
+  .gallery-view { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
+  .gallery-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .gallery-footer {
+    padding: 16px 20px; font-size: 14px; color: var(--dim);
+    border-top: 1px solid var(--border); background: var(--elevated);
+  }
+  .gallery-footer strong { color: var(--text); }
+
+  /* Cuadrícula de características */
+  .cuadros { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
   .cuadro {
-    background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px;
+    transition: border-color .2s, transform .2s;
   }
-  .cuadro h3 { margin:0 0 8px; font-size:15px; }
-  .cuadro p { margin:0; font-size:14px; color:var(--dim); }
+  .cuadro:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+  .cuadro-icon {
+    font-size: 24px; margin-bottom: 12px; display: inline-block;
+    padding: 10px; background: var(--elevated); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .cuadro h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+  .cuadro p { margin: 0; font-size: 14px; color: var(--dim); line-height: 1.55; }
 
-  table { width:100%; border-collapse:collapse; font-size:14px; }
-  td { padding:9px 0; border-bottom:1px solid var(--border); vertical-align:top; }
-  td:first-child { font-family:var(--mono); font-size:12px; color:var(--muted); width:190px; padding-right:20px; }
+  /* Tabla de especificaciones */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; }
+  td { padding: 12px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td:first-child { font-family: var(--mono); font-size: 12px; color: var(--muted); width: 220px; padding-right: 20px; }
 
+  /* Pie de página */
   footer {
-    padding:40px 0 60px; border-top:1px solid var(--border);
-    font-family:var(--mono); font-size:11px; color:var(--muted);
-    display:flex; gap:18px; flex-wrap:wrap; justify-content:space-between;
+    padding: 48px 0 64px; border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
   }
-  footer a { color:var(--muted); text-decoration:none; }
-  footer a:hover { color:var(--accent); }
-
-  .idioma { position:fixed; top:16px; right:16px; display:flex; gap:6px; z-index:5; }
-  .idioma button {
-    font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:6px 10px;
-    background:var(--surface); border:1px solid var(--border); color:var(--muted);
-    border-radius:4px; cursor:pointer;
+  .footer-inner {
+    display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center;
   }
-  .idioma button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
-  [data-en] { display:none; }
-  html[lang="en"] [data-es] { display:none; }
-  html[lang="en"] [data-en] { display:revert; }
+  .footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
+  .footer-links a { color: var(--muted); }
+  .footer-links a:hover { color: var(--accent); }
 
-  @media (prefers-reduced-motion:reduce) { .tile { transition:none; } }
+  /* Manejo de idioma */
+  [data-en] { display: none; }
+  html[lang="en"] [data-es] { display: none; }
+  html[lang="en"] [data-en] { display: revert; }
+
+  @media (max-width: 768px) {
+    .stage-3d-wrap { height: 350px; }
+    .topbar { padding: 10px 16px; }
+    .top-links a { display: none; }
+    .top-links .idioma-bar { display: flex; }
+    td:first-child { width: 130px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
 </style>
 </head>
 <body>
 
-<div class="idioma">
-  <button type="button" data-lang="es" aria-pressed="true">ES</button>
-  <button type="button" data-lang="en" aria-pressed="false">EN</button>
+<!-- Barra de navegación superior fija -->
+<div class="topbar">
+  <div class="top-brand">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+      <rect width="16" height="16" rx="3" fill="#181b20"/>
+      <rect x="3" y="3" width="4" height="4" rx="1" fill="#4a8ef0"/>
+      <rect x="9" y="3" width="4" height="4" rx="1" fill="#4a8ef0"/>
+      <rect x="3" y="9" width="4" height="4" rx="1" fill="#4a8ef0"/>
+      <rect x="9" y="9" width="4" height="4" rx="1" fill="#4a8ef0"/>
+    </svg>
+    VIRTUAL<span>DECK</span>
+  </div>
+  <div class="top-links">
+    <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-es>Wiki y Guías</a>
+    <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-en>Wiki & Guides</a>
+    <a href="https://github.com/AndyVillatoro/virtualdeck" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://apps.microsoft.com/detail/9NW90D6S37Z5" target="_blank" rel="noopener">Store</a>
+    <div class="idioma-bar">
+      <button type="button" data-lang="es" aria-pressed="true">ES</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
 </div>
 
 <header>
   <div class="env">
+    <div class="badge-tag">
+      <span class="dot"></span>
+      <span data-es>VirtualDeck 0.11 · 100% Local y Gratuito</span>
+      <span data-en>VirtualDeck 0.11 · 100% Local & Free</span>
+    </div>
+
     <h1 class="marca">VIRTUAL<span>DECK</span></h1>
-    <p class="lema" data-es>Una cuadrícula de botones que ejecutan lo que usted quiera: abrir aplicaciones, cambiar el audio, controlar la música, lanzar atajos y macros. Para Windows.</p>
-    <p class="lema" data-en>A grid of buttons that runs whatever you want: open apps, switch audio, control music, fire shortcuts and macros. For Windows.</p>
-    <p class="version" data-es>Gratuito · Sin cuentas · 100 % local</p>
-    <p class="version" data-en>Free · No accounts · 100% local</p>
+    <p class="lema" data-es>Tu Stream Deck en cualquier pantalla. Controla música, audio, atajos, macros, programas y luces RGB con una cuadrícula interactiva. Sin comprar hardware.</p>
+    <p class="lema" data-en>Your Stream Deck on any screen. Control music, audio devices, hotkeys, macros, apps and RGB lighting from an interactive grid. No extra hardware needed.</p>
+    <p class="version-tag" data-es>Para Windows 10 y 11 · Sin cuentas · Código abierto</p>
+    <p class="version-tag" data-en>For Windows 10 & 11 · No accounts · Open Source</p>
 
-    <div class="deck" aria-hidden="true">
-      <div class="tile on">🎧</div><div class="tile">🌐</div><div class="tile on">🎵</div><div class="tile">⚙️</div>
-      <div class="tile">📁</div><div class="tile on">🔊</div><div class="tile">⌨️</div><div class="tile">💡</div>
-      <div class="tile">🖥️</div><div class="tile">📸</div><div class="tile on">🌡️</div><div class="tile">⏱️</div>
+    <!-- Escenario 3D interactivo con Three.js -->
+    <div class="stage-3d-wrap" id="stage-wrap" title="Haz clic en los botones para interactuar">
+      <canvas id="deck-3d-canvas"></canvas>
+      <div class="stage-overlay">
+        <div class="stage-tip" data-es>🖱️ Haz clic en los botones o arrastra para rotar</div>
+        <div class="stage-tip" data-en>🖱️ Click the 3D buttons or drag to tilt</div>
+        <div class="stage-hud" id="stage-hud">
+          <span id="hud-icon">🎧</span>
+          <span id="hud-text">HD 660S</span>
+        </div>
+        <button type="button" class="stage-audio-toggle" id="audio-toggle" title="Alternar sonido de clic">🔊 Clic: ON</button>
+      </div>
     </div>
 
+    <!-- Rejilla de respaldo 2D (si WebGL está deshabilitado) -->
+    <div class="deck-fallback" id="deck-fallback">
+      <div class="tile" data-hud="🎧 HD 660S Activo">🎧</div>
+      <div class="tile" data-hud="⏱️ 14:32:00">⏱️</div>
+      <div class="tile" data-hud="🎵 Retro Wave">🎵</div>
+      <div class="tile" data-hud="🌡️ CPU 46°C">🌡️</div>
+      <div class="tile" data-hud="💡 RGB Ámbar">💡</div>
+      <div class="tile" data-hud="🌐 Navegador">🌐</div>
+      <div class="tile" data-hud="⌨️ Macro Teclado">⌨️</div>
+      <div class="tile" data-hud="📁 Carpeta Proyectos">📁</div>
+      <div class="tile" data-hud="🔊 Volumen 75%">🔊</div>
+      <div class="tile" data-hud="📸 Captura lista">📸</div>
+      <div class="tile" data-hud="🪟 Acoplar Ventana">🪟</div>
+      <div class="tile" data-hud="⚙️ Ajustes">⚙️</div>
+    </div>
+
+    <!-- Botones de Descarga y Tienda -->
     <div class="acciones">
-      <a class="btn principal" id="descargar" href="https://github.com/AndyVillatoro/virtualdeck/releases/latest">
-        <span data-es>Descargar para Windows</span><span data-en>Download for Windows</span>
+      <!-- Badge Oficial Microsoft Store -->
+      <a class="btn-store" href="https://apps.microsoft.com/detail/9NW90D6S37Z5" target="_blank" rel="noopener">
+        <svg class="store-icon" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="2" width="9.5" height="9.5" fill="#f25022"/>
+          <rect x="12.5" y="2" width="9.5" height="9.5" fill="#7fba00"/>
+          <rect x="2" y="12.5" width="9.5" height="9.5" fill="#00a4ef"/>
+          <rect x="12.5" y="12.5" width="9.5" height="9.5" fill="#ffb900"/>
+        </svg>
+        <div class="store-text">
+          <span class="store-sub" data-es>Obtener de</span><span class="store-sub" data-en>Get it from</span>
+          <span class="store-main">Microsoft Store</span>
+        </div>
       </a>
-      <a class="btn" href="https://github.com/AndyVillatoro/virtualdeck">
-        <span data-es>Código fuente</span><span data-en>Source code</span>
-      </a>
-    </div>
-    <p class="meta" id="detalle">Windows 10 / 11 · x64</p>
 
-    <div class="aviso">
-      <p style="margin:0" data-es><strong>El instalador no está firmado todavía.</strong> Windows mostrará un aviso de SmartScreen al abrirlo: pulse <em>Más información</em> y luego <em>Ejecutar de todas formas</em>. El certificado de firma está en camino.</p>
-      <p style="margin:0" data-en><strong>The installer is not signed yet.</strong> Windows will show a SmartScreen warning: click <em>More info</em>, then <em>Run anyway</em>. A signing certificate is on the way.</p>
+      <!-- Instalador Directo de GitHub -->
+      <a class="btn principal" id="descargar" href="https://github.com/AndyVillatoro/virtualdeck/releases/latest">
+        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+        <span data-es>Descargar instalador (.exe)</span>
+        <span data-en>Download installer (.exe)</span>
+      </a>
+
+      <!-- Código Fuente en GitHub -->
+      <a class="btn" href="https://github.com/AndyVillatoro/virtualdeck" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span>GitHub</span>
+      </a>
     </div>
+
+    <p class="meta-detail" id="detalle">Windows 10 / 11 · x64 · 100% Local</p>
   </div>
 </header>
 
+<!-- Galería interactiva de capturas de pantalla -->
 <section>
   <div class="env">
-    <h2 data-es>Qué hace</h2><h2 data-en>What it does</h2>
-    <div class="cuadros">
-      <div class="cuadro">
-        <h3 data-es>37 tipos de acción</h3><h3 data-en>37 action types</h3>
-        <p data-es>Abrir programas, webs y carpetas, cambiar el dispositivo de audio, controlar la reproducción, ejecutar scripts, enviar webhooks, leer texto en voz alta, mover ventanas y más.</p>
-        <p data-en>Open programs, websites and folders, switch the audio device, control playback, run scripts, send webhooks, read text aloud, snap windows and more.</p>
+    <div class="sec-header">
+      <h2 class="sec-title" data-es>Interfaz y Funciones</h2>
+      <h2 class="sec-title" data-en>Interface & Capabilities</h2>
+      <p class="sec-sub" data-es>Diseñado para responder al instante en cualquier monitor</p>
+      <p class="sec-sub" data-en>Engineered for instantaneous control across any display</p>
+    </div>
+
+    <div class="gallery-box">
+      <div class="gallery-tabs">
+        <button type="button" class="gallery-tab active" data-img="prensa/01-deck.png" data-desc-es="<strong>Pantalla principal:</strong> Panel de música integrado, cuadrícula de 4×4 con colores e iconos por botón, y barra lateral con reloj, clima y sensores en vivo." data-desc-en="<strong>Main Deck View:</strong> Integrated media player panel, 4×4 button grid with custom colors and icons, and sidebar with clock, weather and live telemetry.">01 · Deck Principal</button>
+        <button type="button" class="gallery-tab" data-img="prensa/02-editor.png" data-desc-es="<strong>Editor visual paso a paso:</strong> Configura 37 tipos de acción, graba macros de teclado y ratón, o elige entre decenas de presets listos." data-desc-en="<strong>Step-by-step Visual Editor:</strong> Configure 37 action types, record keyboard and mouse macros, or choose from dozens of pre-built presets.">02 · Editor de Acciones</button>
+        <button type="button" class="gallery-tab" data-img="prensa/03-kiosko.png" data-desc-es="<strong>Modo Kiosko:</strong> Interfaz limpia sin bordes para tabletas dedicadas o monitores secundarios con protección por PIN." data-desc-en="<strong>Kiosk Mode:</strong> Clean borderless interface for dedicated tablets or secondary screens with optional PIN exit lock.">03 · Modo Kiosko</button>
+        <button type="button" class="gallery-tab" data-img="prensa/04-barra-lateral.png" data-desc-es="<strong>Widgets en vivo:</strong> Sensores de hardware (CPU, GPU, RAM), tipo de cambio de divisas y hora en tipografía dot-matrix." data-desc-en="<strong>Live Widgets:</strong> Hardware sensors (CPU, GPU, RAM), currency exchange rates and real-time dot-matrix clock.">04 · Sensores & Widgets</button>
+        <button type="button" class="gallery-tab" data-img="prensa/05-rgb.png" data-desc-es="<strong>Iluminación OpenRGB:</strong> Control de zonas LED, modos y 18 presets dinámicos para placas base, memorias y periféricos." data-desc-en="<strong>OpenRGB Lighting:</strong> Full LED zone control, color palettes and 18 dynamic presets for motherboards, RAM and peripherals.">05 · Luces RGB</button>
+        <button type="button" class="gallery-tab" data-img="prensa/06-galeria.png" data-desc-es="<strong>Galería comunitaria:</strong> Descarga perfiles listos para usar con auditoría previa de scripts y atajos antes de importar." data-desc-en="<strong>Community Gallery:</strong> Download ready-to-use profiles with full advance auditing of scripts and shortcuts before importing.">06 · Galería de Perfiles</button>
       </div>
-      <div class="cuadro">
-        <h3 data-es>Datos en vivo</h3><h3 data-en>Live data</h3>
-        <p data-es>Un botón puede mostrar el reloj, el clima, la música que suena, un sensor del equipo, una variable propia o una conversión de divisas — y seguir siendo un botón.</p>
-        <p data-en>A button can show the clock, the weather, what is playing, a hardware sensor, your own variable or a currency conversion — and still be a button.</p>
+      <div class="gallery-view">
+        <img src="prensa/01-deck.png" alt="VirtualDeck" class="gallery-img" id="gallery-current-img">
       </div>
-      <div class="cuadro">
-        <h3 data-es>Macros y atajos</h3><h3 data-en>Macros and shortcuts</h3>
-        <p data-es>Grabe secuencias de teclas y clics, o envíe combinaciones sueltas. Cualquier botón puede llevar un atajo global del sistema.</p>
-        <p data-en>Record sequences of keys and clicks, or send single combinations. Any button can carry a system-wide hotkey.</p>
-      </div>
-      <div class="cuadro">
-        <h3 data-es>Pantalla completa y barra flotante</h3><h3 data-en>Fullscreen and floating bar</h3>
-        <p data-es>Úselo como panel dedicado en una tableta o un segundo monitor, con modo kiosko protegido por PIN. O deje una columna de botones flotando sobre el escritorio.</p>
-        <p data-en>Use it as a dedicated panel on a tablet or second monitor, with a PIN-locked kiosk mode. Or leave a column of tiles floating above the desktop.</p>
-      </div>
-      <div class="cuadro">
-        <h3 data-es>Sensores y RGB</h3><h3 data-en>Sensors and RGB</h3>
-        <p data-es>Lee temperaturas y cargas a través de LibreHardwareMonitor, que se instala aparte y es gratuito, y controla la iluminación con OpenRGB: colores, modos, perfiles y 18 presets.</p>
-        <p data-en>Read temperatures and loads through LibreHardwareMonitor, a free separate install. Drive your lighting with OpenRGB: colours, modes, profiles and 18 presets.</p>
-      </div>
-      <div class="cuadro">
-        <h3 data-es>Se dispara solo</h3><h3 data-en>Fires on its own</h3>
-        <p data-es>Un botón puede ejecutarse a una hora, cuando un sensor cruza un umbral, desde el menú de la bandeja o con un atajo global, sin necesidad de tener la ventana delante.</p>
-        <p data-en>A button can run at a given time, when a sensor crosses a threshold, from the tray menu or via a global hotkey — with the window nowhere in sight.</p>
-      </div>
-      <div class="cuadro">
-        <h3 data-es>Modo kiosko</h3><h3 data-en>Kiosk mode</h3>
-        <p data-es>A pantalla completa, sin barra y con un PIN para salir. Pensado para una tableta vieja colgada en la pared, donde lo último que quiere es que alguien salga de la aplicación.</p>
-        <p data-en>Full screen, no title bar, and a PIN to leave. Meant for an old tablet on the wall, where the last thing you want is someone dropping out of the app.</p>
-      </div>
-      <div class="cuadro">
-        <h3 data-es>Mandar desde otro sitio</h3><h3 data-en>Drive it from elsewhere</h3>
-        <p data-es>El teléfono abre una página que sirve el propio deck y se empareja con un código de seis cifras que caduca. Y un deck puede pulsar botones de otro por la red local: el portátil manda sobre el de sobremesa.</p>
-        <p data-en>Your phone opens a page the deck itself serves, paired with a six-digit code that expires. And one deck can press another's buttons over the local network: the laptop drives the desktop.</p>
-      </div>
-      <div class="cuadro">
-        <h3 data-es>Galería de perfiles</h3><h3 data-en>Profile gallery</h3>
-        <p data-es>Decks enteros hechos por otras personas. Antes de importar se le enseña todo lo que ese perfil ejecutará y tecleará en su equipo — sin recortar: si trae treinta scripts, ve los treinta.</p>
-        <p data-en>Whole decks made by other people. Before importing you are shown everything that profile will run and type on your machine — nothing trimmed: thirty scripts means you see all thirty.</p>
+      <div class="gallery-footer" id="gallery-caption">
+        <strong>Pantalla principal:</strong> Panel de música integrado, cuadrícula de 4×4 con colores e iconos por botón, y barra lateral con reloj, clima y sensores en vivo.
       </div>
     </div>
   </div>
 </section>
 
+<!-- 37 tipos de acción y pilares -->
 <section>
   <div class="env">
-    <h2 data-es>Requisitos</h2><h2 data-en>Requirements</h2>
+    <div class="sec-header">
+      <h2 class="sec-title" data-es>Qué Puedes Hacer</h2>
+      <h2 class="sec-title" data-en>What You Can Do</h2>
+      <p class="sec-sub" data-es>Potencia sin dependencias ni suscripciones</p>
+      <p class="sec-sub" data-en>Full power without subscriptions or external dependencies</p>
+    </div>
+
+    <div class="cuadros">
+      <div class="cuadro">
+        <div class="cuadro-icon">⚡</div>
+        <h3 data-es>37 tipos de acción</h3>
+        <h3 data-en>37 action types</h3>
+        <p data-es>Abre programas, carpetas y páginas web. Conmuta salidas de audio en un clic, dispara atajos globales, scripts de PowerShell y webhooks REST.</p>
+        <p data-en>Launch apps, folders and websites. Switch audio outputs in one click, trigger global hotkeys, PowerShell scripts and REST webhooks.</p>
+      </div>
+
+      <div class="cuadro">
+        <div class="cuadro-icon">📊</div>
+        <h3 data-es>Sensores de hardware</h3>
+        <h3 data-en>Live Hardware Telemetry</h3>
+        <p data-es>Monitorea en tiempo real temperaturas de CPU/GPU, carga y memoria con LibreHardwareMonitor sin software propietario invasivo.</p>
+        <p data-en>Monitor CPU/GPU temperatures, workloads and RAM in real time through LibreHardwareMonitor with zero bloated proprietary software.</p>
+      </div>
+
+      <div class="cuadro">
+        <div class="cuadro-icon">💡</div>
+        <h3 data-es>Control OpenRGB</h3>
+        <h3 data-en>OpenRGB Lighting</h3>
+        <p data-es>Sincroniza tus periféricos y placas base con 18 presets preconfigurados o selector de color manual sin consumir CPU.</p>
+        <p data-en>Sync your peripherals and motherboards with 18 fine-tuned presets or custom color pickers without consuming CPU cycles.</p>
+      </div>
+
+      <div class="cuadro">
+        <div class="cuadro-icon">📱</div>
+        <h3 data-es>Mando móvil y LAN</h3>
+        <h3 data-en>Mobile Web & LAN Remote</h3>
+        <p data-es>Controla tu PC desde el navegador de tu teléfono o tableta mediante el servidor local integrado con emparejamiento por código seguro.</p>
+        <p data-en>Control your PC from your smartphone or tablet browser via the built-in local server with secure one-time pairing codes.</p>
+      </div>
+
+      <div class="cuadro">
+        <div class="cuadro-icon">📌</div>
+        <h3 data-es>Barra Flotante de escritorio</h3>
+        <h3 data-en>Desktop Floating Bar</h3>
+        <p data-es>Mantén tus controles y macros más usados siempre a la mano en una tira esbelta y translúcida sobre tus juegos o programas de diseño.</p>
+        <p data-en>Keep your favorite controls and macros always within reach in a slim, translucent strip hovering over your games or design tools.</p>
+      </div>
+
+      <div class="cuadro">
+        <div class="cuadro-icon">🔒</div>
+        <h3 data-es>100% Local y Privado</h3>
+        <h3 data-en>100% Local & Private</h3>
+        <p data-es>Toda tu configuración reside en un archivo JSON en tu ordenador. Sin telemetría, sin rastreadores y sin requerir cuentas de usuario.</p>
+        <p data-en>All configurations reside strictly in a local JSON file on your machine. No telemetry, no tracking, and zero user account requirements.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Requisitos del sistema -->
+<section>
+  <div class="env">
+    <div class="sec-header">
+      <h2 class="sec-title" data-es>Especificaciones</h2>
+      <h2 class="sec-title" data-en>Specifications</h2>
+      <p class="sec-sub" data-es>Requisitos técnicos del sistema</p>
+      <p class="sec-sub" data-en>System requirements</p>
+    </div>
+
     <table>
-      <tr><td>Windows</td><td data-es>10 o 11, 64 bits</td><td data-en>10 or 11, 64-bit</td></tr>
-      <tr><td data-es>Espacio</td><td data-en>Disk</td><td data-es>Unos 300 MB instalado</td><td data-en>About 300 MB installed</td></tr>
-      <tr><td data-es>Cuenta</td><td data-en>Account</td><td data-es>Ninguna. No hay nube: la configuración reside en un archivo del equipo.</td><td data-en>None. There is no cloud: your setup lives in a file on your machine.</td></tr>
-      <tr><td>OpenRGB</td><td data-es>Opcional, solo para la iluminación RGB</td><td data-en>Optional, only for RGB lighting</td></tr>
+      <tr>
+        <td data-es>Sistema Operativo</td><td data-en>Operating System</td>
+        <td data-es>Windows 10 o Windows 11 (64 bits, x64)</td>
+        <td data-en>Windows 10 or Windows 11 (64-bit, x64)</td>
+      </tr>
+      <tr>
+        <td data-es>Espacio en disco</td><td data-en>Storage</td>
+        <td data-es>Aprox. 250 MB (núcleo en Rust de alta eficiencia)</td>
+        <td data-en>Approx. 250 MB (high-efficiency Rust native core)</td>
+      </tr>
+      <tr>
+        <td data-es>Hardware adicional</td><td data-en>Additional Hardware</td>
+        <td data-es>Ninguno obligatorio. Compatible con cualquier pantalla táctil, tableta o ratón.</td>
+        <td data-en>None required. Fully compatible with any touchscreen, tablet or standard mouse.</td>
+      </tr>
+      <tr>
+        <td data-es>Telemetría</td><td data-en>Telemetry</td>
+        <td data-es>0%. No se recopila ni se transmite ningún dato a servidores externos.</td>
+        <td data-en>0%. Absolutely no telemetry or user data is collected or sent to external servers.</td>
+      </tr>
+      <tr>
+        <td data-es>Distribución</td><td data-en>Distribution</td>
+        <td data-es>Microsoft Store (MSIX con firma de Microsoft) o instalador autónomo NSIS (.exe) en GitHub.</td>
+        <td data-en>Microsoft Store (MSIX signed by Microsoft) or standalone NSIS installer (.exe) on GitHub.</td>
+      </tr>
     </table>
   </div>
 </section>
 
+<!-- Pie de página -->
 <footer>
-  <div class="env" style="display:flex; gap:18px; flex-wrap:wrap; width:100%; justify-content:space-between; padding:0 24px;">
-    <span>VirtualDeck</span>
-    <span>
-      <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" data-es>Documentación</a>
-      <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" data-en>Documentation</a>
-      ·
-      <a href="https://github.com/AndyVillatoro/virtualdeck/issues" data-es>Reportar un fallo</a>
-      <a href="https://github.com/AndyVillatoro/virtualdeck/issues" data-en>Report a bug</a>
-      ·
-      <a href="https://github.com/AndyVillatoro/virtualdeck/blob/main/CHANGELOG.md">Changelog</a>
-      ·
-      <a href="privacidad.html" data-es>Privacidad</a>
-      <a href="privacidad.html" data-en>Privacy</a>
-      ·
-      <a href="https://ko-fi.com/cubecode" data-es>Invitar un café</a>
-      <a href="https://ko-fi.com/cubecode" data-en>Buy me a coffee</a>
-      ·
-      <a href="https://paypal.me/cubecode">PayPal</a>
-    </span>
+  <div class="env">
+    <div class="footer-inner">
+      <span>VirtualDeck · Andy Villatoro</span>
+      <div class="footer-links">
+        <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-es>Documentación</a>
+        <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-en>Documentation</a>
+        <span>·</span>
+        <a href="https://github.com/AndyVillatoro/virtualdeck/issues" target="_blank" rel="noopener" data-es>Reportar un fallo</a>
+        <a href="https://github.com/AndyVillatoro/virtualdeck/issues" target="_blank" rel="noopener" data-en>Report an issue</a>
+        <span>·</span>
+        <a href="https://github.com/AndyVillatoro/virtualdeck/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+        <span>·</span>
+        <a href="privacidad.html" data-es>Privacidad</a>
+        <a href="privacidad.html" data-en>Privacy</a>
+        <span>·</span>
+        <a href="https://ko-fi.com/cubecode" target="_blank" rel="noopener">Ko-fi</a>
+        <span>·</span>
+        <a href="https://paypal.me/cubecode" target="_blank" rel="noopener">PayPal</a>
+      </div>
+    </div>
   </div>
 </footer>
 
+<!-- Selector de idioma y actualización dinámica de versión -->
 <script>
-// Idioma: se recuerda la elección y, la primera vez, se detecta la del navegador.
 (function () {
-  // `localStorage` puede lanzar —navegación privada estricta, un origen
-  // opaco— y sin este envoltorio la excepción se lleva por delante el resto
-  // del script: el selector de idioma se quedaba muerto, no a medias.
   function recordado() { try { return localStorage.getItem('vd-lang'); } catch (e) { return null; } }
-  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch (e) { /* sin memoria, sigue funcionando */ } }
+  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch (e) { } }
 
   const delNavegador = (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
   aplicar(recordado() || delNavegador);
-  document.querySelectorAll('.idioma button').forEach(function (b) {
-    b.addEventListener('click', function () { aplicar(b.dataset.lang); recordar(b.dataset.lang); });
+
+  document.querySelectorAll('.idioma-bar button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      aplicar(b.dataset.lang);
+      recordar(b.dataset.lang);
+    });
   });
+
   function aplicar(l) {
     document.documentElement.lang = l;
-    document.querySelectorAll('.idioma button').forEach(function (b) {
+    document.querySelectorAll('.idioma-bar button').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.lang === l));
     });
+    // Actualizar caption de la galería al idioma seleccionado
+    const activeTab = document.querySelector('.gallery-tab.active');
+    if (activeTab) {
+      const desc = l === 'es' ? activeTab.dataset.descEs : activeTab.dataset.descEn;
+      if (desc) document.getElementById('gallery-caption').innerHTML = desc;
+    }
   }
-})();
 
-// El enlace apunta a la release más reciente aunque esta página no se toque.
-// Si la consulta falla —sin red, límite de la API— el enlace de arriba ya
-// funciona por sí solo: /releases/latest siempre lleva a la última.
-fetch('https://api.github.com/repos/AndyVillatoro/virtualdeck/releases/latest')
-  .then(function (r) { return r.ok ? r.json() : null; })
-  .then(function (d) {
-    if (!d) return;
-    const exe = (d.assets || []).find(function (a) { return a.name.endsWith('.exe'); });
-    if (exe) document.getElementById('descargar').href = exe.browser_download_url;
-    const mb = exe ? Math.round(exe.size / 1048576) : null;
-    document.getElementById('detalle').textContent =
-      'Windows 10 / 11 · x64 · ' + d.tag_name + (mb ? ' · ' + mb + ' MB' : '');
-  })
-  .catch(function () { /* el enlace de respaldo ya sirve */ });
+  // Pestañas de la galería
+  document.querySelectorAll('.gallery-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.gallery-tab').forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      const img = document.getElementById('gallery-current-img');
+      img.src = tab.dataset.img;
+      const l = document.documentElement.lang || 'es';
+      const desc = l === 'es' ? tab.dataset.descEs : tab.dataset.descEn;
+      document.getElementById('gallery-caption').innerHTML = desc;
+    });
+  });
+
+  // Enlace a la versión más reciente en GitHub
+  fetch('https://api.github.com/repos/AndyVillatoro/virtualdeck/releases/latest')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      const exe = (d.assets || []).find(function (a) { return a.name.endsWith('.exe'); });
+      if (exe) document.getElementById('descargar').href = exe.browser_download_url;
+      const mb = exe ? Math.round(exe.size / 1048576) : null;
+      document.getElementById('detalle').textContent =
+        'Windows 10 / 11 · x64 · ' + d.tag_name + (mb ? ' · ' + mb + ' MB' : '');
+    })
+    .catch(function () {});
+})();
 </script>
+
+<!-- Three.js 3D Stream Deck Interactivo con física de botones y pantallas OLED -->
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+(function init3DDeck() {
+  const container = document.getElementById('stage-wrap');
+  const canvas = document.getElementById('deck-3d-canvas');
+  const fallback = document.getElementById('deck-fallback');
+  const hud = document.getElementById('stage-hud');
+  const hudIcon = document.getElementById('hud-icon');
+  const hudText = document.getElementById('hud-text');
+  const audioBtn = document.getElementById('audio-toggle');
+
+  if (!canvas || !container) return;
+
+  // Detección de soporte WebGL
+  function isWebGLAvailable() {
+    try {
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      return !!gl;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  if (!isWebGLAvailable()) {
+    container.style.display = 'none';
+    fallback.classList.add('show');
+    return;
+  }
+
+  // Sintetizador de audio táctil (Web Audio API)
+  let audioContext = null;
+  let audioEnabled = true;
+
+  function playClickSound() {
+    if (!audioEnabled) return;
+    try {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      const now = audioContext.currentTime;
+      // Impulso de clic mecánico: transitorio corto
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1400, now);
+      filter.Q.setValueAtTime(3.5, now);
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.025);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.03);
+    } catch (e) {}
+  }
+
+  audioBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    audioEnabled = !audioEnabled;
+    audioBtn.textContent = audioEnabled ? '🔊 Clic: ON' : '🔈 Clic: OFF';
+    audioBtn.style.color = audioEnabled ? 'var(--text)' : 'var(--muted)';
+  });
+
+  // Configuración de escena, cámara y renderizador
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0b0e);
+
+  const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(0, 4.2, 5.8);
+  camera.lookAt(0, -0.2, 0);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  // Iluminación
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xddeeff, 1.8);
+  dirLight.position.set(4, 9, 7);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 1024;
+  dirLight.shadow.mapSize.height = 1024;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 25;
+  dirLight.shadow.bias = -0.0005;
+  scene.add(dirLight);
+
+  const rimLight = new THREE.DirectionalLight(0x4a8ef0, 1.2);
+  rimLight.position.set(-6, -2, -4);
+  scene.add(rimLight);
+
+  const deckGroup = new THREE.Group();
+  deckGroup.rotation.x = -0.32; // Inclinación ergonómica ~18° hacia el usuario
+  scene.add(deckGroup);
+
+  // 1. Chasis del deck (geometría paramétrica)
+  const chassisWidth = 5.2;
+  const chassisHeight = 0.6;
+  const chassisDepth = 3.9;
+
+  const chassisGeo = new THREE.BoxGeometry(chassisWidth, chassisHeight, chassisDepth);
+  const chassisMat = new THREE.MeshStandardMaterial({
+    color: 0x14161a,
+    metalness: 0.5,
+    roughness: 0.35
+  });
+  const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+  chassis.position.y = -chassisHeight / 2;
+  chassis.castShadow = true;
+  chassis.receiveShadow = true;
+  deckGroup.add(chassis);
+
+  // Borde biselado superior con acento
+  const bezelGeo = new THREE.BoxGeometry(chassisWidth + 0.04, 0.08, chassisDepth + 0.04);
+  const bezelMat = new THREE.MeshStandardMaterial({
+    color: 0x22262e,
+    metalness: 0.8,
+    roughness: 0.2
+  });
+  const bezel = new THREE.Mesh(bezelGeo, bezelMat);
+  bezel.position.y = 0.02;
+  deckGroup.add(bezel);
+
+  // Cuña / soporte de escritorio posterior
+  const standGeo = new THREE.BoxGeometry(chassisWidth * 0.85, 0.8, 1.6);
+  const standMat = new THREE.MeshStandardMaterial({ color: 0x0d0e11, roughness: 0.6 });
+  const stand = new THREE.Mesh(standGeo, standMat);
+  stand.position.set(0, -0.6, -0.9);
+  deckGroup.add(stand);
+
+  // Sombra de contacto en el suelo
+  const shadowGeo = new THREE.PlaneGeometry(8, 6);
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.45
+  });
+  const shadowPlane = new THREE.Mesh(shadowGeo, shadowMat);
+  shadowPlane.rotation.x = -Math.PI / 2;
+  shadowPlane.position.y = -1.2;
+  scene.add(shadowPlane);
+
+  // 2. Definición de los 12 botones OLED dinámicos (3 filas x 4 columnas)
+  const buttonConfigs = [
+    { id: 'audio', icon: '🎧', title: 'HD 660S', sub: 'ACTIVO', color: '#4a8ef0', type: 'audio' },
+    { id: 'clock', icon: '⏱️', title: 'RELOJ', sub: '12:00:00', color: '#10b981', type: 'clock' },
+    { id: 'music', icon: '🎵', title: 'WAVE', sub: 'PLAYING', color: '#ec4899', type: 'music' },
+    { id: 'sensors', icon: '🌡️', title: 'CPU 48°', sub: 'GPU 54°', color: '#f59e0b', type: 'sensor' },
+
+    { id: 'rgb', icon: '💡', title: 'RGB', sub: 'AMBER', color: '#f59e0b', type: 'rgb' },
+    { id: 'browser', icon: '🌐', title: 'WEB', sub: 'BROWSER', color: '#3b82f6', type: 'static' },
+    { id: 'macro', icon: '⌨️', title: 'MACRO', sub: 'CTRL+V', color: '#8b5cf6', type: 'static' },
+    { id: 'folder', icon: '📁', title: 'CARPETA', sub: 'DECK', color: '#06b6d4', type: 'static' },
+
+    { id: 'vol', icon: '🔊', title: 'VOL', sub: '75%', color: '#10b981', type: 'vol' },
+    { id: 'shot', icon: '📸', title: 'CAPTURA', sub: 'DISPARAR', color: '#ef4444', type: 'shot' },
+    { id: 'snap', icon: '🪟', title: 'VENTANAS', sub: 'ACOPLAR', color: '#6366f1', type: 'static' },
+    { id: 'settings', icon: '⚙️', title: 'AJUSTES', sub: 'PERFILES', color: '#94a3b8', type: 'static' },
+  ];
+
+  const buttons = [];
+  const interactiveMeshes = [];
+
+  const rows = 3;
+  const cols = 4;
+  const btnSize = 0.88;
+  const btnHeight = 0.35;
+  const spacingX = 1.14;
+  const spacingZ = 1.02;
+  const startX = -((cols - 1) * spacingX) / 2;
+  const startZ = -((rows - 1) * spacingZ) / 2;
+
+  // Generador de Canvas 2D para cada textura OLED
+  function createButtonTexture(cfg, idx) {
+    const c = document.createElement('canvas');
+    c.width = 128;
+    c.height = 128;
+    const ctx = c.getContext('2d');
+    const tex = new THREE.CanvasTexture(c);
+    tex.generateMipmaps = true;
+    tex.minFilter = THREE.LinearMipmapLinearFilter;
+    return { canvas: c, ctx, texture: tex, cfg, flash: 0, state: 0 };
+  }
+
+  let buttonIndex = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cfg = buttonConfigs[buttonIndex];
+      const texData = createButtonTexture(cfg, buttonIndex);
+
+      // Material de botón con pantalla OLED en la cara superior (índice 2 en BoxGeometry: +Y)
+      const capMatSides = new THREE.MeshStandardMaterial({
+        color: 0x1b1d22,
+        roughness: 0.4,
+        metalness: 0.3
+      });
+      const oledMat = new THREE.MeshStandardMaterial({
+        map: texData.texture,
+        roughness: 0.15,
+        metalness: 0.1,
+        emissive: new THREE.Color(0x000000),
+        emissiveMap: texData.texture,
+        emissiveIntensity: 0.45
+      });
+
+      const materials = [
+        capMatSides, capMatSides, // +X, -X
+        oledMat, capMatSides,     // +Y (pantalla), -Y
+        capMatSides, capMatSides  // +Z, -Z
+      ];
+
+      const btnGeo = new THREE.BoxGeometry(btnSize, btnHeight, btnSize);
+      const mesh = new THREE.Mesh(btnGeo, materials);
+      mesh.position.set(startX + c * spacingX, btnHeight / 2 + 0.05, startZ + r * spacingZ);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      // Almacenar metadatos para la física y la pulsación
+      mesh.userData = {
+        texData,
+        baseY: mesh.position.y,
+        currentY: mesh.position.y,
+        targetY: mesh.position.y,
+        velocity: 0,
+        cfg
+      };
+
+      deckGroup.add(mesh);
+      buttons.push(mesh);
+      interactiveMeshes.push(mesh);
+      buttonIndex++;
+    }
+  }
+
+  // Dibujar texturas dinámicas de los botones estilo Dot-Matrix
+  let waveTick = 0;
+  function updateTextures() {
+    waveTick += 0.08;
+    const now = new Date();
+    const timeStr = [
+      String(now.getHours()).padStart(2, '0'),
+      String(now.getMinutes()).padStart(2, '0'),
+      String(now.getSeconds()).padStart(2, '0')
+    ].join(':');
+
+    buttons.forEach((btn) => {
+      const { ctx, cfg, texture, flash } = btn.userData.texData;
+      const w = 128;
+      const h = 128;
+
+      // Fondo OLED negro profundo
+      ctx.fillStyle = '#060709';
+      ctx.fillRect(0, 0, w, h);
+
+      // Rejilla de píxeles micro dot-matrix sutil
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let x = 6; x < w - 6; x += 6) {
+        for (let y = 6; y < h - 6; y += 6) {
+          ctx.fillRect(x, y, 2, 2);
+        }
+      }
+
+      // Renderizado según el tipo de botón
+      if (cfg.type === 'clock') {
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 22px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(timeStr.slice(0, 5), w / 2, 58);
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#059669';
+        ctx.fillText(timeStr.slice(6) + ' SEC', w / 2, 80);
+        ctx.font = '10px "Inter", sans-serif';
+        ctx.fillStyle = '#9ca3af';
+        ctx.fillText('HORA LOCAL', w / 2, 104);
+      } else if (cfg.type === 'music') {
+        // Barras ecualizadoras en puntos
+        ctx.fillStyle = cfg.color;
+        const bars = 5;
+        const barWidth = 12;
+        const startX = (w - (bars * 18 - 6)) / 2;
+        for (let i = 0; i < bars; i++) {
+          const barHeight = Math.sin(waveTick + i * 1.2) * 20 + 26;
+          for (let dotY = 70; dotY >= 70 - barHeight; dotY -= 6) {
+            ctx.fillRect(startX + i * 18, dotY, 10, 4);
+          }
+        }
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('RETRO WAVE', w / 2, 94);
+        ctx.fillStyle = '#ec4899';
+        ctx.fillText('▶ EN REPRODUCCIÓN', w / 2, 110);
+      } else if (cfg.type === 'sensor') {
+        const cpuTemp = Math.round(46 + Math.sin(waveTick * 0.3) * 3);
+        const gpuTemp = Math.round(52 + Math.cos(waveTick * 0.25) * 4);
+        ctx.font = 'bold 14px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillText('CPU ' + cpuTemp + '°C', w / 2, 48);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText('GPU ' + gpuTemp + '°C', w / 2, 74);
+        ctx.font = '10px "Inter", sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.fillText('TELEMETRÍA', w / 2, 104);
+      } else if (cfg.type === 'vol') {
+        // Arco de puntos radial para volumen
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(w / 2, 54, 26, 0.8 * Math.PI, 2.2 * Math.PI);
+        ctx.stroke();
+        ctx.font = 'bold 16px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('75%', w / 2, 59);
+        ctx.font = '10px "Inter", sans-serif';
+        ctx.fillStyle = '#9ca3af';
+        ctx.fillText('VOLUMEN', w / 2, 102);
+      } else {
+        // Botón con icono, título y estado
+        ctx.font = '28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(cfg.icon, w / 2, 50);
+
+        ctx.font = 'bold 12px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(cfg.title, w / 2, 82);
+
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = cfg.color;
+        ctx.fillText(cfg.sub, w / 2, 104);
+      }
+
+      // Flash y onda de pulso al presionar
+      if (btn.userData.texData.flash > 0) {
+        ctx.fillStyle = 'rgba(255,255,255,' + (btn.userData.texData.flash * 0.5) + ')';
+        ctx.fillRect(0, 0, w, h);
+        btn.userData.texData.flash -= 0.08;
+        if (btn.userData.texData.flash < 0) btn.userData.texData.flash = 0;
+      }
+
+      texture.needsUpdate = true;
+    });
+  }
+
+  // Raycasting e interactividad
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2(-100, -100);
+  let isDragging = false;
+  let prevMouseX = 0;
+  let prevMouseY = 0;
+  let targetRotX = -0.32;
+  let targetRotY = 0;
+
+  function onPointerMove(e) {
+    const rect = container.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    if (isDragging) {
+      const deltaX = clientX - prevMouseX;
+      const deltaY = clientY - prevMouseY;
+      targetRotY += deltaX * 0.005;
+      targetRotX += deltaY * 0.004;
+      targetRotX = Math.max(-0.6, Math.min(0.05, targetRotX));
+      targetRotY = Math.max(-0.6, Math.min(0.6, targetRotY));
+      prevMouseX = clientX;
+      prevMouseY = clientY;
+    } else {
+      // Parallax sutil con el movimiento del ratón
+      targetRotY = mouse.x * 0.18;
+      targetRotX = -0.32 - mouse.y * 0.12;
+    }
+
+    // Comprobar cursor encima de botones
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(interactiveMeshes);
+    container.style.cursor = intersects.length > 0 ? 'pointer' : (isDragging ? 'grabbing' : 'grab');
+  }
+
+  function onPointerDown(e) {
+    const rect = container.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+
+    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(interactiveMeshes);
+
+    if (intersects.length > 0) {
+      const btn = intersects[0].object;
+      // Desplazar físicamente hacia abajo
+      btn.userData.targetY = btn.userData.baseY - 0.14;
+      btn.userData.texData.flash = 1.0;
+      playClickSound();
+
+      // Feedback en el HUD interactivo
+      hudIcon.textContent = btn.userData.cfg.icon;
+      hudText.textContent = btn.userData.cfg.title + ' — ' + btn.userData.cfg.sub;
+      hud.classList.add('active');
+      clearTimeout(btn.userData.hudTimer);
+      btn.userData.hudTimer = setTimeout(() => { hud.classList.remove('active'); }, 1800);
+    } else {
+      isDragging = true;
+      prevMouseX = clientX;
+      prevMouseY = clientY;
+    }
+  }
+
+  function onPointerUp() {
+    isDragging = false;
+    buttons.forEach((btn) => {
+      btn.userData.targetY = btn.userData.baseY;
+    });
+  }
+
+  container.addEventListener('pointermove', onPointerMove, { passive: true });
+  container.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointerup', onPointerUp);
+
+  // Redimensionamiento
+  function onResize() {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+  }
+  window.addEventListener('resize', onResize);
+
+  // Optimización de batería con IntersectionObserver
+  let isVisible = true;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      isVisible = entry.isIntersecting;
+    });
+  }, { threshold: 0.1 });
+  observer.observe(container);
+
+  // Bucle de renderizado a 60 FPS con física de resorte
+  let lastTime = performance.now();
+  function animate(now) {
+    requestAnimationFrame(animate);
+    if (!isVisible) return;
+
+    // Física elástica Hooke de retorno en cada tecla
+    buttons.forEach((btn) => {
+      const spring = 0.35;
+      const damping = 0.65;
+      const force = (btn.userData.targetY - btn.position.y) * spring;
+      btn.userData.velocity = (btn.userData.velocity + force) * damping;
+      btn.position.y += btn.userData.velocity;
+    });
+
+    // Interpolación suave de rotación del chasis (lerp)
+    deckGroup.rotation.y += (targetRotY - deckGroup.rotation.y) * 0.08;
+    deckGroup.rotation.x += (targetRotX - deckGroup.rotation.x) * 0.08;
+
+    // Actualizar pantallas animadas cada ~30ms
+    if (now - lastTime > 30) {
+      updateTextures();
+      lastTime = now;
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  requestAnimationFrame(animate);
+})();
+</script>
+
 </body>
 </html>

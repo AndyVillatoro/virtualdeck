@@ -75,7 +75,7 @@ mouse.
 
 ## Local server (HTTP)
 
-For anything that already speaks HTTP — Home Assistant, a script on another
+For anything that already speaks HTTP — REST automations, a script on another
 machine, another panel — there is a built-in server. **It ships disabled**:
 turn it on in ⚙ → *LOCAL SERVER (HTTP)*, which also generates the token.
 

@@ -50,6 +50,7 @@ features = [
     "Storage_Streams",                    # caratula: IRandomAccessStream, DataReader
     "Foundation",                         # IAsyncOperation::get()
     "Foundation_Collections",             # IVectorView de sesiones
+    "Graphics_Display",                   # BrightnessOverride (Surface Pro 8 y paneles modernos)
     "Win32_UI_WindowsAndMessaging",       # EnumWindows — fallback por titulo
     "Win32_System_Threading",             # OpenProcess / QueryFullProcessImageNameW
     # --- macros ---

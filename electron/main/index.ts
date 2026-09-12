@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, net, protocol } from 'electron';
+import { app, BrowserWindow, globalShortcut, net, protocol, session } from 'electron';
 import { join } from 'path';
 import { loadConfig } from './configManager';
 import { createMainWindow } from './windowManager';
@@ -8,7 +8,7 @@ import { fijarArranqueAutomatico, migrarArranqueAutomatico } from './ipc/appIpc'
 import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
-import { abrirBarra } from './floatingBar';
+import { abrirBarra, SESION_BARRA } from './floatingBar';
 import { fijarIdioma } from './idioma';
 import { arrancarSondeo, pararSondeo } from './estadoSistema';
 import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
@@ -16,8 +16,10 @@ import * as remoto from './servidorLocal';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
-// which fixes black tiles and partial redraws on virtual monitors.
+// which fixes black tiles, artifacts, and partial redraws on secondary and virtual monitors.
 app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('no-sandbox');
 
 /**
  * La identidad con la que Windows atribuye las notificaciones.
@@ -156,12 +158,15 @@ function setupWindow() {
 }
 
 app.whenReady().then(() => {
-  // Serve userData files via vd:// — keeps imageData references small in config JSON
-  protocol.handle('vd', (request) => {
+  // Serve userData files via vd:// — keeps imageData references small in config JSON.
+  // Se registra tanto en la sesión por defecto como en la partición de la barra flotante.
+  const handleVd = (request: Request) => {
     const path = request.url.slice('vd://'.length);
     const filePath = join(app.getPath('userData'), decodeURIComponent(path));
     return net.fetch(`file:///${filePath.replace(/\\/g, '/')}`);
-  });
+  };
+  protocol.handle('vd', handleVd);
+  session.fromPartition(SESION_BARRA).protocol.handle('vd', handleVd);
 
   const win = setupWindow();
   setTimeout(() => autoCheckOnStartup(win), 8000);

@@ -4,6 +4,39 @@ Todos los cambios notables de VirtualDeck se documentan aquí.
 Sigue el formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Added
+
+- **Landing Page 3D con Three.js (Ítem 40)**:
+  Modelo 3D físico interactivo de VirtualDeck en la web (`docs/index.html`) con física
+  de pulsación de botones (resorte amortiguado), texturas dinámicas OLED dot-matrix
+  (reloj en vivo, ecualizador de audio senoidal, telemetría CPU/GPU y medidor de volumen),
+  iluminación PBR con sombras de contacto, audio de clic mecánico sintetizado con Web Audio API,
+  badge oficial de Microsoft Store, galería de capturas de prensa a 1080p y optimización
+  de renderizado con `IntersectionObserver` y fallback 2D.
+- **Soporte de Firewall de Windows en un clic para el servidor local (Ítem 38)**:
+  Comprobación en tiempo real del estado de apertura del puerto en el Firewall de
+  Windows y botón para autorizar la regla `VirtualDeck - Servidor Local` con
+  elevación UAC (`Start-Process -Verb RunAs`).
+- **Priorización inteligente de interfaces de red**: Se clasifican y ordenan las
+  direcciones IPv4 locales priorizando interfaces físicas Ethernet/Wi-Fi estándar
+  (RFC1918) sobre túneles VPN o interfaces virtuales (ej. Tailscale, WSL, vEthernet).
+- **Validación flexible de Host con mDNS y hostname**: Se permite el acceso mediante
+  nombre de equipo y nombres locales de multidifusión (ej. `http://<equipo>.local:8787`).
+- **Botón de copiado directo y enlace mDNS** en los ajustes del mando móvil.
+- **Control de brillo moderno y Surface Pro 8 (Ítem 39)**:
+  Soporte para pantallas y portátiles modernos sin interfaz WMI clásica mediante
+  la API WinRT `Windows.Graphics.Display.BrightnessOverride` (tanto en Rust nativo
+  con `windows-rs` como en el fallback de TypeScript/PowerShell).
+- **Resiliencia en DDC/CI y pantallas con lectura bloqueada**:
+  Reintento con retardo en el bus I2C para escritura DDC/CI y seguimiento resiliente
+  del último brillo conocido (`ultimoBrilloConocido`) con base predeterminada al 50%,
+  permitiendo que los botones relativos (`+10%` / `-10%`) sigan funcionando fluidamente
+  incluso si el monitor rechaza las consultas de lectura VCP 0x10.
+- **Protocolo `vd://` en la partición persistente de la barra flotante (Ítem 37)**:
+  Soporte completo para visualización de GIFs e imágenes de usuario en la barra flotante.
+
 ## [0.11.0] — 2026-09-07
 
 Preparativos de la Microsoft Store, y los enlaces de donación que llevaban meses

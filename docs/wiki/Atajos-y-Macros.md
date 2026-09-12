@@ -77,7 +77,7 @@ el ratón.
 
 ## Servidor local (HTTP)
 
-Para lo que ya habla HTTP —Home Assistant, un script en otro equipo, otro
+Para lo que ya habla HTTP —automatizaciones REST, un script en otro equipo, otro
 panel— hay un servidor propio. **Viene apagado**: se activa en ⚙ →
 *SERVIDOR LOCAL (HTTP)*, que también genera el token.
 

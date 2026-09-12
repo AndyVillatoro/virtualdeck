@@ -25,6 +25,11 @@ pub fn set_brightness(percent: i64) -> Result<usize, LauncherError> {
     let nivel = nivel_valido(percent);
 
     let mut aplicadas = wmi_set(nivel).unwrap_or(0);
+    if aplicadas == 0 {
+        if let Some(w) = winrt_set(nivel) {
+            aplicadas += w;
+        }
+    }
     aplicadas += ddc_set(nivel);
 
     Ok(aplicadas)
@@ -42,6 +47,47 @@ fn nivel_valido(percent: i64) -> u32 {
 /// Lee el brillo actual de la primera pantalla que sepa informarlo.
 pub fn brightness() -> Option<u32> {
     wmi_get().or_else(ddc_get)
+    wmi_get().or_else(winrt_get).or_else(ddc_get)
+}
+
+// ---------------------------------------------------------------------------
+// Camino WinRT: Windows.Graphics.Display.BrightnessOverride (Surface Pro 8 / modernos)
+// ---------------------------------------------------------------------------
+
+#[cfg(windows)]
+fn winrt_set(nivel: u32) -> Option<usize> {
+    use windows::Graphics::Display::{BrightnessOverride, DisplayBrightnessOverrideOptions};
+
+    let bo = BrightnessOverride::GetDefaultForSystem().ok()?;
+    if !bo.IsSupported().unwrap_or(false) {
+        return None;
+    }
+    let _ = bo.StartOverride();
+    let ratio = (nivel as f64) / 100.0;
+    bo.SetBrightnessLevel(ratio, DisplayBrightnessOverrideOptions::None).ok()?;
+    Some(1)
+}
+
+#[cfg(not(windows))]
+fn winrt_set(_nivel: u32) -> Option<usize> {
+    None
+}
+
+#[cfg(windows)]
+fn winrt_get() -> Option<u32> {
+    use windows::Graphics::Display::BrightnessOverride;
+
+    let bo = BrightnessOverride::GetDefaultForSystem().ok()?;
+    if !bo.IsSupported().unwrap_or(false) {
+        return None;
+    }
+    let level = bo.BrightnessLevel().ok()?;
+    Some((level * 100.0).round().clamp(0.0, 100.0) as u32)
+}
+
+#[cfg(not(windows))]
+fn winrt_get() -> Option<u32> {
+    None
 }
 
 // ---------------------------------------------------------------------------
@@ -193,6 +239,12 @@ fn ddc_set(nivel: u32) -> usize {
         unsafe {
             if SetMonitorBrightness(m.hPhysicalMonitor, nivel) != 0 {
                 ok += 1;
+            } else {
+                // Pequeña pausa y reintento si el bus I2C/DDC estaba ocupado
+                std::thread::sleep(std::time::Duration::from_millis(40));
+                if SetMonitorBrightness(m.hPhysicalMonitor, nivel) != 0 {
+                    ok += 1;
+                }
             }
         }
     }

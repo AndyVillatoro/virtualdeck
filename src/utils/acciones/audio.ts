@@ -41,10 +41,14 @@ export const AUDIO: Record<string, Manejador> = {
     if (!delta) return fail(t('act.err.noDelta'));
     const brillo = action.adjustTarget !== 'volume';
     const actual = brillo ? await api.launch.getBrightness() : await api.launch.getVolume();
-    if (actual === null || actual === undefined) {
+    // Resiliencia: si el monitor soporta control pero falla al leer (muy común en
+    // DDC/CI con VCP de solo escritura o drivers modernos), usamos 50% de punto de partida
+    // en lugar de bloquear la acción con error de lectura.
+    const base = actual ?? (brillo ? 50 : null);
+    if (base === null) {
       return fail(t(brillo ? 'act.err.noReadBrightness' : 'act.err.noReadVolume'));
     }
-    const nuevo = Math.min(100, Math.max(0, Math.round(actual + delta)));
+    const nuevo = Math.min(100, Math.max(0, Math.round(base + delta)));
     const ok = brillo ? await api.launch.brightness(nuevo) : await api.launch.setVolume(nuevo);
     return ok ? OK : fail(t(brillo ? 'act.err.brightness' : 'act.err.volume'));
   },

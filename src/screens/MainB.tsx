@@ -129,6 +129,16 @@ export function MainB({
   const touchStartXRef = useRef<number>(0);
   const touchStartYRef = useRef<number>(0);
   const lastSwipeAtRef = useRef<number>(0);
+
+  const [windowHeight, setWindowHeight] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 720));
+  useEffect(() => {
+    const handleResize = () => setWindowHeight(window.innerHeight);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [uiScale]);
+  const isCompact = windowHeight < 540;
+
   // Grid sizing — JS-driven because pure-CSS `aspect-ratio + max-width/height`
   // collapses when children are 100%-sized (no intrinsic dimension). We measure
   // the wrapper and compute exact px so the grid expands to the largest box
@@ -300,6 +310,7 @@ export function MainB({
           tileMode={config.tileMode ?? 'square'}
           onTileModeChange={(m) => onConfigChange({ ...config, tileMode: m })}
           onReplayOnboarding={onReplayOnboarding}
+          compact={isCompact}
         />
 
         {/* Page tabs */}
@@ -327,6 +338,7 @@ export function MainB({
           setShowSidebar={setShowSidebar}
           showToast={showToast}
           confirmRename={confirmRename}
+          compact={isCompact}
         />
 
         {/* Page context menu */}
@@ -441,7 +453,7 @@ export function MainB({
             columnas={gridSize}
             filas={gridRows}
             modo={config.tileMode === 'fill' ? 'fill' : 'square'}
-            relleno={16}
+            relleno={isCompact ? 6 : 16}
             senal={showSidebar}
             onTouchStart={(e) => {
               touchStartXRef.current = e.touches[0].clientX;

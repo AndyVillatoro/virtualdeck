@@ -39,15 +39,16 @@ interface Props {
   showToast: (s: string) => void;
   /** Confirmar el renombrado en curso. Vive en MainB porque es quien guarda. */
   confirmRename: (id: string) => void;
+  compact?: boolean;
 }
 
-export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, onPageExport, onPageImport, onPageReorder, onMoveButtonToPage, renamingPageId, setRenamingPageId, renameValue, setRenameValue, setPageContextMenu, dragPageIdx, setDragPageIdx, dragOverPageIdx, setDragOverPageIdx, dragSourceId, setDragSourceId, showSidebar, setShowSidebar, showToast, confirmRename }: Props) {
+export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, onPageExport, onPageImport, onPageReorder, onMoveButtonToPage, renamingPageId, setRenamingPageId, renameValue, setRenameValue, setPageContextMenu, dragPageIdx, setDragPageIdx, dragOverPageIdx, setDragOverPageIdx, dragSourceId, setDragSourceId, showSidebar, setShowSidebar, showToast, confirmRename, compact = false }: Props) {
   const VD = useTheme();
   const t = useT();
 
   return (
       <div style={{
-        display: 'flex', padding: '12px 20px 0', gap: 2,
+        display: 'flex', padding: compact ? '4px 12px 0' : '12px 20px 0', gap: 2,
         borderBottom: `1px solid ${VD.border}`,
         background: VD.surface, flexShrink: 0, alignItems: 'flex-end',
       }}>
@@ -79,8 +80,8 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
               setPageContextMenu({ id: p.id, x: e.clientX, y: e.clientY });
             }}
             style={{
-              padding: '8px 16px',
-              fontFamily: VD.mono, fontSize: 10, letterSpacing: 2,
+              padding: compact ? '4px 10px' : '8px 16px',
+              fontFamily: VD.mono, fontSize: compact ? 9 : 10, letterSpacing: compact ? 1 : 2,
               color: i === activePage ? VD.text : VD.textDim,
               borderBottom: i === activePage
                 ? `2px solid ${config.accent}`
@@ -107,7 +108,7 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
                 style={{
                   background: 'transparent', border: 'none',
                   outline: `1px solid ${config.accent}`,
-                  fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.text,
+                  fontFamily: VD.mono, fontSize: compact ? 9 : 10, letterSpacing: compact ? 1 : 2, color: VD.text,
                   width: Math.max(60, renameValue.length * 9), padding: '0 2px',
                 }}
               />
@@ -132,7 +133,7 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
             onClick={onPageAdd}
             title={t('page.add')}
             style={{
-              padding: '8px 10px', color: VD.textMuted, fontSize: 16,
+              padding: compact ? '4px 6px' : '8px 10px', color: VD.textMuted, fontSize: compact ? 13 : 16,
               cursor: 'pointer', userSelect: 'none', position: 'relative', top: 1, lineHeight: 1,
             }}
           >+</div>
@@ -140,19 +141,19 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
 
         <div style={{ flex: 1 }} />
         {onPageExport && (
-          <div onClick={() => onPageExport(activePage)} title={t('page.export')} style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
+          <div onClick={() => onPageExport(activePage)} title={t('page.export')} style={{ padding: compact ? '4px 6px' : '8px 10px', fontSize: compact ? 10 : 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
             ↗
           </div>
         )}
         {onPageImport && (
-          <div onClick={onPageImport} title={t('page.import')} style={{ padding: '8px 10px', fontSize: 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
+          <div onClick={onPageImport} title={t('page.import')} style={{ padding: compact ? '4px 6px' : '8px 10px', fontSize: compact ? 10 : 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
             ↙
           </div>
         )}
         <div
           onClick={() => setShowSidebar((v) => !v)}
           title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
-          style={{ padding: '8px 10px', fontSize: 12, cursor: 'pointer', userSelect: 'none', color: showSidebar ? VD.textDim : VD.textMuted, transition: 'color 0.15s' }}
+          style={{ padding: compact ? '4px 6px' : '8px 10px', fontSize: compact ? 11 : 12, cursor: 'pointer', userSelect: 'none', color: showSidebar ? VD.textDim : VD.textMuted, transition: 'color 0.15s' }}
         >
           {showSidebar ? '▶' : '◀'}
         </div>
