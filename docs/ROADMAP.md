@@ -209,7 +209,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 
 ### 7. Sistema Visual DOT / 480 & Hardware Táctil (Ítems 41 a 48)
 
-- **7.1 Sistema Visual DOT / 480 (OLED Micro Interface) ★★★ · L** —
+- **7.1 Sistema Visual DOT / 480 (OLED Micro Interface) ★★★ · L** — ✅ HECHO (Prototipo multi-lámina PX-05/PX-03/Casing, purga integral de emojis y unicode, micro-iconos bitmask 8×8 y diseño de hardware ESP-Mosaico implementados en toda la aplicación).
   Evolución estética inspirada en [Ideas, Now Physical — ESP-Mosaico (Henry Li)](https://esp-mosaico.vercel.app/):
   - **Paleta y Cuadrícula**: Grilla estricta en múltiplos de 4px (`4PX GRID`). Modo oscuro en negro OLED puro (`BG #070809`, `SURFACE #111315`, `BORDER #1F2229`), acento primario de referencia (`RED #FF3B30`) plenamente intercambiable con los 10 presets de color de VirtualDeck. Modo claro en tonalidades de grises industriales/cemento (evitando blancos deslumbrantes).
   - **Tipografía y Componentes**: Números grandes y códigos de estado renderizados en matriz de puntos discretos (5×7 y 7×9). Módulos de celda con cabecera técnica (`01 HOME`, `02 MUSIC`, `03 TIMER`) y carril lateral vertical táctil para disparadores secundarios.

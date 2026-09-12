@@ -8,6 +8,15 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ### Added
 
+- **Sistema Visual DOT / 480 & Transición a Matriz Física de Puntos (Ítem 41 & 42)**:
+  - Sistema completo de iconografía física dot-matrix 8×8 bitmask (`DotGlyphIcon`), eliminando
+    por completo emojis, gráficos vectoriales y caracteres unicode en toda la aplicación.
+  - Representación física de puntos recesivos apagados (`showRecessed`) simulando la matriz
+    física de un panel OLED micro-interface estilo **ESP-Mosaico**.
+  - Prototipo interactivo multi-lámina (`Dot480ShowcaseModal`) con módulos PX-05 (Tool Deck),
+    PX-03/PX-02 (Life Signals) y Hardware Casing completo con carril lateral táctil (*right rail*).
+  - Purga de caracteres en diccionarios de idiomas (`es.ts`, `en.ts`, `campos.ts`), botones de acción,
+    presets de botones, widgets de celda, telemetría y diálogos de ajuste.
 - **Landing Page 3D con Three.js (Ítem 40)**:
   Modelo 3D físico interactivo de VirtualDeck en la web (`docs/index.html`) con física
   de pulsación de botones (resorte amortiguado), texturas dinámicas OLED dot-matrix
