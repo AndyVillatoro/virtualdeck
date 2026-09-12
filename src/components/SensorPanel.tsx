@@ -19,13 +19,21 @@ export function groupSensorsByHardware(list: Sensor[]): HardwareGroup[] {
   const groups: Record<string, { hardware: string; category: Sensor['category']; temps: Sensor[]; loads: Sensor[]; powers: Sensor[]; fans: Sensor[] }> = {};
   for (const s of list) {
     if (!s.hardware) continue;
-    if (!groups[s.hardware]) {
-      groups[s.hardware] = { hardware: s.hardware, category: s.category, temps: [], loads: [], powers: [], fans: [] };
+    // Unificar lecturas de CPU y GPU bajo una misma clave para combinar
+    // carga nativa y temperaturas de LHM en una sola tarjeta informativa.
+    const groupKey = (s.category === 'cpu' || s.category === 'gpu' || s.category === 'memory')
+      ? `cat_${s.category}`
+      : s.hardware;
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = { hardware: s.hardware, category: s.category, temps: [], loads: [], powers: [], fans: [] };
+    } else if (s.hardware.length < groups[groupKey].hardware.length && s.hardware.length > 3) {
+      groups[groupKey].hardware = s.hardware;
     }
-    if (s.kind === 'Temperature') groups[s.hardware].temps.push(s);
-    else if (s.kind === 'Load') groups[s.hardware].loads.push(s);
-    else if (s.kind === 'Power') groups[s.hardware].powers.push(s);
-    else if (s.kind === 'Fan') groups[s.hardware].fans.push(s);
+    if (s.kind === 'Temperature') groups[groupKey].temps.push(s);
+    else if (s.kind === 'Load') groups[groupKey].loads.push(s);
+    else if (s.kind === 'Power') groups[groupKey].powers.push(s);
+    else if (s.kind === 'Fan') groups[groupKey].fans.push(s);
   }
   return Object.values(groups)
     .filter((g) => g.temps.length || g.loads.length || g.powers.length || g.fans.length)
@@ -33,7 +41,7 @@ export function groupSensorsByHardware(list: Sensor[]): HardwareGroup[] {
       hardware: g.hardware,
       category: g.category,
       temp: g.temps.find((s) => /package|tctl|tdie|hot ?spot|gpu core|cpu/i.test(s.name)) ?? g.temps[0],
-      load: g.loads.find((s) => /^cpu total$|gpu core|^total/i.test(s.name)) ?? g.loads[0],
+      load: g.loads.find((s) => /^cpu total$|gpu core|^total|carga total/i.test(s.name)) ?? g.loads[0],
       power: g.powers.find((s) => /package|^total|gpu power|cpu/i.test(s.name)) ?? g.powers[0],
       fan: g.fans.find((s) => s.value > 0) ?? g.fans[0],
     }))

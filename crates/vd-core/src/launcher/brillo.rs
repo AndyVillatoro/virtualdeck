@@ -46,7 +46,6 @@ fn nivel_valido(percent: i64) -> u32 {
 
 /// Lee el brillo actual de la primera pantalla que sepa informarlo.
 pub fn brightness() -> Option<u32> {
-    wmi_get().or_else(ddc_get)
     wmi_get().or_else(winrt_get).or_else(ddc_get)
 }
 

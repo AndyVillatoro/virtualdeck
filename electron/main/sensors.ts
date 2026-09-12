@@ -83,13 +83,13 @@ function parseValue(raw: string | undefined): { value: number; unit: string } {
 }
 
 // Maps LHM's ImageURL filename to our coarse category bucket. The icons are
-// stable across LHM versions: cpu.png / amd.png / nvidia.png / mainboard.png /
+// stable across LHM versions: cpu.png / intel.png / nvidia.png / mainboard.png /
 // ram.png / hdd.png / nic.png / battery.png …
 function categoryFromImage(image: string | undefined): SensorCategory {
   if (!image) return 'other';
   const f = image.toLowerCase();
-  if (f.includes('cpu')) return 'cpu';
-  if (f.includes('amd') || f.includes('nvidia') || f.includes('intel-gpu') || f.includes('gpu')) return 'gpu';
+  if (f.includes('cpu') || f.includes('intel-cpu') || f.includes('amd-cpu')) return 'cpu';
+  if (f.includes('nvidia') || f.includes('intel-gpu') || f.includes('gpu') || f.includes('radeon')) return 'gpu';
   if (f.includes('mainboard') || f.includes('motherboard') || f.includes('chip')) return 'mainboard';
   if (f.includes('ram') || f.includes('memory')) return 'memory';
   if (f.includes('hdd') || f.includes('ssd') || f.includes('nvme') || f.includes('storage')) return 'storage';
@@ -100,36 +100,80 @@ function categoryFromImage(image: string | undefined): SensorCategory {
 // older LHM builds). Inspect the hardware *name* for keywords.
 function categoryFromName(name: string): SensorCategory {
   const n = name.toLowerCase();
-  if (/ryzen|core i\d|xeon|threadripper|^cpu\b|processor/.test(n)) return 'cpu';
-  if (/geforce|radeon|rtx|gtx|quadro|nvidia|^gpu\b|amd graphics|intel.*graphics/.test(n)) return 'gpu';
-  if (/^board|mainboard|chipset|prime|tuf|rog|x[57]70|b[567]50|z[567]90/.test(n)) return 'mainboard';
-  if (/memory|ddr[345]|ram(\b|$)/.test(n)) return 'memory';
-  if (/nvme|ssd|hdd|samsung |kingston |wd_|crucial|seagate|toshiba/.test(n)) return 'storage';
+  if (/ryzen|core\b|i[3579]-|xeon|threadripper|\bcpu\b|processor|intel|athlon|celeron|pentium/.test(n)) return 'cpu';
+  if (/geforce|radeon|rtx|gtx|quadro|nvidia|\bgpu\b|graphics/.test(n)) return 'gpu';
+  if (/board|mainboard|chipset|prime|tuf|rog|strix|aorus|x[567]70|b[567]50|z[567]90|b[67]60|h[67]70/.test(n)) return 'mainboard';
+  if (/memory|ddr[345]|\bram\b/.test(n)) return 'memory';
+  if (/nvme|ssd|hdd|samsung|kingston|wd_|crucial|seagate|toshiba|drive/.test(n)) return 'storage';
   return 'other';
 }
 
-// Walks the LHM tree. Hardware label sits at depth 2: root → "Computer" → HW → SensorType → Leaf.
+/**
+ * Deduce la categoría directamente a partir del SensorId de LHM.
+ * Rutas como "/intelcpu/0/temperature/0" o "/lpc/nct6798d/0/temperature/2"
+ * identifican de forma unívoca el componente independientemente de la profundidad.
+ */
+function categoryFromSensorId(id: string): SensorCategory | null {
+  const s = id.toLowerCase();
+  if (s.includes('/intelcpu/') || s.includes('/amdcpu/') || s.includes('/cpu/')) return 'cpu';
+  if (s.includes('/nvidiagpu/') || s.includes('/amdgpu/') || s.includes('/atigpu/') || s.includes('/gpu/')) return 'gpu';
+  if (s.includes('/lpc/') || s.includes('/mainboard/')) return 'mainboard';
+  if (s.includes('/ram/') || s.includes('/memory/')) return 'memory';
+  if (s.includes('/hdd/') || s.includes('/ssd/') || s.includes('/nvme/') || s.includes('/storage/')) return 'storage';
+  return null;
+}
+
+/**
+ * Deduce el tipo de sensor a partir de node.Type o del SensorId.
+ * Garantiza que "/temperature/" siempre se reconozca como Temperature.
+ */
+function kindFromNode(node: any): SensorKind {
+  const raw = String(node?.Type || '');
+  if (raw && raw !== 'undefined') {
+    const norm = raw.charAt(0).toUpperCase() + raw.slice(1);
+    if (norm === 'Temperature' || norm === 'Fan' || norm === 'Voltage' ||
+        norm === 'Load' || norm === 'Clock' || norm === 'Power' ||
+        norm === 'Data' || norm === 'Throughput' || norm === 'Level') {
+      return norm as SensorKind;
+    }
+  }
+  const idLower = String(node?.SensorId || '').toLowerCase();
+  if (idLower.includes('/temperature/')) return 'Temperature';
+  if (idLower.includes('/load/')) return 'Load';
+  if (idLower.includes('/fan/')) return 'Fan';
+  if (idLower.includes('/voltage/')) return 'Voltage';
+  if (idLower.includes('/clock/')) return 'Clock';
+  if (idLower.includes('/power/')) return 'Power';
+  return 'Other';
+}
+
+// Walks the LHM tree. Hardware label sits at depth 2 (or on nodes with ImageURL)
 function flatten(node: any, depth: number, hardware: string, category: SensorCategory, out: Sensor[]): void {
   if (!node) return;
   let hw = hardware;
   let cat = category;
-  if (depth === 2 && node.Text && !node.SensorId) {
+  if (node.Text && !node.SensorId && (node.ImageURL || depth === 2 || !hw)) {
     hw = String(node.Text);
     const fromImg = categoryFromImage(node.ImageURL);
-    cat = fromImg !== 'other' ? fromImg : categoryFromName(hw);
+    const fromName = categoryFromName(hw);
+    cat = fromImg !== 'other' ? fromImg : fromName;
   }
 
-  if (node.SensorId && node.Type) {
+  if (node.SensorId) {
+    const id = String(node.SensorId);
+    const fromIdCat = categoryFromSensorId(id);
+    const finalCat = fromIdCat ?? cat;
+    const kind = kindFromNode(node);
     const v = parseValue(node.Value);
     const mn = parseValue(node.Min);
     const mx = parseValue(node.Max);
     if (isFinite(v.value)) {
       out.push({
-        id: String(node.SensorId),
-        name: String(node.Text ?? node.SensorId),
-        hardware: hw,
-        category: cat,
-        kind: String(node.Type) as SensorKind,
+        id,
+        name: String(node.Text ?? id),
+        hardware: hw || (finalCat === 'cpu' ? 'CPU' : finalCat === 'gpu' ? 'GPU' : finalCat === 'mainboard' ? 'Mainboard' : 'Hardware'),
+        category: finalCat,
+        kind,
         value: v.value,
         unit: v.unit,
         min: isFinite(mn.value) ? mn.value : undefined,
@@ -143,7 +187,7 @@ function flatten(node: any, depth: number, hardware: string, category: SensorCat
 async function fetchTree(): Promise<any> {
   const url = `http://${host}:${port}/data.json`;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), 2500);
   try {
     const res = await net.fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -154,7 +198,17 @@ async function fetchTree(): Promise<any> {
 }
 
 function applyCategoryFilter(all: Sensor[]): Sensor[] {
-  return all.filter((s) => allowedCategories.has(s.category));
+  return all.filter((s) => {
+    if (allowedCategories.has(s.category)) return true;
+    // Si es un sensor de temperatura de CPU reportado por chip de placa base (LPC/SuperIO)
+    // y la categoría CPU está permitida, conservarlo para no perder temperatura.
+    if (s.kind === 'Temperature') {
+      if (s.category === 'cpu' && allowedCategories.has('cpu')) return true;
+      if (s.category === 'gpu' && allowedCategories.has('gpu')) return true;
+      if (s.category === 'mainboard' && (allowedCategories.has('mainboard') || allowedCategories.has('cpu'))) return true;
+    }
+    return false;
+  });
 }
 
 /**
@@ -194,19 +248,23 @@ function unir(deLhm: Sensor[], delNucleo: Sensor[]): Sensor[] {
   return [...porId.values()];
 }
 
+let lastFailAt = 0;
+const REINTENTO_MS = 12000;
+
 export async function list(force = false): Promise<Sensor[]> {
   const delNucleo = nativos(force);
 
-  // Los nativos se sirven aunque LHM esté desactivado: son la fuente por
-  // defecto ahora, no un extra. Antes, con `enabled` en false no había sensores
-  // de ninguna clase.
-  if (!enabled) {
-    connected = false;
+  // Si LHM está apagado explícitamente y nunca se conectó, o si falló recientemente,
+  // devolvemos de inmediato los sensores nativos para no congelar la UI con intentos de red.
+  const enEspera = !enabled && !connected && (Date.now() - lastFailAt < REINTENTO_MS);
+  if (enEspera) {
     return applyCategoryFilter(delNucleo);
   }
-  if (!force && Date.now() - lastFetchAt < CACHE_MS) {
+
+  if (!force && Date.now() - lastFetchAt < CACHE_MS && (cache.length > 0 || !enabled)) {
     return applyCategoryFilter(unir(cache, delNucleo));
   }
+
   try {
     const tree = await fetchTree();
     const out: Sensor[] = [];
@@ -219,6 +277,7 @@ export async function list(force = false): Promise<Sensor[]> {
   } catch (e) {
     connected = false;
     lastError = (e as Error).message;
+    lastFailAt = Date.now();
     // Return last-known cache on transient failures so the UI doesn't flicker
     // to "no data" every time LHM hiccups for one tick.
     return applyCategoryFilter(unir(cache, delNucleo));
@@ -236,7 +295,6 @@ export async function get(id: string): Promise<Sensor | null> {
 }
 
 export async function probe(): Promise<{ ok: boolean; count: number; error?: string }> {
-  if (!enabled) return { ok: false, count: 0, error: tm('sensors.disabled') };
   try {
     const tree = await fetchTree();
     const out: Sensor[] = [];
@@ -250,35 +308,32 @@ export async function probe(): Promise<{ ok: boolean; count: number; error?: str
     connected = false;
     const msg = (e as Error).message;
     lastError = msg;
+    lastFailAt = Date.now();
     return { ok: false, count: 0, error: msg };
   }
 }
 
 /**
- * Busca LibreHardwareMonitor donde suele instalarse.
- *
- * VirtualDeck **ya no lo empaqueta**. Lo traía —19 MB de un instalador de 88—
- * y se quitó por tres motivos:
- *
- * - LHM **escribe su configuración junto a su propio .exe**. En un paquete MSIX
- *   el directorio de instalación es de solo lectura, así que ahí no arrancaría.
- * - La carpeta `resources/lhm/` estaba en `.gitignore`: quien clonara el
- *   repositorio y compilara obtenía un instalador **sin** LHM, sin saberlo.
- * - Es coherente con OpenRGB, que siempre fue cosa del usuario.
- *
- * Lo que sí se pierde: la copia empaquetada traía el servidor web ya activado.
- * Con una instalación propia hay que encenderlo a mano una vez, y por eso la
- * interfaz lo explica en vez de limitarse a fallar.
- *
- * Si no aparece en ninguna ruta conocida, el usuario indica la suya.
+ * Busca LibreHardwareMonitor en rutas habituales del sistema y del proyecto.
+ * Inspecciona recursos empaquetados, Downloads, Desktop y Program Files.
  */
 export function rutaLHMConocida(): string | null {
   const posibles = [
-    process.env['ProgramFiles'], process.env['ProgramFiles(x86)'],
-    process.env['LOCALAPPDATA'] ? join(process.env['LOCALAPPDATA'], 'Programs') : null,
+    // 1. Recursos locales del proyecto o app empaquetada
+    join(process.cwd(), 'resources', 'lhm', 'LibreHardwareMonitor.exe'),
+    app?.getAppPath ? join(app.getAppPath(), 'resources', 'lhm', 'LibreHardwareMonitor.exe') : null,
+    process.resourcesPath ? join(process.resourcesPath, 'lhm', 'LibreHardwareMonitor.exe') : null,
+    process.resourcesPath ? join(process.resourcesPath, 'resources', 'lhm', 'LibreHardwareMonitor.exe') : null,
+    // 2. Descargas o Escritorio habituales del usuario
+    process.env['USERPROFILE'] ? join(process.env['USERPROFILE'], 'Downloads', 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe') : null,
+    process.env['USERPROFILE'] ? join(process.env['USERPROFILE'], 'Desktop', 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe') : null,
+    // 3. Program Files y AppData
+    process.env['ProgramFiles'] ? join(process.env['ProgramFiles'], 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe') : null,
+    process.env['ProgramFiles(x86)'] ? join(process.env['ProgramFiles(x86)'], 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe') : null,
+    process.env['LOCALAPPDATA'] ? join(process.env['LOCALAPPDATA'], 'Programs', 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe') : null,
   ].filter(Boolean) as string[];
-  for (const base of posibles) {
-    const p = join(base, 'LibreHardwareMonitor', 'LibreHardwareMonitor.exe');
+
+  for (const p of posibles) {
     if (existsSync(p)) return p;
   }
   return null;

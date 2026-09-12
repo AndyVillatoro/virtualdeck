@@ -130,13 +130,14 @@ function datosDeSensor(b: ButtonConfig, sensores: Sensor[]): DatosWidget {
     cfg.critAt !== undefined && s.value >= cfg.critAt ? 'crit' as const :
     cfg.warnAt !== undefined && s.value >= cfg.warnAt ? 'warn' as const :
     undefined;
-  const glyph = s.category === 'cpu' ? 'CPU' :
+  const glyph =
+    s.kind === 'Temperature' ? 'WEATHER_THERMO' :
+    s.kind === 'Fan' ? 'FAN' :
+    s.kind === 'Voltage' || s.kind === 'Power' ? 'BOLT' :
+    s.category === 'cpu' ? 'CPU' :
     s.category === 'gpu' ? 'GPU' :
     s.category === 'memory' ? 'RAM' :
     s.category === 'storage' ? 'STORAGE' :
-    s.kind === 'Fan' ? 'FAN' :
-    s.kind === 'Temperature' ? 'WEATHER_THERMO' :
-    s.kind === 'Voltage' || s.kind === 'Power' ? 'BOLT' :
     'GEAR';
   return { line1: `${v}${unidad}`, line2: cfg.suffix || s.name, tone, glyph };
 }

@@ -245,6 +245,32 @@ fn categoria_por_nombre(nombre: &str) -> SensorCategory {
     }
 }
 
+/// Deduce la categoría directamente a partir del SensorId de LHM.
+fn categoria_por_sensor_id(id: &str) -> Option<SensorCategory> {
+    let s = id.to_lowercase();
+    if s.contains("/intelcpu/") || s.contains("/amdcpu/") || s.contains("/cpu/") {
+        Some(SensorCategory::Cpu)
+    } else if s.contains("/nvidiagpu/")
+        || s.contains("/amdgpu/")
+        || s.contains("/atigpu/")
+        || s.contains("/gpu/")
+    {
+        Some(SensorCategory::Gpu)
+    } else if s.contains("/lpc/") || s.contains("/mainboard/") {
+        Some(SensorCategory::Mainboard)
+    } else if s.contains("/ram/") || s.contains("/memory/") {
+        Some(SensorCategory::Memory)
+    } else if s.contains("/hdd/")
+        || s.contains("/ssd/")
+        || s.contains("/nvme/")
+        || s.contains("/storage/")
+    {
+        Some(SensorCategory::Storage)
+    } else {
+        None
+    }
+}
+
 /// Recorre el arbol de LHM aplanandolo a una lista.
 ///
 /// La estructura es `raiz -> "Computer" -> hardware -> tipo -> hoja`, asi que el
@@ -262,7 +288,7 @@ fn aplanar(
     let texto = nodo.get("Text").and_then(Value::as_str);
     let sensor_id = nodo.get("SensorId").and_then(Value::as_str);
 
-    if profundidad == 2 && sensor_id.is_none() {
+    if (profundidad == 2 || nodo.get("ImageURL").is_some()) && sensor_id.is_none() {
         if let Some(t) = texto {
             hw = t.to_string();
             let por_img = categoria_por_imagen(nodo.get("ImageURL").and_then(Value::as_str));
@@ -274,14 +300,42 @@ fn aplanar(
         }
     }
 
-    if let (Some(id), Some(tipo)) = (sensor_id, nodo.get("Type").and_then(Value::as_str)) {
+    if let Some(id) = sensor_id {
+        let tipo = nodo.get("Type").and_then(Value::as_str).unwrap_or("");
+        let kind = if tipo == "Temperature" || id.to_lowercase().contains("/temperature/") {
+            SensorKind::Temperature
+        } else if tipo == "Fan" || id.to_lowercase().contains("/fan/") {
+            SensorKind::Fan
+        } else if tipo == "Voltage" || id.to_lowercase().contains("/voltage/") {
+            SensorKind::Voltage
+        } else if tipo == "Load" || id.to_lowercase().contains("/load/") {
+            SensorKind::Load
+        } else if tipo == "Clock" || id.to_lowercase().contains("/clock/") {
+            SensorKind::Clock
+        } else if tipo == "Power" || id.to_lowercase().contains("/power/") {
+            SensorKind::Power
+        } else {
+            SensorKind::from_lhm(tipo)
+        };
+
+        let cat_final = categoria_por_sensor_id(id).unwrap_or(cat);
+
         if let Some((valor, unidad)) = parsear_valor(nodo.get("Value").and_then(Value::as_str)) {
             out.push(Sensor {
                 id: id.to_string(),
                 name: texto.unwrap_or(id).to_string(),
-                hardware: hw.clone(),
-                category: cat,
-                kind: SensorKind::from_lhm(tipo),
+                hardware: if hw.is_empty() {
+                    match cat_final {
+                        SensorCategory::Cpu => "CPU".into(),
+                        SensorCategory::Gpu => "GPU".into(),
+                        SensorCategory::Mainboard => "Mainboard".into(),
+                        _ => "Hardware".into(),
+                    }
+                } else {
+                    hw.clone()
+                },
+                category: cat_final,
+                kind,
                 value: valor,
                 unit: unidad,
                 min: parsear_valor(nodo.get("Min").and_then(Value::as_str)).map(|(v, _)| v),

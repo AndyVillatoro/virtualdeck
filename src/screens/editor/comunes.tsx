@@ -431,6 +431,17 @@ export function SensorPicker({
     const key = s.hardware || '—';
     (groups[key] ||= []).push(s);
   }
+  const KIND_ORDER: Record<string, number> = {
+    Temperature: 0,
+    Load: 1,
+    Power: 2,
+    Fan: 3,
+    Clock: 4,
+    Voltage: 5,
+    Data: 6,
+    Throughput: 7,
+  };
+
   return (
     <select
       value={value}
@@ -441,15 +452,23 @@ export function SensorPicker({
       {sensors.length === 0 && (
         <option value="" disabled>{t('ed.noSensors')}</option>
       )}
-      {Object.entries(groups).map(([hw, list]) => (
-        <optgroup key={hw} label={hw}>
-          {list.map((s) => (
-            <option key={s.id} value={s.id}>
-              [{s.kind.slice(0, 4)}] {s.name} — {Number.isFinite(s.value) ? s.value.toFixed(s.kind === 'Voltage' ? 2 : 0) : '—'} {s.unit}
-            </option>
-          ))}
-        </optgroup>
-      ))}
+      {Object.entries(groups).map(([hw, list]) => {
+        const sorted = [...list].sort((a, b) => {
+          const oa = KIND_ORDER[a.kind] ?? 9;
+          const ob = KIND_ORDER[b.kind] ?? 9;
+          if (oa !== ob) return oa - ob;
+          return a.name.localeCompare(b.name);
+        });
+        return (
+          <optgroup key={hw} label={hw}>
+            {sorted.map((s) => (
+              <option key={s.id} value={s.id}>
+                [{s.kind.slice(0, 4)}] {s.name} — {Number.isFinite(s.value) ? s.value.toFixed(s.kind === 'Voltage' ? 2 : 0) : '—'} {s.unit}
+              </option>
+            ))}
+          </optgroup>
+        );
+      })}
       {/* Fallback: keep a saved id selectable even if LHM hasn't returned data yet */}
       {value && !sensors.some((s) => s.id === value) && (
         <option value={value}>(saved) {value}</option>
