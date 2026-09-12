@@ -4,6 +4,7 @@ import { useT } from '../../utils/i18n';
 import type { SensorsSettings, SensorsStatus, SensorCategory } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 import { LINKS } from '../../data/links';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 
 // Cuatro de las seis son siglas iguales en los dos idiomas; la sexta no, y
 // estaba escrita en espanol: con la aplicacion en ingles salia «OTROS» entre
@@ -16,6 +17,15 @@ const SENSOR_CATEGORIES: Array<{ id: SensorCategory; label?: string; clave?: str
   { id: 'storage', label: 'SSD/HDD' },
   { id: 'other', clave: 'sensors.catOther' },
 ];
+
+const CAT_GLYPH: Record<SensorCategory, string> = {
+  cpu: 'CPU',
+  gpu: 'GPU',
+  mainboard: 'GEAR',
+  memory: 'RAM',
+  storage: 'STORAGE',
+  other: 'DOTS',
+};
 
 export function SensorsSection({
   accent, config, status, onChange,
@@ -176,8 +186,12 @@ export function SensorsSection({
                     color: on ? accent : VD.textMuted,
                     fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
                     cursor: 'pointer', borderRadius: VD.radius.sm,
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
                   }}
-                >{c.label ?? t(c.clave!)}</button>
+                >
+                  <DotGlyphIcon glyph={CAT_GLYPH[c.id]} size={9} color={on ? accent : VD.textMuted} showRecessed />
+                  {c.label ?? t(c.clave!)}
+                </button>
               );
             })}
           </div>

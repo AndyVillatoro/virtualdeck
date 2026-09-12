@@ -2,6 +2,7 @@ import React from 'react';
 import type { RGBStatus } from '../../types';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { estilo_btnStyle } from './estilos';
 
 export interface BotonesNavegacionProps {
@@ -44,19 +45,33 @@ export function BotonesNavegacion({
             fontFamily: VD.mono,
             fontWeight: 700,
             letterSpacing: 0.5,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
           }}
         >
-          [::] DOT
+          <DotGlyphIcon glyph="DOTS" size={10} color={effectiveAccent} />
+          <span>DOT</span>
         </button>
       )}
       {onConfigExport && (
-        <button onClick={onConfigExport} style={btnStyle} title={t('tip.export')}>
-          ↗ EXP
+        <button
+          onClick={onConfigExport}
+          style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          title={t('tip.export')}
+        >
+          <DotGlyphIcon glyph="EXPORT" size={9} color={VD.textDim} />
+          <span>EXP</span>
         </button>
       )}
       {onConfigImport && (
-        <button onClick={onConfigImport} style={btnStyle} title={t('tip.import')}>
-          ↙ IMP
+        <button
+          onClick={onConfigImport}
+          style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          title={t('tip.import')}
+        >
+          <DotGlyphIcon glyph="IMPORT" size={9} color={VD.textDim} />
+          <span>IMP</span>
         </button>
       )}
       {onFloatingBar && (
@@ -78,17 +93,17 @@ export function BotonesNavegacion({
           style={{
             ...btnStyle,
             borderColor: rgbStatus?.connected ? effectiveAccent : VD.border,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
           }}
         >
-          <span
-            style={{
-              marginRight: 4,
-              color: rgbStatus?.connected ? effectiveAccent : VD.textMuted,
-            }}
-          >
-            ●
-          </span>
-          RGB
+          <DotGlyphIcon
+            glyph="DOTS"
+            size={8}
+            color={rgbStatus?.connected ? effectiveAccent : VD.textMuted}
+          />
+          <span>RGB</span>
         </button>
       )}
     </>

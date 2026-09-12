@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useFieldText } from '../../utils/i18n';
 import { estiloEntrada } from './comunes';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { ButtonConfig } from '../../types';
 
 /**
@@ -72,7 +73,7 @@ export function CamposDivisa({ accent, valor, onChange }: Props) {
           placeholder={tf('DE')}
           style={{ ...inputStyle, width: 70, textTransform: 'uppercase' }}
         />
-        <span style={{ color: VD.textMuted, fontFamily: VD.mono, fontSize: 12 }}>→</span>
+        <DotGlyphIcon glyph="ARROW_RIGHT" size={8} color={VD.textMuted} />
         <input
           list="vd-monedas"
           value={a}

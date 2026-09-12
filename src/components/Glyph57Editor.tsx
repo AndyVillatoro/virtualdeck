@@ -3,6 +3,7 @@ import { GLYPHS_5x7 } from '../design';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
+import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 
 interface Glyph57EditorProps {
   initial?: number[];
@@ -70,8 +71,10 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
           <div style={{ flex: 1 }} />
           <button
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: VD.textDim, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
-          >×</button>
+            style={{ background: 'transparent', border: 'none', color: VD.textDim, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+          >
+            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
+          </button>
         </div>
 
         {/* Editing grid 5×7 */}

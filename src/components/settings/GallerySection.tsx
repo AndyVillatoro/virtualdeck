@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { EntradaGaleria, ResumenRiesgo, Profile } from '../../types';
 import { SettingLabel, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { tiposDesconocidos } from '../../utils/configMigration';
 
 /**
@@ -135,7 +136,10 @@ export function GallerySection({
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, letterSpacing: 0.5 }}>
               {elegido.entrada.label}
             </div>
-            <div style={{ ...menudo, color: VD.warning }}>{t('gal.warn')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <DotGlyphIcon glyph="WARN" size={9} color={VD.warning} />
+              <div style={{ ...menudo, color: VD.warning }}>{t('gal.warn')}</div>
+            </div>
             <div style={menudo}>{t('gal.counts', { n: elegido.riesgo.botones })}</div>
             {elegido.riesgo.programas.length > 0 && (
               <div style={menudo}>

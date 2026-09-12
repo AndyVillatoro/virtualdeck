@@ -3,7 +3,8 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { playSound } from '../../utils/sound';
 import { ejecutarUna, type EntornoPulsacion } from '../../utils/pulsarBoton';
-import type { ButtonConfig, FolderButton, RGBProfile, SoundProfileId } from '../../types';
+import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
+import type { ButtonConfig, FolderButton, SoundProfileId } from '../../types';
 
 /**
  * La ventana emergente de un boton de tipo carpeta: una rejilla pequeña con
@@ -63,12 +64,18 @@ export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, entorno
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          {btn.icon && <span style={{ fontSize: 18, color: btn.fgColor || VD.text }}>{btn.icon}</span>}
+          {btn.icon ? (
+            <DotGlyphIcon glyph={resolveDotGlyph(btn.icon) ?? 'FOLDER'} size={16} color={btn.fgColor || VD.text} showRecessed />
+          ) : (
+            <DotGlyphIcon glyph="FOLDER" size={16} color={btn.fgColor || VD.text} showRecessed />
+          )}
           <span style={{ fontFamily: VD.mono, fontSize: 11, letterSpacing: 2, color: VD.text }}>
             {btn.label || 'CARPETA'}
           </span>
           <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: VD.textDim, cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
+            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
+          </button>
         </div>
 
         {/* Sub-button grid */}
@@ -88,7 +95,19 @@ export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, entorno
               onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = accent; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = flash === i ? accent : VD.border; }}
             >
-              {fb.icon && <div style={{ fontSize: 18, color: fb.fgColor || VD.text, lineHeight: 1 }}>{fb.icon}</div>}
+              {fb.icon && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {(() => {
+                    const g = resolveDotGlyph(fb.icon);
+                    if (g) return <DotGlyphIcon glyph={g} size={16} color={fb.fgColor || VD.text} showRecessed />;
+                    return (
+                      <span style={{ fontSize: 16, color: fb.fgColor || VD.text, lineHeight: 1, fontFamily: VD.dots }}>
+                        {fb.icon}
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
               <div style={{ fontFamily: VD.mono, fontSize: 8, letterSpacing: 1, color: fb.fgColor || VD.textDim, textAlign: 'center', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
                 {fb.label}
               </div>

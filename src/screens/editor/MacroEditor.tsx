@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { MacroStep, MacroStepType } from '../../types';
 
 // El nombre de cada paso se guarda como **clave**, no como texto: el mapa es
@@ -29,7 +30,6 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
   const [recording, setRecording] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [vacia, setVacia] = useState(false);
-  const recTimer = useRef<number | null>(null);
 
   // Poll recording state every 300 ms to reflect stop from external source
   useEffect(() => {
@@ -111,8 +111,12 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
               padding: '5px 12px', background: 'rgba(217,95,95,0.15)', border: `1px solid #d95f5f`,
               color: '#d95f5f', fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
             }}
-          >⏺ {t('macro.rec.start')}</button>
+          >
+            <DotGlyphIcon glyph="DOTS" size={8} color="#d95f5f" />
+            <span>{t('macro.rec.start')}</span>
+          </button>
         ) : (
           <button
             onClick={stopRec}
@@ -120,8 +124,12 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
               padding: '5px 12px', background: 'rgba(217,95,95,0.3)', border: `1px solid #d95f5f`,
               color: '#ff8080', fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1, animation: 'vd-blink 0.8s step-end infinite',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
             }}
-          >⏹ {t('macro.rec.stop')}</button>
+          >
+            <DotGlyphIcon glyph="PAUSE" size={8} color="#ff8080" />
+            <span>{t('macro.rec.stop')}</span>
+          </button>
         )}
         {recording && (
           <span style={{ fontFamily: VD.mono, fontSize: 8, color: '#d95f5f', letterSpacing: 1 }}>
@@ -170,10 +178,18 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
                   {(step.x !== undefined && step.type !== 'scroll') ? ` (${step.x}, ${step.y})` : ''}
                   {step.delayMs ? ` +${step.delayMs}ms` : ''}
                 </span>
-                <button onClick={() => moveStep(idx, -1)} disabled={idx === 0} style={{ ...iconBtnSm(VD) }}>↑</button>
-                <button onClick={() => moveStep(idx, 1)} disabled={idx === steps.length - 1} style={{ ...iconBtnSm(VD) }}>↓</button>
-                <button onClick={() => setEditIdx(editIdx === idx ? null : idx)} style={{ ...iconBtnSm(VD), color: editIdx === idx ? accent : VD.textMuted }}>✎</button>
-                <button onClick={() => removeStep(idx)} style={{ ...iconBtnSm(VD), color: VD.danger }}>✕</button>
+                <button onClick={() => moveStep(idx, -1)} disabled={idx === 0} style={{ ...iconBtnSm(VD) }}>
+                  <DotGlyphIcon glyph="ARROW_UP" size={8} color={VD.textMuted} />
+                </button>
+                <button onClick={() => moveStep(idx, 1)} disabled={idx === steps.length - 1} style={{ ...iconBtnSm(VD) }}>
+                  <DotGlyphIcon glyph="ARROW_DOWN" size={8} color={VD.textMuted} />
+                </button>
+                <button onClick={() => setEditIdx(editIdx === idx ? null : idx)} style={{ ...iconBtnSm(VD), color: editIdx === idx ? accent : VD.textMuted }}>
+                  <DotGlyphIcon glyph="EDIT" size={8} color={editIdx === idx ? accent : VD.textMuted} />
+                </button>
+                <button onClick={() => removeStep(idx)} style={{ ...iconBtnSm(VD), color: VD.danger }}>
+                  <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+                </button>
               </div>
 
               {/* Step editor */}

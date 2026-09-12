@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DotCanvasText } from './DotCanvasText';
+import { DotGlyphIcon } from './DotGlyphIcon';
 
 export interface DotChecklistProps {
   accentColor?: string;
@@ -47,7 +48,7 @@ export function DotChecklist({
                 background: it.active ? accentColor + '22' : 'transparent',
               }}
             >
-              {it.checked && <span style={{ fontSize: 8, color: textColor }}>✓</span>}
+              {it.checked && <DotGlyphIcon glyph="CHECK" size={8} color={textColor} />}
               {!it.checked && it.active && (
                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: accentColor }} />
               )}

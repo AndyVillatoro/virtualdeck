@@ -1,8 +1,7 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
-import { DotLabel } from '../../components/DotLabel';
-import { ButtonCell } from '../../components/ButtonCell';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { BrandIconDisplay } from '../../components/BrandIconDisplay';
 import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
 import { BRAND_ICONS_MAP } from '../../data/brandIcons';
@@ -33,7 +32,6 @@ interface Props {
   brandIconCustomColor: string | undefined;
   brandIconCustomPalette: Record<string, string> | undefined;
   setBrandIconCustomPalette: React.Dispatch<React.SetStateAction<Record<string, string> | undefined>>;
-  button: ButtonConfig;
   customGlyph57: number[] | undefined;
   deckState: Record<string, string>;
   fgColor: string;
@@ -95,7 +93,7 @@ interface Props {
   setCurrencyWidget: React.Dispatch<React.SetStateAction<ButtonConfig['currencyWidget']>>;
 }
 
-export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, button, customGlyph57, deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorTriggerCooldown, sensorTriggerId, sensorTriggerOp, setSensorTriggerOp, sensorTriggerVal, sensorWidgetCrit, sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon, setBrandIconAlwaysAnimate, setBrandIconCustomBitmap, setBrandIconCustomColor, setCustomGlyph57, setFgColor, setIcon, setImageData, setLabel, setSensorTriggerCooldown, setSensorTriggerId, setSensorTriggerVal, setSensorWidgetCrit, setSensorWidgetId, setSensorWidgetSuffix, setSensorWidgetWarn, setShowBrandEditor, setShowBrandPicker, setShowGlyphEditor, setSublabel, setTimerTriggerAt, setVarWidgetName, setVarWidgetPrefix, setVarWidgetSuffix, setVisibleIfApp, setVisibleIfSensorId, setVisibleIfSensorVal, setWidget, sublabel, timerTriggerAt, varWidgetName, varWidgetPrefix, varWidgetSuffix, visibleIfApp, visibleIfSensorId, visibleIfSensorOp, setVisibleIfSensorOp, visibleIfSensorVal, widget, currencyWidget, setCurrencyWidget }: Props) {
+export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, customGlyph57, deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorTriggerCooldown, sensorTriggerId, sensorTriggerOp, setSensorTriggerOp, sensorTriggerVal, sensorWidgetCrit, sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon, setBrandIconAlwaysAnimate, setBrandIconCustomBitmap, setBrandIconCustomColor, setCustomGlyph57, setFgColor, setIcon, setImageData, setLabel, setSensorTriggerCooldown, setSensorTriggerId, setSensorTriggerVal, setSensorWidgetCrit, setSensorWidgetId, setSensorWidgetSuffix, setSensorWidgetWarn, setShowBrandEditor, setShowBrandPicker, setShowGlyphEditor, setSublabel, setTimerTriggerAt, setVarWidgetName, setVarWidgetPrefix, setVarWidgetSuffix, setVisibleIfApp, setVisibleIfSensorId, setVisibleIfSensorVal, setWidget, sublabel, timerTriggerAt, varWidgetName, varWidgetPrefix, varWidgetSuffix, visibleIfApp, visibleIfSensorId, visibleIfSensorOp, setVisibleIfSensorOp, visibleIfSensorVal, widget, currencyWidget, setCurrencyWidget }: Props) {
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
@@ -109,8 +107,62 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
               <Field label={tf("SUB-ETIQUETA (OPCIONAL)")}>
                 <input value={sublabel} onChange={(e) => setSublabel(e.target.value)} placeholder={tf("Descripción corta")} maxLength={30} style={inputStyle} />
               </Field>
-              <Field label={tf("ICONO (EMOJI O SÍMBOLO — VACÍO = ICONO DEL TIPO)")}>
-                <input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder={"▶ ◉ 🎵 💻 🌐 ★"} maxLength={4} style={{ ...inputStyle, fontSize: 20 }} />
+              <Field label={tf("GLIFO DOT / ICONO (VACÍO = ICONO DEL TIPO)")}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    value={icon}
+                    onChange={(e) => setIcon(e.target.value)}
+                    placeholder="PLAY, GEAR, MIC, WEB, CODE..."
+                    maxLength={16}
+                    style={{ ...inputStyle, flex: 1, fontFamily: VD.mono, fontSize: 11 }}
+                  />
+                  {icon && (
+                    <div style={{
+                      width: 28, height: 28,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: VD.elevated, border: `1px solid ${VD.border}`,
+                      borderRadius: VD.radius.sm,
+                    }}>
+                      <DotGlyphIcon glyph={icon} size={16} color={accent} showRecessed />
+                    </div>
+                  )}
+                  {icon && (
+                    <Btn onClick={() => setIcon('')} style={{ color: VD.danger }}>
+                      {tf('Quitar')}
+                    </Btn>
+                  )}
+                </div>
+                {/* Selector rapido de glifos DOT */}
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
+                  {[
+                    'PLAY', 'PAUSE', 'NEXT', 'PREV', 'MIC', 'SPEAKER', 'AUDIO_WAVE',
+                    'TERMINAL', 'WEB', 'CODE', 'GEAR', 'CHECK', 'CLOSE', 'BELL',
+                    'CLOCK', 'FOLDER', 'SPARKLE', 'DOTS', 'ARROW_UP', 'ARROW_DOWN',
+                    'CPU', 'GPU', 'FAN', 'BOLT', 'RAM', 'STORAGE', 'LOCK', 'HEART',
+                    'WARN', 'BOOK', 'BUG', 'GRADUATION',
+                  ].map((g) => {
+                    const isSel = icon.trim().toUpperCase() === g;
+                    return (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setIcon(g)}
+                        title={g}
+                        style={{
+                          width: 26, height: 26,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: isSel ? VD.accentBg : VD.elevated,
+                          border: `1px solid ${isSel ? accent : VD.border}`,
+                          borderRadius: VD.radius.sm,
+                          cursor: 'pointer',
+                          padding: 0,
+                        }}
+                      >
+                        <DotGlyphIcon glyph={g} size={14} color={isSel ? accent : VD.textDim} />
+                      </button>
+                    );
+                  })}
+                </div>
               </Field>
               <Field label={tf("IMAGEN PERSONALIZADA (PNG / JPG / GIF)")}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -140,7 +192,11 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                       </div>
                       <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text }}>
                         {BRAND_ICONS_MAP[brandIcon]?.label ?? brandIcon}
-                        {brandIconCustomBitmap && <span style={{ color: accent, marginLeft: 6 }}>✎</span>}
+                        {brandIconCustomBitmap && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}>
+                            <DotGlyphIcon glyph="EDIT" size={8} color={accent} />
+                          </span>
+                        )}
                       </span>
                       <Btn onClick={() => setShowBrandPicker(true)}>{tf('Cambiar')}</Btn>
                       <Btn onClick={() => setShowBrandEditor(true)}>{tf('Editar puntos')}</Btn>
@@ -200,14 +256,14 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input type="color" value={bgColor || '#222222'} onChange={(e) => setBgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
                     <input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder={"#222222"} style={{ ...inputStyle, flex: 1 }} />
-                    {bgColor && <Btn onClick={() => setBgColor('')}>✕</Btn>}
+                    {bgColor && <Btn onClick={() => setBgColor('')}><DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} /></Btn>}
                   </div>
                 </Field>
                 <Field label={tf("COLOR DE TEXTO / ICONO")}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input type="color" value={fgColor || '#dcdcdc'} onChange={(e) => setFgColor(e.target.value)} style={{ width: 36, height: 28, border: `1px solid ${VD.border}`, background: 'none', cursor: 'pointer', padding: 2 }} />
                     <input value={fgColor} onChange={(e) => setFgColor(e.target.value)} placeholder={"#dcdcdc"} style={{ ...inputStyle, flex: 1 }} />
-                    {fgColor && <Btn onClick={() => setFgColor('')}>✕</Btn>}
+                    {fgColor && <Btn onClick={() => setFgColor('')}><DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} /></Btn>}
                   </div>
                 </Field>
               </div>
@@ -302,7 +358,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                       <input
                         value={varWidgetPrefix}
                         onChange={(e) => setVarWidgetPrefix(e.target.value)}
-                        placeholder={tf("Prefijo (ej. 🎬 )")}
+                        placeholder={tf("Prefijo (ej. REC: )")}
                         style={{ ...inputStyle, flex: 1 }}
                       />
                       <input

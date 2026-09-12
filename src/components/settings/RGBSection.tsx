@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { RGBSettings, RGBStatus } from '../../types';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 
 export function RGBSection({
@@ -98,8 +99,9 @@ export function RGBSection({
             </span>
           )}
           {!testResult && status && (
-            <span style={{ fontFamily: VD.mono, fontSize: 9, color: status.connected ? VD.success : VD.textMuted }}>
-              {status.connected ? `● ${status.deviceCount} dev` : '○ desconectado'}
+            <span style={{ fontFamily: VD.mono, fontSize: 9, color: status.connected ? VD.success : VD.textMuted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <DotGlyphIcon glyph="DOTS" size={6} color={status.connected ? VD.success : VD.textMuted} />
+              {status.connected ? `${status.deviceCount} dev` : 'desconectado'}
             </span>
           )}
         </div>

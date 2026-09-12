@@ -3,6 +3,7 @@ import type { VDTokens } from '../../design';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { ColorPicker } from '../../components/ColorPicker';
 import type { RGBDeviceInfo, RGBSettings, RGBStatus } from '../../types';
 
@@ -30,7 +31,7 @@ export function StatusBadge({ status }: { status: RGBStatus }) {
   const dotColor = status.connected ? VD.success : status.serverRunning ? VD.warning : VD.textMuted;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: VD.mono, fontSize: 10, color: VD.textDim, letterSpacing: 1 }}>
-      <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor }} />
+      <DotGlyphIcon glyph="DOTS" size={8} color={dotColor} />
       {status.connected ? t('rgb.connected', { n: status.deviceCount }) :
        status.serverRunning ? t('rgb.serverUp') : t('rgb.disconnected')}
     </div>
@@ -49,6 +50,8 @@ export function DeviceDetail({
 }) {
   const VD = useTheme();
   const t = useT();
+  const btnPrimary = estiloBotonPrimario(VD);
+  const btnSecondary = estiloBotonSecundario(VD);
   const selectStyle = estiloSelector(VD);
   const activeMode = device.modes.find((m) => m.id === device.activeMode);
   const [color, setColor] = useState(device.colors[0] ?? '#ffffff');
@@ -63,7 +66,7 @@ export function DeviceDetail({
     && activeMode.speedMin !== activeMode.speedMax;
 
   // Si cambia el device seleccionado, sincroniza el color local con el primer LED.
-  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); setSpeed(50); }, [device.id]);
+  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); setSpeed(50); }, [device.id, device.colors]);
   // Reset speed when the active mode changes (different speed range).
   useEffect(() => { setSpeed(50); }, [activeMode?.id]);
 
@@ -326,7 +329,9 @@ export function CalibratorModal({
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${VD.border}` }}>
           <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>{t('rgb.calibrator')}</div>
           <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: VD.textDim, cursor: 'pointer', fontSize: 18 }}>×</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
+            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
+          </button>
         </div>
         <div style={{ padding: 14, maxHeight: '70vh', overflowY: 'auto' }}>
           <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim, lineHeight: 1.6, marginBottom: 14 }}>

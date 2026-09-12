@@ -76,6 +76,31 @@ export const VD_LIGHT: VDTokens = {
   trama: '0,0,0',
 };
 
+// Paleta física DOT / 480 — negro OLED puro (#070809), bordes táctiles de hardware, radios nítidos.
+export const VD_DOT480: VDTokens = {
+  ...VD,
+  bg: '#070809',
+  surface: '#111315',
+  elevated: '#181b1e',
+  elevatedHover: '#20242a',
+  overlay: '#252a32',
+  border: '#1f2229',
+  borderStrong: '#2e3440',
+  text: '#e6e8eb',
+  textDim: '#8e929b',
+  textMuted: '#555a64',
+  accent: '#ff3b30',
+  accentBg: 'rgba(255,59,48,0.16)',
+  danger: '#ff3b30',
+  radius: { sm: 1, md: 2, lg: 3 } as const,
+  shadow: {
+    menu: '0 8px 24px rgba(0,0,0,0.9)',
+    modal: '0 16px 48px rgba(0,0,0,0.95)',
+  },
+  dotIdle: 'rgba(255,255,255,0.04)',
+  trama: '255,255,255',
+};
+
 // Presets del color de acento — 10 colores que cubren el espectro sin chocar con
 // los tokens semánticos (success/warning/danger). El usuario puede usar el
 // <input type="color"> para cualquier color libre adicional.

@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { SaveProfileBar, PresetsRapidos } from './piezas';
 import type { RGBProfile } from '../../types';
 
@@ -52,10 +53,18 @@ export function PanelPerfiles({
             <button
               onClick={() => onAlternarArranque(p.id)}
               title={t(startupProfileId === p.id ? 'rgb.startupOn' : 'rgb.startupOff')}
-              style={{ background: 'none', border: 'none', fontSize: 11, lineHeight: 1, cursor: 'pointer', padding: '0 2px', color: startupProfileId === p.id ? accent : VD.textMuted }}
-            >{startupProfileId === p.id ? '◉' : '○'}</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}
+            >
+              <DotGlyphIcon
+                glyph={startupProfileId === p.id ? 'CHECK' : 'DOTS'}
+                size={8}
+                color={startupProfileId === p.id ? accent : VD.textMuted}
+              />
+            </button>
             <button onClick={() => onAplicar(p.id)} disabled={!conectado} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('rgb.apply')}</button>
-            <button onClick={() => onBorrar(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
+            <button onClick={() => onBorrar(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}>
+              <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+            </button>
           </div>
         ))}
       </div>

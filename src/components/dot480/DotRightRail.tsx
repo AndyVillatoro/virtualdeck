@@ -1,4 +1,5 @@
 import React from 'react';
+import { DotGlyphIcon } from './DotGlyphIcon';
 
 export interface DotRightRailProps {
   icons: string[];
@@ -48,13 +49,17 @@ export function DotRightRail({
               border: isActive ? '1px solid ' + accentColor : '1px solid transparent',
               borderRadius: 6,
               color: isActive ? accentColor : 'rgba(255, 255, 255, 0.45)',
-              fontSize: 11,
               cursor: 'pointer',
               padding: 0,
               transition: 'all 0.15s ease',
             }}
           >
-            {icon}
+            <DotGlyphIcon
+              glyph={icon}
+              size={12}
+              color={isActive ? accentColor : 'rgba(255, 255, 255, 0.45)'}
+              showRecessed
+            />
           </button>
         );
       })}

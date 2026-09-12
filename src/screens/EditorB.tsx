@@ -9,6 +9,7 @@ import { PasoEstilo } from './editor/PasoEstilo';
 import { construirBoton } from './editor/guardar';
 import { useTheme } from '../utils/theme';
 import { DotLabel } from '../components/DotLabel';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 // 4.1 — picker y editor del catálogo de marcas se cargan a demanda. Evita
 // arrastrar el bundle de marcas al árbol inicial cuando el usuario no abre el modal.
 const BrandIconPicker = lazy(() => import('../components/BrandIconPicker').then(m => ({ default: m.BrandIconPicker })));
@@ -250,7 +251,9 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
           <DotLabel size={11} color={VD.text} spacing={2}>{t('ed.title')}</DotLabel>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>· {button.id.toUpperCase()}</span>
           <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ color: VD.textDim, fontSize: 18, background: 'transparent', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
+          <button onClick={onClose} style={{ color: VD.textDim, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
+            <DotGlyphIcon glyph="CLOSE" size={12} color={VD.textDim} />
+          </button>
         </div>
 
         {/* Steps */}
@@ -359,7 +362,6 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 brandIconCustomColor={brandIconCustomColor}
                 brandIconCustomPalette={brandIconCustomPalette}
                 setBrandIconCustomPalette={setBrandIconCustomPalette}
-                button={button}
                 customGlyph57={customGlyph57}
                 deckState={deckState}
                 fgColor={fgColor}
@@ -426,14 +428,19 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
         {/* Footer */}
         <div style={{ height: 54, borderTop: `1px solid ${VD.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, flexShrink: 0 }}>
-          <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: step === 0 ? VD.textMuted : VD.textDim, cursor: step === 0 ? 'default' : 'pointer' }}>
-            {t('ed.back')}
+          <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: step === 0 ? VD.textMuted : VD.textDim, cursor: step === 0 ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={step === 0 ? VD.textMuted : VD.textDim} />
+            <span>{t('ed.back')}</span>
           </button>
           <div style={{ flex: 1 }} />
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, letterSpacing: 1 }}>{t('ed.stepN', { n: step + 1, total: STEPS.length })}</span>
-          <button onClick={onClose} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.textDim, cursor: 'pointer' }}>{t('ed.cancel')}</button>
-          <button onClick={() => { if (step < STEPS.length - 1) setStep(step + 1); else handleSave(); }} style={{ padding: '8px 20px', background: accent, border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm }}>
-            {step < STEPS.length - 1 ? t('ed.next') : t('ed.save')}
+          <button onClick={onClose} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.textDim, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textDim} />
+            <span>{t('ed.cancel')}</span>
+          </button>
+          <button onClick={() => { if (step < STEPS.length - 1) setStep(step + 1); else handleSave(); }} style={{ padding: '8px 20px', background: accent, border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>{step < STEPS.length - 1 ? t('ed.next') : t('ed.save')}</span>
+            <DotGlyphIcon glyph={step < STEPS.length - 1 ? 'ARROW_RIGHT' : 'CHECK'} size={8} color="#fff" />
           </button>
         </div>
       </div>

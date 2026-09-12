@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../utils/theme';
+import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 import type { Sensor } from '../types';
 
 interface HardwareGroup {
@@ -59,6 +60,22 @@ interface SensorCardProps {
   compact?: boolean;
 }
 
+const CAT_GLYPHS: Record<string, string> = {
+  cpu: 'CPU',
+  gpu: 'GPU',
+  mainboard: 'GEAR',
+  memory: 'RAM',
+  storage: 'STORAGE',
+  other: 'DOTS',
+};
+
+const METRIC_GLYPHS: Record<string, string> = {
+  TEMP: 'WEATHER_THERMO',
+  LOAD: 'CPU',
+  FAN: 'FAN',
+  PWR: 'BOLT',
+};
+
 export function SensorCard({ group, compact = false }: SensorCardProps) {
   const VD = useTheme();
   const { temp, load, power, fan } = group;
@@ -78,15 +95,28 @@ export function SensorCard({ group, compact = false }: SensorCardProps) {
       borderRadius: VD.radius.md, padding,
     }}>
       <div style={{
-        fontFamily: VD.mono, fontSize: labelFontSize + 1, letterSpacing: 1, color: VD.textDim,
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: compact ? 4 : 6,
+        display: 'flex', alignItems: 'center', gap: 5, marginBottom: compact ? 4 : 6,
       }}>
-        {shortHardwareLabel(group.hardware).toUpperCase()}
+        <DotGlyphIcon
+          glyph={CAT_GLYPHS[group.category] ?? 'DOTS'}
+          size={labelFontSize + 3}
+          color={VD.accent}
+          showRecessed
+        />
+        <div style={{
+          fontFamily: VD.mono, fontSize: labelFontSize + 1, letterSpacing: 1, color: VD.textDim,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {shortHardwareLabel(group.hardware).toUpperCase()}
+        </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cells.length}, 1fr)`, gap: compact ? 4 : 6 }}>
         {cells.map((c) => (
           <div key={c.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div style={{ fontFamily: VD.mono, fontSize: labelFontSize, color: VD.textMuted, letterSpacing: 1, lineHeight: 1 }}>{c.label}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, lineHeight: 1 }}>
+              <DotGlyphIcon glyph={METRIC_GLYPHS[c.label] ?? 'DOTS'} size={labelFontSize} color={VD.textMuted} />
+              <span style={{ fontFamily: VD.mono, fontSize: labelFontSize, color: VD.textMuted, letterSpacing: 1 }}>{c.label}</span>
+            </div>
             <div style={{ fontFamily: VD.mono, fontSize: valueFontSize, color: c.color || VD.text, lineHeight: 1.1, marginTop: 2 }}>{c.value}</div>
           </div>
         ))}

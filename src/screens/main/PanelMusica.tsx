@@ -3,9 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { DotLabel } from '../../components/DotLabel';
-import {
-  IconMediaPlay, IconMediaPause, IconMediaSkipBack, IconMediaSkipForward, IconMusic,
-} from '../../components/VDIcon';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { NowPlaying, ElectronAPI } from '../../types';
 
 /**
@@ -61,7 +59,7 @@ export function PanelMusica({
 
   const control = (
     key: 'prev' | 'play-pause' | 'next',
-    Icon: typeof IconMediaPlay,
+    glyph: string,
     titulo: string,
     lado_: number,
     principal: boolean,
@@ -90,7 +88,12 @@ export function PanelMusica({
       onPointerUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
       onPointerLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
     >
-      <Icon size={principal ? 30 : 24} color={principal ? accent : VD.textDim} />
+      <DotGlyphIcon
+        glyph={glyph}
+        size={principal ? 28 : 20}
+        color={principal ? accent : VD.textDim}
+        showRecessed
+      />
     </button>
   );
 
@@ -108,9 +111,11 @@ export function PanelMusica({
           title={t('music.hide')}
           style={{
             background: 'none', border: 'none', color: VD.textMuted,
-            cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: '0 2px',
+            cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center',
           }}
-        >×</button>
+        >
+          <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
+        </button>
       </div>
 
       {/* Carátula. El hueco es cuadrado y del ancho del panel; cuando no hay
@@ -127,7 +132,7 @@ export function PanelMusica({
             querian decir cosas distintas. El estado lo dicen el punto y el
             texto, que no se prestan a confusion. */}
         <div style={{ opacity: 0.22 }}>
-          <IconMusic size={64} color={VD.textMuted} />
+          <DotGlyphIcon glyph="AUDIO_WAVE" size={48} color={VD.textMuted} showRecessed />
         </div>
         {nowPlaying.thumbnail && (
           <img
@@ -168,9 +173,9 @@ export function PanelMusica({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-        {control('prev', IconMediaSkipBack, t('media.prev'), LADO_SECUNDARIO, false, puede?.prev !== false)}
-        {control('play-pause', isPlaying ? IconMediaPause : IconMediaPlay, t('media.playPause'), LADO_PRINCIPAL, true)}
-        {control('next', IconMediaSkipForward, t('media.next'), LADO_SECUNDARIO, false, puede?.next !== false)}
+        {control('prev', 'PREV', t('media.prev'), LADO_SECUNDARIO, false, puede?.prev !== false)}
+        {control('play-pause', isPlaying ? 'PAUSE' : 'PLAY', t('media.playPause'), LADO_PRINCIPAL, true)}
+        {control('next', 'NEXT', t('media.next'), LADO_SECUNDARIO, false, puede?.next !== false)}
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>

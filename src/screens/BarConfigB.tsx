@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ButtonCell } from '../components/ButtonCell';
 import { DotLabel } from '../components/DotLabel';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { BARRA_POR_DEFECTO } from './FloatingBarB';
@@ -157,9 +158,12 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
                           position: 'absolute', top: -6, right: -6, width: 18, height: 18,
                           borderRadius: '50%', border: `1px solid ${VD.borderStrong}`,
                           background: VD.surface, color: VD.danger,
-                          fontSize: 11, lineHeight: 1, padding: 0, cursor: 'pointer',
+                          padding: 0, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}
-                      >&times;</button>
+                      >
+                        <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+                      </button>
                     </>
                   ) : (
                     <div style={{
@@ -173,14 +177,24 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
             })}
           </div>
 
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 12 }}>
-            <button onClick={() => cambiarHuecos(barra.slots.length - 1)} disabled={barra.slots.length <= MIN_HUECOS}
-              style={estiloMini(VD)}>−</button>
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginTop: 12 }}>
+            <button
+              onClick={() => cambiarHuecos(barra.slots.length - 1)}
+              disabled={barra.slots.length <= MIN_HUECOS}
+              style={{ ...estiloMini(VD), display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, padding: 0 }}
+            >
+              <DotGlyphIcon glyph="SUBTRACT" size={9} color={barra.slots.length <= MIN_HUECOS ? VD.textMuted : VD.textDim} />
+            </button>
             <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, minWidth: 24, textAlign: 'center' }}>
               {barra.slots.length}
             </span>
-            <button onClick={() => cambiarHuecos(barra.slots.length + 1)} disabled={barra.slots.length >= maximo}
-              style={estiloMini(VD)}>+</button>
+            <button
+              onClick={() => cambiarHuecos(barra.slots.length + 1)}
+              disabled={barra.slots.length >= maximo}
+              style={{ ...estiloMini(VD), display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, padding: 0 }}
+            >
+              <DotGlyphIcon glyph="ADD" size={9} color={barra.slots.length >= maximo ? VD.textMuted : VD.textDim} />
+            </button>
           </div>
           <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, textAlign: 'center', marginTop: 6 }}>
             {t('bar.max', { n: maximo })}

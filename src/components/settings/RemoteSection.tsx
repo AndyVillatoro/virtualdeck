@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { RemoteSettings, RemoteStatus, FirewallStatus } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 
 /**
  * El servidor local (1.4): mandar sobre el deck por HTTP.
@@ -113,8 +114,8 @@ function TarjetaConexionMovil({
           <span style={{ fontFamily: VD.mono, fontSize: 13, fontWeight: 700, color: VD.text, userSelect: 'text' }}>
             {urlPrincipal}
           </span>
-          <button onClick={onCopiarUrl} style={miniBtn(accent)}>
-            {copiadoUrl ? '✓' : t('set.remoteCopyUrl')}
+          <button onClick={onCopiarUrl} style={{ ...miniBtn(accent), display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {copiadoUrl ? <DotGlyphIcon glyph="CHECK" size={8} color={accent} /> : t('set.remoteCopyUrl')}
           </button>
         </div>
         {urlMdns && (
@@ -207,7 +208,9 @@ function SeccionAvanzadaRemota({
           padding: '4px 0',
         }}
       >
-        <span>{abierto ? '▼' : '▶'}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <DotGlyphIcon glyph={abierto ? 'ARROW_DOWN' : 'ARROW_RIGHT'} size={8} color={VD.textDim} />
+        </span>
         <span>{t('set.remoteAdvanced')}</span>
       </button>
 

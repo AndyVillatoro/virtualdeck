@@ -17,6 +17,7 @@ import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pul
 import { useNowPlaying } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import type { ButtonConfig, DeckConfig } from '../types';
 
 
@@ -222,7 +223,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         fontFamily: VD.mono, fontSize: 9, letterSpacing: 2, color: VD.textDim,
         flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
-        <span style={{ color: config.accent }}>●</span>
+        <DotGlyphIcon glyph="DOTS" size={6} color={config.accent} />
         <span>{t('full.title')}</span>
         <div style={{ flex: 1 }} />
         <span>{dayStr} {dateStr}</span>
@@ -230,15 +231,18 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           background: 'transparent', border: `1px solid ${VD.border}`,
           color: VD.textDim, fontFamily: VD.mono, fontSize: 9,
           letterSpacing: 1, padding: '3px 8px', cursor: 'pointer',
-          marginRight: 4,
+          marginRight: 4, display: 'inline-flex', alignItems: 'center', gap: 5,
         }}>
+          <DotGlyphIcon glyph="LOCK" size={8} color={config.accent} />
           {t('full.kioskBadge')}
         </button>
         <button onClick={onExit} style={{
           background: 'transparent', border: `1px solid ${VD.border}`,
           color: VD.textDim, fontFamily: VD.mono, fontSize: 9,
           letterSpacing: 1, padding: '3px 8px', cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', gap: 5,
         }}>
+          <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textDim} />
           {t('full.exit')}
         </button>
       </div>
@@ -271,8 +275,10 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               <span style={{
                 fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
                 color: sensorStatus?.connected ? VD.success : sensorStatus?.enabled ? VD.warning : VD.textMuted,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
               }}>
-                {sensorStatus?.connected ? '● LHM' : sensorStatus?.enabled ? '○ OFFLINE' : '○ DISABLED'}
+                <DotGlyphIcon glyph="DOTS" size={5} color={sensorStatus?.connected ? VD.success : sensorStatus?.enabled ? VD.warning : VD.textMuted} />
+                <span>{sensorStatus?.connected ? 'LHM' : sensorStatus?.enabled ? 'OFFLINE' : 'DISABLED'}</span>
               </span>
             </div>
             {sensorGroups.length === 0 ? (
@@ -357,12 +363,14 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           maxWidth: 'min(560px, 70%)', boxShadow: VD.shadow.menu,
           display: 'flex', gap: 10, alignItems: 'flex-start',
         }}>
-          <span style={{ color: VD.danger, fontSize: 12, flexShrink: 0 }}>!</span>
+          <DotGlyphIcon glyph="WARN" size={12} color={VD.danger} style={{ flexShrink: 0, marginTop: 2 }} />
           <span style={{ flex: 1, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{runtimeError}</span>
           <button
             onClick={() => setRuntimeError(null)}
-            style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}
-          >×</button>
+            style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+          >
+            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
+          </button>
         </div>
       )}
 

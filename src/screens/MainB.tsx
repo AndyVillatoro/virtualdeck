@@ -15,9 +15,10 @@ import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { Hint } from '../components/Hint';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
-import type { ButtonConfig, DeckConfig } from '../types';
+import type { ButtonConfig, DeckConfig, ThemeMode } from '../types';
 
 
 interface MainBProps {
@@ -59,8 +60,8 @@ interface MainBProps {
   alwaysOnTop?: boolean;
   onAlwaysOnTopToggle?: () => void;
   onFloatingBar?: () => void;
-  theme?: 'dark' | 'light' | 'system';
-  onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  theme?: ThemeMode;
+  onThemeChange?: (theme: ThemeMode) => void;
   language?: 'system' | 'es' | 'en';
   onLanguageChange?: (language: 'system' | 'es' | 'en') => void;
   hintsDismissed?: string[];
@@ -552,8 +553,11 @@ export function MainB({
                     }
                     setSelectedIds(new Set()); setBulkMoveTarget(null);
                   }}
-                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-                >{t('bulk.move')}</button>
+                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                >
+                  <DotGlyphIcon glyph="EXPORT" size={7} color={config.accent} />
+                  <span>{t('bulk.move')}</span>
+                </button>
               )}
               {bulkMoveTarget !== null && (
                 <button
@@ -567,8 +571,11 @@ export function MainB({
                     }
                     setSelectedIds(new Set()); setBulkMoveTarget(null);
                   }}
-                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-                >{t('bulk.copy')}</button>
+                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                >
+                  <DotGlyphIcon glyph="CODE" size={7} color={config.accent} />
+                  <span>{t('bulk.copy')}</span>
+                </button>
               )}
 
               <button
@@ -576,13 +583,18 @@ export function MainB({
                   onClearButtons(Array.from(selectedIds));
                   setSelectedIds(new Set());
                 }}
-                style={{ padding: '4px 10px', background: 'none', border: `1px solid ${VD.danger}`, color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-              >{t('bulk.clear')}</button>
+                style={{ padding: '4px 10px', background: 'none', border: `1px solid ${VD.danger}`, color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+              >
+                <DotGlyphIcon glyph="CLOSE" size={7} color={VD.danger} />
+                <span>{t('bulk.clear')}</span>
+              </button>
 
               <button
                 onClick={() => { setSelectedIds(new Set()); setBulkMoveTarget(null); }}
-                style={{ padding: '4px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm }}
-              >×</button>
+                style={{ padding: '4px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center' }}
+              >
+                <DotGlyphIcon glyph="CLOSE" size={7} color={VD.textMuted} />
+              </button>
             </div>
           )}
 
@@ -632,7 +644,9 @@ export function MainB({
               display: 'flex', gap: 12, alignItems: 'flex-start',
             }}>
               <span style={{ flex: 1, whiteSpace: 'pre-wrap', maxHeight: 140, overflowY: 'auto', lineHeight: 1.6 }}>{toast}</span>
-              <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0, padding: 0 }}>×</button>
+              <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', flexShrink: 0, padding: 2, display: 'flex', alignItems: 'center' }}>
+                <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textMuted} />
+              </button>
             </div>
           )}
         </div>

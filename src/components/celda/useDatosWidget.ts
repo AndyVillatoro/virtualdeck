@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { useLang } from '../../utils/i18n';
-import { wxEmoji } from '../WeatherWidget';
+import { wxDotGlyph } from '../WeatherWidget';
 import { findSensor } from '../../utils/sensors';
 import type { ButtonConfig, Sensor, TasasDivisa, TipoWidget } from '../../types';
 
@@ -24,6 +24,7 @@ export interface DatosWidget {
   line1: string;
   line2?: string;
   tone?: 'warn' | 'crit';
+  glyph?: string;
 }
 
 export interface DatosClima {
@@ -72,23 +73,23 @@ const CONSTRUCTORES: Record<TipoWidget, (b: ButtonConfig, f: Fuentes) => DatosWi
   'clock': (_b, f) => ({
     line1: f.hora.format(f.reloj),
     line2: f.fecha.format(f.reloj).toUpperCase(),
+    glyph: 'CLOCK',
   }),
 
   'weather': (_b, f) => {
     if (!f.clima) return null;
-    const emoji = wxEmoji(f.clima.code);
-    return { line1: `${emoji} ${f.clima.temp}°`, line2: f.clima.city };
+    return { line1: `${f.clima.temp}°`, line2: f.clima.city, glyph: wxDotGlyph(f.clima.code) };
   },
 
   'now-playing': (_b, f) => (f.sonando
-    ? { line1: f.sonando.title || '—', line2: f.sonando.artist || undefined }
+    ? { line1: f.sonando.title || '—', line2: f.sonando.artist || undefined, glyph: 'AUDIO_WAVE' }
     : null),
 
   'variable': (b, f) => {
     const cfg = b.varWidget;
     if (!cfg?.varName) return null;
     const bruto = f.estado?.[cfg.varName] ?? '0';
-    return { line1: `${cfg.prefix ?? ''}${bruto}`, line2: cfg.suffix || cfg.varName };
+    return { line1: `${cfg.prefix ?? ''}${bruto}`, line2: cfg.suffix || cfg.varName, glyph: 'CODE' };
   },
 
   'sensor': (b, f) => (b.sensorWidget ? datosDeSensor(b, f.sensores) : null),
@@ -129,7 +130,15 @@ function datosDeSensor(b: ButtonConfig, sensores: Sensor[]): DatosWidget {
     cfg.critAt !== undefined && s.value >= cfg.critAt ? 'crit' as const :
     cfg.warnAt !== undefined && s.value >= cfg.warnAt ? 'warn' as const :
     undefined;
-  return { line1: `${v}${unidad}`, line2: cfg.suffix || s.name, tone };
+  const glyph = s.category === 'cpu' ? 'CPU' :
+    s.category === 'gpu' ? 'GPU' :
+    s.category === 'memory' ? 'RAM' :
+    s.category === 'storage' ? 'STORAGE' :
+    s.kind === 'Fan' ? 'FAN' :
+    s.kind === 'Temperature' ? 'WEATHER_THERMO' :
+    s.kind === 'Voltage' || s.kind === 'Power' ? 'BOLT' :
+    'GEAR';
+  return { line1: `${v}${unidad}`, line2: cfg.suffix || s.name, tone, glyph };
 }
 
 /**

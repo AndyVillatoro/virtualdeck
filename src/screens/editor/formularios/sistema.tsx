@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { Field, Btn, estiloEntrada } from '../comunes';
+import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import type { PropsFormulario } from './base';
 
 /** Lo que le habla al sistema: audio, teclas, portapapeles, procesos, pantalla. */
@@ -16,20 +17,28 @@ export function FormAudioDevice(p: PropsFormulario) {
           <Field label={tf("DISPOSITIVO DE AUDIO")}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               {action.deviceName && (
-                <span style={{ fontFamily: VD.mono, fontSize: 10, color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
-                  ✓ {action.deviceName}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: VD.mono, fontSize: 10, color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                  <DotGlyphIcon glyph="CHECK" size={8} color={accent} />
+                  <span>{action.deviceName}</span>
                 </span>
               )}
               {!action.deviceName && <span />}
-              <Btn onClick={loadAudioDevices}>{loadingDevices ? '...' : tf('⟳ RECARGAR')}</Btn>
+              <Btn onClick={loadAudioDevices} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <DotGlyphIcon glyph="DOTS" size={6} />
+                <span>{loadingDevices ? '...' : tf('RECARGAR')}</span>
+              </Btn>
             </div>
             {loadingDevices && <div style={{ fontFamily: VD.mono, fontSize: 11, color: VD.textDim, padding: '4px 0 8px' }}>{tf('Cargando dispositivos...')}</div>}
             {!loadingDevices && audioError && (
               <div style={{ marginBottom: 10 }}>
-                <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.danger, marginBottom: 6 }}>
-                  ⚠ {audioError}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: VD.mono, fontSize: 10, color: VD.danger, marginBottom: 6 }}>
+                  <DotGlyphIcon glyph="WARN" size={8} color={VD.danger} />
+                  <span>{audioError}</span>
                 </div>
-                <Btn onClick={loadAudioDevices} style={{ marginBottom: 8 }}>{tf('⟳ REINTENTAR')}</Btn>
+                <Btn onClick={loadAudioDevices} style={{ marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <DotGlyphIcon glyph="DOTS" size={6} />
+                  <span>{tf('REINTENTAR')}</span>
+                </Btn>
                 <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, marginBottom: 6 }}>
                   {tf('O introduzca el nombre exacto del dispositivo (tal como aparece en Configuración → Sonido):')}
                 </div>
@@ -75,7 +84,12 @@ export function FormAudioDevice(p: PropsFormulario) {
                   <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text }}>{dev.name}</span>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {dev.isDefault && <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.success, letterSpacing: 1 }}>{tf('PREDETERMINADO')}</span>}
-                    {action.deviceId === dev.id && <span style={{ fontFamily: VD.mono, fontSize: 9, color: accent, letterSpacing: 1 }}>{tf('✓ SELECCIONADO')}</span>}
+                    {action.deviceId === dev.id && (
+                      <span style={{ fontFamily: VD.mono, fontSize: 9, color: accent, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <DotGlyphIcon glyph="CHECK" size={7} color={accent} />
+                        {tf('SELECCIONADO')}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -101,8 +115,9 @@ export function FormHotkey(p: PropsFormulario) {
                 readOnly={capturing}
                 style={{ ...inputStyle, flex: 1, outline: capturing ? `2px solid ${accent}` : undefined }}
               />
-              <Btn onClick={() => setCapturing(c => !c)} style={{ background: capturing ? VD.accentBg : undefined, borderColor: capturing ? accent : undefined, color: capturing ? accent : undefined }}>
-                {capturing ? '● ESPERANDO...' : 'CAPTURAR'}
+              <Btn onClick={() => setCapturing(c => !c)} style={{ background: capturing ? VD.accentBg : undefined, borderColor: capturing ? accent : undefined, color: capturing ? accent : undefined, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {capturing && <DotGlyphIcon glyph="DOTS" size={6} color={accent} />}
+                <span>{capturing ? 'ESPERANDO...' : 'CAPTURAR'}</span>
               </Btn>
             </div>
             {capturing && (
@@ -369,11 +384,18 @@ export function FormWindowSnap(p: PropsFormulario) {
             <Field label={tf("POSICIÓN / TAMAÑO")}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                 {([
-                  ['top-left','↖ ' + tf('Cuad. sup-izq')],['top-half','↑ ' + tf('Mitad superior')],['top-right','↗ ' + tf('Cuad. sup-der')],
-                  ['left-half','← ' + tf('Mitad izq')],['center','⊞ ' + tf('Centro 50%')],['right-half','→ ' + tf('Mitad der')],
-                  ['bottom-left','↙ ' + tf('Cuad. inf-izq')],['bottom-half','↓ ' + tf('Mitad inferior')],['bottom-right','↘ ' + tf('Cuad. inf-der')],
-                  ['maximize','⛶ ' + tf('Maximizar')],['restore','⊡ ' + tf('Restaurar')],
-                ] as [string, string][]).map(([val, lbl]) => (
+                  ['top-left', 'ARROW_UP', tf('Cuad. sup-izq')],
+                  ['top-half', 'ARROW_UP', tf('Mitad superior')],
+                  ['top-right', 'ARROW_UP', tf('Cuad. sup-der')],
+                  ['left-half', 'ARROW_LEFT', tf('Mitad izq')],
+                  ['center', 'DOTS', tf('Centro 50%')],
+                  ['right-half', 'ARROW_RIGHT', tf('Mitad der')],
+                  ['bottom-left', 'ARROW_DOWN', tf('Cuad. inf-izq')],
+                  ['bottom-half', 'ARROW_DOWN', tf('Mitad inferior')],
+                  ['bottom-right', 'ARROW_DOWN', tf('Cuad. inf-der')],
+                  ['maximize', 'FULLSCREEN', tf('Maximizar')],
+                  ['restore', 'MINIMIZE', tf('Restaurar')],
+                ] as [string, string, string][]).map(([val, glyph, lbl]) => (
                   <div
                     key={val}
                     onClick={() => setAction((a) => ({ ...a, snapPosition: val as any }))}
@@ -382,9 +404,12 @@ export function FormWindowSnap(p: PropsFormulario) {
                       background: action.snapPosition === val ? VD.accentBg : VD.elevated,
                       border: `1px solid ${action.snapPosition === val ? accent : VD.border}`,
                       fontFamily: VD.mono, fontSize: 8, color: action.snapPosition === val ? accent : VD.textDim,
-                      textAlign: 'center',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                     }}
-                  >{lbl}</div>
+                  >
+                    <DotGlyphIcon glyph={glyph} size={8} color={action.snapPosition === val ? accent : VD.textDim} />
+                    <span>{lbl}</span>
+                  </div>
                 ))}
               </div>
             </Field>

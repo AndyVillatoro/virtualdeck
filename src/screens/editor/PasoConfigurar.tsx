@@ -2,15 +2,9 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
-import { IconNone } from '../../components/VDIcon';
-import { type ButtonPreset } from './actionData';
-import { MacroEditor } from './MacroEditor';
 import { Field, ToggleOffActionPicker, estiloEntrada } from './comunes';
 import { FORMULARIOS, type PropsFormulario } from './formularios';
 import { FormMediaPlayPause } from './formularios/sistema';
-import type {
-  ActionType, AudioDevice, ButtonAction, FolderButton, RGBDeviceInfo, RGBProfile,
-} from '../../types';
 
 /**
  * Paso 2 de 3: los campos de la accion elegida.

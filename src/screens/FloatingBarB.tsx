@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ButtonCell } from '../components/ButtonCell';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { ThemeProvider, useTheme } from '../utils/theme';
 import { LanguageProvider, useT } from '../utils/i18n';
 import { interpolate } from '../utils/actions';
@@ -241,16 +242,19 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
         title={t('bar.close')}
         style={{
           position: 'absolute', top: 2, right: 2,
-          width: 18, height: 18, lineHeight: 1, padding: 0,
-          border: `1px solid ${VD.borderStrong}`, borderRadius: '50%',
-          background: VD.surface, color: VD.textDim,
-          fontSize: 11, cursor: 'pointer',
+          width: 18, height: 18, padding: 0,
+          border: `1px solid ${VD.borderStrong}`, borderRadius: VD.radius.sm,
+          background: VD.surface, color: VD.danger,
+          cursor: 'pointer',
           opacity: hover ? 1 : 0,
           pointerEvents: hover ? 'auto' : 'none',
           transition: 'opacity 120ms',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           WebkitAppRegion: 'no-drag',
         } as React.CSSProperties}
-      >&times;</button>
+      >
+        <DotGlyphIcon glyph="CLOSE" size={9} color={VD.danger} />
+      </button>
     </div>
   );
 }

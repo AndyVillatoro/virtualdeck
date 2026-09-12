@@ -8,6 +8,7 @@ import {
 import { ListaDispositivos } from './rgb/ListaDispositivos';
 import { PanelPerfiles } from './rgb/PanelPerfiles';
 import { TitleBar } from '../components/TitleBar';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import type {
   DeckConfig, RGBDeviceInfo, RGBProfile, RGBSettings, RGBStatus, RGBDeviceState,
 } from '../types';
@@ -335,7 +336,10 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     }}>
       <TitleBar accent={accent} pageName="RGB MANAGER" showControls={false} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: `1px solid ${VD.border}`, background: VD.surface, flexShrink: 0 }}>
-        <button onClick={onBack} style={btnSecondary}>{t('ui.back')}</button>
+        <button onClick={onBack} style={{ ...btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={VD.textDim} />
+          <span>{t('ui.back')}</span>
+        </button>
         <div style={{ flex: 1 }} />
         <StatusBadge status={status} />
         {status.connected ? (
@@ -343,7 +347,9 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
         ) : (
           <button onClick={handleConnect} disabled={busy} style={{ ...btnPrimary, borderColor: accent, color: accent }}>{t('rgb.connect')}</button>
         )}
-        <button onClick={refresh} disabled={busy || !status.connected} style={btnSecondary} title={t('rgb.rescan')}>↻</button>
+        <button onClick={refresh} disabled={busy || !status.connected} style={{ ...btnSecondary, display: 'flex', alignItems: 'center', padding: '5px 8px' }} title={t('rgb.rescan')}>
+          <DotGlyphIcon glyph="DOTS" size={8} color={VD.textDim} />
+        </button>
       </div>
 
       {!status.connected && (

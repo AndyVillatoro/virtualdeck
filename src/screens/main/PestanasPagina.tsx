@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { DeckConfig } from '../../types';
 
 /**
@@ -133,29 +134,57 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
             onClick={onPageAdd}
             title={t('page.add')}
             style={{
-              padding: compact ? '4px 6px' : '8px 10px', color: VD.textMuted, fontSize: compact ? 13 : 16,
-              cursor: 'pointer', userSelect: 'none', position: 'relative', top: 1, lineHeight: 1,
+              padding: compact ? '4px 6px' : '8px 10px',
+              cursor: 'pointer', userSelect: 'none', position: 'relative', top: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          >+</div>
+          >
+            <DotGlyphIcon glyph="ADD" size={compact ? 9 : 11} color={VD.textMuted} />
+          </div>
         )}
 
         <div style={{ flex: 1 }} />
         {onPageExport && (
-          <div onClick={() => onPageExport(activePage)} title={t('page.export')} style={{ padding: compact ? '4px 6px' : '8px 10px', fontSize: compact ? 10 : 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
-            ↗
+          <div
+            onClick={() => onPageExport(activePage)}
+            title={t('page.export')}
+            style={{
+              padding: compact ? '4px 6px' : '8px 10px',
+              cursor: 'pointer', userSelect: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <DotGlyphIcon glyph="EXPORT" size={compact ? 8 : 10} color={VD.textMuted} />
           </div>
         )}
         {onPageImport && (
-          <div onClick={onPageImport} title={t('page.import')} style={{ padding: compact ? '4px 6px' : '8px 10px', fontSize: compact ? 10 : 11, cursor: 'pointer', userSelect: 'none', color: VD.textMuted, fontFamily: VD.mono, letterSpacing: 0.5 }}>
-            ↙
+          <div
+            onClick={onPageImport}
+            title={t('page.import')}
+            style={{
+              padding: compact ? '4px 6px' : '8px 10px',
+              cursor: 'pointer', userSelect: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <DotGlyphIcon glyph="IMPORT" size={compact ? 8 : 10} color={VD.textMuted} />
           </div>
         )}
         <div
           onClick={() => setShowSidebar((v) => !v)}
           title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
-          style={{ padding: compact ? '4px 6px' : '8px 10px', fontSize: compact ? 11 : 12, cursor: 'pointer', userSelect: 'none', color: showSidebar ? VD.textDim : VD.textMuted, transition: 'color 0.15s' }}
+          style={{
+            padding: compact ? '4px 6px' : '8px 10px',
+            cursor: 'pointer', userSelect: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color 0.15s',
+          }}
         >
-          {showSidebar ? '▶' : '◀'}
+          <DotGlyphIcon
+            glyph={showSidebar ? 'ARROW_RIGHT' : 'ARROW_LEFT'}
+            size={compact ? 9 : 11}
+            color={showSidebar ? VD.textDim : VD.textMuted}
+          />
         </div>
       </div>
   );

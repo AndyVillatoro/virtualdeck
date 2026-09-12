@@ -7,7 +7,7 @@ import { DotLabel } from '../../components/DotLabel';
 import { DotText } from '../../components/DotText';
 import { SensorCard, groupSensorsByHardware } from '../../components/SensorPanel';
 import { WeatherWidget } from '../../components/WeatherWidget';
-import { IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward } from '../../components/VDIcon';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { DeckConfig, ElectronAPI, NowPlaying, RGBStatus, Sensor, SensorsStatus } from '../../types';
 
 /**
@@ -100,12 +100,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
-                <span style={{
-                  fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
-                  color: sensorStatus?.connected ? VD.success : VD.textMuted,
-                }}>
-                  {sensorStatus?.connected ? '●' : '○'}
-                </span>
+                <DotGlyphIcon glyph="DOTS" size={6} color={sensorStatus?.connected ? VD.success : VD.textMuted} />
               </div>
               <div className="vd-scroll" style={{
                 display: 'flex', flexDirection: 'column', gap: 6,
@@ -139,7 +134,9 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                   ? `${rgbStatus.deviceCount} ${t(rgbStatus.deviceCount === 1 ? 'rgb.deviceOne' : 'rgb.deviceMany')}`
                   : t(rgbStatus?.serverRunning ? 'rgb.serverUp' : 'rgb.disconnected')}
               </div>
-              <span style={{ fontFamily: VD.mono, fontSize: 9, color: config.accent }}>→</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <DotGlyphIcon glyph="ARROW_RIGHT" size={9} color={config.accent} />
+              </span>
             </div>
           </div>
 
@@ -152,13 +149,17 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                   <span
                     onClick={() => setExecLog([])}
                     title={t('panel.clearLog')}
-                    style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, cursor: 'pointer', letterSpacing: 0.5 }}
-                  >✕</span>
+                    style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                  >
+                    <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textMuted} />
+                  </span>
                 )}
                 <span
                   onClick={() => setShowLog((v) => !v)}
-                  style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer', userSelect: 'none' }}
-                >{showLog ? '▲' : '▼'}</span>
+                  style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center' }}
+                >
+                  <DotGlyphIcon glyph={showLog ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />
+                </span>
               </div>
             </div>
             {showLog && (
@@ -167,7 +168,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                   <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Sin actividad</div>
                 ) : execLog.map((entry) => (
                   <div key={entry.id} title={entry.error} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ color: entry.ok ? VD.success : VD.danger, fontSize: 8, flexShrink: 0 }}>●</span>
+                    <DotGlyphIcon glyph="DOTS" size={6} color={entry.ok ? VD.success : VD.danger} />
                     <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.label}</span>
                     <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, flexShrink: 0 }}>
                       {new Date(entry.ts).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
@@ -178,9 +179,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
             )}
           </div>
 
-          {/* Now Playing. Se calla si esta el panel de musica: la misma
-              cancion dos veces en la misma pantalla, una de ellas con botones
-              que no se pueden pulsar con el dedo, es peor que no tenerla. */}
+          {/* Now Playing */}
           {!ocultarMusica && (
           <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}`, flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -194,10 +193,11 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                 }}
                 title={t('media.diagnose')}
                 style={{
-                  fontFamily: VD.mono, fontSize: 8, color: VD.textMuted,
-                  cursor: 'pointer', letterSpacing: 1, padding: '2px 4px',
+                  cursor: 'pointer', padding: '2px 4px', display: 'inline-flex', alignItems: 'center',
                 }}
-              >?</span>
+              >
+                <DotGlyphIcon glyph="HELP" size={9} color={VD.textMuted} />
+              </span>
             </div>
             {nowPlaying ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -209,10 +209,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                     border: `1px solid ${VD.border}`, position: 'relative',
                   }}>
                     <div style={{ opacity: 0.35 }}>
-                      {isPlaying
-                        ? <IconMediaPlay size={18} color={VD.textMuted} />
-                        : <IconMediaPause size={18} color={VD.textMuted} />
-                      }
+                      <DotGlyphIcon glyph={isPlaying ? 'PLAY' : 'PAUSE'} size={16} color={VD.textMuted} showRecessed />
                     </div>
                     {nowPlaying.thumbnail && (
                       <img
@@ -240,13 +237,13 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                     {t(isPlaying ? 'media.playing' : 'media.paused')}{sourceName ? ` · ${sourceName}` : ''}
                   </span>
                 </div>
-                {/* Media controls — Lucide icons, matching app design */}
+                {/* Media controls — Dot-matrix icons */}
                 <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
                   {([
-                    { key: 'prev',       Icon: IconMediaSkipBack,                          title: t('media.prev'),      admite: nowPlaying.controls?.prev },
-                    { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: t('media.playPause'), admite: undefined },
-                    { key: 'next',       Icon: IconMediaSkipForward,                       title: t('media.next'),      admite: nowPlaying.controls?.next },
-                  ] as const).map(({ key, Icon, title, admite }) => {
+                    { key: 'prev',       glyph: 'PREV',                       title: t('media.prev'),      admite: nowPlaying.controls?.prev },
+                    { key: 'play-pause', glyph: isPlaying ? 'PAUSE' : 'PLAY', title: t('media.playPause'), admite: undefined },
+                    { key: 'next',       glyph: 'NEXT',                       title: t('media.next'),      admite: nowPlaying.controls?.next },
+                  ] as const).map(({ key, glyph, title, admite }) => {
                     // Lo mismo que hace el panel de musica, que aqui faltaba: si la
                     // fuente dice que no admite anterior o siguiente, el boton no se
                     // enseña como si funcionara. Un video suelto de YouTube declara
@@ -277,7 +274,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                       onMouseEnter={(e) => { if (activo) (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
                     >
-                      <Icon size={13} color={VD.textDim} />
+                      <DotGlyphIcon glyph={glyph} size={11} color={VD.textDim} showRecessed />
                     </button>
                     );
                   })}

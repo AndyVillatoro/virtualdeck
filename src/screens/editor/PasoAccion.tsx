@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
-import { IconNone } from '../../components/VDIcon';
+import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
 import { ACTION_TYPES, PRESET_CATEGORIES, type ButtonPreset } from './actionData';
 
 /** Las categorias que declara `PRESET_CATEGORIES`, sin repetirlas a mano. */
@@ -95,15 +95,30 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
                 >
-                  {preset.icon ? (
-                    <div style={{ fontSize: 18, color: preset.fgColor || VD.text, lineHeight: 1 }}>
-                      {preset.icon}
-                    </div>
-                  ) : PresetIcon ? (
-                    <PresetIcon size={20} color={preset.fgColor || VD.text} />
-                  ) : (
-                    <div style={{ fontSize: 18, color: preset.fgColor || VD.text, lineHeight: 1 }}>○</div>
-                  )}
+                  {(() => {
+                    const dotGlyph = preset.icon ? resolveDotGlyph(preset.icon) : null;
+                    if (dotGlyph) {
+                      return (
+                        <DotGlyphIcon
+                          glyph={dotGlyph}
+                          size={16}
+                          color={preset.fgColor || VD.text}
+                          showRecessed
+                        />
+                      );
+                    }
+                    if (preset.icon) {
+                      return (
+                        <div style={{ fontSize: 16, color: preset.fgColor || VD.text, lineHeight: 1, fontFamily: VD.dots }}>
+                          {preset.icon}
+                        </div>
+                      );
+                    }
+                    if (PresetIcon) {
+                      return <PresetIcon size={18} color={preset.fgColor || VD.text} />;
+                    }
+                    return <DotGlyphIcon glyph="DOTS" size={14} color={preset.fgColor || VD.text} showRecessed />;
+                  })()}
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: preset.fgColor || VD.textDim, textAlign: 'center', maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {preset.label}
                   </div>

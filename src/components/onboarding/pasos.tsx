@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { ACCENT_PRESETS } from '../../design';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 
 /**
  * Las piezas con las que se puede *hacer* algo dentro del tutorial.
@@ -41,7 +42,7 @@ function Opcion({ activa, accent, onClick, children, ancho }: {
 }
 
 export type Idioma = 'system' | 'es' | 'en';
-export type Tema = 'dark' | 'light' | 'system';
+export type Tema = 'dark' | 'light' | 'dot480' | 'system';
 
 export function PasoIdioma({ valor, accent, onChange }: {
   valor: Idioma; accent: string; onChange: (v: Idioma) => void;
@@ -67,6 +68,7 @@ export function PasoApariencia({ tema, accent, onTema, onAccent }: {
   const temas: [Tema, string][] = [
     ['dark', t('settings.theme.dark')],
     ['light', t('settings.theme.light')],
+    ['dot480', t('settings.theme.dot480')],
     ['system', t('settings.theme.system')],
   ];
   return (
@@ -123,13 +125,20 @@ export function PasoRespaldo({ accent, onExport, onImport }: {
     // El aviso se apaga solo: es una confirmacion, no un estado.
     setTimeout(() => setHecho(null), 2500);
   };
+  const VD = useTheme();
   return (
     <div style={{ display: 'flex', gap: 8 }}>
       <Opcion activa={hecho === 'exp'} accent={accent} onClick={() => lanzar('exp', onExport)}>
-        ↗ {t('onb.backup.export')}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <DotGlyphIcon glyph="EXPORT" size={9} color={hecho === 'exp' ? accent : VD.textMuted} />
+          <span>{t('onb.backup.export')}</span>
+        </span>
       </Opcion>
       <Opcion activa={hecho === 'imp'} accent={accent} onClick={() => lanzar('imp', onImport)}>
-        ↙ {t('onb.backup.import')}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <DotGlyphIcon glyph="IMPORT" size={9} color={hecho === 'imp' ? accent : VD.textMuted} />
+          <span>{t('onb.backup.import')}</span>
+        </span>
       </Opcion>
     </div>
   );

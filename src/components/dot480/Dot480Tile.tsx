@@ -63,6 +63,7 @@ export function Dot480Tile({
         }}
       >
         <span>
+          <strong style={{ color: '#d2d5dc', marginRight: 4 }}>{index}</strong>
           {index && <strong style={{ color: '#d2d5dc', marginRight: 4 }}>{index}</strong>}
           {title}
         </span>

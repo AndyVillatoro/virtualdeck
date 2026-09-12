@@ -2,9 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { playSound } from '../../utils/sound';
-import {
-  IconMediaSkipBack, IconMediaPlay, IconMediaPause, IconMediaSkipForward,
-} from '../../components/VDIcon';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { DeckConfig, SoundProfileId } from '../../types';
 
 /**
@@ -39,10 +37,7 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
           overflow: 'hidden', border: `1px solid ${VD.border}`, position: 'relative',
         }}>
           <div style={{ opacity: 0.35 }}>
-            {isPlaying
-              ? <IconMediaPlay size={16} color={VD.textDim} />
-              : <IconMediaPause size={16} color={VD.textDim} />
-            }
+            <DotGlyphIcon glyph={isPlaying ? 'PLAY' : 'PAUSE'} size={14} color={VD.textDim} showRecessed />
           </div>
           {nowPlaying?.thumbnail && (
             <img
@@ -69,10 +64,10 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
         </div>
         <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
           {([
-            { key: 'prev',       Icon: IconMediaSkipBack,                          title: t('media.prev') },
-            { key: 'play-pause', Icon: isPlaying ? IconMediaPause : IconMediaPlay, title: t('media.playPause') },
-            { key: 'next',       Icon: IconMediaSkipForward,                       title: t('media.next') },
-          ] as const).map(({ key, Icon, title }) => (
+            { key: 'prev',       glyph: 'PREV',                       title: t('media.prev') },
+            { key: 'play-pause', glyph: isPlaying ? 'PAUSE' : 'PLAY', title: t('media.playPause') },
+            { key: 'next',       glyph: 'NEXT',                       title: t('media.next') },
+          ] as const).map(({ key, glyph, title }) => (
             <button
               key={key}
               title={title}
@@ -89,7 +84,7 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
             >
-              <Icon size={12} color={VD.textDim} />
+              <DotGlyphIcon glyph={glyph} size={10} color={VD.textDim} showRecessed />
             </button>
           ))}
         </div>

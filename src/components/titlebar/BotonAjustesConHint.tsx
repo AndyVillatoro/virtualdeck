@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { Hint } from '../Hint';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { estilo_iconBtnStyle } from './estilos';
 
 export interface BotonAjustesConHintProps {
@@ -35,7 +36,13 @@ export function BotonAjustesConHint({
         title={t('tip.settings')}
         style={{ ...iconBtnStyle, color: showSettings ? effectiveAccent : VD.textDim }}
       >
-        ⚙
+        <DotGlyphIcon
+          glyph="GEAR"
+          size={compact ? 12 : 14}
+          color={showSettings ? effectiveAccent : VD.textDim}
+          dimColor={VD.dotIdle}
+          showRecessed
+        />
       </button>
       {onDismissHint && !showSettings && (
         <Hint

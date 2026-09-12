@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { DotLabel } from '../components/DotLabel';
+import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useT } from '../utils/i18n';
 import type { DeckConfig } from '../types';
 
@@ -63,8 +64,10 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
               padding: '6px 12px', background: 'rgba(0,0,0,0.5)',
               border: `1px solid ${VD.border}`, fontFamily: VD.mono,
               fontSize: 10, color: VD.text, letterSpacing: 1, cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
             }}>
-              {t('wp.back')}
+              <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={VD.text} />
+              <span>{t('wp.back')}</span>
             </button>
             <DotLabel size={10} color={VD.text} spacing={2}>{t('wp.preview')}</DotLabel>
           </div>
@@ -101,8 +104,10 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
             padding: '8px 20px', background: applied ? VD.success : VD.accent,
             border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2,
             color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'background 0.3s',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
           }}>
-            {applied ? t('wp.applied') : t('wp.apply')}
+            <DotGlyphIcon glyph={applied ? 'CHECK' : 'ARROW_RIGHT'} size={8} color="#fff" />
+            <span>{applied ? t('wp.applied') : t('wp.apply')}</span>
           </button>
         </div>
 
@@ -131,8 +136,10 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
                   position: 'absolute', bottom: 4, left: 0, right: 0, textAlign: 'center',
                   fontFamily: VD.mono, fontSize: 8, color: '#fff', letterSpacing: 1,
                   textShadow: '0 1px 3px rgba(0,0,0,0.9)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                 }}>
-                  {t('wp.selected')}
+                  <DotGlyphIcon glyph="CHECK" size={8} color="#fff" />
+                  <span>{t('wp.selected')}</span>
                 </div>
               )}
               <div style={{

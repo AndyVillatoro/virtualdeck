@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { DEFAULT_CONFIG } from './configDefaults';
 import { makeT, resolveLang } from './i18n';
 import type {
-  ActionType, ButtonConfig, DeckConfig, ElectronAPI, PageConfig, Profile, SoundProfileId,
+  ActionType, ButtonConfig, DeckConfig, ElectronAPI, PageConfig, Profile, SoundProfileId, ThemeMode,
 } from '../types';
 
 /**
@@ -380,7 +380,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   }, [config, saveConfig, api]);
 
   // Theme handler
-  const setTheme = useCallback((theme: 'dark' | 'light' | 'system') => {
+  const setTheme = useCallback((theme: ThemeMode) => {
     saveConfig({ ...config, theme });
   }, [config, saveConfig]);
 

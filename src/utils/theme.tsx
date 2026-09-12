@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { VD, VD_LIGHT, type VDTokens } from '../design';
+import { VD, VD_LIGHT, VD_DOT480, type VDTokens } from '../design';
+import type { ThemeMode } from '../types';
 
 const ThemeContext = createContext<VDTokens>(VD);
 
@@ -8,7 +9,7 @@ export function ThemeProvider({
   accent,
   children,
 }: {
-  theme?: 'dark' | 'light' | 'system';
+  theme?: ThemeMode;
   accent?: string;
   children: React.ReactNode;
 }) {
@@ -18,15 +19,14 @@ export function ThemeProvider({
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-color-scheme: light)').matches);
 
-  // El atributo lleva el tema **resuelto**, no el que hay en la configuracion.
-  // Lo ponia `App` con `config.theme` tal cual, asi que con «sistema» quedaba
-  // `data-theme="system"` y las reglas CSS de `[data-theme='light']` no
-  // casaban nunca — justo en la opcion que trae puesta la aplicacion.
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
-  }, [isLight]);
+  const isDot480 = theme === 'dot480';
 
-  const base: VDTokens = isLight ? VD_LIGHT : VD;
+  useEffect(() => {
+    const resolvedTheme = isDot480 ? 'dot480' : isLight ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+  }, [isLight, isDot480]);
+
+  const base: VDTokens = isDot480 ? VD_DOT480 : isLight ? VD_LIGHT : VD;
   const tokens: VDTokens =
     accent && accent !== base.accent
       ? { ...base, accent, accentBg: `${accent}20` }

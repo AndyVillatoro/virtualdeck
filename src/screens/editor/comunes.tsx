@@ -4,6 +4,7 @@ import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { IconNone } from '../../components/VDIcon';
+import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
 import { ACTION_TYPES } from './actionData';
 import type { ActionType, ButtonAction, FolderButton, Sensor } from '../../types';
 import { RGB_PRESET_IDS, clavePreset } from '../../data/rgbPresets';
@@ -64,7 +65,9 @@ export function FolderButtonSlot({ button, accent, onChange }: {
             setEditing(false);
           }} style={{ flex: 1, padding: '3px 0', background: VD.accentBg, border: `1px solid ${accent}`, fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', borderRadius: VD.radius.sm }}>OK</button>
           <button onClick={() => { onChange(null); setEditing(false); }}
-            style={{ padding: '3px 6px', background: 'transparent', border: `1px solid ${VD.border}`, fontFamily: VD.mono, fontSize: 8, color: VD.danger, cursor: 'pointer', borderRadius: VD.radius.sm }}>✕</button>
+            style={{ padding: '3px 6px', background: 'transparent', border: `1px solid ${VD.border}`, fontFamily: VD.mono, fontSize: 8, color: VD.danger, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center' }}>
+            <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+          </button>
         </div>
       </div>
     );
@@ -82,7 +85,15 @@ export function FolderButtonSlot({ button, accent, onChange }: {
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
     >
-      {button?.icon && <div style={{ fontSize: 14, color: button.fgColor || VD.text, lineHeight: 1 }}>{button.icon}</div>}
+      {button?.icon && (
+        <div style={{ lineHeight: 1 }}>
+          {resolveDotGlyph(button.icon) ? (
+            <DotGlyphIcon glyph={button.icon} size={16} color={button.fgColor || VD.text} showRecessed />
+          ) : (
+            <span style={{ fontSize: 14, color: button.fgColor || VD.text }}>{button.icon}</span>
+          )}
+        </div>
+      )}
       <div style={{ fontFamily: VD.mono, fontSize: 7, color: button?.fgColor || VD.textDim, textAlign: 'center', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: 0.5 }}>
         {button?.label}
       </div>
@@ -346,7 +357,9 @@ export function ExtraActionRow({ action, onChange, onRemove }: { action: ButtonA
         </>
       )}
       <div style={{ flex: 1 }} />
-      <button onClick={onRemove} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px' }}>×</button>
+      <button onClick={onRemove} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}>
+        <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+      </button>
     </div>
     <ModificadoresPaso action={action} onChange={onChange} />
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 
 /**
  * Menu de clic derecho de una celda.
@@ -33,18 +34,18 @@ export function MenuContextual({ x, y, isEmpty, onEdit, onDuplicate, onClear, on
         boxShadow: VD.shadow.menu, minWidth: 150,
       }}
     >
-      <Item label={t('cell.editShort')} icon="✎" onClick={() => { onCerrar(); onEdit(); }} />
+      <Item label={t('cell.editShort')} glyph="EDIT" onClick={() => { onCerrar(); onEdit(); }} />
       {!isEmpty && onDuplicate && (
-        <Item label={t('cell.duplicate')} icon="⊕" onClick={() => { onCerrar(); onDuplicate(); }} />
+        <Item label={t('cell.duplicate')} glyph="ADD" onClick={() => { onCerrar(); onDuplicate(); }} />
       )}
       {!isEmpty && onClear && (
-        <Item label={t('cell.clear')} icon="○" onClick={() => { onCerrar(); onClear(); }} danger />
+        <Item label={t('cell.clear')} glyph="CLOSE" onClick={() => { onCerrar(); onClear(); }} danger />
       )}
     </div>
   );
 }
 
-function Item({ label, icon, onClick, danger }: { label: string; icon: string; onClick: () => void; danger?: boolean }) {
+function Item({ label, glyph, onClick, danger }: { label: string; glyph: string; onClick: () => void; danger?: boolean }) {
   const VD = useTheme();
   const [hov, setHov] = useState(false);
   return (
@@ -64,7 +65,12 @@ function Item({ label, icon, onClick, danger }: { label: string; icon: string; o
         borderBottom: `1px solid ${VD.border}`,
       }}
     >
-      <span style={{ fontSize: 13, opacity: 0.7 }}>{icon}</span>
+      <DotGlyphIcon
+        glyph={glyph}
+        size={11}
+        color={danger ? VD.danger : VD.textDim}
+        showRecessed
+      />
       {label}
     </div>
   );

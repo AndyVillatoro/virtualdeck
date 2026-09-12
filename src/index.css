@@ -19,8 +19,18 @@ html, body, #root {
   background: #f0f0f0;
 }
 
+:root[data-theme='dot480'] html,
+:root[data-theme='dot480'] body,
+:root[data-theme='dot480'] #root {
+  background: #070809;
+}
+
 :root {
   --vd-accent: #4a8ef0;
+}
+
+:root[data-theme='dot480'] {
+  --vd-accent: #ff3b30;
 }
 
 /*
@@ -69,6 +79,10 @@ html, body, #root {
 }
 .vd-scroll::-webkit-scrollbar-track {
   background: transparent;
+}
+:root[data-theme='dot480'] .vd-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 0;
 }
 
 button {

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
-import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId } from '../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../types';
 import { PanelAjustes } from './settings/PanelAjustes';
 import { BotonesNavegacion } from './titlebar/BotonesNavegacion';
 import { BotonAjustesConHint } from './titlebar/BotonAjustesConHint';
@@ -47,8 +47,8 @@ export interface TitleBarProps {
   // 4.x — UI scale + theme
   uiScale?: number;
   onUiScaleChange?: (scale: number) => void;
-  theme?: 'dark' | 'light' | 'system';
-  onThemeChange?: (theme: 'dark' | 'light' | 'system') => void;
+  theme?: ThemeMode;
+  onThemeChange?: (theme: ThemeMode) => void;
   language?: 'system' | 'es' | 'en';
   onLanguageChange?: (language: 'system' | 'es' | 'en') => void;
   tileMode?: 'square' | 'fill';

@@ -4,6 +4,7 @@ import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
 import { BRAND_ICON_GROUPS, BRAND_ICONS } from '../data/brandIcons';
 import { BrandIconDisplay } from './BrandIconDisplay';
+import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 
 interface BrandIconPickerProps {
   current: string;
@@ -97,8 +98,10 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
           />
           <button onClick={onClose} style={{
             background: 'transparent', border: 'none',
-            color: VD.textDim, fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 4px',
-          }}>×</button>
+            color: VD.textDim, cursor: 'pointer', padding: '0 4px', display: 'flex', alignItems: 'center',
+          }}>
+            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
+          </button>
         </div>
 
         {/* Category tabs */}
@@ -147,7 +150,9 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
             onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = accent; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = current === '' ? accent : VD.border; }}
           >
-            <div style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: VD.textMuted }}>○</div>
+            <div style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DotGlyphIcon glyph="CLOSE" size={16} color={VD.textMuted} showRecessed />
+            </div>
             <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, letterSpacing: 0.5, textAlign: 'center' }}>{t('ui.none')}</div>
           </div>
 

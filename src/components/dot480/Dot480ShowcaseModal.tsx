@@ -4,6 +4,7 @@ import { SheetToolDeck } from './SheetToolDeck';
 import { SheetLifeSignals } from './SheetLifeSignals';
 import { SheetHardwareCasing } from './SheetHardwareCasing';
 import { ACCENT_PRESETS } from '../../design';
+import { DotGlyphIcon } from './DotGlyphIcon';
 
 interface Dot480ShowcaseModalProps {
   isOpen: boolean;
@@ -114,9 +115,13 @@ export function Dot480ShowcaseModal({ isOpen, onClose, initialAccent = '#ff3b30'
                 padding: '6px 12px',
                 borderRadius: 6,
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              {isCementMode ? '🔘 CEMENT MODE' : '⬛ OLED BLACK'}
+              <DotGlyphIcon glyph="DOTS" size={10} color={isCementMode ? '#8a919e' : '#ffffff'} />
+              <span>{isCementMode ? 'CEMENT MODE' : 'OLED BLACK'}</span>
             </button>
 
             {/* Presets de acento */}
@@ -150,12 +155,11 @@ export function Dot480ShowcaseModal({ isOpen, onClose, initialAccent = '#ff3b30'
                 height: 28,
                 borderRadius: 6,
                 cursor: 'pointer',
-                fontSize: 14,
                 display: 'grid',
                 placeItems: 'center',
               }}
             >
-              ✕
+              <DotGlyphIcon glyph="CLOSE" size={10} color={colors.textMuted} />
             </button>
           </div>
         </div>

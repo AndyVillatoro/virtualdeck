@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 
 /**
  * El PIN del modo kiosko.
@@ -84,9 +85,12 @@ export function PinKiosko({ modo, setModo, pinGuardado, accent, onGuardarPin, se
             transition: 'transform 60ms',
             animation: pinShake ? 'vd-pin-shake 0.32s' : undefined,
           }}>
-            <DotLabel size={10} color={VD.text} spacing={2}>
-              {t(modo === 'set' ? 'pin.setTitle' : 'pin.exitTitle')}
-            </DotLabel>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <DotGlyphIcon glyph="LOCK" size={12} color={accent} />
+              <DotLabel size={10} color={VD.text} spacing={2}>
+                {t(modo === 'set' ? 'pin.setTitle' : 'pin.exitTitle')}
+              </DotLabel>
+            </div>
             <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, letterSpacing: 1 }}>
               {modo === 'set'
                 ? t('pin.setHelp')

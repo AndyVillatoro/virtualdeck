@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { DotGlyphIcon } from './DotGlyphIcon';
 
 export interface DotVibePadProps {
   accentColor?: string;
@@ -7,22 +8,22 @@ export interface DotVibePadProps {
 }
 
 const PAD_ITEMS = [
-  { id: 'play', glyph: '▶', hasBadge: false },
-  { id: 'grid', glyph: '::', hasBadge: false },
-  { id: 'undo', glyph: '↰', hasBadge: false },
-  { id: 'redo', glyph: '↱', hasBadge: false },
-  { id: 'node', glyph: '⚯', hasBadge: false },
-  { id: 'term', glyph: '>_', hasBadge: false },
-  { id: 'mic', glyph: '🎙', hasBadge: false },
-  { id: 'web', glyph: '🌐', hasBadge: false },
-  { id: 'list', glyph: '☰', hasBadge: false },
-  { id: 'code', glyph: '</>', hasBadge: false },
-  { id: 'check', glyph: '✓', hasBadge: true },
-  { id: 'close', glyph: '✕', hasBadge: false },
-  { id: 'gear', glyph: '⚙', hasBadge: false },
-  { id: 'spark', glyph: '✦', hasBadge: false },
-  { id: 'up', glyph: '↑', hasBadge: false },
-  { id: 'down', glyph: '↓', hasBadge: false },
+  { id: 'play', glyph: 'PLAY', hasBadge: false },
+  { id: 'grid', glyph: 'DOTS', hasBadge: false },
+  { id: 'undo', glyph: 'ARROW_LEFT', hasBadge: false },
+  { id: 'redo', glyph: 'ARROW_RIGHT', hasBadge: false },
+  { id: 'wave', glyph: 'AUDIO_WAVE', hasBadge: false },
+  { id: 'term', glyph: 'TERMINAL', hasBadge: false },
+  { id: 'mic', glyph: 'MIC', hasBadge: false },
+  { id: 'web', glyph: 'WEB', hasBadge: false },
+  { id: 'speaker', glyph: 'SPEAKER', hasBadge: false },
+  { id: 'code', glyph: 'CODE', hasBadge: false },
+  { id: 'check', glyph: 'CHECK', hasBadge: true },
+  { id: 'close', glyph: 'CLOSE', hasBadge: false },
+  { id: 'gear', glyph: 'GEAR', hasBadge: false },
+  { id: 'spark', glyph: 'SPARKLE', hasBadge: false },
+  { id: 'up', glyph: 'ARROW_UP', hasBadge: false },
+  { id: 'down', glyph: 'ARROW_DOWN', hasBadge: false },
 ];
 
 export function DotVibePad({
@@ -59,15 +60,19 @@ export function DotVibePad({
               border: '1px dashed ' + (isSelected ? accentColor : borderColor),
               borderRadius: 4,
               color: isSelected ? accentColor : 'rgba(255, 255, 255, 0.85)',
-              fontSize: 9,
-              fontFamily: '"JetBrains Mono", monospace',
               cursor: 'pointer',
               padding: 0,
               boxSizing: 'border-box',
               transition: 'transform 0.08s ease',
             }}
           >
-            <span>{item.glyph}</span>
+            <DotGlyphIcon
+              glyph={item.glyph}
+              size={12}
+              color={isSelected ? accentColor : 'rgba(255, 255, 255, 0.85)'}
+              dimColor="rgba(255, 255, 255, 0.06)"
+              showRecessed
+            />
             {item.hasBadge && (
               <span
                 style={{

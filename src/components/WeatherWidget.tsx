@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
+import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 
 interface WeatherData {
   temp: number;
@@ -9,33 +10,30 @@ interface WeatherData {
   country: string;
 }
 
-/**
- * Codigos WMO -> emoji. El **texto** de cada condicion ya no vive aqui: es una
- * clave de diccionario (`wx.<codigo>`), porque las veintitres estaban escritas
- * en espanol dentro del componente y con la aplicacion en ingles el tooltip
- * decia «Parcial. nub.». La comprobacion de i18n no las veia: son palabras
- * sueltas, sin acentos, dentro de un mapa de objeto.
- */
-const WX_EMOJI: Record<number, string> = {
-  0: '☀', 1: '🌤', 2: '⛅', 3: '☁',
-  45: '🌫', 48: '🌫',
-  51: '🌦', 53: '🌦', 55: '🌧',
-  61: '🌧', 63: '🌧', 65: '🌧',
-  71: '❄', 73: '❄', 75: '❄', 77: '❄',
-  80: '🌦', 81: '🌧', 82: '🌧', 85: '❄',
-  95: '⛈', 96: '⛈', 99: '⛈',
+const WX_GLYPH: Record<number, string> = {
+  0: 'WEATHER_SUN', 1: 'WEATHER_SUN_CLOUD', 2: 'WEATHER_SUN_CLOUD', 3: 'WEATHER_CLOUD',
+  45: 'WEATHER_FOG', 48: 'WEATHER_FOG',
+  51: 'WEATHER_RAIN', 53: 'WEATHER_RAIN', 55: 'WEATHER_RAIN',
+  61: 'WEATHER_RAIN', 63: 'WEATHER_RAIN', 65: 'WEATHER_RAIN',
+  71: 'WEATHER_SNOW', 73: 'WEATHER_SNOW', 75: 'WEATHER_SNOW', 77: 'WEATHER_SNOW',
+  80: 'WEATHER_RAIN', 81: 'WEATHER_RAIN', 82: 'WEATHER_RAIN', 85: 'WEATHER_SNOW',
+  95: 'WEATHER_THUNDER', 96: 'WEATHER_THUNDER', 99: 'WEATHER_THUNDER',
 };
 
 /** El codigo exacto, o el de su decena; si tampoco, ninguno. */
 function codigoConocido(code: number): number | null {
-  if (WX_EMOJI[code] !== undefined) return code;
+  if (WX_GLYPH[code] !== undefined) return code;
   const decena = Math.floor(code / 10) * 10;
-  return WX_EMOJI[decena] !== undefined ? decena : null;
+  return WX_GLYPH[decena] !== undefined ? decena : null;
+}
+
+export function wxDotGlyph(code: number): string {
+  const c = codigoConocido(code);
+  return c === null ? 'WEATHER_THERMO' : (WX_GLYPH[c] ?? 'WEATHER_SUN');
 }
 
 export function wxEmoji(code: number): string {
-  const c = codigoConocido(code);
-  return c === null ? '🌡' : WX_EMOJI[c];
+  return wxDotGlyph(code);
 }
 
 /** Clave de diccionario con el nombre de la condicion. */
@@ -76,7 +74,6 @@ export function WeatherWidget() {
     return () => window.clearInterval(timerRef.current);
   }, []);
 
-  const emoji = weather ? wxEmoji(weather.code) : '🌡';
   const desc = weather ? t(wxClave(weather.code)) : '';
 
   return (
@@ -89,7 +86,15 @@ export function WeatherWidget() {
         cursor: 'default',
       }}
     >
-      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{loading ? '⋯' : error ? '—' : emoji}</span>
+      <div style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {loading ? (
+          <DotGlyphIcon glyph="DOTS" size={14} color={VD.textMuted} />
+        ) : error ? (
+          <DotGlyphIcon glyph="MINIMIZE" size={12} color={VD.textMuted} />
+        ) : (
+          <DotGlyphIcon glyph={wxDotGlyph(weather.code)} size={18} color={VD.accent} showRecessed />
+        )}
+      </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         {loading ? (
           <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{t('weather.loading')}</div>
@@ -113,9 +118,9 @@ export function WeatherWidget() {
         <div
           onClick={() => fetchWeather(true)}
           title="Actualizar"
-          style={{ fontSize: 10, color: VD.textMuted, cursor: 'pointer', flexShrink: 0, lineHeight: 1, padding: 2 }}
+          style={{ cursor: 'pointer', flexShrink: 0, padding: 2, display: 'flex', alignItems: 'center' }}
         >
-          ↺
+          <DotGlyphIcon glyph="DOTS" size={9} color={VD.textMuted} />
         </div>
       )}
     </div>

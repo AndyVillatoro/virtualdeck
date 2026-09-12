@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DONATION_LINKS } from '../../data/links';
 import { SettingLabel } from './settingHelpers';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 
 /**
  * Apoyar el proyecto: su propio apartado de los ajustes.
@@ -51,9 +52,11 @@ export function SoporteSection({ accent }: { accent: string }) {
                 border: `1px solid ${accent}`, color: accent,
                 fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
                 cursor: 'pointer', borderRadius: VD.radius.sm,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
               }}
             >
-              ♥ {d.label}
+              <DotGlyphIcon glyph="HEART" size={8} color={accent} />
+              <span>{d.label}</span>
             </button>
           ))}
         </div>

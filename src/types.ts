@@ -180,7 +180,7 @@ export interface ButtonConfig {
   varWidget?: {
     /** Nombre de la variable de estado a mostrar (ej. "tomas", "pomodoro"). */
     varName: string;
-    /** Texto opcional antes del valor (ej. "🎬 "). */
+    /** Texto opcional antes del valor (ej. "REC: "). */
     prefix?: string;
     /** Texto opcional debajo (ej. "TOMAS"). Vacío = nombre de la variable. */
     suffix?: string;
@@ -255,6 +255,8 @@ export interface Profile {
 
 export type SoundProfileId = 'click' | 'tick' | 'thud' | 'off';
 
+export type ThemeMode = 'dark' | 'light' | 'dot480' | 'system';
+
 export interface DeckConfig {
   pages: PageConfig[];
   buttons: ButtonConfig[];
@@ -286,8 +288,8 @@ export interface DeckConfig {
   rgb?: RGBSettings;
   /** 4.x — Factor de escala de la interfaz (0.75 – 1.75). Default 1. */
   uiScale?: number;
-  /** 4.x — Tema de color. */
-  theme?: 'dark' | 'light' | 'system';
+  /** 4.x — Tema de color: oscuro, claro, DOT/480 OLED o sistema. */
+  theme?: ThemeMode;
   /** 5.x — Sensores de hardware vía LibreHardwareMonitor HTTP. */
   sensors?: SensorsSettings;
   /** 1.4 — servidor local para mandar sobre el deck por HTTP. Viene apagado. */

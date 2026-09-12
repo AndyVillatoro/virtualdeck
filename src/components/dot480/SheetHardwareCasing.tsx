@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DotCanvasText } from './DotCanvasText';
 import { DotArc } from './DotArc';
 import { DotRightRail } from './DotRightRail';
+import { DotGlyphIcon } from './DotGlyphIcon';
 
 interface Props {
   surface: string;
@@ -19,8 +20,10 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
       {/* 01 CLOCK & HEALTH */}
       <div style={{ background: surface, border: '1px solid ' + border, borderRadius: 12, display: 'flex', overflow: 'hidden', height: 160 }}>
         <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: textMuted }}>
-            <span>🔋 80%</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 8, color: textMuted }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <DotGlyphIcon glyph="BATTERY" size={10} color={accent} showRecessed /> 80%
+            </span>
           </div>
           <div>
             <DotCanvasText text="09:41" size="large" dotSize={3.4} gap={1.6} litColor={text} />
@@ -28,24 +31,24 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(0,0,0,0.3)', padding: '3px 6px', borderRadius: 8, border: '1px solid ' + accent + '55' }}>
-              <span style={{ fontSize: 7, color: accent }}>🚴</span>
+              <DotGlyphIcon glyph="AUDIO_WAVE" size={8} color={accent} />
               <span style={{ fontSize: 8, fontWeight: 700, color: text }}>46.8 km</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(0,0,0,0.3)', padding: '3px 6px', borderRadius: 8, border: '1px solid ' + border }}>
-              <span style={{ fontSize: 7 }}>🔥</span>
+              <DotGlyphIcon glyph="SPARKLE" size={8} color={textMuted} />
               <span style={{ fontSize: 8, color: textMuted }}>1,250</span>
             </div>
           </div>
         </div>
-        <DotRightRail icons={['📈', '🎵', '⚙️']} activeIdx={0} accentColor={accent} borderColor={border} />
+        <DotRightRail icons={['TERMINAL', 'AUDIO_WAVE', 'GEAR']} activeIdx={0} accentColor={accent} borderColor={border} />
       </div>
 
       {/* 02 MUSIC PLAYER */}
       <div style={{ background: surface, border: '1px solid ' + border, borderRadius: 12, display: 'flex', overflow: 'hidden', height: 160 }}>
         <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 6, background: '#333338', display: 'grid', placeItems: 'center', fontSize: 14 }}>
-              👤
+            <div style={{ width: 36, height: 36, borderRadius: 6, background: '#333338', display: 'grid', placeItems: 'center' }}>
+              <DotGlyphIcon glyph="DOTS" size={16} color={textMuted} showRecessed />
             </div>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: text }}>Bleed</div>
@@ -63,18 +66,22 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
           </div>
           {/* Controls */}
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-            <button type="button" style={{ background: 'none', border: 'none', color: text, fontSize: 11, cursor: 'pointer' }}>⏮</button>
+            <button type="button" style={{ background: 'none', border: 'none', color: text, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <DotGlyphIcon glyph="PREV" size={10} color={text} />
+            </button>
             <button
               type="button"
               onClick={() => setIsPlaying(!isPlaying)}
-              style={{ width: 26, height: 26, borderRadius: '50%', background: accent, border: 'none', color: '#ffffff', fontSize: 11, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+              style={{ width: 26, height: 26, borderRadius: '50%', background: accent, border: 'none', color: '#ffffff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}
             >
-              {isPlaying ? '⏸' : '▶'}
+              <DotGlyphIcon glyph={isPlaying ? 'PAUSE' : 'PLAY'} size={10} color="#ffffff" />
             </button>
-            <button type="button" style={{ background: 'none', border: 'none', color: text, fontSize: 11, cursor: 'pointer' }}>⏭</button>
+            <button type="button" style={{ background: 'none', border: 'none', color: text, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <DotGlyphIcon glyph="NEXT" size={10} color={text} />
+            </button>
           </div>
         </div>
-        <DotRightRail icons={['❤️', '📋', '🔊']} activeIdx={0} accentColor={accent} borderColor={border} />
+        <DotRightRail icons={['HEART', 'CODE', 'SPEAKER']} activeIdx={0} accentColor={accent} borderColor={border} />
       </div>
 
       {/* 03 RIDE GAUGE */}
@@ -92,7 +99,7 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
             <span>1:45:32 TIME</span><span>1,250 KCAL</span>
           </div>
         </div>
-        <DotRightRail icons={['🔄', '🏁', '🗑️']} activeIdx={1} accentColor={accent} borderColor={border} />
+        <DotRightRail icons={['CLOCK', 'CHECK', 'CLOSE']} activeIdx={1} accentColor={accent} borderColor={border} />
       </div>
 
       {/* 04 WEATHER */}
@@ -104,11 +111,18 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
               <div style={{ fontSize: 24, fontWeight: 700, color: text }}>18°</div>
               <div style={{ fontSize: 7, color: textMuted }}>PARTLY CLOUDY</div>
             </div>
-            <div style={{ fontSize: 24 }}>⛅</div>
+            <div>
+              <DotGlyphIcon glyph="WEATHER_SUN_CLOUD" size={24} color={accent} showRecessed />
+            </div>
           </div>
-          <div style={{ fontSize: 7, color: textMuted }}>H 20°  L 12°  💧 20%</div>
+          <div style={{ fontSize: 7, color: textMuted, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>H 20°  L 12°</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <DotGlyphIcon glyph="WEATHER_RAIN" size={8} color={accent} /> 20%
+            </span>
+          </div>
         </div>
-        <DotRightRail icons={['🎯', '☂️', '🔄']} activeIdx={0} accentColor={accent} borderColor={border} />
+        <DotRightRail icons={['DOTS', 'WEATHER_RAIN', 'CLOCK']} activeIdx={0} accentColor={accent} borderColor={border} />
       </div>
 
       {/* 05 SETTINGS */}
@@ -125,7 +139,7 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
             <span>Brightness</span><span>80%</span>
           </div>
         </div>
-        <DotRightRail icons={['⚙️', '🌙', '🔒']} activeIdx={0} accentColor={accent} borderColor={border} />
+        <DotRightRail icons={['GEAR', 'WEATHER_SUN', 'LOCK']} activeIdx={0} accentColor={accent} borderColor={border} />
       </div>
 
       {/* 06 VOICE AI */}
@@ -139,7 +153,7 @@ export function SheetHardwareCasing({ surface, border, accent, text, textMuted }
           </div>
           <div style={{ fontSize: 8, color: textMuted }}>How can I help?</div>
         </div>
-        <DotRightRail icons={['🎙️', '⌨️', '✕']} activeIdx={0} accentColor={accent} borderColor={border} />
+        <DotRightRail icons={['MIC', 'CODE', 'CLOSE']} activeIdx={0} accentColor={accent} borderColor={border} />
       </div>
     </div>
   );

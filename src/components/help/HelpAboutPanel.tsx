@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { SettingLabel } from '../settings/settingHelpers';
 import { LINKS } from '../../data/links';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { CREDITS } from './credits';
 import { buildIssueUrl } from '../../utils/bugReport';
 import type { PlatformInfo } from '../../types';
@@ -76,7 +77,9 @@ export function HelpAboutPanel({
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
       >
         <SettingLabel>{t('help.title')}</SettingLabel>
-        <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{expanded ? '▲' : '▼'}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <DotGlyphIcon glyph={expanded ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />
+        </span>
       </div>
 
       {expanded && (
@@ -90,8 +93,14 @@ export function HelpAboutPanel({
 
           {/* Acciones rápidas */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-            <button style={linkBtn} onClick={() => open(LINKS.docs)}>{t('help.docs')}</button>
-            <button style={linkBtn} onClick={reportBug}>{t('help.report')}</button>
+            <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={() => open(LINKS.docs)}>
+              <DotGlyphIcon glyph="BOOK" size={9} color={accent} />
+              {t('help.docs')}
+            </button>
+            <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={reportBug}>
+              <DotGlyphIcon glyph="BUG" size={9} color={accent} />
+              {t('help.report')}
+            </button>
             <button style={linkBtn} onClick={checkUpdates} disabled={checking}>
               {checking ? t('help.checking') : t('help.check')}
             </button>
@@ -124,7 +133,10 @@ export function HelpAboutPanel({
 
           {/* Repetir tutorial */}
           {onReplayOnboarding && (
-            <button style={linkBtn} onClick={onReplayOnboarding}>{t('help.replay')}</button>
+            <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={onReplayOnboarding}>
+              <DotGlyphIcon glyph="GRADUATION" size={9} color={accent} />
+              {t('help.replay')}
+            </button>
           )}
 
           {/* Créditos / licencias */}
@@ -134,7 +146,9 @@ export function HelpAboutPanel({
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
             >
               <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>{t('help.credits')}</span>
-              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{showCredits ? '▲' : '▼'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                <DotGlyphIcon glyph={showCredits ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />
+              </span>
             </div>
             {showCredits && (
               <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>

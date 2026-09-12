@@ -10,7 +10,8 @@ import { GallerySection } from './GallerySection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
 import { SoporteSection } from './SoporteSection';
-import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId } from '../../types';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../../types';
 
 /**
  * El desplegable de la rueda dentada.
@@ -28,8 +29,8 @@ interface Props {
   onUiScaleChange?: (scale: number) => void;
   tileMode: 'square' | 'fill';
   onTileModeChange?: (m: 'square' | 'fill') => void;
-  theme: 'dark' | 'light' | 'system';
-  onThemeChange?: (t: 'dark' | 'light' | 'system') => void;
+  theme: ThemeMode;
+  onThemeChange?: (t: ThemeMode) => void;
   language: 'es' | 'en' | 'system';
   onLanguageChange?: (l: 'es' | 'en' | 'system') => void;
   autostart: boolean;
@@ -109,15 +110,19 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
           <button
             onClick={() => onUiScaleChange(Math.max(0.75, uiScale - 0.25))}
-            style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >−</button>
+            style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <DotGlyphIcon glyph="SUBTRACT" size={8} color={VD.text} />
+          </button>
           <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, flex: 1, textAlign: 'center', letterSpacing: 1 }}>
             {Math.round(uiScale * 100)}%
           </span>
           <button
             onClick={() => onUiScaleChange(Math.min(1.75, uiScale + 0.25))}
-            style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >+</button>
+            style={{ width: 28, height: 28, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <DotGlyphIcon glyph="ADD" size={8} color={VD.text} />
+          </button>
           {uiScale !== 1 && (
             <button
               onClick={() => onUiScaleChange(1)}
@@ -161,7 +166,7 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
       <div>
         <SettingLabel>{t('settings.theme')}</SettingLabel>
         <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-          {(['dark', 'light', 'system'] as const).map((opt) => (
+          {(['dark', 'light', 'dot480', 'system'] as const).map((opt) => (
             <button
               key={opt}
               onClick={() => onThemeChange(opt)}
@@ -169,11 +174,11 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
                 flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
                 background: theme === opt ? VD.accentBg : VD.elevated,
                 border: `1px solid ${theme === opt ? effectiveAccent : VD.border}`,
-                fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
+                fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
                 color: theme === opt ? effectiveAccent : VD.textDim,
               }}
             >
-              {opt === 'dark' ? t('settings.theme.dark') : opt === 'light' ? t('settings.theme.light') : t('settings.theme.system')}
+              {t(`settings.theme.${opt}`)}
             </button>
           ))}
         </div>
@@ -355,7 +360,9 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
               <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
               <button onClick={() => { onLoadProfile?.(p.id); onCerrar(); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('ui.load')}</button>
-              <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '0 2px' }}>×</button>
+              <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}>
+                <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+              </button>
             </div>
           ))}
         </div>

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
+import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { BRAND_ICONS_MAP, ICON_SIZE, celdaDesdeFraccion } from '../data/brandIcons';
 
@@ -443,8 +444,10 @@ export function BrandIconEditor({
           <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{dotCount} PUNTOS</span>
           <button onClick={onClose} style={{
             background: 'transparent', border: 'none',
-            color: VD.textDim, fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: '0 4px',
-          }}>×</button>
+            color: VD.textDim, cursor: 'pointer', lineHeight: 1, padding: '0 4px', display: 'flex', alignItems: 'center',
+          }}>
+            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
+          </button>
         </div>
 
         {/* Body */}
@@ -496,9 +499,11 @@ export function BrandIconEditor({
                   color: erasing ? accent : VD.textDim,
                   fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
+                  display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
-                {erasing ? '◉ BORRADOR' : '○ BORRADOR'}
+                <DotGlyphIcon glyph={erasing ? 'CHECK' : 'DOTS'} size={7} color={erasing ? accent : VD.textDim} />
+                <span>BORRADOR</span>
               </button>
               <button onClick={handleClear} style={{
                 padding: '5px 10px', border: `1px solid ${VD.border}`,

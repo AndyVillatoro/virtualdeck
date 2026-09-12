@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import type { ButtonConfig } from '../../types';
 
 /**
@@ -56,8 +57,10 @@ export function Insignias({
           position: 'absolute', top: 4, left: 4, width: 16, height: 16,
           borderRadius: '50%', background: accent, zIndex: 3,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 10, color: '#fff', fontWeight: 700, lineHeight: 1,
-        }}>✓</div>
+          lineHeight: 1,
+        }}>
+          <DotGlyphIcon glyph="CHECK" size={8} color="#fff" />
+        </div>
       )}
 
       {/* En pantalla táctil no hay cursor, así que el lápiz se queda fijo. */}
@@ -70,9 +73,11 @@ export function Insignias({
             background: 'rgba(0,0,0,0.75)',
             border: `1px solid ${VD.borderStrong}`, borderRadius: VD.radius.md,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, color: VD.textDim, zIndex: 2, lineHeight: 1,
+            zIndex: 2, lineHeight: 1,
           }}
-        >✎</div>
+        >
+          <DotGlyphIcon glyph="EDIT" size={10} color={VD.textDim} />
+        </div>
       )}
 
       {multiCount > 1 && !hovered && (
@@ -81,13 +86,13 @@ export function Insignias({
           background: 'rgba(0,0,0,0.7)', borderRadius: VD.radius.sm,
           fontFamily: VD.mono, fontSize: 7, color: accent,
           padding: '1px 4px', lineHeight: 1.4,
-        }}>×{multiCount}</div>
+        }}>x{multiCount}</div>
       )}
 
       {button.isToggle && !hovered && (
         <div style={{
           position: 'absolute', top: 4,
-          // Se corre a la derecha si la insignia de ×N ya ocupa esa esquina.
+          // Se corre a la derecha si la insignia de xN ya ocupa esa esquina.
           left: multiCount > 1 ? 28 : 4,
           width: 6, height: 6, borderRadius: 3,
           background: toggled ? accent : VD.textMuted, opacity: 0.8,
@@ -97,8 +102,12 @@ export function Insignias({
       {carpeta && !hovered && (
         <div style={{
           position: 'absolute', bottom: 4, left: 4,
-          fontFamily: VD.mono, fontSize: 7, color: accent, opacity: 0.7,
-        }}>{button.action.folderButtons?.length ?? 0}</div>
+          fontFamily: VD.mono, fontSize: 7, color: accent, opacity: 0.8,
+          display: 'inline-flex', alignItems: 'center', gap: 3,
+        }}>
+          <DotGlyphIcon glyph="FOLDER" size={6} color={accent} />
+          <span>{button.action.folderButtons?.length ?? 0}</span>
+        </div>
       )}
 
       {!isEmpty && (
