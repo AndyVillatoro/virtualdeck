@@ -6,6 +6,7 @@ import { BotonesNavegacion } from './titlebar/BotonesNavegacion';
 import { BotonAjustesConHint } from './titlebar/BotonAjustesConHint';
 import { ControlesVentana } from './titlebar/ControlesVentana';
 import { useClickOutsideSettings } from './titlebar/useClickOutsideSettings';
+import { Dot480ShowcaseModal } from './dot480/Dot480ShowcaseModal';
 
 export interface TitleBarProps {
   showControls?: boolean;
@@ -108,6 +109,7 @@ export function TitleBar({
   const VD = useTheme();
   const effectiveAccent = accent ?? VD.accent;
   const [showSettings, setShowSettings] = useState(false);
+  const [showDot480, setShowDot480] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
   const ruedaRef = useRef<HTMLButtonElement>(null);
@@ -147,6 +149,7 @@ export function TitleBar({
               onFloatingBar={onFloatingBar}
               onWallpaper={onWallpaper}
               onRGB={onRGB}
+              onOpenDot480={() => setShowDot480(true)}
               rgbStatus={rgbStatus}
               compact={compact}
             />
@@ -204,6 +207,14 @@ export function TitleBar({
           setNewProfileName={setNewProfileName}
           panelRef={panelRef}
           onCerrar={() => setShowSettings(false)}
+        />
+      )}
+
+      {showDot480 && (
+        <Dot480ShowcaseModal
+          isOpen={showDot480}
+          onClose={() => setShowDot480(false)}
+          initialAccent={effectiveAccent}
         />
       )}
     </div>

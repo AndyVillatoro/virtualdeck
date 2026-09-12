@@ -134,8 +134,8 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 38 | Mando móvil y servidor local | Resolver conectividad LAN: comprobación de firewall en Windows, soporte para hostnames/mDNS en validación de Host, feedback de IP activa en UI. | ✅ 2026-09-12 |
 | 39 | Control de brillo y Surface Pro 8 | Soporte para pantallas modernas sin WMI clásico (Surface Pro 8 / Intel Xe via WinRT `BrightnessOverride` o WDDM) y resiliencia en DDC/CI cuando la lectura falla pero la escritura funciona. | ✅ 2026-09-12 |
 | 40 | Landing Page con Three.js | Modelo 3D interactivo en la web con física de pulsación en botones, texturas dinámicas OLED dot-matrix, iluminación realista y badge oficial de Microsoft Store. | ✅ 2026-09-12 |
-| 41 | Sistema Visual DOT / 480 (OLED Micro Interface) | Evolución de identidad inspirada en ESP-Mosaico: grilla estricta de 4px; modo oscuro en negro OLED (#070809); modo claro con tonalidades en grises industriales/cemento (evitando blancos deslumbrantes); compatibilidad total con los acentos existentes de VirtualDeck (los 10 presets de color actúan como acento primario); gráficos halftone/dithered para carátulas e imágenes, arcos dot concéntricos y formas de onda de audio en puntos. | ⬜ |
-| 42 | Estudio de Hardware Paramétrico (inspirado en Codyboard) | Modelado de proporciones de chasis físico (escala mm a px), knobs/encoders giratorios virtuales y barras de luz difusa LED WS2812B como widgets decorativos. | ⬜ |
+| 41 | Sistema Visual DOT / 480 (OLED Micro Interface) | Evolución de identidad inspirada en [Ideas, Now Physical — ESP-Mosaico (Henry Li)](https://esp-mosaico.vercel.app/): grilla estricta de 4px (`4PX GRID`); modo oscuro en negro OLED puro (`BG #070809`, `SURFACE #111315`); modo claro con tonalidades en grises industriales/cemento (evitando blancos deslumbrantes); compatibilidad total con los acentos de VirtualDeck (los 10 presets actúan como acento primario `RED #FF3B30`); gráficos halftone/dithered para carátulas e imágenes, arcos dot concéntricos y formas de onda de audio en puntos. | ⬜ |
+| 42 | Estudio de Hardware Paramétrico | Inspirado en [Codyboard — Hardware Study 01](https://codyboard.github.io/codyboard-designer/) ([repositorio](https://github.com/Codyboard/codyboard-designer.git)): Modelado de proporciones de chasis físico (escala mm a px), knobs/encoders giratorios virtuales y barras de luz difusa LED WS2812B como widgets decorativos. | ⬜ |
 | 43 | Detección dinámica de monitores y multi-pantalla | Escucha en caliente de pantallas conectadas/desconectadas (`screen.on('display-added')`), selector de monitor destino para ventana principal / kiosko y actualización dinámica de handles DDC/CI. | ⬜ |
 | 44 | Perfiles automáticos por aplicación activa + Botones anclados globales | Cambio inteligente de página según la ventana/proceso en primer plano (ej. OBS, Photoshop, IDE) y opción de botones fijos/anclados que persisten en todas las páginas. | ⬜ |
 | 45 | Subdivisión modular de mosaico 2×2 | Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuartos de celda) para funciones compactas y alta densidad de controles. | ⬜ |
@@ -206,6 +206,30 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 - **6.2 Auto-update ★ · M** — ✅ HECHO (`electron-updater` + GitHub Releases).
 - **6.3 Empaquetado firmado ★ · M** — Documentado en [CONTRIBUTING.md](../CONTRIBUTING.md) (sección Firma y distribución).
 - **6.4 Documentación ★ · S** — ✅ HECHO (wiki bilingüe).
+
+### 7. Sistema Visual DOT / 480 & Hardware Táctil (Ítems 41 a 48)
+
+- **7.1 Sistema Visual DOT / 480 (OLED Micro Interface) ★★★ · L** —
+  Evolución estética inspirada en [Ideas, Now Physical — ESP-Mosaico (Henry Li)](https://esp-mosaico.vercel.app/):
+  - **Paleta y Cuadrícula**: Grilla estricta en múltiplos de 4px (`4PX GRID`). Modo oscuro en negro OLED puro (`BG #070809`, `SURFACE #111315`, `BORDER #1F2229`), acento primario de referencia (`RED #FF3B30`) plenamente intercambiable con los 10 presets de color de VirtualDeck. Modo claro en tonalidades de grises industriales/cemento (evitando blancos deslumbrantes).
+  - **Tipografía y Componentes**: Números grandes y códigos de estado renderizados en matriz de puntos discretos (5×7 y 7×9). Módulos de celda con cabecera técnica (`01 HOME`, `02 MUSIC`, `03 TIMER`) y carril lateral vertical táctil para disparadores secundarios.
+  - **Gráficos Dithered / Halftone**: Procesamiento de carátulas e imágenes en tramado de puntos (1-bit / 2-bit halftone) estilo serigrafía técnica.
+  - **Indicadores Concéntricos de Puntos**: Arcos circulares de puntos (`●●●○○○`) para temporizador, volumen, batería y progreso. Ondas de audio en barras verticales de puntos.
+- **7.2 Estudio de Hardware Paramétrico ★★ · M** —
+  Inspirado en [Codyboard Designer](https://codyboard.github.io/codyboard-designer/) ([repositorio](https://github.com/Codyboard/codyboard-designer.git)):
+  - Modelado de proporciones de chasis físico (conversión milímetros a píxeles), knobs/encoders giratorios virtuales y tiras de luz difusa LED WS2812B como widgets decorativos.
+- **7.3 Detección Dinámica de Monitores y Multi-Pantalla ★★ · M** —
+  Escucha en caliente de pantallas conectadas/desconectadas (`screen.on('display-added')`, `screen.on('display-removed')`), selector de monitor destino para la ventana principal o modo kiosko y refresco dinámico de handles DDC/CI.
+- **7.4 Perfiles Automáticos por Aplicación Activa + Botones Anclados ★★ · M** —
+  Cambio inteligente de página según la ventana activa (ej. OBS, Photoshop, IDE, juego) y opción de botones fijados/anclados que persisten en la grilla en todas las páginas.
+- **7.5 Subdivisión Modular de Mosaico 2×2 ★★ · S-M** —
+  Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuartos de celda) para funciones compactas y alta densidad de controles.
+- **7.6 Botón Explícito de Eliminación / Vaciar Celda ★ · S** —
+  Botón directo en `EditorB` para vaciar o eliminar la configuración de un botón con confirmación y deshacer rápido.
+- **7.7 Dial Visual Rotativo Dot-Matrix para Scroll de Ratón ★★ · S** —
+  Indicador gráfico circular (dial de puntos LED concéntricos) en celdas de volumen y brillo que responde visualmente en tiempo real al giro de la rueda del ratón.
+- **7.8 Widget de Barra / Slider Táctil Continuo ★★ · S-M** —
+  Widget táctil horizontal/vertical para deslizamiento continuo con dedo o ratón, optimizado para tabletas y dispositivos táctiles (Surface Pro).
 
 ---
 
