@@ -57,7 +57,7 @@ export function createMainWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: saved?.width ?? 1100, height: saved?.height ?? 720,
     x: saved?.x, y: saved?.y,
-    minWidth: 900, minHeight: 600,
+    minWidth: 400, minHeight: 240,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
     icon: join(__dirname, '../../build/icon.png'),
     // Nunca en la barra de tareas: VirtualDeck vive en la bandeja.
@@ -73,7 +73,7 @@ export function createMainWindow(): BrowserWindow {
     show: !ARRANQUE_OCULTO,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: true, contextIsolation: true, nodeIntegration: false,
+      sandbox: false, contextIsolation: true, nodeIntegration: false,
       // Los temporizadores siguen corriendo con la ventana escondida.
       //
       // Chromium estrangula los `setInterval` de una ventana oculta a uno por

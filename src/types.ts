@@ -399,6 +399,22 @@ export interface RemoteSettings {
   allowLan: boolean;
 }
 
+export interface RemoteStatus {
+  corriendo: boolean;
+  port: number;
+  lan: string[];
+  ipPrincipal?: string;
+  hostname?: string;
+  mdnsUrl?: string;
+}
+
+export interface FirewallStatus {
+  soportado: boolean;
+  existe: boolean;
+  permitido: boolean;
+  error?: string;
+}
+
 export interface SensorsSettings {
   enabled: boolean;
   /** Host de LibreHardwareMonitor (default 127.0.0.1). */
@@ -632,12 +648,14 @@ export interface ElectronAPI {
     restoreBackup: (filename: string) => Promise<object | null>;
   };
   remote: {
-    status: () => Promise<{ corriendo: boolean; port: number; lan: string[] }>;
+    status: () => Promise<RemoteStatus>;
     newToken: () => Promise<string>;
     /** Codigo de seis cifras para emparejar el telefono. Caduca a los 5 min. */
     pairCode: () => Promise<string>;
     /** Pulsa un boton de OTRO VirtualDeck por su servidor local. */
     send: (o: OrdenRemota) => Promise<{ ok: boolean; error?: string }>;
+    checkFirewall: (port: number) => Promise<FirewallStatus>;
+    addFirewallRule: (port: number) => Promise<{ ok: boolean; error?: string }>;
   };
   gallery: {
     // Un solo objeto y no una union discriminada: el tsconfig va con

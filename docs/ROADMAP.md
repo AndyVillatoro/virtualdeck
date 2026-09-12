@@ -78,6 +78,8 @@ Cerrado. Quedó además cubierto el proceso principal, que no estaba en la lista
 |---|----------|----------|--------|
 | 11 | `EditorB` | Vista previa y los tres efectos de carga fuera (`editor/VistaPrevia`, `useCatalogos`, `useCapturaHotkey`, `usePegarImagen`). 605 → 485 líneas, complejidad 21 → bajo el límite. | ✅ 2026-08-31 |
 | 12 | `TitleBar` | Extraído a `settings/PanelAjustes` + `RGBSection`/`SensorsSection`. | ✅ |
+| 12.1 | `TitleBar` (auditoría profunda) | Reducir complejidad ciclomática (29 → <18), separar controles de ventana, navegación y atajos, reducir prop drilling a `PanelAjustes`. Enfoque prioritario exclusivo antes de otros componentes. | 🚧 |
+| 12.1 | `TitleBar` (auditoría profunda) | Reducir complejidad ciclomática (29 → <18), separar controles de ventana, navegación y atajos, reducir prop drilling a `PanelAjustes`. Modo compacto adaptativo para monitores estrechos / zoom > 150%. | ✅ 2026-09-12 |
 | 13 | `MainB` | Rejilla, panel lateral, pestañas, widgets y disparadores fuera. 815 → 618 líneas. | ✅ |
 | 14 | `RGBManagerB` | Lista de dispositivos y panel de perfiles fuera (`rgb/ListaDispositivos`, `rgb/PanelPerfiles`). 478 → 450 líneas, complejidad 20 → bajo el límite. | ✅ 2026-08-31 |
 | 15 | `utils/actions.ts` | Dividido en `utils/acciones/` (una familia por archivo) + guardián de cobertura. | ✅ |
@@ -121,13 +123,25 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 27 | Botón ± para brillo y volumen | Acción `adjust`: sube o baja desde donde esté. Rueda del ratón sobre la celda, o dos botones. Cuatro presets sembrados. | ✅ 2026-08-23 |
 | 28 | Widget de divisas | Conversión entre dos monedas, tasa diaria de `open.er-api.com`, cacheada. | ✅ 2026-08-23 |
 | 29 | Más presets RGB | De 7 a 18, con brillo y velocidad por preset. Sin motor de animación: se decidió ir por presets prehechos. | ✅ 2026-08-23 |
-| 30 | Microsoft Store (MSIX) | Paquete con iconos propios, `virtualdeck://` declarado en el manifiesto y arranque con la sesión. Falta la ficha de la tienda, que es del dueño. | 🚧 |
+| 30 | Microsoft Store (MSIX) | Publicada en la Store como VirtualDeck. Documentar ciclo de actualización continua de versiones (bump semver + partner center) e incorporar botón oficial en landing. | ✅ / 🚧 |
 | 31 | Auditoría de caminos de respaldo | `VD_SIN_NUCLEO=1` para arrancar ignorando el núcleo nativo. Sin él ese código no se ejecuta nunca y se pudre; cinco fallos de la 0.9.4 salieron de ahí. | ✅ 2026-09-06 |
 | 32 | Auditoría «dice que sí sin hacer nada» | Barrido de las acciones que devuelven éxito con la lista vacía o sin encontrar nada: RGB, enlaces, lanzador. | ✅ 2026-09-06 |
 | 33 | Integridad de la configuración | Escritura atómica (temporal + renombre con reintentos) y rotación de copias por fecha, no por nombre. | ✅ 2026-09-06 |
 | 34 | Mando entre decks | Accion `remote`: un deck pulsa botones de otro por el servidor local que ya existia. Medido con dos VirtualDeck a la vez. | ✅ 2026-09-06 |
-| 35 | Pagina de promocion | `docs/index.html`, bilingue, servible por Pages desde `main` / `/docs`. Falta activarlo en Settings, que es del dueño. | 🚧 |
+| 35 | Pagina de promocion | `docs/index.html`, bilingue, servible por Pages desde `main` / `/docs`. Rediseño moderno/3D con Three.js, recursos de `docs/prensa` y badge de Microsoft Store. | ✅ 2026-09-12 |
 | 36 | Donaciones | Ko-fi y PayPal reales, apartado propio en los ajustes. GitHub Sponsors fuera: Stripe no opera en Honduras. | ✅ 2026-09-07 |
+| 37 | Barra flotante: GIFs e imágenes | Registrar esquema y protocolo `vd://` en la partición de sesión `persist:vd-barra`. Actualmente las imágenes locales `vd://` no cargan en la barra. | ✅ 2026-09-12 |
+| 38 | Mando móvil y servidor local | Resolver conectividad LAN: comprobación de firewall en Windows, soporte para hostnames/mDNS en validación de Host, feedback de IP activa en UI. | ✅ 2026-09-12 |
+| 39 | Control de brillo y Surface Pro 8 | Soporte para pantallas modernas sin WMI clásico (Surface Pro 8 / Intel Xe via WinRT `BrightnessOverride` o WDDM) y resiliencia en DDC/CI cuando la lectura falla pero la escritura funciona. | ✅ 2026-09-12 |
+| 40 | Landing Page con Three.js | Modelo 3D interactivo en la web con física de pulsación en botones, texturas dinámicas OLED dot-matrix, iluminación realista y badge oficial de Microsoft Store. | ✅ 2026-09-12 |
+| 41 | Sistema Visual DOT / 480 (OLED Micro Interface) | Evolución de identidad inspirada en ESP-Mosaico: grilla estricta de 4px; modo oscuro en negro OLED (#070809); modo claro con tonalidades en grises industriales/cemento (evitando blancos deslumbrantes); compatibilidad total con los acentos existentes de VirtualDeck (los 10 presets de color actúan como acento primario); gráficos halftone/dithered para carátulas e imágenes, arcos dot concéntricos y formas de onda de audio en puntos. | ⬜ |
+| 42 | Estudio de Hardware Paramétrico (inspirado en Codyboard) | Modelado de proporciones de chasis físico (escala mm a px), knobs/encoders giratorios virtuales y barras de luz difusa LED WS2812B como widgets decorativos. | ⬜ |
+| 43 | Detección dinámica de monitores y multi-pantalla | Escucha en caliente de pantallas conectadas/desconectadas (`screen.on('display-added')`), selector de monitor destino para ventana principal / kiosko y actualización dinámica de handles DDC/CI. | ⬜ |
+| 44 | Perfiles automáticos por aplicación activa + Botones anclados globales | Cambio inteligente de página según la ventana/proceso en primer plano (ej. OBS, Photoshop, IDE) y opción de botones fijos/anclados que persisten en todas las páginas. | ⬜ |
+| 45 | Subdivisión modular de mosaico 2×2 | Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuartos de celda) para funciones compactas y alta densidad de controles. | ⬜ |
+| 46 | Botón explícito "Eliminar botón" / vaciar celda | Integración directa del botón de eliminación en `EditorB` (actualmente solo accesible por clic derecho como "Limpiar botón") con confirmación o deshacer rápido. | ⬜ |
+| 47 | Dial visual rotativo dot-matrix para scroll de mouse | Indicador gráfico circular (dial de puntos LED concéntricos) en celdas de volumen y brillo que responde visualmente al giro de la rueda del ratón al estilo DOT / 480. | ⬜ |
+| 48 | Widget de barra / slider táctil continuo | Widget táctil horizontal/vertical para deslizamiento continuo con dedo o ratón, optimizado para tabletas y dispositivos táctiles (Surface Pro). | ⬜ |
 
 ---
 

@@ -1,0 +1,100 @@
+========================================
+NOMBRE DEL PRODUCTO
+========================================
+VirtualDeck
+
+========================================
+DESCRIPCIÓN
+========================================
+VirtualDeck convierte cualquier pantalla táctil, tableta o monitor secundario en un panel de botones para tu PC. Sin comprar hardware.
+
+Cada botón hace algo: abrir un programa, cambiar el dispositivo de audio, escribir un texto, lanzar una macro, encender las luces RGB, correr un script. Los organizas en páginas y carpetas, les pones icono y color, y quedan a un toque.
+
+QUÉ PUEDES PONER EN UN BOTÓN
+
+Programas, archivos y páginas web. Atajos de teclado y texto automático. Control de multimedia: reproducir, pausar, siguiente, volumen, silencio, aleatorio y repetición. Cambio de dispositivo de audio predeterminado, que en Windows son cuatro clics y aquí es uno. Brillo del monitor. Apagar, reiniciar, suspender y bloquear. Macros de teclado y ratón que grabas una vez y repites. Control RGB por OpenRGB, con 18 presets. Scripts de PowerShell, con la salida guardada en una variable si la necesitas. Contadores, temporizadores y botones que se ramifican según el valor de una variable.
+
+MÁS QUE BOTONES
+
+Un botón puede mostrar información en lugar de un icono: el reloj, el clima, lo que está sonando con su carátula, la temperatura de la CPU o de la GPU, el tipo de cambio de una moneda, o el valor de tus propias variables.
+
+Y no todos los botones necesitan un dedo. Puedes hacer que uno se dispare solo a una hora determinada, o cuando un sensor pase de un umbral: que la ventilación suba si la GPU llega a 80 grados, o que se ponga el modo noche a las once.
+
+MODO KIOSKO
+
+Pantalla completa sin bordes, para dejar la tableta encendida todo el día haciendo solo de deck. Con PIN opcional para que nadie salga sin permiso.
+
+BARRA FLOTANTE
+
+Una tira delgada siempre visible sobre las demás ventanas, con los botones que uses más. Ocupa poco y no estorba.
+
+DESDE EL MÓVIL Y DESDE OTRO PC
+
+VirtualDeck levanta un servidor local, solo en tu red y protegido con un token que generas tú. Con eso puedes pulsar botones desde el navegador del móvil o desde otro equipo que también tenga VirtualDeck.
+
+TUYO Y PORTÁTIL
+
+La configuración es un archivo JSON que puedes exportar, importar y llevarte. Hay una galería de perfiles listos para empezar, y antes de importar cualquiera se te muestra exactamente qué hace: si lanza programas, si ejecuta scripts, si teclea cosas.
+
+Tema claro y oscuro, diez colores de acento, y la aplicación entera en español e inglés.
+
+CÓDIGO ABIERTO
+
+VirtualDeck es software libre bajo licencia MIT. El código completo, el historial de cambios y el seguimiento de errores están en GitHub.
+
+NOTAS
+
+Las luces RGB requieren instalar OpenRGB. Los sensores de temperatura requieren LibreHardwareMonitor con su servidor web activado. Los dos son gratuitos y la aplicación te enlaza la descarga.
+
+========================================
+QUÉ HAY DE NUEVO EN ESTA VERSIÓN
+========================================
+Primera publicación en la Microsoft Store.
+
+========================================
+CARACTERÍSTICAS DEL PRODUCTO  (una por campo, «Añadir más»)
+========================================
+Convierte cualquier pantalla táctil o monitor extra en un panel de botones
+37 tipos de acción distintos: programas, atajos, multimedia, audio, RGB y scripts
+Cambia el dispositivo de audio predeterminado con un solo toque
+Graba macros de teclado y ratón y repítelas cuando quieras
+Botones que muestran reloj, clima, música, sensores o divisas
+Disparadores automáticos por hora o por umbral de un sensor
+Modo kiosko a pantalla completa con PIN opcional
+Barra flotante siempre visible sobre las demás ventanas
+Control de luces RGB con 18 presets, vía OpenRGB
+Púlsalo desde el navegador del móvil o desde otro PC de tu red
+Páginas, carpetas y perfiles que puedes exportar e importar
+Tema claro y oscuro, en español e inglés
+Código abierto con licencia MIT
+
+========================================
+PALABRAS CLAVE DE BÚSQUEDA  (máximo 7)
+========================================
+stream deck
+panel de botones
+macros
+atajos de teclado
+pantalla tactil
+control rgb
+productividad
+
+========================================
+DESCRIPCIÓN CORTA
+========================================
+Convierte cualquier pantalla táctil o monitor extra en un panel de botones para tu PC: programas, atajos, macros, audio, multimedia y luces RGB, a un toque.
+
+========================================
+COPYRIGHT Y MARCA COMERCIAL
+========================================
+© 2026 Andy Villatoro. Licencia MIT.
+
+========================================
+DESARROLLADO POR
+========================================
+Andy Villatoro
+
+========================================
+INFORMACIÓN ADICIONAL DEL SISTEMA
+========================================
+Las luces RGB requieren OpenRGB instalado. Los sensores de temperatura requieren LibreHardwareMonitor con Options → Remote Web Server → Run activado. Ambos son gratuitos y VirtualDeck enlaza su descarga.

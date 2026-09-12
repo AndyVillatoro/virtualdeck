@@ -61,6 +61,8 @@ const api = {
     newToken: (): Promise<string> => ipcRenderer.invoke('remote:newToken'),
     pairCode: (): Promise<string> => ipcRenderer.invoke('remote:pairCode'),
     send: (o: OrdenRemota): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('remote:send', o),
+    checkFirewall: (port: number): Promise<FirewallStatus> => ipcRenderer.invoke('remote:checkFirewall', port),
+    addFirewallRule: (port: number): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('remote:addFirewallRule', port),
   },
   gallery: {
     manifest: (url: string): Promise<GalleryManifest> => ipcRenderer.invoke('gallery:manifest', url),
@@ -231,5 +233,14 @@ type EstadoActualizacion = { status: 'disabled' | 'error' | 'checking' | 'availa
 type AvisoActualizacion = { status: 'error' | 'available' | 'downloaded'; version?: string; error?: string };
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }
+interface RemoteStatus {
+  corriendo: boolean;
+  port: number;
+  lan: string[];
+  ipPrincipal?: string;
+  hostname?: string;
+  mdnsUrl?: string;
+}
+interface FirewallStatus { soportado: boolean; existe: boolean; permitido: boolean; error?: string; }
 interface BarGeometry { huecos: number; lado: 'left' | 'right'; tile: number; y: number | null; }
 interface MediaDiagnosticResult { ok: boolean; stage: string; stdout: string; stderr: string; }

@@ -10,6 +10,7 @@ import { tm, fijarIdioma } from '../idioma';
 import * as remoto from '../servidorLocal';
 import { mandar, type OrdenRemota } from '../mandoRemoto';
 import * as galeria from '../galeria';
+import { comprobarReglaFirewall, abrirReglaFirewall } from '../firewall';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
@@ -47,6 +48,8 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   // La otra mitad: pulsar un boton de OTRO VirtualDeck. La CSP del renderer
   // no deja salir un fetch a la red local, por eso pasa por aqui.
   ipcMain.handle('remote:send', (_e: any, o: OrdenRemota) => mandar(o));
+  ipcMain.handle('remote:checkFirewall', (_e: any, port: number) => comprobarReglaFirewall(port));
+  ipcMain.handle('remote:addFirewallRule', (_e: any, port: number) => abrirReglaFirewall(port));
 
   // 6.1 — galeria de perfiles. La descarga va aqui porque la CSP del renderer
   // solo deja conectar con `self` y los dos servicios del clima.

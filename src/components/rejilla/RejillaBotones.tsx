@@ -16,8 +16,9 @@ import type { ButtonConfig } from '../../types';
 /** Cómo se encaja la rejilla en el hueco disponible. */
 type ModoCasilla = 'square' | 'fill';
 
-/** Separacion entre casillas. Entra en el calculo del encaje, no solo en el CSS. */
-const HUECO = 8;
+/** Separacion entre casillas por defecto. */
+const HUECO_DEFECTO = 8;
+const HUECO_COMPACTO = 6;
 
 interface Props {
   botones: ButtonConfig[];
@@ -26,6 +27,8 @@ interface Props {
   modo: ModoCasilla;
   /** Margen entre la rejilla y el borde del hueco. */
   relleno: number;
+  /** Separación entre casillas en px. Si no se indica, es 6 cuando relleno <= 8 o 8 por defecto. */
+  hueco?: number;
   /** Cada pantalla arma su propia celda con las props que necesita. */
   celda: (boton: ButtonConfig) => ReactNode;
   /**
@@ -39,16 +42,17 @@ interface Props {
 }
 
 export function RejillaBotones({
-  botones, columnas, filas, modo, relleno, celda, senal, onTouchStart, onTouchEnd,
+  botones, columnas, filas, modo, relleno, hueco, celda, senal, onTouchStart, onTouchEnd,
 }: Props) {
-  const hueco = useRef<HTMLDivElement>(null);
+  const huecoRef = useRef<HTMLDivElement>(null);
   const [caja, setCaja] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  const separacion = hueco ?? (relleno <= 8 ? HUECO_COMPACTO : HUECO_DEFECTO);
 
   // En 'square' la rejilla se ciñe a la proporción columnas/filas y deja
   // margen; en 'fill' ocupa todo el hueco y las casillas salen algo
   // rectangulares.
   useEffect(() => {
-    const el = hueco.current;
+    const el = huecoRef.current;
     if (!el) return;
     const calcular = () => {
       // `clientWidth` **incluye el relleno**. Medirlo sin descontarlo daba una
@@ -67,24 +71,24 @@ export function RejillaBotones({
       // 114x123. Descontando los huecos primero, el lado es uno solo y sale
       // igual en los dos.
       const lado = Math.min(
-        (W - (columnas - 1) * HUECO) / columnas,
-        (H - (filas - 1) * HUECO) / filas,
+        (W - (columnas - 1) * separacion) / columnas,
+        (H - (filas - 1) * separacion) / filas,
       );
       if (lado <= 0) { setCaja({ w: W, h: H }); return; }
       setCaja({
-        w: Math.floor(lado * columnas + (columnas - 1) * HUECO),
-        h: Math.floor(lado * filas + (filas - 1) * HUECO),
+        w: Math.floor(lado * columnas + (columnas - 1) * separacion),
+        h: Math.floor(lado * filas + (filas - 1) * separacion),
       });
     };
     calcular();
     const observador = new ResizeObserver(calcular);
     observador.observe(el);
     return () => observador.disconnect();
-  }, [columnas, filas, modo, relleno, senal]);
+  }, [columnas, filas, modo, relleno, separacion, senal]);
 
   return (
     <div
-      ref={hueco}
+      ref={huecoRef}
       style={{
         flex: 1, padding: relleno, minWidth: 0, minHeight: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -99,7 +103,7 @@ export function RejillaBotones({
         display: 'grid',
         gridTemplateColumns: `repeat(${columnas}, minmax(0, 1fr))`,
         gridTemplateRows: `repeat(${filas}, minmax(0, 1fr))`,
-        gap: HUECO,
+        gap: separacion,
       }}>
         {botones.map((b) => celda(b))}
       </div>
