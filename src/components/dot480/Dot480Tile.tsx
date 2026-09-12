@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface Dot480TileProps {
-  index: string;
+  index?: string;
   title: string;
   statusDot?: boolean;
   statusDotColor?: string;
@@ -63,7 +63,7 @@ export function Dot480Tile({
         }}
       >
         <span>
-          <strong style={{ color: '#d2d5dc', marginRight: 4 }}>{index}</strong>
+          {index && <strong style={{ color: '#d2d5dc', marginRight: 4 }}>{index}</strong>}
           {title}
         </span>
         {statusDot && (
