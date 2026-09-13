@@ -64,9 +64,18 @@ if (!existsSync(mappingFile) || !existsSync(manifestFile)) {
 let manifestRaw = readFileSync(manifestFile, 'utf-8');
 if (!manifestRaw.includes(`Version="${VERSION}.0"`)) {
   manifestRaw = manifestRaw.replace(/Version="[0-9.]+"/, `Version="${VERSION}.0"`);
-  writeFileSync(manifestFile, manifestRaw, 'utf-8');
   console.log(`      Actualizada versión en AppxManifest.xml a ${VERSION}.0`);
 }
+
+// Actualizar TargetDeviceFamily: Partner Center rechaza MinVersion <= 10.0.17134.0
+if (manifestRaw.includes('TargetDeviceFamily')) {
+  manifestRaw = manifestRaw.replace(
+    /<TargetDeviceFamily[^>]+>/,
+    '<TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.22621.0" />'
+  );
+  console.log(`      Actualizado TargetDeviceFamily a MinVersion="10.0.17763.0" y MaxVersionTested="10.0.22621.0"`);
+}
+writeFileSync(manifestFile, manifestRaw, 'utf-8');
 
 // Limpiar mapping.txt: en Electron 33 ciertos ficheros legados (como chrome_100_percent.pak)
 // ya no existen y causan error 0x80070002 en makeappx.
@@ -138,12 +147,14 @@ const sizeMb = (statSync(targetMsix).size / (1024 * 1024)).toFixed(1);
 const manifestContent = readFileSync(manifestFile, 'utf-8');
 
 const hasVersion = manifestContent.includes(`Version="${VERSION}.0"`);
+const hasMinVersion = manifestContent.includes('MinVersion="10.0.17763.0"');
 const hasProtocol = manifestContent.includes('windows.protocol');
 const hasStartup = manifestContent.includes('windows.startupTask');
 const hasFullTrust = manifestContent.includes('runFullTrust');
 
 console.log(`  ✓ Paquete generado con éxito: ${targetMsix} (${sizeMb} MB)`);
 console.log(`  ✓ Versión en manifiesto (${VERSION}.0): ${hasVersion ? 'OK' : 'ALERTA: no coincide'}`);
+console.log(`  ✓ MinVersion moderna (>= 10.0.17763.0): ${hasMinVersion ? 'OK' : 'ALERTA: inferior a 17763'}`);
 console.log(`  ✓ Protocolo virtualdeck://: ${hasProtocol ? 'OK' : 'ALERTA: falta protocolo'}`);
 console.log(`  ✓ Tarea de inicio con Windows: ${hasStartup ? 'OK' : 'ALERTA: falta startupTask'}`);
 console.log(`  ✓ runFullTrust declarado: ${hasFullTrust ? 'OK' : 'ALERTA: falta full trust'}`);
