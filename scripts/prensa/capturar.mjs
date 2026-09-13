@@ -190,7 +190,7 @@ async function abrirGaleriaConRiesgo(cdp) {
   const tituloAjustes = IDIOMA === 'en' ? 'Settings' : 'Configuración';
   await clicPorBuscador(cdp, buscarPorTitulo(tituloAjustes), 'la rueda de ajustes');
   await dormir(600);
-  const textoBotonGaleria = IDIOMA === 'en' ? 'PROJECT GALLERY' : 'GALERÍA DEL PROYECTO';
+  const textoBotonGaleria = IDIOMA === 'en' ? 'PROJECT GALLERY' : 'GALERIA DEL PROYECTO';
   await clicPorBuscador(cdp, buscarPorTexto(textoBotonGaleria, 'button'), 'el botón de la galería del proyecto');
   await esperarPorBuscador(cdp, buscarPorTexto('Streaming'), 'la lista de perfiles de la galería');
   await clicPorBuscador(cdp, buscarPorTexto('Streaming'), 'el perfil «Streaming» de la galería');
