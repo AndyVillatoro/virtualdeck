@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { DEFAULT_CONFIG } from './configDefaults';
+import { DEFAULT_CONFIG, conHuecosCompletos } from './configDefaults';
+import { sanearPagina } from './configMigration';
 import { makeT, resolveLang } from './i18n';
 import type {
   ActionType, ButtonConfig, DeckConfig, ElectronAPI, PageConfig, Profile, SoundProfileId, ThemeMode,
@@ -363,6 +364,53 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     setActivePage(0);
   }, [withHistory, setActivePage, t]);
 
+  const appendPagesFromProfile = useCallback((profile: Profile) => {
+    let newActivePage = 0;
+    withHistory(t('undo.appendProfile', { nombre: profile.name }), (prev) => {
+      const baseIdx = prev.pages.length;
+      newActivePage = baseIdx;
+      const timestamp = Date.now();
+      const newPages: PageConfig[] = profile.pages.map((p, i) => {
+        const { pagina: acotada } = sanearPagina(p);
+        const gs = acotada.gridSize ?? 4;
+        const gr = acotada.gridRows ?? gs;
+        return {
+          ...acotada,
+          gridSize: gs,
+          gridRows: gr,
+          id: `page_${timestamp}_${i}`,
+          name: p.name || `${t('page.importedName')} ${baseIdx + i + 1}`,
+        };
+      });
+
+      const botonesRemapeados: ButtonConfig[] = [];
+      for (let i = 0; i < newPages.length; i++) {
+        const targetPage = baseIdx + i;
+        const botonesOriginales = (profile.buttons ?? []).filter((b) => b.page === i);
+        const botonesNormalizados = conHuecosCompletos([newPages[i]], botonesOriginales.map((b) => ({ ...b, page: 0 })))
+          .map((b, slotIdx) => ({
+            ...b,
+            id: `p${timestamp}_${targetPage}_${slotIdx}`,
+            page: targetPage,
+          }));
+        botonesRemapeados.push(...botonesNormalizados);
+      }
+
+      return {
+        ...prev,
+        pages: [...prev.pages, ...newPages],
+        buttons: [...prev.buttons, ...botonesRemapeados],
+      };
+    });
+    if (newActivePage > 0) setActivePage(newActivePage);
+  }, [withHistory, setActivePage, t]);
+
+  const appendProfilePages = useCallback((id: string) => {
+    const profile = config.profiles?.find((p) => p.id === id);
+    if (!profile) return;
+    appendPagesFromProfile(profile);
+  }, [config.profiles, appendPagesFromProfile]);
+
   const deleteProfile = useCallback((id: string) => {
     withHistory('', (prev) => ({
       ...prev,
@@ -489,7 +537,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
     renamePage, addPage, deletePage, reorderPages, setPageGridSize,
-    saveProfile, loadProfile, deleteProfile,
+    saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,

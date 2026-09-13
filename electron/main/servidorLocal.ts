@@ -6,6 +6,7 @@ import { join, normalize } from 'node:path';
 import { app, type BrowserWindow } from 'electron';
 import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
+import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
 import { paginaMando } from './paginaMando';
 
 /**
@@ -46,7 +47,7 @@ export interface AjustesRemoto {
   allowLan: boolean;
 }
 
-export const REMOTO_POR_DEFECTO: AjustesRemoto = {
+const REMOTO_POR_DEFECTO: AjustesRemoto = {
   enabled: false,
   port: 8787,
   token: '',
@@ -120,7 +121,7 @@ function puntuarInterfaz(nombre: string, ip: string): number {
 }
 
 /** Las direcciones IPv4 de este equipo en la red local, ordenadas por relevancia. */
-export function direccionesLan(): string[] {
+function direccionesLan(): string[] {
   const candidatos: Array<{ nombre: string; ip: string; puntos: number }> = [];
   const interfaces = networkInterfaces();
   for (const [nombre, lista] of Object.entries(interfaces)) {
@@ -182,7 +183,28 @@ function responder(res: ServerResponse, codigo: number, cuerpo: unknown): void {
   res.end(texto);
 }
 
-export interface BotonMandoMovil {
+interface SubBotonMandoMovil {
+  id: string;
+  label: string;
+  sublabel?: string;
+  icon?: string;
+  dotGlyph?: string;
+  bgColor?: string;
+  fgColor?: string;
+}
+
+interface SliderMandoMovil {
+  target: 'volume' | 'brightness' | 'variable';
+  orientation?: 'horizontal' | 'vertical';
+  min?: number;
+  max?: number;
+  step?: number;
+  showValue?: boolean;
+  label?: string;
+  varName?: string;
+}
+
+interface BotonMandoMovil {
   id: string;
   label: string;
   sublabel?: string;
@@ -193,6 +215,10 @@ export interface BotonMandoMovil {
   imageData?: string;
   customGlyph57?: number[];
   brandIcon?: string;
+  pinned?: boolean;
+  widget?: string;
+  sliderWidget?: SliderMandoMovil;
+  subButtons?: SubBotonMandoMovil[];
 }
 
 /** Los botones que se pueden pulsar, para que el cliente sepa qué pedir. */
@@ -210,10 +236,29 @@ function listaDeBotones(): BotonMandoMovil[] {
       imageData?: string;
       customGlyph57?: number[];
       brandIcon?: string;
+      pinned?: boolean;
+      widget?: string;
+      sliderWidget?: SliderMandoMovil;
+      subButtons?: Array<{
+        id: string;
+        label?: string;
+        sublabel?: string;
+        icon?: string;
+        dotGlyph?: string;
+        bgColor?: string;
+        fgColor?: string;
+        action?: { type: string };
+      }>;
     }>;
   };
   return (cfg?.buttons ?? [])
     .filter((b) => b.action && b.action.type !== 'none')
+    .filter((b) => {
+      const tieneAccion = b.action && b.action.type !== 'none';
+      const es2x2 = b.subButtons && b.subButtons.length === 4;
+      const esSlider = b.widget === 'slider' || !!b.sliderWidget;
+      return tieneAccion || es2x2 || esSlider;
+    })
     .map((b) => {
       let imageData = b.imageData;
       if (imageData && imageData.startsWith('vd://images/')) {
@@ -234,6 +279,18 @@ function listaDeBotones(): BotonMandoMovil[] {
         imageData,
         customGlyph57: b.customGlyph57,
         brandIcon: b.brandIcon,
+        pinned: b.pinned,
+        widget: b.widget,
+        sliderWidget: b.sliderWidget,
+        subButtons: b.subButtons?.map((s) => ({
+          id: s.id,
+          label: s.label ?? '',
+          sublabel: s.sublabel,
+          icon: s.icon,
+          dotGlyph: s.dotGlyph,
+          bgColor: s.bgColor,
+          fgColor: s.fgColor,
+        })),
       };
     });
 }
@@ -340,6 +397,12 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
 
   if (url.pathname === '/api/buttons') return responder(res, 200, { ok: true, buttons: listaDeBotones() });
 
+  if (url.pathname.startsWith('/api/value/')) {
+    return void atenderValor(url, req, res).then((atendido) => {
+      if (!atendido) responder(res, 404, { ok: false, error: 'no existe' });
+    });
+  }
+
   // El resto se traduce a un enlace y lo resuelve `enlacesExternos`: lo que se
   // puede hacer por HTTP y lo que se puede hacer por `virtualdeck://` tienen
   // que ser lo mismo, y con dos implementaciones acabarian separandose.
@@ -352,6 +415,35 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
   if (page) return conEnlace(res, `virtualdeck://page/${page[1]}`);
 
   responder(res, 404, { ok: false, error: 'no existe' });
+}
+
+async function atenderValor(url: URL, req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+  const match = url.pathname.match(/^\/api\/value\/(volume|brightness)$/);
+  if (!match) return false;
+  const target = match[1] as 'volume' | 'brightness';
+
+  if (req.method === 'GET') {
+    const val = target === 'volume' ? await getVolume() : await getBrightness();
+    responder(res, 200, { ok: true, target, value: val });
+    return true;
+  }
+
+  if (req.method === 'POST') {
+    const cuerpo = await leerCuerpo(req);
+    let val = parseFloat(url.searchParams.get('value') ?? '');
+    if (isNaN(val) && cuerpo) {
+      try { val = parseFloat(JSON.parse(cuerpo).value); } catch { /* vacio */ }
+    }
+    if (isNaN(val)) {
+      responder(res, 400, { ok: false, error: 'valor invalido' });
+      return true;
+    }
+    const ok = target === 'volume' ? await setVolume(val) : await setBrightness(val);
+    responder(res, ok ? 200 : 500, { ok, target, value: val });
+    return true;
+  }
+
+  return false;
 }
 
 function conEnlace(res: ServerResponse, enlace: string): void {

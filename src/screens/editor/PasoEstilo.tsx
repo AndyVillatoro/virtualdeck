@@ -2,12 +2,14 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import { BrandIconDisplay } from '../../components/BrandIconDisplay';
 import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
 import { BRAND_ICONS_MAP } from '../../data/brandIcons';
 import { Field, Btn, SensorPicker, estiloEntrada } from './comunes';
 import { CamposDivisa } from './CamposDivisa';
-import type { ButtonAction, ButtonConfig, Sensor, TipoWidget } from '../../types';
+import { CamposSlider } from './CamposSlider';
+import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig } from '../../types';
 
 /**
  * Paso 3 de 3: como se ve el boton y cuando aparece o se dispara solo.
@@ -91,9 +93,13 @@ interface Props {
   widget: TipoWidget | undefined;
   currencyWidget: ButtonConfig['currencyWidget'];
   setCurrencyWidget: React.Dispatch<React.SetStateAction<ButtonConfig['currencyWidget']>>;
+  pinned: boolean;
+  setPinned: React.Dispatch<React.SetStateAction<boolean>>;
+  sliderWidget: SliderWidgetConfig | undefined;
+  setSliderWidget: React.Dispatch<React.SetStateAction<SliderWidgetConfig | undefined>>;
 }
 
-export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, customGlyph57, deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorTriggerCooldown, sensorTriggerId, sensorTriggerOp, setSensorTriggerOp, sensorTriggerVal, sensorWidgetCrit, sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon, setBrandIconAlwaysAnimate, setBrandIconCustomBitmap, setBrandIconCustomColor, setCustomGlyph57, setFgColor, setIcon, setImageData, setLabel, setSensorTriggerCooldown, setSensorTriggerId, setSensorTriggerVal, setSensorWidgetCrit, setSensorWidgetId, setSensorWidgetSuffix, setSensorWidgetWarn, setShowBrandEditor, setShowBrandPicker, setShowGlyphEditor, setSublabel, setTimerTriggerAt, setVarWidgetName, setVarWidgetPrefix, setVarWidgetSuffix, setVisibleIfApp, setVisibleIfSensorId, setVisibleIfSensorVal, setWidget, sublabel, timerTriggerAt, varWidgetName, varWidgetPrefix, varWidgetSuffix, visibleIfApp, visibleIfSensorId, visibleIfSensorOp, setVisibleIfSensorOp, visibleIfSensorVal, widget, currencyWidget, setCurrencyWidget }: Props) {
+export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, customGlyph57, deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorTriggerCooldown, sensorTriggerId, sensorTriggerOp, setSensorTriggerOp, sensorTriggerVal, sensorWidgetCrit, sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon, setBrandIconAlwaysAnimate, setBrandIconCustomBitmap, setBrandIconCustomColor, setCustomGlyph57, setFgColor, setIcon, setImageData, setLabel, setSensorTriggerCooldown, setSensorTriggerId, setSensorTriggerVal, setSensorWidgetCrit, setSensorWidgetId, setSensorWidgetSuffix, setSensorWidgetWarn, setShowBrandEditor, setShowBrandPicker, setShowGlyphEditor, setSublabel, setTimerTriggerAt, setVarWidgetName, setVarWidgetPrefix, setVarWidgetSuffix, setVisibleIfApp, setVisibleIfSensorId, setVisibleIfSensorVal, setWidget, sublabel, timerTriggerAt, varWidgetName, varWidgetPrefix, varWidgetSuffix, visibleIfApp, visibleIfSensorId, visibleIfSensorOp, setVisibleIfSensorOp, visibleIfSensorVal, widget, currencyWidget, setCurrencyWidget, sliderWidget, setSliderWidget, pinned, setPinned }: Props) {
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
@@ -137,9 +143,12 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   {[
                     'PLAY', 'PAUSE', 'NEXT', 'PREV', 'MIC', 'SPEAKER', 'AUDIO_WAVE',
                     'TERMINAL', 'WEB', 'CODE', 'GEAR', 'CHECK', 'CLOSE', 'BELL',
+                    'TERMINAL', 'WEB', 'CODE', 'GEAR', 'CHECK', 'CLOSE', 'TRASH', 'BELL',
                     'CLOCK', 'FOLDER', 'SPARKLE', 'DOTS', 'ARROW_UP', 'ARROW_DOWN',
                     'CPU', 'GPU', 'FAN', 'BOLT', 'RAM', 'STORAGE', 'LOCK', 'HEART',
                     'WARN', 'BOOK', 'BUG', 'GRADUATION',
+                    'WARN', 'BOOK', 'BUG', 'GRADUATION', 'WEATHER_THERMO', 'WEATHER_SUN',
+                    'WEATHER_RAIN', 'BATTERY', 'VOLUME_MUTE',
                   ].map((g) => {
                     const isSel = icon.trim().toUpperCase() === g;
                     return (
@@ -170,6 +179,10 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                   {imageData && (
                     <>
                       <img src={imageData} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: VD.radius.md, border: `1px solid ${VD.border}` }} />
+                      <div style={{ position: 'relative', width: 32, height: 32, borderRadius: VD.radius.md, overflow: 'hidden', border: `1px solid ${VD.border}` }}>
+                        <img src={imageData} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', imageRendering: 'pixelated' }} />
+                        <DotMatrixImageOverlay pitch={3} />
+                      </div>
                       <Btn onClick={() => setImageData('')} style={{ color: VD.danger }}>{tf('Quitar')}</Btn>
                     </>
                   )}
@@ -273,7 +286,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
               {/* Widget — live data display on the button cell */}
               <Field label={tf("WIDGET (MUESTRA DATOS EN EL BOTÓN)")}>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable', 'currency'] as const).map((w) => {
+                  {([undefined, 'clock', 'weather', 'now-playing', 'sensor', 'variable', 'currency', 'slider'] as const).map((w) => {
                     // now-playing on an audio-device button hides the device
                     // name in favor of the playing track — useless combo, so
                     // we lock it out here instead of silently dropping the
@@ -294,7 +307,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                           opacity: conflicts ? 0.4 : 1,
                         }}
                       >
-                        {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : w === 'currency' ? tf('DIVISA') : 'VARIABLE'}
+                        {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : w === 'currency' ? tf('DIVISA') : w === 'slider' ? tf('SLIDER') : 'VARIABLE'}
                       </button>
                     );
                   })}
@@ -307,6 +320,14 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                     accent={accent}
                     valor={currencyWidget}
                     onChange={setCurrencyWidget}
+                  />
+                )}
+                {widget === 'slider' && (
+                  <CamposSlider
+                    accent={accent}
+                    valor={sliderWidget}
+                    onChange={setSliderWidget}
+                    deckState={deckState}
                   />
                 )}
                 {widget === 'sensor' && (
@@ -340,6 +361,11 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                     <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
                       {t('ed.thresholdHint')}
                     </div>
+                    {!sensorList.some((s) => s.kind === 'Temperature') && (
+                      <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>
+                        {t('ed.noTempSensors')}
+                      </div>
+                    )}
                   </div>
                 )}
                 {widget === 'variable' && (
@@ -373,6 +399,36 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                     </div>
                   </div>
                 )}
+              </Field>
+
+              {/* Global pinned button */}
+              <Field label={tf("BOTÓN ANCLADO GLOBAL")}>
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+                  background: pinned ? `${accent}18` : VD.elevated,
+                  padding: '9px 12px',
+                  borderRadius: VD.radius.sm,
+                  border: `1px solid ${pinned ? accent : VD.border}`,
+                  transition: 'all 0.15s ease',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={pinned}
+                    onChange={e => setPinned(e.target.checked)}
+                    style={{ accentColor: accent, cursor: 'pointer' }}
+                  />
+                  <DotGlyphIcon glyph="PIN" size={10} color={pinned ? accent : VD.textMuted} />
+                  <span style={{
+                    fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+                    color: pinned ? VD.text : VD.textDim,
+                    textTransform: 'uppercase', userSelect: 'none',
+                  }}>
+                    {tf('ANCLAR EN TODAS LAS PÁGINAS')}
+                  </span>
+                </label>
+                <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+                  {tf('Los botones anclados se mantienen en este hueco a través de todas las páginas.')}
+                </div>
               </Field>
 
               {/* Visibility condition */}

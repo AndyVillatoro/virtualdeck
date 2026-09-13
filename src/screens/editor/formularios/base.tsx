@@ -1,5 +1,5 @@
 import type React from 'react';
-import type { AudioDevice, ButtonAction, FolderButton, RGBDeviceInfo, RGBProfile } from '../../../types';
+import type { AudioDevice, ButtonAction, FolderButton, RGBDeviceInfo, RGBProfile, SliderWidgetConfig, TipoWidget } from '../../../types';
 
 /**
  * El bag que reciben todos los formularios.
@@ -41,4 +41,9 @@ export interface PropsFormulario {
   rgbDevices: RGBDeviceInfo[];
   rgbProfiles: RGBProfile[];
   deckState: Record<string, string>;
+  widget?: TipoWidget;
+  setWidget?: (w: TipoWidget | undefined) => void;
+  sliderWidget?: SliderWidgetConfig;
+  setSliderWidget?: React.Dispatch<React.SetStateAction<SliderWidgetConfig | undefined>>;
+  setStep?: (step: number) => void;
 }

@@ -243,5 +243,3 @@ export function avisarCambioDeConfig(data: unknown, principal?: BrowserWindow): 
   if (barraAbierta()) ventana!.webContents.send('config:changed', data);
   if (principal && !principal.isDestroyed()) principal.webContents.send('config:changed', data);
 }
-
-app.on('before-quit', () => { try { cerrarBarra(); } catch { /* ya cerrada */ } });

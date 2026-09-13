@@ -43,7 +43,7 @@ interface Entradas {
   /** El reloj que ya tiene la pantalla; no se crea otro. */
   reloj: Date;
   clima: DatosClima | null;
-  sonando: { title?: string; artist?: string } | null;
+  sonando: { title?: string; artist?: string; status?: string } | null;
   sensores: Sensor[];
 }
 
@@ -52,7 +52,7 @@ interface Fuentes {
   estado?: Record<string, string>;
   reloj: Date;
   clima: DatosClima | null;
-  sonando: { title?: string; artist?: string } | null;
+  sonando: { title?: string; artist?: string; status?: string } | null;
   sensores: Sensor[];
   divisas?: Record<string, TasasDivisa>;
   hora: Intl.DateTimeFormat;
@@ -82,7 +82,11 @@ const CONSTRUCTORES: Record<TipoWidget, (b: ButtonConfig, f: Fuentes) => DatosWi
   },
 
   'now-playing': (_b, f) => (f.sonando
-    ? { line1: f.sonando.title || '—', line2: f.sonando.artist || undefined, glyph: 'AUDIO_WAVE' }
+    ? {
+        line1: f.sonando.title || '—',
+        line2: f.sonando.artist || undefined,
+        glyph: f.sonando.status === 'Paused' ? 'PAUSE' : 'PLAY',
+      }
     : null),
 
   'variable': (b, f) => {
@@ -95,6 +99,18 @@ const CONSTRUCTORES: Record<TipoWidget, (b: ButtonConfig, f: Fuentes) => DatosWi
   'sensor': (b, f) => (b.sensorWidget ? datosDeSensor(b, f.sensores) : null),
 
   'currency': (b, f) => (b.currencyWidget ? datosDeDivisa(b.currencyWidget, f.divisas) : null),
+
+  'slider': (b, f) => {
+    const cfg = b.sliderWidget;
+    const target = cfg?.target ?? 'volume';
+    if (target === 'variable') {
+      const v = cfg?.varName ? (f.estado?.[cfg.varName] ?? '0') : '0';
+      return { line1: `${v}`, line2: cfg?.label || cfg?.varName || 'VAR', glyph: 'CODE' };
+    }
+    const glyph = target === 'brightness' ? 'SUN' : 'VOLUME';
+    const tag = target === 'brightness' ? 'BRI' : 'VOL';
+    return { line1: cfg?.label || tag, line2: target.toUpperCase(), glyph: glyph as any };
+  },
 };
 
 export function useDatosWidget({ botones, estado, reloj, clima, sonando, sensores, divisas }: Entradas) {

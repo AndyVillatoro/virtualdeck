@@ -7,14 +7,8 @@ import { ACTION_TYPES, PRESET_CATEGORIES, type ButtonPreset } from './actionData
 
 /** Las categorias que declara `PRESET_CATEGORIES`, sin repetirlas a mano. */
 type CategoriaPreset = (typeof PRESET_CATEGORIES)[number];
-import { MacroEditor } from './MacroEditor';
-import {
-  Field, Btn, SensorPicker, FolderButtonSlot, ToggleOffActionPicker, BranchActionRow, ExtraActionRow,
-  estiloEntrada,
-} from './comunes';
-import type {
-  ActionType, AudioDevice, ButtonAction, FolderButton, RGBDeviceInfo, RGBProfile,
-} from '../../types';
+import { ExtraActionRow } from './comunes';
+import type { ButtonAction } from '../../types';
 
 /**
  * Paso 1 de 3: que hace el boton.
@@ -42,7 +36,6 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
-  const inputStyle = estiloEntrada(VD);
 
   return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -187,8 +180,11 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                 background: 'transparent', border: `1px dashed ${VD.border}`,
                 fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer',
                 borderRadius: VD.radius.sm, letterSpacing: 1,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
               }}>
                 {tf('+ AÑADIR ACCIÓN ADICIONAL')}
+                <DotGlyphIcon glyph="ADD" size={8} color={VD.textMuted} />
+                <span>{tf('AÑADIR ACCIÓN ADICIONAL')}</span>
               </button>
             )}
             {showExtraPicker && (

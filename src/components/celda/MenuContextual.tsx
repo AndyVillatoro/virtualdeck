@@ -15,13 +15,16 @@ interface Props {
   x: number;
   y: number;
   isEmpty: boolean;
+  isPinned?: boolean;
   onEdit: () => void;
   onDuplicate?: () => void;
+  onTogglePin?: () => void;
   onClear?: () => void;
+  onQuickSlider?: (target: 'volume' | 'brightness') => void;
   onCerrar: () => void;
 }
 
-export function MenuContextual({ x, y, isEmpty, onEdit, onDuplicate, onClear, onCerrar }: Props) {
+export function MenuContextual({ x, y, isEmpty, isPinned, onEdit, onDuplicate, onTogglePin, onClear, onQuickSlider, onCerrar }: Props) {
   const VD = useTheme();
   const t = useT();
   return (
@@ -35,11 +38,21 @@ export function MenuContextual({ x, y, isEmpty, onEdit, onDuplicate, onClear, on
       }}
     >
       <Item label={t('cell.editShort')} glyph="EDIT" onClick={() => { onCerrar(); onEdit(); }} />
+      {isEmpty && onQuickSlider && (
+        <>
+          <div style={{ height: 1, background: VD.border, margin: '2px 0' }} />
+          <Item label={t('cell.quickVolumeSlider')} glyph="DOTS" onClick={() => { onCerrar(); onQuickSlider('volume'); }} />
+          <Item label={t('cell.quickBrightnessSlider')} glyph="DOTS" onClick={() => { onCerrar(); onQuickSlider('brightness'); }} />
+        </>
+      )}
       {!isEmpty && onDuplicate && (
         <Item label={t('cell.duplicate')} glyph="ADD" onClick={() => { onCerrar(); onDuplicate(); }} />
       )}
+      {!isEmpty && onTogglePin && (
+        <Item label={isPinned ? t('btn.unpin') : t('btn.pin')} glyph="PIN" onClick={() => { onCerrar(); onTogglePin(); }} />
+      )}
       {!isEmpty && onClear && (
-        <Item label={t('cell.clear')} glyph="CLOSE" onClick={() => { onCerrar(); onClear(); }} danger />
+        <Item label={t('cell.clear')} glyph="TRASH" onClick={() => { onCerrar(); onClear(); }} danger />
       )}
     </div>
   );

@@ -117,12 +117,33 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
               <span
                 onClick={() => onPageChange(i)}
                 onDoubleClick={() => { setRenamingPageId(p.id); setRenameValue(p.name); }}
-                title={t('page.tip')}
-                style={{ cursor: 'pointer' }}
+                title={p.targetApp ? `${t('page.tip')} · ${t('page.boundApp')}: ${p.targetApp}` : t('page.tip')}
+                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
               >
-                {p.name}
+                <span>{p.name}</span>
+                {p.targetApp && (
+                  <span
+                    title={`${t('page.boundApp')}: ${p.targetApp}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                      padding: '1px 4px',
+                      borderRadius: VD.radius.sm,
+                      background: `${config.accent}1c`,
+                      border: `1px solid ${config.accent}55`,
+                      color: config.accent,
+                      fontSize: 7,
+                      letterSpacing: 0.5,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    <DotGlyphIcon glyph="APP_WINDOW" size={6} color={config.accent} />
+                    <span>{p.targetApp}</span>
+                  </span>
+                )}
                 {(p.gridSize ?? 4) !== 4 && (
-                  <span style={{ fontSize: 7, marginLeft: 4, opacity: 0.5 }}>{p.gridSize ?? 4}×{p.gridRows ?? p.gridSize ?? 4}</span>
+                  <span style={{ fontSize: 7, marginLeft: 2, opacity: 0.5 }}>{p.gridSize ?? 4}×{p.gridRows ?? p.gridSize ?? 4}</span>
                 )}
               </span>
             )}
@@ -172,7 +193,7 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
         )}
         <div
           onClick={() => setShowSidebar((v) => !v)}
-          title={showSidebar ? 'Ocultar panel' : 'Mostrar panel'}
+          title={t(showSidebar ? 'sidebar.hide' : 'sidebar.show')}
           style={{
             padding: compact ? '4px 6px' : '8px 10px',
             cursor: 'pointer', userSelect: 'none',

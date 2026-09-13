@@ -33,7 +33,7 @@ function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
 }
 function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   const c = v * s, hh = (h % 360) / 60, x = c * (1 - Math.abs((hh % 2) - 1));
-  let r = 0, g = 0, b = 0;
+  let r: number, g: number, b: number;
   if (hh < 1) [r, g, b] = [c, x, 0];
   else if (hh < 2) [r, g, b] = [x, c, 0];
   else if (hh < 3) [r, g, b] = [0, c, x];

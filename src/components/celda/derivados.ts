@@ -34,7 +34,8 @@ export function derivarCelda(
   },
 ): DerivadosCelda {
   const isEmpty = button.action.type === 'none'
-    && !button.label && !button.icon && !button.imageData && !button.brandIcon;
+    && !button.label && !button.icon && !button.imageData && !button.brandIcon
+    && !(button.subButtons && button.subButtons.length === 4);
 
   const porDefecto = button.action.type !== 'none'
     ? button.action.type.replace(/-/g, ' ').toUpperCase()

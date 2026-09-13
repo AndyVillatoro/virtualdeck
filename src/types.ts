@@ -204,6 +204,46 @@ export interface ButtonConfig {
   timerTriggerAt?: string;
   /** Disparar acción cuando un sensor cruza un umbral (edge-triggered con cooldown). */
   sensorTrigger?: SensorCondition & { cooldownMs?: number };
+  /** 4.5 — Subdivisión modular de mosaico 2×2 (4 mini-botones: TL, TR, BL, BR). */
+  subButtons?: SubButtonConfig[];
+  /** 7.4 — Botón anclado global: persiste en su celda en todas las páginas. */
+  pinned?: boolean;
+  /** 7.8 — Configuración del widget 'slider': barra táctil continua horizontal/vertical. */
+  sliderWidget?: SliderWidgetConfig;
+}
+
+export interface SliderWidgetConfig {
+  /** Qué controla el slider: 'volume' | 'brightness' | 'variable' */
+  target: 'volume' | 'brightness' | 'variable';
+  /** Si target === 'variable', nombre de la variable de estado en DeckConfig.state */
+  varName?: string;
+  /** Orientación visual de la barra: 'horizontal' (por defecto) o 'vertical' */
+  orientation?: 'horizontal' | 'vertical';
+  /** Valor mínimo (por defecto 0) */
+  min?: number;
+  /** Valor máximo (por defecto 100) */
+  max?: number;
+  /** Paso del deslizador (por defecto 1 para variables, 5 para volumen/brillo) */
+  step?: number;
+  /** Mostrar indicador numérico/porcentaje (por defecto true) */
+  showValue?: boolean;
+  /** Prefijo o etiqueta técnica personalizada (ej. "VOL", "BRI", "VAR") */
+  label?: string;
+}
+
+export interface SubButtonConfig {
+  id: string;
+  label?: string;
+  sublabel?: string;
+  icon?: string;
+  dotGlyph?: string;
+  bgColor?: string;
+  fgColor?: string;
+  action: ButtonAction;
+  actions?: ButtonAction[];
+  isToggle?: boolean;
+  actionToggleOff?: ButtonAction;
+  longPressAction?: ButtonAction;
 }
 
 // 5.x — Macro teclado/ratón
@@ -238,6 +278,8 @@ export interface PageConfig {
   gridSize?: 3 | 4 | 5 | 6;
   /** Número de filas. Por defecto igual a gridSize (grilla cuadrada). */
   gridRows?: number;
+  /** 7.4 — Proceso de aplicación vinculado para cambio automático de página (ej. "obs64", "photoshop"). */
+  targetApp?: string;
 }
 
 export interface Profile {
@@ -251,6 +293,8 @@ export interface Profile {
    * traen: en esos se deja el que este puesto, que es lo que hacian.
    */
   wallpaper?: string;
+  /** 7.4 — Proceso de aplicación vinculado para auto-carga del perfil completo. */
+  targetApp?: string;
 }
 
 export type SoundProfileId = 'click' | 'tick' | 'thud' | 'off';
@@ -325,6 +369,12 @@ export interface DeckConfig {
    * de VirtualDeck no tiene marco con el que distinguirla del fondo.
    */
   alwaysOnTop?: boolean;
+  /** 7.4 — Cambio inteligente de página/perfil según la app activa en primer plano. Default true. */
+  autoProfileSwitch?: boolean;
+  /** 7.4 — Volver a la página 1 cuando la app pierde el foco. Default false. */
+  autoProfileRestoreDefault?: boolean;
+  /** 7.3 — ID del monitor preferido para pantalla completa o kiosko. */
+  targetDisplayId?: number;
 }
 
 /**
@@ -593,6 +643,20 @@ export interface SensorsStatus {
   bundledRunning: boolean;
 }
 
+export interface DisplayInfo {
+  id: number;
+  name: string;
+  bounds: { x: number; y: number; width: number; height: number };
+  workArea: { x: number; y: number; width: number; height: number };
+  scaleFactor: number;
+  isPrimary: boolean;
+  isCurrent: boolean;
+  frequency?: number;
+  rotation: number;
+  touchSupport?: 'available' | 'unavailable' | 'unknown';
+  internal?: boolean;
+}
+
 export interface PlatformInfo {
   appVersion: string;
   electron: string;
@@ -607,7 +671,7 @@ export interface PlatformInfo {
  * Estaba escrito a mano en `types.ts` y dos veces mas en `PasoEstilo`, asi que
  * añadir uno pedia acordarse de los tres.
  */
-export type TipoWidget = 'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | 'currency';
+export type TipoWidget = 'clock' | 'weather' | 'now-playing' | 'sensor' | 'variable' | 'currency' | 'slider';
 
 /** Tasas de cambio con una base, tal y como las devuelve el proceso principal. */
 export interface TasasDivisa {
@@ -625,6 +689,12 @@ export interface ElectronAPI {
     close: () => void;
     fullscreen: () => void;
     setAlwaysOnTop: (encima: boolean) => void;
+    /** 7.4 — Proceso y título de la aplicación activa en primer plano. */
+    getActiveApp: () => Promise<{ processName: string | null; windowTitle: string | null }>;
+    /** 7.3 — Obtiene la lista de monitores y pantallas activas. */
+    getDisplays: () => Promise<DisplayInfo[]>;
+    /** 7.3 — Traslada la ventana principal al monitor especificado. */
+    moveToDisplay: (displayId: number) => Promise<boolean>;
   };
   bar: {
     open: (g: BarGeometry) => Promise<boolean>;
@@ -785,6 +855,10 @@ export interface ElectronAPI {
     onRGBDevicesChanged: (handler: () => void) => () => void;
     /** Estado del sistema publicado por el proceso principal cada 5 s. */
     onEstadoSistema: (handler: (data: unknown) => void) => () => void;
+    /** 7.4 — Evento de cambio de aplicación activa en primer plano. */
+    onActiveAppChanged: (handler: (appInfo: { processName: string | null; windowTitle: string | null }) => void) => () => void;
+    /** 7.3 — Evento emitido cuando se conectan o desconectan pantallas o cambia su resolución. */
+    onDisplaysChanged: (handler: (displays: DisplayInfo[]) => void) => () => void;
   };
 }
 

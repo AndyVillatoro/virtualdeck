@@ -210,7 +210,42 @@ impl Sensors {
         let allowed = self.lhm.allowed_categories().clone();
         self.list(force)
             .iter()
-            .filter(|s| allowed.contains(&s.category))
+            .filter(|s| {
+                if allowed.contains(&s.category) {
+                    return true;
+                }
+                if s.kind == SensorKind::Temperature {
+                    if s.category == SensorCategory::Cpu && allowed.contains(&SensorCategory::Cpu) {
+                        return true;
+                    }
+                    if s.category == SensorCategory::Gpu && allowed.contains(&SensorCategory::Gpu) {
+                        return true;
+                    }
+                    if s.category == SensorCategory::Mainboard
+                        && (allowed.contains(&SensorCategory::Mainboard) || allowed.contains(&SensorCategory::Cpu))
+                    {
+                        return true;
+                    }
+                    if s.category == SensorCategory::Memory && allowed.contains(&SensorCategory::Memory) {
+                        return true;
+                    }
+                    if s.category == SensorCategory::Storage && allowed.contains(&SensorCategory::Storage) {
+                        return true;
+                    }
+                    let id_or_name = format!("{} {}", s.id, s.name).to_lowercase();
+                    if (id_or_name.contains("cpu") || id_or_name.contains("core") || id_or_name.contains("package"))
+                        && allowed.contains(&SensorCategory::Cpu)
+                    {
+                        return true;
+                    }
+                    if (id_or_name.contains("gpu") || id_or_name.contains("hot spot") || id_or_name.contains("vram"))
+                        && allowed.contains(&SensorCategory::Gpu)
+                    {
+                        return true;
+                    }
+                }
+                false
+            })
             .cloned()
             .collect()
     }

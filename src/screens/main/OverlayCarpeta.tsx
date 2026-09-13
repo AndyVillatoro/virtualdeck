@@ -132,7 +132,7 @@ export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, entorno
 }
 
 // ── Helper components ─────────────────────────────────────────────────────
-export function PageCtxItem({ label, onClick, danger }: { label: string; onClick: () => void; danger?: boolean }) {
+export function PageCtxItem({ label, onClick, danger, glyph }: { label: string; onClick: () => void; danger?: boolean; glyph?: string }) {
   const VD = useTheme();
   const [hov, setHov] = useState(false);
   return (
@@ -145,9 +145,11 @@ export function PageCtxItem({ label, onClick, danger }: { label: string; onClick
         cursor: 'pointer', fontFamily: VD.mono, fontSize: 11,
         color: danger ? VD.danger : VD.text, letterSpacing: 0.5,
         transition: 'background 0.1s', borderBottom: `1px solid ${VD.border}`,
+        display: 'flex', alignItems: 'center', gap: 8,
       }}
     >
-      {label}
+      {glyph && <DotGlyphIcon glyph={glyph} size={10} color={danger ? VD.danger : VD.textDim} showRecessed />}
+      <span>{label}</span>
     </div>
   );
 }

@@ -22,7 +22,7 @@
 
 ---
 
-## Estado general (2026-09-06)
+## Estado general (2026-09-13)
 
 Auditoría sobre el código (no solo el doc):
 
@@ -36,9 +36,11 @@ Auditoría sobre el código (no solo el doc):
   electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
   en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
   falta **galería de perfiles** (ver [galeria.md](galeria.md)).
-- **Publicado:** hasta **v0.11.0** en GitHub Releases, con `latest.yml` y `.blockmap`
+- **Publicado / Versión actual:** **v0.12.0** en GitHub Releases, con `latest.yml` y `.blockmap`
   —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
-  separado (ítem 30).
+  separado (ítem 30). Incluye Bloque 7 completo (DOT/480, multi-monitor, auto-perfiles,
+  botones anclados, mosaico 2×2, sliders continuos táctiles, mando web móvil interactivo
+  y refactor modular SRP).
 - **i18n profundo (Bloque A): ✅ todo**, incluido lo que no estaba en la lista — el
   **proceso principal** (bandeja y diálogos) y los módulos que no son componentes.
   512 claves ES/EN. Con una salvedad que conviene no olvidar: la auditoría es una
@@ -78,9 +80,8 @@ Cerrado. Quedó además cubierto el proceso principal, que no estaba en la lista
 |---|----------|----------|--------|
 | 11 | `EditorB` | Vista previa y los tres efectos de carga fuera (`editor/VistaPrevia`, `useCatalogos`, `useCapturaHotkey`, `usePegarImagen`). 605 → 485 líneas, complejidad 21 → bajo el límite. | ✅ 2026-08-31 |
 | 12 | `TitleBar` | Extraído a `settings/PanelAjustes` + `RGBSection`/`SensorsSection`. | ✅ |
-| 12.1 | `TitleBar` (auditoría profunda) | Reducir complejidad ciclomática (29 → <18), separar controles de ventana, navegación y atajos, reducir prop drilling a `PanelAjustes`. Enfoque prioritario exclusivo antes de otros componentes. | 🚧 |
 | 12.1 | `TitleBar` (auditoría profunda) | Reducir complejidad ciclomática (29 → <18), separar controles de ventana, navegación y atajos, reducir prop drilling a `PanelAjustes`. Modo compacto adaptativo para monitores estrechos / zoom > 150%. | ✅ 2026-09-12 |
-| 13 | `MainB` | Rejilla, panel lateral, pestañas, widgets y disparadores fuera. 815 → 618 líneas. | ✅ |
+| 13 | `MainB` | Rejilla, panel lateral, pestañas fuera; desacople modular con `ModalVincularApp`, `BarraSeleccionLote`, `MenuContextualPagina` y `tipos.ts`. 933 → 542 líneas, complejidad baja. | ✅ 2026-09-13 |
 | 14 | `RGBManagerB` | Lista de dispositivos y panel de perfiles fuera (`rgb/ListaDispositivos`, `rgb/PanelPerfiles`). 478 → 450 líneas, complejidad 20 → bajo el límite. | ✅ 2026-08-31 |
 | 15 | `utils/actions.ts` | Dividido en `utils/acciones/` (una familia por archivo) + guardián de cobertura. | ✅ |
 
@@ -91,6 +92,7 @@ Correr `npm run lint:dead` y eliminar lo confirmado, de a poco. (`electron-updat
 - ✅ 2026-05-29 — `electron/main/bootstrap.ts` (entry point alternativo huérfano, con no-op roto) eliminado.
 - ✅ 2026-05-29 — `lucide-react` (dependencia muerta: `VDIcon` migró a SVG inline) desinstalada + atribución quitada de `credits.ts`.
 - ✅ 2026-08-23 — knip en cero. 64 iconos SVG muertos, 6 funciones huérfanas y 35 `export` innecesarios. El paquete **no adelgazó** (mismo hash): Vite ya los descartaba.
+- ✅ 2026-09-13 — knip en cero. Limpieza de exports e imports huérfanos tras integración de widgets, sliders, monitores y perfiles. Parada limpia de tracker (`stopActiveWindowTracker`).
 
 ## Bloque C — Documentación (wiki bilingüe)
 
@@ -124,6 +126,7 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 28 | Widget de divisas | Conversión entre dos monedas, tasa diaria de `open.er-api.com`, cacheada. | ✅ 2026-08-23 |
 | 29 | Más presets RGB | De 7 a 18, con brillo y velocidad por preset. Sin motor de animación: se decidió ir por presets prehechos. | ✅ 2026-08-23 |
 | 30 | Microsoft Store (MSIX) | Publicada en la Store como VirtualDeck. Documentar ciclo de actualización continua de versiones (bump semver + partner center) e incorporar botón oficial en landing. | ✅ / 🚧 |
+| 30 | Microsoft Store (MSIX) | Publicada en la Store como VirtualDeck. Automatización completa del empaquetado y validación de `VirtualDeck-X.Y.Z.msix` con `npm run package:store` (`scripts/build-store.mjs`), generación de assets, saneado de mapping y makeappx del Windows SDK con checklist interactivo para Partner Center. | ✅ 2026-09-12 |
 | 31 | Auditoría de caminos de respaldo | `VD_SIN_NUCLEO=1` para arrancar ignorando el núcleo nativo. Sin él ese código no se ejecuta nunca y se pudre; cinco fallos de la 0.9.4 salieron de ahí. | ✅ 2026-09-06 |
 | 32 | Auditoría «dice que sí sin hacer nada» | Barrido de las acciones que devuelven éxito con la lista vacía o sin encontrar nada: RGB, enlaces, lanzador. | ✅ 2026-09-06 |
 | 33 | Integridad de la configuración | Escritura atómica (temporal + renombre con reintentos) y rotación de copias por fecha, no por nombre. | ✅ 2026-09-06 |
@@ -134,14 +137,17 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 38 | Mando móvil y servidor local | Resolver conectividad LAN: comprobación de firewall en Windows, soporte para hostnames/mDNS en validación de Host, feedback de IP activa en UI. | ✅ 2026-09-12 |
 | 39 | Control de brillo y Surface Pro 8 | Soporte para pantallas modernas sin WMI clásico (Surface Pro 8 / Intel Xe via WinRT `BrightnessOverride` o WDDM) y resiliencia en DDC/CI cuando la lectura falla pero la escritura funciona. | ✅ 2026-09-12 |
 | 40 | Landing Page con Three.js | Modelo 3D interactivo en la web con física de pulsación en botones, texturas dinámicas OLED dot-matrix, iluminación realista y badge oficial de Microsoft Store. | ✅ 2026-09-12 |
-| 41 | Sistema Visual DOT / 480 (OLED Micro Interface) | Evolución de identidad inspirada en [Ideas, Now Physical — ESP-Mosaico (Henry Li)](https://esp-mosaico.vercel.app/): grilla estricta de 4px (`4PX GRID`); modo oscuro en negro OLED puro (`BG #070809`, `SURFACE #111315`); modo claro con tonalidades en grises industriales/cemento (evitando blancos deslumbrantes); compatibilidad total con los acentos de VirtualDeck (los 10 presets actúan como acento primario `RED #FF3B30`); gráficos halftone/dithered para carátulas e imágenes, arcos dot concéntricos y formas de onda de audio en puntos. | ⬜ |
-| 42 | Estudio de Hardware Paramétrico | Inspirado en [Codyboard — Hardware Study 01](https://codyboard.github.io/codyboard-designer/) ([repositorio](https://github.com/Codyboard/codyboard-designer.git)): Modelado de proporciones de chasis físico (escala mm a px), knobs/encoders giratorios virtuales y barras de luz difusa LED WS2812B como widgets decorativos. | ⬜ |
-| 43 | Detección dinámica de monitores y multi-pantalla | Escucha en caliente de pantallas conectadas/desconectadas (`screen.on('display-added')`), selector de monitor destino para ventana principal / kiosko y actualización dinámica de handles DDC/CI. | ⬜ |
-| 44 | Perfiles automáticos por aplicación activa + Botones anclados globales | Cambio inteligente de página según la ventana/proceso en primer plano (ej. OBS, Photoshop, IDE) y opción de botones fijos/anclados que persisten en todas las páginas. | ⬜ |
-| 45 | Subdivisión modular de mosaico 2×2 | Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuartos de celda) para funciones compactas y alta densidad de controles. | ⬜ |
-| 46 | Botón explícito "Eliminar botón" / vaciar celda | Integración directa del botón de eliminación en `EditorB` (actualmente solo accesible por clic derecho como "Limpiar botón") con confirmación o deshacer rápido. | ⬜ |
-| 47 | Dial visual rotativo dot-matrix para scroll de mouse | Indicador gráfico circular (dial de puntos LED concéntricos) en celdas de volumen y brillo que responde visualmente al giro de la rueda del ratón al estilo DOT / 480. | ⬜ |
-| 48 | Widget de barra / slider táctil continuo | Widget táctil horizontal/vertical para deslizamiento continuo con dedo o ratón, optimizado para tabletas y dispositivos táctiles (Surface Pro). | ⬜ |
+| 41 | Sistema Visual DOT / 480 (OLED Micro Interface) | Evolución de identidad inspirada en [Ideas, Now Physical — ESP-Mosaico (Henry Li)](https://esp-mosaico.vercel.app/): grilla estricta de 4px (`4PX GRID`); modo oscuro en negro OLED puro (`BG #070809`, `SURFACE #111315`); modo claro con tonalidades en grises industriales/cemento (evitando blancos deslumbrantes); compatibilidad total con los acentos de VirtualDeck (los 10 presets actúan como acento primario `RED #FF3B30`); gráficos halftone/dithered para carátulas e imágenes, arcos dot concéntricos y formas de onda de audio en puntos. | ✅ 2026-09-12 |
+| 42 | Estudio de Hardware Paramétrico | Inspirado en [Codyboard — Hardware Study 01](https://codyboard.github.io/codyboard-designer/) ([repositorio](https://github.com/Codyboard/codyboard-designer.git)): Modelado de proporciones de chasis físico (escala mm a px), knobs/encoders giratorios virtuales y barras de luz difusa LED WS2812B como widgets decorativos. | ⏸ Archivado |
+| 43 | Detección dinámica de monitores y multi-pantalla | Escucha en caliente de pantallas conectadas/desconectadas (`screen.on('display-added')`), selector de monitor destino para ventana principal / kiosko, clamping de seguridad contra desconexiones, conmutador rápido en TitleBar y sección DOT en ajustes. | ✅ 2026-09-12 |
+| 44 | Perfiles automáticos por aplicación activa + Botones anclados globales | Cambio inteligente de página según la ventana/proceso en primer plano (ej. OBS, Photoshop, IDE) y opción de botones fijos/anclados que persisten en todas las páginas. | ✅ 2026-09-12 |
+| 45 | Subdivisión modular de mosaico 2×2 | Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuartos de celda) para funciones compactas y alta densidad de controles. | ✅ 2026-09-12 |
+| 46 | Botón explícito "Eliminar botón" / vaciar celda | Integración directa del botón de eliminación en `EditorB` con confirmación in-situ, cancelación por Escape y botón interactivo `[DESHACER]` táctil/ratón en el toast. | ✅ 2026-09-12 |
+| 47 | Dial visual rotativo dot-matrix para scroll de mouse | Indicador gráfico circular (dial de 16 puntos LED concéntricos) en celdas de volumen y brillo (`adjust`) que responde visualmente en tiempo real al giro de la rueda del ratón y clics, con estela de rotación y feedback flotante del delta. | ✅ 2026-09-12 |
+| 48 | Widget de barra / slider táctil continuo | Widget táctil horizontal/vertical para deslizamiento continuo con dedo o ratón, optimizado para tabletas y dispositivos táctiles (Surface Pro). | ✅ 2026-09-12 |
+| 49 | Acciones encadenadas avanzadas | Retraso individual por paso (`delayMs`), condiciones de bifurcación («ejecutar paso B solo si paso A fue OK / si falló») y bucles de repetición («repetir N veces»). | ⬜ pendiente |
+| 50 | Nuevos tipos de acción e integraciones de terceros | Discord push-to-talk / toggle mute nativo vía RPC/IPC, y control de Spotify Web API para selección directa de playlists y dispositivos de reproducción. | ⬜ pendiente |
+| 51 | Expansión del núcleo nativo Rust (`vd-core`) | Migración completa de comandos auxiliares de PowerShell (búsqueda de procesos, manipulación de ventanas, scripts rápidos) al módulo compilado en Rust a 2ms. | ⬜ pendiente |
 
 ---
 
@@ -215,21 +221,30 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
   - **Tipografía y Componentes**: Números grandes y códigos de estado renderizados en matriz de puntos discretos (5×7 y 7×9). Módulos de celda con cabecera técnica (`01 HOME`, `02 MUSIC`, `03 TIMER`) y carril lateral vertical táctil para disparadores secundarios.
   - **Gráficos Dithered / Halftone**: Procesamiento de carátulas e imágenes en tramado de puntos (1-bit / 2-bit halftone) estilo serigrafía técnica.
   - **Indicadores Concéntricos de Puntos**: Arcos circulares de puntos (`●●●○○○`) para temporizador, volumen, batería y progreso. Ondas de audio en barras verticales de puntos.
-- **7.2 Estudio de Hardware Paramétrico ★★ · M** —
+- **7.2 Estudio de Hardware Paramétrico ★★ · M** — ⏸ Archivado / Pausado.
   Inspirado en [Codyboard Designer](https://codyboard.github.io/codyboard-designer/) ([repositorio](https://github.com/Codyboard/codyboard-designer.git)):
   - Modelado de proporciones de chasis físico (conversión milímetros a píxeles), knobs/encoders giratorios virtuales y tiras de luz difusa LED WS2812B como widgets decorativos.
-- **7.3 Detección Dinámica de Monitores y Multi-Pantalla ★★ · M** —
-  Escucha en caliente de pantallas conectadas/desconectadas (`screen.on('display-added')`, `screen.on('display-removed')`), selector de monitor destino para la ventana principal o modo kiosko y refresco dinámico de handles DDC/CI.
-- **7.4 Perfiles Automáticos por Aplicación Activa + Botones Anclados ★★ · M** —
-  Cambio inteligente de página según la ventana activa (ej. OBS, Photoshop, IDE, juego) y opción de botones fijados/anclados que persisten en la grilla en todas las páginas.
-- **7.5 Subdivisión Modular de Mosaico 2×2 ★★ · S-M** —
-  Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuartos de celda) para funciones compactas y alta densidad de controles.
-- **7.6 Botón Explícito de Eliminación / Vaciar Celda ★ · S** —
-  Botón directo en `EditorB` para vaciar o eliminar la configuración de un botón con confirmación y deshacer rápido.
-- **7.7 Dial Visual Rotativo Dot-Matrix para Scroll de Ratón ★★ · S** —
-  Indicador gráfico circular (dial de puntos LED concéntricos) en celdas de volumen y brillo que responde visualmente en tiempo real al giro de la rueda del ratón.
-- **7.8 Widget de Barra / Slider Táctil Continuo ★★ · S-M** —
-  Widget táctil horizontal/vertical para deslizamiento continuo con dedo o ratón, optimizado para tabletas y dispositivos táctiles (Surface Pro).
+- **7.3 Detección Dinámica de Monitores y Multi-Pantalla ★★ · M** — ✅ HECHO (2026-09-12)
+  - **Detección Dinámica Hotplug**: Suscripción reactiva en proceso principal (`screen.on('display-added')`, `screen.on('display-removed')`, `screen.on('display-metrics-changed')`) con difusión en tiempo real al renderer vía `events.onDisplaysChanged`.
+  - **Seguridad Offscreen Auto-Clamping**: Si un monitor secundario se desconecta mientras VirtualDeck se encuentra en él, la ventana se reposiciona y sujeta automáticamente en el área de trabajo de la pantalla principal (`clampBoundsToDisplay`) previniendo que la app quede invisible o perdida fuera de pantalla.
+  - **Movimiento de Ventana y Destino de Kiosko**: Canales IPC `window:getDisplays` y `window:moveToDisplay` para mover la ventana preservando estados maximizado y fullscreen. Configuración persistente de `targetDisplayId` para proyectar el modo Kiosko/Fullscreen automáticamente sobre un monitor secundario o pantalla auxiliar seleccionada.
+  - **Conmutador Rápido en Barra de Título & Sección DOT en Ajustes**: Botón contextual táctil `[MONITOR X/Y]` en la `TitleBar` cuando existen múltiples pantallas para saltar de monitor en un solo clic, y panel `DisplaysSection` en ajustes con estética DOT/OLED micro-interface, métricas técnicas (resolución, tasa Hz, soporte táctil) y botones de acción rápida.
+- **7.4 Perfiles Automáticos por Aplicación Activa + Botones Anclados ★★ · M** — ✅ HECHO (2026-09-12)
+  - **Seguimiento Nativo de Ventana Activa**: Daemon persistente en segundo plano PowerShell/P-Invoke con Win32 `GetForegroundWindow` + `GetWindowThreadProcessId` que emite `window:activeAppChanged` y expone `window.getActiveApp()` con 0% de CPU.
+  - **Cambio Automático de Páginas y Perfiles**: Hook `useAutoProfile` con debounce (250ms) y filtro de bucle/auto-enfoque; cambia dinámicamente a la página o perfil configurado para el proceso en primer plano (ej. `obs64`, `photoshop`, `code`), y vuelve a la página 1 (`autoProfileRestoreDefault`) si no hay coincidencias.
+  - **Vinculación de Aplicaciones**: Insignia retro DOT `APP_WINDOW` en pestañas de páginas, selector interactivo en menú contextual de página con lista de procesos en ejecución (`runningProcesses`) y campo de texto libre, y asociación de app destino por perfil en `PanelAjustes`.
+  - **Botones Anclados Globales**: Conmutador DOT en `PasoEstilo` del editor, micro-insignia física `PIN` en celdas, acción rápida de anclaje en el menú contextual derecho (`MenuContextual`), y proyección matemática directa de huecos en `resolverBotonesPagina` para persistencia homogénea en la cuadrícula a través de todas las páginas.
+- **7.5 Subdivisión Modular de Mosaico 2×2 ★★ · S-M** — ✅ HECHO (2026-09-12)
+  Capacidad de dividir 1 celda estándar en 4 mini-botones independientes (cuadrantes TL, TR, BL, BR) con soporte de todas las 37 acciones, micro-etiquetas mono, iconos dot-matrix, indicador LED de toggle, pulsación independiente, selector 2×2 en `EditorB` con plantillas predefinidas (Multimedia, Direcciones, Accesos, Audio) y capa de filtro visual Dot Matrix retro OLED para carátulas de música y fondos de botones personalizados.
+- **7.6 Botón Explícito de Eliminación / Vaciar Celda ★ · S** — ✅ HECHO (2026-09-12)
+  Botón directo en `EditorB` para vaciar o eliminar la configuración de un botón con confirmación in-situ con icono `TRASH`, cancelación fluida con Escape y botón interactivo táctil/ratón `[DESHACER]` (`UNDO` dot glyph) en el toast.
+- **7.7 Dial Visual Rotativo Dot-Matrix para Scroll de Ratón ★★ · S** — ✅ HECHO (2026-09-12)
+  Indicador gráfico circular (`DotRotaryDial`) de 16 puntos LED concéntricos en celdas de ajuste de volumen y brillo (`adjust`) que responde visualmente en tiempo real al giro de la rueda del ratón y clics, con estela de rotación en el color de acento y feedback flotante del delta (+10% / -5%).
+- **7.8 Widget de Barra / Slider Táctil Continuo ★★ · S-M** — ✅ HECHO (2026-09-12)
+  - **Interacción Táctil y Puntero Continuo**: Deslizamiento directo horizontal y vertical (fader) con captura de puntero (`setPointerCapture`) para tabletas (Surface Pro), pantallas táctiles y ratón, con respuesta local de 0 ms y despacho IPC acelerado/throttled (~40 ms). Soporte nativo de rueda del ratón con saltos por paso configurable.
+  - **Integración con Hardware y Estado**: Soporta control en vivo de volumen del sistema (`volume`), brillo de monitores (`brightness`), o variables dinámicas del deck (`variable`) con sincronización bidireccional inmediata.
+  - **Alineación Visual DOT / 480 (OLED Micro Interface)**: Renderizado en cuadrícula estricta de 4px con micro-columnas LED discretas de 3 puntos (horizontal) y segmentos fader (vertical), punto guía blanco activo (`#ffffff`), escala técnica (`0 • 50 • 100`), valor porcentual flotante y 0 emojis.
+  - **Pipeline Completo en Editor**: Selector de widget `'slider'` en `PasoEstilo`, editor `CamposSlider` con preview interactiva en tiempo real en `VistaPrevia`, guardado e i18n integral en español e inglés.
 
 ---
 

@@ -32,12 +32,8 @@ export function wxDotGlyph(code: number): string {
   return c === null ? 'WEATHER_THERMO' : (WX_GLYPH[c] ?? 'WEATHER_SUN');
 }
 
-export function wxEmoji(code: number): string {
-  return wxDotGlyph(code);
-}
-
 /** Clave de diccionario con el nombre de la condicion. */
-export function wxClave(code: number): string {
+function wxClave(code: number): string {
   const c = codigoConocido(code);
   return c === null ? 'wx.unknown' : `wx.${c}`;
 }

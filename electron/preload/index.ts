@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
-  ElectronAPI, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota } from '../../src/types';
+  ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota } from '../../src/types';
 
 /**
  * El puente, comprobado contra el tipo que ve la pantalla.
@@ -22,6 +22,12 @@ const api = {
     close: () => ipcRenderer.send('window:close'),
     fullscreen: () => ipcRenderer.send('window:fullscreen'),
     setAlwaysOnTop: (encima: boolean) => ipcRenderer.send('window:setAlwaysOnTop', encima),
+    getActiveApp: (): Promise<{ processName: string | null; windowTitle: string | null }> =>
+      ipcRenderer.invoke('window:getActiveApp'),
+    getDisplays: (): Promise<DisplayInfo[]> =>
+      ipcRenderer.invoke('window:getDisplays'),
+    moveToDisplay: (displayId: number): Promise<boolean> =>
+      ipcRenderer.invoke('window:moveToDisplay', displayId),
   },
   bar: {
     open: (g: BarGeometry): Promise<boolean> => ipcRenderer.invoke('bar:open', g),
@@ -216,6 +222,16 @@ const api = {
       const listener = () => handler();
       ipcRenderer.on('rgb:devicesChanged', listener);
       return () => ipcRenderer.removeListener('rgb:devicesChanged', listener);
+    },
+    onActiveAppChanged: (handler: (appInfo: { processName: string | null; windowTitle: string | null }) => void): (() => void) => {
+      const listener = (_e: unknown, data: { processName: string | null; windowTitle: string | null }) => handler(data);
+      ipcRenderer.on('window:activeAppChanged', listener);
+      return () => ipcRenderer.removeListener('window:activeAppChanged', listener);
+    },
+    onDisplaysChanged: (handler: (displays: DisplayInfo[]) => void): (() => void) => {
+      const listener = (_e: unknown, data: DisplayInfo[]) => handler(data);
+      ipcRenderer.on('window:displaysChanged', listener);
+      return () => ipcRenderer.removeListener('window:displaysChanged', listener);
     },
   },
 } satisfies ElectronAPI;

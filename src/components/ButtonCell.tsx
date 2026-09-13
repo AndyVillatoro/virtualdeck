@@ -10,6 +10,9 @@ import { RotuloCelda } from './celda/RotuloCelda';
 import { derivarCelda } from './celda/derivados';
 import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
+import { DotRotaryDial } from './dot480/DotRotaryDial';
+import { DotContinuousSlider } from './dot480/DotContinuousSlider';
+import { Subdivision2x2 } from './celda/Subdivision2x2';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
 import type { ButtonConfig, SoundProfileId } from '../types';
 
@@ -17,6 +20,8 @@ interface ButtonCellProps {
   button: ButtonConfig;
   accent: string;
   toggled?: boolean;
+  /** Estado toggle individual de los 4 cuadrantes (si subButtons existe) */
+  subToggled?: boolean[];
   isActive?: boolean;
   isHidden?: boolean;
   isRunning?: boolean;
@@ -24,12 +29,14 @@ interface ButtonCellProps {
   widgetData?: { line1: string; line2?: string; tone?: 'warn' | 'crit' };
   soundEnabled?: boolean;
   soundProfile?: SoundProfileId;
+  deckState?: Record<string, string>;
+  onStateUpdate?: (k: string, v: string) => void;
   /** Etiqueta con variables ya interpoladas (Feature 3). Sustituye al label del botón. */
   resolvedLabel?: string;
   onEdit: () => void;
-  onExecute: () => void;
+  onExecute: (target?: ButtonConfig) => void;
   onSelect?: () => void;
-  onLongPress?: () => void;
+  onLongPress?: (target?: ButtonConfig) => void;
   onDuplicate?: () => void;
   onClear?: () => void;
   onDragStart?: () => void;
@@ -39,24 +46,28 @@ interface ButtonCellProps {
   onAdjustWheel?: (signo: 1 | -1) => void;
   /** Se llama tambien si el arrastre se cancela, no solo al soltar. */
   onDragEnd?: () => void;
-  /**
-   * Menu de clic derecho. La barra flotante lo apaga: sus opciones (editar,
-   * duplicar, vaciar) son de la grilla y ahi no significan nada.
-   */
+  onTogglePin?: () => void;
+  /** Menu de clic derecho. La barra flotante lo apaga: sus opciones son de la grilla. */
   showContextMenu?: boolean;
+  onQuickSlider?: (target: 'volume' | 'brightness') => void;
 }
 
 function ButtonCellInner({
-  button, accent, toggled = false, isActive = false, isHidden = false, isRunning = false,
+  button, accent, toggled = false, subToggled, isActive = false, isHidden = false, isRunning = false,
   isSelected = false,
   widgetData, soundEnabled = false, soundProfile = 'click',
-  resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onDragStart, onDrop, onDragEnd,
+  deckState, onStateUpdate,
+  resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onTogglePin, onDragStart, onDrop, onDragEnd,
   onAdjustWheel,
   showContextMenu = true,
+  onQuickSlider,
 }: ButtonCellProps) {
   const VD = useTheme();
   const t = useT();
   const [hovered, setHovered] = useState(false);
+  const [rotaryStep, setRotaryStep] = useState(0);
+  const [lastRotaryDir, setLastRotaryDir] = useState<1 | -1>(1);
+  const [lastRotaryTime, setLastRotaryTime] = useState(0);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
   // Callback refs: memo comparator ignores handler identity, so we keep fresh
@@ -73,7 +84,8 @@ function ButtonCellInner({
   const { isEmpty, displayLabel, ActionIcon, iconColor, multiCount, titulo } =
     derivarCelda(button, { accent, toggled, resolvedLabel, VD, t });
 
-  const hasLongPress = !isEmpty && !!onLongPress;
+  const hasSubButtons = !!(button.subButtons && button.subButtons.length === 4);
+  const hasLongPress = !isEmpty && !!onLongPress && !hasSubButtons;
 
   const raton = usePulsacionRaton({
     isEmpty, hasLongPress, soundEnabled, soundProfile,
@@ -114,10 +126,11 @@ function ButtonCellInner({
 
   // Con el dedo, mantener pulsado arrastra. Solo donde eso significa algo: la
   // rejilla principal, que es la unica que sabe recolocar botones (`onDrop`).
-  // En kiosko y en la barra flotante no se secuestra el toque.
+  // En kiosko y en la barra flotante no se secuestra el toque. Las celdas 2x2
+  // manejan el toque en cada uno de sus cuadrantes independientes.
   usePulsacionTactil({
     ref: cellRef,
-    activo: !isEmpty && !!onDrop,
+    activo: !isEmpty && !!onDrop && button.widget !== 'slider' && !hasSubButtons,
     idBoton: button.id,
     setPressed: raton.setPressed,
     destellar,
@@ -142,17 +155,30 @@ function ButtonCellInner({
         ref={cellRef}
         className="vd-btn"
         title={titulo}
-        draggable={!isEmpty}
-        onClick={raton.alClic}
+        draggable={!isEmpty && button.widget !== 'slider' && !hasSubButtons}
+        onClick={(e) => {
+          if (hasSubButtons || button.widget === 'slider') return;
+          if (button.action.type === 'adjust') {
+            const dir = (button.action.adjustDelta ?? 5) >= 0 ? 1 : -1;
+            setRotaryStep((prev) => prev + dir);
+            setLastRotaryDir(dir);
+            setLastRotaryTime(Date.now());
+          }
+          raton.alClic(e);
+        }}
         onContextMenu={raton.alMenuContextual}
         // La rueda solo hace algo en los botones de ajuste, y ahi ahorra tener
         // dos: arriba suma el paso, abajo lo resta.
-        onWheel={button.action.type === 'adjust' ? (e) => {
+        onWheel={button.widget === 'slider' ? undefined : button.action.type === 'adjust' ? (e) => {
           e.preventDefault();
-          onAdjustWheelRef.current?.(e.deltaY < 0 ? 1 : -1);
+          const dir = e.deltaY < 0 ? 1 : -1;
+          onAdjustWheelRef.current?.(dir);
+          setRotaryStep((prev) => prev + dir);
+          setLastRotaryDir(dir);
+          setLastRotaryTime(Date.now());
         } : undefined}
-        onMouseDown={raton.alBajar}
-        onMouseUp={raton.alSubirOSalir}
+        onMouseDown={hasSubButtons || button.widget === 'slider' ? undefined : raton.alBajar}
+        onMouseUp={hasSubButtons || button.widget === 'slider' ? undefined : raton.alSubirOSalir}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); raton.alSubirOSalir(); }}
         {...arrastre.props}
@@ -198,24 +224,69 @@ function ButtonCellInner({
         {isRunning && <span className="vd-running-ring" />}
 
         <CapasDeFondo button={button} toggled={toggled} />
-
-        {/* Center stack — icon or live widget. The label is rendered separately as a bottom banner. */}
-        <div style={{
-          position: 'relative', textAlign: 'center', padding: '6px 4px',
-          paddingBottom: displayLabel ? 22 : 6,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <ContenidoCentral
-            button={button}
-            isEmpty={isEmpty}
-            iconColor={iconColor}
-            ActionIcon={ActionIcon}
-            widgetData={widgetData}
+        {hasSubButtons ? (
+          <Subdivision2x2
+            subButtons={button.subButtons!}
+            parentButton={button}
+            accent={accent}
+            subToggled={subToggled}
+            soundEnabled={soundEnabled}
+            soundProfile={soundProfile}
+            onExecute={(target) => onExecuteRef.current?.(target)}
+            onLongPress={onLongPress ? (target) => onLongPressRef.current?.(target) : undefined}
+            onContextMenu={raton.alMenuContextual}
           />
-        </div>
+        ) : button.widget === 'slider' ? (
+          <DotContinuousSlider
+            button={button}
+            sliderConfig={button.sliderWidget}
+            accent={accent}
+            deckState={deckState}
+            onStateUpdate={onStateUpdate}
+            soundEnabled={soundEnabled}
+            soundProfile={soundProfile}
+            toggled={toggled}
+          />
+        ) : (
+          <>
+            {/* Center stack — icon, rotary encoder or live widget. The label is rendered separately as a bottom banner. */}
+            <div style={{
+              position: 'relative', textAlign: 'center', padding: '6px 4px',
+              paddingBottom: displayLabel ? 22 : 6,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {button.action.type === 'adjust' ? (
+                <DotRotaryDial
+                  step={rotaryStep}
+                  lastDir={lastRotaryDir}
+                  lastActiveTime={lastRotaryTime}
+                  accent={accent}
+                  hovered={hovered}
+                  delta={button.action.adjustDelta ?? 5}
+                >
+                  <ContenidoCentral
+                    button={button}
+                    isEmpty={isEmpty}
+                    iconColor={iconColor}
+                    ActionIcon={ActionIcon}
+                    widgetData={widgetData}
+                  />
+                </DotRotaryDial>
+              ) : (
+                <ContenidoCentral
+                  button={button}
+                  isEmpty={isEmpty}
+                  iconColor={iconColor}
+                  ActionIcon={ActionIcon}
+                  widgetData={widgetData}
+                />
+              )}
+            </div>
 
-        {displayLabel && (
-          <RotuloCelda texto={displayLabel} button={button} accent={accent} toggled={toggled} />
+            {displayLabel && (
+              <RotuloCelda texto={displayLabel} button={button} accent={accent} toggled={toggled} />
+            )}
+          </>
         )}
 
       </div>
@@ -226,9 +297,12 @@ function ButtonCellInner({
           x={contextMenu.x}
           y={contextMenu.y}
           isEmpty={isEmpty}
+          isPinned={button.pinned}
           onEdit={onEdit}
           onDuplicate={onDuplicate}
+          onTogglePin={onTogglePin}
           onClear={onClear}
+          onQuickSlider={onQuickSlider}
           onCerrar={() => setContextMenu(null)}
         />
       )}
@@ -254,6 +328,7 @@ const REDIBUJAN = [
 // arrastrado viaja en el `dataTransfer` y no en un estado (ver `onDrop`).
 export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
   REDIBUJAN.every((k) => prev[k] === next[k])
+  && (prev.subToggled?.join(',') ?? '') === (next.subToggled?.join(',') ?? '')
   && (prev.widgetData?.line1 ?? null) === (next.widgetData?.line1 ?? null)
   && (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null)
   && (prev.widgetData?.tone ?? null) === (next.widgetData?.tone ?? null),

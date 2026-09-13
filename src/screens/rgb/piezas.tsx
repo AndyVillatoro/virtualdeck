@@ -50,8 +50,6 @@ export function DeviceDetail({
 }) {
   const VD = useTheme();
   const t = useT();
-  const btnPrimary = estiloBotonPrimario(VD);
-  const btnSecondary = estiloBotonSecundario(VD);
   const selectStyle = estiloSelector(VD);
   const activeMode = device.modes.find((m) => m.id === device.activeMode);
   const [color, setColor] = useState(device.colors[0] ?? '#ffffff');

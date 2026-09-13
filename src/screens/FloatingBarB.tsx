@@ -204,6 +204,7 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                 button={btn}
                 accent={config.accent ?? VD.accent}
                 toggled={encendidos.has(btn.id)}
+                subToggled={btn.subButtons?.map((s) => encendidos.has(s.id))}
                 isActive={botonActivo(btn, estadoSistema)}
                 isHidden={!botonVisible(btn, estadoSistema, null)}
                 isRunning={ejecutando.has(btn.id)}
@@ -213,12 +214,14 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                 soundProfile={config.soundProfile ?? 'click'}
                 showContextMenu={false}
                 onEdit={() => { /* la barra no edita: para eso está el deck */ }}
-                onExecute={() => ejecutar(btn)}
+                onExecute={(target) => ejecutar(target ?? btn)}
                 onAdjustWheel={(signo) => ejecutar({ ...btn, action: {
                   ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
                 } })}
-                onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none'
-                  ? () => pulsacionLargaBoton(btn) : undefined}
+                onLongPress={(target) => {
+                  const b = target ?? btn;
+                  if (b.longPressAction && b.longPressAction.type !== 'none') pulsacionLargaBoton(b);
+                }}
               />
             ) : (
               // Hueco: solo un contorno tenue, y solo mientras el cursor está

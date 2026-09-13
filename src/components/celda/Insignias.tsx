@@ -110,6 +110,21 @@ export function Insignias({
         </div>
       )}
 
+      {/* 7.4 — Botón anclado global: micro-icono PIN en la esquina superior derecha */}
+      {button.pinned && !hovered && (
+        <div
+          title={t('btn.pinnedHint')}
+          style={{
+            position: 'absolute', top: 4, right: 4,
+            width: 12, height: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2,
+          }}
+        >
+          <DotGlyphIcon glyph="PIN" size={8} color={accent} />
+        </div>
+      )}
+
       {!isEmpty && (
         <div style={{
           position: 'absolute', bottom: 4, right: 4,

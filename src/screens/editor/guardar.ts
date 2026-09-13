@@ -1,4 +1,4 @@
-import type { ButtonAction, ButtonConfig, FolderButton } from '../../types';
+import type { ButtonAction, ButtonConfig, FolderButton, SubButtonConfig } from '../../types';
 
 /**
  * Arma el botón a guardar a partir de lo que hay en el formulario.
@@ -14,6 +14,8 @@ import type { ButtonAction, ButtonConfig, FolderButton } from '../../types';
  */
 
 export interface CamposDelEditor {
+  is2x2Mode?: boolean;
+  subButtons?: SubButtonConfig[];
   action: ButtonAction;
   extraActions: ButtonAction[];
   label: string;
@@ -43,6 +45,7 @@ export interface CamposDelEditor {
   varWidgetName: string;
   varWidgetPrefix: string;
   currencyWidget: ButtonConfig['currencyWidget'];
+  sliderWidget: ButtonConfig['sliderWidget'];
   varWidgetSuffix: string;
   visibleIfApp: string;
   visibleIfSensorId: string;
@@ -53,6 +56,7 @@ export interface CamposDelEditor {
   sensorTriggerOp: '>' | '<' | '>=' | '<=' | '==';
   sensorTriggerVal: string;
   sensorTriggerCooldown: string;
+  pinned?: boolean;
 }
 
 /** Un número escrito por el usuario, o `undefined` si no escribió uno válido. */
@@ -119,6 +123,24 @@ function widgetDeDivisa(c: CamposDelEditor): ButtonConfig['currencyWidget'] {
   return { from: de, to: a, amount: cuanto && cuanto > 0 ? cuanto : 1 };
 }
 
+function widgetDeSlider(c: CamposDelEditor): ButtonConfig['sliderWidget'] {
+  if (c.widget !== 'slider') return undefined;
+  const s = c.sliderWidget;
+  if (!s) return { target: 'volume', orientation: 'horizontal', min: 0, max: 100, step: 5, showValue: true };
+  const target = s.target;
+  const isVar = target === 'variable';
+  return {
+    target,
+    orientation: s.orientation === 'vertical' ? 'vertical' : 'horizontal',
+    varName: isVar && s.varName ? s.varName.trim() : undefined,
+    min: s.min ?? 0,
+    max: s.max ?? 100,
+    step: s.step ?? (isVar ? 1 : 5),
+    showValue: s.showValue !== false,
+    label: s.label ? s.label.trim() : undefined,
+  };
+}
+
 export function construirBoton(button: ButtonConfig, c: CamposDelEditor): ButtonConfig {
   return {
     ...button,
@@ -152,8 +174,11 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     sensorWidget: widgetDeSensor(c),
     varWidget: widgetDeVariable(c),
     currencyWidget: widgetDeDivisa(c),
+    sliderWidget: widgetDeSlider(c),
     visibleIf: condicionDeVisibilidad(c),
     timerTriggerAt: c.timerTriggerAt.trim() || undefined,
     sensorTrigger: disparadorDeSensor(c),
+    pinned: c.pinned || undefined,
+    subButtons: c.is2x2Mode && c.subButtons && c.subButtons.length === 4 ? c.subButtons : undefined,
   };
 }

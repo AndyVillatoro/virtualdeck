@@ -33,7 +33,7 @@ export function GallerySection({
   accent, onImportar,
 }: {
   accent: string;
-  onImportar: (p: Profile) => void;
+  onImportar: (p: Profile, agregarAlDeck?: boolean) => void;
 }) {
   const VD = useTheme();
   const t = useT();
@@ -68,7 +68,7 @@ export function GallerySection({
     setElegido({ entrada: e, perfil: r.perfil, riesgo: r.riesgo });
   };
 
-  const importar = () => {
+  const importar = (agregarAlDeck: boolean = false) => {
     if (!elegido) return;
     const p = elegido.perfil as { pages?: unknown; buttons?: unknown; accent?: string; wallpaper?: unknown };
     if (!Array.isArray(p.pages) || !Array.isArray(p.buttons)) { setError(t('gal.notADeck')); return; }
@@ -83,7 +83,7 @@ export function GallerySection({
       buttons: p.buttons as Profile['buttons'],
       accent: p.accent ?? accent,
       wallpaper: p.wallpaper as Profile['wallpaper'],
-    });
+    }, agregarAlDeck);
     setElegido(null);
   };
 
@@ -175,8 +175,13 @@ export function GallerySection({
             {elegido.riesgo.scripts.length === 0 && elegido.riesgo.programas.length === 0 && (elegido.riesgo.webhooks?.length ?? 0) === 0 && (elegido.riesgo.teclas?.length ?? 0) === 0 && (
               <div style={menudo}>{t('gal.nothingRisky')}</div>
             )}
-            <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-              <button onClick={importar} style={miniBtn(accent)}>{t('gal.import')}</button>
+            <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+              <button onClick={() => importar(true)} style={miniBtn(accent)} title={t('gal.importAndAppendHint')}>
+                {t('gal.importAndAppend')}
+              </button>
+              <button onClick={() => importar(false)} style={miniBtn(VD.textDim)} title={t('gal.importOnlyHint')}>
+                {t('gal.importOnly')}
+              </button>
               <button onClick={() => setElegido(null)} style={miniBtn(VD.textMuted)}>{t('ui.cancel')}</button>
             </div>
           </div>

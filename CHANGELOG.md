@@ -6,7 +6,102 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-09-13
+
 ### Added
+
+- **Mando Móvil Web Remoto Modernizado e Interactivo**:
+  - **Soporte de Mosaico 2×2 en Web Remota**: Los botones con subdivisión modular 2×2 ahora se proyectan como micro-rejillas interactivas en la interfaz web para smartphones/tablets, con retroalimentación háptica (vibración) y visual instantánea al pulsar cada cuadrante de forma independiente vía `/api/press/:subId`.
+  - **Botones Anclados Globales en Mando Móvil**: Los botones anclados (`pinned: true`) se proyectan y fijan de forma consistente en todas las páginas del mando móvil con la insignia técnica `📌`.
+  - **Sliders Táctiles Continuos de Volumen y Brillo en Remoto**: Los botones con widget de slider continuo (`widget === 'slider' || sliderWidget`) se renderizan como faders táctiles interactivos en el navegador del teléfono, sincronizados bidireccionalmente en tiempo real a través de los nuevos endpoints `/api/value/volume` y `/api/value/brightness` (`GET` y `POST`).
+  - **Resolución de Acciones y Enlaces Externos para Subbotones**: Soporte de disparo de cuadrantes 2×2 a través de peticiones HTTP locales, URLs directas y eventos de activación sintéticos.
+
+- **Corrección Táctil Física en Pantallas y Tablets**:
+  - Corrección del bloqueo de toques en celdas 2×2 en pantallas táctiles físicas (ej. Surface Pro y monitores táctiles): se desactiva el atributo `draggable` de HTML5 en celdas que contienen cuadrantes 2×2 para evitar que Chromium intercepte los gestos táctiles como arrastre del botón contenedor padre ("se presionan como uno solo pero no hace nada").
+  - Configuración explícita de `touchAction: 'none'` en contenedor y `touchAction: 'manipulation'` en cuadrantes, con eliminación de `e.preventDefault()` en manejadores pasivos y debouncing de toques (250 ms) contra clics fantasma.
+
+- **Refactorización Modular SRP y Calidad de Código (Bloque B)**:
+  - **Desacoplamiento Estructural de `MainB.tsx`**: Reducción de 933 a 542 líneas de código (<600 límite de arquitectura) mediante la extracción modular de `ModalVincularApp.tsx`, `BarraSeleccionLote.tsx`, `MenuContextualPagina.tsx` y `tipos.ts`.
+  - **Limpieza Integral de Código Muerto (Knip)**: Eliminación de exports huérfanos e imports no utilizados en procesos principal y de renderizado, alcanzando 0 advertencias en `npm run lint:dead`.
+  - **Cierre Seguro de Procesos en Segundo Plano**: Invocación garantizada de `stopActiveWindowTracker()` durante el evento `app.on('before-quit')` en Electron para evitar procesos zombis o fugas de descriptores de sondeo Win32.
+
+- **Widget de Barra / Slider Táctil Continuo (Ítem 48 / 7.8)**:
+  - **Componente Físico Continuo (`DotContinuousSlider`)**:
+    - Control táctil directo optimizado para pantallas táctiles y tabletas (Surface Pro), puntero de ratón y rueda de desplazamiento.
+    - Soporte de captura de puntero nativa (`setPointerCapture`) que permite arrastre continuo y fluido incluso si el dedo o cursor sale fuera de los límites de la celda.
+    - Manejo de estado optimista en el cliente para latencia percibida de 0 ms, con despacho acelerado e IPC throttled (~40 ms) para control de hardware en tiempo real sin saturar el bus.
+    - Soporte de rueda de ratón para ajuste escalonado configurable según el paso (`step`).
+  - **Modos de Orientación y Control de Hardware**:
+    - Dos orientaciones: `horizontal` (matriz de micro-columnas LED discretas de 3 puntos) y `vertical` (fader con barra segmentada).
+    - Tres objetivos seleccionables: `volume` (volumen del sistema con sincronización de nivel nativo), `brightness` (brillo de pantalla principal), y `variable` (variables reactivas de estado del deck `DeckConfig.state`).
+  - **Alineación Visual Estricta DOT / 480 (OLED Micro Interface)**:
+    - Micro-cabecera técnica con icono bitmask 8×8 (`VOLUME`, `SUN`, `CODE`), etiqueta técnica en mayúsculas mono y lectura numérica/porcentual flotante.
+    - Segmento de punto activo/frente en blanco brillante fósforo (`#ffffff`) y cola en el color de acento del deck con sutil brillo OLED (`boxShadow`).
+    - Marcas de calibración y escala inferior (`0 • 50 • 100`).
+  - **Integración Completa en Editor (`CamposSlider`) y Celdas de Cuadrícula**:
+    - Nuevo tipo de widget `'slider'` disponible en `PasoEstilo` del editor de botones.
+    - Panel de configuración dedicado `CamposSlider` con selector de objetivo, orientación, variable, rango mín/máx/paso, toggle de valor y etiqueta técnica.
+    - Vista previa interactiva instantánea en `VistaPrevia` que responde a toques y clics directamente mientras se diseña el botón.
+    - Supresión selectiva del drag-and-drop de celdas en `ButtonCell` cuando el widget es slider, permitiendo arrastrar el fader sin desplazar accidentalmente el botón.
+    - Internacionalización simétrica completa en español e inglés.
+
+- **Detección Dinámica de Monitores y Multi-Pantalla (Ítem 43 / 7.3)**:
+  - **Escucha en Caliente de Pantallas (Hotplug)**: Suscripción en el proceso principal de Electron a `screen.on('display-added')`, `screen.on('display-removed')` y `screen.on('display-metrics-changed')`, notificando instantáneamente al renderer vía el evento IPC `events.onDisplaysChanged`.
+  - **Protección Automática Offscreen Auto-Clamping**: Si una pantalla externa se desconecta mientras VirtualDeck se encontraba en ella, la ventana se reposiciona y ajusta de inmediato al área de trabajo del monitor principal (`clampBoundsToDisplay`), evitando que la interfaz quede invisible o inaccesible fuera de los límites de pantalla.
+  - **Movimiento de Ventana y Destino de Kiosko Multi-Monitor**:
+    - Nuevos métodos IPC en `ElectronAPI.window`: `getDisplays(): Promise<DisplayInfo[]>` y `moveToDisplay(displayId: number): Promise<boolean>`.
+    - Soporte en `moveToDisplay` para mover la ventana conservando el estado maximizado o pantalla completa de forma suave y sin artefactos visuales.
+    - Nueva propiedad `targetDisplayId?: number` en `DeckConfig` para fijar una pantalla secundaria dedicada al modo Pantalla Completa / Kiosko.
+  - **Conmutador Rápido en Barra de Título**:
+    - Nuevo botón `[ MONITOR X/Y ]` con icono físico DOT `MONITOR` en los controles de ventana de la `TitleBar`, que solo aparece cuando hay 2 o más monitores conectados y permite conmutar la app de pantalla en un solo clic.
+  - **Panel de Ajustes Multi-Pantalla (100% DOT / 480 OLED)**:
+    - Nueva sección `DisplaysSection` en `PanelAjustes` con listado de monitores activos, especificaciones técnicas (resolución nativa, escala DPI, tasa de refresco Hz, soporte táctil), insignias de estado (`[PRIMARIO]`, `[ACTUAL]`, `[DESTINO KIOSKO]`), y acciones rápidas `[ MOVER VENTANA AQUÍ ]` y `[ USAR PARA KIOSKO ]`.
+  - **Iconografía Física DOT**:
+    - Nuevo glifo bitmask de 8×8 puntos `MONITOR` (con alias `SCREEN`, `DISPLAY`, `PANTALLA`) en `DotGlyphIcon`.
+  - **Internacionalización Simétrica (ES/EN)**:
+    - Claves bilingües añadidas para todos los textos de configuración y conmutación de pantallas en `es.ts` y `en.ts`.
+
+- **Perfiles automáticos por aplicación activa y botones anclados globales (Ítem 44 / 7.4)**:
+  - **Seguimiento Nativo Win32 de Ventana Activa en Tiempo Real**: Daemon en segundo plano con P/Invoke C# de bajo consumo (`GetForegroundWindow` + `GetWindowThreadProcessId`), con sondeo ultra ligero (350ms) y cero consumo perceptible de CPU; emite el evento IPC bidireccional `window:activeAppChanged` y expone `window.getActiveApp()`.
+  - **Motor de Conmutación Automática Inteligente (`useAutoProfile`)**: Hook reactivo global integrado en `App.tsx` que escucha las aplicaciones que pasan al primer plano (ej. `obs64`, `photoshop`, `code`, `chrome`, juegos); cambia instantáneamente a la página vinculada o perfil guardado correspondiente, con debounce de 250ms, prevención de bucles y opción para volver automáticamente a la página inicial cuando ninguna ventana coincide (`autoProfileRestoreDefault`).
+  - **Vinculación de Aplicaciones a Páginas y Perfiles**:
+    - Indicador físico retro DOT `APP_WINDOW` en la pestaña de cada página que tenga un ejecutable vinculado.
+    - Modal de vinculación accesible desde el menú contextual de pestaña (`VINCULAR APLICACIÓN`), que lista las aplicaciones activas del sistema (`runningProcesses`) en botones táctiles directos y permite escribir cualquier nombre de proceso personalizado.
+    - Asignación directa de `targetApp` en la lista de perfiles de `PanelAjustes`.
+    - Conmutadores de ajuste globales para activar o desactivar el cambio automático y la restauración de página por omisión.
+  - **Botones Anclados Globales (Persistencia en Toda la Cuadrícula)**:
+    - Nuevo conmutador visual DOT en el editor de botones (`PasoEstilo`): `[ ⚲ ANCLAR EN TODAS LAS PÁGINAS ]`.
+    - Opción directa en el menú contextual con clic derecho sobre la celda (`MenuContextual`): `[ ANCLAR BOTÓN / DESANCLAR ]`.
+    - Micro-insignia física `PIN` de 8×8 puntos recesivos en la esquina superior derecha de cualquier celda anclada.
+    - Resolución matemática de cuadrícula en `resolverBotonesPagina`: proyecta el botón anclado exactamente en su casilla original sobre todas las páginas, respetando la estructura de datos limpia en `deck-config.json`.
+  - **Estricta coherencia estética DOT / 480**: Iconografía física 8×8 bitmask (`PIN`, `APP_WINDOW`), cero emojis o caracteres unicode, paleta oscura OLED `#070809` e internacionalización simétrica (ES/EN).
+
+- **Subdivisión modular de mosaico 2×2 en celdas y filtro retro OLED pixel art (Ítem 45)**:
+  - Capacidad para subdividir cualquier celda estándar de la rejilla en 4 cuadrantes / mini-botones independientes (Top-Left, Top-Right, Bottom-Left, Bottom-Right).
+  - Cada cuadrante opera como un botón autónomo con su propia acción (compatible con las 37 acciones del sistema), micro-etiqueta mono en mayúsculas, icono/glifo físico de 8×8 (`DotGlyphIcon`), micro-LED de estado activo/toggle y destello individual de pulsación con retroalimentación sonora.
+  - Nuevo componente [`Subdivision2x2`](file:///c:/Users/andyf/code%20proyects/virtualdeck/src/components/celda/Subdivision2x2.tsx) para renderizar la rejilla física 2×2 con costuras OLED de 2px y micro-tiles.
+  - Nuevo editor de cuadrantes [`EditorSubdivision2x2`](file:///c:/Users/andyf/code%20proyects/virtualdeck/src/screens/editor/EditorSubdivision2x2.tsx) en `EditorB`, 100% diseñado bajo el sistema visual DOT / 480 (cero emojis e iconos genéricos), con selector interactivo 2×2 táctil y 4 plantillas predefinidas instantáneas (`MULTIMEDIA`, `DIRECCIONES`, `ACCESOS`, `AUDIO`).
+  - Previsualización en vivo en `VistaPrevia` que refleja de inmediato la cuadrícula 2×2 al alternar el modo o configurar cualquier cuadrante.
+  - Persistencia de estados toggle de sub-botones a través de recargas y reinicios de la aplicación mediante la inclusión de sub-IDs en el conjunto de botones vivos.
+  - Nuevo componente de capa de filtro [`DotMatrixImageOverlay`](file:///c:/Users/andyf/code%20proyects/virtualdeck/src/components/dot480/DotMatrixImageOverlay.tsx) para carátulas de música (`nowPlaying.thumbnail` en panel principal, barra lateral y pantalla completa) y botones con imágenes personalizadas (`imageData`), creando una matriz física de micro-aperturas OLED circulares donde cada punto toma el color de la imagen o carátula subyacente rodeado de negro OLED y bisel fósforo.
+
+- **Dial visual rotativo dot-matrix para scroll de ratón y clics (Ítem 47)**:
+  - Nuevo componente [`DotRotaryDial`](file:///c:/Users/andyf/code%20proyects/virtualdeck/src/components/dot480/DotRotaryDial.tsx): anillo circular de 16 puntos LED concéntricos en estilo *DOT / 480* para todos los botones de ajuste relativo (`adjust`: volumen del sistema, brillo de pantalla).
+  - Rotación e iluminación dinámica en tiempo real al girar la rueda del ratón (sentido horario para incremento, antihorario para decremento) o al hacer clic sobre la celda.
+  - Estela de puntos brillantes con inercia visual y atenuación progresiva en el color de acento.
+  - Indicador flotante transitorio de delta (`+10%` / `-5%`) durante la interacción activa.
+  - Realce de contorno en hover con adaptación lumínica automática según el tema oscuro/claro.
+
+- **Botón explícito «Vaciar celda» / eliminar en el Editor de Botones (Ítem 46)**:
+  - Botón integrado en el pie del editor modal (`EditorB`) con advertencia y confirmación in-situ con icono `TRASH`.
+  - Cancelación rápida con tecla `Escape` (cancela la confirmación sin cerrar la ventana del editor).
+  - Notificación de deshacer (*undo toast*) mejorada con botón interactivo táctil y de ratón `[ ⤺ DESHACER ]` (`UNDO` dot glyph) para revertir eliminaciones accidentales en pantallas táctiles o sin teclado físico.
+  - Sincronización del icono `TRASH` en el menú contextual de la cuadrícula principal (`MenuContextual`).
+- **Diagnóstico y Detección de Sensores LibreHardwareMonitor (LHM)**:
+  - Detección completa de sensores de temperatura (°C/°F) en widgets y en el selector de disparadores de botones, corrigiendo la sobreescritura de nodos contenedores intermedios en el árbol de hardware.
+  - Normalización de direcciones de enlace `0.0.0.0` y `localhost` a `127.0.0.1` para prevenir el fallo de Winsock `WSAEADDRNOTAVAIL (10049)`.
+  - Comprobación y registro de reserva de URL ACL en Windows (`netsh http add urlacl`) con elevación UAC en un clic desde los ajustes de sensores, permitiendo a LHM vincular el puerto HTTP 8085 sin requerir ejecución manual como Administrador.
+  - Inyección preventiva de configuración `LibreHardwareMonitor.config` para auto-activar el servidor web en el puerto 8085.
 
 - **Sistema Visual DOT / 480 & Transición a Matriz Física de Puntos (Ítem 41 & 42)**:
   - Sistema completo de iconografía física dot-matrix 8×8 bitmask (`DotGlyphIcon`), eliminando

@@ -32,6 +32,8 @@ const TEXTOS = {
     pagina: 'PÁGINA',
     pantallaCompleta: 'PANTALLA COMPLETA',
     salirPantallaCompleta: 'SALIR DE PANTALLA COMPLETA',
+    volumen: 'VOL',
+    brillo: 'BRILLO',
   },
   en: {
     titulo: 'VIRTUALDECK',
@@ -45,6 +47,8 @@ const TEXTOS = {
     pagina: 'PAGE',
     pantallaCompleta: 'FULLSCREEN',
     salirPantallaCompleta: 'EXIT FULLSCREEN',
+    volumen: 'VOL',
+    brillo: 'BRIGHTNESS',
   },
 };
 
@@ -108,6 +112,49 @@ export function paginaMando(): string {
   }
   .celda.ok { border-color: #22c55e !important; box-shadow: 0 0 16px rgba(34, 197, 94, 0.5) !important; }
   .celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 16px rgba(239, 68, 68, 0.5) !important; }
+  .pin-insignia {
+    position: absolute; top: 4px; right: 4px; font-size: 9px; z-index: 3;
+    opacity: 0.75; pointer-events: none;
+  }
+  .mosaico-2x2 {
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+    gap: 3px; width: 100%; height: 100%; padding: 3px; box-sizing: border-box;
+  }
+  .sub-celda {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; overflow: hidden; cursor: pointer; position: relative;
+    user-select: none; transition: transform 0.08s ease, border-color 0.12s, box-shadow 0.12s;
+  }
+  .sub-celda:active { transform: scale(0.92); border-color: var(--ac); }
+  .sub-celda.ok { border-color: #22c55e !important; box-shadow: 0 0 10px rgba(34, 197, 94, 0.4) !important; }
+  .sub-celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important; }
+  .sub-icono { font-size: 13px; line-height: 1; pointer-events: none; }
+  .sub-txt {
+    font-size: 7px; font-weight: 600; max-width: 90%; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; margin-top: 1px; pointer-events: none;
+  }
+  .slider-celda {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; padding: 8px 10px; box-sizing: border-box;
+  }
+  .slider-cab {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    font-size: 8px; font-weight: 700; color: var(--ten);
+  }
+  .slider-val { font-size: 9px; font-weight: 700; color: var(--ac); }
+  .slider-control {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 3px; background: var(--sup); outline: none; margin: 8px 0;
+  }
+  .slider-control::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--ac); cursor: pointer; box-shadow: 0 0 8px rgba(74, 142, 240, 0.5);
+  }
+  .slider-control::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--ac);
+    cursor: pointer; border: none; box-shadow: 0 0 8px rgba(74, 142, 240, 0.5);
+  }
   .fondo-img {
     position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
     opacity: 0.88; border-radius: inherit; pointer-events: none;
@@ -285,11 +332,95 @@ async function pantallaDeck() {
   }
   const rejilla = nodo('div', { className: 'rejilla' });
   const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva);
+  const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva || b.pinned);
   if (visibles.length === 0) app.append(nodo('p', { textContent: t.sinBotones }));
   for (const b of visibles) {
     const celda = nodo('div', { className: 'celda' });
     if (b.bgColor) celda.style.backgroundColor = b.bgColor;
     if (b.fgColor) celda.style.color = b.fgColor;
+
+    if (b.pinned) {
+      celda.append(nodo('span', { className: 'pin-insignia', textContent: '📌' }));
+    }
+
+    if (b.subButtons && b.subButtons.length === 4) {
+      celda.style.cursor = 'default';
+      const m2x2 = nodo('div', { className: 'mosaico-2x2' });
+      for (const sub of b.subButtons) {
+        const sc = nodo('div', { className: 'sub-celda' });
+        if (sub.bgColor) sc.style.backgroundColor = sub.bgColor;
+        if (sub.fgColor) sc.style.color = sub.fgColor;
+        if (sub.icon) sc.append(nodo('span', { className: 'sub-icono', textContent: sub.icon }));
+        if (sub.label) sc.append(nodo('span', { className: 'sub-txt', textContent: sub.label }));
+        sc.onclick = async (e) => {
+          e.stopPropagation();
+          if ('vibrate' in navigator) { try { navigator.vibrate(25); } catch (err) {} }
+          let ok = false;
+          try { ok = (await pedir('/api/press/' + encodeURIComponent(sub.id))).ok; } catch (err) { ok = false; }
+          sc.classList.add(ok ? 'ok' : 'mal');
+          setTimeout(() => sc.classList.remove('ok', 'mal'), 300);
+        };
+        m2x2.append(sc);
+      }
+      celda.append(m2x2);
+      rejilla.append(celda);
+      continue;
+    }
+
+    if (b.widget === 'slider' || b.sliderWidget) {
+      celda.style.cursor = 'default';
+      const sw = b.sliderWidget || { target: 'volume', min: 0, max: 100, step: 2 };
+      const target = sw.target || 'volume';
+      const min = sw.min ?? 0;
+      const max = sw.max ?? 100;
+      const step = sw.step ?? (target === 'variable' ? 1 : 5);
+      const sc = nodo('div', { className: 'slider-celda' });
+      const cab = nodo('div', { className: 'slider-cab' });
+      const icono = target === 'volume' ? '🔊' : target === 'brightness' ? '☀️' : '📊';
+      const eti = sw.label || (target === 'volume' ? t.volumen : target === 'brightness' ? t.brillo : (sw.varName || 'VAR'));
+      cab.append(nodo('span', { textContent: icono + ' ' + eti }));
+      const valSpan = nodo('span', { className: 'slider-val', textContent: '50%' });
+      cab.append(valSpan);
+      sc.append(cab);
+
+      const range = nodo('input', {
+        type: 'range',
+        className: 'slider-control',
+        min: String(min),
+        max: String(max),
+        step: String(step),
+        value: '50',
+      });
+
+      if (target === 'volume' || target === 'brightness') {
+        pedir('/api/value/' + target).then((r) => r.json()).then((d) => {
+          if (d.ok && typeof d.value === 'number') {
+            range.value = String(d.value);
+            valSpan.textContent = d.value + '%';
+          }
+        }).catch(() => {});
+      }
+
+      let timerSlider = null;
+      range.oninput = () => {
+        valSpan.textContent = range.value + (target === 'variable' ? '' : '%');
+        if (timerSlider) clearTimeout(timerSlider);
+        timerSlider = setTimeout(() => {
+          if (target === 'volume' || target === 'brightness') {
+            pedir('/api/value/' + target, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ value: parseFloat(range.value) }),
+            }).catch(() => {});
+          }
+        }, 60);
+      };
+      range.onclick = (e) => e.stopPropagation();
+      sc.append(range);
+      celda.append(sc);
+      rejilla.append(celda);
+      continue;
+    }
 
     if (b.imageData) {
       const img = nodo('img', { className: 'fondo-img', src: b.imageData, alt: '' });

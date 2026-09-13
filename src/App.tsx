@@ -7,6 +7,7 @@ import { RGBManagerB } from './screens/RGBManagerB';
 import { BarConfigB } from './screens/BarConfigB';
 import { SearchOverlay } from './components/SearchOverlay';
 import { Onboarding } from './components/Onboarding';
+import { DotGlyphIcon } from './components/dot480/DotGlyphIcon';
 import { NowPlayingProvider } from './utils/nowPlaying';
 import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
@@ -17,6 +18,7 @@ import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
 import { useDeck } from './utils/useDeck';
 import { pulsarBoton } from './utils/pulsarBoton';
+import { useAutoProfile } from './utils/useAutoProfile';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
 import type { ButtonConfig, DeckConfig, PageConfig } from './types';
 
@@ -34,8 +36,10 @@ function PantallaCargando() {
   );
 }
 
-function AvisoDeshacer({ texto }: { texto: string }) {
+function AvisoDeshacer({ texto, onUndo }: { texto: string; onUndo?: () => void }) {
   const VD = useTheme();
+  const t = useT();
+  const esDeshecho = texto.toLowerCase().includes('deshecho') || texto.toLowerCase().includes('undone');
   return (
     <div style={{
       position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
@@ -44,8 +48,31 @@ function AvisoDeshacer({ texto }: { texto: string }) {
       borderRadius: VD.radius.md, padding: '8px 14px',
       fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 0.5,
       boxShadow: VD.shadow.menu,
+      display: 'inline-flex', alignItems: 'center', gap: 12,
     }}>
-      {texto}
+      <span>{texto}</span>
+      {onUndo && !esDeshecho && (
+        <button
+          onClick={onUndo}
+          style={{
+            background: `${VD.accent}22`,
+            border: `1px solid ${VD.accent}`,
+            borderRadius: VD.radius.sm,
+            padding: '3px 8px',
+            color: VD.accent,
+            fontFamily: VD.mono,
+            fontSize: 9,
+            letterSpacing: 1,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <DotGlyphIcon glyph="UNDO" size={8} color={VD.accent} />
+          <span>{t('undo.action')}</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -62,12 +89,20 @@ function AvisoError({ texto, onCerrar }: { texto: string; onCerrar: () => void }
       maxWidth: 'min(560px, 80%)', boxShadow: VD.shadow.menu,
       display: 'flex', gap: 10, alignItems: 'flex-start',
     }}>
-      <span style={{ color: VD.danger, fontSize: 13, flexShrink: 0 }}>!</span>
+      <div style={{ flexShrink: 0, marginTop: 2 }}>
+        <DotGlyphIcon glyph="WARN" size={9} color={VD.danger} />
+      </div>
       <span style={{ flex: 1, lineHeight: 1.5 }}>{texto}</span>
       <button
         onClick={onCerrar}
-        style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: 0 }}
-      >&times;</button>
+        style={{
+          background: 'none', border: 'none', color: VD.textMuted,
+          cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center',
+          marginTop: 2,
+        }}
+      >
+        <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textMuted} />
+      </button>
     </div>
   );
 }
@@ -125,11 +160,18 @@ export default function App() {
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
     renamePage, addPage, deletePage, reorderPages, setPageGridSize,
-    saveProfile, loadProfile, deleteProfile,
+    saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,
   } = deck;
+
+  useAutoProfile({
+    config,
+    activePage,
+    onPageChange: setActivePage,
+    onLoadProfile: loadProfile,
+  });
 
   useEffect(() => {
     document.documentElement.style.setProperty('--vd-accent', config.accent);
@@ -180,7 +222,7 @@ export default function App() {
         const merged = conHuecosCompletos(s.pages || PAGES_DEFAULT, s.buttons);
         // Los interruptores encendidos ahora se guardan; si un boton dejo de
         // existir, su id se quedaria ahi para siempre.
-        const vivos = new Set(merged.map((b) => b.id));
+        const vivos = new Set(merged.flatMap((b) => [b.id, ...(b.subButtons?.map((sb) => sb.id) ?? [])]));
         s.toggledIds = (s.toggledIds ?? []).filter((id) => vivos.has(id));
         setConfig({ ...DEFAULT_CONFIG, ...s, buttons: merged, configVersion: CURRENT_CONFIG_VERSION });
       }
@@ -361,7 +403,29 @@ export default function App() {
   useEffect(() => {
     if (!api?.events) return;
     return api.events.onButtonTrigger((id) => {
-      const btn = config.buttons.find((b) => b.id === id);
+      let btn = config.buttons.find((b) => b.id === id);
+      if (!btn) {
+        for (const parent of config.buttons) {
+          const sub = parent.subButtons?.find((s) => s.id === id);
+          if (sub) {
+            btn = {
+              id: sub.id,
+              page: parent.page,
+              label: sub.label || '',
+              sublabel: sub.sublabel,
+              icon: sub.icon,
+              bgColor: sub.bgColor,
+              fgColor: sub.fgColor,
+              action: sub.action,
+              actions: sub.actions,
+              isToggle: sub.isToggle,
+              actionToggleOff: sub.actionToggleOff,
+              longPressAction: sub.longPressAction,
+            };
+            break;
+          }
+        }
+      }
       if (btn) void dispararBoton(btn);
     });
   }, [api, config.buttons, dispararBoton]);
@@ -414,6 +478,19 @@ export default function App() {
     if (!data) return;
     applyImportedConfig(data);
   }, [api, applyImportedConfig]);
+
+  const handleEnterFullscreen = useCallback(async () => {
+    if (config.targetDisplayId !== undefined && api?.window?.moveToDisplay) {
+      await api.window.moveToDisplay(config.targetDisplayId).catch(() => {});
+    }
+    api?.window?.fullscreen();
+    setView('fullscreen');
+  }, [api, config.targetDisplayId]);
+
+  const handleExitFullscreen = useCallback(() => {
+    api?.window?.fullscreen();
+    setView('main');
+  }, [api]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -478,12 +555,13 @@ export default function App() {
           activePage={activePage}
           autostart={autostart}
           onPageChange={setActivePage}
-          onFullscreen={() => setView('fullscreen')}
+          onFullscreen={handleEnterFullscreen}
           onEditButton={(id) => setEditingId(id)}
           onWallpaper={() => setView('wallpaper')}
           onRGB={() => setView('rgb')}
           onFloatingBar={() => setView('barra')}
           onConfigChange={saveConfig}
+          onUpdateButton={updateButton}
           onDuplicateButton={duplicateButton}
           onClearButton={clearButton}
           onConfigExport={handleConfigExport}
@@ -494,6 +572,8 @@ export default function App() {
           onPageDelete={deletePage}
           onSaveProfile={saveProfile}
           onLoadProfile={loadProfile}
+          onAppendProfilePages={appendProfilePages}
+          onAppendPagesFromProfile={appendPagesFromProfile}
           onDeleteProfile={deleteProfile}
           onAutostartToggle={toggleAutostart}
           toggledIds={toggledIds}
@@ -529,7 +609,7 @@ export default function App() {
           config={config}
           soundOnPress={config.soundOnPress ?? true}
           soundProfile={config.soundProfile ?? 'click'}
-          onExit={() => setView('main')}
+          onExit={handleExitFullscreen}
           onSetKioskPin={setKioskPin}
           onStateUpdate={updateState}
           onToggle={handleToggle}
@@ -567,6 +647,7 @@ export default function App() {
           deckState={config.state ?? {}}
           onClose={() => setEditingId(null)}
           onSave={(updated) => { updateButton(updated); setEditingId(null); }}
+          onClear={(id) => { clearButton(id); setEditingId(null); }}
         />
       )}
 
@@ -599,7 +680,7 @@ export default function App() {
 
       {/* Undo toast — bottom-center, no-blocking */}
       {undoToast && (
-        <AvisoDeshacer texto={undoToast} />
+        <AvisoDeshacer texto={undoToast} onUndo={undo} />
       )}
 
       {/* Update ready — bottom-center, offers restart */}

@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { playSound } from '../../utils/sound';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import type { DeckConfig, SoundProfileId } from '../../types';
 
 /**
@@ -40,12 +41,22 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
             <DotGlyphIcon glyph={isPlaying ? 'PLAY' : 'PAUSE'} size={14} color={VD.textDim} showRecessed />
           </div>
           {nowPlaying?.thumbnail && (
-            <img
-              src={nowPlaying.thumbnail}
-              alt=""
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            />
+            <>
+              <img
+                src={nowPlaying.thumbnail}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  imageRendering: 'pixelated',
+                }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <DotMatrixImageOverlay pitch={3} />
+            </>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>

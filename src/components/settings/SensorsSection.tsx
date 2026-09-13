@@ -158,6 +158,11 @@ export function SensorsSection({
               placeholder="127.0.0.1"
               style={{ ...inputStyleSettings, marginTop: 4 }}
             />
+            {config.host?.trim() === '0.0.0.0' && (
+              <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.warning, marginTop: 3, lineHeight: 1.3 }}>
+                {t('sensors.hostHint0000')}
+              </div>
+            )}
           </div>
           <div style={{ width: 70 }}>
             <SettingLabel>{t('ui.port')}</SettingLabel>

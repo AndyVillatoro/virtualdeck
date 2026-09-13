@@ -190,45 +190,6 @@ export function IconNotify(p: VDIconProps) {
   </Ico>;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// GROUP 2 — Controles de media (tamaño grande)
-// ─────────────────────────────────────────────────────────────────
-
-export function IconMediaSkipBack(p: VDIconProps) {
-  return <Ico {...p}>
-    <line x1="6" y1="5" x2="6" y2="19"/>
-    <polygon points="19,5 19,19 8,12" className="fill-stroke"/>
-  </Ico>;
-}
-
-export function IconMediaPlay(p: VDIconProps) {
-  return <Ico {...p}>
-    <polygon points="7,5 7,19 19,12" style={{ fill: 'var(--vd-stroke)', fillOpacity: 0.5, stroke: 'var(--vd-stroke)' }}/>
-  </Ico>;
-}
-
-/** Nota musical. Hueco de la caratula cuando no hay imagen. */
-export function IconMusic(p: VDIconProps) {
-  return <Ico {...p}>
-    <path d="M9 18V5l10-2v13"/>
-    <circle cx="6" cy="18" r="3" className="fill-stroke"/>
-    <circle cx="16" cy="16" r="3" className="fill-stroke"/>
-  </Ico>;
-}
-
-export function IconMediaPause(p: VDIconProps) {
-  return <Ico {...p}>
-    <rect x="8" y="5" width="2.5" height="14" rx="1" className="fill-stroke"/>
-    <rect x="13.5" y="5" width="2.5" height="14" rx="1" className="fill-stroke"/>
-  </Ico>;
-}
-
-export function IconMediaSkipForward(p: VDIconProps) {
-  return <Ico {...p}>
-    <polygon points="5,5 5,19 16,12" className="fill-stroke"/>
-    <line x1="18" y1="5" x2="18" y2="19"/>
-  </Ico>;
-}
 
 // ─────────────────────────────────────────────────────────────────
 // GROUP 3 — Interfaz / barra de título

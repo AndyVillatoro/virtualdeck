@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { BrandIconDisplay } from '../BrandIconDisplay';
+import { DotMatrixImageOverlay } from '../dot480/DotMatrixImageOverlay';
 import type { ButtonConfig } from '../../types';
 
 /**
@@ -15,12 +16,23 @@ export function CapasDeFondo({ button, toggled }: { button: ButtonConfig; toggle
   const VD = useTheme();
   if (button.imageData) {
     return (
-      <img
-        src={button.imageData}
-        alt=""
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
-        draggable={false}
-      />
+      <>
+        <img
+          src={button.imageData}
+          alt=""
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            imageRendering: 'pixelated',
+            opacity: 0.92,
+          }}
+          draggable={false}
+        />
+        <DotMatrixImageOverlay pitch={4} />
+      </>
     );
   }
   if (!button.brandIcon) return null;

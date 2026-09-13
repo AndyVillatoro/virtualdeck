@@ -3,8 +3,11 @@ import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { BarraLateral } from './main/BarraLateral';
 import { PanelMusica } from './main/PanelMusica';
-import { FolderOverlay, PageCtxItem } from './main/OverlayCarpeta';
+import { FolderOverlay } from './main/OverlayCarpeta';
 import { PestanasPagina } from './main/PestanasPagina';
+import { MenuContextualPagina } from './main/MenuContextualPagina';
+import { BarraSeleccionLote } from './main/BarraSeleccionLote';
+import { ModalVincularApp } from './main/ModalVincularApp';
 import { interpolate } from '../utils/actions';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { logError } from '../utils/logger';
@@ -14,87 +17,21 @@ import { ButtonCell } from '../components/ButtonCell';
 import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
+import { resolverBotonesPagina } from '../utils/botonesPagina';
 import { Hint } from '../components/Hint';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
-import type { ButtonConfig, DeckConfig, ThemeMode } from '../types';
-
-
-interface MainBProps {
-  config: DeckConfig;
-  activePage: number;
-  autostart: boolean;
-  toggledIds: Set<string>;
-  soundOnPress: boolean;
-  soundProfile: import('../types').SoundProfileId;
-  onPageChange: (page: number) => void;
-  onToggle: (id: string) => void;
-  onFullscreen: () => void;
-  onEditButton: (id: string) => void;
-  onWallpaper: () => void;
-  onRGB: () => void;
-  onConfigChange: (c: DeckConfig) => void;
-  onDuplicateButton: (id: string) => void;
-  onClearButton: (id: string) => void;
-  onConfigExport: () => void;
-  onConfigImport: () => void;
-  onSwapButtons: (idA: string, idB: string) => void;
-  onPageRename: (id: string, name: string) => void;
-  onPageAdd: () => void;
-  onPageDelete: (id: string) => void;
-  onPageReorder: (fromIdx: number, toIdx: number) => void;
-  onPageSetGrid: (pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => void;
-  onMoveButtonToPage: (buttonId: string, targetPage: number, copy: boolean) => boolean;
-  onMoveButtonsToPage: (ids: string[], targetPage: number, copy: boolean) => number;
-  onClearButtons: (ids: string[]) => void;
-  onSaveProfile: (name: string) => void;
-  onLoadProfile: (id: string) => void;
-  onDeleteProfile: (id: string) => void;
-  onAutostartToggle: () => void;
-  onSoundToggle: () => void;
-  onSoundProfileChange: (id: import('../types').SoundProfileId) => void;
-  onStateUpdate: (update: Record<string, string>) => void;
-  uiScale?: number;
-  onUiScaleChange?: (scale: number) => void;
-  alwaysOnTop?: boolean;
-  onAlwaysOnTopToggle?: () => void;
-  onFloatingBar?: () => void;
-  theme?: ThemeMode;
-  onThemeChange?: (theme: ThemeMode) => void;
-  language?: 'system' | 'es' | 'en';
-  onLanguageChange?: (language: 'system' | 'es' | 'en') => void;
-  hintsDismissed?: string[];
-  onDismissHint?: (id: string) => void;
-  onPageExport?: (pageIdx: number) => Promise<void>;
-  onPageImport?: () => Promise<void>;
-  onReplayOnboarding?: () => void;
-}
-
-function getSourceName(src: string): string {
-  if (!src) return '';
-  // Fuente puede venir de: SMTC (AppUserModelId, ej. "SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify")
-  // o del fallback por window title (ej. "Spotify", "YouTube Music", "YouTube", "SoundCloud", "VLC").
-  if (/youtube\s*music/i.test(src)) return 'YouTube Music';
-  if (/youtube/i.test(src))         return 'YouTube';
-  if (/spotify/i.test(src))         return 'Spotify';
-  if (/soundcloud/i.test(src))      return 'SoundCloud';
-  if (/chrome/i.test(src))          return 'Chrome';
-  if (/msedge|edge/i.test(src))     return 'Edge';
-  if (/firefox/i.test(src))         return 'Firefox';
-  if (/vlc/i.test(src))             return 'VLC';
-  if (/foobar/i.test(src))          return 'foobar2000';
-  const parts = src.split(/[\\./]/);
-  return parts[parts.length - 1]?.replace(/\.exe$/i, '') || '';
-}
+import type { ButtonConfig } from '../types';
+import { type MainBProps, getSourceName } from './main/tipos';
 
 export function MainB({
   config, activePage, autostart, toggledIds, soundOnPress, soundProfile,
   onPageChange, onToggle, onFullscreen, onEditButton, onWallpaper, onRGB,
-  onConfigChange, onDuplicateButton, onClearButton,
+  onConfigChange, onUpdateButton, onDuplicateButton, onClearButton,
   onConfigExport, onConfigImport, onSwapButtons,
   onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
-  onSaveProfile, onLoadProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
+  onSaveProfile, onLoadProfile, onAppendProfilePages, onAppendPagesFromProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
   const VD = useTheme();
@@ -111,17 +48,26 @@ export function MainB({
   const [renameValue, setRenameValue] = useState('');
   const [pageContextMenu, setPageContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkMoveTarget, setBulkMoveTarget] = useState<number | null>(null);
   const [dragSourceId, setDragSourceId] = useState<string | null>(null);
   const [dragPageIdx, setDragPageIdx] = useState<number | null>(null);
   const [dragOverPageIdx, setDragOverPageIdx] = useState<number | null>(null);
   const [openFolderBtn, setOpenFolderBtn] = useState<ButtonConfig | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
+  const [bindingAppPageId, setBindingAppPageId] = useState<string | null>(null);
   // El sondeo del sistema y las dos funciones que lo leen se comparten con
   // kiosko, que no las tenia.
   const estadoSistema = useEstadoSistema(api);
   const { rgbStatus } = estadoSistema;
+
+  const handleTogglePin = useCallback((buttonId: string) => {
+    const btn = config.buttons.find((b) => b.id === buttonId);
+    if (!btn) return;
+    const nextPinned = !btn.pinned;
+    const nextButtons = config.buttons.map((b) => (b.id === buttonId ? { ...b, pinned: nextPinned || undefined } : b));
+    onConfigChange({ ...config, buttons: nextButtons });
+  }, [config, onConfigChange]);
+
   const [execLog, setExecLog] = useState<{ id: number; ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
   const execLogIdRef = useRef(0);
   const [showLog, setShowLog] = useState(false);
@@ -150,10 +96,9 @@ export function MainB({
 
   // Pausar el polling de nowPlaying cuando la sidebar está oculta (no hay consumidor visible).
   // El sondeo de reproduccion cuesta un PowerShell por tic, asi que solo corre
-  // si hay algo que lo enseñe. Antes miraba **solo** la barra lateral; con la
-  // barra escondida y el panel de musica encendido, el panel se quedaba sin
-  // datos y no aparecia nunca.
-  const necesitaMedia = showSidebar || panelMusica.enabled;
+  // si hay algo que lo enseñe (barra lateral, panel de música flotante o widget en la cuadrícula).
+  const tieneWidgetNowPlaying = config.buttons.some((b) => b.widget === 'now-playing');
+  const necesitaMedia = showSidebar || panelMusica.enabled || tieneWidgetNowPlaying;
   useEffect(() => { setNowPlayingActive(necesitaMedia); }, [necesitaMedia, setNowPlayingActive]);
 
   useEffect(() => {
@@ -232,7 +177,7 @@ export function MainB({
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
   const gridRows = currentPage?.gridRows ?? gridSize;
-  const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
+  const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
   const divisas = useDivisas(config.buttons, api);
@@ -284,7 +229,10 @@ export function MainB({
           onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
           remoteConfig={config.remote ?? { enabled: false, port: 8787, token: '', allowLan: false }}
           onRemoteConfigChange={(remote) => onConfigChange({ ...config, remote })}
-          onImportarDeGaleria={(p) => onConfigChange({ ...config, profiles: [...(config.profiles ?? []), p] })}
+          onImportarDeGaleria={(p, agregarAlDeck) => {
+            onConfigChange({ ...config, profiles: [...(config.profiles ?? []), p] });
+            if (agregarAlDeck) onAppendPagesFromProfile(p);
+          }}
           musicPanel={panelMusica}
           onMusicPanelChange={(musicPanel) => onConfigChange({ ...config, musicPanel })}
           onConfigExport={onConfigExport}
@@ -296,6 +244,7 @@ export function MainB({
           onSoundProfileChange={onSoundProfileChange}
           onSaveProfile={onSaveProfile}
           onLoadProfile={onLoadProfile}
+          onAppendProfilePages={onAppendProfilePages}
           onDeleteProfile={onDeleteProfile}
           uiScale={uiScale}
           onUiScaleChange={onUiScaleChange}
@@ -312,6 +261,19 @@ export function MainB({
           onTileModeChange={(m) => onConfigChange({ ...config, tileMode: m })}
           onReplayOnboarding={onReplayOnboarding}
           compact={isCompact}
+          autoProfileSwitch={config.autoProfileSwitch ?? true}
+          onAutoProfileSwitchToggle={() => onConfigChange({ ...config, autoProfileSwitch: !(config.autoProfileSwitch ?? true) })}
+          autoProfileRestoreDefault={config.autoProfileRestoreDefault ?? false}
+          onAutoProfileRestoreDefaultToggle={() => onConfigChange({ ...config, autoProfileRestoreDefault: !(config.autoProfileRestoreDefault ?? false) })}
+          targetDisplayId={config.targetDisplayId}
+          onTargetDisplayChange={(targetDisplayId) => onConfigChange({ ...config, targetDisplayId })}
+          onUpdateProfileTargetApp={(profId, targetApp) => {
+            const cleaned = targetApp.trim().replace(/\.exe$/i, '').toLowerCase();
+            const nextProfiles = (config.profiles ?? []).map((p) =>
+              p.id === profId ? { ...p, targetApp: cleaned || undefined } : p,
+            );
+            onConfigChange({ ...config, profiles: nextProfiles });
+          }}
         />
 
         {/* Page tabs */}
@@ -342,75 +304,20 @@ export function MainB({
           compact={isCompact}
         />
 
-        {/* Page context menu */}
-        {pageContextMenu && (() => {
-          const ctxPage = config.pages.find(pp => pp.id === pageContextMenu.id);
-          const ctxGs = ctxPage?.gridSize ?? 4;
-          return (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                position: 'fixed', left: pageContextMenu.x, top: pageContextMenu.y,
-                zIndex: 9999, background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-                borderRadius: VD.radius.lg, overflow: 'hidden', boxShadow: VD.shadow.menu, minWidth: 160,
-              }}
-            >
-              <PageCtxItem label={t('page.rename')} onClick={() => {
-                if (ctxPage) { setRenamingPageId(ctxPage.id); setRenameValue(ctxPage.name); }
-                setPageContextMenu(null);
-              }} />
-              {/* Grid — columnas y filas independientes */}
-              {(() => {
-                const ctxRows = ctxPage?.gridRows ?? ctxGs;
-                return (
-                  <div style={{ padding: '8px 14px', borderBottom: `1px solid ${VD.border}` }}>
-                    <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginBottom: 6, letterSpacing: 1 }}>
-                      {t('page.grid')} · {ctxGs}×{ctxRows}
-                    </div>
-                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.columns')}</div>
-                    <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-                      {([3, 4, 5, 6] as const).map(cols => (
-                        <button
-                          key={cols}
-                          onClick={() => { onPageSetGrid(pageContextMenu.id, cols, ctxRows); }}
-                          style={{
-                            flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                            background: ctxGs === cols ? VD.accentBg : VD.elevated,
-                            border: `1px solid ${ctxGs === cols ? config.accent : VD.border}`,
-                            fontFamily: VD.mono, fontSize: 9,
-                            color: ctxGs === cols ? config.accent : VD.textDim,
-                          }}
-                        >{cols}</button>
-                      ))}
-                    </div>
-                    <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.rows')}</div>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {([2, 3, 4, 5, 6] as const).map(rows => (
-                        <button
-                          key={rows}
-                          onClick={() => { onPageSetGrid(pageContextMenu.id, ctxGs as 3 | 4 | 5 | 6, rows); }}
-                          style={{
-                            flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                            background: ctxRows === rows ? VD.accentBg : VD.elevated,
-                            border: `1px solid ${ctxRows === rows ? config.accent : VD.border}`,
-                            fontFamily: VD.mono, fontSize: 9,
-                            color: ctxRows === rows ? config.accent : VD.textDim,
-                          }}
-                        >{rows}</button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-              {config.pages.length > 1 && (
-                <PageCtxItem label={t('page.delete')} danger onClick={() => {
-                  onPageDelete(pageContextMenu.id);
-                  setPageContextMenu(null);
-                }} />
-              )}
-            </div>
-          );
-        })()}
+
+        <MenuContextualPagina
+          contextMenu={pageContextMenu}
+          pages={config.pages}
+          accent={config.accent}
+          onStartRename={(page) => {
+            setRenamingPageId(page.id);
+            setRenameValue(page.name);
+          }}
+          onOpenAppBinding={(pageId) => setBindingAppPageId(pageId)}
+          onSetGrid={onPageSetGrid}
+          onDeletePage={onPageDelete}
+          onClose={() => setPageContextMenu(null)}
+        />
 
         <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
           {/* El panel de musica, si toca por la izquierda. Va fuera de la
@@ -479,6 +386,7 @@ export function MainB({
                 button={btn}
                 accent={config.accent}
                 toggled={toggledIds.has(btn.id)}
+                subToggled={btn.subButtons?.map((s) => toggledIds.has(s.id))}
                 isSelected={selectedIds.has(btn.id)}
                 isActive={botonActivo(btn, estadoSistema)}
                 isHidden={!botonVisible(btn, estadoSistema, sensorList)}
@@ -486,13 +394,18 @@ export function MainB({
                 widgetData={widgetDataMap[btn.id]}
                 soundEnabled={soundOnPress}
                 soundProfile={soundProfile}
+                deckState={config.state ?? {}}
+                onStateUpdate={(k, v) => onStateUpdate({ [k]: v })}
                 resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
                 onEdit={() => onEditButton(btn.id)}
-                onExecute={() => executeButton(btn)}
+                onExecute={(target) => executeButton(target ?? btn)}
                 onAdjustWheel={(signo) => executeButton({ ...btn, action: {
                   ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
                 } })}
-                onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none' ? () => executeLongPressButton(btn) : undefined}
+                onLongPress={(target) => {
+                  const b = target ?? btn;
+                  if (b.longPressAction && b.longPressAction.type !== 'none') executeLongPressButton(b);
+                }}
                 onSelect={() => setSelectedIds((prev) => {
                   const next = new Set(prev);
                   if (next.has(btn.id)) next.delete(btn.id); else next.add(btn.id);
@@ -500,6 +413,25 @@ export function MainB({
                 })}
                 onDuplicate={() => onDuplicateButton(btn.id)}
                 onClear={() => onClearButton(btn.id)}
+                onQuickSlider={(target) => {
+                  const isVol = target === 'volume';
+                  onUpdateButton?.({
+                    ...btn,
+                    label: isVol ? 'VOLUMEN' : 'BRILLO',
+                    icon: isVol ? 'SPEAKER' : 'WEATHER_SUN',
+                    action: { type: 'adjust', adjustTarget: target, adjustDelta: 0 },
+                    widget: 'slider',
+                    sliderWidget: {
+                      target,
+                      min: 0,
+                      max: 100,
+                      step: isVol ? 2 : 5,
+                      orientation: 'horizontal',
+                      showValue: true,
+                    },
+                  });
+                }}
+                onTogglePin={() => handleTogglePin(btn.id)}
                 onDragStart={() => setDragSourceId(btn.id)}
                 onDragEnd={() => setDragSourceId(null)}
                 onDrop={(sourceId) => {
@@ -510,93 +442,17 @@ export function MainB({
             )}
           />
 
-          {/* Bulk-select toolbar — floats over grid when ≥1 button selected */}
-          {selectedIds.size > 0 && (
-            <div style={{
-              position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
-              zIndex: 50, display: 'flex', alignItems: 'center', gap: 8,
-              background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-              borderRadius: VD.radius.lg, padding: '8px 14px',
-              boxShadow: VD.shadow.menu, fontFamily: VD.mono,
-            }}>
-              <span style={{ fontSize: 9, color: VD.textDim, letterSpacing: 1, marginRight: 4 }}>
-                {/* En español «1 SELECCIONADOS» chirría, y con una sola celda
-                    marcada es el caso más frecuente. */}
-                {selectedIds.size === 1 ? t('bulk.selectedOne') : t('bulk.selected', { n: selectedIds.size })}
-              </span>
-
-              {/* Move-to-page picker */}
-              <select
-                value={bulkMoveTarget ?? ''}
-                onChange={(e) => setBulkMoveTarget(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                style={{
-                  background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text,
-                  fontFamily: VD.mono, fontSize: 8, padding: '3px 6px', borderRadius: VD.radius.sm,
-                  outline: 'none',
-                }}
-              >
-                <option value="">{t('ui.moveTo')}</option>
-                {config.pages.map((p, i) => i !== activePage && (
-                  <option key={p.id} value={i}>{p.name}</option>
-                ))}
-              </select>
-
-              {bulkMoveTarget !== null && (
-                <button
-                  onClick={() => {
-                    // Una sola operacion, no una por boton: antes cada una era
-                    // su propio paso de deshacer y su propio guardado.
-                    const ids = Array.from(selectedIds);
-                    const movidos = onMoveButtonsToPage(ids, bulkMoveTarget!, false);
-                    if (movidos < ids.length) {
-                      showToast(t('bulk.partial', { n: movidos, total: ids.length }));
-                    }
-                    setSelectedIds(new Set()); setBulkMoveTarget(null);
-                  }}
-                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                >
-                  <DotGlyphIcon glyph="EXPORT" size={7} color={config.accent} />
-                  <span>{t('bulk.move')}</span>
-                </button>
-              )}
-              {bulkMoveTarget !== null && (
-                <button
-                  onClick={() => {
-                    // Una sola operacion, no una por boton: antes cada una era
-                    // su propio paso de deshacer y su propio guardado.
-                    const ids = Array.from(selectedIds);
-                    const movidos = onMoveButtonsToPage(ids, bulkMoveTarget!, true);
-                    if (movidos < ids.length) {
-                      showToast(t('bulk.partial', { n: movidos, total: ids.length }));
-                    }
-                    setSelectedIds(new Set()); setBulkMoveTarget(null);
-                  }}
-                  style={{ padding: '4px 10px', background: VD.accentBg, border: `1px solid ${config.accent}`, color: config.accent, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                >
-                  <DotGlyphIcon glyph="CODE" size={7} color={config.accent} />
-                  <span>{t('bulk.copy')}</span>
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  onClearButtons(Array.from(selectedIds));
-                  setSelectedIds(new Set());
-                }}
-                style={{ padding: '4px 10px', background: 'none', border: `1px solid ${VD.danger}`, color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-              >
-                <DotGlyphIcon glyph="CLOSE" size={7} color={VD.danger} />
-                <span>{t('bulk.clear')}</span>
-              </button>
-
-              <button
-                onClick={() => { setSelectedIds(new Set()); setBulkMoveTarget(null); }}
-                style={{ padding: '4px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center' }}
-              >
-                <DotGlyphIcon glyph="CLOSE" size={7} color={VD.textMuted} />
-              </button>
-            </div>
-          )}
+          {/* Bulk-select toolbar */}
+          <BarraSeleccionLote
+            selectedIds={selectedIds}
+            pages={config.pages}
+            activePage={activePage}
+            accent={config.accent}
+            onMoveButtonsToPage={onMoveButtonsToPage}
+            onClearButtons={onClearButtons}
+            onClearSelection={() => setSelectedIds(new Set())}
+            showToast={showToast}
+          />
 
           {/* Sidebar */}
           {showSidebar && (
@@ -663,6 +519,27 @@ export function MainB({
           onClose={() => setOpenFolderBtn(null)}
         />
       )}
+
+      {/* App binding modal */}
+      {bindingAppPageId && (() => {
+        const targetPage = config.pages.find((p) => p.id === bindingAppPageId);
+        if (!targetPage) return null;
+        return (
+          <ModalVincularApp
+            page={targetPage}
+            accent={config.accent}
+            runningProcesses={estadoSistema.runningProcesses}
+            onSave={(cleaned) => {
+              const updatedPages = config.pages.map((p) =>
+                p.id === bindingAppPageId ? { ...p, targetApp: cleaned || undefined } : p,
+              );
+              onConfigChange({ ...config, pages: updatedPages });
+              setBindingAppPageId(null);
+            }}
+            onClose={() => setBindingAppPageId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

@@ -146,7 +146,7 @@ const buscarPorTexto = (texto, etiqueta = '*') => `() => [...document.querySelec
   .sort((a, b) => (a.textContent.length - b.textContent.length))[0]`;
 
 const buscarCasillaVacia = `() => [...document.querySelectorAll('[title]')]
-  .find((e) => (e.getAttribute('title') ?? '').startsWith('Clic para configurar'))`;
+  .find((e) => (e.getAttribute('title') ?? '').startsWith(${JSON.stringify(IDIOMA === 'en' ? 'Click to configure' : 'Clic para configurar')}))`;
 
 /** Por su `title`, para los botones que solo llevan un símbolo dentro. */
 const buscarPorTitulo = (titulo) => `() => [...document.querySelectorAll('[title]')]
@@ -187,12 +187,15 @@ async function esperarPorBuscador(cdp, buscador, queEs, msMax = 20000) {
  * pulsarla, que es lo único que hace que los clics caigan donde deben.
  */
 async function abrirGaleriaConRiesgo(cdp) {
-  await clicPorBuscador(cdp, buscarPorTexto('⚙', 'button'), 'la rueda de ajustes');
+  const tituloAjustes = IDIOMA === 'en' ? 'Settings' : 'Configuración';
+  await clicPorBuscador(cdp, buscarPorTitulo(tituloAjustes), 'la rueda de ajustes');
   await dormir(600);
-  await clicPorBuscador(cdp, buscarPorTexto('GALERIA DEL PROYECTO', 'button'), 'el botón de la galería del proyecto');
+  const textoBotonGaleria = IDIOMA === 'en' ? 'PROJECT GALLERY' : 'GALERÍA DEL PROYECTO';
+  await clicPorBuscador(cdp, buscarPorTexto(textoBotonGaleria, 'button'), 'el botón de la galería del proyecto');
   await esperarPorBuscador(cdp, buscarPorTexto('Streaming'), 'la lista de perfiles de la galería');
   await clicPorBuscador(cdp, buscarPorTexto('Streaming'), 'el perfil «Streaming» de la galería');
-  await esperarPorBuscador(cdp, buscarPorTexto('Un perfil no son solo datos'), 'el aviso de riesgo');
+  const textoAviso = IDIOMA === 'en' ? 'A profile is not just data' : 'Un perfil no son solo datos';
+  await esperarPorBuscador(cdp, buscarPorTexto(textoAviso), 'el aviso de riesgo');
   await dormir(600);
 
   // El aviso ya está desplegado. Se sube el panel para que quepa entero en los
@@ -201,7 +204,7 @@ async function abrirGaleriaConRiesgo(cdp) {
   // captura es una lista de atajos sin decir de dónde sale.
   await evaluar(cdp, `(() => {
     const aviso = [...document.querySelectorAll('div')]
-      .find((e) => (e.textContent ?? '').startsWith('Un perfil no son solo datos'));
+      .find((e) => (e.textContent ?? '').startsWith(${JSON.stringify(textoAviso)}));
     const panel = aviso?.closest('div[style*="overflow"]') ?? aviso?.parentElement?.parentElement;
     const caja = aviso?.parentElement;
     if (panel && caja) panel.scrollTop += caja.getBoundingClientRect().top - panel.getBoundingClientRect().top - 175;
@@ -316,7 +319,7 @@ async function capturar(escena, entorno) {
   hijo.stderr.on('data', (d) => { registro += d; });
 
   try {
-    const cdp = await esperarCdp();
+    const cdp = await esperarCdp(() => registro);
     await cdp.enviar('Emulation.setDeviceMetricsOverride', {
       width: escena.ancho, height: escena.alto,
       deviceScaleFactor: escena.escala, mobile: false,
@@ -427,11 +430,18 @@ async function conBarraFlotante(fondoPng, escena) {
   }
 }
 
-async function esperarCdp() {
+async function esperarCdp(getRegistro) {
+  let ultimoError = null;
   for (let i = 0; i < 60; i++) {
-    try { return await conectar(PUERTO_CDP); } catch { await dormir(500); }
+    try {
+      return await conectar(PUERTO_CDP);
+    } catch (e) {
+      ultimoError = e;
+      await dormir(500);
+    }
   }
-  throw new Error('el depurador no llegó a abrir');
+  const reg = getRegistro ? getRegistro() : '';
+  throw new Error(`el depurador no llegó a abrir (${ultimoError?.message ?? ultimoError})\n--- Log de Electron ---\n${reg}\n-----------------------`);
 }
 
 /**
@@ -561,6 +571,8 @@ async function main() {
   for (const k of Object.keys(entornoSinProxy)) {
     if (/^(https?|all|no)_proxy$/i.test(k)) delete entornoSinProxy[k];
   }
+  delete entornoSinProxy.ELECTRON_RUN_AS_NODE;
+  delete entornoSinProxy.ELECTRON_NO_ATTACH_CONSOLE;
 
   const entorno = {
     ...entornoSinProxy,

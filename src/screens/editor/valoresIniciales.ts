@@ -42,6 +42,7 @@ export function estiloInicial(button: ButtonConfig) {
     bgColor: button.bgColor || '',
     fgColor: button.fgColor || '',
     widget: button.widget,
+    pinned: button.pinned ?? false,
   };
 }
 
@@ -58,6 +59,7 @@ export function widgetInicial(button: ButtonConfig) {
     varWidgetPrefix: button.varWidget?.prefix ?? '',
     varWidgetSuffix: button.varWidget?.suffix ?? '',
     currencyWidget: button.currencyWidget,
+    sliderWidget: button.sliderWidget,
   };
 }
 

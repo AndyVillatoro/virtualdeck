@@ -4,6 +4,7 @@ import { useT } from '../../utils/i18n';
 import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import type { NowPlaying, ElectronAPI } from '../../types';
 
 /**
@@ -135,12 +136,22 @@ export function PanelMusica({
           <DotGlyphIcon glyph="AUDIO_WAVE" size={48} color={VD.textMuted} showRecessed />
         </div>
         {nowPlaying.thumbnail && (
-          <img
-            src={nowPlaying.thumbnail}
-            alt=""
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-          />
+          <>
+            <img
+              src={nowPlaying.thumbnail}
+              alt=""
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                imageRendering: 'pixelated',
+              }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+            />
+            <DotMatrixImageOverlay pitch={4} />
+          </>
         )}
       </div>
 

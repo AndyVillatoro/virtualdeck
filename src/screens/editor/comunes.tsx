@@ -41,7 +41,7 @@ export function FolderButtonSlot({ button, accent, onChange }: {
         onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
       >
-        +
+        <DotGlyphIcon glyph="ADD" size={12} color={VD.textMuted} />
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function FolderButtonSlot({ button, accent, onChange }: {
     return (
       <div style={{ background: VD.bg, border: `1px solid ${accent}`, borderRadius: VD.radius.md, padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder={"⌘"} maxLength={2}
+          <input value={icon} onChange={e => setIcon(e.target.value)} placeholder={"Ctrl"} maxLength={4}
             style={{ width: 28, background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 4px', color: VD.text, fontFamily: VD.mono, fontSize: 13, outline: 'none', borderRadius: VD.radius.sm, textAlign: 'center' }} />
           <input value={label} onChange={e => setLabel(e.target.value)} placeholder={tf("Nombre")} maxLength={12}
             style={{ flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`, padding: '2px 6px', color: VD.text, fontFamily: VD.mono, fontSize: 9, outline: 'none', borderRadius: VD.radius.sm }} />
@@ -417,7 +417,7 @@ export function Btn({ onClick, children, style }: { onClick: () => void; childre
 export function SensorPicker({
   sensors, value, onChange, accent: _accent, allowEmpty,
 }: {
-  sensors: import('../../types').Sensor[];
+  sensors: Sensor[];
   value: string;
   onChange: (id: string) => void;
   accent: string;
@@ -426,7 +426,7 @@ export function SensorPicker({
   const t = useT();
   const VD = useTheme();
   const selectStyle = estiloSelector(VD);
-  const groups: Record<string, import('../../types').Sensor[]> = {};
+  const groups: Record<string, Sensor[]> = {};
   for (const s of sensors) {
     const key = s.hardware || '—';
     (groups[key] ||= []).push(s);

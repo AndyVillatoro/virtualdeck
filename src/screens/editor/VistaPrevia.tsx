@@ -3,7 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { ButtonCell } from '../../components/ButtonCell';
-import type { ButtonConfig, ButtonAction } from '../../types';
+import type { ButtonConfig, ButtonAction, SubButtonConfig, TipoWidget, SliderWidgetConfig } from '../../types';
 
 /**
  * La columna izquierda del editor: el boton tal y como va a quedar.
@@ -17,7 +17,7 @@ import type { ButtonConfig, ButtonAction } from '../../types';
  * espera ausencia, no vacio.
  */
 export function VistaPrevia({
-  id, page, accent, action, extraActions, isToggle, campos,
+  id, page, accent, action, extraActions, isToggle, campos, subButtons, is2x2Mode,
 }: {
   id: string;
   page: number;
@@ -25,6 +25,8 @@ export function VistaPrevia({
   action: ButtonAction;
   extraActions: ButtonAction[];
   isToggle: boolean;
+  subButtons?: SubButtonConfig[];
+  is2x2Mode?: boolean;
   campos: {
     label: string; sublabel: string; icon: string;
     imageData: string; brandIcon: string;
@@ -34,6 +36,9 @@ export function VistaPrevia({
     brandIconCustomPalette?: Record<string, string>;
     customGlyph57?: number[];
     bgColor: string; fgColor: string;
+    pinned?: boolean;
+    widget?: TipoWidget;
+    sliderWidget?: SliderWidgetConfig;
   };
 }) {
   const VD = useTheme();
@@ -57,6 +62,10 @@ export function VistaPrevia({
     action,
     actions: extraActions.length > 0 ? [action, ...extraActions] : undefined,
     isToggle,
+    pinned: campos.pinned || undefined,
+    widget: campos.widget,
+    sliderWidget: campos.sliderWidget,
+    subButtons: is2x2Mode && subButtons && subButtons.length === 4 ? subButtons : undefined,
   };
 
   return (

@@ -6,7 +6,6 @@ import { BotonesNavegacion } from './titlebar/BotonesNavegacion';
 import { BotonAjustesConHint } from './titlebar/BotonAjustesConHint';
 import { ControlesVentana } from './titlebar/ControlesVentana';
 import { useClickOutsideSettings } from './titlebar/useClickOutsideSettings';
-import { Dot480ShowcaseModal } from './dot480/Dot480ShowcaseModal';
 
 export interface TitleBarProps {
   showControls?: boolean;
@@ -30,6 +29,7 @@ export interface TitleBarProps {
   onSoundProfileChange?: (id: SoundProfileId) => void;
   onSaveProfile?: (name: string) => void;
   onLoadProfile?: (id: string) => void;
+  onAppendProfilePages?: (id: string) => void;
   onDeleteProfile?: (id: string) => void;
   // RGB integration
   rgbStatus?: RGBStatus | null;
@@ -39,7 +39,7 @@ export interface TitleBarProps {
   sensorsConfig?: SensorsSettings;
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
-  onImportarDeGaleria?: (p: Profile) => void;
+  onImportarDeGaleria?: (p: Profile, agregarAlDeck?: boolean) => void;
   musicPanel?: { enabled: boolean; side: 'left' | 'right' };
   onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
@@ -57,6 +57,13 @@ export interface TitleBarProps {
   hintsDismissed?: string[];
   onDismissHint?: (id: string) => void;
   compact?: boolean;
+  autoProfileSwitch?: boolean;
+  onAutoProfileSwitchToggle?: () => void;
+  autoProfileRestoreDefault?: boolean;
+  onAutoProfileRestoreDefaultToggle?: () => void;
+  targetDisplayId?: number;
+  onTargetDisplayChange?: (displayId: number | undefined) => void;
+  onUpdateProfileTargetApp?: (id: string, targetApp: string) => void;
 }
 
 export function TitleBar({
@@ -81,6 +88,7 @@ export function TitleBar({
   onSoundProfileChange,
   onSaveProfile,
   onLoadProfile,
+  onAppendProfilePages,
   onDeleteProfile,
   rgbStatus,
   rgbConfig,
@@ -105,11 +113,17 @@ export function TitleBar({
   hintsDismissed,
   onDismissHint,
   compact = false,
+  autoProfileSwitch,
+  onAutoProfileSwitchToggle,
+  autoProfileRestoreDefault,
+  onAutoProfileRestoreDefaultToggle,
+  targetDisplayId,
+  onTargetDisplayChange,
+  onUpdateProfileTargetApp,
 }: TitleBarProps) {
   const VD = useTheme();
   const effectiveAccent = accent ?? VD.accent;
   const [showSettings, setShowSettings] = useState(false);
-  const [showDot480, setShowDot480] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const panelRef = useRef<HTMLDivElement>(null);
   const ruedaRef = useRef<HTMLButtonElement>(null);
@@ -149,7 +163,6 @@ export function TitleBar({
               onFloatingBar={onFloatingBar}
               onWallpaper={onWallpaper}
               onRGB={onRGB}
-              onOpenDot480={() => setShowDot480(true)}
               rgbStatus={rgbStatus}
               compact={compact}
             />
@@ -201,20 +214,20 @@ export function TitleBar({
           profiles={profiles}
           onSaveProfile={onSaveProfile}
           onLoadProfile={onLoadProfile}
+          onAppendProfilePages={onAppendProfilePages}
           onDeleteProfile={onDeleteProfile}
+          onUpdateProfileTargetApp={onUpdateProfileTargetApp}
+          autoProfileSwitch={autoProfileSwitch}
+          onAutoProfileSwitchToggle={onAutoProfileSwitchToggle}
+          autoProfileRestoreDefault={autoProfileRestoreDefault}
+          onAutoProfileRestoreDefaultToggle={onAutoProfileRestoreDefaultToggle}
+          targetDisplayId={targetDisplayId}
+          onTargetDisplayChange={onTargetDisplayChange}
           onReplayOnboarding={onReplayOnboarding}
           newProfileName={newProfileName}
           setNewProfileName={setNewProfileName}
           panelRef={panelRef}
           onCerrar={() => setShowSettings(false)}
-        />
-      )}
-
-      {showDot480 && (
-        <Dot480ShowcaseModal
-          isOpen={showDot480}
-          onClose={() => setShowDot480(false)}
-          initialAccent={effectiveAccent}
         />
       )}
     </div>

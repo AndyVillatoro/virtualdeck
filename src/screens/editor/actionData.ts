@@ -6,7 +6,7 @@ import {
   IconVolumeUp, IconVolumeDown, IconMute, IconBrightness, IconNotify,
   type VDIconProps,
 } from '../../components/VDIcon';
-import type { ActionType, ButtonAction, FolderButton } from '../../types';
+import type { ActionType, ButtonAction, FolderButton, SliderWidgetConfig, TipoWidget } from '../../types';
 
 export interface ButtonPreset {
   category: 'APPS' | 'WEB' | 'MEDIA' | 'SISTEMA' | 'CREATIVO' | 'RGB';
@@ -16,6 +16,8 @@ export interface ButtonPreset {
   bgColor?: string;
   fgColor?: string;
   action: ButtonAction;
+  widget?: TipoWidget;
+  sliderWidget?: SliderWidgetConfig;
 }
 
 // label/desc son CLAVES i18n (ver `act.*` en src/utils/i18n.tsx). Se resuelven
@@ -82,6 +84,8 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'WEB', label: 'Gmail', icon: 'BELL', bgColor: '#2a0a0a', fgColor: '#ea4335', action: { type: 'web', url: 'https://mail.google.com' } },
   { category: 'WEB', label: 'Twitch', icon: 'PLAY', bgColor: '#1a0033', fgColor: '#9146ff', action: { type: 'web', url: 'https://twitch.tv' } },
   // MEDIA
+  { category: 'MEDIA', label: 'Vol. Táctil (H)', icon: 'SPEAKER', bgColor: '#141c24', fgColor: '#38bdf8', action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'volume', min: 0, max: 100, step: 2, orientation: 'horizontal', showValue: true } },
+  { category: 'MEDIA', label: 'Fader Vol. (V)', icon: 'SPEAKER', bgColor: '#141c24', fgColor: '#38bdf8', action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'volume', min: 0, max: 100, step: 2, orientation: 'vertical', showValue: true } },
   { category: 'MEDIA', label: 'Play/Pausa', icon: 'PLAY', action: { type: 'media-play-pause' } },
   { category: 'MEDIA', label: 'Siguiente',  icon: 'NEXT', action: { type: 'media-next' } },
   { category: 'MEDIA', label: 'Anterior',   icon: 'PREV', action: { type: 'media-prev' } },
@@ -92,6 +96,8 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'MEDIA', label: 'Vol. 50%',   action: { type: 'volume-set', volumePercent: 50 } },
   { category: 'MEDIA', label: 'Vol. 80%',   action: { type: 'volume-set', volumePercent: 80 } },
   // SISTEMA
+  { category: 'SISTEMA', label: 'Brillo Táctil (H)', icon: 'WEATHER_SUN', bgColor: '#242014', fgColor: '#facc15', action: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'brightness', min: 0, max: 100, step: 5, orientation: 'horizontal', showValue: true } },
+  { category: 'SISTEMA', label: 'Fader Brillo (V)', icon: 'WEATHER_SUN', bgColor: '#242014', fgColor: '#facc15', action: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'brightness', min: 0, max: 100, step: 5, orientation: 'vertical', showValue: true } },
   { category: 'SISTEMA', label: 'Bloquear PC', icon: 'LOCK', bgColor: '#1a0a0a', fgColor: '#d95f5f', action: { type: 'script', script: 'rundll32.exe user32.dll,LockWorkStation', scriptShell: 'cmd' } },
   { category: 'SISTEMA', label: 'Escritorio', icon: 'MINIMIZE', action: { type: 'script', script: '(New-Object -ComObject Shell.Application).MinimizeAll()', scriptShell: 'powershell' } },
   { category: 'SISTEMA', label: 'Captura', icon: 'SCISSORS', action: { type: 'hotkey', hotkey: 'Win+Shift+S' } },

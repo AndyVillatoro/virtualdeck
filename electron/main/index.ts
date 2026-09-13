@@ -8,9 +8,11 @@ import { fijarArranqueAutomatico, migrarArranqueAutomatico } from './ipc/appIpc'
 import { autoCheckOnStartup } from './ipc/updateIpc';
 import * as rgb from './rgb';
 import * as sensors from './sensors';
-import { abrirBarra, SESION_BARRA } from './floatingBar';
+import { abrirBarra, cerrarBarra, SESION_BARRA } from './floatingBar';
 import { fijarIdioma } from './idioma';
 import { arrancarSondeo, pararSondeo } from './estadoSistema';
+import { startActiveWindowTracker, stopActiveWindowTracker } from './activeWindow';
+import { setupDisplayListeners } from './displays';
 import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
 import * as remoto from './servidorLocal';
 
@@ -87,6 +89,8 @@ function setupWindow() {
   // El sondeo del estado del sistema vive aqui y se reparte a las dos
   // ventanas: la barra flotante es otra y antes no lo tenia.
   arrancarSondeo();
+  startActiveWindowTracker();
+  setupDisplayListeners(win);
   createTray(win, onQuit);
   applyTriggerableConfig(win, initialCfg, onQuit);
 
@@ -123,6 +127,11 @@ function setupWindow() {
     if (sensorsCfg.spawnOnStart) {
       sensors.spawnLHM(sensorsCfg.lhmPath, !!sensorsCfg.spawnElevated).catch(() => {});
     }
+  }
+  // Asegurar siempre la configuración del servidor web si se detecta LHM en el equipo
+  const rutaLhm = sensorsCfg?.lhmPath || sensors.rutaLHMConocida();
+  if (rutaLhm) {
+    sensors.asegurarConfigLHM(rutaLhm, sensorsCfg?.port || 8085);
   }
 
   // RGB autostart — non-blocking so the rest of the app stays functional if OpenRGB fails.
@@ -196,8 +205,10 @@ app.whenReady().then(() => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  stopActiveWindowTracker();
   pararSondeo();
   remoto.parar();
+  try { cerrarBarra(); } catch {}
   try { rgb.killServer(); } catch {}
   try { sensors.killLHM(); } catch {}
 });

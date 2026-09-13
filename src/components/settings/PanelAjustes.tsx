@@ -7,6 +7,7 @@ import { RGBSection } from './RGBSection';
 import { SensorsSection } from './SensorsSection';
 import { RemoteSection } from './RemoteSection';
 import { GallerySection } from './GallerySection';
+import { DisplaysSection } from './DisplaysSection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
 import { SoporteSection } from './SoporteSection';
@@ -48,14 +49,22 @@ interface Props {
   onSensorsConfigChange?: (next: SensorsSettings) => void;
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
-  onImportarDeGaleria?: (p: Profile) => void;
+  onImportarDeGaleria?: (p: Profile, agregarAlDeck?: boolean) => void;
   musicPanel?: { enabled: boolean; side: 'left' | 'right' };
   onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
   profiles: Profile[];
   onSaveProfile?: (name: string) => void;
   onLoadProfile?: (id: string) => void;
+  onAppendProfilePages?: (id: string) => void;
   onDeleteProfile?: (id: string) => void;
+  onUpdateProfileTargetApp?: (id: string, targetApp: string) => void;
+  autoProfileSwitch?: boolean;
+  onAutoProfileSwitchToggle?: () => void;
+  autoProfileRestoreDefault?: boolean;
+  onAutoProfileRestoreDefaultToggle?: () => void;
+  targetDisplayId?: number;
+  onTargetDisplayChange?: (displayId: number | undefined) => void;
   onReplayOnboarding?: () => void;
   newProfileName: string;
   setNewProfileName: (s: string) => void;
@@ -64,7 +73,7 @@ interface Props {
   onCerrar: () => void;
 }
 
-export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, remoteConfig, onRemoteConfigChange, onImportarDeGaleria, musicPanel, onMusicPanelChange, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
+export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale, onUiScaleChange, tileMode, onTileModeChange, theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle, alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange, rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus, remoteConfig, onRemoteConfigChange, onImportarDeGaleria, onAppendProfilePages, musicPanel, onMusicPanelChange, profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onUpdateProfileTargetApp, autoProfileSwitch, onAutoProfileSwitchToggle, autoProfileRestoreDefault, onAutoProfileRestoreDefaultToggle, targetDisplayId, onTargetDisplayChange, onReplayOnboarding, newProfileName, setNewProfileName, panelRef, onCerrar }: Props) {
   const VD = useTheme();
   const t = useT();
 
@@ -320,6 +329,14 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
 
     <div style={{ height: 1, background: VD.border }} />
 
+    <DisplaysSection
+      accent={effectiveAccent}
+      targetDisplayId={targetDisplayId}
+      onTargetDisplayChange={onTargetDisplayChange}
+    />
+
+    <div style={{ height: 1, background: VD.border }} />
+
     <AjusteTactil accent={effectiveAccent} />
 
     <div style={{ height: 1, background: VD.border }} />
@@ -355,14 +372,36 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
         </button>
       </div>
       {profiles.length > 0 && (
-        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 130, overflowY: 'auto' }}>
+        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
           {profiles.map(p => (
-            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
-              <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-              <button onClick={() => { onLoadProfile?.(p.id); onCerrar(); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('ui.load')}</button>
-              <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}>
-                <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
-              </button>
+            <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '5px 8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                <button onClick={() => { onLoadProfile?.(p.id); onCerrar(); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('ui.load')}</button>
+                <button onClick={() => { onAppendProfilePages?.(p.id); onCerrar(); }} title={t('ui.appendPagesHint')} style={{ background: VD.accentBg, border: `1px solid ${effectiveAccent}`, fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 5px', borderRadius: VD.radius.sm, letterSpacing: 0.5 }}>{t('ui.appendPages')}</button>
+                <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}>
+                  <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <DotGlyphIcon glyph="APP_WINDOW" size={7} color={p.targetApp ? effectiveAccent : VD.textMuted} />
+                <input
+                  value={p.targetApp ?? ''}
+                  onChange={(e) => onUpdateProfileTargetApp?.(p.id, e.target.value)}
+                  placeholder={t('set.profileTargetApp')}
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: `1px solid ${p.targetApp ? effectiveAccent : VD.border}`,
+                    fontFamily: VD.mono,
+                    fontSize: 8,
+                    color: p.targetApp ? effectiveAccent : VD.textDim,
+                    outline: 'none',
+                    padding: '1px 2px',
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -372,6 +411,30 @@ export function PanelAjustes({ accent: effectiveAccent, onAccentChange, uiScale,
           {t('set.noProfiles')}
         </div>
       )}
+    </div>
+
+    <div style={{ height: 1, background: VD.border }} />
+
+    {/* Auto profile switching by active window */}
+    <div>
+      <SettingLabel>{t('set.autoProfiles')}</SettingLabel>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <ToggleRow
+          label={t('set.autoProfileSwitch')}
+          value={autoProfileSwitch ?? true}
+          accent={effectiveAccent}
+          onClick={onAutoProfileSwitchToggle}
+        />
+        <ToggleRow
+          label={t('set.autoProfileRestoreDefault')}
+          value={autoProfileRestoreDefault ?? false}
+          accent={effectiveAccent}
+          onClick={onAutoProfileRestoreDefaultToggle}
+        />
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
+          {t('set.autoProfileHint')}
+        </div>
+      </div>
     </div>
 
     <div style={{ height: 1, background: VD.border }} />

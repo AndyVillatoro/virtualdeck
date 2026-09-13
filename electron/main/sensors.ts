@@ -1,7 +1,7 @@
 import { intentarNativo } from './native';
 import { app, net } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tm } from './idioma';
 
@@ -59,10 +59,23 @@ let lhmProc: ChildProcess | null = null;
 const CACHE_MS = 1500;
 
 export function configure(opts: { host?: string; port?: number; enabled?: boolean; categories?: SensorCategory[] }) {
-  if (opts.host) host = opts.host;
+  if (opts.host) {
+    const h = opts.host.trim();
+    host = (h === '0.0.0.0' || h === '') ? '127.0.0.1' : h;
+  }
   if (typeof opts.port === 'number' && opts.port > 0) port = opts.port;
   if (opts.enabled !== undefined) enabled = opts.enabled;
   if (opts.categories && Array.isArray(opts.categories)) allowedCategories = new Set(opts.categories);
+
+  // Sincronizar también con el núcleo nativo en Rust (vd-node) si está disponible
+  intentarNativo('configureSensors', (n) => {
+    return n.configureSensors(JSON.stringify({
+      enabled,
+      host,
+      port,
+      categories: Array.from(allowedCategories),
+    }));
+  });
 }
 
 export function status(): SensorsStatus {
@@ -123,9 +136,12 @@ function categoryFromSensorId(id: string): SensorCategory | null {
   return null;
 }
 
+// Nombres típicos de nodos contenedores de LHM (categorías de sensor, NO hardware)
+const NOMBRES_CONTENEDORES = /^(temperatures?|voltages?|fans?|clocks?|controls?|powers?|data|levels?|load|throughput|factors?|currents?)$/i;
+
 /**
- * Deduce el tipo de sensor a partir de node.Type o del SensorId.
- * Garantiza que "/temperature/" siempre se reconozca como Temperature.
+ * Deduce el tipo de sensor a partir de node.Type, del SensorId o del valor/nombre.
+ * Garantiza que cualquier lectura de temperatura siempre se reconozca como Temperature.
  */
 function kindFromNode(node: any): SensorKind {
   const raw = String(node?.Type || '');
@@ -144,6 +160,19 @@ function kindFromNode(node: any): SensorKind {
   if (idLower.includes('/voltage/')) return 'Voltage';
   if (idLower.includes('/clock/')) return 'Clock';
   if (idLower.includes('/power/')) return 'Power';
+
+  // Fallback heurístico por unidad o texto del valor
+  const valStr = String(node?.Value || '');
+  if (valStr.includes('°C') || valStr.includes('°F') || valStr.includes('°')) return 'Temperature';
+  if (valStr.includes('%')) return 'Load';
+  if (valStr.includes('RPM')) return 'Fan';
+  if (valStr.includes(' V')) return 'Voltage';
+  if (valStr.includes('MHz') || valStr.includes('GHz')) return 'Clock';
+  if (valStr.includes(' W')) return 'Power';
+
+  const textLower = String(node?.Text || '').toLowerCase();
+  if (textLower.includes('temp') || textLower.includes('temperat')) return 'Temperature';
+
   return 'Other';
 }
 
@@ -152,8 +181,12 @@ function flatten(node: any, depth: number, hardware: string, category: SensorCat
   if (!node) return;
   let hw = hardware;
   let cat = category;
-  if (node.Text && !node.SensorId && (node.ImageURL || depth === 2 || !hw)) {
-    hw = String(node.Text);
+  const textStr = node.Text ? String(node.Text).trim() : '';
+  const esContenedor = NOMBRES_CONTENEDORES.test(textStr);
+
+  // Solo actualizar hw y cat si este nodo NO es un contenedor de agrupación ("Temperatures", "Load", etc.)
+  if (textStr && !node.SensorId && !esContenedor && (node.ImageURL || depth === 2 || !hw)) {
+    hw = textStr;
     const fromImg = categoryFromImage(node.ImageURL);
     const fromName = categoryFromName(hw);
     cat = fromImg !== 'other' ? fromImg : fromName;
@@ -185,7 +218,8 @@ function flatten(node: any, depth: number, hardware: string, category: SensorCat
 }
 
 async function fetchTree(): Promise<any> {
-  const url = `http://${host}:${port}/data.json`;
+  const targetHost = (host === '0.0.0.0' || !host.trim()) ? '127.0.0.1' : host;
+  const url = `http://${targetHost}:${port}/data.json`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 2500);
   try {
@@ -201,11 +235,16 @@ function applyCategoryFilter(all: Sensor[]): Sensor[] {
   return all.filter((s) => {
     if (allowedCategories.has(s.category)) return true;
     // Si es un sensor de temperatura de CPU reportado por chip de placa base (LPC/SuperIO)
-    // y la categoría CPU está permitida, conservarlo para no perder temperatura.
+    // o cualquier temperatura relevante para componentes activos, conservarlo para no perder temperatura.
     if (s.kind === 'Temperature') {
       if (s.category === 'cpu' && allowedCategories.has('cpu')) return true;
       if (s.category === 'gpu' && allowedCategories.has('gpu')) return true;
       if (s.category === 'mainboard' && (allowedCategories.has('mainboard') || allowedCategories.has('cpu'))) return true;
+      if (s.category === 'memory' && allowedCategories.has('memory')) return true;
+      if (s.category === 'storage' && allowedCategories.has('storage')) return true;
+      const idOrName = (s.id + ' ' + s.name).toLowerCase();
+      if ((idOrName.includes('cpu') || idOrName.includes('core') || idOrName.includes('package')) && allowedCategories.has('cpu')) return true;
+      if ((idOrName.includes('gpu') || idOrName.includes('hot spot') || idOrName.includes('vram')) && allowedCategories.has('gpu')) return true;
     }
     return false;
   });
@@ -339,42 +378,136 @@ export function rutaLHMConocida(): string | null {
   return null;
 }
 
+/**
+ * Asegura que el archivo .config de LibreHardwareMonitor tenga el servidor web habilitado
+ * y configurado en el puerto correcto. Si no existe, genera una configuración básica.
+ */
+export function asegurarConfigLHM(exePath: string, targetPort = 8085): boolean {
+  try {
+    if (!exePath || !existsSync(exePath)) return false;
+    const dir = exePath.substring(0, exePath.lastIndexOf('\\')) || '.';
+    const configCandidates = [
+      join(dir, 'LibreHardwareMonitor.config'),
+      `${exePath}.config`,
+    ];
+
+    for (const cfgPath of configCandidates) {
+      if (existsSync(cfgPath)) {
+        let content = readFileSync(cfgPath, 'utf-8');
+        let modificado = false;
+
+        // 1. Asegurar runWebServerMenuItem
+        if (!content.includes('key="runWebServerMenuItem"')) {
+          content = content.replace(
+            '</appSettings>',
+            `    <add key="runWebServerMenuItem" value="true" />\n  </appSettings>`,
+          );
+          modificado = true;
+        } else if (content.includes('key="runWebServerMenuItem" value="false"')) {
+          content = content.replace(
+            /key="runWebServerMenuItem"\s+value="false"/g,
+            'key="runWebServerMenuItem" value="true"',
+          );
+          modificado = true;
+        }
+
+        // 2. Asegurar listenerPort
+        const portStr = String(targetPort);
+        if (!content.includes('key="listenerPort"')) {
+          content = content.replace(
+            '</appSettings>',
+            `    <add key="listenerPort" value="${portStr}" />\n  </appSettings>`,
+          );
+          modificado = true;
+        }
+
+        // 3. Asegurar listenerIp
+        if (!content.includes('key="listenerIp"')) {
+          content = content.replace(
+            '</appSettings>',
+            `    <add key="listenerIp" value="127.0.0.1" />\n  </appSettings>`,
+          );
+          modificado = true;
+        }
+
+        if (modificado) {
+          writeFileSync(cfgPath, content, 'utf-8');
+        }
+        return true;
+      }
+    }
+
+    // Si no existía archivo de configuración, crear uno básico
+    const targetConfig = join(dir, 'LibreHardwareMonitor.config');
+    const basicConfig = `<?xml version="1.0" encoding="utf-8"?>\n<configuration>\n  <appSettings>\n    <add key="listenerIp" value="127.0.0.1" />\n    <add key="listenerPort" value="${targetPort}" />\n    <add key="runWebServerMenuItem" value="true" />\n  </appSettings>\n</configuration>\n`;
+    writeFileSync(targetConfig, basicConfig, 'utf-8');
+    return true;
+  } catch (err) {
+    console.warn('[sensores] No se pudo asegurar config de LHM:', err);
+    return false;
+  }
+}
+
 export async function spawnLHM(customPath?: string, elevated = false): Promise<{ ok: boolean; error?: string }> {
   if (lhmProc && !lhmProc.killed) return { ok: true };
   const exe = customPath || rutaLHMConocida();
   if (!exe || !existsSync(exe)) return { ok: false, error: 'LibreHardwareMonitor.exe no encontrado' };
+  
+  // Asegurar que la configuración de LHM tenga el servidor web habilitado en el puerto correcto
+  asegurarConfigLHM(exe, port);
+
   const cwd = exe.substring(0, exe.lastIndexOf('\\')) || undefined;
-  try {
-    if (elevated) {
-      // HttpListener en Windows requiere admin (o URL ACL). Lanzamos LHM via
-      // PowerShell Start-Process -Verb RunAs para disparar UAC. No podemos
-      // trackear el proceso resultante (cambia de sesión), así que lhmProc
-      // queda null pero LHM ya corre con privilegios.
+
+  const spawnConAdmin = async (): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      // HttpListener en Windows y acceso a ring-0 (WinRing0) para DTS/MSR exigen admin.
+      // Lanzamos LHM via PowerShell Start-Process -Verb RunAs para disparar UAC.
       const ps = spawn('powershell.exe', [
         '-NoProfile', '-NonInteractive', '-Command',
         `Start-Process -FilePath '${exe.replace(/'/g, "''")}' -WorkingDirectory '${(cwd || '').replace(/'/g, "''")}' -Verb RunAs -WindowStyle Hidden`,
       ], { stdio: 'ignore', windowsHide: true });
       ps.on('error', (err) => { lastError = `LHM spawn (elevated): ${err.message}`; });
-      // Damos tiempo a UAC + cold start (puede tardar más con admin).
       await new Promise((r) => setTimeout(r, 3500));
       return { ok: true };
+    } catch (e) {
+      return { ok: false, error: (e as Error).message };
     }
-    // detached:false + windowsHide so LHM tray icon shows but no console window.
-    // LHM reads its config from the same dir as the .exe — bundled config
-    // already has runWebServerMenuItem=true and listenerPort=8085.
+  };
+
+  if (elevated) {
+    return spawnConAdmin();
+  }
+
+  try {
     const child = spawn(exe, [], {
       detached: false,
       stdio: 'ignore',
       windowsHide: true,
       cwd,
     });
-    child.on('exit', () => { if (lhmProc === child) lhmProc = null; });
-    child.on('error', (err) => { lastError = `LHM spawn: ${err.message}`; });
+    let falloElevacion = false;
+    child.on('exit', (code) => {
+      if (lhmProc === child) lhmProc = null;
+      if (code !== 0 && code !== null && !connected) {
+        falloElevacion = true;
+      }
+    });
+    child.on('error', (err: any) => {
+      lastError = `LHM spawn: ${err.message}`;
+      if (err.code === 'EACCES' || (err.message && err.message.includes('EACCES'))) {
+        falloElevacion = true;
+      }
+    });
     lhmProc = child;
-    // LHM needs ~1.5–3 s before the web server starts accepting connections.
     await new Promise((r) => setTimeout(r, 2000));
+    if (falloElevacion) {
+      return spawnConAdmin();
+    }
     return { ok: true };
-  } catch (e) {
+  } catch (e: any) {
+    if (e.code === 'EACCES' || (e.message && e.message.includes('EACCES'))) {
+      return spawnConAdmin();
+    }
     return { ok: false, error: (e as Error).message };
   }
 }

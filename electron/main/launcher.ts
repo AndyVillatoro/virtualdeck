@@ -458,9 +458,8 @@ export async function setVolume(percent: number): Promise<boolean> {
   const r = intentarNativo('setVolume', (n) => n.setVolume(Math.round(percent)));
   if (r !== undefined) return r;
 
-  const level = Math.min(1.0, Math.max(0.0, percent / 100));
   const script = `
-param([float]$V)
+param([int]$Percent)
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -477,13 +476,14 @@ public class AudioCtrl {
     var e = (IMMDevEnum)new MMDev();
     var d = (IMMDevice)e.GetDefaultAudioEndpoint(0, 1);
     var g = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
-    ((IAudioVol)d.Activate(ref g, 0, IntPtr.Zero)).SetMasterVolumeLevelScalar(v, IntPtr.Zero);
+    ((IAudioVol)d.Activate(ref g, 1, IntPtr.Zero)).SetMasterVolumeLevelScalar(v, IntPtr.Zero);
   }
 }
 '@
-[AudioCtrl]::SetVol($V)
+$v = [Math]::Max(0.0f, [Math]::Min(1.0f, [float]$Percent / 100.0f))
+[AudioCtrl]::SetVol($v)
 `;
-  return runPSBool(script, { timeoutMs: 15000, args: [level.toFixed(4)] });
+  return runPSBool(script, { timeoutMs: 15000, args: [String(Math.round(percent))] });
 }
 
 export async function snapWindow(position: string, processName?: string): Promise<boolean> {

@@ -94,7 +94,7 @@ export async function manifiesto(url: string): Promise<{ ok: true; profiles: Ent
  * desconocido cuando pulses un botón». No se resume ni se recorta: si trae
  * treinta scripts, se ven los treinta.
  */
-export function resumirRiesgo(perfil: unknown): ResumenRiesgo {
+function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   const botones = (perfil as { buttons?: Array<Record<string, unknown>> })?.buttons ?? [];
   const scripts: string[] = [];
   const programas: string[] = [];

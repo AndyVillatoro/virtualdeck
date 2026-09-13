@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData';
 import {
   accionInicial, estiloInicial, widgetInicial, visibilidadInicial, disparadoresInicial,
@@ -10,13 +10,11 @@ import { construirBoton } from './editor/guardar';
 import { useTheme } from '../utils/theme';
 import { DotLabel } from '../components/DotLabel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
-// 4.1 — picker y editor del catálogo de marcas se cargan a demanda. Evita
-// arrastrar el bundle de marcas al árbol inicial cuando el usuario no abre el modal.
-const BrandIconPicker = lazy(() => import('../components/BrandIconPicker').then(m => ({ default: m.BrandIconPicker })));
-const BrandIconEditor = lazy(() => import('../components/BrandIconEditor').then(m => ({ default: m.BrandIconEditor })));
-import { Glyph57Editor } from '../components/Glyph57Editor';
+import { EditorSubdivision2x2 } from './editor/EditorSubdivision2x2';
+import { PieEditorB } from './editor/PieEditorB';
+import { ModalesIconosEditor } from './editor/ModalesIconosEditor';
 import { useT } from '../utils/i18n';
-import type { ButtonConfig, RGBProfile } from '../types';
+import type { ButtonConfig, RGBProfile, SubButtonConfig } from '../types';
 
 interface EditorBProps {
   button: ButtonConfig;
@@ -25,6 +23,8 @@ interface EditorBProps {
   deckState?: Record<string, string>;
   onClose: () => void;
   onSave: (updated: ButtonConfig) => void;
+  /** 7.6: Vaciar botón con confirmación y soporte de deshacer */
+  onClear?: (id: string) => void;
 }
 
 // Claves i18n de los pasos (el texto se resuelve con t() en render).
@@ -36,10 +36,25 @@ import { usePegarImagen } from './editor/usePegarImagen';
 const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
 
 
-export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave }: EditorBProps) {
+export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave, onClear }: EditorBProps) {
   const VD = useTheme();
   const t = useT();
   const api = window.electronAPI;
+  const isConfigured = button.action.type !== 'none'
+    || !!button.label
+    || !!button.sublabel
+    || !!button.icon
+    || !!button.imageData
+    || !!button.brandIcon
+    || !!button.widget
+    || !!button.customGlyph57
+    || !!button.globalHotkey
+    || !!button.bgColor
+    || !!button.fgColor
+    || !!button.longPressAction
+    || (button.actions && button.actions.length > 1)
+    || (button.isToggle && button.actionToggleOff && button.actionToggleOff.type !== 'none')
+    || !!(button.subButtons && button.subButtons.length === 4);
   // Los valores de partida salen de `valoresIniciales`: alli estan todos los
   // `?? ''` que antes vivian aqui dentro, uno por campo.
   //
@@ -50,6 +65,16 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const wid = widgetInicial(button);
   const vis = visibilidadInicial(button);
   const dis = disparadoresInicial(button);
+
+  const [is2x2Mode, setIs2x2Mode] = useState<boolean>(() => !!(button.subButtons && button.subButtons.length === 4));
+  const [subButtons, setSubButtons] = useState<SubButtonConfig[]>(() => {
+    if (button.subButtons && button.subButtons.length === 4) return button.subButtons;
+    return Array.from({ length: 4 }, (_, i) => ({
+      id: `${button.id}-q${i}`,
+      label: '',
+      action: { type: 'none' as const },
+    }));
+  });
 
   const [step, setStep] = useState(0);
   const [action, setAction] = useState(ini.action);
@@ -70,6 +95,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const [showBrandEditor, setShowBrandEditor] = useState(false);
   const [bgColor, setBgColor] = useState(est.bgColor);
   const [fgColor, setFgColor] = useState(est.fgColor);
+  const [pinned, setPinned] = useState(est.pinned);
   // 1.4 — Disparadores externos
   const [globalHotkey, setGlobalHotkey] = useState(dis.globalHotkey);
   const [inTrayMenu, setInTrayMenu] = useState(dis.inTrayMenu);
@@ -86,6 +112,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const [varWidgetPrefix, setVarWidgetPrefix] = useState(wid.varWidgetPrefix);
   const [varWidgetSuffix, setVarWidgetSuffix] = useState(wid.varWidgetSuffix);
   const [currencyWidget, setCurrencyWidget] = useState(wid.currencyWidget);
+  const [sliderWidget, setSliderWidget] = useState(wid.sliderWidget);
   const [visibleIfApp, setVisibleIfApp] = useState(vis.visibleIfApp);
   const [visibleIfSensorId, setVisibleIfSensorId] = useState(vis.visibleIfSensorId);
   const [visibleIfSensorOp, setVisibleIfSensorOp] = useState(vis.visibleIfSensorOp);
@@ -134,6 +161,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
 
   const handleSave = () => {
     onSave(construirBoton(button, {
+      is2x2Mode,
+      subButtons,
       action,
       extraActions,
       label,
@@ -164,6 +193,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
       varWidgetPrefix,
       varWidgetSuffix,
       currencyWidget,
+      sliderWidget,
       visibleIfApp,
       visibleIfSensorId,
       visibleIfSensorOp,
@@ -173,6 +203,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
       sensorTriggerOp,
       sensorTriggerVal,
       sensorTriggerCooldown,
+      pinned,
     }));
   };
 
@@ -183,6 +214,10 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
     setIcon(preset.icon ?? '');
     setBgColor(preset.bgColor ?? '');
     setFgColor(preset.fgColor ?? '');
+    if (preset.widget) {
+      setWidget(preset.widget);
+      if (preset.sliderWidget) setSliderWidget(preset.sliderWidget);
+    }
     setStep(2);
   };
 
@@ -250,6 +285,39 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
           <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: accent }} />
           <DotLabel size={11} color={VD.text} spacing={2}>{t('ed.title')}</DotLabel>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>· {button.id.toUpperCase()}</span>
+
+          {/* Selector de modo: 1x1 Estándar vs 2x2 Cuadrantes */}
+          <div style={{ display: 'flex', gap: 2, background: VD.elevated, padding: 2, borderRadius: VD.radius.sm, border: `1px solid ${VD.border}`, marginLeft: 16 }}>
+            <button
+              onClick={() => setIs2x2Mode(false)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 8px', border: 'none', borderRadius: VD.radius.sm,
+                background: !is2x2Mode ? accent : 'transparent',
+                color: !is2x2Mode ? '#fff' : VD.textDim,
+                fontFamily: VD.mono, fontSize: 9, letterSpacing: '1px',
+                cursor: 'pointer',
+              }}
+            >
+              <DotGlyphIcon glyph="DOTS" size={8} color={!is2x2Mode ? '#fff' : VD.textDim} />
+              <span>{t('ed.mode.standard')}</span>
+            </button>
+            <button
+              onClick={() => setIs2x2Mode(true)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 8px', border: 'none', borderRadius: VD.radius.sm,
+                background: is2x2Mode ? accent : 'transparent',
+                color: is2x2Mode ? '#fff' : VD.textDim,
+                fontFamily: VD.mono, fontSize: 9, letterSpacing: '1px',
+                cursor: 'pointer',
+              }}
+            >
+              <DotGlyphIcon glyph="FULLSCREEN" size={8} color={is2x2Mode ? '#fff' : VD.textDim} />
+              <span>{t('ed.mode.split2x2')}</span>
+            </button>
+          </div>
+
           <div style={{ flex: 1 }} />
           <button onClick={onClose} style={{ color: VD.textDim, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
             <DotGlyphIcon glyph="CLOSE" size={12} color={VD.textDim} />
@@ -257,16 +325,28 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
         </div>
 
         {/* Steps */}
-        <div style={{ display: 'flex', padding: '16px 24px', gap: 4, borderBottom: `1px solid ${VD.border}`, flexShrink: 0 }}>
-          {STEPS.map((s, i) => (
-            <div key={s} style={{ flex: 1, cursor: 'pointer' }} onClick={() => setStep(i)}>
-              <div style={{ height: 2, background: i <= step ? accent : VD.border, transition: 'background 0.2s' }} />
-              <div style={{ marginTop: 8, fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: i === step ? VD.text : i < step ? VD.textDim : VD.textMuted }}>
-                {String(i + 1).padStart(2, '0')} · {t(s)}
+        {!is2x2Mode ? (
+          <div style={{ display: 'flex', padding: '16px 24px', gap: 4, borderBottom: `1px solid ${VD.border}`, flexShrink: 0 }}>
+            {STEPS.map((s, i) => (
+              <div key={s} style={{ flex: 1, cursor: 'pointer' }} onClick={() => setStep(i)}>
+                <div style={{ height: 2, background: i <= step ? accent : VD.border, transition: 'background 0.2s' }} />
+                <div style={{ marginTop: 8, fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: i === step ? VD.text : i < step ? VD.textDim : VD.textMuted }}>
+                  {String(i + 1).padStart(2, '0')} · {t(s)}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderBottom: `1px solid ${VD.border}`, flexShrink: 0 }}>
+            <DotGlyphIcon glyph="FULLSCREEN" size={10} color={accent} />
+            <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: '1px' }}>
+              {t('ed.mode.split2x2')}
+            </span>
+            <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
+              · {t('ed.mode.hint')}
+            </span>
+          </div>
+        )}
 
         {/* Body */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -277,11 +357,14 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
             action={action}
             extraActions={extraActions}
             isToggle={isToggle}
+            subButtons={subButtons}
+            is2x2Mode={is2x2Mode}
             campos={{
               label, sublabel, icon, imageData, brandIcon,
               brandIconAlwaysAnimate, brandIconCustomBitmap,
               brandIconCustomColor, brandIconCustomPalette,
-              customGlyph57, bgColor, fgColor,
+              customGlyph57, bgColor, fgColor, pinned,
+              widget, sliderWidget,
             }}
           />
 
@@ -291,9 +374,19 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               el mismo elemento y **conservaba el desplazamiento del paso
               anterior**: al pasar a Configurar aparecia ya bajado, tapando los
               campos de arriba, que son los que dicen que hace el boton. */}
-          <div key={step} className="vd-scroll" style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div key={is2x2Mode ? 'subdivision-2x2' : step} className="vd-scroll" style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* STEP 0: Action type + presets */}
+            {is2x2Mode ? (
+              <EditorSubdivision2x2
+                parentId={button.id}
+                subButtons={subButtons}
+                onChange={setSubButtons}
+                accent={accent}
+              />
+            ) : (
+              <>
+                {/* STEP 0: Action type + presets */}
             {step === 0 && (
               <PasoAccion
                 accent={accent}
@@ -347,6 +440,11 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 rgbDevices={rgbDevices}
                 rgbProfiles={rgbProfiles}
                 deckState={deckState}
+                widget={widget}
+                setWidget={setWidget}
+                sliderWidget={sliderWidget}
+                setSliderWidget={setSliderWidget}
+                setStep={setStep}
               />
             )}
 
@@ -421,70 +519,59 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
                 widget={widget}
                 currencyWidget={currencyWidget}
                 setCurrencyWidget={setCurrencyWidget}
+                sliderWidget={sliderWidget}
+                setSliderWidget={setSliderWidget}
+                pinned={pinned}
+                setPinned={setPinned}
               />
             )}
+            </>
+          )}
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ height: 54, borderTop: `1px solid ${VD.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 10, flexShrink: 0 }}>
-          <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: step === 0 ? VD.textMuted : VD.textDim, cursor: step === 0 ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={step === 0 ? VD.textMuted : VD.textDim} />
-            <span>{t('ed.back')}</span>
-          </button>
-          <div style={{ flex: 1 }} />
-          <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, letterSpacing: 1 }}>{t('ed.stepN', { n: step + 1, total: STEPS.length })}</span>
-          <button onClick={onClose} style={{ padding: '8px 14px', border: `1px solid ${VD.border}`, background: 'transparent', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: VD.textDim, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textDim} />
-            <span>{t('ed.cancel')}</span>
-          </button>
-          <button onClick={() => { if (step < STEPS.length - 1) setStep(step + 1); else handleSave(); }} style={{ padding: '8px 20px', background: accent, border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span>{step < STEPS.length - 1 ? t('ed.next') : t('ed.save')}</span>
-            <DotGlyphIcon glyph={step < STEPS.length - 1 ? 'ARROW_RIGHT' : 'CHECK'} size={8} color="#fff" />
-          </button>
-        </div>
-      </div>
-
-      {/* Brand icon picker modal — lazy */}
-      {showBrandPicker && (
-        <Suspense fallback={null}>
-          <BrandIconPicker
-            current={brandIcon}
-            accent={accent}
-            onSelect={(key) => { setBrandIcon(key); setBrandIconCustomBitmap(undefined); setBrandIconCustomColor(undefined); setBrandIconCustomPalette(undefined); }}
-            onClose={() => setShowBrandPicker(false)}
-          />
-        </Suspense>
-      )}
-
-      {/* 2.1 — Editor de glifo 5×7 */}
-      {showGlyphEditor && (
-        <Glyph57Editor
-          initial={customGlyph57}
+        <PieEditorB
+          step={step}
+          totalSteps={STEPS.length}
+          is2x2Mode={is2x2Mode}
           accent={accent}
-          onSave={(rows) => {
-            // Si todo está vacío, limpiar el campo
-            if (rows.every((r) => r === 0)) setCustomGlyph57(undefined);
-            else setCustomGlyph57(rows);
-          }}
-          onClose={() => setShowGlyphEditor(false)}
+          isConfigured={isConfigured}
+          buttonId={button.id}
+          onBack={() => setStep(Math.max(0, step - 1))}
+          onNext={() => setStep(step + 1)}
+          onSave={handleSave}
+          onClose={onClose}
+          onClear={onClear}
         />
-      )}
-
-      {/* Brand icon dot editor modal — lazy */}
-      {showBrandEditor && brandIcon && (
-        <Suspense fallback={null}>
-          <BrandIconEditor
-            iconKey={brandIcon}
-            customBitmap={brandIconCustomBitmap}
-            customColor={brandIconCustomColor}
-            customPalette={brandIconCustomPalette}
-            accent={accent}
-            onSave={(bmp, col, pal) => { setBrandIconCustomBitmap(bmp); setBrandIconCustomColor(col); setBrandIconCustomPalette(pal); }}
-            onClose={() => setShowBrandEditor(false)}
-          />
-        </Suspense>
-      )}
+      </div>
+      {/* Icon Pickers & Editors Modals */}
+      <ModalesIconosEditor
+        showBrandPicker={showBrandPicker}
+        onCloseBrandPicker={() => setShowBrandPicker(false)}
+        brandIcon={brandIcon}
+        accent={accent}
+        onSelectBrandIcon={(key) => {
+          setBrandIcon(key);
+          setBrandIconCustomBitmap(undefined);
+          setBrandIconCustomColor(undefined);
+          setBrandIconCustomPalette(undefined);
+        }}
+        showGlyphEditor={showGlyphEditor}
+        onCloseGlyphEditor={() => setShowGlyphEditor(false)}
+        customGlyph57={customGlyph57}
+        onSaveGlyph57={setCustomGlyph57}
+        showBrandEditor={showBrandEditor}
+        onCloseBrandEditor={() => setShowBrandEditor(false)}
+        brandIconCustomBitmap={brandIconCustomBitmap}
+        brandIconCustomColor={brandIconCustomColor}
+        brandIconCustomPalette={brandIconCustomPalette}
+        onSaveBrandEditor={(bmp, col, pal) => {
+          setBrandIconCustomBitmap(bmp);
+          setBrandIconCustomColor(col);
+          setBrandIconCustomPalette(pal);
+        }}
+      />
     </div>
   );
 }

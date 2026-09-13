@@ -71,7 +71,8 @@ impl LhmClient {
         let antes = (self.enabled, self.host.clone(), self.port);
         self.enabled = s.enabled;
         if !s.host.trim().is_empty() {
-            self.host = s.host.clone();
+            let h = s.host.trim();
+            self.host = if h == "0.0.0.0" { "127.0.0.1".into() } else { h.to_string() };
         }
         if s.port > 0 {
             self.port = s.port;
@@ -288,7 +289,33 @@ fn aplanar(
     let texto = nodo.get("Text").and_then(Value::as_str);
     let sensor_id = nodo.get("SensorId").and_then(Value::as_str);
 
-    if (profundidad == 2 || nodo.get("ImageURL").is_some()) && sensor_id.is_none() {
+    let es_contenedor = texto.map_or(false, |t| {
+        let t_low = t.trim().to_lowercase();
+        matches!(
+            t_low.as_str(),
+            "temperatures"
+                | "temperature"
+                | "voltages"
+                | "voltage"
+                | "fans"
+                | "fan"
+                | "clocks"
+                | "clock"
+                | "controls"
+                | "control"
+                | "powers"
+                | "power"
+                | "data"
+                | "levels"
+                | "level"
+                | "load"
+                | "throughput"
+                | "factors"
+                | "currents"
+        )
+    });
+
+    if (profundidad == 2 || nodo.get("ImageURL").is_some()) && sensor_id.is_none() && !es_contenedor {
         if let Some(t) = texto {
             hw = t.to_string();
             let por_img = categoria_por_imagen(nodo.get("ImageURL").and_then(Value::as_str));
@@ -302,17 +329,29 @@ fn aplanar(
 
     if let Some(id) = sensor_id {
         let tipo = nodo.get("Type").and_then(Value::as_str).unwrap_or("");
-        let kind = if tipo == "Temperature" || id.to_lowercase().contains("/temperature/") {
+        let val_str = nodo.get("Value").and_then(Value::as_str).unwrap_or("");
+        let text_low = texto.unwrap_or("").to_lowercase();
+        let kind = if tipo == "Temperature"
+            || id.to_lowercase().contains("/temperature/")
+            || val_str.contains("°C")
+            || val_str.contains("°F")
+            || val_str.contains('°')
+            || text_low.contains("temp")
+        {
             SensorKind::Temperature
-        } else if tipo == "Fan" || id.to_lowercase().contains("/fan/") {
+        } else if tipo == "Fan" || id.to_lowercase().contains("/fan/") || val_str.contains("RPM") {
             SensorKind::Fan
-        } else if tipo == "Voltage" || id.to_lowercase().contains("/voltage/") {
+        } else if tipo == "Voltage" || id.to_lowercase().contains("/voltage/") || val_str.contains(" V") {
             SensorKind::Voltage
-        } else if tipo == "Load" || id.to_lowercase().contains("/load/") {
+        } else if tipo == "Load" || id.to_lowercase().contains("/load/") || val_str.contains('%') {
             SensorKind::Load
-        } else if tipo == "Clock" || id.to_lowercase().contains("/clock/") {
+        } else if tipo == "Clock"
+            || id.to_lowercase().contains("/clock/")
+            || val_str.contains("MHz")
+            || val_str.contains("GHz")
+        {
             SensorKind::Clock
-        } else if tipo == "Power" || id.to_lowercase().contains("/power/") {
+        } else if tipo == "Power" || id.to_lowercase().contains("/power/") || val_str.contains(" W") {
             SensorKind::Power
         } else {
             SensorKind::from_lhm(tipo)

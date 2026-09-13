@@ -20,7 +20,7 @@
 import { createServer as servidorHttp } from 'node:http';
 import { createServer as servidorHttps } from 'node:https';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { arrancar as arrancarOpenRGB } from './openrgb-falso.mjs';
@@ -97,7 +97,7 @@ function arbolDeSensores() {
   };
 }
 
-export function arrancarLHM(puerto = 8085) {
+export function arrancarLHM(puerto = PUERTO_LHM) {
   const s = servidorHttp((req, res) => {
     if (!req.url.startsWith('/data.json')) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'content-type': 'application/json' });
@@ -138,8 +138,8 @@ export function arrancarLHM(puerto = 8085) {
  *
  *   VD_PRENSA_PUERTO_RGB=6743 node scripts/prensa/capturar.mjs
  */
-export const PUERTO_LHM = Number(process.env.VD_PRENSA_PUERTO_LHM) || 8085;
-export const PUERTO_RGB = Number(process.env.VD_PRENSA_PUERTO_RGB) || 6742;
+export const PUERTO_LHM = Number(process.env.VD_PRENSA_PUERTO_LHM) || (process.platform === 'win32' ? 18085 : 8085);
+export const PUERTO_RGB = Number(process.env.VD_PRENSA_PUERTO_RGB) || (process.platform === 'win32' ? 16742 : 6742);
 
 export const HOSTS = [
   'ipapi.co', 'api.open-meteo.com',
@@ -173,12 +173,32 @@ async function reflejar(host, url, cabecerasEntrantes) {
   return salida;
 }
 
+function buscarOpenssl() {
+  if (process.platform !== 'win32') return 'openssl';
+  const candidatos = [
+    'C:\\Program Files\\Git\\mingw64\\bin\\openssl.exe',
+    'openssl',
+    'C:\\Program Files\\Git\\usr\\bin\\openssl.exe',
+  ];
+  for (const c of candidatos) {
+    try {
+      if (c === 'openssl') {
+        execFileSync('where', ['openssl'], { stdio: 'ignore' });
+        return 'openssl';
+      }
+      if (existsSync(c)) return c;
+    } catch {}
+  }
+  return 'openssl';
+}
+
 /** Certificado autofirmado válido para los cinco nombres. Se tira al acabar. */
 export function certificado() {
   const dir = mkdtempSync(join(tmpdir(), 'vd-prensa-tls-'));
   const clave = join(dir, 'clave.pem');
   const cert = join(dir, 'cert.pem');
-  execFileSync('openssl', [
+  const opensslBin = buscarOpenssl();
+  execFileSync(opensslBin, [
     'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2',
     '-keyout', clave, '-out', cert, '-subj', '/CN=virtualdeck-prensa',
     '-addext', `subjectAltName=${HOSTS.map((h) => `DNS:${h}`).join(',')}`,

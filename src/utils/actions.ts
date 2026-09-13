@@ -1,4 +1,4 @@
-import type { ButtonAction, DeckConfig, ElectronAPI, RGBProfile } from '../types';
+import type { ButtonAction, ElectronAPI, RGBProfile } from '../types';
 import { makeT, type TFunc } from './i18n';
 
 /**

@@ -11,10 +11,11 @@ import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
+import { resolverBotonesPagina } from '../utils/botonesPagina';
 import { FolderOverlay } from './main/OverlayCarpeta';
 import { interpolate } from '../utils/actions';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
-import { useNowPlaying } from '../utils/nowPlaying';
+import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
@@ -56,6 +57,11 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   const lang = useLang();
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
+  const setNowPlayingActive = useNowPlayingActivation();
+  useEffect(() => {
+    setNowPlayingActive(true);
+    return () => { setNowPlayingActive(false); };
+  }, [setNowPlayingActive]);
   const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [activePage, setActivePage] = useState(0);
   // Los interruptores llegan de arriba: viven en la configuracion para que la
@@ -164,7 +170,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
   const gridRows = currentPage?.gridRows ?? gridSize;
-  const pageButtons = config.buttons.filter((b) => b.page === activePage).slice(0, gridSize * gridRows);
+  const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows);
   const isPlaying = nowPlaying?.status === 'Playing';
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
@@ -322,6 +328,7 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               button={btn}
               accent={config.accent}
               toggled={toggledIds.has(btn.id)}
+              subToggled={btn.subButtons?.map((s) => toggledIds.has(s.id))}
               isActive={botonActivo(btn, estadoSistema)}
               isHidden={!botonVisible(btn, estadoSistema, sensorList)}
               isRunning={ejecutando.has(btn.id)}
@@ -331,13 +338,17 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
               soundEnabled={soundOnPress}
               soundProfile={soundProfile}
+              deckState={config.state ?? {}}
+              onStateUpdate={(k, v) => onStateUpdate({ [k]: v })}
               onEdit={() => {}}
-              onExecute={() => executeButton(btn)}
+              onExecute={(target) => executeButton(target ?? btn)}
               onAdjustWheel={(signo) => executeButton({ ...btn, action: {
                 ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
               } })}
-              onLongPress={btn.longPressAction && btn.longPressAction.type !== 'none'
-                ? () => executeLongPress(btn) : undefined}
+              onLongPress={(target) => {
+                const b = target ?? btn;
+                if (b.longPressAction && b.longPressAction.type !== 'none') executeLongPress(b);
+              }}
             />
           )}
         />

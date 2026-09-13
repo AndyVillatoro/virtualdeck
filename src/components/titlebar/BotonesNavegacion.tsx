@@ -12,7 +12,6 @@ export interface BotonesNavegacionProps {
   onFloatingBar?: () => void;
   onWallpaper?: () => void;
   onRGB?: () => void;
-  onOpenDot480?: () => void;
   rgbStatus?: RGBStatus | null;
   compact?: boolean;
 }
@@ -24,7 +23,6 @@ export function BotonesNavegacion({
   onFloatingBar,
   onWallpaper,
   onRGB,
-  onOpenDot480,
   rgbStatus,
   compact = false,
 }: BotonesNavegacionProps) {
@@ -34,26 +32,6 @@ export function BotonesNavegacion({
 
   return (
     <>
-      {onOpenDot480 && (
-        <button
-          onClick={onOpenDot480}
-          title="DOT / 480 OLED Micro Interface"
-          style={{
-            ...btnStyle,
-            borderColor: effectiveAccent,
-            color: effectiveAccent,
-            fontFamily: VD.mono,
-            fontWeight: 700,
-            letterSpacing: 0.5,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-          }}
-        >
-          <DotGlyphIcon glyph="DOTS" size={10} color={effectiveAccent} />
-          <span>DOT</span>
-        </button>
-      )}
       {onConfigExport && (
         <button
           onClick={onConfigExport}
@@ -75,13 +53,15 @@ export function BotonesNavegacion({
         </button>
       )}
       {onFloatingBar && (
-        <button onClick={onFloatingBar} title={t('tip.bar')} style={btnStyle}>
-          {t('bar.short')}
+        <button onClick={onFloatingBar} title={t('tip.bar')} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <DotGlyphIcon glyph="TERMINAL" size={9} color={VD.textDim} />
+          <span>{t('bar.short')}</span>
         </button>
       )}
       {onWallpaper && (
-        <button onClick={onWallpaper} style={btnStyle}>
-          {t('ui.wallpaper')}
+        <button onClick={onWallpaper} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <DotGlyphIcon glyph="SPARKLE" size={9} color={VD.textDim} />
+          <span>{t('ui.wallpaper')}</span>
         </button>
       )}
       {/* Conectado se marca con el acento, no con el verde del tema: es

@@ -12,7 +12,7 @@ export const PAGES_DEFAULT: PageConfig[] = [
   { id: 'main', name: 'Main' },
 ];
 
-export function makeDefaultButtons(pages: PageConfig[] = PAGES_DEFAULT): ButtonConfig[] {
+function makeDefaultButtons(pages: PageConfig[] = PAGES_DEFAULT): ButtonConfig[] {
   const btns: ButtonConfig[] = [];
   for (let page = 0; page < pages.length; page++) {
     const gs = pages[page]?.gridSize ?? 4;

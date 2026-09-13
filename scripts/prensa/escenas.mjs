@@ -94,6 +94,8 @@ const EN = {
   // botón dice otra cosa y el paso no encontraría nada: se vio con «KIOSKO»,
   // que en inglés es «KIOSK», y la captura habría salido sin entrar en kiosko.
   'KIOSKO': 'KIOSK', 'MOSTRAR': 'SHOW',
+  'MEDIOS': 'MEDIA', 'BRILLO': 'BRIGHT', 'VOL': 'VOL', 'PIN': 'PIN',
+  'PREV': 'PREV', 'PLAY': 'PLAY',
 };
 
 /** El idioma con el que se siembra. Lo pone `capturar.mjs` por entorno. */
@@ -116,8 +118,12 @@ const b = (slot, o) => {
   if (x.label) x.label = L(x.label);
   if (x.sensorWidget?.suffix) x.sensorWidget = { ...x.sensorWidget, suffix: L(x.sensorWidget.suffix) };
   if (x.varWidget?.suffix) x.varWidget = { ...x.varWidget, suffix: L(x.varWidget.suffix) };
+  if (x.sliderWidget?.label) x.sliderWidget = { ...x.sliderWidget, label: L(x.sliderWidget.label) };
   if (Array.isArray(x.action?.folderButtons)) {
     x.action = { ...x.action, folderButtons: x.action.folderButtons.map((f) => ({ ...f, label: L(f.label) })) };
+  }
+  if (Array.isArray(x.subButtons)) {
+    x.subButtons = x.subButtons.map((sb) => ({ ...sb, label: sb.label ? L(sb.label) : undefined }));
   }
   return x;
 };
@@ -125,22 +131,27 @@ const b = (slot, o) => {
 // ── Escena 1: el deck lleno ───────────────────────────────────────────────
 const DECK = [
   b(0,  { label: 'EN VIVO',   brandIcon: 'obs',      bgColor: C.rojo,    isToggle: true, action: { type: 'app', appPath: 'C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe' } }),
-  b(1,  { label: 'CÁMARA 2',  icon: '🎥',            bgColor: C.gris,    action: { type: 'hotkey', hotkey: 'Ctrl+Shift+F2' } }),
+  b(1,  { label: 'CÁMARA 2',  dotGlyph: 'MONITOR',   bgColor: C.gris,    action: { type: 'hotkey', hotkey: 'Ctrl+Shift+F2' } }),
   b(2,  { label: 'SILENCIAR', brandIcon: 'discord',  bgColor: C.violeta, isToggle: true, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+M' } }),
   b(3,  { label: 'HORA',      widget: 'clock',       bgColor: C.azul,    action: { type: 'none' } }),
 
-  b(4,  { label: 'ANTERIOR',  bgColor: C.gris,       action: { type: 'media-prev' } }),
-  b(5,  { label: 'PAUSA',     bgColor: C.gris,       action: { type: 'media-play-pause' } }),
-  b(6,  { label: 'SIGUIENTE', bgColor: C.gris,       action: { type: 'media-next' } }),
-  b(7,  { label: 'SONANDO',   widget: 'now-playing', bgColor: C.verde,   action: { type: 'media-play-pause' } }),
+  b(4,  { label: 'PIN',       dotGlyph: 'PIN',       pinned: true, bgColor: C.gris, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+P' } }),
+  b(5,  { label: 'MEDIOS',    bgColor: C.gris,       subButtons: [
+    { id: '0-5-0', label: 'PREV', dotGlyph: 'PREV', action: { type: 'media-prev' } },
+    { id: '0-5-1', label: 'PLAY', dotGlyph: 'PLAY', action: { type: 'media-play-pause' } },
+    { id: '0-5-2', label: 'NEXT', dotGlyph: 'NEXT', action: { type: 'media-next' } },
+    { id: '0-5-3', label: 'MUTE', dotGlyph: 'MUTE', action: { type: 'mute' } },
+  ] }),
+  b(6,  { label: 'SONANDO',   widget: 'now-playing', bgColor: C.verde,   action: { type: 'media-play-pause' } }),
+  b(7,  { widget: 'slider',   sliderWidget: { target: 'volume', orientation: 'horizontal', label: 'VOL' }, bgColor: C.gris, action: { type: 'none' } }),
 
-  b(8,  { label: 'VOL −',     bgColor: C.gris,       action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: -10 } }),
-  b(9,  { label: 'VOL +',     bgColor: C.gris,       action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 10 } }),
-  b(10, { label: 'MUDO',      bgColor: C.ambar,      isToggle: true, action: { type: 'mute' } }),
-  b(11, { label: 'CASCOS',    icon: '🎧',            bgColor: C.teal,    action: { type: 'audio-device', deviceName: 'Auriculares' } }),
+  b(8,  { widget: 'slider',   sliderWidget: { target: 'brightness', orientation: 'horizontal', label: 'BRILLO' }, bgColor: C.gris, action: { type: 'none' } }),
+  b(9,  { label: 'CASCOS',    dotGlyph: 'SPEAKER',   bgColor: C.teal,    action: { type: 'audio-device', deviceName: 'Auriculares' } }),
+  b(10, { label: 'MUDO',      dotGlyph: 'MUTE',      bgColor: C.ambar,   isToggle: true, action: { type: 'mute' } }),
+  b(11, { label: 'NOTAS',     brandIcon: 'obsidian', bgColor: C.violeta, action: { type: 'app', appPath: 'C:\\Program Files\\Obsidian\\Obsidian.exe' } }),
 
-  b(12, { label: 'LUZ JUEGO', icon: '🔴',            bgColor: C.rojo,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'gaming' } }),
-  b(13, { label: 'LUZ CINE',  icon: '🔵',            bgColor: C.azul,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'cinema' } }),
+  b(12, { label: 'LUZ JUEGO', dotGlyph: 'SPARKLE',   bgColor: C.rojo,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'gaming' } }),
+  b(13, { label: 'LUZ CINE',  dotGlyph: 'SPARKLE',   bgColor: C.azul,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'cinema' } }),
   b(14, { label: 'CPU',       widget: 'sensor',      bgColor: C.gris,    sensorWidget: { sensorId: '/amdcpu/0/temperature/0', suffix: 'CPU', warnAt: 70, critAt: 85 }, action: { type: 'none' } }),
   b(15, { label: 'MÁS',       brandIcon: 'vscode',   bgColor: C.azul,    action: { type: 'folder', folderButtons: [
     { label: 'CÓDIGO', action: { type: 'app', appPath: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' } },
@@ -177,9 +188,9 @@ const MESA = [
 
   b(15, { label: 'CÓDIGO',  brandIcon: 'vscode',   bgColor: C.azul,  action: { type: 'app', appPath: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' } }),
   b(16, { label: 'NOTAS',   brandIcon: 'obsidian', bgColor: C.violeta, action: { type: 'app', appPath: 'C:\\Program Files\\Obsidian\\Obsidian.exe' } }),
-  b(17, { label: 'CASCOS',  icon: '🎧',            bgColor: C.teal,  action: { type: 'audio-device', deviceName: 'Auriculares' } }),
-  b(18, { label: 'MUDO',    bgColor: C.ambar,      isToggle: true, action: { type: 'mute' } }),
-  b(19, { label: 'LUCES',   icon: '💡',            bgColor: C.gris,  isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'work' } }),
+  b(17, { label: 'CASCOS',  dotGlyph: 'SPEAKER',   bgColor: C.teal,  action: { type: 'audio-device', deviceName: 'Auriculares' } }),
+  b(18, { label: 'MUDO',    dotGlyph: 'MUTE',      bgColor: C.ambar, isToggle: true, action: { type: 'mute' } }),
+  b(19, { label: 'LUCES',   dotGlyph: 'SPARKLE',   bgColor: C.gris,  isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'work' } }),
 ];
 
 const paginaDeck = { id: 'main', name: L('STREAM'), gridSize: 4, gridRows: 4 };
@@ -232,7 +243,7 @@ export const ESCENAS = [
       tileMode: 'fill',
     }),
     pasos: [
-      { hacer: 'clicEnTexto', texto: '⤢' },
+      { hacer: 'clicEnTitulo', titulo: IDIOMA === 'en' ? 'Fullscreen mode' : 'Modo pantalla completa' },
       { hacer: 'esperar', ms: 900 },
       { hacer: 'clicEnTexto', texto: L('KIOSKO') },
       { hacer: 'esperar', ms: 900 },

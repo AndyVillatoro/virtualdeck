@@ -8,6 +8,7 @@ import { DotText } from '../../components/DotText';
 import { SensorCard, groupSensorsByHardware } from '../../components/SensorPanel';
 import { WeatherWidget } from '../../components/WeatherWidget';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import type { DeckConfig, ElectronAPI, NowPlaying, RGBStatus, Sensor, SensorsStatus } from '../../types';
 
 /**
@@ -165,13 +166,13 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
             {showLog && (
               <div style={{ maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {execLog.length === 0 ? (
-                  <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>Sin actividad</div>
+                  <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{t('panel.noActivity')}</div>
                 ) : execLog.map((entry) => (
                   <div key={entry.id} title={entry.error} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <DotGlyphIcon glyph="DOTS" size={6} color={entry.ok ? VD.success : VD.danger} />
                     <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.label}</span>
                     <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, flexShrink: 0 }}>
-                      {new Date(entry.ts).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                      {new Date(entry.ts).toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                     </span>
                   </div>
                 ))}
@@ -212,12 +213,22 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                       <DotGlyphIcon glyph={isPlaying ? 'PLAY' : 'PAUSE'} size={16} color={VD.textMuted} showRecessed />
                     </div>
                     {nowPlaying.thumbnail && (
-                      <img
-                        src={nowPlaying.thumbnail}
-                        alt=""
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                      />
+                      <>
+                        <img
+                          src={nowPlaying.thumbnail}
+                          alt=""
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            imageRendering: 'pixelated',
+                          }}
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <DotMatrixImageOverlay pitch={3} />
+                      </>
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

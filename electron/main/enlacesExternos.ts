@@ -32,7 +32,7 @@ type Orden =
  * `virtualdeck://press/<id>` · `virtualdeck://press?label=Spotify`
  * `virtualdeck://page/<n>` (1 es la primera) · `virtualdeck://show`
  */
-export function interpretar(url: string): Orden | null {
+function interpretar(url: string): Orden | null {
   let u: URL;
   try { u = new URL(url); } catch { return null; }
   if (u.protocol !== `${ESQUEMA}:`) return null;
@@ -63,19 +63,37 @@ export function interpretar(url: string): Orden | null {
  * «Música» lleve la tilde correcta sería perder el enlace por nada.
  */
 function resolverId(orden: Extract<Orden, { tipo: 'press' }>): string | null {
-  const cfg = loadConfig() as { buttons?: Array<{ id: string; label?: string }> };
+  const cfg = loadConfig() as {
+    buttons?: Array<{
+      id: string;
+      label?: string;
+      subButtons?: Array<{ id: string; label?: string }>;
+    }>;
+  };
   const botones = cfg?.buttons ?? [];
   const normal = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  const porEtiqueta = (q: string) => botones.find((b) => b.label && normal(b.label) === normal(q))?.id ?? null;
-  // Por id primero y **por etiqueta si no**, en la misma ruta.
-  //
-  // El id de un boton es `p1-0`; lo que una persona escribe en un `.bat` o en
-  // un acceso directo es el nombre que ve. `virtualdeck://press/Spotify` no
-  // hacia nada, porque «Spotify» no tiene espacios ni acentos y por tanto
-  // parecia un id. Cualquier cliente —el enlace, el mando remoto, Home
-  // Assistant— tropezaba con lo mismo, y el error decia la verdad sin ser util.
-  if (orden.id) return (botones.some((b) => b.id === orden.id) ? orden.id : null) ?? porEtiqueta(orden.id);
-  return porEtiqueta(orden.label ?? '');
+
+  const buscarPorEtiqueta = (q: string): string | null => {
+    const normQ = normal(q);
+    const encontrado = botones.find((b) => b.label && normal(b.label) === normQ);
+    if (encontrado) return encontrado.id;
+    for (const b of botones) {
+      const sub = b.subButtons?.find((s) => s.label && normal(s.label) === normQ);
+      if (sub) return sub.id;
+    }
+    return null;
+  };
+
+  // Por id primero y por etiqueta si no, en la misma ruta,
+  // soportando tanto botones de nivel superior como subbotones 2x2.
+  if (orden.id) {
+    if (botones.some((b) => b.id === orden.id)) return orden.id;
+    for (const b of botones) {
+      if (b.subButtons?.some((s) => s.id === orden.id)) return orden.id;
+    }
+    return buscarPorEtiqueta(orden.id);
+  }
+  return orden.label ? buscarPorEtiqueta(orden.label) : null;
 }
 
 /** Saca la primera URL del esquema que haya en los argumentos de la línea de órdenes. */

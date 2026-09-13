@@ -3,7 +3,7 @@ import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { app } from 'electron';
 
-interface WindowBounds { x: number; y: number; width: number; height: number; maximized?: boolean }
+export interface WindowBounds { x: number; y: number; width: number; height: number; maximized?: boolean }
 
 function getWindowStatePath() {
   return join(app.getPath('userData'), 'window-state.json');
@@ -24,7 +24,7 @@ function saveWindowState(b: WindowBounds) {
   try { writeFileSync(getWindowStatePath(), JSON.stringify(b), 'utf-8'); } catch {}
 }
 
-function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
+export function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
   const displays = screen.getAllDisplays();
   const onScreen = displays.some((d) => {
     const a = d.workArea;
@@ -48,7 +48,7 @@ const isDev = process.env.NODE_ENV === 'development';
  * La marca la pone `setLoginItemSettings` al registrar el arranque automático
  * (ver `appIpc`). No sirve `wasOpenedAtLogin`: solo existe en macOS.
  */
-export const ARRANQUE_OCULTO = process.argv.includes('--oculto');
+const ARRANQUE_OCULTO = process.argv.includes('--oculto');
 
 export function createMainWindow(): BrowserWindow {
   const savedRaw = loadWindowState();
@@ -158,7 +158,7 @@ export function createMainWindow(): BrowserWindow {
         .capturePage()
         .then((img) => {
           const destino = join(process.env['TEMP'] ?? '.', 'vd-diag.png');
-          require('fs').writeFileSync(destino, img.toPNG());
+          writeFileSync(destino, img.toPNG());
           console.log('[diag] captura de la ventana en', destino, '|', JSON.stringify(img.getSize()));
         })
         .catch((e) => console.error('[diag] no se pudo capturar:', e.message));

@@ -123,16 +123,24 @@ export function PinKiosko({ modo, setModo, pinGuardado, accent, onGuardarPin, se
                   padding: '8px 14px', background: 'transparent', border: `1px solid ${VD.border}`,
                   color: VD.textDim, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}
-              >{t('ui.cancel')}</button>
+              >
+                <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textDim} />
+                <span>{t('ui.cancel')}</span>
+              </button>
               <button
                 onClick={submitPin}
                 style={{
                   padding: '8px 14px', background: VD.accentBg, border: `1px solid ${accent}`,
                   color: accent, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}
-              >{t(modo === 'set' ? 'pin.save' : 'pin.confirm')}</button>
+              >
+                <DotGlyphIcon glyph="CHECK" size={8} color={accent} />
+                <span>{t(modo === 'set' ? 'pin.save' : 'pin.confirm')}</span>
+              </button>
             </div>
           </div>
         </div>

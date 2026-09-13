@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { NowPlaying } from '../types';
 
 // Polling centralizado de medios. Antes MainB y FullscreenB tenían su propio
@@ -19,32 +19,35 @@ const NowPlayingContext = createContext<NowPlayingContextValue>({
   refrescar: () => {},
 });
 
+let _globalRefresh = () => {};
+
+/**
+ * Permite a acciones de transporte de medios (ej. media-play-pause) forzar
+ * un refresco inmediato del estado de reproducción sin depender de React Context.
+ */
+export function refrescarNowPlayingGlobal(): void {
+  _globalRefresh();
+}
+
 const POLL_INTERVAL_MS = 5000;
 
 export function NowPlayingProvider({ children }: { children: React.ReactNode }) {
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [active, setActive] = useState(true);
-  const timerRef = useRef<number>();
-  const pedirRef = useRef<() => void>(() => {});
+  const pedir = useCallback(() => {
+    const api = window.electronAPI;
+    if (!api) return;
+    api.media.nowPlaying()
+      .then((np) => setNowPlaying(np))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
-    const api = window.electronAPI;
-    if (!api || !active) return;
-    let cancelled = false;
-    const tick = () => {
-      api.media.nowPlaying()
-        .then((np) => { if (!cancelled) setNowPlaying(np); })
-        .catch(() => {});
-    };
-    pedirRef.current = tick;
-    tick();
-    timerRef.current = window.setInterval(tick, POLL_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      pedirRef.current = () => {};
-      window.clearInterval(timerRef.current);
-    };
-  }, [active]);
+    if (!active) return;
+    pedir();
+    const t = window.setInterval(pedir, POLL_INTERVAL_MS);
+    return () => window.clearInterval(t);
+  }, [active, pedir]);
 
   // Tras pulsar pausa, SMTC tarda un momento en reflejarlo, asi que no sirve
   // preguntar en el mismo instante. Se pregunta dos veces: pronto, para que el
@@ -52,9 +55,16 @@ export function NowPlayingProvider({ children }: { children: React.ReactNode }) 
   // temprano. Sin esto habia que esperar al siguiente sondeo —hasta 5 s— y el
   // icono seguia diciendo «reproduciendo» despues de pausar.
   const refrescar = useCallback(() => {
-    window.setTimeout(() => pedirRef.current(), 250);
-    window.setTimeout(() => pedirRef.current(), 900);
-  }, []);
+    window.setTimeout(() => pedir(), 250);
+    window.setTimeout(() => pedir(), 900);
+  }, [pedir]);
+
+  useEffect(() => {
+    _globalRefresh = refrescar;
+    return () => {
+      _globalRefresh = () => {};
+    };
+  }, [refrescar]);
 
   return (
     <NowPlayingContext.Provider value={{ nowPlaying, setActive, refrescar }}>

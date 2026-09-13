@@ -6,6 +6,8 @@
     { "id": "0-0", "page": 0, "label": "Reloj", "icon": "", "widget": "clock", "action": { "type": "none" } },
     { "id": "0-1", "page": 0, "label": "Clima", "icon": "", "widget": "weather", "action": { "type": "none" } },
     { "id": "0-2", "page": 0, "label": "Play", "icon": "", "action": { "type": "media-play-pause" } },
-    { "id": "0-3", "page": 0, "label": "Silencio", "icon": "", "action": { "type": "mute" } }
+    { "id": "0-3", "page": 0, "label": "Silencio", "icon": "", "action": { "type": "mute" } },
+    { "id": "0-4", "page": 0, "label": "Volumen", "icon": "SPEAKER", "widget": "slider", "sliderWidget": { "target": "volume", "min": 0, "max": 100, "step": 2, "orientation": "horizontal", "showValue": true }, "action": { "type": "adjust", "adjustTarget": "volume", "adjustDelta": 0 } },
+    { "id": "0-5", "page": 0, "label": "Brillo", "icon": "WEATHER_SUN", "widget": "slider", "sliderWidget": { "target": "brightness", "min": 0, "max": 100, "step": 5, "orientation": "horizontal", "showValue": true }, "action": { "type": "adjust", "adjustTarget": "brightness", "adjustDelta": 0 } }
   ]
 }
