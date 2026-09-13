@@ -37,6 +37,7 @@ salga a 1920×1080, así que si la Store rechaza una imagen no es por el tamaño
 | `04-barra-lateral.png` | Una página de 5×4 hecha de widgets en vivo, con la barra lateral leyendo reloj, clima, cinco piezas de hardware y el estado del RGB. | 1920×1080 PNG |
 | `05-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
 | `06-galeria.png` | La galería de perfiles con el aviso de riesgo desplegado: lo que un perfil descargado va a ejecutar, antes de importarlo. | 1920×1080 PNG |
+| `07-barra-flotante.png` | Columna de tiles flotante HUD superpuesta en el escritorio/aplicaciones con mosaico 2×2, pin, slider de volumen y atajos. | 1920×1080 PNG |
 | `icono-mosaico-300.png` | El icono de mosaico. No es una captura: es `build/icon.svg` centrado sobre el fondo del tema. | 300×300 PNG exactos |
 | `fuentes/` | Las entradas de las que tiran dos capturas: la pista y la carátula de la franja de música, y la captura de escritorio sobre la que va la barra flotante. Ver más abajo. | — |
 

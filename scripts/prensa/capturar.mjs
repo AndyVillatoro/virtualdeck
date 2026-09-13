@@ -334,8 +334,14 @@ async function capturar(escena, entorno) {
       const fondo = escena.fondo ? await fondoDeEscritorio(escena) : png;
       png = await conBarraFlotante(fondo, escena);
     }
-    mkdirSync(SALIDA, { recursive: true });
-    writeFileSync(join(SALIDA, escena.archivo), png);
+    const rutaSalida = join(SALIDA, escena.archivo);
+    mkdirSync(dirname(rutaSalida), { recursive: true });
+    writeFileSync(rutaSalida, png);
+    if (escena.archivo === '07-barra-flotante.png') {
+      const rutaFuera = join(SALIDA, 'fuera-de-la-store', 'barra-flotante.png');
+      mkdirSync(dirname(rutaFuera), { recursive: true });
+      writeFileSync(rutaFuera, png);
+    }
     cdp.cerrar();
     return { png, registro };
   } finally {
@@ -417,11 +423,22 @@ async function conBarraFlotante(fondoPng, escena) {
     await dormir(600);
     const { data } = await cdp.enviar('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
 
+    const metaFondo = await sharp(fondoPng).metadata();
+    const barraAncho = Math.round(caja.ancho * escena.escala);
+    const barraAlto = Math.round(caja.alto * escena.escala);
+
+    // En Windows la pantalla fisica suele ser mayor (1440p, 4K), por lo que caja.x
+    // real cae fuera de un lienzo de 1920x1080. Colocamos la barra pegada al margen
+    // derecho del lienzo de la captura:
+    const margen = Math.round(16 * escena.escala);
+    const left = metaFondo.width - barraAncho - margen;
+    const top = Math.max(0, Math.round((metaFondo.height - barraAlto) / 2));
+
     return sharp(fondoPng)
       .composite([{
         input: Buffer.from(data, 'base64'),
-        left: Math.round(caja.x * escena.escala),
-        top: Math.round(caja.y * escena.escala),
+        left,
+        top,
       }])
       .png()
       .toBuffer();
