@@ -114,7 +114,6 @@ function L(texto) {
 }
 
 const b = (slot, o) => {
-  const x = { id: `0-${slot}`, page: 0, label: '', icon: '', ...o };
   const x = { id: `0-${slot}`, page: 0, label: '', icon: '', action: { type: 'none' }, ...o };
   if (x.label) x.label = L(x.label);
   if (x.sensorWidget?.suffix) x.sensorWidget = { ...x.sensorWidget, suffix: L(x.sensorWidget.suffix) };
@@ -137,7 +136,6 @@ const DECK = [
   b(3,  { label: 'HORA',      widget: 'clock',       bgColor: C.azul,    action: { type: 'none' } }),
 
   b(4,  { label: 'PIN',       dotGlyph: 'PIN',       pinned: true, bgColor: C.gris, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+P' } }),
-  b(5,  { label: 'MEDIOS',    bgColor: C.gris,       subButtons: [
   b(5,  { label: 'MEDIOS',    bgColor: C.gris,       action: { type: 'none' }, subButtons: [
     { id: '0-5-0', label: 'PREV', dotGlyph: 'PREV', action: { type: 'media-prev' } },
     { id: '0-5-1', label: 'PLAY', dotGlyph: 'PLAY', action: { type: 'media-play-pause' } },
@@ -145,10 +143,7 @@ const DECK = [
     { id: '0-5-3', label: 'MUTE', dotGlyph: 'MUTE', action: { type: 'mute' } },
   ] }),
   b(6,  { label: 'SONANDO',   widget: 'now-playing', bgColor: C.verde,   action: { type: 'media-play-pause' } }),
-  b(7,  { widget: 'slider',   sliderWidget: { target: 'volume', orientation: 'horizontal', label: 'VOL' }, bgColor: C.gris, action: { type: 'none' } }),
   b(7,  { label: 'VOL',       widget: 'slider',   sliderWidget: { target: 'volume', orientation: 'horizontal', label: 'VOL' }, bgColor: C.gris, action: { type: 'none' } }),
-
-  b(8,  { widget: 'slider',   sliderWidget: { target: 'brightness', orientation: 'horizontal', label: 'BRILLO' }, bgColor: C.gris, action: { type: 'none' } }),
   b(8,  { label: 'BRILLO',    widget: 'slider',   sliderWidget: { target: 'brightness', orientation: 'horizontal', label: 'BRILLO' }, bgColor: C.gris, action: { type: 'none' } }),
   b(9,  { label: 'CASCOS',    dotGlyph: 'SPEAKER',   bgColor: C.teal,    action: { type: 'audio-device', deviceName: 'Auriculares' } }),
   b(10, { label: 'MUDO',      dotGlyph: 'MUTE',      bgColor: C.ambar,   isToggle: true, action: { type: 'mute' } }),
@@ -233,7 +228,6 @@ export const ESCENAS = [
     // mal encuadrada. Así se ven los presets enteros, el rótulo «TIPO DE
     // ACCIÓN» y sus dos primeras filas por encima de la franja que tapa la
     // Store.
-    pasos: [{ hacer: 'clicEnCasillaVacia' }, { hacer: 'esperar', ms: 700 }],
     pasos: [{ hacer: 'clicEnCasillaVacia' }, { hacer: 'esperar', ms: 1500 }],
   },
   {

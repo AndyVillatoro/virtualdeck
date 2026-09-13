@@ -474,6 +474,20 @@ async function esperarInterfaz(cdp) {
  * tipografía equivocada y solo se notaba comparándolas.
  */
 async function comprobarFuentes(cdp) {
+  await evaluar(cdp, `Promise.all([
+    document.fonts.load('12px "Inter"'),
+    document.fonts.load('12px "JetBrains Mono"'),
+    document.fonts.load('12px "DotGothic16"'),
+    document.fonts.ready
+  ]).catch(() => {})`);
+  for (let i = 0; i < 15; i++) {
+    const faltan = await evaluar(cdp, `(() => {
+      const quiero = ['Inter', 'JetBrains Mono', 'DotGothic16'];
+      return quiero.filter((f) => !document.fonts.check(\`12px "\${f}"\`));
+    })()`);
+    if (!faltan || faltan.length === 0) return;
+    await dormir(500);
+  }
   const faltan = await evaluar(cdp, `(() => {
     const quiero = ['Inter', 'JetBrains Mono', 'DotGothic16'];
     return quiero.filter((f) => !document.fonts.check(\`12px "\${f}"\`));
