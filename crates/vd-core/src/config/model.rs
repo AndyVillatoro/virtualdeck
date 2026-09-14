@@ -71,6 +71,9 @@ pub enum ActionType {
     MediaShuffle,
     MediaRepeat,
     Macro,
+    MobileRemote,
+    Discord,
+    Spotify,
     /// Tipo no reconocido. Se conserva textualmente para no romper configs
     /// creadas por otra version.
     #[serde(untagged)]
@@ -287,6 +290,26 @@ pub struct ButtonAction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub macro_repeat: Option<i64>,
 
+    // --- encadenado avanzado (Item 49) ---
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub only_if_prev_failed: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub continue_on_error: Option<bool>,
+
+    // --- mando movil (Item 45) ---
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mobile_remote_action: Option<String>,
+
+    // --- integraciones de terceros (Item 50) ---
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discord_action: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spotify_action: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spotify_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spotify_device_id: Option<String>,
+
     /// Campos desconocidos, conservados tal cual.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Extra,
@@ -354,6 +377,13 @@ impl Default for ButtonAction {
             timer_actions: None,
             macro_steps: None,
             macro_repeat: None,
+            only_if_prev_failed: None,
+            continue_on_error: None,
+            mobile_remote_action: None,
+            discord_action: None,
+            spotify_action: None,
+            spotify_uri: None,
+            spotify_device_id: None,
             extra: Extra::new(),
         }
     }
@@ -462,6 +492,8 @@ pub enum WidgetKind {
     NowPlaying,
     Sensor,
     Variable,
+    Currency,
+    Slider,
 }
 
 /// Configuracion del widget `variable`.
@@ -488,6 +520,55 @@ pub struct SensorWidget {
     /// Umbral critico (rojo).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crit_at: Option<f64>,
+}
+
+/// Configuracion del widget `slider`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SliderWidgetConfig {
+    pub target: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub var_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub orientation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub show_value: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+}
+
+/// Sub-boton para division 2x2.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SubButtonConfig {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sublabel: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dot_glyph: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bg_color: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fg_color: Option<String>,
+    pub action: ButtonAction,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actions: Option<Vec<ButtonAction>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_toggle: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_toggle_off: Option<ButtonAction>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub long_press_action: Option<ButtonAction>,
 }
 
 /// Condiciones de visibilidad de un boton. Deben cumplirse todas.
@@ -572,7 +653,13 @@ pub struct ButtonConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sensor_widget: Option<SensorWidget>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slider_widget: Option<SliderWidgetConfig>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visible_if: Option<VisibleIf>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sub_buttons: Option<Vec<SubButtonConfig>>,
 
     /// Campos desconocidos, conservados tal cual.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
@@ -610,7 +697,10 @@ impl ButtonConfig {
             widget: None,
             var_widget: None,
             sensor_widget: None,
+            slider_widget: None,
             visible_if: None,
+            pinned: None,
+            sub_buttons: None,
             extra: Extra::new(),
         }
     }
@@ -645,6 +735,8 @@ pub struct PageConfig {
     /// Filas. Ausente = igual a `grid_size` (grilla cuadrada).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grid_rows: Option<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_app: Option<String>,
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Extra,
 }
@@ -663,12 +755,17 @@ impl PageConfig {
 
 /// Un perfil guardado (snapshot de paginas + botones + acento).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Profile {
     pub id: String,
     pub name: String,
     pub pages: Vec<PageConfig>,
     pub buttons: Vec<ButtonConfig>,
     pub accent: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallpaper: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_app: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -691,6 +788,8 @@ pub enum SoundProfileId {
 pub enum Theme {
     Dark,
     Light,
+    #[serde(rename = "dot480")]
+    Dot480,
     System,
 }
 
@@ -871,6 +970,14 @@ pub struct DeckConfig {
     pub onboarding_completed: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hints_dismissed: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_profile_switch: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_profile_restore_default: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_display_id: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub always_on_top: Option<bool>,
 
     /// Campos desconocidos, conservados tal cual.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
@@ -889,6 +996,7 @@ impl Default for DeckConfig {
             name: "Main".into(),
             grid_size: Some(4),
             grid_rows: Some(4),
+            target_app: None,
             extra: Extra::new(),
         };
         let casillas = usize::from(pagina.columns()) * usize::from(pagina.rows());

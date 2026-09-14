@@ -16,6 +16,7 @@ function loadWindowState(): WindowBounds | null {
     const data = JSON.parse(readFileSync(p, 'utf-8'));
     if (typeof data?.x !== 'number' || typeof data?.y !== 'number') return null;
     if (typeof data?.width !== 'number' || typeof data?.height !== 'number') return null;
+    if (data.width < 400 || data.height < 240) return null;
     return data as WindowBounds;
   } catch { return null; }
 }
@@ -24,23 +25,37 @@ function saveWindowState(b: WindowBounds) {
   try { writeFileSync(getWindowStatePath(), JSON.stringify(b), 'utf-8'); } catch {}
 }
 
+const isDev = !app.isPackaged || process.env.NODE_ENV === 'development';
+
 export function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
+  const primary = screen.getPrimaryDisplay().workArea;
   const displays = screen.getAllDisplays();
+  // En desarrollo, con --primary o con una sola pantalla, centrar siempre en el monitor principal
+  if (isDev || process.argv.includes('--primary') || displays.length <= 1) {
+    const w = Math.min(Math.max(b.width || 1100, 400), primary.width - 40);
+    const h = Math.min(Math.max(b.height || 720, 240), primary.height - 40);
+    return {
+      x: Math.round(primary.x + Math.max(0, (primary.width - w) / 2)),
+      y: Math.round(primary.y + Math.max(0, (primary.height - h) / 2)),
+      width: w,
+      height: h,
+    };
+  }
   const onScreen = displays.some((d) => {
     const a = d.workArea;
     return b.x + 80 < a.x + a.width && b.x + b.width > a.x + 80
         && b.y + 40 < a.y + a.height && b.y + b.height > a.y + 20;
   });
-  if (onScreen) return b;
-  const primary = screen.getPrimaryDisplay().workArea;
+  if (onScreen && b.width >= 400 && b.height >= 240) return b;
+  const w = Math.min(Math.max(b.width || 1100, 400), primary.width - 40);
+  const h = Math.min(Math.max(b.height || 720, 240), primary.height - 40);
   return {
-    x: Math.round(primary.x + (primary.width - b.width) / 2),
-    y: Math.round(primary.y + (primary.height - b.height) / 2),
-    width: b.width, height: b.height,
+    x: Math.round(primary.x + Math.max(0, (primary.width - w) / 2)),
+    y: Math.round(primary.y + Math.max(0, (primary.height - h) / 2)),
+    width: w,
+    height: h,
   };
 }
-
-const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Arrancada por el inicio de sesión de Windows, no por el usuario.
@@ -52,22 +67,29 @@ const ARRANQUE_OCULTO = process.argv.includes('--oculto');
 
 export function createMainWindow(): BrowserWindow {
   const savedRaw = loadWindowState();
-  const saved = savedRaw ? clampBoundsToDisplay(savedRaw) : null;
+  // En desarrollo nunca reutilizamos coordenadas para no quedar atrapados en monitores virtuales
+  const saved = (isDev || process.argv.includes('--primary')) ? null : (savedRaw ? clampBoundsToDisplay(savedRaw) : null);
+
+  const primary = screen.getPrimaryDisplay().workArea;
+  const initialWidth = saved?.width ?? Math.min(1100, primary.width - 40);
+  const initialHeight = saved?.height ?? Math.min(720, primary.height - 40);
+  const initialX = saved?.x ?? Math.round(primary.x + Math.max(0, (primary.width - initialWidth) / 2));
+  const initialY = saved?.y ?? Math.round(primary.y + Math.max(0, (primary.height - initialHeight) / 2));
+
+  // En desarrollo, reescribir inmediatamente el estado guardado para limpiar restos de pantallas virtuales
+  if (isDev) {
+    saveWindowState({ x: initialX, y: initialY, width: initialWidth, height: initialHeight, maximized: false });
+  }
 
   const win = new BrowserWindow({
-    width: saved?.width ?? 1100, height: saved?.height ?? 720,
-    x: saved?.x, y: saved?.y,
+    width: initialWidth, height: initialHeight,
+    x: initialX, y: initialY,
+    center: !saved?.x && !saved?.y,
     minWidth: 400, minHeight: 240,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
     icon: join(__dirname, '../../build/icon.png'),
-    // Nunca en la barra de tareas: VirtualDeck vive en la bandeja.
-    //
-    // Estuvo así desde el principio, y yo lo cambié a «solo mientras se ve»
-    // temiendo que una ventana sin marco y sin entrada en la barra no hubiera
-    // forma de recuperarla. Ese miedo era infundado: Alt+Tab la sigue listando,
-    // el clic en el icono de la bandeja la trae, y el menú de la bandeja tiene
-    // «Mostrar». Lo que sí sobraba era el icono duplicado.
-    skipTaskbar: true,
+    // Mostrar en la barra de tareas cuando está visible; se oculta al ir a la bandeja.
+    skipTaskbar: false,
     // Arranque con Windows: la ventana no se llega a crear visible. Hacerlo con
     // `show: false` y no escondiéndola después evita que aparezca y desaparezca.
     show: !ARRANQUE_OCULTO,
@@ -85,7 +107,7 @@ export function createMainWindow(): BrowserWindow {
     },
   });
 
-  if (savedRaw?.maximized) win.maximize();
+  if (savedRaw?.maximized && !isDev && !process.argv.includes('--primary')) win.maximize();
 
   // When moving between monitors with different DPI, a 1px size nudge forces
   // Chromium to re-evaluate the scale factor — fixes blurry text on HiDPI moves.
@@ -196,8 +218,12 @@ export function createMainWindow(): BrowserWindow {
       console.log(`[arranque] en bandeja, sin ventana, a los ${Math.round(process.uptime() * 1000)} ms`);
       return;
     }
+    if (win.isMinimized()) win.restore();
+    win.setSkipTaskbar(false);
     win.show();
     win.focus();
+    win.setAlwaysOnTop(true);
+    win.setAlwaysOnTop(false);
     // Cuanto tardo en verse algo. Sin un numero, "tarda en arrancar" no se
     // puede confirmar ni comparar entre versiones.
     console.log(`[arranque] ventana visible a los ${Math.round(process.uptime() * 1000)} ms`);
@@ -206,6 +232,9 @@ export function createMainWindow(): BrowserWindow {
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL']);
     win.webContents.openDevTools({ mode: 'detach' });
+    if (process.env['DEVTOOLS'] === '1') {
+      win.webContents.openDevTools({ mode: 'detach' });
+    }
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'));
   }

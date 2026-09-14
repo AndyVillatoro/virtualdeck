@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import { DotRadialSweep } from '../dot480/DotRadialSweep';
 import { playSound } from '../../utils/sound';
 import type { ButtonConfig, SubButtonConfig, SoundProfileId } from '../../types';
 
@@ -16,7 +17,7 @@ export interface Subdivision2x2Props {
   onContextMenu?: (e: React.MouseEvent) => void;
 }
 
-const MS_DESTELLO = 250;
+const MS_DESTELLO = 420;
 const MS_LARGA = 500;
 
 export const Subdivision2x2 = memo(function Subdivision2x2({
@@ -258,6 +259,9 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
               alSubirOSalir();
             }}
           >
+            {/* 5.3 — Barrido de matriz de puntos compacto al pulsar */}
+            {isFlashing && <DotRadialSweep accent={accent} compact />}
+
             {/* Indicador LED de Toggle ON (micro-dot de acento en esquina) */}
             {isToggled && (
               <span
@@ -286,7 +290,6 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
               <span style={{ width: 4, height: 4, borderRadius: '50%', background: displayColor, opacity: 0.3 }} />
             )}
 
-            {/* Micro-etiqueta mono */}
             {sub.label ? (
               <span
                 style={{
@@ -304,6 +307,25 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
                 }}
               >
                 {sub.label}
+              </span>
+            ) : null}
+
+            {sub.sublabel ? (
+              <span
+                style={{
+                  fontFamily: VD.mono,
+                  fontSize: 6.5,
+                  letterSpacing: '0.4px',
+                  color: isToggled ? `${accent}cc` : VD.textDim,
+                  textTransform: 'uppercase',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1,
+                }}
+              >
+                {sub.sublabel}
               </span>
             ) : null}
           </div>

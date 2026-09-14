@@ -13,6 +13,8 @@ import { registerMacroIpc } from './macroIpc';
 import { registerLogIpc } from './logIpc';
 import { registerUpdateIpc } from './updateIpc';
 import { registerFloatingBarIpc } from './floatingBarIpc';
+import { registerDiscordIpc } from './discordIpc';
+import { registerSpotifyIpc } from './spotifyIpc';
 
 export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerWindowIpc(win);
@@ -29,4 +31,7 @@ export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerLogIpc();
   registerUpdateIpc(win);
   registerFloatingBarIpc();
+  registerDiscordIpc();
+  registerSpotifyIpc();
 }
+

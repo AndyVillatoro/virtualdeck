@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
-  ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota } from '../../src/types';
+  ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
+  DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState } from '../../src/types';
+
 
 /**
  * El puente, comprobado contra el tipo que ve la pantalla.
@@ -85,6 +87,25 @@ const api = {
     repeat: (): Promise<boolean> => ipcRenderer.invoke('media:repeat'),
     diagnose: (): Promise<MediaDiagnosticResult> => ipcRenderer.invoke('media:diagnose'),
   },
+  discord: {
+    status: (): Promise<DiscordStatus> => ipcRenderer.invoke('discord:status'),
+    voiceSettings: (): Promise<DiscordVoiceSettings | null> => ipcRenderer.invoke('discord:voiceSettings'),
+    setVoiceSettings: (settings: { mute?: boolean; deaf?: boolean }): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('discord:setVoiceSettings', settings),
+    toggleMute: (): Promise<{ ok: boolean; muted?: boolean; error?: string }> => ipcRenderer.invoke('discord:toggleMute'),
+    toggleDeaf: (): Promise<{ ok: boolean; deaf?: boolean; error?: string }> => ipcRenderer.invoke('discord:toggleDeaf'),
+  },
+  spotify: {
+    playUri: (uriOrUrl: string, token?: string, deviceId?: string): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('spotify:playUri', uriOrUrl, token, deviceId),
+    getDevices: (token?: string): Promise<{ ok: boolean; devices?: SpotifyDevice[]; error?: string }> =>
+      ipcRenderer.invoke('spotify:getDevices', token),
+    transferPlayback: (deviceId: string, token?: string, play?: boolean): Promise<{ ok: boolean; error?: string }> =>
+      ipcRenderer.invoke('spotify:transferPlayback', deviceId, token, play),
+    getPlaybackState: (token?: string): Promise<{ ok: boolean; state?: SpotifyPlaybackState; error?: string }> =>
+      ipcRenderer.invoke('spotify:getPlaybackState', token),
+  },
+
   currency: {
     rates: (base: string, force?: boolean): Promise<{ ok: boolean; datos?: TasasDivisa; error?: string }> =>
       ipcRenderer.invoke('currency:rates', base, force),
@@ -107,6 +128,9 @@ const api = {
     clipboard: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:clipboard', text),
     typeText: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:typeText', text),
     killProcess: (name: string): Promise<boolean> => ipcRenderer.invoke('launch:killProcess', name),
+    isProcessRunning: (name: string): Promise<boolean> => ipcRenderer.invoke('launch:isProcessRunning', name),
+    focusWindow: (processName: string): Promise<boolean> => ipcRenderer.invoke('launch:focusWindow', processName),
+    closeWindow: (processName?: string): Promise<boolean> => ipcRenderer.invoke('launch:closeWindow', processName),
     setVolume: (percent: number): Promise<boolean> => ipcRenderer.invoke('launch:setVolume', percent),
     snapWindow: (position: string, processName?: string): Promise<boolean> => ipcRenderer.invoke('launch:snapWindow', position, processName),
   },
@@ -233,7 +257,23 @@ const api = {
       ipcRenderer.on('window:displaysChanged', listener);
       return () => ipcRenderer.removeListener('window:displaysChanged', listener);
     },
+    onVolumeChanged: (handler: (vol: number) => void): (() => void) => {
+      const listener = (_e: unknown, vol: number) => handler(vol);
+      ipcRenderer.on('audio:volumeChanged', listener);
+      return () => ipcRenderer.removeListener('audio:volumeChanged', listener);
+    },
+    onBrightnessChanged: (handler: (bri: number) => void): (() => void) => {
+      const listener = (_e: unknown, bri: number) => handler(bri);
+      ipcRenderer.on('window:brightnessChanged', listener);
+      return () => ipcRenderer.removeListener('window:brightnessChanged', listener);
+    },
+    onDiscordVoiceSettingsChanged: (handler: (settings: DiscordVoiceSettings) => void): (() => void) => {
+      const listener = (_e: unknown, s: DiscordVoiceSettings) => handler(s);
+      ipcRenderer.on('discord:voiceSettingsChanged', listener);
+      return () => ipcRenderer.removeListener('discord:voiceSettingsChanged', listener);
+    },
   },
+
 } satisfies ElectronAPI;
 
 contextBridge.exposeInMainWorld('electronAPI', api);

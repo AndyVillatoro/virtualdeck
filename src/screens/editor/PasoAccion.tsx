@@ -169,20 +169,46 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                 <ExtraActionRow
                   key={idx}
                   action={ea}
+                  stepIndex={idx}
+                  canMoveUp={idx > 0}
+                  canMoveDown={idx < extraActions.length - 1}
+                  onMoveUp={() => {
+                    if (idx <= 0) return;
+                    setExtraActions(prev => {
+                      const next = [...prev];
+                      const temp = next[idx - 1];
+                      next[idx - 1] = next[idx];
+                      next[idx] = temp;
+                      return next;
+                    });
+                  }}
+                  onMoveDown={() => {
+                    if (idx >= extraActions.length - 1) return;
+                    setExtraActions(prev => {
+                      const next = [...prev];
+                      const temp = next[idx + 1];
+                      next[idx + 1] = next[idx];
+                      next[idx] = temp;
+                      return next;
+                    });
+                  }}
                   onChange={(updated) => setExtraActions(prev => prev.map((a, i) => i === idx ? updated : a))}
                   onRemove={() => setExtraActions(prev => prev.filter((_, i) => i !== idx))}
                 />
               ))}
             </div>
-            {extraActions.length < 3 && !showExtraPicker && (
-              <button onClick={() => setShowExtraPicker(true)} style={{
-                marginTop: 6, padding: '5px 12px',
-                background: 'transparent', border: `1px dashed ${VD.border}`,
-                fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer',
-                borderRadius: VD.radius.sm, letterSpacing: 1,
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}>
-                {tf('+ AÑADIR ACCIÓN ADICIONAL')}
+            {extraActions.length < 8 && !showExtraPicker && (
+              <button
+                type="button"
+                onClick={() => setShowExtraPicker(true)}
+                style={{
+                  marginTop: 6, padding: '6px 12px',
+                  background: 'transparent', border: `1px dashed ${VD.border}`,
+                  fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, cursor: 'pointer',
+                  borderRadius: VD.radius.sm, letterSpacing: 1,
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}
+              >
                 <DotGlyphIcon glyph="ADD" size={8} color={VD.textMuted} />
                 <span>{tf('AÑADIR ACCIÓN ADICIONAL')}</span>
               </button>

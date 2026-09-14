@@ -16,12 +16,16 @@ export interface MainBProps {
   onConfigChange: (c: DeckConfig) => void;
   onUpdateButton?: (btn: ButtonConfig) => void;
   onDuplicateButton: (id: string) => void;
+  onCopyButton?: (id: string) => void;
+  onPasteButton?: (id: string) => void;
+  canPasteButton?: boolean;
   onClearButton: (id: string) => void;
   onConfigExport: () => void;
   onConfigImport: () => void;
   onSwapButtons: (idA: string, idB: string) => void;
   onPageRename: (id: string, name: string) => void;
   onPageAdd: () => void;
+  onDuplicatePage?: (pageId: string) => void;
   onPageDelete: (id: string) => void;
   onPageReorder: (fromIdx: number, toIdx: number) => void;
   onPageSetGrid: (pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => void;

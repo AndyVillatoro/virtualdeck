@@ -305,6 +305,9 @@ impl Ctx {
 
             // --- de la interfaz ---
             T::Folder => Outcome::ForUi("abrir carpeta de botones"),
+            T::MobileRemote => Outcome::ForUi("mando móvil"),
+            T::Discord => Outcome::ForUi("control de discord"),
+            T::Spotify => Outcome::ForUi("control de spotify"),
             T::Notify => self.notificar(a),
             // La captura de region no la hace VirtualDeck: abre la herramienta
             // de Windows (la misma de Win+Shift+S), que ya sabe recortar,

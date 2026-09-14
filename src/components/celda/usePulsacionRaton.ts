@@ -26,8 +26,8 @@ import type { SoundProfileId } from '../../types';
 
 /** Lo que tarda una pulsación en contar como larga. Igual que en el táctil. */
 const MS_LARGA = 500;
-/** Lo que dura el destello de confirmación. */
-const MS_DESTELLO = 300;
+/** Lo que dura el destello de confirmación. Debe cubrir el barrido radial completo. */
+const MS_DESTELLO = 520;
 
 interface Opciones {
   /** Sin acción, sin etiqueta y sin icono: el clic abre el editor. */
@@ -95,8 +95,11 @@ export function usePulsacionRaton(o: Opciones) {
     if (yaDisparo.current) { yaDisparo.current = false; return; }
     const { onSelect, isEmpty, onEdit, onExecute } = ref.current;
     if ((e.ctrlKey || e.metaKey) && onSelect) { onSelect(); return; }
-    if (isEmpty) { onEdit(); return; }
     destellar();
+    if (isEmpty) {
+      setTimeout(() => onEdit(), 250);
+      return;
+    }
     onExecute();
   }, [destellar]);
 

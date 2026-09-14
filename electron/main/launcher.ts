@@ -1,7 +1,23 @@
 import { intentarNativo } from './native';
 import { exec, spawn } from 'child_process';
-import { shell } from 'electron';
+import { shell, BrowserWindow } from 'electron';
 import { runPS, runPSBool, runCmd, injectUtf8Prefix } from './ps-helpers';
+
+export function emitirCambioVolumen(vol: number): void {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (!w.isDestroyed()) {
+      w.webContents.send('audio:volumeChanged', vol);
+    }
+  }
+}
+
+export function emitirCambioBrillo(bri: number): void {
+  for (const w of BrowserWindow.getAllWindows()) {
+    if (!w.isDestroyed()) {
+      w.webContents.send('window:brightnessChanged', bri);
+    }
+  }
+}
 
 /**
  * Lanza un programa. Camino de respaldo cuando no hay nucleo nativo.
@@ -156,6 +172,7 @@ export async function setBrightness(level: number): Promise<boolean> {
   const r = intentarNativo('setBrightness', (n) => n.setBrightness(pct));
   if (r === true) {
     ultimoBrilloConocido = pct;
+    emitirCambioBrillo(pct);
     return true;
   }
 
@@ -251,6 +268,7 @@ if ($aplicado) { Write-Output "OK" }
 
   const ok = await runPSBool(script, { timeoutMs: 10000, args: [String(pct)] });
   ultimoBrilloConocido = pct;
+  if (ok) emitirCambioBrillo(pct);
   return ok;
 }
 
@@ -454,9 +472,30 @@ export async function killProcess(name: string): Promise<boolean> {
   });
 }
 
-export async function setVolume(percent: number): Promise<boolean> {
-  const r = intentarNativo('setVolume', (n) => n.setVolume(Math.round(percent)));
+export async function isProcessRunning(name: string): Promise<boolean> {
+  const r = intentarNativo('isProcessRunning', (n) => n.isProcessRunning(name));
   if (r !== undefined) return r;
+
+  const names = await getRunningProcesses();
+  return names.includes(name.replace(/\.exe$/i, '').toLowerCase().trim());
+}
+
+export async function killProcessByPid(pid: number): Promise<boolean> {
+  const r = intentarNativo('killProcessByPid', (n) => n.killProcessByPid(pid));
+  if (r !== undefined) return r;
+
+  return new Promise((resolve) => {
+    exec(`taskkill /PID ${pid} /F`, { timeout: 10000 }, (err) => resolve(!err));
+  });
+}
+
+export async function setVolume(percent: number): Promise<boolean> {
+  const p = Math.min(100, Math.max(0, Math.round(percent)));
+  const r = intentarNativo('setVolume', (n) => n.setVolume(p));
+  if (r !== undefined) {
+    if (r) emitirCambioVolumen(p);
+    return r;
+  }
 
   const script = `
 param([int]$Percent)
@@ -483,7 +522,9 @@ public class AudioCtrl {
 $v = [Math]::Max(0.0f, [Math]::Min(1.0f, [float]$Percent / 100.0f))
 [AudioCtrl]::SetVol($v)
 `;
-  return runPSBool(script, { timeoutMs: 15000, args: [String(Math.round(percent))] });
+  const ok = await runPSBool(script, { timeoutMs: 15000, args: [String(p)] });
+  if (ok) emitirCambioVolumen(p);
+  return ok;
 }
 
 export async function snapWindow(position: string, processName?: string): Promise<boolean> {
@@ -525,12 +566,58 @@ switch ($Pos) {
   'top-right'    { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/2),$sy,[int]($sw/2),[int]($sh/2),$f) }
   'bottom-left'  { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx,$sy+[int]($sh/2),[int]($sw/2),[int]($sh/2),$f) }
   'bottom-right' { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/2),$sy+[int]($sh/2),[int]($sw/2),[int]($sh/2),$f) }
+  'minimize'     { [void][WinSnap]::ShowWindow($hw, 6) }
   'maximize'     { [void][WinSnap]::ShowWindow($hw, 3) }
   'restore'      { [void][WinSnap]::ShowWindow($hw, 9) }
   'center'       { [void][WinSnap]::SetWindowPos($hw,[IntPtr]::Zero,$sx+[int]($sw/4),$sy+[int]($sh/4),[int]($sw/2),[int]($sh/2),$f) }
 }
 `;
   return runPSBool(script, { timeoutMs: 15000, args: [pname, position] });
+}
+
+export async function focusWindow(processName: string): Promise<boolean> {
+  const r = intentarNativo('focusWindow', (n) => n.focusWindow(processName));
+  if (r !== undefined) return r;
+  return snapWindow('restore', processName);
+}
+
+export async function minimizeWindow(processName?: string): Promise<boolean> {
+  const r = intentarNativo('minimizeWindow', (n) => n.minimizeWindow(processName));
+  if (r !== undefined) return r;
+  return snapWindow('minimize', processName);
+}
+
+export async function maximizeWindow(processName?: string): Promise<boolean> {
+  const r = intentarNativo('maximizeWindow', (n) => n.maximizeWindow(processName));
+  if (r !== undefined) return r;
+  return snapWindow('maximize', processName);
+}
+
+export async function restoreWindow(processName?: string): Promise<boolean> {
+  const r = intentarNativo('restoreWindow', (n) => n.restoreWindow(processName));
+  if (r !== undefined) return r;
+  return snapWindow('restore', processName);
+}
+
+export async function closeWindow(processName?: string): Promise<boolean> {
+  const r = intentarNativo('closeWindow', (n) => n.closeWindow(processName));
+  if (r !== undefined) return r;
+
+  const pname = (processName ?? '').replace(/\.exe$/i, '').trim();
+  const script = `
+param([string]$Pname)
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public class WinClose {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+}
+'@
+$hw = if ($Pname) { (Get-Process -Name $Pname -EA SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1).MainWindowHandle } else { [WinClose]::GetForegroundWindow() }
+if ($hw -and $hw -ne [IntPtr]::Zero) { [void][WinClose]::PostMessage($hw, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
+`;
+  return runPSBool(script, { timeoutMs: 5000, args: [pname] });
 }
 
 const HOTKEY_MAP: Record<string, string> = {

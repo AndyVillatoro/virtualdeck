@@ -90,8 +90,34 @@ export function DotContinuousSlider({
     }
     sincronizar();
     window.addEventListener('focus', sincronizar);
-    return () => window.removeEventListener('focus', sincronizar);
-  }, [target, cfg.varName, deckState, sincronizar, min, max]);
+
+    const api = typeof window !== 'undefined' ? window.electronAPI : undefined;
+    const unsubVol = target === 'volume' && api?.events?.onVolumeChanged
+      ? api.events.onVolumeChanged((vol) => {
+          if (!isDragging) {
+            const clamped = Math.max(min, Math.min(max, vol));
+            setValue(clamped);
+            latestTargetValRef.current = clamped;
+          }
+        })
+      : undefined;
+
+    const unsubBri = target === 'brightness' && api?.events?.onBrightnessChanged
+      ? api.events.onBrightnessChanged((bri) => {
+          if (!isDragging) {
+            const clamped = Math.max(min, Math.min(max, bri));
+            setValue(clamped);
+            latestTargetValRef.current = clamped;
+          }
+        })
+      : undefined;
+
+    return () => {
+      window.removeEventListener('focus', sincronizar);
+      unsubVol?.();
+      unsubBri?.();
+    };
+  }, [target, cfg.varName, deckState, sincronizar, min, max, isDragging]);
 
   // Despacho de valor a API / estado (con throttling ~40ms para no saturar Win32/DDC)
   const despachar = useCallback((nuevoVal: number, forzar = false) => {

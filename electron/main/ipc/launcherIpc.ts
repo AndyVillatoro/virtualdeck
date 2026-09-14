@@ -4,7 +4,7 @@ import { ipcMain, shell, BrowserWindow } from 'electron';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
   sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume,
-  getRunningProcesses, snapWindow,
+  getRunningProcesses, snapWindow, isProcessRunning, focusWindow, closeWindow,
 } from '../launcher';
 
 export function registerLauncherIpc(win: BrowserWindow) {
@@ -38,6 +38,9 @@ export function registerLauncherIpc(win: BrowserWindow) {
     return typeTextKeys(text);
   });
   ipcMain.handle('launch:killProcess', (_e: any, name: string) => killProcess(name));
+  ipcMain.handle('launch:isProcessRunning', (_e: any, name: string) => isProcessRunning(name));
+  ipcMain.handle('launch:focusWindow', (_e: any, processName: string) => focusWindow(processName));
+  ipcMain.handle('launch:closeWindow', (_e: any, processName?: string) => closeWindow(processName));
   ipcMain.handle('launch:setVolume', (_e: any, percent: number) => setVolume(percent));
   ipcMain.handle('launch:snapWindow', (_e: any, position: string, processName?: string) => snapWindow(position, processName));
   ipcMain.handle('state:activeApps', () => getRunningProcesses());

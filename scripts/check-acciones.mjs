@@ -13,7 +13,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const TIPOS = 'src/types.ts';
+const TIPOS = 'src/types/actions.ts';
 const DIR = 'src/utils/acciones';
 const FORMULARIOS = 'src/screens/editor/formularios/index.tsx';
 const PRESETS_RENDERER = 'src/data/rgbPresets.ts';

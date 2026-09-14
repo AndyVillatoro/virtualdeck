@@ -40,6 +40,20 @@ export function FormApp(p: PropsFormulario) {
   );
 }
 
+const WEB_SHORTCUTS = [
+  { label: 'Gemini', url: 'https://gemini.google.com' },
+  { label: 'ChatGPT', url: 'https://chatgpt.com' },
+  { label: 'Claude', url: 'https://claude.ai' },
+  { label: 'GitHub', url: 'https://github.com' },
+  { label: 'YouTube', url: 'https://youtube.com' },
+  { label: 'Twitch', url: 'https://twitch.tv' },
+  { label: 'Discord', url: 'https://discord.com/app' },
+  { label: 'WhatsApp', url: 'https://web.whatsapp.com' },
+  { label: 'Notion', url: 'https://notion.so' },
+  { label: 'Reddit', url: 'https://reddit.com' },
+  { label: 'Spotify', url: 'https://open.spotify.com' },
+] as const;
+
 export function FormWeb(p: PropsFormulario) {
   const VD = useTheme();
   const tf = useFieldText();
@@ -47,9 +61,31 @@ export function FormWeb(p: PropsFormulario) {
   const { action, setAction } = p;
   return (
     <>
-          <Field label={tf("URL")}>
-            <input value={action.url || ''} onChange={(e) => setAction((a) => ({ ...a, url: e.target.value }))} placeholder={tf("https://ejemplo.com")} style={inputStyle} />
-          </Field>
+      <Field label={tf("URL")}>
+        <input value={action.url || ''} onChange={(e) => setAction((a) => ({ ...a, url: e.target.value }))} placeholder={tf("https://ejemplo.com")} style={inputStyle} />
+      </Field>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+        {WEB_SHORTCUTS.map((s) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => setAction((a) => ({ ...a, url: s.url }))}
+            style={{
+              padding: '3px 6px',
+              fontFamily: VD.mono,
+              fontSize: 8,
+              letterSpacing: 0.5,
+              background: action.url === s.url ? VD.accentBg : VD.elevated,
+              border: `1px solid ${action.url === s.url ? VD.accent : VD.border}`,
+              color: action.url === s.url ? VD.accent : VD.textMuted,
+              borderRadius: VD.radius.sm,
+              cursor: 'pointer',
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
     </>
   );
 }

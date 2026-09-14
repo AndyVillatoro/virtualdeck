@@ -72,6 +72,7 @@ Variables are read as `{name}` in any string field of any other action.
 |---|---|---|
 | `webhook` | `webhookUrl`, `webhookMethod?` (default `POST`), `webhookHeaders?` (JSON string), `webhookBody?` | Generic HTTP request. Headers and body accept `{variables}`. |
 | `remote` | `remoteHost`, `remoteToken`, `remoteButton?`, `remotePage?` | Presses a button on **another** VirtualDeck on the network. The token is the other machine's (its settings → local server), which must have it on with LAN access allowed. Plain HTTP, no encryption. |
+| `mobile-remote` | `mobileRemoteAction?` (`pair-code`/`toggle-server`/`open-web`) | Controls the local mobile remote web server: generates a 6-digit pairing code, toggles the server on/off, or opens the remote interface in the browser. |
 | `tts` | `ttsText` | Reads the text aloud. Accepts variables. |
 | `region-capture` | — | Opens the native region-capture tool (`Win+Shift+S`). The clip lands in the clipboard. |
 
@@ -127,5 +128,26 @@ Regardless of type, a button can have:
 - `timerTriggerAt`: fires at a given time of day.
 - a sensor threshold: fires when a reading crosses a value.
 
-All of them run the button's chain exactly like a mouse click does — toggles,
-radio groups, variables and script output included.
+Both run the button's action sequence via the `button:trigger` IPC channel.
+Toggles, variables and other effects apply just as if clicked on the grid.
+
+## Sequences and chained actions
+
+A button can execute a sequence of actions (up to 8 additional steps). Each step features:
+
+- `delayMs`: Delay (in ms) before running the step (default 150 ms between steps, or 0 ms if specified).
+- `repeat`: Number of consecutive repetitions (1 to 99 times).
+- Execution condition:
+  - **ALWAYS**: Always runs when reached.
+  - **ONLY IF OK** (`onlyIfPrevOk`): Runs only if the previous step succeeded.
+  - **IF FAILED** (`onlyIfPrevFailed`): Runs only if the previous step failed (ideal for fallbacks or error alerts).
+- **CONTINUE ON ERROR** (`continueOnError`): Allows subsequent steps in the sequence to continue even if this step fails.
+- Visual reordering with step up and down controls in the editor.
+
+## Third-party integrations (Discord & Spotify)
+
+| Type | Fields | Description |
+|---|---|---|
+| `discord` | `discordAction` (`toggle-mute`, `toggle-deaf`, `mute`, `unmute`, `deaf`, `undeaf`) | Native voice control for Discord desktop via local Named Pipe (`\\.\pipe\discord-ipc-0..9`). Mute microphone or deafen audio with 0ms latency. |
+| `spotify` | `spotifyAction` (`play-uri`, `transfer-playback`, `toggle-shuffle`, `toggle-repeat`), `spotifyUri?`, `spotifyDeviceId?` | Opens and plays playlists, tracks or albums directly in Spotify (supports `spotify:...` and `open.spotify.com` links), or transfers active playback via Spotify Web API. |
+

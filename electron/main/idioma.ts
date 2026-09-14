@@ -17,7 +17,7 @@ import { app } from 'electron';
  */
 
 type Clave =
-  | 'tray.show' | 'tray.quick' | 'tray.quit' | 'tray.button'
+  | 'tray.show' | 'tray.quick' | 'tray.quit' | 'tray.button' | 'tray.moveToPrimary'
   | 'dlg.exportLog' | 'dlg.exportConfig' | 'dlg.importConfig'
   | 'dlg.pickImage' | 'dlg.exportPage' | 'dlg.importPage' | 'dlg.pickOpenRGB'
   | 'filter.images' | 'filter.text'
@@ -25,13 +25,17 @@ type Clave =
   // aviso en pantalla. No son logs: los lee el usuario.
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
-  | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject';
+  | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject'
+  | 'discord.notRunning' | 'discord.disconnected' | 'discord.timeout' | 'discord.notAuthenticated' | 'discord.error'
+  | 'spotify.tokenRequired' | 'spotify.noUri';
+
 
 const ES: Record<Clave, string> = {
   'tray.show': 'Mostrar VirtualDeck',
   'tray.quick': 'Acciones rápidas',
   'tray.quit': 'Salir',
   'tray.button': 'Botón',
+  'tray.moveToPrimary': 'Centrar en pantalla principal',
   'dlg.exportLog': 'Exportar registro de VirtualDeck',
   'dlg.exportConfig': 'Exportar configuración de VirtualDeck',
   'dlg.importConfig': 'Importar configuración de VirtualDeck',
@@ -62,13 +66,22 @@ const ES: Record<Clave, string> = {
   'gal.tooBig': 'El archivo es demasiado grande',
   'gal.badManifest': 'El manifiesto no trae una lista de perfiles',
   'gal.notObject': 'El perfil descargado no es un objeto',
+  'discord.notRunning': 'Discord no está abierto o no responde en el pipe local',
+  'discord.disconnected': 'Discord desconectado',
+  'discord.timeout': 'Tiempo de espera agotado en comando Discord',
+  'discord.notAuthenticated': 'Discord RPC no autenticado o permiso denegado',
+  'discord.error': 'Error en comando Discord RPC',
+  'spotify.tokenRequired': 'Se requiere token de acceso para esta operación',
+  'spotify.noUri': 'URI o enlace de Spotify no válido',
 };
+
 
 const EN: Record<Clave, string> = {
   'tray.show': 'Show VirtualDeck',
   'tray.quick': 'Quick actions',
   'tray.quit': 'Quit',
   'tray.button': 'Button',
+  'tray.moveToPrimary': 'Center on primary display',
   'dlg.exportLog': 'Export VirtualDeck log',
   'dlg.exportConfig': 'Export VirtualDeck configuration',
   'dlg.importConfig': 'Import VirtualDeck configuration',
@@ -99,7 +112,15 @@ const EN: Record<Clave, string> = {
   'gal.tooBig': 'The file is too large',
   'gal.badManifest': 'The manifest has no profile list',
   'gal.notObject': 'The downloaded profile is not an object',
+  'discord.notRunning': 'Discord is not open or not responding on local pipe',
+  'discord.disconnected': 'Discord disconnected',
+  'discord.timeout': 'Timeout waiting for Discord command',
+  'discord.notAuthenticated': 'Discord RPC not authenticated or permission denied',
+  'discord.error': 'Discord RPC command error',
+  'spotify.tokenRequired': 'Access token required for this operation',
+  'spotify.noUri': 'Invalid Spotify URI or link',
 };
+
 
 let actual: Record<Clave, string> = ES;
 

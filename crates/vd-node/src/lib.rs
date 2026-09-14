@@ -224,6 +224,43 @@ pub fn kill_process(name: String) -> bool {
     }
 }
 
+/// Comprueba de forma inmediata si un proceso está en ejecución (<0.05ms).
+#[napi]
+pub fn is_process_running(name: String) -> bool {
+    vd_core::launcher::is_process_running(&name)
+}
+
+/// Información de un proceso en ejecución.
+#[napi(object)]
+pub struct ProcessDetail {
+    pub pid: u32,
+    pub name: String,
+}
+
+/// Lista los procesos en ejecución con sus PIDs y nombres.
+#[napi]
+pub fn get_process_list() -> Vec<ProcessDetail> {
+    match vd_core::launcher::running_processes() {
+        Ok(lista) => lista
+            .into_iter()
+            .map(|p| ProcessDetail {
+                pid: p.pid,
+                name: p.name,
+            })
+            .collect(),
+        Err(e) => {
+            eprintln!("[launcher] getProcessList: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Termina un proceso por su identificador PID.
+#[napi]
+pub fn kill_process_by_pid(pid: u32) -> bool {
+    informar("killProcessByPid", vd_core::launcher::kill_process_by_pid(pid))
+}
+
 #[napi]
 pub fn set_volume(percent: i64) -> bool {
     informar("setVolume", vd_core::launcher::set_master_volume(percent))
@@ -259,6 +296,64 @@ pub fn snap_window(position: String, process_name: Option<String>) -> bool {
     informar(
         "snapWindow",
         vd_core::launcher::snap_window(pos, process_name.as_deref()),
+    )
+}
+
+/// Información de la ventana y proceso actualmente en primer plano.
+#[napi(object)]
+pub struct ActiveWindowInfo {
+    pub process_name: Option<String>,
+    pub window_title: Option<String>,
+}
+
+/// Obtiene el proceso y título de la ventana activa en primer plano en <0.05ms (Win32 en memoria).
+#[napi]
+pub fn get_active_window() -> Option<ActiveWindowInfo> {
+    vd_core::launcher::active_app().map(|info| ActiveWindowInfo {
+        process_name: info.process_name,
+        window_title: info.window_title,
+    })
+}
+
+/// Trae al frente la ventana de un proceso por nombre.
+#[napi]
+pub fn focus_window(process_name: String) -> bool {
+    informar("focusWindow", vd_core::launcher::focus_window(&process_name))
+}
+
+/// Minimiza una ventana. Si no se especifica nombre, minimiza la activa.
+#[napi]
+pub fn minimize_window(process_name: Option<String>) -> bool {
+    informar(
+        "minimizeWindow",
+        vd_core::launcher::minimize_window(process_name.as_deref()),
+    )
+}
+
+/// Maximiza una ventana. Si no se especifica nombre, maximiza la activa.
+#[napi]
+pub fn maximize_window(process_name: Option<String>) -> bool {
+    informar(
+        "maximizeWindow",
+        vd_core::launcher::maximize_window(process_name.as_deref()),
+    )
+}
+
+/// Restaura una ventana. Si no se especifica nombre, restaura la activa.
+#[napi]
+pub fn restore_window(process_name: Option<String>) -> bool {
+    informar(
+        "restoreWindow",
+        vd_core::launcher::restore_window(process_name.as_deref()),
+    )
+}
+
+/// Cierra suavemente una ventana vía mensaje WM_CLOSE sin forzar la terminación del proceso.
+#[napi]
+pub fn close_window(process_name: Option<String>) -> bool {
+    informar(
+        "closeWindow",
+        vd_core::launcher::close_window(process_name.as_deref()),
     )
 }
 

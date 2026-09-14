@@ -5,6 +5,7 @@ import { MEDIA } from './media';
 import { ENTRADA } from './entrada';
 import { DATOS } from './datos';
 import { RGB } from './rgb';
+import { TERCEROS } from './terceros';
 
 /**
  * Qué hace cada tipo de acción, por familia.
@@ -16,8 +17,9 @@ import { RGB } from './rgb';
  * manejador" se puede detectar — y `scripts/check-acciones.mjs` lo detecta.
  */
 export const MANEJADORES: Record<string, Manejador> = {
-  ...LANZAR, ...AUDIO, ...MEDIA, ...ENTRADA, ...DATOS, ...RGB,
+  ...LANZAR, ...AUDIO, ...MEDIA, ...ENTRADA, ...DATOS, ...RGB, ...TERCEROS,
 };
+
 
 /**
  * Tipos que `executeAction` **no** despacha a propósito, porque los resuelve

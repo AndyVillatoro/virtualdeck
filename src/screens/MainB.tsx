@@ -28,9 +28,9 @@ import { type MainBProps, getSourceName } from './main/tipos';
 export function MainB({
   config, activePage, autostart, toggledIds, soundOnPress, soundProfile,
   onPageChange, onToggle, onFullscreen, onEditButton, onWallpaper, onRGB,
-  onConfigChange, onUpdateButton, onDuplicateButton, onClearButton,
+  onConfigChange, onUpdateButton, onDuplicateButton, onCopyButton, onPasteButton, canPasteButton, onClearButton,
   onConfigExport, onConfigImport, onSwapButtons,
-  onPageRename, onPageAdd, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
+  onPageRename, onPageAdd, onDuplicatePage, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
   onSaveProfile, onLoadProfile, onAppendProfilePages, onAppendPagesFromProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
@@ -122,6 +122,42 @@ export function MainB({
     clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 6000);
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+      if (selectedIds.size === 0) return;
+
+      const firstSelected = Array.from(selectedIds)[0];
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+      if (isCtrlOrCmd && e.key.toLowerCase() === 'c') {
+        if (firstSelected && onCopyButton) {
+          e.preventDefault();
+          onCopyButton(firstSelected);
+          showToast(t('cell.copied'));
+        }
+      } else if (isCtrlOrCmd && e.key.toLowerCase() === 'v') {
+        if (firstSelected && canPasteButton && onPasteButton) {
+          e.preventDefault();
+          onPasteButton(firstSelected);
+          showToast(t('cell.pasted'));
+        }
+      } else if (isCtrlOrCmd && e.key.toLowerCase() === 'd') {
+        if (firstSelected) {
+          e.preventDefault();
+          onDuplicateButton(firstSelected);
+        }
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        selectedIds.forEach((id) => onClearButton(id));
+        setSelectedIds(new Set());
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedIds, onCopyButton, onPasteButton, canPasteButton, onDuplicateButton, onClearButton, showToast, t]);
 
   // Se asigna en cada render, no en un efecto: solo la leen los manejadores
   // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
@@ -315,6 +351,7 @@ export function MainB({
           }}
           onOpenAppBinding={(pageId) => setBindingAppPageId(pageId)}
           onSetGrid={onPageSetGrid}
+          onDuplicatePage={onDuplicatePage}
           onDeletePage={onPageDelete}
           onClose={() => setPageContextMenu(null)}
         />
@@ -412,6 +449,15 @@ export function MainB({
                   return next;
                 })}
                 onDuplicate={() => onDuplicateButton(btn.id)}
+                onCopy={() => {
+                  onCopyButton?.(btn.id);
+                  showToast(t('cell.copied'));
+                }}
+                onPaste={() => {
+                  onPasteButton?.(btn.id);
+                  showToast(t('cell.pasted'));
+                }}
+                canPaste={canPasteButton}
                 onClear={() => onClearButton(btn.id)}
                 onQuickSlider={(target) => {
                   const isVol = target === 'volume';

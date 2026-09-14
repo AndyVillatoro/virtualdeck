@@ -25,7 +25,7 @@ for (const f of archivos) {
 
 // 2. Cada tipo de acción tiene que estar en las dos referencias. `none` es la
 //    celda vacía: no es una acción que el usuario elija.
-const tipos = [...readFileSync('src/types.ts', 'utf-8')
+const tipos = [...readFileSync('src/types/actions.ts', 'utf-8')
   .match(/export type ActionType\s*=([\s\S]*?);/)[1]
   .matchAll(/'([a-z-]+)'/g)].map((m) => m[1]).filter((t) => t !== 'none');
 

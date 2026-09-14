@@ -159,11 +159,12 @@ export default function App() {
     withHistory, undo, saveConfig,
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
-    renamePage, addPage, deletePage, reorderPages, setPageGridSize,
+    renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
     saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,
+    copyButton, pasteButton, buttonClipboard,
   } = deck;
 
   useAutoProfile({
@@ -563,12 +564,16 @@ export default function App() {
           onConfigChange={saveConfig}
           onUpdateButton={updateButton}
           onDuplicateButton={duplicateButton}
+          onCopyButton={copyButton}
+          onPasteButton={pasteButton}
+          canPasteButton={!!buttonClipboard}
           onClearButton={clearButton}
           onConfigExport={handleConfigExport}
           onConfigImport={handleConfigImport}
           onSwapButtons={swapButtons}
           onPageRename={renamePage}
           onPageAdd={addPage}
+          onDuplicatePage={duplicatePage}
           onPageDelete={deletePage}
           onSaveProfile={saveProfile}
           onLoadProfile={loadProfile}

@@ -87,7 +87,7 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
 
   const porId = new Map(config.buttons.map((b) => [b.id, b]));
   const configurados = config.buttons.filter(
-    (b) => b.action.type !== 'none' || b.label || b.icon || b.imageData || b.brandIcon,
+    (b) => b.action.type !== 'none' || b.label || b.icon || b.imageData || b.brandIcon || b.widget === 'slider' || !!b.sliderWidget || (b.subButtons && b.subButtons.length === 4),
   );
 
   return (

@@ -1,8 +1,9 @@
 import { FormNone, FormApp, FormWeb, FormShortcut, FormScript } from './basicos';
 import { FormAudioDevice, FormHotkey, FormClipboard, FormTypeText, FormKillProcess, FormVolumeSet, FormBrightness, FormAdjust, FormNotify, FormTts, FormRegionCapture, FormMediaPlayPause, FormWindowSnap } from './sistema';
-import { FormSetVar, FormIncrVar, FormWebhook, FormRemote, FormBranch, FormCountdown } from './datos';
+import { FormSetVar, FormIncrVar, FormWebhook, FormRemote, FormMobileRemote, FormBranch, FormCountdown } from './datos';
 import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb';
 import { FormFolder, FormMacro } from './compuestos';
+import { FormDiscord, FormSpotify } from './terceros';
 import type { PropsFormulario } from './base';
 
 /**
@@ -13,6 +14,7 @@ import type { PropsFormulario } from './base';
  */
 export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElement> = {
   'none': FormNone,
+
   'app': FormApp,
   'web': FormWeb,
   'shortcut': FormShortcut,
@@ -30,6 +32,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'incr-var': FormIncrVar,
   'webhook': FormWebhook,
   'remote': FormRemote,
+  'mobile-remote': FormMobileRemote,
   'tts': FormTts,
   'region-capture': FormRegionCapture,
   'rgb-color': FormRgbColor,
@@ -52,6 +55,9 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'branch': FormBranch,
   'countdown': FormCountdown,
   'macro': FormMacro,
+  'discord': FormDiscord,
+  'spotify': FormSpotify,
 };
+
 
 export type { PropsFormulario };

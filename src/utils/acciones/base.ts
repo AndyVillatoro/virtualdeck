@@ -81,9 +81,12 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     case 'media-shuffle':  return t('act.lbl.shuffle');
     case 'media-repeat':   return t('act.lbl.repeat');
     case 'macro':          return `${t('act.lbl.macro', { n: a.macroSteps?.length ?? 0 })}`;
+    case 'discord':        return `Discord: ${a.discordAction ?? 'toggle-mute'}`;
+    case 'spotify':        return a.spotifyUri ? `Spotify: ${a.spotifyUri.split(':').pop()}` : 'Spotify';
     default:               return a.type;
   }
 }
+
 
 /**
  * Parte una linea de argumentos respetando las comillas.

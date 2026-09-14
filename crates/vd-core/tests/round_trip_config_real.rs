@@ -45,6 +45,15 @@ fn perdidas(original: &Value, resultado: &Value, ruta: &str, out: &mut Vec<Strin
                 perdidas(va, vb, &format!("{ruta}[{i}]"), out);
             }
         }
+        (Value::Number(na), Value::Number(nb)) => {
+            let igual = match (na.as_f64(), nb.as_f64()) {
+                (Some(fa), Some(fb)) => (fa - fb).abs() < f64::EPSILON,
+                _ => na == nb,
+            };
+            if !igual {
+                out.push(format!("valor distinto en {ruta}: {na} -> {nb}"));
+            }
+        }
         (a, b) if a != b => {
             out.push(format!("valor distinto en {ruta}: {a} -> {b}"));
         }

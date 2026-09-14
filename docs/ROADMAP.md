@@ -22,7 +22,7 @@
 
 ---
 
-## Estado general (2026-09-13)
+## Estado general (2026-09-14)
 
 Auditoría sobre el código (no solo el doc):
 
@@ -41,9 +41,12 @@ Auditoría sobre el código (no solo el doc):
   separado (ítem 30). Incluye Bloque 7 completo (DOT/480, multi-monitor, auto-perfiles,
   botones anclados, mosaico 2×2, sliders continuos táctiles, mando web móvil interactivo
   y refactor modular SRP).
+- **Deuda Técnica y Modularidad (Bloque B): ✅ completado** — modularización de `DotGlyphIcon.tsx`
+  (887 → 72 líneas), descomposición de `src/types/` en módulos semánticos, desacople SRP de
+  `FullscreenB.tsx` (complejidad 36 → <18) y `ButtonCell.tsx` (complejidad 34 → <18 con `CuerpoCelda`).
 - **i18n profundo (Bloque A): ✅ todo**, incluido lo que no estaba en la lista — el
   **proceso principal** (bandeja y diálogos) y los módulos que no son componentes.
-  512 claves ES/EN. Con una salvedad que conviene no olvidar: la auditoría es una
+  818 claves ES/EN. Con una salvedad que conviene no olvidar: la auditoría es una
   heurística, y esta sesión encontró textos con ella en verde **abriendo la app en
   inglés**. «Auditoría limpia» no es «todo traducido».
 - **Código muerto: ✅** knip en cero (eran ~97 exports y 17 tipos).
@@ -145,9 +148,29 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 46 | Botón explícito "Eliminar botón" / vaciar celda | Integración directa del botón de eliminación en `EditorB` con confirmación in-situ, cancelación por Escape y botón interactivo `[DESHACER]` táctil/ratón en el toast. | ✅ 2026-09-12 |
 | 47 | Dial visual rotativo dot-matrix para scroll de mouse | Indicador gráfico circular (dial de 16 puntos LED concéntricos) en celdas de volumen y brillo (`adjust`) que responde visualmente en tiempo real al giro de la rueda del ratón y clics, con estela de rotación y feedback flotante del delta. | ✅ 2026-09-12 |
 | 48 | Widget de barra / slider táctil continuo | Widget táctil horizontal/vertical para deslizamiento continuo con dedo o ratón, optimizado para tabletas y dispositivos táctiles (Surface Pro). | ✅ 2026-09-12 |
-| 49 | Acciones encadenadas avanzadas | Retraso individual por paso (`delayMs`), condiciones de bifurcación («ejecutar paso B solo si paso A fue OK / si falló») y bucles de repetición («repetir N veces»). | ⬜ pendiente |
-| 50 | Nuevos tipos de acción e integraciones de terceros | Discord push-to-talk / toggle mute nativo vía RPC/IPC, y control de Spotify Web API para selección directa de playlists y dispositivos de reproducción. | ⬜ pendiente |
-| 51 | Expansión del núcleo nativo Rust (`vd-core`) | Migración completa de comandos auxiliares de PowerShell (búsqueda de procesos, manipulación de ventanas, scripts rápidos) al módulo compilado en Rust a 2ms. | ⬜ pendiente |
+| 49 | Acciones encadenadas avanzadas | Retraso individual por paso (`delayMs`), condiciones de bifurcación («ejecutar paso B solo si paso A fue OK / si falló»), bucles de repetición («repetir N veces»), continuación ante fallos (`continueOnError`) y reordenamiento visual de pasos (hasta 8 acciones). | ✅ 2026-09-13 |
+| 50 | Nuevos tipos de acción e integraciones de terceros | Discord push-to-talk / toggle mute nativo vía RPC/IPC, y control de Spotify Web API para selección directa de playlists y dispositivos de reproducción. | ✅ 2026-09-13 |
+| 51 | Expansión del núcleo nativo Rust (`vd-core`) | Migración completa de comandos auxiliares de PowerShell (búsqueda de procesos, manipulación de ventanas, monitor multi-pantalla, active app tracker in-process en <0.05ms) al módulo compilado en Rust a 2ms. | ✅ 2026-09-14 |
+| 52 | Modo claro refinado (grises industriales / anti-glare) | Sustituir fondos blancos puros (#ffffff) en `VD_LIGHT` y controles por escala de grises suaves (cemento/industrial #e2e4e8 / #d8dbe0 / #1a1d20) para evitar deslumbramiento manteniendo legibilidad y estilo DOT. | ✅ 2026-09-14 |
+| 53 | Menú de configuración colapsable (acordeón DOT) | Cada apartado de `PanelAjustes.tsx` se convierte en una sección colapsable individual con cabecera técnica DOT, indicador LED/chevron interactivo y memoria de estado colapsado para navegación limpia y compacta. | ✅ 2026-09-14 |
+| 54 | Presets de navegación web ampliados (IA y utilidades) | Expansión del catálogo de accesos web en `actionData.ts` y chips de autocompletado en el editor: Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch, Reddit, Discord Web, WhatsApp Web, Notion, Spotify Web. | ✅ 2026-09-14 |
+| 55 | Hardening y auditoría de integraciones Spotify y Discord | Pruebas exhaustivas y validación end-to-end de Discord (RPC local / pipes / mute / deafen / manejo ante app cerrada) y Spotify (flujo de tokens / play URI / selección de dispositivo / reconexión y feedback en celda). | ✅ 2026-09-14 |
+
+### 🎯 Matriz de Prioridades de Nuevas Características y Pendientes (v0.13.0+)
+
+Orden de ejecución recomendado según impacto en el usuario, ergonomía y estabilidad del sistema:
+
+| Prioridad | Ítem | Impacto / Justificación | Esfuerzo |
+|-----------|------|--------------------------|----------|
+| **P1 — Inmediata** | **52. Modo Claro Refinado (Anti-Glare)** | **Ergonomía visual y confort**: Elimina el blanco deslumbrante (#ffffff) reemplazándolo por grises industriales/cemento (#e2e4e8), alineándolo al diseño DOT / 480 sin fatiga visual. | **S** (Pequeño) |
+| **P1 — Inmediata** | **53. Menú de Configuración Colapsable** | **Usabilidad crítica de Ajustes**: El panel actual tiene 12 secciones que desbordan la pantalla en vertical; el acordeón modular colapsable permite navegar cómodamente en monitores de cualquier tamaño. | **S-M** (Pequeño-Medio) |
+| **P1 — Inmediata** | **54. Presets Web Ampliados (Gemini, etc.)** | **Ahorro de tiempo en configuración**: Chips rápidos para autocompletar Gemini, Claude, ChatGPT, GitHub, etc., en 1 clic en el editor de acciones web. | **S** (Pequeño) |
+| **P2 — Alta** | **55. Hardening Spotify & Discord** | **Fiabilidad de integraciones**: Robustecer el manejo de pipes IPC de Discord (cuando Discord no está iniciado) y validación de tokens/endpoints en Spotify con feedback de estado en celda. | **M** (Medio) |
+| **P3 — Media** | **Auditoría Deuda Técnica: Idiomas (`max-lines: 600`)** | **Salud de la suite `npm run check`**: Los diccionarios `es.ts` y `en.ts` (786 líneas) son los únicos que exceden el umbral de 600 líneas de ESLint. Modularizar por dominios (acciones, editor, ajustes). | **M** (Medio) |
+| **P3 — Media** | **Auditoría SRP: Complejidad en `EditorB` / `MainB`** | **Mantenibilidad frontend**: Reducir complejidad ciclomática en pantallas secundarias para dejar todo el codebase con 0 advertencias de complejidad. | **M** (Medio) |
+| **P4 — Ecosistema** | **24/6.1. Galería de Perfiles en Vivo** | **Comunidad**: Conexión directa a repositorio GitHub para descargar e importar perfiles compartidos con previsualización segura de acciones y teclas. | **L** (Grande) |
+| **P5 — Mantenimiento** | **4.1 / 30. Lazy Loading de Iconos & Store MSIX** | **Empaquetado**: Import dinámico del catálogo pesado de marcas y documentación del ciclo semver continuo de Windows Store. | **S-M** (Pequeño) |
+
 
 ---
 
@@ -162,23 +185,32 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
   (servidor HTTP/WS + pairing + UI web). Convierte cualquier teléfono en un panel.
 - **1.2 Variables y estado ★★ · M** — ✅ HECHO. Capa `state` + interpolación `{var}` +
   `set-var`/`incr-var` + widget `variable`.
-- **1.3 Acciones condicionales/encadenadas ★★ · M** — Ya hay `actions: ButtonAction[]`
-  con delay fijo 150ms. Ampliar: delay por paso, condicional (ejecutar B si A ok),
-  bucles (`repeat: 3`).
+- **1.3 Acciones condicionales/encadenadas ★★ · M** — ✅ HECHO (Ítem 49).
+  Secuencia ampliada a 8 pasos, delay individual por paso (`delayMs`), bifurcación condicional
+  (`onlyIfPrevOk` / `onlyIfPrevFailed`), bucles (`repeat: N`), `continueOnError` y reordenamiento.
 - **1.4 Disparadores externos ★★ · L** — Que un botón se active sin clic: hotkey global
   (✅ ya existe `globalHotkey`/`inTrayMenu`), deep-link `vd://`, llamada HTTP local.
-- **1.5 Tipos de acción nuevos ★ · S-M** — Discord push-to-talk, control Spotify vía API,
-  captura de región (✅ `region-capture`), webhook (✅), TTS (✅).
+- **1.5 Tipos de acción nuevos ★ · S-M** — ✅ HECHO (Ítem 50). Discord push-to-talk / toggle mute nativo vía RPC/IPC local, control Spotify vía URI/API, captura de región (✅ `region-capture`), webhook (✅), TTS (✅).
+- **1.6 Presets ampliados de navegación web ★★ · S** — Catálogo directo en `actionData.ts` y chips de inserción en el editor para IA y herramientas habituales: Gemini (`gemini.google.com`), Claude, ChatGPT, GitHub, YouTube, Twitch, Reddit, Discord Web, WhatsApp Web, Notion, Spotify Web.
+- **1.7 Auditoría y hardening de integraciones de terceros (Spotify & Discord) ★★ · M** — Pruebas end-to-end de los canales IPC/RPC: Discord Named Pipes ante inicio tardío o cierre del cliente, y control de Spotify Web API (dispositivos, transferencias y fallback de token) con feedback reactivo de estado en celda.
+
 
 ### 2. UX y editor
 
-- **2.1 Editor de matriz 5×7 para íconos propios ★★ · M** — Dibujar un glifo 5×7 en el
-  editor y usarlo como ícono (coherente con la firma dot-matrix). Existe `customGlyph57`.
+- **2.1 Editor de matriz 5×7 para íconos propios ★★ · M** — ✅ HECHO (2026-09-14).
+  Diseñador interactivo en `Glyph57Editor.tsx` con arrastre continuo (paint/erase),
+  herramientas de transformación (Shift ▲▼◀▶, Invertir, Espejo H/V, Limpiar, Llenar, Deshacer Ctrl+Z),
+  paleta de 16 símbolos pre-calculados y celda simulada OLED de vista previa.
 - **2.2 Búsqueda global Ctrl+K ★★ · S** — ✅ HECHO (`SearchOverlay`).
+- **2.3 Portapapeles de botones y duplicación de página ★★ · S** — ✅ HECHO (2026-09-14).
+  Copiar (`Ctrl+C`), pegar (`Ctrl+V`) y duplicar (`Ctrl+D`) celdas, vaciar (`Delete`/`Backspace`),
+  menú contextual en celda y duplicación de página completa en menú contextual de pestañas
+  con persistencia en historial `withHistory` y feedback de toasts.
 - **2.4 Pegar imagen del portapapeles ★ · S** — ✅ HECHO (Ctrl+V en `EditorB`).
 - **2.5 Drag & drop entre páginas ★ · M** — ✅ HECHO (arrastrar a la pestaña destino).
 - **2.6 Historial visible (undo) ★ · S** — ✅ HECHO (toast de undo).
 - **2.8 Vista previa al editar ★ · S** — ✅ HECHO (celda viva en `EditorB`).
+- **2.9 Menú de configuración colapsable (acordeón DOT) ★★ · S-M** — Transformación de `PanelAjustes.tsx` en un acordeón técnico modular donde cada uno de los 12 apartados (Acento, Monitores, Sonido, Perfiles, etc.) posee un encabezado cliqueable, indicador visual LED/chevron y memoria de colapso, evitando el desbordamiento vertical de pantalla.
 
 ### 3. Calidad de vida y robustez
 
@@ -200,10 +232,14 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 
 - **5.1 Reloj siempre en DotText ★★ · S** — ✅ HECHO (sidebar y fullscreen).
 - **5.2 Wallpapers procedurales (scanlines/CRT) ★ · S** — ✅ HECHO (incluidos en fondos).
-- **5.3 Animación de press con más carácter ★ · S** — Pulso radial / barrido de puntos
-  desde el centro, en vez del flash de 300ms.
+- **5.3 Animación de press con más carácter ★ · S** — ✅ HECHO (2026-09-14).
+  "Radial Dot Sweep": onda expansiva de micro-puntos LED discretos acelerada por GPU que nace
+  en el centro (50%, 50%) de la celda y viaja físicamente hacia afuera en 360° con anillos concéntricos
+  punteados, chispa nuclear central de ignición y transición fluida tanto en botones configurados
+  como en celdas vacías (con delay de 250ms antes de abrir el editor modal).
 - **5.4 Sonido al press configurable ★ · S** — ✅ HECHO (4 perfiles).
 - **5.5 Modo kiosko real ★ · M** — ✅ HECHO (PIN de salida en fullscreen).
+- **5.6 Modo claro refinado (grises ergonómicos anti-glare) ★★ · S** — Revisión completa de `VD_LIGHT` y estilos de inputs/paneles: sustitución de fondos blancos puros (`#ffffff`) que causan fatiga visual por una escala de grises industriales suaves (`#e2e4e8`, `#d8dbe0`, `#f0f1f4`) inspirada en el hardware Braun/teenage engineering, preservando legibilidad técnica de 8-9px y ratios de contraste WCAG AA.
 
 ### 6. Distribución y comunidad
 

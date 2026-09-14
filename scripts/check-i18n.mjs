@@ -432,6 +432,7 @@ const CLAVES_EN_PUNTOS = [/^onb\.\d+\.title$/];
 const DOTTEXT_DECLARADOS = new Set([
   'src/components/Onboarding.tsx',   // el título de cada paso — texto libre
   'src/screens/FullscreenB.tsx',     // hora y minutos — solo dígitos
+  'src/screens/fullscreen/PanelLateralFullscreen.tsx', // hora y minutos — solo dígitos
   'src/screens/main/BarraLateral.tsx', // el reloj — solo dígitos
 ]);
 {

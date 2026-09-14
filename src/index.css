@@ -16,7 +16,7 @@ html, body, #root {
 :root[data-theme='light'] html,
 :root[data-theme='light'] body,
 :root[data-theme='light'] #root {
-  background: #f0f0f0;
+  background: #d8dbe0;
 }
 
 :root[data-theme='dot480'] html,
@@ -90,7 +90,7 @@ button {
   font-family: inherit;
 }
 
-/* 5.3 — Pulso radial al presionar un botón. Reemplaza el flash de fondo plano. */
+/* 5.3 — Pulso radial y barrido de matriz de puntos (Radial Dot Sweep). */
 @keyframes vd-flash-radial {
   0%   { transform: scale(0.25); opacity: 0.9; }
   60%  { opacity: 0.35; }
@@ -103,6 +103,219 @@ button {
   border-radius: inherit;
   background: radial-gradient(circle, var(--vd-accent) 0%, transparent 55%);
   animation: vd-flash-radial 320ms ease-out forwards;
+}
+
+/* 5.3 — Barrido de matriz de puntos (Radial Dot Sweep). Onda expansiva física desde el centro. */
+.vd-dot-sweep-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 5;
+}
+
+/* 1. Resplandor radial suave */
+.vd-wave-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: vd-wave-glow-expand 380ms cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+@keyframes vd-wave-glow-expand {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(8);
+    opacity: 0;
+  }
+}
+
+/* 2. Anillos concéntricos punteados */
+.vd-wave-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin-top: -12px;
+  margin-left: -12px;
+  border-radius: 50%;
+  border-style: dotted;
+  border-width: 1.5px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.vd-wave-circle-1 {
+  animation: vd-wave-circle-expand-1 420ms cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+.vd-wave-circle-2 {
+  animation: vd-wave-circle-expand-2 420ms cubic-bezier(0.1, 0.7, 0.2, 1) 70ms forwards;
+}
+@keyframes vd-wave-circle-expand-1 {
+  0% {
+    transform: scale(0.15);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  65% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(6.2);
+    opacity: 0;
+  }
+}
+@keyframes vd-wave-circle-expand-2 {
+  0% {
+    transform: scale(0.15);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.75;
+  }
+  65% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4.8);
+    opacity: 0;
+  }
+}
+
+/* 3. Chispa de origen nuclear */
+.vd-dot-origin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  margin-left: -3px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: vd-dot-origin-pop 260ms cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+@keyframes vd-dot-origin-pop {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.6);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* 4. Micro-puntos discretos que vuelan hacia afuera desde el centro */
+.vd-radial-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3.5px;
+  height: 3.5px;
+  margin-top: -1.75px;
+  margin-left: -1.75px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.vd-dot-w1 {
+  animation: vd-dot-fly-w1 420ms cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+.vd-dot-w1-compact {
+  width: 2.5px;
+  height: 2.5px;
+  margin-top: -1.25px;
+  margin-left: -1.25px;
+  animation: vd-dot-fly-w1-compact 340ms cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+.vd-dot-w2 {
+  width: 3px;
+  height: 3px;
+  margin-top: -1.5px;
+  margin-left: -1.5px;
+  animation: vd-dot-fly-w2 420ms cubic-bezier(0.1, 0.7, 0.2, 1) 60ms forwards;
+}
+@keyframes vd-dot-fly-w1 {
+  0% {
+    transform: rotate(var(--angle)) translateY(0px) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(10px) scale(1.3);
+  }
+  60% {
+    opacity: 0.9;
+    transform: rotate(var(--angle)) translateY(38px) scale(1.0);
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(68px) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes vd-dot-fly-w1-compact {
+  0% {
+    transform: rotate(var(--angle)) translateY(0px) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(6px) scale(1.2);
+  }
+  60% {
+    opacity: 0.85;
+    transform: rotate(var(--angle)) translateY(22px) scale(0.9);
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(36px) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes vd-dot-fly-w2 {
+  0% {
+    transform: rotate(var(--angle)) translateY(0px) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+    transform: rotate(var(--angle)) translateY(8px) scale(1.1);
+  }
+  60% {
+    opacity: 0.75;
+    transform: rotate(var(--angle)) translateY(28px) scale(0.85);
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(52px) scale(0.35);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vd-wave-glow,
+  .vd-wave-circle,
+  .vd-dot-origin,
+  .vd-radial-dot {
+    animation-duration: 200ms !important;
+  }
 }
 
 /* 5.2 — Flicker sutil para el wallpaper CRT (~25% irregular). */

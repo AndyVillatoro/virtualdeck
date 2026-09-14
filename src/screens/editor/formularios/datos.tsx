@@ -284,3 +284,36 @@ export function FormCountdown(p: PropsFormulario) {
     </>
   );
 }
+
+export function FormMobileRemote(p: PropsFormulario) {
+  const VD = useTheme();
+  const tf = useFieldText();
+  const inputStyle = estiloEntrada(VD);
+  const { action, setAction } = p;
+  const modo = action.mobileRemoteAction ?? 'pair-code';
+
+  return (
+    <>
+      <Field label={tf("ACCIÓN DEL MANDO MÓVIL")}>
+        <select
+          value={modo}
+          onChange={(e) => setAction((a) => ({
+            ...a,
+            mobileRemoteAction: e.target.value as 'pair-code' | 'toggle-server' | 'open-web',
+          }))}
+          style={inputStyle}
+        >
+          <option value="pair-code">{tf("Generar código de vinculación (pantalla y portapapeles)")}</option>
+          <option value="toggle-server">{tf("Alternar servidor web (iniciar / detener)")}</option>
+          <option value="open-web">{tf("Abrir mando móvil en el navegador")}</option>
+        </select>
+      </Field>
+      <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6 }}>
+        {modo === 'pair-code' && tf("Al pulsar este botón en el deck, se genera un código de 6 dígitos para escribir en el teléfono y se copia al portapapeles.")}
+        {modo === 'toggle-server' && tf("Enciende o apaga el servidor local de mando móvil directamente desde una celda del deck.")}
+        {modo === 'open-web' && tf("Abre la interfaz web del mando en el navegador predeterminado de este equipo.")}
+      </div>
+    </>
+  );
+}
+

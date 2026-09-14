@@ -1,4 +1,4 @@
-import { BrowserWindow, Tray, Menu, nativeImage, globalShortcut } from 'electron';
+import { BrowserWindow, Tray, Menu, nativeImage, globalShortcut, screen } from 'electron';
 import { join } from 'path';
 import { deflateSync } from 'zlib';
 import { tm } from './idioma';
@@ -84,12 +84,34 @@ export function createTray(win: BrowserWindow, onQuit: () => void) {
     const trayIcon = loadTrayIcon();
     tray = new Tray(trayIcon);
     tray.setToolTip('VirtualDeck');
+    const traerAlFrente = () => {
+      if (win.isMinimized()) win.restore();
+      win.setSkipTaskbar(false);
+      win.show();
+      win.focus();
+      win.setAlwaysOnTop(true);
+      win.setAlwaysOnTop(false);
+    };
+    const centrarEnPrincipal = () => {
+      const primary = screen.getPrimaryDisplay().workArea;
+      if (win.isMaximized()) win.unmaximize();
+      const w = Math.min(1100, primary.width - 40);
+      const h = Math.min(720, primary.height - 40);
+      win.setBounds({
+        x: Math.round(primary.x + Math.max(0, (primary.width - w) / 2)),
+        y: Math.round(primary.y + Math.max(0, (primary.height - h) / 2)),
+        width: w,
+        height: h,
+      });
+      traerAlFrente();
+    };
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: tm('tray.show'), click: () => { win.show(); win.focus(); } },
+      { label: tm('tray.show'), click: traerAlFrente },
+      { label: tm('tray.moveToPrimary'), click: centrarEnPrincipal },
       { type: 'separator' },
       { label: tm('tray.quit'), click: onQuit },
     ]));
-    tray.on('click', () => win.isVisible() ? win.focus() : win.show());
+    tray.on('click', traerAlFrente);
   } catch (e) {
     console.warn('Tray failed:', e);
   }

@@ -313,14 +313,17 @@ export function RemoteSection({
   const [abriendoFirewall, setAbriendoFirewall] = useState(false);
   const [mensajeFirewall, setMensajeFirewall] = useState<string | null>(null);
 
-  const comprobarFw = useCallback(() => {
-    if (!config.allowLan || !api?.remote?.checkFirewall) return;
-    api.remote.checkFirewall(config.port).then(setFirewall).catch(() => {});
-  }, [api, config.allowLan, config.port]);
+  const comprobarFw = useCallback((portToCheck?: number) => {
+    if (!api?.remote?.checkFirewall) return;
+    const p = portToCheck ?? config.port;
+    api.remote.checkFirewall(p).then(setFirewall).catch(() => {});
+  }, [api, config.port]);
 
   useEffect(() => {
-    comprobarFw();
-  }, [comprobarFw]);
+    if (config.enabled) {
+      comprobarFw();
+    }
+  }, [config.enabled, config.allowLan, config.port, comprobarFw]);
 
   const abrirFirewall = async () => {
     if (!api?.remote?.addFirewallRule) return;
@@ -364,6 +367,9 @@ export function RemoteSection({
     // Al activar el mando móvil, permitir red local por defecto para que el teléfono conecte directamente
     const allowLan = enabled ? (config.allowLan ?? true) : config.allowLan;
     onChange({ ...config, enabled, token, allowLan });
+    if (enabled) {
+      comprobarFw(config.port);
+    }
   };
 
   const regenerar = async () => {

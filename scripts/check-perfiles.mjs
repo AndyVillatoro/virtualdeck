@@ -10,15 +10,15 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const tipos = new Set([...readFileSync('src/types.ts', 'utf-8')
+const tipos = new Set([...readFileSync('src/types/actions.ts', 'utf-8')
   .match(/export type ActionType\s*=([\s\S]*?);/)[1]
   .matchAll(/'([a-z-]+)'/g)].map((m) => m[1]));
 
-const widgets = new Set([...readFileSync('src/types.ts', 'utf-8')
+const widgets = new Set([...readFileSync('src/types/actions.ts', 'utf-8')
   .match(/export type TipoWidget\s*=([^;]*);/)[1]
   .matchAll(/'([a-z-]+)'/g)].map((m) => m[1]));
 
-const snaps = new Set([...readFileSync('src/types.ts', 'utf-8')
+const snaps = new Set([...readFileSync('src/types/actions.ts', 'utf-8')
   .match(/snapPosition\?:([^;]*);/)[1]
   .matchAll(/'([a-z-]+)'/g)].map((m) => m[1]));
 

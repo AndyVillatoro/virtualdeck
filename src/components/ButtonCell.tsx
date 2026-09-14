@@ -1,19 +1,16 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
-import { ContenidoCentral } from './celda/ContenidoCentral';
 import { Insignias } from './celda/Insignias';
 import { usePulsacionTactil } from './celda/usePulsacionTactil';
 import { useArrastreCelda } from './celda/useArrastreCelda';
 import { CapasDeFondo } from './celda/CapasDeFondo';
-import { RotuloCelda } from './celda/RotuloCelda';
 import { derivarCelda } from './celda/derivados';
 import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
-import { DotRotaryDial } from './dot480/DotRotaryDial';
-import { DotContinuousSlider } from './dot480/DotContinuousSlider';
-import { Subdivision2x2 } from './celda/Subdivision2x2';
+import { DotRadialSweep } from './dot480/DotRadialSweep';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
+import { CuerpoCelda } from './celda/CuerpoCelda';
 import type { ButtonConfig, SoundProfileId } from '../types';
 
 interface ButtonCellProps {
@@ -38,6 +35,9 @@ interface ButtonCellProps {
   onSelect?: () => void;
   onLongPress?: (target?: ButtonConfig) => void;
   onDuplicate?: () => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
+  canPaste?: boolean;
   onClear?: () => void;
   onDragStart?: () => void;
   /** Recibe el id del boton arrastrado, leido del propio evento. */
@@ -52,27 +52,51 @@ interface ButtonCellProps {
   onQuickSlider?: (target: 'volume' | 'brightness') => void;
 }
 
-function ButtonCellInner({
-  button, accent, toggled = false, subToggled, isActive = false, isHidden = false, isRunning = false,
-  isSelected = false,
-  widgetData, soundEnabled = false, soundProfile = 'click',
-  deckState, onStateUpdate,
-  resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onClear, onTogglePin, onDragStart, onDrop, onDragEnd,
-  onAdjustWheel,
-  showContextMenu = true,
-  onQuickSlider,
-}: ButtonCellProps) {
-  const VD = useTheme();
-  const t = useT();
-  const [hovered, setHovered] = useState(false);
+function useRotaryHandler(
+  button: ButtonConfig,
+  onAdjustWheelRef: React.MutableRefObject<((signo: 1 | -1) => void) | undefined>,
+) {
   const [rotaryStep, setRotaryStep] = useState(0);
   const [lastRotaryDir, setLastRotaryDir] = useState<1 | -1>(1);
   const [lastRotaryTime, setLastRotaryTime] = useState(0);
+
+  const stepRotary = useCallback((dir: 1 | -1) => {
+    setRotaryStep((prev) => prev + dir);
+    setLastRotaryDir(dir);
+    setLastRotaryTime(Date.now());
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const dir = e.deltaY < 0 ? 1 : -1;
+    onAdjustWheelRef.current?.(dir);
+    stepRotary(dir);
+  }, [onAdjustWheelRef, stepRotary]);
+
+  const handleAdjustClick = useCallback(() => {
+    const delta = button.action.adjustDelta ?? 5;
+    stepRotary(delta >= 0 ? 1 : -1);
+  }, [button.action.adjustDelta, stepRotary]);
+
+  return { rotaryStep, lastRotaryDir, lastRotaryTime, handleWheel, handleAdjustClick };
+}
+
+function ButtonCellInner(props: ButtonCellProps) {
+  const {
+    button, accent, subToggled, widgetData, deckState, onStateUpdate,
+    resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onCopy, onPaste, canPaste, onClear, onTogglePin, onDragStart, onDrop, onDragEnd,
+    onAdjustWheel, onQuickSlider,
+  } = props;
+  const toggled = Boolean(props.toggled);
+  const soundProfile = props.soundProfile ?? 'click';
+  const showContextMenu = props.showContextMenu !== false;
+
+  const VD = useTheme();
+  const t = useT();
+  const [hovered, setHovered] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const cellRef = useRef<HTMLDivElement>(null);
-  // Callback refs: memo comparator ignores handler identity, so we keep fresh
-  // copies without adding them to effect dependency arrays. Las del sonido se
-  // fueron con `usePulsacionRaton`, que ahora es el unico que lo dispara.
+
   const onLongPressRef = useRef(onLongPress);
   const onExecuteRef = useRef(onExecute);
   const onAdjustWheelRef = useRef(onAdjustWheel);
@@ -84,11 +108,16 @@ function ButtonCellInner({
   const { isEmpty, displayLabel, ActionIcon, iconColor, multiCount, titulo } =
     derivarCelda(button, { accent, toggled, resolvedLabel, VD, t });
 
-  const hasSubButtons = !!(button.subButtons && button.subButtons.length === 4);
-  const hasLongPress = !isEmpty && !!onLongPress && !hasSubButtons;
+  const hasSubButtons = Boolean(button.subButtons && button.subButtons.length === 4);
+  const isSlider = button.widget === 'slider';
+  const isAdjust = button.action.type === 'adjust';
+  const hasLongPress = !isEmpty && Boolean(onLongPress) && !hasSubButtons;
+
+  const { rotaryStep, lastRotaryDir, lastRotaryTime, handleWheel, handleAdjustClick } =
+    useRotaryHandler(button, onAdjustWheelRef);
 
   const raton = usePulsacionRaton({
-    isEmpty, hasLongPress, soundEnabled, soundProfile,
+    isEmpty, hasLongPress, soundEnabled: Boolean(props.soundEnabled), soundProfile,
     onEdit, onExecute, onLongPress, onSelect,
     showContextMenu,
     abrirMenu: (x, y) => setContextMenu({ x, y }),
@@ -101,8 +130,6 @@ function ButtonCellInner({
   });
   const { dragOver } = arrastre;
 
-  // 5.3 — el pulso radial reemplaza el flash de fondo plano. La celda mantiene
-  // su bg estable durante la ejecución; la "ondita" se renderiza encima como overlay.
   const estado = { toggled, dragOver, pressed, hovered, flash, isEmpty, bgPropio: button.bgColor };
   const bg = colorDeFondo(estado, VD);
   const borderColor = colorDeBorde(estado, VD, accent);
@@ -110,12 +137,6 @@ function ButtonCellInner({
   useEffect(() => {
     if (!contextMenu) return;
     const cerrar = () => setContextMenu(null);
-    // Tambien con el clic **derecho**: pulsando con el derecho en otra celda
-    // no hay evento `click`, asi que el menu de la primera se quedaba abierto
-    // encima mientras se abria el de la segunda.
-    //
-    // No se usa `mousedown`, que seria lo obvio: llega antes que el `click` de
-    // las propias entradas del menu y se las comeria.
     document.addEventListener('click', cerrar);
     document.addEventListener('contextmenu', cerrar);
     return () => {
@@ -124,23 +145,19 @@ function ButtonCellInner({
     };
   }, [contextMenu]);
 
-  // Con el dedo, mantener pulsado arrastra. Solo donde eso significa algo: la
-  // rejilla principal, que es la unica que sabe recolocar botones (`onDrop`).
-  // En kiosko y en la barra flotante no se secuestra el toque. Las celdas 2x2
-  // manejan el toque en cada uno de sus cuadrantes independientes.
+  const canDrag = !isEmpty && !isSlider && !hasSubButtons;
+
   usePulsacionTactil({
     ref: cellRef,
-    activo: !isEmpty && !!onDrop && button.widget !== 'slider' && !hasSubButtons,
+    activo: canDrag && Boolean(onDrop),
     idBoton: button.id,
     setPressed: raton.setPressed,
     destellar,
     yaDisparoRef: raton.yaDisparo,
     alPulsar: useCallback(() => onExecuteRef.current?.(), []),
-  })
+  });
 
-  // Botón oculto por visibilidad condicional: placeholder inerte. Va DESPUÉS de
-  // todos los hooks (Rules of Hooks: no se pueden llamar tras un return temprano).
-  if (isHidden) {
+  if (props.isHidden) {
     return (
       <div style={{
         background: VD.elevated, border: `1px solid ${VD.border}`,
@@ -149,38 +166,30 @@ function ButtonCellInner({
     );
   }
 
+  const handleCellClick = (e: React.MouseEvent) => {
+    if (hasSubButtons || isSlider) return;
+    if (isAdjust) handleAdjustClick();
+    raton.alClic(e);
+  };
+
+  const interactiveMouseProps = hasSubButtons || isSlider ? {} : {
+    onMouseDown: raton.alBajar,
+    onMouseUp: raton.alSubirOSalir,
+  };
+
   return (
     <>
       <div
         ref={cellRef}
         className="vd-btn"
         title={titulo}
-        draggable={!isEmpty && button.widget !== 'slider' && !hasSubButtons}
-        onClick={(e) => {
-          if (hasSubButtons || button.widget === 'slider') return;
-          if (button.action.type === 'adjust') {
-            const dir = (button.action.adjustDelta ?? 5) >= 0 ? 1 : -1;
-            setRotaryStep((prev) => prev + dir);
-            setLastRotaryDir(dir);
-            setLastRotaryTime(Date.now());
-          }
-          raton.alClic(e);
-        }}
+        draggable={canDrag}
+        onClick={handleCellClick}
         onContextMenu={raton.alMenuContextual}
-        // La rueda solo hace algo en los botones de ajuste, y ahi ahorra tener
-        // dos: arriba suma el paso, abajo lo resta.
-        onWheel={button.widget === 'slider' ? undefined : button.action.type === 'adjust' ? (e) => {
-          e.preventDefault();
-          const dir = e.deltaY < 0 ? 1 : -1;
-          onAdjustWheelRef.current?.(dir);
-          setRotaryStep((prev) => prev + dir);
-          setLastRotaryDir(dir);
-          setLastRotaryTime(Date.now());
-        } : undefined}
-        onMouseDown={hasSubButtons || button.widget === 'slider' ? undefined : raton.alBajar}
-        onMouseUp={hasSubButtons || button.widget === 'slider' ? undefined : raton.alSubirOSalir}
+        onWheel={!isSlider && isAdjust ? handleWheel : undefined}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); raton.alSubirOSalir(); }}
+        {...interactiveMouseProps}
         {...arrastre.props}
         style={{
           background: bg,
@@ -198,8 +207,6 @@ function ButtonCellInner({
           minHeight: 0,
           minWidth: 0,
           gap: 6,
-          // Cells fill their grid track. The grid container itself is sized
-          // (by parent) to keep tracks square — see MainB / FullscreenB.
           width: '100%',
           height: '100%',
         }}
@@ -208,8 +215,8 @@ function ButtonCellInner({
           button={button}
           accent={accent}
           isEmpty={isEmpty}
-          isActive={isActive}
-          isSelected={isSelected}
+          isActive={Boolean(props.isActive)}
+          isSelected={Boolean(props.isSelected)}
           hovered={hovered}
           isTouch={isTouch}
           toggled={toggled}
@@ -217,81 +224,36 @@ function ButtonCellInner({
           onEdit={onEdit}
         />
 
-        {/* 5.3 — Pulso radial al ejecutar */}
-        {flash && <span className="vd-flash-pulse" />}
-
-        {/* Ejecución en curso — anillo pulsante */}
-        {isRunning && <span className="vd-running-ring" />}
+        {flash && <DotRadialSweep accent={accent} />}
+        {props.isRunning && <span className="vd-running-ring" />}
 
         <CapasDeFondo button={button} toggled={toggled} />
-        {hasSubButtons ? (
-          <Subdivision2x2
-            subButtons={button.subButtons!}
-            parentButton={button}
-            accent={accent}
-            subToggled={subToggled}
-            soundEnabled={soundEnabled}
-            soundProfile={soundProfile}
-            onExecute={(target) => onExecuteRef.current?.(target)}
-            onLongPress={onLongPress ? (target) => onLongPressRef.current?.(target) : undefined}
-            onContextMenu={raton.alMenuContextual}
-          />
-        ) : button.widget === 'slider' ? (
-          <DotContinuousSlider
-            button={button}
-            sliderConfig={button.sliderWidget}
-            accent={accent}
-            deckState={deckState}
-            onStateUpdate={onStateUpdate}
-            soundEnabled={soundEnabled}
-            soundProfile={soundProfile}
-            toggled={toggled}
-          />
-        ) : (
-          <>
-            {/* Center stack — icon, rotary encoder or live widget. The label is rendered separately as a bottom banner. */}
-            <div style={{
-              position: 'relative', textAlign: 'center', padding: '6px 4px',
-              paddingBottom: displayLabel ? 22 : 6,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {button.action.type === 'adjust' ? (
-                <DotRotaryDial
-                  step={rotaryStep}
-                  lastDir={lastRotaryDir}
-                  lastActiveTime={lastRotaryTime}
-                  accent={accent}
-                  hovered={hovered}
-                  delta={button.action.adjustDelta ?? 5}
-                >
-                  <ContenidoCentral
-                    button={button}
-                    isEmpty={isEmpty}
-                    iconColor={iconColor}
-                    ActionIcon={ActionIcon}
-                    widgetData={widgetData}
-                  />
-                </DotRotaryDial>
-              ) : (
-                <ContenidoCentral
-                  button={button}
-                  isEmpty={isEmpty}
-                  iconColor={iconColor}
-                  ActionIcon={ActionIcon}
-                  widgetData={widgetData}
-                />
-              )}
-            </div>
 
-            {displayLabel && (
-              <RotuloCelda texto={displayLabel} button={button} accent={accent} toggled={toggled} />
-            )}
-          </>
-        )}
-
+        <CuerpoCelda
+          button={button}
+          accent={accent}
+          toggled={toggled}
+          subToggled={subToggled}
+          hasSubButtons={hasSubButtons}
+          soundEnabled={Boolean(props.soundEnabled)}
+          soundProfile={soundProfile}
+          deckState={deckState}
+          onStateUpdate={onStateUpdate}
+          onExecute={(target) => onExecuteRef.current?.(target)}
+          onLongPress={onLongPress ? (target) => onLongPressRef.current?.(target) : undefined}
+          onContextMenu={raton.alMenuContextual}
+          isEmpty={isEmpty}
+          iconColor={iconColor}
+          ActionIcon={ActionIcon}
+          widgetData={widgetData}
+          displayLabel={displayLabel}
+          rotaryStep={rotaryStep}
+          lastRotaryDir={lastRotaryDir}
+          lastRotaryTime={lastRotaryTime}
+          hovered={hovered}
+        />
       </div>
 
-      {/* Right-click context menu */}
       {contextMenu && (
         <MenuContextual
           x={contextMenu.x}
@@ -300,6 +262,9 @@ function ButtonCellInner({
           isPinned={button.pinned}
           onEdit={onEdit}
           onDuplicate={onDuplicate}
+          onCopy={onCopy}
+          onPaste={onPaste}
+          canPaste={canPaste}
           onTogglePin={onTogglePin}
           onClear={onClear}
           onQuickSlider={onQuickSlider}
@@ -312,24 +277,34 @@ function ButtonCellInner({
 
 /**
  * Props que obligan a redibujar la celda.
- *
- * Como lista y no como cadena de `&&`: añadir una prop que deba redibujar es
- * añadir un nombre aqui, y olvidarse de una deja de ser un `&&` perdido en
- * medio de trece.
  */
 const REDIBUJAN = [
   'button', 'toggled', 'isActive', 'isHidden', 'isRunning', 'isSelected',
-  'accent', 'showContextMenu', 'soundEnabled', 'soundProfile', 'resolvedLabel',
+  'accent', 'showContextMenu', 'soundEnabled', 'soundProfile', 'resolvedLabel', 'canPaste',
 ] as const;
 
-// Memoizado: la grilla re-renderiza al editar un solo boton, y sin esto se
-// redibujarian las treinta celdas. Los handlers cambian de identidad en cada
-// render del padre, asi que se ignoran a proposito — por eso el id del boton
-// arrastrado viaja en el `dataTransfer` y no en un estado (ver `onDrop`).
-export const ButtonCell = memo(ButtonCellInner, (prev, next) =>
-  REDIBUJAN.every((k) => prev[k] === next[k])
-  && (prev.subToggled?.join(',') ?? '') === (next.subToggled?.join(',') ?? '')
-  && (prev.widgetData?.line1 ?? null) === (next.widgetData?.line1 ?? null)
-  && (prev.widgetData?.line2 ?? null) === (next.widgetData?.line2 ?? null)
-  && (prev.widgetData?.tone ?? null) === (next.widgetData?.tone ?? null),
-);
+function arrayIgual(a?: boolean[], b?: boolean[]): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
+function widgetDataIgual(
+  a?: { line1: string; line2?: string; tone?: 'warn' | 'crit' },
+  b?: { line1: string; line2?: string; tone?: 'warn' | 'crit' },
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.line1 === b.line1 && a.line2 === b.line2 && a.tone === b.tone;
+}
+
+function celdasSonIguales(prev: ButtonCellProps, next: ButtonCellProps): boolean {
+  for (const k of REDIBUJAN) {
+    if (prev[k] !== next[k]) return false;
+  }
+  if (!arrayIgual(prev.subToggled, next.subToggled)) return false;
+  return widgetDataIgual(prev.widgetData, next.widgetData);
+}
+
+export const ButtonCell = memo(ButtonCellInner, celdasSonIguales);

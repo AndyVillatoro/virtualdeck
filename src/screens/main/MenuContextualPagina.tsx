@@ -11,6 +11,7 @@ interface MenuContextualPaginaProps {
   onStartRename: (page: PageConfig) => void;
   onOpenAppBinding: (pageId: string) => void;
   onSetGrid: (pageId: string, cols: 3 | 4 | 5 | 6, rows: number) => void;
+  onDuplicatePage?: (pageId: string) => void;
   onDeletePage: (pageId: string) => void;
   onClose: () => void;
 }
@@ -22,6 +23,7 @@ export function MenuContextualPagina({
   onStartRename,
   onOpenAppBinding,
   onSetGrid,
+  onDuplicatePage,
   onDeletePage,
   onClose,
 }: MenuContextualPaginaProps) {
@@ -99,6 +101,17 @@ export function MenuContextualPagina({
           ))}
         </div>
       </div>
+
+      {pages.length < 8 && onDuplicatePage && (
+        <PageCtxItem
+          label={t('page.duplicate')}
+          glyph="ADD"
+          onClick={() => {
+            onDuplicatePage(contextMenu.id);
+            onClose();
+          }}
+        />
+      )}
 
       {pages.length > 1 && (
         <PageCtxItem

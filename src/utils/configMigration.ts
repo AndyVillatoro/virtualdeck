@@ -30,7 +30,12 @@ const ACTION_TYPES = new Set([
   // importarlo, con un «botón N inválido» que no decía por qué.
   // `scripts/check-acciones.mjs` cruza ahora esta lista con `ActionType`.
   'adjust',
+  'mobile-remote',
+  // 5.0 — Terceros
+  'discord',
+  'spotify',
 ]);
+
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);

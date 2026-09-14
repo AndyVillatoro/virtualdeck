@@ -71,7 +71,11 @@ function setupWindow() {
   const win = createMainWindow();
 
   win.on('close', (e) => {
-    if (!isQuitting) { e.preventDefault(); win.hide(); }
+    if (!isQuitting) {
+      e.preventDefault();
+      win.setSkipTaskbar(true);
+      win.hide();
+    }
   });
 
   const initialCfg = loadConfig();
@@ -185,8 +189,16 @@ app.whenReady().then(() => {
   registrarEsquema();
   app.on('second-instance', (_e, argv) => {
     const url = urlEnArgumentos(argv);
-    if (url) atender(url, win);
-    else { win.show(); win.focus(); }
+    if (url) {
+      atender(url, win);
+    } else {
+      if (win.isMinimized()) win.restore();
+      win.setSkipTaskbar(false);
+      win.show();
+      win.focus();
+      win.setAlwaysOnTop(true);
+      win.setAlwaysOnTop(false);
+    }
   });
   // Y el caso en el que la aplicación **no** estaba abierta: Windows la
   // arranca con la URL en los argumentos. Se espera a que el renderer esté

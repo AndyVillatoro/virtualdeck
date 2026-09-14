@@ -91,6 +91,68 @@ pub fn kill_process(name: &str) -> Result<usize, LauncherError> {
     Ok(terminados)
 }
 
+/// Comprueba de forma rápida si un proceso está en ejecución, deteniéndose
+/// en la primera coincidencia sin necesidad de acumular ni ordenar toda la lista.
+pub fn is_process_running(name: &str) -> bool {
+    let objetivo = name.trim().trim_end_matches(".exe").to_lowercase();
+    if objetivo.is_empty() {
+        return false;
+    }
+    unsafe {
+        let Ok(snapshot) = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) else {
+            return false;
+        };
+        let mut entry = PROCESSENTRY32W {
+            dwSize: std::mem::size_of::<PROCESSENTRY32W>() as u32,
+            ..Default::default()
+        };
+        let mut found = false;
+        if Process32FirstW(snapshot, &mut entry).is_ok() {
+            loop {
+                let fin = entry
+                    .szExeFile
+                    .iter()
+                    .position(|c| *c == 0)
+                    .unwrap_or(entry.szExeFile.len());
+                let nombre = String::from_utf16_lossy(&entry.szExeFile[..fin]);
+                if nombre.trim_end_matches(".exe").eq_ignore_ascii_case(&objetivo) {
+                    found = true;
+                    break;
+                }
+                if Process32NextW(snapshot, &mut entry).is_err() {
+                    break;
+                }
+            }
+        }
+        let _ = CloseHandle(snapshot);
+        found
+    }
+}
+
+/// Termina un proceso por su PID.
+pub fn kill_process_by_pid(pid: u32) -> Result<(), LauncherError> {
+    if pid == 0 {
+        return Err(LauncherError::Empty);
+    }
+    unsafe {
+        let handle = OpenProcess(PROCESS_TERMINATE, false, pid)
+            .map_err(|e| LauncherError::Spawn(format!("abrir proceso {pid}: {e}")))?;
+        let res = TerminateProcess(handle, 1);
+        let _ = CloseHandle(handle);
+        res.map_err(|e| LauncherError::Spawn(format!("terminar proceso {pid}: {e}")))
+    }
+}
+
+/// Busca procesos cuyo nombre contenga la subcadena indicada.
+pub fn find_processes(query: &str) -> Result<Vec<ProcessInfo>, LauncherError> {
+    let q = query.trim().to_lowercase();
+    let lista = running_processes()?;
+    if q.is_empty() {
+        return Ok(lista);
+    }
+    Ok(lista.into_iter().filter(|p| p.name.contains(&q)).collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -132,5 +194,26 @@ mod tests {
     #[test]
     fn un_nombre_vacio_es_error() {
         assert!(matches!(kill_process("  "), Err(LauncherError::Empty)));
+    }
+
+    #[test]
+    fn is_process_running_detecta_procesos() {
+        assert!(!is_process_running(""));
+        assert!(!is_process_running("proceso_imposible_99999"));
+        let yo = std::process::id();
+        let lista = running_processes().expect("procesos");
+        if let Some(este) = lista.iter().find(|p| p.pid == yo) {
+            assert!(is_process_running(&este.name));
+        }
+    }
+
+    #[test]
+    fn find_processes_filtra_correctamente() {
+        let lista = running_processes().expect("procesos");
+        if let Some(primero) = lista.first() {
+            let trozo = &primero.name[..primero.name.len().min(3)];
+            let encontrados = find_processes(trozo).expect("buscar");
+            assert!(encontrados.iter().any(|p| p.name == primero.name));
+        }
     }
 }

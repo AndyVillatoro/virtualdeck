@@ -273,6 +273,21 @@ function svgGlifo57(filas, color) {
   return '<svg viewBox="0 0 26 36" width="22" height="30" style="display:block;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));">' + puntos + '</svg>';
 }
 
+function simboloGlifo(nombre) {
+  if (!nombre) return '';
+  const mapa = {
+    PLAY: '▶', PAUSE: '❚❚', NEXT: '⏭', PREV: '⏮', MUTE: '✕',
+    SPEAKER: '🔊', VOLUME: '🔊', MIC: '🎙',
+    ARROW_UP: '▲', ARROW_DOWN: '▼', ARROW_LEFT: '◀', ARROW_RIGHT: '▶',
+    UP: '▲', DOWN: '▼', LEFT: '◀', RIGHT: '▶',
+    TERMINAL: '>_', CODE: '</>', WEB: '🌐', GEAR: '⚙',
+    CLOCK: '◷', ADD: '+', SUBTRACT: '−', CHECK: '✓', CLOSE: '✕',
+    EDIT: '✎', LOCK: '🔒', BOLT: '⚡', WEATHER_SUN: '☀',
+    FULLSCREEN: '⛶', MINIMIZE: '🗕', STORAGE: '💾', CPU: '🔲'
+  };
+  return mapa[String(nombre).toUpperCase()] || nombre;
+}
+
 function pantallaEmparejar(error) {
   btnOlvidar.style.display = 'none';
   vaciar();
@@ -331,7 +346,6 @@ async function pantallaDeck() {
     app.append(barra);
   }
   const rejilla = nodo('div', { className: 'rejilla' });
-  const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva);
   const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva || b.pinned);
   if (visibles.length === 0) app.append(nodo('p', { textContent: t.sinBotones }));
   for (const b of visibles) {
@@ -340,7 +354,7 @@ async function pantallaDeck() {
     if (b.fgColor) celda.style.color = b.fgColor;
 
     if (b.pinned) {
-      celda.append(nodo('span', { className: 'pin-insignia', textContent: '📌' }));
+      celda.append(nodo('span', { className: 'pin-insignia', textContent: '•PIN•' }));
     }
 
     if (b.subButtons && b.subButtons.length === 4) {
@@ -350,7 +364,8 @@ async function pantallaDeck() {
         const sc = nodo('div', { className: 'sub-celda' });
         if (sub.bgColor) sc.style.backgroundColor = sub.bgColor;
         if (sub.fgColor) sc.style.color = sub.fgColor;
-        if (sub.icon) sc.append(nodo('span', { className: 'sub-icono', textContent: sub.icon }));
+        const ico = simboloGlifo(sub.icon || sub.dotGlyph);
+        if (ico && ico !== sub.label) sc.append(nodo('span', { className: 'sub-icono', textContent: ico }));
         if (sub.label) sc.append(nodo('span', { className: 'sub-txt', textContent: sub.label }));
         sc.onclick = async (e) => {
           e.stopPropagation();
@@ -432,7 +447,7 @@ async function pantallaDeck() {
       wrap.innerHTML = svgGlifo57(b.customGlyph57, b.fgColor);
       celda.append(wrap);
     } else if (b.icon) {
-      celda.append(nodo('div', { className: 'icono-centro', textContent: b.icon }));
+      celda.append(nodo('div', { className: 'icono-centro', textContent: simboloGlifo(b.icon) }));
     }
 
     if (b.label || b.sublabel) {

@@ -56,12 +56,21 @@ export interface NucleoNativo {
   typeText: (text: string) => boolean;
   sendHotkey: (combo: string) => boolean;
   getRunningProcesses: () => string[];
+  getProcessList: () => Array<{ pid: number; name: string }>;
+  isProcessRunning: (name: string) => boolean;
   killProcess: (name: string) => boolean;
+  killProcessByPid: (pid: number) => boolean;
   setVolume: (percent: number) => boolean;
   getVolume: () => number | null;
   isMuted: () => boolean | null;
   setMuted: (muted: boolean) => boolean;
   snapWindow: (position: string, processName?: string) => boolean;
+  getActiveWindow: () => { processName: string | null; windowTitle: string | null } | null;
+  focusWindow: (processName: string) => boolean;
+  minimizeWindow: (processName?: string) => boolean;
+  maximizeWindow: (processName?: string) => boolean;
+  restoreWindow: (processName?: string) => boolean;
+  closeWindow: (processName?: string) => boolean;
 
   // --- media (SMTC) ---
   getNowPlaying: () => NowPlayingNativo | null;

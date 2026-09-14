@@ -3,8 +3,9 @@ import { useTheme } from '../utils/theme';
 import { useT, useLang } from '../utils/i18n';
 import { PinKiosko, type ModoPin } from './fullscreen/PinKiosko';
 import { SonandoAhora } from './fullscreen/SonandoAhora';
-import { DotText } from '../components/DotText';
-import { DotLabel } from '../components/DotLabel';
+import { BarraSuperiorFullscreen } from './fullscreen/BarraSuperiorFullscreen';
+import { PanelLateralFullscreen } from './fullscreen/PanelLateralFullscreen';
+import { useFullscreenHotkeys } from './fullscreen/useFullscreenHotkeys';
 import { Wallpaper } from '../components/Wallpaper';
 import { ButtonCell } from '../components/ButtonCell';
 import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
@@ -17,16 +18,15 @@ import { interpolate } from '../utils/actions';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
-import { SensorCard, groupSensorsByHardware } from '../components/SensorPanel';
+import { groupSensorsByHardware } from '../components/SensorPanel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
-import type { ButtonConfig, DeckConfig } from '../types';
-
-
+import { DotLabel } from '../components/DotLabel';
+import type { ButtonConfig, DeckConfig, SoundProfileId } from '../types';
 
 interface FullscreenBProps {
   config: DeckConfig;
   soundOnPress: boolean;
-  soundProfile: import('../types').SoundProfileId;
+  soundProfile: SoundProfileId;
   onExit: () => void;
   /** Persiste el PIN del modo kiosko para próximas activaciones. */
   onSetKioskPin: (pin: string) => void;
@@ -49,30 +49,33 @@ function getSourceName(src: string): string {
   return parts[parts.length - 1]?.replace(/\.exe$/i, '') || '';
 }
 
-export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetKioskPin, onStateUpdate, onToggle }: FullscreenBProps) {
-  // La paleta viene del contexto: importarla fijaba el tema oscuro y esta
-  // pantalla se quedaba sin modo claro por completo.
+export function FullscreenB({
+  config,
+  soundOnPress,
+  soundProfile,
+  onExit,
+  onSetKioskPin,
+  onStateUpdate,
+  onToggle,
+}: FullscreenBProps) {
   const VD = useTheme();
   const t = useT();
   const lang = useLang();
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation();
+
   useEffect(() => {
     setNowPlayingActive(true);
     return () => { setNowPlayingActive(false); };
   }, [setNowPlayingActive]);
+
   const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [activePage, setActivePage] = useState(0);
-  // Los interruptores llegan de arriba: viven en la configuracion para que la
-  // barra flotante los vea. Kiosko tenia los suyos, y con eso un boton
-  // encendido en la pantalla principal salia apagado al entrar aqui.
   const toggledIds = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const errorTimer = useRef<number>();
 
-  // 5.5 — Modo kiosko: oculta topbar, deshabilita context menu y pide PIN para salir.
-  // Activación per-session (no persistida); el PIN sí se guarda para próximos turnos.
   const [kioskActive, setKioskActive] = useState(false);
   const [pinPrompt, setPinPrompt] = useState<ModoPin>(null);
   const storedPin = config.kiosk?.pin ?? '';
@@ -86,7 +89,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   };
   const requestExitKiosk = () => setPinPrompt('exit');
 
-
   useEffect(() => {
     if (!runtimeError) return;
     clearTimeout(errorTimer.current);
@@ -99,41 +101,16 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // `stopImmediatePropagation`, y en fase de **captura**: `App` tiene su
-        // propio manejador de ESC con `if (view === 'fullscreen') setView('main')`,
-        // que no sabe nada del kiosko. Se registra antes, asi que corria primero
-        // y **el PIN no protegia nada**: ESC devolvia a la pantalla principal sin
-        // preguntar, y cerrar el propio dialogo del PIN tambien salia del kiosko.
-        // `preventDefault` no bastaba — no detiene a los demas oyentes—, y
-        // detener la propagacion desde la fase de burbuja llega tarde.
-        if (pinPrompt) { e.preventDefault(); e.stopImmediatePropagation(); setPinPrompt(null); return; }
-        if (kioskActive) { e.preventDefault(); e.stopImmediatePropagation(); requestExitKiosk(); return; }
-        onExit();
-        return;
-      }
-      // Con el dialogo del PIN abierto, las cifras son el PIN y no un cambio de
-      // pagina; y en captura, ademas, se las quitariamos al propio campo.
-      if (pinPrompt || (e.target as HTMLElement)?.tagName === 'INPUT') return;
-      const num = parseInt(e.key);
-      if (!isNaN(num) && num >= 1 && num <= config.pages.length) setActivePage(num - 1);
-    };
-    document.addEventListener('keydown', onKey, true);
-    return () => document.removeEventListener('keydown', onKey, true);
-  }, [onExit, config.pages.length, kioskActive, pinPrompt]);
+  useFullscreenHotkeys({
+    onExit,
+    totalPages: config.pages.length,
+    kioskActive,
+    pinPrompt,
+    setPinPrompt,
+    requestExitKiosk,
+    setActivePage,
+  });
 
-  const handleToggle = onToggle;
-
-  // Se asigna en cada render, no en un efecto: solo la leen los manejadores
-  // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
-  // que se creo la celda.
-  // Igual que `toggledIds`: la celda conserva el manejador de su primer render,
-  // asi que leer `config` del cierre daba el de entonces. Se notaba en las
-  // acciones que interpolan `{variable}`: una accion `n = vi-{m}` escribia el
-  // valor de `m` de cuando se dibujo la celda, no el de ahora. Solo se salvaban
-  // los botones cuya **etiqueta** lleva `{}`, porque eso si fuerza el redibujo.
   const configRef = useRef(config);
   configRef.current = config;
 
@@ -142,9 +119,16 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
 
   const entorno = useCallback((): EntornoPulsacion => ({
     api: window.electronAPI!,
-    config: configRef.current, toggledIds: () => toggledRef.current, onToggle: handleToggle, onStateUpdate,
-    avisar: setRuntimeError, t,
-  }), [handleToggle, onStateUpdate, t]);
+    config: configRef.current,
+    toggledIds: () => toggledRef.current,
+    onToggle,
+    onStateUpdate,
+    avisar: setRuntimeError,
+    t,
+  }), [onToggle, onStateUpdate, t]);
+
+  const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
+  const [carpetaAbierta, setCarpetaAbierta] = useState<ButtonConfig | null>(null);
 
   const executeLongPress = useCallback(async (btn: ButtonConfig) => {
     if (!window.electronAPI) return;
@@ -174,26 +158,11 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
   const isPlaying = nowPlaying?.status === 'Playing';
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
-  // Group sensors by hardware piece (CPU / GPU / Mainboard / Storage…) and
-  // auto-pick the most representative reading per kind. This is the data that
-  // fills the left pane below the clock.
   const sensorGroups = useMemo(() => groupSensorsByHardware(sensorList), [sensorList]);
-
-  // Los mismos datos de widget que la pantalla principal. Kiosko los dibujaba
-  // sin ellos, asi que un boton con reloj o con un sensor mostraba el icono de
-  // la accion y ya.
-  // Lo mismo que mira la pantalla principal: que salida de audio manda y que
-  // procesos corren. Sin esto, en kiosko la visibilidad condicional se
-  // ignoraba (un boton con «solo si corre tal app» salia siempre) y el anillo
-  // del dispositivo activo no se pintaba.
   const estadoSistema = useEstadoSistema(window.electronAPI);
-  const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
-  // Kiosko no abria las carpetas: un boton de tipo carpeta no hacia **nada**,
-  // sin aviso. `pulsarBoton` devuelve OK para ese tipo porque quien lo abre es
-  // la pantalla, y aqui no habia quien.
-  const [carpetaAbierta, setCarpetaAbierta] = useState<ButtonConfig | null>(null);
 
-  const clima = useClimaWidget(config.buttons.some((b) => b.widget === 'weather'), window.electronAPI);
+  const hasWeather = useMemo(() => config.buttons.some((b) => b.widget === 'weather'), [config.buttons]);
+  const clima = useClimaWidget(hasWeather, window.electronAPI);
   const divisas = useDivisas(config.buttons, window.electronAPI);
   const datosWidget = useDatosWidget({
     botones: config.buttons,
@@ -213,109 +182,33 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         color: VD.text, fontFamily: VD.font,
         position: 'relative', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
-      }}>
-      {/* El fondo que el usuario eligio, no uno fijo. Estaba clavado a
-          `dotgrid`, asi que elegir CRT pintaba la viñeta en el deck y una
-          cuadricula de puntos en pantalla completa — justo el modo donde el
-          fondo mas se ve, porque ocupa la pantalla entera. */}
+      }}
+    >
       <Wallpaper kind={config.wallpaper} />
 
-      {/* Top bar — oculta en modo kiosko */}
       {!kioskActive && (
-      <div style={{
-        height: 30, display: 'flex', alignItems: 'center',
-        padding: '0 20px', gap: 16,
-        borderBottom: `1px solid ${VD.border}`,
-        fontFamily: VD.mono, fontSize: 9, letterSpacing: 2, color: VD.textDim,
-        flexShrink: 0, position: 'relative', zIndex: 1,
-      }}>
-        <DotGlyphIcon glyph="DOTS" size={6} color={config.accent} />
-        <span>{t('full.title')}</span>
-        <div style={{ flex: 1 }} />
-        <span>{dayStr} {dateStr}</span>
-        <button onClick={enterKiosk} title="Activar modo kiosko (oculta UI, ESC pide PIN)" style={{
-          background: 'transparent', border: `1px solid ${VD.border}`,
-          color: VD.textDim, fontFamily: VD.mono, fontSize: 9,
-          letterSpacing: 1, padding: '3px 8px', cursor: 'pointer',
-          marginRight: 4, display: 'inline-flex', alignItems: 'center', gap: 5,
-        }}>
-          <DotGlyphIcon glyph="LOCK" size={8} color={config.accent} />
-          {t('full.kioskBadge')}
-        </button>
-        <button onClick={onExit} style={{
-          background: 'transparent', border: `1px solid ${VD.border}`,
-          color: VD.textDim, fontFamily: VD.mono, fontSize: 9,
-          letterSpacing: 1, padding: '3px 8px', cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-        }}>
-          <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textDim} />
-          {t('full.exit')}
-        </button>
-      </div>
+        <BarraSuperiorFullscreen
+          accent={config.accent}
+          dayStr={dayStr}
+          dateStr={dateStr}
+          onEnterKiosk={enterKiosk}
+          onExit={onExit}
+        />
       )}
 
-      {/* Main area */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative', zIndex: 1 }}>
-        {/* Left: compact clock + sensor cards + page selector. Compacted to
-            free vertical space for the sensor stack — the previous layout
-            wasted ~50% of this column on a giant clock. */}
-        <div style={{
-          width: '34%', padding: '20px 24px 16px',
-          borderRight: `1px solid ${VD.border}`,
-          display: 'flex', flexDirection: 'column', flexShrink: 0, gap: 12,
-          minHeight: 0,
-        }}>
-          <div>
-            <DotLabel size={8} color={VD.textMuted} spacing={2} style={{ marginBottom: 8, display: 'block' }}>{t('full.clock')}</DotLabel>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-              <DotText text={hours} dotSize={7} gap={2} color={VD.text} />
-              <DotText text={minutes} dotSize={7} gap={2} color={VD.textDim} />
-            </div>
-          </div>
+        <PanelLateralFullscreen
+          hours={hours}
+          minutes={minutes}
+          pages={config.pages}
+          activePage={activePage}
+          setActivePage={setActivePage}
+          accent={config.accent}
+          showSensors={config.sensors?.showWidget ?? true}
+          sensorStatus={sensorStatus}
+          sensorGroups={sensorGroups}
+        />
 
-          {/* Sensor cards — fills the space between clock and page selector. */}
-          {(config.sensors?.showWidget ?? true) && (
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <DotLabel size={8} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
-              <span style={{
-                fontFamily: VD.mono, fontSize: 7, letterSpacing: 1,
-                color: sensorStatus?.connected ? VD.success : sensorStatus?.enabled ? VD.warning : VD.textMuted,
-                display: 'inline-flex', alignItems: 'center', gap: 4,
-              }}>
-                <DotGlyphIcon glyph="DOTS" size={5} color={sensorStatus?.connected ? VD.success : sensorStatus?.enabled ? VD.warning : VD.textMuted} />
-                <span>{sensorStatus?.connected ? 'LHM' : sensorStatus?.enabled ? 'OFFLINE' : 'DISABLED'}</span>
-              </span>
-            </div>
-            {sensorGroups.length === 0 ? (
-              <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
-                {t(sensorStatus?.enabled ? 'sensors.noData' : 'sensors.offHint')}
-              </div>
-            ) : (
-              sensorGroups.map((g) => <SensorCard key={g.hardware} group={g} />)
-            )}
-          </div>
-          )}
-          {!(config.sensors?.showWidget ?? true) && <div style={{ flex: 1 }} />}
-
-          {/* Page selector */}
-          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-            {config.pages.map((p, i) => (
-              <button key={p.id} onClick={() => setActivePage(i)} style={{
-                flex: 1, padding: '4px 0',
-                background: i === activePage ? config.accent : VD.elevated,
-                border: `1px solid ${i === activePage ? config.accent : VD.border}`,
-                color: i === activePage ? '#fff' : VD.textMuted,
-                fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                cursor: 'pointer', borderRadius: VD.radius.sm,
-              }}>
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: la rejilla, compartida con MainB. */}
         <RejillaBotones
           botones={pageButtons}
           columnas={gridSize}
@@ -333,8 +226,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               isHidden={!botonVisible(btn, estadoSistema, sensorList)}
               isRunning={ejecutando.has(btn.id)}
               widgetData={datosWidget[btn.id]}
-              // Sin esto, una etiqueta con {variable} salia con las llaves
-              // literales en kiosko y resuelta en la pantalla principal.
               resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
               soundEnabled={soundOnPress}
               soundProfile={soundProfile}
@@ -342,9 +233,13 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
               onStateUpdate={(k, v) => onStateUpdate({ [k]: v })}
               onEdit={() => {}}
               onExecute={(target) => executeButton(target ?? btn)}
-              onAdjustWheel={(signo) => executeButton({ ...btn, action: {
-                ...btn.action, adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
-              } })}
+              onAdjustWheel={(signo) => executeButton({
+                ...btn,
+                action: {
+                  ...btn.action,
+                  adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
+                },
+              })}
               onLongPress={(target) => {
                 const b = target ?? btn;
                 if (b.longPressAction && b.longPressAction.type !== 'none') executeLongPress(b);
@@ -354,7 +249,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         />
       </div>
 
-      {/* PIN prompt — set new (kiosk activation) o exit (kiosk deactivation) */}
       <PinKiosko
         modo={pinPrompt}
         setModo={setPinPrompt}
@@ -364,7 +258,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         setKioskActive={setKioskActive}
       />
 
-      {/* Runtime error toast */}
       {runtimeError && (
         <div style={{
           position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)',
@@ -385,14 +278,11 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
         </div>
       )}
 
-      {/* Bottom: now playing + page indicator. Compact + responsive — hides
-          the page block on narrow windows and the artwork on very narrow ones. */}
       <div style={{
         borderTop: `1px solid ${VD.border}`,
         padding: '6px 10px', display: 'flex', gap: 6,
         background: VD.surface, flexShrink: 0, position: 'relative', zIndex: 1,
       }}>
-        {/* Now Playing */}
         <SonandoAhora
           nowPlaying={nowPlaying}
           isPlaying={isPlaying}
@@ -402,7 +292,6 @@ export function FullscreenB({ config, soundOnPress, soundProfile, onExit, onSetK
           soundProfile={soundProfile}
         />
 
-        {/* Page indicator — drops out on narrow windows via .vd-fs-page CSS rule. */}
         <div className="vd-fs-page" style={{
           width: 86, border: `1px solid ${VD.border}`, padding: '5px 8px',
           background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column',

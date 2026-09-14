@@ -203,6 +203,8 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
               <ButtonCell
                 button={btn}
                 accent={config.accent ?? VD.accent}
+                deckState={config.state}
+                onStateUpdate={(k, v) => entorno().onStateUpdate({ [k]: v })}
                 toggled={encendidos.has(btn.id)}
                 subToggled={btn.subButtons?.map((s) => encendidos.has(s.id))}
                 isActive={botonActivo(btn, estadoSistema)}

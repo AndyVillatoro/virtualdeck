@@ -16,6 +16,14 @@ mod ventanas;
 pub use brillo::{brightness, set_brightness};
 pub use procesos::{kill_process, running_processes, ProcessInfo};
 pub use ventanas::{force_foreground, snap_window, SnapPosition};
+pub use procesos::{
+    find_processes, is_process_running, kill_process, kill_process_by_pid, running_processes,
+    ProcessInfo,
+};
+pub use ventanas::{
+    active_app, close_window, focus_window, force_foreground, maximize_window, minimize_window,
+    restore_window, snap_window, ActiveAppInfo, SnapPosition,
+};
 
 use std::os::windows::process::CommandExt;
 use std::process::{Command, Stdio};
@@ -200,11 +208,57 @@ pub fn run_script(script: &str, shell: Shell) -> Result<String, LauncherError> {
             ])
             .creation_flags(CREATE_NO_WINDOW)
             .output()?,
+        Shell::PowerShell => {
+            let script_con_utf8 = if script.contains("[Console]::OutputEncoding") {
+                script.to_string()
+            } else {
+                format!(
+                    "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; \
+                     $OutputEncoding = [System.Text.Encoding]::UTF8; \
+                     {script}"
+                )
+            };
+            Command::new("powershell")
+                .args([
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-NonInteractive",
+                    "-Command",
+                    &script_con_utf8,
+                ])
+                .creation_flags(CREATE_NO_WINDOW)
+                .output()?
+        }
         Shell::Cmd => Command::new("cmd")
             .args(["/C", script])
             .creation_flags(CREATE_NO_WINDOW)
             .output()?,
     };
+
+    let mut texto = String::from_utf8_lossy(&salida.stdout).into_owned();
+    if texto.trim().is_empty() {
+        texto = String::from_utf8_lossy(&salida.stderr).into_owned();
+    }
+
+    if salida.status.success() {
+        Ok(texto.trim().to_string())
+    } else {
+        Err(LauncherError::ScriptFailed(
+            salida.status.code().unwrap_or(-1),
+        ))
+    }
+}
+
+/// Ejecuta un comando o ejecutable directamente en el sistema sin intermediarios shell (latencia ~2ms).
+pub fn run_command_fast(exe: &str, args: &[String]) -> Result<String, LauncherError> {
+    if exe.trim().is_empty() {
+        return Err(LauncherError::Empty);
+    }
+    let salida = Command::new(exe)
+        .args(args)
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()?;
 
     let mut texto = String::from_utf8_lossy(&salida.stdout).into_owned();
     if texto.trim().is_empty() {

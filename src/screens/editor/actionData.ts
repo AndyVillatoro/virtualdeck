@@ -4,8 +4,10 @@ import {
   IconClipboard, IconTypeText, IconKillProcess, IconVolumeSet, IconFolder,
   IconMediaPlayPause, IconMediaNext, IconMediaPrev,
   IconVolumeUp, IconVolumeDown, IconMute, IconBrightness, IconNotify,
+  IconDiscord, IconSpotify,
   type VDIconProps,
 } from '../../components/VDIcon';
+
 import type { ActionType, ButtonAction, FolderButton, SliderWidgetConfig, TipoWidget } from '../../types';
 
 export interface ButtonPreset {
@@ -60,7 +62,11 @@ export const ACTION_TYPES: { type: ActionType; label: string; Icon: React.Compon
   { type: 'media-shuffle',    label: 'act.media-shuffle.label',    Icon: IconMediaPlayPause,  desc: 'act.media-shuffle.desc' },
   { type: 'media-repeat',     label: 'act.media-repeat.label',     Icon: IconMediaNext,       desc: 'act.media-repeat.desc' },
   { type: 'macro',            label: 'act.macro.label',            Icon: IconScript,          desc: 'act.macro.desc' },
+  { type: 'mobile-remote',     label: 'act.mobile-remote.label',    Icon: IconWeb,             desc: 'act.mobile-remote.desc' },
+  { type: 'discord',           label: 'act.discord.label',          Icon: IconDiscord,         desc: 'act.discord.desc' },
+  { type: 'spotify',           label: 'act.spotify.label',          Icon: IconSpotify,         desc: 'act.spotify.desc' },
 ];
+
 
 export const PRESETS: ButtonPreset[] = [
   // APPS
@@ -75,14 +81,20 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'APPS', label: 'Calculadora', icon: 'ADD', action: { type: 'app', appPath: 'calc.exe' } },
   { category: 'APPS', label: 'Task Mgr', icon: 'CPU', action: { type: 'app', appPath: 'taskmgr.exe' } },
   // WEB
-  { category: 'WEB', label: 'YouTube', icon: 'PLAY', bgColor: '#2a0000', fgColor: '#ff4444', action: { type: 'web', url: 'https://youtube.com' } },
-  { category: 'WEB', label: 'ChatGPT', icon: 'SPARKLE', bgColor: '#002a1a', fgColor: '#10a37f', action: { type: 'web', url: 'https://chat.openai.com' } },
+  { category: 'WEB', label: 'Gemini', icon: 'SPARKLE', bgColor: '#0f172a', fgColor: '#38bdf8', action: { type: 'web', url: 'https://gemini.google.com' } },
+  { category: 'WEB', label: 'ChatGPT', icon: 'SPARKLE', bgColor: '#002a1a', fgColor: '#10a37f', action: { type: 'web', url: 'https://chatgpt.com' } },
   { category: 'WEB', label: 'Claude', icon: 'SPARKLE', bgColor: '#2a1a0a', fgColor: '#d97706', action: { type: 'web', url: 'https://claude.ai' } },
-  { category: 'WEB', label: 'GitHub', icon: 'CODE', action: { type: 'web', url: 'https://github.com' } },
-  { category: 'WEB', label: 'Netflix', icon: 'PLAY', bgColor: '#2a0000', fgColor: '#e50914', action: { type: 'web', url: 'https://netflix.com' } },
-  { category: 'WEB', label: 'Twitter/X', icon: 'WEB', action: { type: 'web', url: 'https://x.com' } },
-  { category: 'WEB', label: 'Gmail', icon: 'BELL', bgColor: '#2a0a0a', fgColor: '#ea4335', action: { type: 'web', url: 'https://mail.google.com' } },
+  { category: 'WEB', label: 'GitHub', icon: 'CODE', bgColor: '#181b1e', fgColor: '#e6e8eb', action: { type: 'web', url: 'https://github.com' } },
+  { category: 'WEB', label: 'YouTube', icon: 'PLAY', bgColor: '#2a0000', fgColor: '#ff4444', action: { type: 'web', url: 'https://youtube.com' } },
   { category: 'WEB', label: 'Twitch', icon: 'PLAY', bgColor: '#1a0033', fgColor: '#9146ff', action: { type: 'web', url: 'https://twitch.tv' } },
+  { category: 'WEB', label: 'Discord', icon: 'CHAT', bgColor: '#111328', fgColor: '#5865f2', action: { type: 'web', url: 'https://discord.com/app' } },
+  { category: 'WEB', label: 'WhatsApp', icon: 'CHAT', bgColor: '#0a2016', fgColor: '#25d366', action: { type: 'web', url: 'https://web.whatsapp.com' } },
+  { category: 'WEB', label: 'Notion', icon: 'EDIT', bgColor: '#1a1a1a', fgColor: '#ffffff', action: { type: 'web', url: 'https://notion.so' } },
+  { category: 'WEB', label: 'Reddit', icon: 'CHAT', bgColor: '#2a1005', fgColor: '#ff4500', action: { type: 'web', url: 'https://reddit.com' } },
+  { category: 'WEB', label: 'Spotify', icon: 'AUDIO', bgColor: '#052514', fgColor: '#1db954', action: { type: 'web', url: 'https://open.spotify.com' } },
+  { category: 'WEB', label: 'Netflix', icon: 'PLAY', bgColor: '#2a0000', fgColor: '#e50914', action: { type: 'web', url: 'https://netflix.com' } },
+  { category: 'WEB', label: 'Twitter/X', icon: 'WEB', bgColor: '#111315', fgColor: '#e6e8eb', action: { type: 'web', url: 'https://x.com' } },
+  { category: 'WEB', label: 'Gmail', icon: 'BELL', bgColor: '#2a0a0a', fgColor: '#ea4335', action: { type: 'web', url: 'https://mail.google.com' } },
   // MEDIA
   { category: 'MEDIA', label: 'Vol. Táctil (H)', icon: 'SPEAKER', bgColor: '#141c24', fgColor: '#38bdf8', action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'volume', min: 0, max: 100, step: 2, orientation: 'horizontal', showValue: true } },
   { category: 'MEDIA', label: 'Fader Vol. (V)', icon: 'SPEAKER', bgColor: '#141c24', fgColor: '#38bdf8', action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'volume', min: 0, max: 100, step: 2, orientation: 'vertical', showValue: true } },
@@ -92,7 +104,11 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'MEDIA', label: 'Vol. +',     icon: 'SPEAKER', action: { type: 'volume-up' } },
   { category: 'MEDIA', label: 'Vol. −',     icon: 'SPEAKER', action: { type: 'volume-down' } },
   { category: 'MEDIA', label: 'Silenciar',  icon: 'VOLUME_MUTE', action: { type: 'mute' } },
+  { category: 'MEDIA', label: 'Discord Mute', icon: 'MIC', bgColor: '#1e1f40', fgColor: '#7289da', action: { type: 'discord', discordAction: 'toggle-mute' } },
+  { category: 'MEDIA', label: 'Discord Sordo', icon: 'VOLUME_MUTE', bgColor: '#1e1f40', fgColor: '#7289da', action: { type: 'discord', discordAction: 'toggle-deaf' } },
+  { category: 'MEDIA', label: 'Spotify Top 50', icon: 'AUDIO_WAVE', bgColor: '#1a3320', fgColor: '#1DB954', action: { type: 'spotify', spotifyAction: 'play-uri', spotifyUri: 'spotify:playlist:37i9dQZEVXbMDoHDwVN2tF' } },
   { category: 'MEDIA', label: 'Vol. 25%',   action: { type: 'volume-set', volumePercent: 25 } },
+
   { category: 'MEDIA', label: 'Vol. 50%',   action: { type: 'volume-set', volumePercent: 50 } },
   { category: 'MEDIA', label: 'Vol. 80%',   action: { type: 'volume-set', volumePercent: 80 } },
   // SISTEMA
@@ -113,6 +129,8 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'SISTEMA', label: 'Brillo 70%', icon: 'WEATHER_SUN', action: { type: 'brightness', brightnessLevel: 70 } },
   { category: 'SISTEMA', label: 'Brillo 100%', icon: 'WEATHER_SUN', action: { type: 'brightness', brightnessLevel: 100 } },
   { category: 'SISTEMA', label: 'Portapapeles', icon: 'STORAGE', action: { type: 'hotkey', hotkey: 'Win+V' } },
+  { category: 'SISTEMA', label: 'Vincular Móvil', icon: 'KEY', bgColor: '#111827', fgColor: '#38bdf8', action: { type: 'mobile-remote', mobileRemoteAction: 'pair-code' } },
+  { category: 'SISTEMA', label: 'Servidor Móvil', icon: 'BOLT', bgColor: '#181b20', fgColor: '#4ade80', action: { type: 'mobile-remote', mobileRemoteAction: 'toggle-server' } },
   // CREATIVO — Illustrator
   { category: 'CREATIVO', label: 'AI Selección', icon: 'V', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'hotkey', hotkey: 'V' } },
   { category: 'CREATIVO', label: 'AI Sel. Dir.', icon: 'A', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'hotkey', hotkey: 'A' } },

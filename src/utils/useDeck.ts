@@ -88,6 +88,40 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     }));
   }, [withHistory, t]);
 
+  const [buttonClipboard, setButtonClipboard] = useState<ButtonConfig | null>(null);
+
+  const copyButton = useCallback((id: string): boolean => {
+    const src = config.buttons.find((b) => b.id === id);
+    if (!src) return false;
+    setButtonClipboard(src);
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(JSON.stringify({ type: 'virtualdeck-button', version: 1, button: src }));
+      }
+    } catch {}
+    return true;
+  }, [config.buttons]);
+
+  const pasteButton = useCallback((targetId: string): boolean => {
+    if (!buttonClipboard) return false;
+    withHistory(t('undo.paste'), (prev) => {
+      const target = prev.buttons.find((b) => b.id === targetId);
+      if (!target) return prev;
+      return {
+        ...prev,
+        buttons: prev.buttons.map((b) => {
+          if (b.id !== targetId) return b;
+          return {
+            ...buttonClipboard,
+            id: target.id,
+            page: target.page,
+          };
+        }),
+      };
+    });
+    return true;
+  }, [buttonClipboard, withHistory, t]);
+
   const duplicateButton = useCallback((id: string) => {
     withHistory(t('undo.duplicate'), (prev) => {
       const src = prev.buttons.find((b) => b.id === id);
@@ -243,6 +277,29 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
       return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
     });
   }, [withHistory, t]);
+
+  const duplicatePage = useCallback((id: string) => {
+    withHistory(t('undo.duplicatePage'), (prev) => {
+      if (prev.pages.length >= 8) return prev;
+      const pageIdx = prev.pages.findIndex((p) => p.id === id);
+      if (pageIdx < 0) return prev;
+      const srcPage = prev.pages[pageIdx];
+      const newIdx = prev.pages.length;
+      const newPage: PageConfig = {
+        ...srcPage,
+        id: `page_${Date.now()}`,
+        name: `${srcPage.name} (2)`,
+      };
+      const srcButtons = prev.buttons.filter((b) => b.page === pageIdx);
+      const newButtons: ButtonConfig[] = srcButtons.map((b, slot) => ({
+        ...b,
+        id: `p${Date.now()}_${slot}`,
+        page: newIdx,
+      }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+    });
+    setActivePage(config.pages.length);
+  }, [config.pages.length, withHistory, t, setActivePage]);
 
   const deletePage = useCallback((id: string) => {
     withHistory(t('undo.delPage'), (prev) => {
@@ -534,9 +591,9 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   return {
     config, setConfig, loaded, setLoaded, t,
     withHistory, undo, saveConfig,
-    updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
+    updateButton, duplicateButton, copyButton, pasteButton, buttonClipboard, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
-    renamePage, addPage, deletePage, reorderPages, setPageGridSize,
+    renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
     saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,

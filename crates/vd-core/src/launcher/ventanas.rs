@@ -4,9 +4,16 @@
 //! compilaba dentro de un script de PowerShell.
 
 use windows::Win32::Foundation::{HWND, RECT};
+use windows::Win32::Foundation::{HWND, LPARAM, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{
+    GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+};
 use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow, IsIconic, SetWindowPos, ShowWindow, SystemParametersInfoW, HWND_TOP,
     SPI_GETWORKAREA, SWP_NOZORDER, SW_MAXIMIZE, SW_RESTORE, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS,
+    GetForegroundWindow, IsIconic, PostMessageW, SetWindowPos, ShowWindow, SystemParametersInfoW,
+    HWND_TOP, SPI_GETWORKAREA, SWP_NOZORDER, SW_MAXIMIZE, SW_MINIMIZE, SW_RESTORE,
+    SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS, WM_CLOSE,
 };
 
 use super::{procesos, LauncherError};
@@ -103,6 +110,21 @@ fn work_area() -> RECT {
     }
 }
 
+/// Area de trabajo especifica del monitor donde se encuentra la ventana indicada.
+fn work_area_for_hwnd(hwnd: HWND) -> RECT {
+    let mut mi = MONITORINFO {
+        cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+        ..Default::default()
+    };
+    let hmon = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
+    if !hmon.is_invalid() && unsafe { GetMonitorInfoW(hmon, &mut mi).as_bool() } {
+        if mi.rcWork.right > mi.rcWork.left && mi.rcWork.bottom > mi.rcWork.top {
+            return mi.rcWork;
+        }
+    }
+    work_area()
+}
+
 /// Primera ventana principal de un proceso, buscando por nombre.
 fn window_of_process(name: &str) -> Option<HWND> {
     use windows::core::BOOL;
@@ -163,6 +185,8 @@ pub fn snap_window(
     position: SnapPosition,
     process_name: Option<&str>,
 ) -> Result<(), LauncherError> {
+/// Resuelve el HWND de destino: o el proceso pedido o la ventana en primer plano.
+fn resolve_target_hwnd(process_name: Option<&str>) -> Result<HWND, LauncherError> {
     let hwnd = match process_name.filter(|s| !s.trim().is_empty()) {
         Some(nombre) => window_of_process(nombre).ok_or_else(|| {
             LauncherError::Spawn(format!("no se encontro una ventana de \"{nombre}\""))
@@ -174,6 +198,15 @@ pub fn snap_window(
     if hwnd.is_invalid() {
         return Err(LauncherError::Spawn("no hay ventana destino".into()));
     }
+    Ok(hwnd)
+}
+
+/// Coloca una ventana en la posicion indicada, respetando el monitor donde reside.
+pub fn snap_window(
+    position: SnapPosition,
+    process_name: Option<&str>,
+) -> Result<(), LauncherError> {
+    let hwnd = resolve_target_hwnd(process_name)?;
 
     // SAFETY: hwnd valido. Restaurar antes de mover es necesario: una ventana
     // maximizada ignora SetWindowPos.
@@ -191,6 +224,7 @@ pub fn snap_window(
                 }
                 let _ = ShowWindow(hwnd, SW_RESTORE);
                 if let Some((x, y, w, h)) = otra.rect_in(work_area()) {
+                if let Some((x, y, w, h)) = otra.rect_in(work_area_for_hwnd(hwnd)) {
                     SetWindowPos(hwnd, Some(HWND_TOP), x, y, w, h, SWP_NOZORDER)?;
                 }
             }
@@ -198,6 +232,131 @@ pub fn snap_window(
     }
 
     Ok(())
+}
+
+/// Trae al frente la ventana principal de un proceso.
+pub fn focus_window(process_name: &str) -> Result<(), LauncherError> {
+    let hwnd = window_of_process(process_name).ok_or_else(|| {
+        LauncherError::Spawn(format!("no se encontro una ventana de \"{process_name}\""))
+    })?;
+    if force_foreground(hwnd.0 as isize) {
+        Ok(())
+    } else {
+        Err(LauncherError::Spawn(format!(
+            "no se pudo traer al frente la ventana de \"{process_name}\""
+        )))
+    }
+}
+
+/// Minimiza una ventana. Si no se especifica proceso, minimiza la activa.
+pub fn minimize_window(process_name: Option<&str>) -> Result<(), LauncherError> {
+    let hwnd = resolve_target_hwnd(process_name)?;
+    unsafe {
+        let _ = ShowWindow(hwnd, SW_MINIMIZE);
+    }
+    Ok(())
+}
+
+/// Maximiza una ventana. Si no se especifica proceso, maximiza la activa.
+pub fn maximize_window(process_name: Option<&str>) -> Result<(), LauncherError> {
+    let hwnd = resolve_target_hwnd(process_name)?;
+    unsafe {
+        let _ = ShowWindow(hwnd, SW_MAXIMIZE);
+    }
+    Ok(())
+}
+
+/// Restaura una ventana. Si no se especifica proceso, restaura la activa.
+pub fn restore_window(process_name: Option<&str>) -> Result<(), LauncherError> {
+    let hwnd = resolve_target_hwnd(process_name)?;
+    unsafe {
+        let _ = ShowWindow(hwnd, SW_RESTORE);
+    }
+    Ok(())
+}
+
+/// Cierra una ventana limpiamente via WM_CLOSE (sin forzar terminacion del proceso).
+pub fn close_window(process_name: Option<&str>) -> Result<(), LauncherError> {
+    let hwnd = resolve_target_hwnd(process_name)?;
+    unsafe {
+        let _ = PostMessageW(Some(hwnd), WM_CLOSE, WPARAM(0), LPARAM(0));
+    }
+    Ok(())
+}
+
+/// Informacion de la aplicacion y ventana actualmente en primer plano.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActiveAppInfo {
+    pub process_name: Option<String>,
+    pub window_title: Option<String>,
+}
+
+/// Consulta la ventana en primer plano del sistema en <0.05ms (directo por Win32).
+pub fn active_app() -> Option<ActiveAppInfo> {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetForegroundWindow, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId,
+    };
+
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.is_invalid() {
+            return None;
+        }
+
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+
+        let window_title = {
+            let len = GetWindowTextLengthW(hwnd);
+            if len > 0 {
+                let mut buf = vec![0u16; len as usize + 1];
+                let written = GetWindowTextW(hwnd, &mut buf);
+                if written > 0 {
+                    Some(String::from_utf16_lossy(&buf[..written as usize]))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        };
+
+        let process_name = if pid > 0 {
+            if let Ok(handle) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+                let mut buf = vec![0u16; 512];
+                let mut len = buf.len() as u32;
+                let ok = QueryFullProcessImageNameW(
+                    handle,
+                    PROCESS_NAME_WIN32,
+                    windows::core::PWSTR(buf.as_mut_ptr()),
+                    &mut len,
+                );
+                let _ = CloseHandle(handle);
+                if ok.is_ok() && len > 0 {
+                    let full = String::from_utf16_lossy(&buf[..len as usize]);
+                    full.rsplit(['\\', '/'])
+                        .next()
+                        .map(|s| s.trim_end_matches(".exe").to_lowercase())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        Some(ActiveAppInfo {
+            process_name,
+            window_title,
+        })
+    }
 }
 
 /// Trae una ventana al frente y le da el foco de teclado.
@@ -346,5 +505,10 @@ mod tests {
             Some(SnapPosition::BottomRight)
         );
         assert_eq!(SnapPosition::from_config("inventada"), None);
+    }
+
+    #[test]
+    fn active_app_no_entra_en_panico() {
+        let _ = active_app();
     }
 }

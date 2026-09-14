@@ -60,4 +60,40 @@ export const DATOS: Record<string, Manejador> = {
       return fail(t('act.err.webhook', { msg: (e as Error).message }));
     }
   },
+
+  'mobile-remote': async ({ action, api, t }) => {
+    const modo = action.mobileRemoteAction ?? 'pair-code';
+    if (modo === 'pair-code') {
+      const code = await api.remote.pairCode();
+      if (!code) return fail(t('act.err.mobileCode'));
+      try { await navigator.clipboard.writeText(code); } catch { /* ignore */ }
+      await api.notify.show('VirtualDeck', t('act.mobile.pairCodeToast', { code }));
+      return OK;
+    }
+    if (modo === 'open-web') {
+      const st = await api.remote.status();
+      const port = st.port || 8787;
+      await api.launch.url(`http://127.0.0.1:${port}`);
+      return OK;
+    }
+    if (modo === 'toggle-server') {
+      const cfg = (await api.config.load()) as { remote?: { enabled?: boolean; port?: number; token?: string; allowLan?: boolean } };
+      const r = cfg.remote ?? { enabled: false, port: 8787, allowLan: true };
+      const nextEnabled = !r.enabled;
+      let token = r.token;
+      if (nextEnabled && !token) {
+        token = (await api.remote.newToken()) ?? '';
+      }
+      const updatedRemote = { ...r, enabled: nextEnabled, token, allowLan: nextEnabled ? (r.allowLan ?? true) : r.allowLan };
+      const nextCfg = { ...cfg, remote: updatedRemote };
+      await api.config.save(nextCfg);
+      await api.notify.show(
+        'VirtualDeck',
+        t(nextEnabled ? 'act.mobile.serverStarted' : 'act.mobile.serverStopped', { port: updatedRemote.port }),
+      );
+      return OK;
+    }
+    return OK;
+  },
 };
+

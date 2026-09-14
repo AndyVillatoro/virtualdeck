@@ -1,5 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
-import { BrowserWindow, app } from 'electron';
+import { BrowserWindow } from 'electron';
+import { intentarNativo } from './native';
 
 export interface ActiveAppInfo {
   processName: string | null;
@@ -9,10 +10,18 @@ export interface ActiveAppInfo {
 let activeProcess: string | null = null;
 let activeTitle: string | null = null;
 let psChild: ChildProcess | null = null;
+let nativeInterval: NodeJS.Timeout | null = null;
 let isShuttingDown = false;
 let restartTimeout: NodeJS.Timeout | null = null;
 
 export function getActiveApp(): ActiveAppInfo {
+  const nativo = intentarNativo('getActiveApp', (n) => n.getActiveWindow());
+  if (nativo) {
+    return {
+      processName: nativo.processName?.toLowerCase() || null,
+      windowTitle: nativo.windowTitle?.trim() || null,
+    };
+  }
   return {
     processName: activeProcess,
     windowTitle: activeTitle,
@@ -20,8 +29,8 @@ export function getActiveApp(): ActiveAppInfo {
 }
 
 /**
- * Script de PowerShell persistente que consulta GetForegroundWindow sin recrear procesos.
- * Bucle C# con P/Invoke user32.dll de latencia ultra-baja (<0.001 ms por ciclo).
+ * Script de PowerShell de respaldo cuando no hay núcleo nativo disponible (VD_SIN_NUCLEO=1).
+ * Bucle C# con P/Invoke user32.dll.
  */
 const SCRIPT_FOREGROUND = `
 $ErrorActionPreference = 'SilentlyContinue'
@@ -65,7 +74,19 @@ function emitChange(processName: string | null, windowTitle: string | null) {
   }
 }
 
-export function startActiveWindowTracker(): void {
+function tickNativo(): void {
+  const info = intentarNativo('getActiveWindow', (n) => n.getActiveWindow());
+  if (info) {
+    const proc = info.processName?.toLowerCase() || null;
+    const title = info.windowTitle?.trim() || null;
+
+    if (proc !== activeProcess || title !== activeTitle) {
+      emitChange(proc, title);
+    }
+  }
+}
+
+function startPsFallback(): void {
   if (psChild || isShuttingDown) return;
 
   try {
@@ -109,11 +130,34 @@ export function startActiveWindowTracker(): void {
   }
 }
 
+export function startActiveWindowTracker(): void {
+  if (isShuttingDown) return;
+
+  // 1. Camino Nativo Rust (<0.05ms): en proceso sin runtime externo de PowerShell
+  const infoInicial = intentarNativo('getActiveWindow', (n) => n.getActiveWindow());
+  if (infoInicial !== undefined) {
+    if (!nativeInterval) {
+      // Chequeo inicial
+      tickNativo();
+      // Muestreo reactivo a 250ms con 0% de CPU
+      nativeInterval = setInterval(tickNativo, 250);
+    }
+    return;
+  }
+
+  // 2. Respaldo PowerShell si no hay módulo compilado o VD_SIN_NUCLEO=1
+  startPsFallback();
+}
+
 export function stopActiveWindowTracker(): void {
   isShuttingDown = true;
   if (restartTimeout) {
     clearTimeout(restartTimeout);
     restartTimeout = null;
+  }
+  if (nativeInterval) {
+    clearInterval(nativeInterval);
+    nativeInterval = null;
   }
   if (psChild) {
     try {
@@ -122,4 +166,3 @@ export function stopActiveWindowTracker(): void {
     psChild = null;
   }
 }
-

@@ -141,7 +141,10 @@ export async function runActionSequence(
 
   for (const [i, a] of actions.entries()) {
     if (a.onlyIfPrevOk && !lastOk) continue;
+    if (a.onlyIfPrevFailed && lastOk) continue;
+
     const reps = Math.max(1, a.repeat ?? 1);
+    let stepOk = true;
     for (let r = 0; r < reps; r++) {
       const delay = a.delayMs ?? (i > 0 ? 150 : 0);
       if (delay > 0) await new Promise((res) => setTimeout(res, delay));
@@ -151,10 +154,24 @@ export async function runActionSequence(
         ? await especial(a, entorno)
         : await executeAction(a, api, merged, rgbProfiles, t);
 
-      lastOk = res.ok;
+      stepOk = res.ok;
       if (res.stateUpdate) Object.assign(merged, res.stateUpdate);
       if (!res.ok) {
         if (!firstError) firstError = res.error;
+        break;
+      }
+    }
+
+    lastOk = stepOk;
+    // Si este paso era de recuperación (onlyIfPrevFailed) y terminó bien, el fallo previo queda subsanado
+    if (a.onlyIfPrevFailed && stepOk) {
+      firstError = undefined;
+    }
+
+    if (!stepOk) {
+      const hasFallback = actions.slice(i + 1).some((next) => next.onlyIfPrevFailed);
+      const shouldContinue = a.continueOnError || hasFallback;
+      if (!shouldContinue) {
         break;
       }
     }

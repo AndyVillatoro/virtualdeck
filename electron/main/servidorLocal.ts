@@ -252,7 +252,6 @@ function listaDeBotones(): BotonMandoMovil[] {
     }>;
   };
   return (cfg?.buttons ?? [])
-    .filter((b) => b.action && b.action.type !== 'none')
     .filter((b) => {
       const tieneAccion = b.action && b.action.type !== 'none';
       const es2x2 = b.subButtons && b.subButtons.length === 4;

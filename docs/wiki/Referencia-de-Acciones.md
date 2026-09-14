@@ -58,6 +58,7 @@ Las variables se leen como `{nombre}` en cualquier campo de tipo string en otras
 |------|--------|-------------|
 | `webhook` | `webhookUrl`, `webhookMethod?` (default `POST`), `webhookHeaders?` (JSON string), `webhookBody?` | HTTP request genérico. Headers y body aceptan `{variables}`. |
 | `remote` | `remoteHost`, `remoteToken`, `remoteButton?`, `remotePage?` | Pulsa un botón de **otro** VirtualDeck de la red. El token es el del otro equipo (sus ajustes → servidor local), que debe tenerlo encendido y con la red local permitida. Va por HTTP sin cifrar. |
+| `mobile-remote` | `mobileRemoteAction?` (`pair-code`/`toggle-server`/`open-web`) | Controla el servidor web local del mando móvil: genera código de emparejamiento de 6 dígitos, alterna el servidor o abre la interfaz en el navegador. |
 | `tts` | `ttsText` | Reproduce el texto en voz alta (Windows SpeechSynthesizer vía PowerShell). Acepta variables. |
 | `region-capture` | — | Abre la herramienta nativa de captura de región (Win+Shift+S). El recorte queda en el portapapeles. |
 
@@ -124,3 +125,24 @@ Independientemente del tipo, un botón puede tener:
 - `inTrayMenu`: aparece en el menú contextual del tray.
 
 Ambos ejecutan la cadena del botón mediante el canal IPC `button:trigger`. Los interruptores, las variables y los demás efectos se aplican igual que con un clic en la cuadrícula.
+
+## Secuencias y acciones encadenadas
+
+Un botón puede ejecutar una secuencia de acciones (hasta 8 pasos adicionales). Cada paso cuenta con:
+
+- `delayMs`: Tiempo de espera (en ms) antes de ejecutar el paso (por defecto 150 ms entre pasos, o 0 ms si se especifica).
+- `repeat`: Número de repeticiones consecutivas (1 a 99 veces).
+- Condición de ejecución:
+  - **SIEMPRE**: Se ejecuta siempre en su turno.
+  - **SOLO SI OK** (`onlyIfPrevOk`): Se ejecuta solo si el paso anterior terminó con éxito.
+  - **SI FALLA** (`onlyIfPrevFailed`): Se ejecuta solo si el paso anterior terminó con error (ideal para pasos de recuperación o alertas de fallo).
+- **CONTINUAR SI FALLA** (`continueOnError`): Permite que la secuencia continúe con los pasos siguientes incluso si este paso falla.
+- Reordenamiento visual mediante los botones de subir y bajar en el editor.
+
+## Integraciones de terceros (Discord y Spotify)
+
+| Tipo | Campos | Descripción |
+|------|--------|-------------|
+| `discord` | `discordAction` (`toggle-mute`, `toggle-deaf`, `mute`, `unmute`, `deaf`, `undeaf`) | Control nativo de voz en Discord de escritorio mediante conexión Named Pipe local (`\\.\pipe\discord-ipc-0..9`). Permite silenciar el micrófono o ensordecer con latencia de 0 ms. |
+| `spotify` | `spotifyAction` (`play-uri`, `transfer-playback`, `toggle-shuffle`, `toggle-repeat`), `spotifyUri?`, `spotifyDeviceId?` | Abre y reproduce playlists, canciones o álbumes directamente en Spotify (acepta `spotify:...` y enlaces `open.spotify.com`), o transfiere reproducción activa al dispositivo indicado vía Spotify Web API. |
+

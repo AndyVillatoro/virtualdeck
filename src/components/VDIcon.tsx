@@ -223,6 +223,27 @@ export function IconNotify(p: VDIconProps) {
 // Convenience map — same keys as ACTION_ICONS in ButtonCell
 // ─────────────────────────────────────────────────────────────────
 
+export function IconDiscord(p: VDIconProps) {
+  return (
+    <Ico {...p}>
+      <path d="M18 6h-2c-1.5 0-2.8 1-3.5 2.2C11.8 7 10.5 6 9 6H7c-3 0-4 3-4 7 0 4 3 6 5 6h1l1-2c-1-.3-1.8-.8-2.4-1.5.8.5 1.8.8 3 .9h.8c1.2-.1 2.2-.4 3-.9-.6.7-1.4 1.2-2.4 1.5l1 2h1c2 0 5-2 5-6 0-4-1-7-4-7z" />
+      <circle cx="9.5" cy="11.5" r="1.5" fill="currentColor" />
+      <circle cx="14.5" cy="11.5" r="1.5" fill="currentColor" />
+    </Ico>
+  );
+}
+
+export function IconSpotify(p: VDIconProps) {
+  return (
+    <Ico {...p}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 9.5c2.5-.7 5.5-.5 8 .8" />
+      <path d="M8.5 12.2c2.1-.5 4.5-.4 6.5.6" />
+      <path d="M9 15c1.6-.4 3.4-.3 5 .5" />
+    </Ico>
+  );
+}
+
 export const VD_ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> = {
   none:              IconNone,
   app:               IconApp,
@@ -244,4 +265,7 @@ export const VD_ACTION_ICONS: Record<string, React.ComponentType<VDIconProps>> =
   'volume-set':      IconVolumeSet,
   folder:            IconFolder,
   notify:            IconNotify,
+  discord:           IconDiscord,
+  spotify:           IconSpotify,
 };
+

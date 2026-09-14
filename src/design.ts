@@ -50,29 +50,26 @@ export type VDTokens = {
   trama: string;
 };
 
-// Paleta clara — mismos tokens semánticos, valores invertidos.
+// Paleta clara refinada — grises industriales/cemento suaves (anti-glare), sin blancos deslumbrantes.
 export const VD_LIGHT: VDTokens = {
   ...VD,
-  bg: '#f0f0f0',
-  surface: '#e8e8e8',
-  elevated: '#dcdcdc',
-  elevatedHover: '#d4d4d4',
-  overlay: '#cccccc',
-  border: '#c0c0c0',
-  borderStrong: '#aaaaaa',
-  text: '#1a1a1a',
-  // Mas oscuros que el gris de antes (#444 y #888). Sobre `bg: #f0f0f0` el
-  // apagado daba un contraste de ~3.5:1, por debajo del minimo legible, y la
-  // interfaz esta casi entera a 8-9 px.
-  textDim: '#333333',
-  textMuted: '#5c5c5c',
-  accentBg: 'rgba(74,142,240,0.15)',
+  bg: '#d8dbe0',
+  surface: '#cbcfd5',
+  elevated: '#c0c5cc',
+  elevatedHover: '#b5bac2',
+  overlay: '#a9b0b9',
+  border: '#9da4ae',
+  borderStrong: '#7d8591',
+  text: '#111418',
+  textDim: '#2c323a',
+  textMuted: '#4d5560',
+  accentBg: 'rgba(74,142,240,0.18)',
   shadow: {
-    menu: '0 8px 24px rgba(0,0,0,0.18)',
-    modal: '0 16px 48px rgba(0,0,0,0.28)',
+    menu: '0 8px 24px rgba(0,0,0,0.16)',
+    modal: '0 16px 48px rgba(0,0,0,0.25)',
   },
-  dotIdle: 'rgba(0,0,0,0.05)',
-  // Trama oscura sobre fondo claro: en blanco seria invisible.
+  dotIdle: 'rgba(0,0,0,0.08)',
+  // Trama oscura sobre fondo gris claro: técnica y nítida.
   trama: '0,0,0',
 };
 

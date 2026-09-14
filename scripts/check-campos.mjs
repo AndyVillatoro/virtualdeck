@@ -16,7 +16,7 @@ import { join } from 'node:path';
 const problemas = [];
 
 // ── los campos declarados ─────────────────────────────────────────────────
-const tipos = readFileSync('src/types.ts', 'utf-8');
+const tipos = readFileSync('src/types/actions.ts', 'utf-8');
 const bloque = tipos.slice(tipos.indexOf('export interface ButtonAction'));
 const campos = new Set(
   [...bloque.slice(0, bloque.indexOf('\n}')).matchAll(/^\s{2}(\w+)\??:/gm)].map((m) => m[1]),

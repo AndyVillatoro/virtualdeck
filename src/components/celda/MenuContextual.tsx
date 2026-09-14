@@ -18,13 +18,16 @@ interface Props {
   isPinned?: boolean;
   onEdit: () => void;
   onDuplicate?: () => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
+  canPaste?: boolean;
   onTogglePin?: () => void;
   onClear?: () => void;
   onQuickSlider?: (target: 'volume' | 'brightness') => void;
   onCerrar: () => void;
 }
 
-export function MenuContextual({ x, y, isEmpty, isPinned, onEdit, onDuplicate, onTogglePin, onClear, onQuickSlider, onCerrar }: Props) {
+export function MenuContextual({ x, y, isEmpty, isPinned, onEdit, onDuplicate, onCopy, onPaste, canPaste, onTogglePin, onClear, onQuickSlider, onCerrar }: Props) {
   const VD = useTheme();
   const t = useT();
   return (
@@ -44,6 +47,12 @@ export function MenuContextual({ x, y, isEmpty, isPinned, onEdit, onDuplicate, o
           <Item label={t('cell.quickVolumeSlider')} glyph="DOTS" onClick={() => { onCerrar(); onQuickSlider('volume'); }} />
           <Item label={t('cell.quickBrightnessSlider')} glyph="DOTS" onClick={() => { onCerrar(); onQuickSlider('brightness'); }} />
         </>
+      )}
+      {!isEmpty && onCopy && (
+        <Item label={t('cell.copy')} glyph="EXPORT" onClick={() => { onCerrar(); onCopy(); }} />
+      )}
+      {canPaste && onPaste && (
+        <Item label={t('cell.paste')} glyph="IMPORT" onClick={() => { onCerrar(); onPaste(); }} />
       )}
       {!isEmpty && onDuplicate && (
         <Item label={t('cell.duplicate')} glyph="ADD" onClick={() => { onCerrar(); onDuplicate(); }} />
