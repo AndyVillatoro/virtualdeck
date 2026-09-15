@@ -88,8 +88,11 @@ export function createMainWindow(): BrowserWindow {
     minWidth: 400, minHeight: 240,
     frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
     icon: join(__dirname, '../../build/icon.png'),
-    // Mostrar en la barra de tareas cuando está visible; se oculta al ir a la bandeja.
-    skipTaskbar: false,
+    // Solo bandeja, nunca barra de tareas: la ventana se enseña y se esconde
+    // desde el icono de la bandeja (ver `trayManager`). Minimizar la manda
+    // allí (`window:minimize` es `hide()`), así que no hay caso en que quede
+    // inalcanzable por no tener botón.
+    skipTaskbar: true,
     // Arranque con Windows: la ventana no se llega a crear visible. Hacerlo con
     // `show: false` y no escondiéndola después evita que aparezca y desaparezca.
     show: !ARRANQUE_OCULTO,
@@ -219,7 +222,6 @@ export function createMainWindow(): BrowserWindow {
       return;
     }
     if (win.isMinimized()) win.restore();
-    win.setSkipTaskbar(false);
     win.show();
     win.focus();
     win.setAlwaysOnTop(true);

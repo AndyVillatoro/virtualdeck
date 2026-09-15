@@ -19,6 +19,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P4-F2** | P4 | Tienda: ventana #tienda (buscador/filtros/ficha/updates) | Muse Spark | `tienda.ts`, `TiendaB.tsx`, `tiendaAplicar.ts` | `DONE` ✅ | 2026-09-15 |
+| **T-FIX-05** | - | Pre-release UI: carátula visible + mando móvil DOT + solo bandeja | Muse Spark | `PanelMusica*`, `SeccionRemot*`, `windowManager.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-04** | - | Docs galería: el repo público ya existe (verificar + actualizar) | Muse Spark | `galeria.md`, `ROADMAP.md` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-03** | - | Higiene pre-release: ROADMAP al día + knip sin huella propia | Muse Spark | `ROADMAP.md`, `galeriaComun.ts`, `catalogoMarcas.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
@@ -36,6 +37,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-05 DONE)
+- **Contexto**: reporte con captura, rama `task/fix-prerelease-ui` (fusionada a main). (1) Carátula: transporte (prev/play/next) dentro de la cover en franja inferior DOT (`PanelMusica`, botones 52/64, `flexShrink: 0`); fuera la fila separada (~90px menos de panel). (2) Mando móvil: 3 claves ES a usted/neutro + 3 claves muertas fuera (`remoteLan`, `remotePairNeedsLan`, `remotePairHint`, ES+EN); tarjeta más densa. (3) Solo bandeja: `skipTaskbar: true` en creación + fuera los 3 `setSkipTaskbar(false)` (dom-ready, bandeja, second-instance); `window:minimize` ya era `hide()`, así que no hay ventana inalcanzable.
+- **Pruebas**: `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes (i18n 862 por las claves muertas). `npm run build` ok. Sin verificación visual en app (sin display aquí): pendiente clicar del lado del dueño.
+- **Recomendación**: listo para release v0.13.0.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-04 DONE)
 - **Contexto**: el dueño avisó de que el repo público existe. Verificado: `manifest.json` sirve 4 perfiles v1 (esencial, streaming, trabajo, rgb) y `npm run check:galeria` da verde (4 revisados, 40 tipos). Docs actualizados (`galeria.md` Estado actual + `ROADMAP` iteración 4 / matriz P4 / 6.1): existe, falta clicarlo en la app y versionarlo a v2. Solo docs, sin tocar código.

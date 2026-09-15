@@ -122,6 +122,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Cambios:** solo docs (`galeria.md`, `ROADMAP.md` ×3): existe, validado en vivo, diferido versionado v2 + curation.
 * **Verificación:** `npm run check` 0 errores, 6 guardianes verdes; `npm run check:galeria` en vivo ok (4 revisados).
 
+## Turno 2026-09-15 — T-FIX-05 Carátula + mando móvil + solo bandeja (DONE)
+
+* **Modelo:** Muse Spark, rama `task/fix-prerelease-ui` (fusionada a main).
+* **Carátula** (`screens/main/PanelMusica.tsx`): transporte dentro de la cover (franja inferior `rgba(7,8,9,0.78)` + glifos dot, 52/64px); eliminada la fila separada; `flexShrink: 0`; comentario actualizado.
+* **Mando móvil** (`RemoteSection.tsx`, `esAjustes.ts`, `enAjustes.ts`): tuteo fuera (3 claves a usted/neutro), 3 claves muertas eliminadas ES+EN, tarjeta densa (9px 10px, gap 8, URL 12px).
+* **Bandeja** (`windowManager.ts`, `trayManager.ts`, `index.ts`): `skipTaskbar: true` + 3 `setSkipTaskbar(false)` fuera; verificado que `window:minimize` es `hide()` y que las 4 rutas de mostrar (bandeja, second-instance, deep-link, arranque) no dependen del taskbar.
+* **Verificación:** `npm run check` 0 errores, 6 guardianes verdes (`i18n 862`), `npm run build` ok. Sin display aquí: sin captura de verificación.
+
 ## Proximo paso concreto
 
 * **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).

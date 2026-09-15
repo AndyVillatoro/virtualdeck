@@ -193,7 +193,6 @@ app.whenReady().then(() => {
       atender(url, win);
     } else {
       if (win.isMinimized()) win.restore();
-      win.setSkipTaskbar(false);
       win.show();
       win.focus();
       win.setAlwaysOnTop(true);

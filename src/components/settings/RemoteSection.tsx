@@ -102,8 +102,8 @@ function TarjetaConexionMovil({
   return (
     <div style={{
       background: VD.elevated, border: `1px solid ${VD.border}`,
-      borderRadius: VD.radius.md, padding: '12px 14px',
-      display: 'flex', flexDirection: 'column', gap: 12,
+      borderRadius: VD.radius.md, padding: '9px 10px',
+      display: 'flex', flexDirection: 'column', gap: 8,
     }}>
       {/* Paso 1: Dirección web */}
       <div>
@@ -111,7 +111,7 @@ function TarjetaConexionMovil({
           {t('set.remoteStep1')}
         </div>
         <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: VD.mono, fontSize: 13, fontWeight: 700, color: VD.text, userSelect: 'text' }}>
+          <span style={{ fontFamily: VD.mono, fontSize: 12, fontWeight: 700, color: VD.text, userSelect: 'text' }}>
             {urlPrincipal}
           </span>
           <button onClick={onCopiarUrl} style={{ ...miniBtn(accent), display: 'inline-flex', alignItems: 'center', gap: 4 }}>

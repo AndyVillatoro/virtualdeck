@@ -86,7 +86,6 @@ export function createTray(win: BrowserWindow, onQuit: () => void) {
     tray.setToolTip('VirtualDeck');
     const traerAlFrente = () => {
       if (win.isMinimized()) win.restore();
-      win.setSkipTaskbar(false);
       win.show();
       win.focus();
       win.setAlwaysOnTop(true);

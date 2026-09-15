@@ -14,9 +14,13 @@ import type { NowPlaying, ElectronAPI } from '../../types';
  * pulsar con el dedo**: la carátula mide 44 px y los tres botones reparten el
  * ancho de la barra, con lo que cada uno queda en unos 25 px de alto. En una
  * tableta —que es donde este deck tiene más sentido— eso es fallar el botón la
- * mitad de las veces. Aquí los controles son de 64 px, que es la medida que
- * recomiendan Windows y Apple para el dedo, y el de reproducir es más grande
- * todavía porque es el que se usa.
+ * mitad de las veces.
+ *
+ * El transporte va **dentro de la carátula**, en una franja inferior con
+ * glifos dot-matrix: viaja con la imagen y no empuja el resto. En formatos
+ * alargados, donde el alto manda, la carátula con sus botones es un solo
+ * bloque que no se esconde al desplazar — lo primero que se ve es lo que
+ * suena y cómo pararlo.
  *
  * Aparece **solo cuando hay algo sonando**: un panel fijo de 300 px vacío se
  * come un tercio de la rejilla a cambio de nada.
@@ -28,9 +32,9 @@ import type { NowPlaying, ElectronAPI } from '../../types';
  * cuando busca algo concreto.
  */
 
-/** Lado del botón de reproducir. Los otros dos son algo menores. */
-const LADO_PRINCIPAL = 78;
-const LADO_SECUNDARIO = 64;
+/** Botón principal sobre la carátula. Los otros dos son algo menores. */
+const LADO_PRINCIPAL = 64;
+const LADO_SECUNDARIO = 52;
 
 export function PanelMusica({
   nowPlaying, isPlaying, sourceName, accent, api, lado, onCerrar,
@@ -120,18 +124,18 @@ export function PanelMusica({
       </div>
 
       {/* Carátula. El hueco es cuadrado y del ancho del panel; cuando no hay
-          imagen se queda el icono de reproducción en vez de un vacío gris. */}
+          imagen se queda el icono de reproducción en vez de un vacío gris.
+          No se encoge (`flexShrink: 0`): en una ventana baja el panel
+          desplaza, pero la carátula mantiene su tamaño. */}
       <div style={{
         width: '100%', aspectRatio: '1', borderRadius: VD.radius.lg,
         background: VD.overlay, border: `1px solid ${VD.border}`,
-        overflow: 'hidden', position: 'relative',
+        overflow: 'hidden', position: 'relative', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        {/* Un icono neutro, no play/pausa: ahi arriba significaba una cosa
-            («esta sonando») y en el boton de abajo la contraria («pulsa para
-            pausar»), con lo que la misma pantalla enseñaba dos triangulos que
-            querian decir cosas distintas. El estado lo dicen el punto y el
-            texto, que no se prestan a confusion. */}
+        {/* Un icono neutro, no play/pausa: el estado lo dicen el punto y el
+            texto de abajo, que no se prestan a confusion. El transporte vive
+            en la franja inferior de la carátula. */}
         <div style={{ opacity: 0.22 }}>
           <DotGlyphIcon glyph="AUDIO_WAVE" size={48} color={VD.textMuted} showRecessed />
         </div>
@@ -153,6 +157,21 @@ export function PanelMusica({
             <DotMatrixImageOverlay pitch={4} />
           </>
         )}
+        {/* Transporte sobre la carátula: anterior / reproducir / siguiente con
+            glifos dot-matrix en franja inferior. Es el mismo `control` de
+            abajo, solo que vive sobre la imagen: un bloque solo, siempre
+            visible, sin empujar título ni botones. */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          padding: '10px 0 12px',
+          background: 'rgba(7,8,9,0.78)',
+          borderTop: `1px solid ${VD.border}`,
+        }}>
+          {control('prev', 'PREV', t('media.prev'), LADO_SECUNDARIO, false, puede?.prev !== false)}
+          {control('play-pause', isPlaying ? 'PAUSE' : 'PLAY', t('media.playPause'), LADO_PRINCIPAL, true)}
+          {control('next', 'NEXT', t('media.next'), LADO_SECUNDARIO, false, puede?.next !== false)}
+        </div>
       </div>
 
       <div>
@@ -181,12 +200,6 @@ export function PanelMusica({
             {t(isPlaying ? 'media.playing' : 'media.paused')}{sourceName ? ` · ${sourceName}` : ''}
           </span>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-        {control('prev', 'PREV', t('media.prev'), LADO_SECUNDARIO, false, puede?.prev !== false)}
-        {control('play-pause', isPlaying ? 'PAUSE' : 'PLAY', t('media.playPause'), LADO_PRINCIPAL, true)}
-        {control('next', 'NEXT', t('media.next'), LADO_SECUNDARIO, false, puede?.next !== false)}
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
