@@ -6,6 +6,39 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-09-15
+
+### Added
+
+- **Tienda en ventana propia (`#tienda`)**:
+  - Manifiesto v2: entradas `profile` o `page` (páginas sueltas `{page, buttons}`), `version`, `minAppVersion` (bloquea con aviso), `targetApp`, `requires`, `readme` / `readmeUrl`.
+  - Ventana aparte con buscador (nombre/autor/texto), filtros por tipo, app destino y etiquetas, ficha con nota del autor + riesgo completo e insignias **INSTALADO** / **UPDATE → vX** comparando con el `origen` sellado al instalar.
+  - La tienda no escribe configuración: pide por `tienda:import` y la ventana principal valida y aplica (`tienda:hecho` de vuelta).
+  - **Riesgo extendido**: lo que se ejecuta solo (temporizadores, sensores) y otros efectos al pulsar (voz, cierre de apps, portapapeles, captura, Discord/Spotify); recorre macros (teclas, texto, clics), ramas, carpetas y cuadrantes 2×2 sin recortar.
+  - **Páginas sueltas instalables**: sanea, remapea ids y limpia los atajos globales que choquen (avisando cuántos).
+- **Reescaneo RGB real**: pide detección al servidor OpenRGB (`requestRescan`), con espera, aviso de cuenta y apertura automática del calibrador si hay zonas sin contar.
+- **Automatización Microsoft Store**: `scripts/build-store.mjs` (`--bump`, `--check-only`, `--preflight`, validaciones previas y ficha de envío).
+- **Presets web ampliados**: Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch, Reddit, Discord/WhatsApp Web, Notion, Spotify Web (catálogo + chips en el editor).
+- **Modo claro anti-glare**: grises cemento mate en vez de blanco puro.
+- **Menú de ajustes colapsable**: acordeón modular con memoria de estado.
+- **Hardening Spotify & Discord**: Discord sin freeze ante app cerrada (pre-chequeo + Client ID StreamKit + fallback a atajos); Spotify con URIs normalizadas, dispositivos y token global + por botón; sección Integraciones.
+
+### Changed
+
+- **Transporte dentro de la carátula**: anterior/reproducir/siguiente sobre la imagen en franja DOT; la carátula no se encoge ni se esconde.
+- **Solo bandeja**: VirtualDeck ya no sale en la barra de tareas (minimizar manda a la bandeja, como siempre hizo).
+- **Mando móvil en registro usted** y tarjeta más densa, a juego con los ajustes.
+- **ColorPicker con commit al soltar**: el selector se mueve en local y escribe al hardware al soltar (antes cada píxel disparaba IPC + relectura y se trababa).
+- **Diccionarios ES/EN por dominios** y pantallas `EditorB`/`MainB` bajo complejidad 18 (piezas puras extraídas).
+- **Lazy loading de marcas**: el catálogo viaja en chunk aparte (−37 KB del arranque).
+- Ajustes con cabeceras fijas al desplazar y ancho adaptable; Ayuda sin colapsable duplicado.
+
+### Fixed
+
+- Discord congelaba ~10 s si la app estaba cerrada; Spotify fallaba con URLs no URI y sin dispositivo visible.
+- El reescaneo RGB no detectaba hardware nuevo ni avisaba nada.
+- La galería no entraba en ramas, temporizadores, carpetas ni cuadrantes al resumir riesgo.
+
 ## [0.12.0] — 2026-09-13
 
 ### Added

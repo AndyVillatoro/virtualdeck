@@ -19,6 +19,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P4-F2** | P4 | Tienda: ventana #tienda (buscador/filtros/ficha/updates) | Muse Spark | `tienda.ts`, `TiendaB.tsx`, `tiendaAplicar.ts` | `DONE` ✅ | 2026-09-15 |
+| **T-REL-013** | - | Release v0.13.0: bump+changelog+tag+installer+MSIX+Pages | Muse Spark | `package.json`, `CHANGELOG.md`, `docs/index.html` | `CLAIMED` 🟡 | 2026-09-15 |
 | **T-FIX-07** | - | RGB: auto-calibrador tras rescan + picker con commit | Muse Spark | `RGBManagerB.tsx`, `ColorPicker.tsx`, `piezas.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-06** | - | RGB: reescaneo real (requestRescan + busy + toast) | Muse Spark | `rgb.ts`, `rgbIpc.ts`, `RGBManagerB.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-05** | - | Pre-release UI: carátula visible + mando móvil DOT + solo bandeja | Muse Spark | `PanelMusica*`, `SeccionRemot*`, `windowManager.ts` | `DONE` ✅ | 2026-09-15 |
