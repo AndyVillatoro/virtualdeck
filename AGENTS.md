@@ -88,7 +88,7 @@ Cualquier modelo orquestado por OpenCode debe seleccionar su próxima tarea de e
 | **P3 — Media** | **Reducción de Complejidad en Pantallas Secundarias** | `src/screens/EditorB.tsx`, `src/screens/MainB.tsx` | Extraer subcomponentes puros para llevar la complejidad ciclomática de las pantallas por debajo de 18 (eliminar warnings restantes de ESLint). |
 | **P4 — Ecosistema** | **Galería de Perfiles en Vivo (Ítem 24/6.1)** | `src/components/settings/GallerySection.tsx`, `electron/main/` | Conexión directa a repositorio de perfiles comunitarios en GitHub con previsualización de riesgo de teclas y scripts. |
 | **P5 — Mantenimiento** | **Lazy Loading de Catálogo de Marcas (Ítem 4.1)** | `src/data/brandIcons.ts`, `src/components/BrandIconPicker.tsx` | Carga diferida (`import()`) del catálogo de marcas SVG pesadas para optimizar tiempo de inicio y consumo de memoria. |
-| **P5 — Mantenimiento** | **Automatización y Checklist de Publicación MSIX (Ítem 30)** | `scripts/build-store.mjs`, `docs/STORE.md` | Automatizar bump semver y empaquetado para la tienda de Microsoft Windows. |
+| **P5 — Mantenimiento** | **Automatización y Checklist de Publicación MSIX (Ítem 30)** | `scripts/build-store.mjs`, `docs/MICROSOFT-STORE.md` | Automatizar bump semver y empaquetado para la tienda de Microsoft Windows. |
 
 ---
 

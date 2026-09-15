@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '../utils/theme';
-import { BRAND_ICONS_MAP, getCachedBrandIconSvg, generateSvgFromBitmap, mergePalette } from '../data/brandIcons';
+import { useCatalogoMarcas } from '../utils/catalogoMarcas';
 
 interface BrandIconDisplayProps {
   iconKey: string;
@@ -24,15 +24,17 @@ export function BrandIconDisplay({
   customBitmap, customColor, customPalette, style,
 }: BrandIconDisplayProps) {
   const VD = useTheme();
-  const icon = BRAND_ICONS_MAP[iconKey];
+  const catalogo = useCatalogoMarcas();
+  const icon = catalogo?.BRAND_ICONS_MAP[iconKey];
 
   const svg = useMemo(() => {
-    if (customBitmap && icon) {
-      const palette = mergePalette(iconKey, customPalette);
-      return generateSvgFromBitmap(customBitmap, customColor ?? icon.color, palette);
+    if (!catalogo || !icon) return null;
+    if (customBitmap) {
+      const palette = catalogo.mergePalette(iconKey, customPalette);
+      return catalogo.generateSvgFromBitmap(customBitmap, customColor ?? icon.color, palette);
     }
-    return getCachedBrandIconSvg(iconKey);
-  }, [iconKey, customBitmap, customColor, customPalette, icon]);
+    return catalogo.getCachedBrandIconSvg(iconKey);
+  }, [catalogo, iconKey, customBitmap, customColor, customPalette, icon]);
 
   if (!icon || !svg) return null;
 

@@ -4,7 +4,8 @@ import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
 import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 import { BrandIconDisplay } from './BrandIconDisplay';
-import { BRAND_ICONS_MAP, ICON_SIZE, celdaDesdeFraccion } from '../data/brandIcons';
+import { useCatalogoMarcas, iconoDeCatalogo, type CatalogoMarcas } from '../utils/catalogoMarcas';
+import { ICON_SIZE, celdaDesdeFraccion } from '../data/brandIconTypes';
 
 import {
   CANVAS_PX,
@@ -26,12 +27,60 @@ interface BrandIconEditorProps {
 }
 
 // ── Editor ────────────────────────────────────────────────────────────────────
+
+/** Aviso mientras baja el catálogo (el lienzo se rellena solo al llegar). */
+function AvisoCargandoCatalogo({ catalogo, hayCustom }: {
+  catalogo: CatalogoMarcas | null;
+  hayCustom: boolean;
+}) {
+  const VD = useTheme();
+  const t = useT();
+  if (catalogo || hayCustom) return null;
+  return (
+    <div style={{
+      padding: 24, fontFamily: VD.mono, fontSize: 10, color: VD.textMuted,
+      letterSpacing: 1, textAlign: 'center',
+    }}>
+      {t('brand.loading')}
+    </div>
+  );
+}
+
+/**
+ * Adopta el icono base cuando el catálogo llega diferido.
+ *
+ * Los estados nacen vacíos y se rellenan al llegar el icono, una sola vez por
+ * icono y sin pisar lo que ya trae el botón (custom*) ni lo ya dibujado.
+ */
+function useAdoptarIconoBase(
+  iconKey: string,
+  icon: { bitmap: string[]; color: string; palette?: Record<string, string> } | undefined,
+  customBitmap: string[] | undefined,
+  customColor: string | undefined,
+  customPalette: Record<string, string> | undefined,
+  setBitmap: (b: string[]) => void,
+  setPrimaryColor: (c: string) => void,
+  setActiveColor: (c: string) => void,
+  setPalette: (p: Record<string, string>) => void,
+) {
+  const adoptadoPara = useRef<string | null>(null);
+  useEffect(() => {
+    if (!icon || adoptadoPara.current === iconKey) return;
+    adoptadoPara.current = iconKey;
+    if (!customBitmap) setBitmap(normalizeBitmapPreserveLetters(icon.bitmap));
+    if (!customColor) { setPrimaryColor(icon.color); setActiveColor(icon.color); }
+    if (!customPalette) setPalette({ ...(icon.palette ?? {}) });
+  }, [icon, iconKey, customBitmap, customColor, customPalette, setBitmap, setPrimaryColor, setActiveColor, setPalette]);
+}
+
 export function BrandIconEditor({
   iconKey, customBitmap, customColor, customPalette, onSave, onClose, accent,
 }: BrandIconEditorProps) {
   const t = useT();
   const VD = useTheme();
-  const icon = BRAND_ICONS_MAP[iconKey];
+  // El catálogo llega diferido: los estados nacen vacíos y se adoptan al llegar.
+  const catalogo = useCatalogoMarcas();
+  const icon = iconoDeCatalogo(catalogo, iconKey);
   const original = icon?.bitmap ?? [];
   const originalColor = icon?.color ?? '#ffffff';
   // The icon's built-in (read-only) palette is merged so multi-color icons
@@ -47,6 +96,11 @@ export function BrandIconEditor({
   );
   const [activeColor, setActiveColor] = useState<string>(customColor ?? originalColor);
   const [erasing, setErasing] = useState(false);
+
+  useAdoptarIconoBase(
+    iconKey, icon, customBitmap, customColor, customPalette,
+    setBitmap, setPrimaryColor, setActiveColor, setPalette,
+  );
 
   // Drawing — refs avoid React re-renders during pointer drag
   const drawingRef = useRef(false);
@@ -271,6 +325,7 @@ export function BrandIconEditor({
         </div>
 
         {/* Body */}
+        <AvisoCargandoCatalogo catalogo={catalogo} hayCustom={!!customBitmap} />
         <div style={{ display: 'flex', gap: 0, overflow: 'hidden' }}>
 
           {/* Grid canvas */}

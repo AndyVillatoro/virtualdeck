@@ -5,7 +5,12 @@ import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import { BrandIconDisplay } from '../../components/BrandIconDisplay';
 import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
-import { BRAND_ICONS_MAP } from '../../data/brandIcons';
+import { useCatalogoMarcas, type CatalogoMarcas } from '../../utils/catalogoMarcas';
+
+/** Etiqueta del icono de marca; la clave si el catálogo aún no llegó. */
+function etiquetaMarca(catalogo: CatalogoMarcas | null, clave: string): string {
+  return catalogo?.BRAND_ICONS_MAP[clave]?.label ?? clave;
+}
 import { Field, Btn, SensorPicker, estiloEntrada } from './comunes';
 import { CamposDivisa } from './CamposDivisa';
 import { CamposSlider } from './CamposSlider';
@@ -104,6 +109,8 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
   const t = useT();
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
+  // Etiqueta del icono de marca (el catálogo llega diferido; sin él, la clave).
+  const catalogoMarcas = useCatalogoMarcas();
 
   return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -204,7 +211,7 @@ export function PasoEstilo({ accent, action, bgColor, brandIcon, brandIconAlways
                         />
                       </div>
                       <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text }}>
-                        {BRAND_ICONS_MAP[brandIcon]?.label ?? brandIcon}
+                        {etiquetaMarca(catalogoMarcas, brandIcon)}
                         {brandIconCustomBitmap && (
                           <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}>
                             <DotGlyphIcon glyph="EDIT" size={8} color={accent} />

@@ -125,6 +125,8 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `src/data/links.ts` | Enlaces externos (repo, docs, donaciones). | ✅ |
 | `src/components/settings/SoporteSection.tsx` | El apartado «Apoyar el proyecto» de los ajustes. | ✅ |
 | `src/data/brandIcons.ts` | Catálogo de íconos de marca. | ✅ |
+| `src/data/brandIconTypes.ts` | Tipos y geometría liviana del pack (sin los bitmaps). | ✅ |
+| `src/utils/catalogoMarcas.ts` | Carga diferida del catálogo (`import()` + hook reactivo). | ✅ |
 
 ---
 

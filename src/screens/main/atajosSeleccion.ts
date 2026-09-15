@@ -4,13 +4,13 @@ import type { TFunc } from '../../utils/i18n';
 export type AtajoSeleccion = 'copy' | 'paste' | 'duplicate' | 'delete';
 
 /** El atajo no aplica si el foco está en un campo editable. */
-export function esObjetivoEditable(e: KeyboardEvent): boolean {
+function esObjetivoEditable(e: KeyboardEvent): boolean {
   const tag = (e.target as HTMLElement)?.tagName;
   return tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable;
 }
 
 /** Traduce la tecla a acción de lote, sin mirar capacidades. Función pura. */
-export function resolverAtajoSeleccion(e: KeyboardEvent): AtajoSeleccion | null {
+function resolverAtajoSeleccion(e: KeyboardEvent): AtajoSeleccion | null {
   if (!(e.ctrlKey || e.metaKey)) {
     return e.key === 'Delete' || e.key === 'Backspace' ? 'delete' : null;
   }

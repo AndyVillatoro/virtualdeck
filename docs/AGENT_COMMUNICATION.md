@@ -17,7 +17,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P3A** | P3 | Modularización Diccionarios Idiomas | Muse Spark | `es.ts`, `en.ts`, `es*.ts`, `en*.ts`, `check-i18n.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P3B** | P3 | Reducción Complejidad Pantallas | Muse Spark | `EditorB.tsx`, `MainB.tsx` (+ piezas en `editor/`, `main/`) | `DONE` ✅ | 2026-09-15 |
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
-| **T-P5**  | P5 | Lazy Loading Iconos de Marca | *Disponible* | `brandIcons.ts`, `BrandIconPicker.tsx` | `READY` ⬜ | - |
+| **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
 
@@ -33,6 +33,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P5 DONE)
+- **Contexto**: T-P5 en rama `task/p5-tienda` (fusionada a main). (1) Lazy marcas: `brandIconTypes.ts` (tipos+geometría) + `utils/catalogoMarcas.ts` (`import()` + hook); Display/Picker/Editor/PasoEstilo consumen diferido con fallback; índice −37KB, chunk `brandIcons` propio. (2) `build-store.mjs`: `--bump`, `--check-only`, `--preflight`, `--skip-assets/build`, validaciones previas y ficha `dist/store-submission-VERSION.md` (probado en fixture). AGENTS apuntaba a `docs/STORE.md` inexistente → `docs/MICROSOFT-STORE.md`.
+- **Pruebas**: `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes. `npm run build` ok. `build-store --check-only` OK en esta máquina.
+- **Recomendación**: backlog P1-P5 vacío. Siguiente: T-P4 Fase 2 (ventana `#tienda`) o release v0.13.0 (hay `feat:` acumulado → MINOR según CONTRIBUTING).
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P4 Fase 1 DONE)
 - **Contexto**: Fase 1 en rama `task/p4-tienda` (fusionada a main). Manifiesto v2 (`kind` page/profile, `version`, `minAppVersion`, `targetApp`, `requires`, compatible v1); páginas sueltas instalables (`appendPageFromGallery`: sanea, remapea ids, limpia hotkeys en choque y lo cuenta, sella `origen`); `resumirRiesgo` con `automaticos` (timers/sensores) e `integraciones` (tts/kill/clipboard/audio/region/discord/spotify) vía `tm()` + recorre `subButtons`; `tiposDesconocidos` y `check-perfiles.mjs` con la misma cobertura + shape `{page, buttons}`; tipos del preload unificados (`type X = ...`, se acabó la tercera copia); ejemplo `pages/obs-mini.json` cubierto por `npm run check`.

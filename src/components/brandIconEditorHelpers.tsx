@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 import { useTheme } from '../utils/theme';
-import { ICON_SIZE } from '../data/brandIcons';
+import { ICON_SIZE } from '../data/brandIconTypes';
 
 // SVG canvas geometry — kept independent from data/brandIcons.ts so the editor
 // can render in any size while the icon's preview uses its own viewBox.

@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
-import { BRAND_ICON_GROUPS, BRAND_ICONS } from '../data/brandIcons';
+import { useCatalogoMarcas } from '../utils/catalogoMarcas';
+import type { BrandIcon } from '../data/brandIconTypes';
 import { BrandIconDisplay } from './BrandIconDisplay';
 import { DotGlyphIcon } from './dot480/DotGlyphIcon';
 
@@ -36,8 +37,6 @@ const CLAVES_ICONO: Record<string, string> = {
   controlpanel: 'brand.i.controlPanel',
 };
 
-const ALL_GROUPS = [{ title: 'Todos', items: [] as [string, string, string][] }, ...BRAND_ICON_GROUPS];
-
 export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIconPickerProps) {
   const t = useT();
   /** El grupo va por posicion; el icono, por su clave. Lo demas es marca. */
@@ -47,17 +46,24 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
   const [search, setSearch] = useState('');
   const [groupTitle, setGroupTitle] = useState('Todos');
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
+  // El catálogo (~42 KiB) llega diferido: sin él solo hay grupos vacíos.
+  const catalogo = useCatalogoMarcas();
+  const iconos = useMemo<BrandIcon[]>(
+    () => catalogo?.BRAND_ICONS ?? [],
+    [catalogo],
+  );
+  const grupos = catalogo?.BRAND_ICON_GROUPS ?? [];
 
   const displayed = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (q) {
-      return BRAND_ICONS.filter(
+      return iconos.filter(
         (ic) => ic.label.toLowerCase().includes(q) || ic.key.toLowerCase().includes(q)
       );
     }
-    if (groupTitle === 'Todos') return BRAND_ICONS;
-    return BRAND_ICONS.filter((ic) => ic.group === groupTitle);
-  }, [search, groupTitle]);
+    if (groupTitle === 'Todos') return iconos;
+    return iconos.filter((ic) => ic.group === groupTitle);
+  }, [search, groupTitle, iconos]);
 
   return (
     <div
@@ -110,20 +116,20 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
             display: 'flex', gap: 2, padding: '8px 12px',
             borderBottom: `1px solid ${VD.border}`, flexWrap: 'wrap', flexShrink: 0,
           }}>
-            {ALL_GROUPS.map((g, i) => (
+            {['Todos', ...grupos.map((g) => g.title)].map((titulo, i) => (
               <button
-                key={g.title}
-                onClick={() => setGroupTitle(g.title)}
+                key={titulo}
+                onClick={() => setGroupTitle(titulo)}
                 style={{
                   padding: '4px 10px',
-                  background: groupTitle === g.title ? VD.accentBg : 'transparent',
-                  border: `1px solid ${groupTitle === g.title ? accent : VD.border}`,
-                  color: groupTitle === g.title ? accent : VD.textMuted,
+                  background: groupTitle === titulo ? VD.accentBg : 'transparent',
+                  border: `1px solid ${groupTitle === titulo ? accent : VD.border}`,
+                  color: groupTitle === titulo ? accent : VD.textMuted,
                   fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
                   cursor: 'pointer', borderRadius: VD.radius.sm,
                 }}
               >
-                {rotuloGrupo(i, g.title).toUpperCase()}
+                {rotuloGrupo(i, titulo).toUpperCase()}
               </button>
             ))}
           </div>
@@ -156,6 +162,14 @@ export function BrandIconPicker({ current, onSelect, onClose, accent }: BrandIco
             <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, letterSpacing: 0.5, textAlign: 'center' }}>{t('ui.none')}</div>
           </div>
 
+          {!catalogo && (
+            <div style={{
+              gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              minHeight: 120, fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, letterSpacing: 1,
+            }}>
+              {t('brand.loading')}
+            </div>
+          )}
           {displayed.map((icon) => {
             const isSelected = current === icon.key;
             const isHovered = hoveredKey === icon.key;

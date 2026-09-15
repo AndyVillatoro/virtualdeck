@@ -45,6 +45,7 @@ export const ES_EDITOR: Dict = {
   'ed.split.toggle': 'MODO INTERRUPTOR (TOGGLE)',
   'ed.pickSensor': '— Seleccione un sensor —',
   'brand.search': 'Buscar icono...',
+  'brand.loading': 'Cargando iconos...',
   'macro.scrollHint': '(+ arriba, − abajo)',
   'ed.cancelCapture': 'CANCELAR',
   'brand.clearAll': 'LIMPIAR TODO',

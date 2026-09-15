@@ -93,9 +93,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Docs:** `galeria.md` con spec v2.
 * **Verificación:** `npm run check` 0 errores (39 warnings, antes 41), 6 guardianes verdes (`perfiles: 2 revisados`), `npm run build` ok.
 
+## Turno 2026-09-15 — T-P5 Lazy marcas + Store MSIX (DONE)
+
+* **Modelo:** Muse Spark, rama `task/p5-tienda` (fusionada a main).
+* **Lazy marcas:** `brandIconTypes.ts` + `utils/catalogoMarcas.ts` (holder `import()` + `useCatalogoMarcas` + `iconoDeCatalogo` + `precargarCatalogoMarcas` como API de preload); Display/Picker/Editor/PasoEstilo/helpers consumen diferido con fallback (`brand.loading` ES/EN); `celdaDesdeFraccion` + `ICON_SIZE` viven en tipos. Índice −37KB, chunk `brandIcons` (38KB) aparte. Deuda propia dejada en cero (Editor 24, PasoEstilo 27<29).
+* **Store MSIX:** `build-store.mjs` con `--bump patch|minor|major` (sincroniza lock), `--check-only`, `--preflight`, `--skip-assets/--skip-build`, validaciones previas (appx, extensions, makeappx, CHANGELOG, git) y ficha `dist/store-submission-VERSION.md`. Probado: check-only OK + bump/validación en fixture (positivo y negativo).
+* **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes, `npm run build` ok.
+
 ## Proximo paso concreto
 
-* **T-P4 Fase 2**: ventana `#tienda` aparte (patrón `FloatingBarB`) con buscador, filtros (tipo/app/tags), ficha con README y aviso de updates leyendo `origen` guardado.
-* Luego **T-P5** (lazy `brandIcons.ts` + checklist Store MSIX).
+* **Backlog P1-P5 vacío.** Opciones: **T-P4 Fase 2** (ventana `#tienda`) o **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
 
 ## Proximo paso historico (T-P3B, hecho)
