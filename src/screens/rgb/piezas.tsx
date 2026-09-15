@@ -63,8 +63,12 @@ export function DeviceDetail({
     && activeMode.speedMax !== undefined
     && activeMode.speedMin !== activeMode.speedMax;
 
-  // Si cambia el device seleccionado, sincroniza el color local con el primer LED.
-  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); setSpeed(50); }, [device.id, device.colors]);
+  // Si cambia el aparato seleccionado, sincroniza el color local con el primer
+  // LED. Solo por aparato: sincronizar en cada relectura devolvería el
+  // selector al color del hardware mientras se arrastra (el hardware se
+  // escribe al soltar, no por píxel).
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `device.colors` a propósito fuera: ver arriba.
+  useEffect(() => { setColor(device.colors[0] ?? '#ffffff'); setLocalColors(null); setSpeed(50); }, [device.id]);
   // Reset speed when the active mode changes (different speed range).
   useEffect(() => { setSpeed(50); }, [activeMode?.id]);
 
@@ -81,7 +85,7 @@ export function DeviceDetail({
       <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16 }}>
         <div>
           <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('rgb.color')}</DotLabel>
-          <ColorPicker value={color} onChange={(v) => { setColor(v); onSetColor(v); }} />
+          <ColorPicker value={color} onChange={setColor} onCommit={(v) => onSetColor(v)} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

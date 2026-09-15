@@ -19,6 +19,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P4-F2** | P4 | Tienda: ventana #tienda (buscador/filtros/ficha/updates) | Muse Spark | `tienda.ts`, `TiendaB.tsx`, `tiendaAplicar.ts` | `DONE` ✅ | 2026-09-15 |
+| **T-FIX-07** | - | RGB: auto-calibrador tras rescan + picker con commit | Muse Spark | `RGBManagerB.tsx`, `ColorPicker.tsx`, `piezas.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-06** | - | RGB: reescaneo real (requestRescan + busy + toast) | Muse Spark | `rgb.ts`, `rgbIpc.ts`, `RGBManagerB.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-05** | - | Pre-release UI: carátula visible + mando móvil DOT + solo bandeja | Muse Spark | `PanelMusica*`, `SeccionRemot*`, `windowManager.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-04** | - | Docs galería: el repo público ya existe (verificar + actualizar) | Muse Spark | `galeria.md`, `ROADMAP.md` | `DONE` ✅ | 2026-09-15 |
@@ -38,6 +39,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-07 DONE)
+- **Contexto**: dos reportes RGB, rama `task/fix-rgb-picker-calib` (fusionada a main). (1) Tras reescanear no se abría nada: `refresh` ahora devuelve la lista y `handleRescan` abre el calibrador (conteo LEDs) si hay zonas sin calibrar, si no toast con la cuenta. (2) Picker trabado: cada píxel mandaba al hardware + releía y el efecto devolvía el selector al color del aparato. Ahora `ColorPicker` separa `onChange` (local, por píxel) de `onCommit` (al soltar; hex directo confirma al momento) y `DeviceDetail` solo sincroniza por aparato (`[device.id]`, con disable-explicado). `BrandColorPicker` no se toca (local, sin bug).
+- **Pruebas**: `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes. `npm run build` ok. Sin hardware OpenRGB aquí: camino con servidor no ejecutado.
+- **Recomendación**: listo para release v0.13.0.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-06 DONE)
 - **Contexto**: el botón reescanear solo releía la lista vieja (sin busy ni toast: parecía no hacer nada) y el servidor nunca recibía `requestRescan()` (existe en el SDK, sin usar). Rama `task/fix-rgb-rescan` (fusionada a main): `rgb.rescanDevices()` (rescan + espera a que cambie la cuenta, tope 8s + relectura total de zonas/LEDs), canal `rgb:rescan` (main+preload+tipos), `handleRescan` con busy y toast (`rgb.rescanned/rescanFailed`), clave `rgb.sinConexion` en `idioma.ts` ES/EN.

@@ -30,6 +30,18 @@ interface RGBManagerBProps {
   onBack: () => void;
 }
 
+/**
+ * Zonas redimensionables sin tamaño guardado: son las que piden conteo de
+ * LEDs. Pura para usarla en el aviso y en el reescaneo.
+ */
+function zonasSinCalibrar(
+  list: RGBDeviceInfo[], sizes?: RGBSettings['zoneSizes'],
+): number {
+  return list.flatMap((d) =>
+    d.zones.filter((z) => z.resizable && !sizes?.[d.name]?.[z.name]),
+  ).length;
+}
+
 export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps) {
   const VD = useTheme();
   const t = useT();
@@ -60,8 +72,8 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     onConfigChange({ ...config, rgb: updater(config.rgb ?? DEFAULT_RGB) });
   }, [config, onConfigChange]);
 
-  const refresh = useCallback(async () => {
-    if (!api) return;
+  const refresh = useCallback(async (): Promise<RGBDeviceInfo[]> => {
+    if (!api) return [];
     const s = await api.rgb.status();
     setStatus(s);
     if (s.connected) {
@@ -70,10 +82,11 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
       if (list.length > 0 && (selectedId === null || !list.find((d) => d.id === selectedId))) {
         setSelectedId(list[0].id);
       }
-    } else {
-      setDevices([]);
-      setSelectedId(null);
+      return list;
     }
+    setDevices([]);
+    setSelectedId(null);
+    return [];
   }, [api, selectedId]);
 
   useEffect(() => {
@@ -116,16 +129,19 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
    * Antes el botón llamaba a `refresh`, que relee la lista que el servidor
    * ya conocía: lo conectado después no aparecía nunca y, como no había ni
    * espera ni aviso, parecía que el botón no hacía nada.
+   *
+   * Si hay zonas sin calibrar, se abre el calibrador (conteo de LEDs) en vez
+   * del aviso: es adonde iba quien le dio a escanear.
    */
   const handleRescan = async () => {
     if (!api) return;
     setBusy(true);
     try {
       const r = await api.rgb.rescan();
-      await refresh();
-      showToast(r.error
-        ? t('rgb.rescanFailed', { err: r.error })
-        : t('rgb.rescanned', { n: r.count }));
+      const list = await refresh();
+      if (r.error) { showToast(t('rgb.rescanFailed', { err: r.error })); return; }
+      if (zonasSinCalibrar(list, rgbCfg.zoneSizes) > 0) setShowCalibrator(true);
+      else showToast(t('rgb.rescanned', { n: r.count }));
     } finally { setBusy(false); }
   };
 
@@ -305,13 +321,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
   };
 
   // ── Calibrador ────────────────────────────────────────────────────────────
-  const resizableZones = devices.flatMap((d) =>
-    d.zones.filter((z) => z.resizable).map((z) => ({ device: d, zone: z })),
-  );
-  const uncalibratedCount = resizableZones.filter(({ device, zone }) => {
-    const saved = rgbCfg.zoneSizes?.[device.name]?.[zone.name];
-    return !saved;
-  }).length;
+  const uncalibratedCount = zonasSinCalibrar(devices, rgbCfg.zoneSizes);
 
   const identifyLed = async (deviceId: number, zoneId: number, ledIdx: number, ledCount: number) => {
     if (!api) return;

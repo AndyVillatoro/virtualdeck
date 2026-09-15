@@ -137,6 +137,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Cambios:** `rgb.rescanDevices()` + `rgb:rescan` (main/preload/tipos) + `handleRescan` con busy y toast + `rgb.rescanned/rescanFailed` (ES/EN) + `rgb.sinConexion` (`idioma.ts` ES/EN).
 * **Verificación:** `npm run check` 0 errores, 6 guardianes verdes (`i18n 864`, `ipc 122+14`), `npm run build` ok. Sin OpenRGB aquí: camino con hardware no ejecutado.
 
+## Turno 2026-09-15 — T-FIX-07 RGB calibrador auto + picker commit (DONE)
+
+* **Modelo:** Muse Spark, rama `task/fix-rgb-picker-calib` (fusionada a main).
+* **Calibrador:** `refresh` devuelve la lista; `handleRescan` abre el calibrador si hay zonas sin calibrar (`zonasSinCalibrar` pura en módulo), si no toast.
+* **Picker:** `onCommit` en `ColorPicker` (soltar/hex), `DeviceDetail` con `onChange` local + efecto solo `[device.id]`.
+* **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes, `npm run build` ok. Sin hardware: no ejecutado contra servidor.
+
 ## Proximo paso concreto
 
 * **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).

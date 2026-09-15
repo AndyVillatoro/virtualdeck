@@ -47,16 +47,27 @@ function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
 interface ColorPickerProps {
   value: string;
   onChange: (hex: string) => void;
+  /**
+   * Al soltar tras arrastrar (o al clicar): momento de escribir fuera.
+   * Separado de `onChange` a propósito — ver abajo.
+   */
+  onCommit?: (hex: string) => void;
   showHexInput?: boolean;
   height?: number;
 }
 
-export function ColorPicker({ value, onChange, showHexInput = true, height = 130 }: ColorPickerProps) {
+export function ColorPicker({ value, onChange, onCommit, showHexInput = true, height = 130 }: ColorPickerProps) {
   const VD = useTheme();
   const [r, g, b] = hexToRgb(value);
   const [h, s, v] = rgbToHsv(r, g, b);
   const svRef = useRef<HTMLDivElement | null>(null);
   const dragKind = useRef<'sv' | 'hue' | null>(null);
+  // Lo último emitido: `value` puede ir un render por detrás al soltar.
+  const ultimoRef = useRef(value);
+  // El commit cambia en cada render si llega en línea: por referencia.
+  const commitRef = useRef(onCommit);
+  commitRef.current = onCommit;
+  useEffect(() => { ultimoRef.current = value; }, [value]);
 
   const setFromSV = useCallback((clientX: number, clientY: number, hue: number) => {
     const el = svRef.current; if (!el) return;
@@ -64,21 +75,32 @@ export function ColorPicker({ value, onChange, showHexInput = true, height = 130
     const ns = clamp01((clientX - rect.left) / rect.width);
     const nv = clamp01(1 - (clientY - rect.top) / rect.height);
     const [rr, gg, bb] = hsvToRgb(hue, ns, nv);
-    onChange(rgbToHex(rr, gg, bb));
+    const hex = rgbToHex(rr, gg, bb);
+    ultimoRef.current = hex;
+    onChange(hex);
   }, [onChange]);
 
   const setFromHue = useCallback((clientX: number, target: HTMLElement, sv: number, vv: number) => {
     const rect = target.getBoundingClientRect();
     const nh = clamp01((clientX - rect.left) / rect.width) * 360;
     const [rr, gg, bb] = hsvToRgb(nh, sv || 1, vv || 1);
-    onChange(rgbToHex(rr, gg, bb));
+    const hex = rgbToHex(rr, gg, bb);
+    ultimoRef.current = hex;
+    onChange(hex);
   }, [onChange]);
 
   useEffect(() => {
     function onMove(e: MouseEvent) {
       if (dragKind.current === 'sv') setFromSV(e.clientX, e.clientY, h);
     }
-    function onUp() { dragKind.current = null; }
+    // El commit va al soltar, no por píxel: quien escribe fuera (el gestor
+    // RGB manda al hardware y relee) no puede ir al ritmo del ratón. Sin
+    // esto, cada píxel disparaba una ronda IPC y la relectura devolvía el
+    // selector al color del aparato — «selecciona pero se queda trabado».
+    function onUp() {
+      if (dragKind.current === 'sv') commitRef.current?.(ultimoRef.current);
+      dragKind.current = null;
+    }
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     return () => {
@@ -116,7 +138,10 @@ export function ColorPicker({ value, onChange, showHexInput = true, height = 130
           setFromHue(e.clientX, e.currentTarget, s, v);
           const target = e.currentTarget;
           const move = (ev: MouseEvent) => setFromHue(ev.clientX, target, s, v);
-          const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+          const up = () => {
+            commitRef.current?.(ultimoRef.current);
+            window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
+          };
           window.addEventListener('mousemove', move);
           window.addEventListener('mouseup', up);
         }}
@@ -145,8 +170,14 @@ export function ColorPicker({ value, onChange, showHexInput = true, height = 130
           <input
             value={value.toUpperCase()}
             onChange={(e) => {
-              const v = e.target.value.trim();
-              if (/^#?[0-9a-fA-F]{6}$/.test(v)) onChange(v.startsWith('#') ? v : `#${v}`);
+              const val = e.target.value.trim();
+              if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
+                const hex = val.startsWith('#') ? val : `#${val}`;
+                ultimoRef.current = hex;
+                onChange(hex);
+                // Acción discreta, no arrastre: se escribe fuera al momento.
+                commitRef.current?.(hex);
+              }
             }}
             style={{
               flex: 1, background: VD.elevated, border: `1px solid ${VD.border}`,
