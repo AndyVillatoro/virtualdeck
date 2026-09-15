@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
-import { SettingLabel } from '../settings/settingHelpers';
 import { LINKS } from '../../data/links';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { CREDITS } from './credits';
@@ -18,7 +17,6 @@ export function HelpAboutPanel({
   const VD = useTheme();
   const t = useT();
   const api = window.electronAPI;
-  const [expanded, setExpanded] = useState(false);
   const [version, setVersion] = useState('');
   const [platformInfo, setPlatformInfo] = useState<PlatformInfo | null>(null);
   const [showCredits, setShowCredits] = useState(false);
@@ -27,10 +25,10 @@ export function HelpAboutPanel({
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (!expanded || !api) return;
+    if (!api) return;
     api.app.getVersion().then(setVersion).catch(() => {});
     api.app.platformInfo().then((p) => setPlatformInfo(p as PlatformInfo)).catch(() => {});
-  }, [expanded, api]);
+  }, [api]);
 
   // Escuchar eventos de update (descargado / error) para feedback.
   useEffect(() => {
@@ -71,105 +69,93 @@ export function HelpAboutPanel({
   };
 
   return (
-    <div>
-      <div
-        onClick={() => setExpanded((v) => !v)}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-      >
-        <SettingLabel>{t('help.title')}</SettingLabel>
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-          <DotGlyphIcon glyph={expanded ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />
-        </span>
+    // Sin cabecera propia: la sección acordeón del panel ya trae el título.
+    // El colapsable interior venía de antes del acordeón y duplicaba el título.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Versión */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent }} />
+        <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 1 }}>VirtualDeck</span>
+        <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>v{version || '…'}</span>
       </div>
 
-      {expanded && (
-        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {/* Versión */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: accent }} />
-            <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 1 }}>VirtualDeck</span>
-            <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>v{version || '…'}</span>
-          </div>
+      {/* Acciones rápidas */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+        <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={() => open(LINKS.docs)}>
+          <DotGlyphIcon glyph="BOOK" size={9} color={accent} />
+          {t('help.docs')}
+        </button>
+        <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={reportBug}>
+          <DotGlyphIcon glyph="BUG" size={9} color={accent} />
+          {t('help.report')}
+        </button>
+        <button style={linkBtn} onClick={checkUpdates} disabled={checking}>
+          {checking ? t('help.checking') : t('help.check')}
+        </button>
+      </div>
 
-          {/* Acciones rápidas */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-            <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={() => open(LINKS.docs)}>
-              <DotGlyphIcon glyph="BOOK" size={9} color={accent} />
-              {t('help.docs')}
-            </button>
-            <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={reportBug}>
-              <DotGlyphIcon glyph="BUG" size={9} color={accent} />
-              {t('help.report')}
-            </button>
-            <button style={linkBtn} onClick={checkUpdates} disabled={checking}>
-              {checking ? t('help.checking') : t('help.check')}
-            </button>
-          </div>
+      {updateMsg && (
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, lineHeight: 1.4 }}>{updateMsg}</div>
+      )}
 
-          {updateMsg && (
-            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, lineHeight: 1.4 }}>{updateMsg}</div>
-          )}
+      {/* Log */}
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.open()}>{t('help.openLog')}</button>
+        <button
+          style={{ ...linkBtn, flex: 1 }}
+          onClick={async () => {
+            // Se distingue «no hay registro» de «el usuario cancelo»: solo
+            // lo primero merece un aviso. Antes el boton no decia nada en
+            // ninguno de los dos casos, asi que en una instalacion limpia
+            // parecia roto.
+            const r = await api?.log.export();
+            setSinRegistro(r === 'sin-registro');
+          }}
+        >{t('help.exportLog')}</button>
+      </div>
+      {sinRegistro && (
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
+          {t('help.noLog')}
+        </div>
+      )}
 
-          {/* Log */}
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button style={{ ...linkBtn, flex: 1 }} onClick={() => api?.log.open()}>{t('help.openLog')}</button>
-            <button
-              style={{ ...linkBtn, flex: 1 }}
-              onClick={async () => {
-                // Se distingue «no hay registro» de «el usuario cancelo»: solo
-                // lo primero merece un aviso. Antes el boton no decia nada en
-                // ninguno de los dos casos, asi que en una instalacion limpia
-                // parecia roto.
-                const r = await api?.log.export();
-                setSinRegistro(r === 'sin-registro');
-              }}
-            >{t('help.exportLog')}</button>
-          </div>
-          {sinRegistro && (
-            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
-              {t('help.noLog')}
-            </div>
-          )}
+      {/* Repetir tutorial */}
+      {onReplayOnboarding && (
+        <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={onReplayOnboarding}>
+          <DotGlyphIcon glyph="GRADUATION" size={9} color={accent} />
+          {t('help.replay')}
+        </button>
+      )}
 
-          {/* Repetir tutorial */}
-          {onReplayOnboarding && (
-            <button style={{ ...linkBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }} onClick={onReplayOnboarding}>
-              <DotGlyphIcon glyph="GRADUATION" size={9} color={accent} />
-              {t('help.replay')}
-            </button>
-          )}
-
-          {/* Créditos / licencias */}
-          <div>
-            <div
-              onClick={() => setShowCredits((v) => !v)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-            >
-              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>{t('help.credits')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                <DotGlyphIcon glyph={showCredits ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />
-              </span>
-            </div>
-            {showCredits && (
-              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {CREDITS.map((c) => (
-                  <div key={c.name} onClick={() => open(c.url)} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                    <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {c.name}{c.bundled ? t('help.bundled') : ''}
-                    </span>
-                    <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>{c.license}</span>
-                  </div>
-                ))}
-                {platformInfo && (
-                  <div style={{ marginTop: 4, fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, lineHeight: 1.5 }}>
-                    {platformInfo.os} · Electron {platformInfo.electron}
-                  </div>
-                )}
+      {/* Créditos / licencias */}
+      <div>
+        <div
+          onClick={() => setShowCredits((v) => !v)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+        >
+          <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1 }}>{t('help.credits')}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <DotGlyphIcon glyph={showCredits ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />
+          </span>
+        </div>
+        {showCredits && (
+          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {CREDITS.map((c) => (
+              <div key={c.name} onClick={() => open(c.url)} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.name}{c.bundled ? t('help.bundled') : ''}
+                </span>
+                <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>{c.license}</span>
+              </div>
+            ))}
+            {platformInfo && (
+              <div style={{ marginTop: 4, fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, lineHeight: 1.5 }}>
+                {platformInfo.os} · Electron {platformInfo.electron}
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

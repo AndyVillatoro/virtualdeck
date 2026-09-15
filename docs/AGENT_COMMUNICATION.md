@@ -19,6 +19,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P4**  | P4 | Galería de Perfiles en Vivo | *Disponible* | `GallerySection.tsx`, `galeria.ts` | `READY` ⬜ | - |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca | *Disponible* | `brandIcons.ts`, `BrandIconPicker.tsx` | `READY` ⬜ | - |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
+| **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
@@ -32,6 +33,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-02 DONE)
+- **Contexto**: reporte de usuario — `HelpAboutPanel` traía su propio colapsable con el mismo título dentro de la sección acordeón. Fix en rama `fix/ayuda-doble-colapsable`: fuera el toggle interior (la versión/plataforma ahora se cargan al montar) y el import sin uso; el sub-colapsable de créditos se conserva.
+- **Pruebas**: `npm run check` 0 errores (41 warnings, sin cambios), 6 guardianes verdes. `npm run build` ok.
+- **Recomendación**: seguir roadmap → `T-P4` y `T-P5`.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-01 DONE)
 - **Contexto**: reporte de usuario — con ventana baja o zoom grande los títulos del acordeón de ajustes se perdían al hacer scroll. Fix en rama `fix/ajustes-sticky`: cabecera de `SeccionAjustes` con `position: sticky; top: -12; zIndex: 2` (se quitó el `overflow: hidden` de la sección porque anulaba el sticky; esquinas redondeadas por piezas) y panel con `width: min(280px, calc(100vw - 16px))`.
