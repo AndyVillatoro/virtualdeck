@@ -1,0 +1,9 @@
+{
+  "page": { "id": "obs-mini", "name": "OBS Mini", "gridSize": 4, "gridRows": 2, "targetApp": "obs64" },
+  "buttons": [
+    { "id": "q0", "page": 0, "label": "Grabar", "icon": "", "action": { "type": "hotkey", "hotkey": "Ctrl+Alt+R" } },
+    { "id": "q1", "page": 0, "label": "Mute Mic", "icon": "", "action": { "type": "discord", "discordAction": "toggle-mute" } },
+    { "id": "q2", "page": 0, "label": "Play", "icon": "", "action": { "type": "media-play-pause" } },
+    { "id": "q3", "page": 0, "label": "Reloj", "icon": "", "widget": "clock", "action": { "type": "none" } }
+  ]
+}

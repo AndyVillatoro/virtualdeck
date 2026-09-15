@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG, conHuecosCompletos } from './configDefaults';
 import { sanearPagina } from './configMigration';
 import { makeT, resolveLang } from './i18n';
 import type {
-  ActionType, ButtonConfig, DeckConfig, ElectronAPI, PageConfig, Profile, SoundProfileId, ThemeMode,
+  ActionType, ButtonConfig, DeckConfig, ElectronAPI, OrigenInstalacion, PageConfig, Profile, SoundProfileId, ThemeMode,
 } from '../types';
 
 /**
@@ -468,6 +468,48 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     appendPagesFromProfile(profile);
   }, [config.profiles, appendPagesFromProfile]);
 
+  /**
+   * Agrega UNA página suelta (tienda, kind 'page') como página nueva.
+   *
+   * Igual que la importación de página local, pero con dos extras: deja
+   * constancia del origen (manifiesto + versión, para avisar updates) y
+   * limpia los atajos globales que choquen con los que ya hay — un atajo
+   * duplicado haría que dos botones respondieran a la misma tecla.
+   * Devuelve cuántos atajos se limpiaron, para avisarlo en pantalla.
+   */
+  const appendPageFromGallery = useCallback((page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion): number => {
+    const ocupados = new Set(
+      config.buttons.map((b) => b.globalHotkey).filter((h): h is string => !!h),
+    );
+    let limpiados = 0;
+    const sinChoques = buttons.map((b) => {
+      if (b.globalHotkey && ocupados.has(b.globalHotkey)) {
+        limpiados++;
+        const { globalHotkey: _quitado, ...resto } = b;
+        return resto as ButtonConfig;
+      }
+      if (b.globalHotkey) ocupados.add(b.globalHotkey);
+      return b;
+    });
+    const newIdx = config.pages.length;
+    withHistory(t('undo.appendPage', { nombre: page.name || `#${newIdx + 1}` }), (prev) => {
+      const { pagina: acotada } = sanearPagina(page);
+      const cols = acotada.gridSize ?? 4;
+      const timestamp = Date.now();
+      const newPage: PageConfig = {
+        ...acotada, gridSize: cols, gridRows: acotada.gridRows ?? cols,
+        id: `page_${timestamp}`,
+        name: (page.name || t('page.importedName')).toUpperCase(),
+        ...(origen ? { origen } : {}),
+      };
+      const rellenados = conHuecosCompletos([newPage], sinChoques.map((b) => ({ ...b, page: 0 })))
+        .map((b, i) => ({ ...b, id: `p${timestamp}_${newIdx}_${i}`, page: newIdx }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...rellenados] };
+    });
+    setActivePage(newIdx);
+    return limpiados;
+  }, [config.buttons, config.pages.length, withHistory, setActivePage, t]);
+
   const deleteProfile = useCallback((id: string) => {
     withHistory('', (prev) => ({
       ...prev,
@@ -594,7 +636,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     updateButton, duplicateButton, copyButton, pasteButton, buttonClipboard, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
-    saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, deleteProfile,
+    saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, appendPageFromGallery, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,

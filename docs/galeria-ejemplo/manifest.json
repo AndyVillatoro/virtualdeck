@@ -8,6 +8,18 @@
       "description": "Cuatro botones para ver como se ve un perfil de la galeria. No ejecuta scripts.",
       "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/profiles/ejemplo-basico.json",
       "tags": ["ejemplo"]
+    },
+    {
+      "id": "obs-mini",
+      "kind": "page",
+      "label": "OBS Mini",
+      "author": "@AndyVillatoro",
+      "description": "Una pagina suelta para OBS: grabar, mute de Discord, play y reloj. Se agrega sin tocar el deck.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/pages/obs-mini.json",
+      "tags": ["ejemplo", "obs"],
+      "targetApp": "obs64",
+      "version": "1.0.0",
+      "minAppVersion": "0.12.0"
     }
   ]
 }

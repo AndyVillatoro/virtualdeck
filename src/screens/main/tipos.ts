@@ -1,4 +1,4 @@
-import type { ButtonConfig, DeckConfig, ThemeMode, SoundProfileId, Profile } from '../../types';
+import type { ButtonConfig, DeckConfig, OrigenInstalacion, PageConfig, ThemeMode, SoundProfileId, Profile } from '../../types';
 
 export interface MainBProps {
   config: DeckConfig;
@@ -35,6 +35,8 @@ export interface MainBProps {
   onSaveProfile: (name: string) => void;
   onLoadProfile: (id: string) => void;
   onAppendProfilePages: (id: string) => void;
+  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
+  onAppendPageFromGallery?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
   onAppendPagesFromProfile: (p: Profile) => void;
   onDeleteProfile: (id: string) => void;
   onAutostartToggle: () => void;

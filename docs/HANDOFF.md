@@ -83,9 +83,19 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Cambio:** `HelpAboutPanel.tsx` sin toggle interior; versión/plataforma se cargan al montar; el sub-colapsable de créditos queda igual.
 * **Verificación:** `npm run check` 0 errores (41 warnings, sin cambios), 6 guardianes verdes, `npm run build` ok.
 
+## Turno 2026-09-15 — T-P4 Fase 1 Tienda: modelo + main (DONE)
+
+* **Modelo:** Muse Spark, rama `task/p4-tienda` (fusionada a main).
+* **Modelo v2:** `EntradaGaleria` con `kind`/`version`/`minAppVersion`/`targetApp`/`requires` (compatible v1); `ResumenRiesgo` con `automaticos` e `integraciones`; `OrigenInstalacion` sellado en `PageConfig`/`Profile`.
+* **Main:** `resumirRiesgo` descompuesto (`mirarDirectas/Macro/PasoMacro/Integraciones/Hijas/Boton`) + recorre `subButtons` y clics de macro; fragmentos por `tm()` (13 claves nuevas en `idioma.ts` ES/EN).
+* **Renderer:** `appendPageFromGallery` (sanea, remapea, limpia hotkeys en choque, sella origen, deshacer `undo.appendPage`); `GallerySection` con flujo de páginas (`FilaEntradaGaleria`, `FichaRiesgoGaleria`), bloqueo por `minAppVersion`, insignias y aviso de hotkeys; cadena `App→MainB→Barra→TitleBar→PanelAjustes`.
+* **Guardianes:** `check-perfiles.mjs` valida shape `{page, buttons}` y recorre carpetas/cuadrantes; ejemplo `pages/obs-mini.json` + entrada v2 en el manifiesto; `package.json check` cubre `pages/`. Preload sin tercera copia de tipos.
+* **Docs:** `galeria.md` con spec v2.
+* **Verificación:** `npm run check` 0 errores (39 warnings, antes 41), 6 guardianes verdes (`perfiles: 2 revisados`), `npm run build` ok.
+
 ## Proximo paso concreto
 
-* Tomar **`T-P4 Galeria de Perfiles en Vivo`** (`src/components/settings/GallerySection.tsx`, `electron/main/galeria.ts`).
-* Reclamar `T-P4` en `docs/AGENT_COMMUNICATION.md` antes de editar; rama `task/p4-galeria`.
+* **T-P4 Fase 2**: ventana `#tienda` aparte (patrón `FloatingBarB`) con buscador, filtros (tipo/app/tags), ficha con README y aviso de updates leyendo `origen` guardado.
+* Luego **T-P5** (lazy `brandIcons.ts` + checklist Store MSIX).
 
 ## Proximo paso historico (T-P3B, hecho)

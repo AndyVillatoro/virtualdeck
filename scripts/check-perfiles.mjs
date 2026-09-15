@@ -36,12 +36,70 @@ function revisarAccion(a, donde) {
   for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
     for (const [i, sub] of (a[clave] ?? []).entries()) revisarAccion(sub, `${donde}.${clave}[${i}]`);
   }
+  // Carpetas y cuadrantes 2×2 llevan acciones propias (misma paridad que
+  // `resumirRiesgo` y `tiposDesconocidos`).
+  for (const [i, fb] of (a.folderButtons ?? []).entries()) revisarAccion(fb?.action, `${donde}.carpeta[${i}]`);
+  for (const [i, sb] of (a.subButtons ?? []).entries()) {
+    if (!sb || typeof sb !== 'object') continue;
+    revisarAccion(sb.action, `${donde}.cuadrante[${i}]`);
+    for (const [k, sub] of (sb.actions ?? []).entries()) revisarAccion(sub, `${donde}.cuadrante[${i}].accion[${k}]`);
+    if (sb.actionToggleOff) revisarAccion(sb.actionToggleOff, `${donde}.cuadrante[${i}] (apagar)`);
+    if (sb.longPressAction) revisarAccion(sb.longPressAction, `${donde}.cuadrante[${i}] (mantener)`);
+  }
+}
+
+function revisarBoton(b, sitio) {
+  if (typeof b?.id !== 'string') problemas.push(`${sitio}: sin id`);
+  if (typeof b?.label !== 'string') problemas.push(`${sitio}: sin label`);
+  if (b?.widget && !widgets.has(b.widget)) problemas.push(`${sitio}: widget '${b.widget}' no existe`);
+  revisarAccion(b?.action, sitio);
+  for (const [k, a] of (b?.actions ?? []).entries()) revisarAccion(a, `${sitio} accion ${k + 1}`);
+  if (b?.actionToggleOff) revisarAccion(b.actionToggleOff, `${sitio} (apagar)`);
+  if (b?.longPressAction) revisarAccion(b.longPressAction, `${sitio} (mantener)`);
+  // Los cuadrantes 2×2 viven en el botón, no en la acción.
+  for (const [k, sb] of (b?.subButtons ?? []).entries()) {
+    if (!sb || typeof sb !== 'object') continue;
+    revisarAccion(sb.action, `${sitio} cuadrante ${k + 1}`);
+    for (const [m, a] of (sb.actions ?? []).entries()) revisarAccion(a, `${sitio} cuadrante ${k + 1} accion ${m + 1}`);
+    if (sb.actionToggleOff) revisarAccion(sb.actionToggleOff, `${sitio} cuadrante ${k + 1} (apagar)`);
+    if (sb.longPressAction) revisarAccion(sb.longPressAction, `${sitio} cuadrante ${k + 1} (mantener)`);
+  }
+}
+
+function revisarPaginaSuelta(ruta, j) {
+  // Tienda (T-P4): {page, buttons} — una página para agregar, no un deck.
+  // Al importar, los botones se remapean a la página nueva, así que el `page`
+  // que traigan no se comprueba: solo importa el total contra los huecos.
+  const p = j.page;
+  if (!p || typeof p !== 'object' || typeof p.id !== 'string' || typeof p.name !== 'string') {
+    problemas.push(`${ruta}: 'page' tiene que traer id y name`);
+    return 0;
+  }
+  if (p.gridSize !== undefined && ![3, 4, 5, 6].includes(p.gridSize)) problemas.push(`${ruta}: gridSize ${p.gridSize} fuera de rango (3-6)`);
+  if (p.gridRows !== undefined && (p.gridRows < 1 || p.gridRows > 8)) problemas.push(`${ruta}: gridRows ${p.gridRows} fuera de rango (1-8)`);
+  if (!Array.isArray(j.buttons)) { problemas.push(`${ruta}: 'buttons' tiene que ser una lista`); return 0; }
+  const vistos = new Set();
+  for (const [i, b] of j.buttons.entries()) {
+    const donde = `${ruta} boton ${i + 1}`;
+    revisarBoton(b, donde);
+    if (typeof b?.id === 'string') {
+      if (vistos.has(b.id)) problemas.push(`${donde}: id '${b.id}' repetido`);
+      else vistos.add(b.id);
+    }
+  }
+  const huecos = (p.gridSize ?? 4) * (p.gridRows ?? p.gridSize ?? 4);
+  if (j.buttons.length > huecos) problemas.push(`${ruta}: ${j.buttons.length} botones y solo caben ${huecos}`);
+  return j.buttons.length;
 }
 
 function revisarPerfil(ruta, texto) {
   let j;
   try { j = JSON.parse(texto ?? readFileSync(ruta, 'utf-8')); }
   catch (e) { problemas.push(`${ruta}: no es JSON valido — ${e.message}`); return; }
+
+  if (j && typeof j === 'object' && !Array.isArray(j.pages) && j.page && Array.isArray(j.buttons)) {
+    return revisarPaginaSuelta(ruta, j);
+  }
 
   // Lo mismo que exige `validateConfig` del renderer.
   if (!Array.isArray(j.pages) || j.pages.length === 0) problemas.push(`${ruta}: 'pages' tiene que ser una lista no vacia`);
@@ -61,17 +119,13 @@ function revisarPerfil(ruta, texto) {
   const vistos = new Set();
   for (const [i, b] of j.buttons.entries()) {
     const donde = `${ruta} boton ${i + 1}`;
-    if (typeof b?.id !== 'string') problemas.push(`${donde}: sin id`);
-    else if (vistos.has(b.id)) problemas.push(`${donde}: id '${b.id}' repetido`);
-    else vistos.add(b.id);
+    revisarBoton(b, donde);
+    if (typeof b?.id === 'string') {
+      if (vistos.has(b.id)) problemas.push(`${donde}: id '${b.id}' repetido`);
+      else vistos.add(b.id);
+    }
     if (typeof b?.page !== 'number') problemas.push(`${donde}: sin page`);
     else if (b.page >= (j.pages?.length ?? 0)) problemas.push(`${donde}: page ${b.page} y solo hay ${j.pages?.length} paginas`);
-    if (typeof b?.label !== 'string') problemas.push(`${donde}: sin label`);
-    if (b?.widget && !widgets.has(b.widget)) problemas.push(`${donde}: widget '${b.widget}' no existe`);
-    revisarAccion(b?.action, donde);
-    for (const [k, a] of (b?.actions ?? []).entries()) revisarAccion(a, `${donde} accion ${k + 1}`);
-    if (b?.actionToggleOff) revisarAccion(b.actionToggleOff, `${donde} (apagar)`);
-    if (b?.longPressAction) revisarAccion(b.longPressAction, `${donde} (mantener)`);
   }
   // Menos botones que huecos no rompe nada —se rellenan— pero mas de los que
   // caben quedan escondidos detras de la rejilla y el autor no lo sabe.

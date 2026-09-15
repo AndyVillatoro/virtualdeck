@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
-  DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState } from '../../src/types';
+  DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo } from '../../src/types';
 
 
 /**
@@ -281,8 +281,8 @@ contextBridge.exposeInMainWorld('electronAPI', api);
 interface AudioDevice { id: string; name: string; isDefault: boolean; }
 interface BackupInfo { filename: string; timestamp: number; sizeBytes: number; }
 interface WeatherResult { temp: number; code: number; city: string; country: string; }
-interface GalleryEntry { id: string; label: string; author?: string; description?: string; url: string; tags?: string[] }
-interface RiskSummary { botones: number; scripts: string[]; programas: string[]; atajosGlobales: string[] }
+type GalleryEntry = EntradaGaleria;
+type RiskSummary = ResumenRiesgo;
 type GalleryManifest = { ok: true; profiles: GalleryEntry[] } | { ok: false; error: string };
 type GalleryProfile = { ok: true; perfil: unknown; riesgo: RiskSummary } | { ok: false; error: string };
 type EstadoActualizacion = { status: 'disabled' | 'error' | 'checking' | 'available' | 'not-available'; version?: string; error?: string };

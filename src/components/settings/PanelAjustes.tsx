@@ -15,7 +15,7 @@ import { HelpAboutPanel } from '../help/HelpAboutPanel';
 import { SoporteSection } from './SoporteSection';
 import { SeccionIntegraciones } from './SeccionIntegraciones';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
-import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../../types';
+import type { Profile, PageConfig, ButtonConfig, OrigenInstalacion, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../../types';
 
 interface Props {
   accent: string;
@@ -44,6 +44,8 @@ interface Props {
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
   onImportarDeGaleria?: (p: Profile, agregarAlDeck?: boolean) => void;
+  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
+  onAppendPageFromGallery?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
   musicPanel?: { enabled: boolean; side: 'left' | 'right' };
   onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
@@ -72,7 +74,7 @@ export function PanelAjustes({
   theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle,
   alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange,
   rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus,
-  remoteConfig, onRemoteConfigChange, onImportarDeGaleria, onAppendProfilePages, musicPanel, onMusicPanelChange,
+  remoteConfig, onRemoteConfigChange, onImportarDeGaleria, onAppendPageFromGallery, onAppendProfilePages, musicPanel, onMusicPanelChange,
   profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onUpdateProfileTargetApp,
   autoProfileSwitch, onAutoProfileSwitchToggle, autoProfileRestoreDefault, onAutoProfileRestoreDefaultToggle,
   targetDisplayId, onTargetDisplayChange, onReplayOnboarding, newProfileName, setNewProfileName,
@@ -354,7 +356,7 @@ export function PanelAjustes({
       {/* 9. Galería de Perfiles (opcional) */}
       {onImportarDeGaleria && (
         <SeccionAjustes titulo={t('set.gallery')} glyph="DOWNLOAD" accent={effectiveAccent}>
-          <GallerySection accent={effectiveAccent} onImportar={onImportarDeGaleria} />
+          <GallerySection accent={effectiveAccent} onImportar={onImportarDeGaleria} onAppendPage={onAppendPageFromGallery} />
         </SeccionAjustes>
       )}
 

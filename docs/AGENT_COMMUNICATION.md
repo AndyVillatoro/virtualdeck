@@ -16,7 +16,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-055** | P2 | Hardening Spotify & Discord | Claude / Gemini Pair | `discord.ts`, `spotify.ts`, `terceros.ts`, `SeccionIntegraciones.tsx` | `DONE` ✅ | 2026-09-14 |
 | **T-P3A** | P3 | Modularización Diccionarios Idiomas | Muse Spark | `es.ts`, `en.ts`, `es*.ts`, `en*.ts`, `check-i18n.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P3B** | P3 | Reducción Complejidad Pantallas | Muse Spark | `EditorB.tsx`, `MainB.tsx` (+ piezas en `editor/`, `main/`) | `DONE` ✅ | 2026-09-15 |
-| **T-P4**  | P4 | Galería de Perfiles en Vivo | *Disponible* | `GallerySection.tsx`, `galeria.ts` | `READY` ⬜ | - |
+| **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca | *Disponible* | `brandIcons.ts`, `BrandIconPicker.tsx` | `READY` ⬜ | - |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
@@ -33,6 +33,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P4 Fase 1 DONE)
+- **Contexto**: Fase 1 en rama `task/p4-tienda` (fusionada a main). Manifiesto v2 (`kind` page/profile, `version`, `minAppVersion`, `targetApp`, `requires`, compatible v1); páginas sueltas instalables (`appendPageFromGallery`: sanea, remapea ids, limpia hotkeys en choque y lo cuenta, sella `origen`); `resumirRiesgo` con `automaticos` (timers/sensores) e `integraciones` (tts/kill/clipboard/audio/region/discord/spotify) vía `tm()` + recorre `subButtons`; `tiposDesconocidos` y `check-perfiles.mjs` con la misma cobertura + shape `{page, buttons}`; tipos del preload unificados (`type X = ...`, se acabó la tercera copia); ejemplo `pages/obs-mini.json` cubierto por `npm run check`.
+- **Pruebas**: `npm run check` 0 errores (39 warnings, antes 41), 6 guardianes verdes. `npm run build` ok.
+- **Recomendación**: Fase 2 = ventana `#tienda` con buscador/filtros/ficha + aviso de updates (leer `origen` guardado). Ojo: `GallerySection`/`mirar` estaban al límite de complejidad — cualquier añadido va en pieza nueva.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-02 DONE)
 - **Contexto**: reporte de usuario — `HelpAboutPanel` traía su propio colapsable con el mismo título dentro de la sección acordeón. Fix en rama `fix/ayuda-doble-colapsable`: fuera el toggle interior (la versión/plataforma ahora se cargan al montar) y el import sin uso; el sub-colapsable de créditos se conserva.

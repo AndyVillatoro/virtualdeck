@@ -32,6 +32,43 @@ https://<owner>.github.io/virtualdeck-gallery/
 }
 ```
 
+## Manifiesto v2: páginas sueltas y versiones (T-P4)
+
+Una entrada puede traer una **página suelta** en vez de un deck completo, con
+versión y requisitos. Los campos nuevos son opcionales: sin `kind` la entrada
+es un perfil, como en v1.
+
+```json
+{
+  "id": "obs-mini",
+  "kind": "page",
+  "label": "OBS Mini",
+  "author": "@example",
+  "description": "Una página para OBS: grabar, mute y reloj.",
+  "url": "https://example.github.io/virtualdeck-gallery/pages/obs-mini.json",
+  "tags": ["obs"],
+  "targetApp": "obs64",
+  "version": "1.0.0",
+  "minAppVersion": "0.12.0",
+  "requires": ["OBS instalado"]
+}
+```
+
+- `kind`: `"profile"` (deck completo) o `"page"` (una página para agregar
+  sin tocar el deck). El archivo de una página trae `{ "page": {...},
+  "buttons": [...] }`, igual que una página exportada desde la app.
+- `version`: versión del contenido. La app guarda de dónde vino cada
+  perfil/página para avisar updates.
+- `minAppVersion`: la app bloquea la instalación con un aviso si es más vieja.
+- `targetApp`: proceso destino (ej. `"obs64"`); al instalar, la página hereda
+  el auto-perfil si coincide.
+- `requires`: requisitos en texto libre que se enseñan antes de instalar.
+
+Al agregar una página, los atajos globales que choquen con los que ya hay se
+quitan y se avisa cuántos fueron. El aviso de riesgo enseña además lo que se
+ejecuta solo (temporizadores, sensores) y otros efectos al pulsar (voz, cierre
+de apps, portapapeles, Discord/Spotify).
+
 ## Importar desde URL en VirtualDeck
 
 La app expone `api.config.import()` para JSONs locales. Para galería remota, el flujo equivalente:

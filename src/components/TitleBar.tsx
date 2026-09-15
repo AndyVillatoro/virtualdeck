@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
-import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../types';
+import type { Profile, PageConfig, ButtonConfig, OrigenInstalacion, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../types';
 import { PanelAjustes } from './settings/PanelAjustes';
 import { BotonesNavegacion } from './titlebar/BotonesNavegacion';
 import { BotonAjustesConHint } from './titlebar/BotonAjustesConHint';
@@ -40,6 +40,8 @@ export interface TitleBarProps {
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
   onImportarDeGaleria?: (p: Profile, agregarAlDeck?: boolean) => void;
+  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
+  onAppendPageFromGallery?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
   musicPanel?: { enabled: boolean; side: 'left' | 'right' };
   onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
@@ -97,6 +99,7 @@ export function TitleBar({
   remoteConfig,
   onRemoteConfigChange,
   onImportarDeGaleria,
+  onAppendPageFromGallery,
   musicPanel,
   onMusicPanelChange,
   sensorsStatus,
@@ -207,6 +210,7 @@ export function TitleBar({
           remoteConfig={remoteConfig}
           onRemoteConfigChange={onRemoteConfigChange}
           onImportarDeGaleria={onImportarDeGaleria}
+          onAppendPageFromGallery={onAppendPageFromGallery}
           musicPanel={musicPanel}
           onMusicPanelChange={onMusicPanelChange}
           onSensorsConfigChange={onSensorsConfigChange}

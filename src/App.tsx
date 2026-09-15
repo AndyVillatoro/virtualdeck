@@ -160,7 +160,7 @@ export default function App() {
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
-    saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, deleteProfile,
+    saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, appendPageFromGallery, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
     toggleAlwaysOnTop,
@@ -579,6 +579,7 @@ export default function App() {
           onLoadProfile={loadProfile}
           onAppendProfilePages={appendProfilePages}
           onAppendPagesFromProfile={appendPagesFromProfile}
+          onAppendPageFromGallery={appendPageFromGallery}
           onDeleteProfile={deleteProfile}
           onAutostartToggle={toggleAutostart}
           toggledIds={toggledIds}

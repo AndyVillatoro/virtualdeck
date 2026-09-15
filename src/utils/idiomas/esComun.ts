@@ -299,6 +299,7 @@ export const ES_COMUN: Dict = {
   'undo.gridSize': 'cambiar la cuadrícula a {tam}',
   'undo.saveProfile': 'guardar perfil "{nombre}"',
   'undo.appendProfile': 'agregar páginas de "{nombre}"',
+  'undo.appendPage': 'agregar página "{nombre}"',
   'undo.updateProfile': 'sobrescribir perfil "{nombre}"',
   'undo.deleteProfile': 'eliminar perfil "{nombre}"',
   'bulk.selected': '{n} SELECCIONADOS',

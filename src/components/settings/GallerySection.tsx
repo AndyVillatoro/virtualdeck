@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
-import type { EntradaGaleria, ResumenRiesgo, Profile } from '../../types';
+import type { EntradaGaleria, ResumenRiesgo, Profile, PageConfig, ButtonConfig, OrigenInstalacion } from '../../types';
 import { SettingLabel, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
-import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import { FilaEntradaGaleria } from './FilaEntradaGaleria';
+import { FichaRiesgoGaleria } from './FichaRiesgoGaleria';
 import { tiposDesconocidos } from '../../utils/configMigration';
+
+/** Compara semver simple: "1.2.0" > "0.12.0". Las partes no numéricas valen 0. */
+function versionMayor(a: string, b: string): boolean {
+  const pa = a.split('.').map((x) => parseInt(x, 10) || 0);
+  const pb = b.split('.').map((x) => parseInt(x, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0);
+  }
+  return false;
+}
 
 /**
  * La galería de perfiles (6.1): traerse el deck de otra persona.
@@ -30,10 +41,12 @@ const GALERIA_OFICIAL =
   'https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/manifest.json';
 
 export function GallerySection({
-  accent, onImportar,
+  accent, onImportar, onAppendPage,
 }: {
   accent: string;
   onImportar: (p: Profile, agregarAlDeck?: boolean) => void;
+  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
+  onAppendPage?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
 }) {
   const VD = useTheme();
   const t = useT();
@@ -44,15 +57,21 @@ export function GallerySection({
   const [url, setUrl] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [lista, setLista] = useState<EntradaGaleria[] | null>(null);
+  const [versionApp, setVersionApp] = useState<string | null>(null);
   const [elegido, setElegido] = useState<{ entrada: EntradaGaleria; perfil: unknown; riesgo: ResumenRiesgo } | null>(null);
 
   const cargar = async (dir?: string) => {
     const donde = (dir ?? url).trim();
     if (!api?.gallery || !donde) return;
     if (dir) setUrl(dir);
-    setCargando(true); setError(null); setLista(null); setElegido(null);
-    const r = await api.gallery.manifest(donde);
+    setCargando(true); setError(null); setAviso(null); setLista(null); setElegido(null);
+    const [r, v] = await Promise.all([
+      api.gallery.manifest(donde),
+      versionApp ?? api.app.getVersion().catch(() => ''),
+    ]);
+    if (typeof v === 'string' && v) setVersionApp(v);
     setCargando(false);
     if (!r.ok || !r.profiles) { setError(t('gal.failed', { error: r.error ?? '?' })); return; }
     if (r.profiles.length === 0) { setError(t('gal.empty')); return; }
@@ -61,12 +80,23 @@ export function GallerySection({
 
   const mirar = async (e: EntradaGaleria) => {
     if (!api?.gallery) return;
-    setCargando(true); setError(null);
+    // Una entrada que pide una app más nueva se avisa antes de descargar.
+    const v = versionApp ?? await api.app.getVersion().catch(() => '');
+    if (v) setVersionApp(v);
+    if (e.minAppVersion && v && versionMayor(e.minAppVersion, v)) {
+      setError(t('gal.needsUpdate', { version: e.minAppVersion }));
+      return;
+    }
+    setCargando(true); setError(null); setAviso(null);
     const r = await api.gallery.profile(e.url);
     setCargando(false);
     if (!r.ok || !r.riesgo) { setError(t('gal.failed', { error: r.error ?? '?' })); return; }
     setElegido({ entrada: e, perfil: r.perfil, riesgo: r.riesgo });
   };
+
+  const origenDe = (e: EntradaGaleria): OrigenInstalacion => ({
+    manifestUrl: url || undefined, entryId: e.id, version: e.version,
+  });
 
   const importar = (agregarAlDeck: boolean = false) => {
     if (!elegido) return;
@@ -83,8 +113,23 @@ export function GallerySection({
       buttons: p.buttons as Profile['buttons'],
       accent: p.accent ?? accent,
       wallpaper: p.wallpaper as Profile['wallpaper'],
+      origen: origenDe(elegido.entrada),
     }, agregarAlDeck);
     setElegido(null);
+  };
+
+  /** Tienda (T-P4): una entrada kind 'page' trae {page, buttons} y se agrega como página nueva. */
+  const importarPagina = () => {
+    if (!elegido || !onAppendPage) return;
+    const p = elegido.perfil as { page?: unknown; buttons?: unknown };
+    if (!p.page || typeof p.page !== 'object' || !Array.isArray(p.buttons)) { setError(t('gal.notAPage')); return; }
+    const malos = tiposDesconocidos(p.buttons);
+    if (malos.length > 0) { setError(t('gal.unknownTypes', { tipos: malos.join(', ') })); return; }
+    const limpiados = onAppendPage(
+      p.page as PageConfig, p.buttons as ButtonConfig[], origenDe(elegido.entrada),
+    );
+    setElegido(null);
+    setAviso(limpiados > 0 ? t('gal.hotkeysStripped', { n: limpiados }) : null);
   };
 
   const menudo: React.CSSProperties = { fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6 };
@@ -110,81 +155,21 @@ export function GallerySection({
         </button>
         <div style={menudo}>{t('gal.hint')}</div>
         {error && <div style={{ ...menudo, color: VD.danger }}>{error}</div>}
+        {aviso && <div style={menudo}>{aviso}</div>}
 
         {lista && !elegido && lista.map((e) => (
-          <div
-            key={e.id}
-            onClick={() => mirar(e)}
-            style={{
-              background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md,
-              padding: '6px 9px', cursor: 'pointer',
-            }}
-          >
-            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text }}>
-              {e.label}{e.author ? ` · ${e.author}` : ''}
-            </div>
-            {e.description && <div style={menudo}>{e.description}</div>}
-          </div>
+          <FilaEntradaGaleria key={e.id} entrada={e} onMirar={mirar} />
         ))}
 
         {elegido && (
-          <div style={{
-            background: VD.elevated, border: `1px solid ${VD.warning}`,
-            borderRadius: VD.radius.md, padding: '9px 10px',
-            display: 'flex', flexDirection: 'column', gap: 6,
-          }}>
-            <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text, letterSpacing: 0.5 }}>
-              {elegido.entrada.label}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <DotGlyphIcon glyph="WARN" size={9} color={VD.warning} />
-              <div style={{ ...menudo, color: VD.warning }}>{t('gal.warn')}</div>
-            </div>
-            <div style={menudo}>{t('gal.counts', { n: elegido.riesgo.botones })}</div>
-            {elegido.riesgo.programas.length > 0 && (
-              <div style={menudo}>
-                {t('gal.launches')}
-                {elegido.riesgo.programas.map((p, i) => <div key={i} style={{ color: VD.textDim }}>· {p}</div>)}
-              </div>
-            )}
-            {elegido.riesgo.scripts.length > 0 && (
-              <div style={menudo}>
-                {t('gal.runs')}
-                {elegido.riesgo.scripts.map((s, i) => (
-                  <div key={i} style={{ color: VD.danger, wordBreak: 'break-all' }}>· {s}</div>
-                ))}
-              </div>
-            )}
-            {(elegido.riesgo.webhooks?.length ?? 0) > 0 && (
-              <div style={menudo}>
-                {t('gal.sends')}
-                {elegido.riesgo.webhooks!.map((w, i) => <div key={i} style={{ color: VD.textDim }}>· {w}</div>)}
-              </div>
-            )}
-            {(elegido.riesgo.teclas?.length ?? 0) > 0 && (
-              <div style={menudo}>
-                {t('gal.types')}
-                {elegido.riesgo.teclas!.map((k, i) => (
-                  <div key={i} style={{ color: VD.danger, wordBreak: 'break-all' }}>· {k}</div>
-                ))}
-              </div>
-            )}
-            {elegido.riesgo.atajosGlobales.length > 0 && (
-              <div style={menudo}>{t('gal.hotkeys', { list: elegido.riesgo.atajosGlobales.join(', ') })}</div>
-            )}
-            {elegido.riesgo.scripts.length === 0 && elegido.riesgo.programas.length === 0 && (elegido.riesgo.webhooks?.length ?? 0) === 0 && (elegido.riesgo.teclas?.length ?? 0) === 0 && (
-              <div style={menudo}>{t('gal.nothingRisky')}</div>
-            )}
-            <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-              <button onClick={() => importar(true)} style={miniBtn(accent)} title={t('gal.importAndAppendHint')}>
-                {t('gal.importAndAppend')}
-              </button>
-              <button onClick={() => importar(false)} style={miniBtn(VD.textDim)} title={t('gal.importOnlyHint')}>
-                {t('gal.importOnly')}
-              </button>
-              <button onClick={() => setElegido(null)} style={miniBtn(VD.textMuted)}>{t('ui.cancel')}</button>
-            </div>
-          </div>
+          <FichaRiesgoGaleria
+            entrada={elegido.entrada}
+            riesgo={elegido.riesgo}
+            puedeAgregarPagina={!!onAppendPage}
+            onImportar={importar}
+            onImportarPagina={importarPagina}
+            onCerrar={() => setElegido(null)}
+          />
         )}
       </div>
     </div>

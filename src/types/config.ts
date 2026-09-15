@@ -113,6 +113,8 @@ export interface PageConfig {
   gridRows?: number;
   /** 7.4 — Proceso de aplicación vinculado para cambio automático de página (ej. "obs64", "photoshop"). */
   targetApp?: string;
+  /** Tienda (T-P4): de qué entrada de qué manifiesto vino esta página, para avisar updates. */
+  origen?: OrigenInstalacion;
 }
 
 export interface Profile {
@@ -123,6 +125,8 @@ export interface Profile {
   accent: string;
   wallpaper?: string;
   targetApp?: string;
+  /** Tienda (T-P4): de qué entrada de qué manifiesto vino este perfil, para avisar updates. */
+  origen?: OrigenInstalacion;
 }
 
 export type SoundProfileId = 'click' | 'tick' | 'thud' | 'off';
@@ -174,6 +178,8 @@ export interface FloatingBarSettings {
   tileSize?: number;
 }
 
+export type TipoEntradaGaleria = 'profile' | 'page';
+
 export interface EntradaGaleria {
   id: string;
   label: string;
@@ -181,6 +187,23 @@ export interface EntradaGaleria {
   description?: string;
   url: string;
   tags?: string[];
+  /** Tienda (T-P4): qué trae la url. Ausente = 'profile' (formato v1). */
+  kind?: TipoEntradaGaleria;
+  /** Versión del contenido (semver libre, ej. "1.2.0"). */
+  version?: string;
+  /** Versión mínima de VirtualDeck para instalarlo (ej. "0.12.0"). */
+  minAppVersion?: string;
+  /** App destino (ej. "obs64"): activa el auto-perfil si coincide. */
+  targetApp?: string;
+  /** Requisitos en texto libre (ej. "OBS instalado", "cuenta de Spotify"). */
+  requires?: string[];
+}
+
+/** De qué entrada de qué manifiesto se instaló un perfil o página. */
+export interface OrigenInstalacion {
+  manifestUrl?: string;
+  entryId?: string;
+  version?: string;
 }
 
 export interface ResumenRiesgo {
@@ -190,6 +213,10 @@ export interface ResumenRiesgo {
   atajosGlobales: string[];
   webhooks?: string[];
   teclas?: string[];
+  /** Disparadores que se ejecutan solos, sin pulsar: temporizadores y sensores. */
+  automaticos: string[];
+  /** Efectos al pulsar no cubiertos arriba: voz, cierre de apps, portapapeles, integraciones. */
+  integraciones: string[];
 }
 
 export interface OrdenRemota {

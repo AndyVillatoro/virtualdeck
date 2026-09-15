@@ -26,6 +26,11 @@ type Clave =
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
   | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject'
+  // Fragmentos del resumen de riesgo de la galería (los enseña el renderer).
+  | 'gal.risk.click' | 'gal.risk.move' | 'gal.risk.scroll' | 'gal.risk.voice'
+  | 'gal.risk.kill' | 'gal.risk.clipboard' | 'gal.risk.audio' | 'gal.risk.capture'
+  | 'gal.risk.discord' | 'gal.risk.spotify' | 'gal.risk.timer' | 'gal.risk.sensor'
+  | 'gal.risk.play'
   | 'discord.notRunning' | 'discord.disconnected' | 'discord.timeout' | 'discord.notAuthenticated' | 'discord.error'
   | 'spotify.tokenRequired' | 'spotify.noUri';
 
@@ -66,6 +71,19 @@ const ES: Record<Clave, string> = {
   'gal.tooBig': 'El archivo es demasiado grande',
   'gal.badManifest': 'El manifiesto no trae una lista de perfiles',
   'gal.notObject': 'El perfil descargado no es un objeto',
+  'gal.risk.click': 'clic ({x},{y})',
+  'gal.risk.move': 'mover ratón ({x},{y})',
+  'gal.risk.scroll': 'scroll ({n})',
+  'gal.risk.voice': 'voz: "{texto}"',
+  'gal.risk.kill': 'cerrar: {nombre}',
+  'gal.risk.clipboard': 'portapapeles ({n} caracteres)',
+  'gal.risk.audio': 'audio: {nombre}',
+  'gal.risk.capture': 'captura de región',
+  'gal.risk.discord': 'Discord: {accion}',
+  'gal.risk.spotify': 'Spotify: {accion}',
+  'gal.risk.timer': 'temporizador {hora}',
+  'gal.risk.sensor': 'sensor {id} {op} {valor}',
+  'gal.risk.play': 'reproducir',
   'discord.notRunning': 'Discord no está abierto o no responde en el pipe local',
   'discord.disconnected': 'Discord desconectado',
   'discord.timeout': 'Tiempo de espera agotado en comando Discord',
@@ -112,6 +130,19 @@ const EN: Record<Clave, string> = {
   'gal.tooBig': 'The file is too large',
   'gal.badManifest': 'The manifest has no profile list',
   'gal.notObject': 'The downloaded profile is not an object',
+  'gal.risk.click': 'click ({x},{y})',
+  'gal.risk.move': 'move mouse ({x},{y})',
+  'gal.risk.scroll': 'scroll ({n})',
+  'gal.risk.voice': 'voice: "{texto}"',
+  'gal.risk.kill': 'kill: {nombre}',
+  'gal.risk.clipboard': 'clipboard ({n} chars)',
+  'gal.risk.audio': 'audio: {nombre}',
+  'gal.risk.capture': 'region capture',
+  'gal.risk.discord': 'Discord: {accion}',
+  'gal.risk.spotify': 'Spotify: {accion}',
+  'gal.risk.timer': 'timer {hora}',
+  'gal.risk.sensor': 'sensor {id} {op} {valor}',
+  'gal.risk.play': 'play',
   'discord.notRunning': 'Discord is not open or not responding on local pipe',
   'discord.disconnected': 'Discord disconnected',
   'discord.timeout': 'Timeout waiting for Discord command',

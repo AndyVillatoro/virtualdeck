@@ -12,7 +12,7 @@ interface BarraSuperiorMainProps extends Pick<PropsTitleBar,
   | 'onSaveProfile' | 'onLoadProfile' | 'onAppendProfilePages' | 'onDeleteProfile'
   | 'uiScale' | 'onUiScaleChange' | 'alwaysOnTop' | 'onAlwaysOnTopToggle'
   | 'onFloatingBar' | 'theme' | 'onThemeChange' | 'language' | 'onLanguageChange'
-  | 'hintsDismissed' | 'onDismissHint' | 'onReplayOnboarding'
+  | 'hintsDismissed' | 'onDismissHint' | 'onReplayOnboarding' | 'onAppendPageFromGallery'
 > {
   config: DeckConfig;
   panelMusica: { enabled: boolean; side: 'left' | 'right' };

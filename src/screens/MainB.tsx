@@ -31,7 +31,7 @@ export function MainB({
   onConfigChange, onUpdateButton, onDuplicateButton, onCopyButton, onPasteButton, canPasteButton, onClearButton,
   onConfigExport, onConfigImport, onSwapButtons,
   onPageRename, onPageAdd, onDuplicatePage, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
-  onSaveProfile, onLoadProfile, onAppendProfilePages, onAppendPagesFromProfile, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
+  onSaveProfile, onLoadProfile, onAppendProfilePages, onAppendPagesFromProfile, onAppendPageFromGallery, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
 }: MainBProps) {
   const VD = useTheme();
@@ -234,6 +234,7 @@ export function MainB({
           compact={isCompact}
           onConfigChange={onConfigChange}
           onAppendPagesFromProfile={onAppendPagesFromProfile}
+          onAppendPageFromGallery={onAppendPageFromGallery}
           autostart={autostart}
           soundOnPress={soundOnPress}
           soundProfile={soundProfile}

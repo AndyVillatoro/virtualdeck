@@ -258,6 +258,18 @@ export function tiposDesconocidos(botones: unknown): string[] {
     for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
       for (const sub of (Array.isArray(a[clave]) ? a[clave] as unknown[] : [])) mirar(sub);
     }
+    // Carpetas y cuadrantes 2×2 llevan acciones propias (misma paridad que
+    // `resumirRiesgo` en electron/main/galeria.ts).
+    for (const fb of (Array.isArray(a.folderButtons) ? a.folderButtons as unknown[] : [])) {
+      if (isObject(fb)) mirar(fb.action);
+    }
+    for (const sb of (Array.isArray(a.subButtons) ? a.subButtons as unknown[] : [])) {
+      if (!isObject(sb)) continue;
+      mirar(sb.action);
+      for (const sub of (Array.isArray(sb.actions) ? sb.actions as unknown[] : [])) mirar(sub);
+      mirar(sb.actionToggleOff);
+      mirar(sb.longPressAction);
+    }
   };
   for (const b of botones) {
     if (!isObject(b)) continue;
@@ -265,6 +277,14 @@ export function tiposDesconocidos(botones: unknown): string[] {
     for (const a of (Array.isArray(b.actions) ? b.actions as unknown[] : [])) mirar(a);
     mirar(b.actionToggleOff);
     mirar(b.longPressAction);
+    // Los cuadrantes 2×2 viven en el botón, no en la acción.
+    for (const sb of (Array.isArray(b.subButtons) ? b.subButtons as unknown[] : [])) {
+      if (!isObject(sb)) continue;
+      mirar(sb.action);
+      for (const a of (Array.isArray(sb.actions) ? sb.actions as unknown[] : [])) mirar(a);
+      mirar(sb.actionToggleOff);
+      mirar(sb.longPressAction);
+    }
   }
   return [...malos];
 }

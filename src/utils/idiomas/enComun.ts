@@ -291,6 +291,7 @@ export const EN_COMUN: Dict = {
   'undo.reorder': 'reorder buttons',
   'undo.saveProfile': 'save profile "{nombre}"',
   'undo.appendProfile': 'append pages from "{nombre}"',
+  'undo.appendPage': 'append page "{nombre}"',
   'undo.updateProfile': 'overwrite profile "{nombre}"',
   'undo.deleteProfile': 'delete profile "{nombre}"',
   'bulk.selected': '{n} SELECTED',
