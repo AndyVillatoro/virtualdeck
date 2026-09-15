@@ -54,7 +54,24 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * Ojo: `scripts/check-i18n.mjs:46-59` (`clavesDe`) solo lee `const ES: Dict` / `const EN: Dict` hasta `\n};`. Si se divide en `esAcciones.ts` etc., hay que actualizar esa funcion para fusionar submódulos.
 * Tras el cambio: `npm run check` (0 errores) + `npm run build`, luego actualizar tabla a `DONE` y dejar mensaje en el buzon.
 
+## Turno 2026-09-15 — T-P3B Reduccion Complejidad Pantallas (DONE)
+
+* **Modelo:** Muse Spark, rama `task/p3-pantallas` (desde `main` con T-P3A ya fusionado).
+* **Archivos nuevos:** `src/screens/editor/botonConfigurado.ts`, `CabeceraEditorB.tsx`, `FranjaPasosEditorB.tsx`, `FormularioPasoEditorB.tsx`; `src/screens/main/atajosSeleccion.ts`, `BarraSuperiorMain.tsx`, `AvisosContextuales.tsx`, `PanelesMusica.tsx`, `CeldaPrincipal.tsx`.
+* **Archivos modificados:** `src/screens/EditorB.tsx` (complejidad 33 → sin avisos), `src/screens/MainB.tsx` (30 + flecha 22 → sin avisos), `docs/AGENT_COMMUNICATION.md` (`T-P3B DONE` + buzón).
+* **Sin cambios de comportamiento:** mismo JSX/props reordenado; `onSelect` sigue alternando selección; `STEPS` ahora se exporta desde `FranjaPasosEditorB`; `AtajoSeleccion` usa valores en inglés por el guardián i18n.
+* **Nota:** `PanelMusicaLateral` va en dos instancias (una por lado) porque el orden en el flex importa.
+
+### Verificacion
+
+* `npm run check`: **0 errores, 41 warnings** (antes 44; caen `EditorB`, `MainB` y la flecha de atajos).
+  * `tsc --noEmit`: ok. `depcruise`: sin violaciones.
+  * Los 6 guardianes en verde con conteos idénticos.
+* `npm run build`: **ok**.
+
 ## Proximo paso concreto
 
-* Tomar **`T-P3B Reduccion Complejidad Pantallas`** (`src/screens/EditorB.tsx` complejidad 33, `src/screens/MainB.tsx` 30 + arrow 22).
-* Reclamar `T-P3B` en `docs/AGENT_COMMUNICATION.md` antes de editar; rama `task/p3-pantallas`; claves nuevas de i18n van al fragmento de su dominio, nunca al merge.
+* Tomar **`T-P4 Galeria de Perfiles en Vivo`** (`src/components/settings/GallerySection.tsx`, `electron/main/galeria.ts`).
+* Reclamar `T-P4` en `docs/AGENT_COMMUNICATION.md` antes de editar; rama `task/p4-galeria`.
+
+## Proximo paso historico (T-P3B, hecho)

@@ -61,13 +61,22 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 
 | Pantalla | Responsabilidad única | SRP |
 |----------|----------------------|-----|
-| `MainB.tsx` | Grilla principal: render de botones, ejecución, widgets, toasts, hints. | 🟡 (grande; candidato a extraer sub-componentes) |
-| `EditorB.tsx` | Editor de un botón: acción, estilo, ícono, widget, disparadores. | 🟡 (1900+ líneas; dividir por sección) |
+| `MainB.tsx` | Grilla principal: compone barra, rejilla, paneles y overlays; la ejecución, los atajos y cada pieza viven en `main/`. | ✅ |
+| `EditorB.tsx` | Editor de un botón: posee el estado y arma cabecera, pasos y formulario con piezas de `editor/`. | ✅ |
 | `FullscreenB.tsx` | Modo panel a pantalla completa (tablet/monitor dedicado). | ✅ |
 | `WallpaperB.tsx` | Elegir el fondo del deck. | ✅ |
 | `RGBManagerB.tsx` | Configurar perfiles y dispositivos RGB. | 🟡 (760 líneas) |
 | `editor/actionData.ts` | Datos puros del editor (tipos de acción, presets). | ✅ |
 | `editor/MacroEditor.tsx` | Editor manual de pasos de macro. | ✅ |
+| `editor/botonConfigurado.ts` | Dice si un botón cuenta como configurado (función pura). | ✅ |
+| `editor/CabeceraEditorB.tsx` | Cabecera del editor: título y selector de modo 1×1/2×2. | ✅ |
+| `editor/FranjaPasosEditorB.tsx` | Franja de pasos 01–03 o aviso de modo 2×2 (+`STEPS`). | ✅ |
+| `editor/FormularioPasoEditorB.tsx` | Cuadrantes 2×2 o el paso 0/1/2 del formulario. | ✅ |
+| `main/atajosSeleccion.ts` | Atajos de selección múltiple (hook + resolutor puro). | ✅ |
+| `main/BarraSuperiorMain.tsx` | `TitleBar` de la principal con su cableado de config. | ✅ |
+| `main/AvisosContextuales.tsx` | Hints contextuales (uno a la vez, descartables). | ✅ |
+| `main/PanelesMusica.tsx` | Panel de música lateral (una instancia por lado). | ✅ |
+| `main/CeldaPrincipal.tsx` | Una celda de la rejilla principal con su cableado. | ✅ |
 
 ---
 

@@ -3,17 +3,14 @@ import { PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData'
 import {
   accionInicial, estiloInicial, widgetInicial, visibilidadInicial, disparadoresInicial,
 } from './editor/valoresIniciales';
-import { PasoAccion } from './editor/PasoAccion';
-import { PasoConfigurar } from './editor/PasoConfigurar';
-import { PasoEstilo } from './editor/PasoEstilo';
 import { construirBoton } from './editor/guardar';
+import { botonConfigurado } from './editor/botonConfigurado';
+import { CabeceraEditorB } from './editor/CabeceraEditorB';
+import { FranjaPasosEditorB, STEPS } from './editor/FranjaPasosEditorB';
+import { FormularioPasoEditorB } from './editor/FormularioPasoEditorB';
 import { useTheme } from '../utils/theme';
-import { DotLabel } from '../components/DotLabel';
-import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
-import { EditorSubdivision2x2 } from './editor/EditorSubdivision2x2';
 import { PieEditorB } from './editor/PieEditorB';
 import { ModalesIconosEditor } from './editor/ModalesIconosEditor';
-import { useT } from '../utils/i18n';
 import type { ButtonConfig, RGBProfile, SubButtonConfig } from '../types';
 
 interface EditorBProps {
@@ -27,34 +24,17 @@ interface EditorBProps {
   onClear?: (id: string) => void;
 }
 
-// Claves i18n de los pasos (el texto se resuelve con t() en render).
+// Las claves i18n de los pasos viven en `FranjaPasosEditorB` (exporta STEPS).
 import { VistaPrevia } from './editor/VistaPrevia';
 import { useCatalogos } from './editor/useCatalogos';
 import { useCapturaHotkey } from './editor/useCapturaHotkey';
 import { usePegarImagen } from './editor/usePegarImagen';
 
-const STEPS = ['ed.step.action', 'ed.step.config', 'ed.step.style'];
-
 
 export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave, onClear }: EditorBProps) {
   const VD = useTheme();
-  const t = useT();
   const api = window.electronAPI;
-  const isConfigured = button.action.type !== 'none'
-    || !!button.label
-    || !!button.sublabel
-    || !!button.icon
-    || !!button.imageData
-    || !!button.brandIcon
-    || !!button.widget
-    || !!button.customGlyph57
-    || !!button.globalHotkey
-    || !!button.bgColor
-    || !!button.fgColor
-    || !!button.longPressAction
-    || (button.actions && button.actions.length > 1)
-    || (button.isToggle && button.actionToggleOff && button.actionToggleOff.type !== 'none')
-    || !!(button.subButtons && button.subButtons.length === 4);
+  const isConfigured = botonConfigurado(button);
   // Los valores de partida salen de `valoresIniciales`: alli estan todos los
   // `?? ''` que antes vivian aqui dentro, uno por campo.
   //
@@ -278,75 +258,15 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
         borderRadius: VD.radius.sm,
       }}>
         {/* Header */}
-        <div style={{
-          height: 44, borderBottom: `1px solid ${VD.border}`,
-          display: 'flex', alignItems: 'center', padding: '0 16px', gap: 10, flexShrink: 0,
-        }}>
-          <div style={{ width: 6, height: 6, borderRadius: VD.radius.md, background: accent }} />
-          <DotLabel size={11} color={VD.text} spacing={2}>{t('ed.title')}</DotLabel>
-          <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>· {button.id.toUpperCase()}</span>
-
-          {/* Selector de modo: 1x1 Estándar vs 2x2 Cuadrantes */}
-          <div style={{ display: 'flex', gap: 2, background: VD.elevated, padding: 2, borderRadius: VD.radius.sm, border: `1px solid ${VD.border}`, marginLeft: 16 }}>
-            <button
-              onClick={() => setIs2x2Mode(false)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 8px', border: 'none', borderRadius: VD.radius.sm,
-                background: !is2x2Mode ? accent : 'transparent',
-                color: !is2x2Mode ? '#fff' : VD.textDim,
-                fontFamily: VD.mono, fontSize: 9, letterSpacing: '1px',
-                cursor: 'pointer',
-              }}
-            >
-              <DotGlyphIcon glyph="DOTS" size={8} color={!is2x2Mode ? '#fff' : VD.textDim} />
-              <span>{t('ed.mode.standard')}</span>
-            </button>
-            <button
-              onClick={() => setIs2x2Mode(true)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 8px', border: 'none', borderRadius: VD.radius.sm,
-                background: is2x2Mode ? accent : 'transparent',
-                color: is2x2Mode ? '#fff' : VD.textDim,
-                fontFamily: VD.mono, fontSize: 9, letterSpacing: '1px',
-                cursor: 'pointer',
-              }}
-            >
-              <DotGlyphIcon glyph="FULLSCREEN" size={8} color={is2x2Mode ? '#fff' : VD.textDim} />
-              <span>{t('ed.mode.split2x2')}</span>
-            </button>
-          </div>
-
-          <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ color: VD.textDim, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 4 }}>
-            <DotGlyphIcon glyph="CLOSE" size={12} color={VD.textDim} />
-          </button>
-        </div>
+        <CabeceraEditorB
+          buttonId={button.id}
+          is2x2Mode={is2x2Mode}
+          onCambiarModo={setIs2x2Mode}
+          onClose={onClose}
+        />
 
         {/* Steps */}
-        {!is2x2Mode ? (
-          <div style={{ display: 'flex', padding: '16px 24px', gap: 4, borderBottom: `1px solid ${VD.border}`, flexShrink: 0 }}>
-            {STEPS.map((s, i) => (
-              <div key={s} style={{ flex: 1, cursor: 'pointer' }} onClick={() => setStep(i)}>
-                <div style={{ height: 2, background: i <= step ? accent : VD.border, transition: 'background 0.2s' }} />
-                <div style={{ marginTop: 8, fontFamily: VD.mono, fontSize: 10, letterSpacing: 2, color: i === step ? VD.text : i < step ? VD.textDim : VD.textMuted }}>
-                  {String(i + 1).padStart(2, '0')} · {t(s)}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderBottom: `1px solid ${VD.border}`, flexShrink: 0 }}>
-            <DotGlyphIcon glyph="FULLSCREEN" size={10} color={accent} />
-            <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: '1px' }}>
-              {t('ed.mode.split2x2')}
-            </span>
-            <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>
-              · {t('ed.mode.hint')}
-            </span>
-          </div>
-        )}
+        <FranjaPasosEditorB is2x2Mode={is2x2Mode} step={step} onPaso={setStep} />
 
         {/* Body */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
@@ -376,157 +296,123 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               campos de arriba, que son los que dicen que hace el boton. */}
           <div key={is2x2Mode ? 'subdivision-2x2' : step} className="vd-scroll" style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* STEP 0: Action type + presets */}
-            {is2x2Mode ? (
-              <EditorSubdivision2x2
-                parentId={button.id}
-                subButtons={subButtons}
-                onChange={setSubButtons}
-                accent={accent}
-              />
-            ) : (
-              <>
-                {/* STEP 0: Action type + presets */}
-            {step === 0 && (
-              <PasoAccion
-                accent={accent}
-                action={action}
-                setAction={setAction}
-                applyPreset={applyPreset}
-                extraActions={extraActions}
-                setExtraActions={setExtraActions}
-                filteredPresets={filteredPresets}
-                presetCategory={presetCategory}
-                setPresetCategory={setPresetCategory}
-                presetSearch={presetSearch}
-                setPresetSearch={setPresetSearch}
-                showExtraPicker={showExtraPicker}
-                setShowExtraPicker={setShowExtraPicker}
-              />
-            )}
-
-            {/* STEP 1: Configure action */}
-            {step === 1 && (
-              <PasoConfigurar
-                accent={accent}
-                action={action}
-                setAction={setAction}
-                actionToggleOff={actionToggleOff}
-                setActionToggleOff={setActionToggleOff}
-                applyFolderPreset={applyFolderPreset}
-                audioDevices={audioDevices}
-                audioError={audioError}
-                capturing={capturing}
-                setCapturing={setCapturing}
-                folderButtons={folderButtons}
-                setFolderButtons={setFolderButtons}
-                globalHotkey={globalHotkey}
-                setGlobalHotkey={setGlobalHotkey}
-                inTrayMenu={inTrayMenu}
-                setInTrayMenu={setInTrayMenu}
-                isToggle={isToggle}
-                setIsToggle={setIsToggle}
-                label={label}
-                setLabel={setLabel}
-                loadAudioDevices={loadAudioDevices}
-                loadingDevices={loadingDevices}
-                longPressAction={longPressAction}
-                setLongPressAction={setLongPressAction}
-                pickFile={pickFile}
-                pickShortcut={pickShortcut}
-                radioGroup={radioGroup}
-                setRadioGroup={setRadioGroup}
-                rgbConnected={rgbConnected}
-                rgbDevices={rgbDevices}
-                rgbProfiles={rgbProfiles}
-                deckState={deckState}
-                widget={widget}
-                setWidget={setWidget}
-                sliderWidget={sliderWidget}
-                setSliderWidget={setSliderWidget}
-                setStep={setStep}
-              />
-            )}
-
-            {/* STEP 2: Style */}
-            {step === 2 && (
-              <PasoEstilo
-                accent={accent}
-                action={action}
-                bgColor={bgColor}
-                brandIcon={brandIcon}
-                brandIconAlwaysAnimate={brandIconAlwaysAnimate}
-                brandIconCustomBitmap={brandIconCustomBitmap}
-                brandIconCustomColor={brandIconCustomColor}
-                brandIconCustomPalette={brandIconCustomPalette}
-                setBrandIconCustomPalette={setBrandIconCustomPalette}
-                customGlyph57={customGlyph57}
-                deckState={deckState}
-                fgColor={fgColor}
-                icon={icon}
-                imageData={imageData}
-                label={label}
-                pickImage={pickImage}
-                sensorList={sensorList}
-                sensorTriggerCooldown={sensorTriggerCooldown}
-                sensorTriggerId={sensorTriggerId}
-                sensorTriggerOp={sensorTriggerOp}
-                setSensorTriggerOp={setSensorTriggerOp}
-                sensorTriggerVal={sensorTriggerVal}
-                sensorWidgetCrit={sensorWidgetCrit}
-                sensorWidgetId={sensorWidgetId}
-                sensorWidgetSuffix={sensorWidgetSuffix}
-                sensorWidgetWarn={sensorWidgetWarn}
-                setBgColor={setBgColor}
-                setBrandIcon={setBrandIcon}
-                setBrandIconAlwaysAnimate={setBrandIconAlwaysAnimate}
-                setBrandIconCustomBitmap={setBrandIconCustomBitmap}
-                setBrandIconCustomColor={setBrandIconCustomColor}
-                setCustomGlyph57={setCustomGlyph57}
-                setFgColor={setFgColor}
-                setIcon={setIcon}
-                setImageData={setImageData}
-                setLabel={setLabel}
-                setSensorTriggerCooldown={setSensorTriggerCooldown}
-                setSensorTriggerId={setSensorTriggerId}
-                setSensorTriggerVal={setSensorTriggerVal}
-                setSensorWidgetCrit={setSensorWidgetCrit}
-                setSensorWidgetId={setSensorWidgetId}
-                setSensorWidgetSuffix={setSensorWidgetSuffix}
-                setSensorWidgetWarn={setSensorWidgetWarn}
-                setShowBrandEditor={setShowBrandEditor}
-                setShowBrandPicker={setShowBrandPicker}
-                setShowGlyphEditor={setShowGlyphEditor}
-                setSublabel={setSublabel}
-                setTimerTriggerAt={setTimerTriggerAt}
-                setVarWidgetName={setVarWidgetName}
-                setVarWidgetPrefix={setVarWidgetPrefix}
-                setVarWidgetSuffix={setVarWidgetSuffix}
-                setVisibleIfApp={setVisibleIfApp}
-                setVisibleIfSensorId={setVisibleIfSensorId}
-                setVisibleIfSensorVal={setVisibleIfSensorVal}
-                setWidget={setWidget}
-                sublabel={sublabel}
-                timerTriggerAt={timerTriggerAt}
-                varWidgetName={varWidgetName}
-                varWidgetPrefix={varWidgetPrefix}
-                varWidgetSuffix={varWidgetSuffix}
-                visibleIfApp={visibleIfApp}
-                visibleIfSensorId={visibleIfSensorId}
-                visibleIfSensorOp={visibleIfSensorOp}
-                setVisibleIfSensorOp={setVisibleIfSensorOp}
-                visibleIfSensorVal={visibleIfSensorVal}
-                widget={widget}
-                currencyWidget={currencyWidget}
-                setCurrencyWidget={setCurrencyWidget}
-                sliderWidget={sliderWidget}
-                setSliderWidget={setSliderWidget}
-                pinned={pinned}
-                setPinned={setPinned}
-              />
-            )}
-            </>
-          )}
+            <FormularioPasoEditorB
+              parentId={button.id}
+              is2x2Mode={is2x2Mode}
+              step={step}
+              subButtons={subButtons}
+              onSubButtonsChange={setSubButtons}
+              accent={accent}
+              action={action}
+              setAction={setAction}
+              applyPreset={applyPreset}
+              extraActions={extraActions}
+              setExtraActions={setExtraActions}
+              filteredPresets={filteredPresets}
+              presetCategory={presetCategory}
+              setPresetCategory={setPresetCategory}
+              presetSearch={presetSearch}
+              setPresetSearch={setPresetSearch}
+              showExtraPicker={showExtraPicker}
+              setShowExtraPicker={setShowExtraPicker}
+              actionToggleOff={actionToggleOff}
+              setActionToggleOff={setActionToggleOff}
+              applyFolderPreset={applyFolderPreset}
+              audioDevices={audioDevices}
+              audioError={audioError}
+              capturing={capturing}
+              setCapturing={setCapturing}
+              folderButtons={folderButtons}
+              setFolderButtons={setFolderButtons}
+              globalHotkey={globalHotkey}
+              setGlobalHotkey={setGlobalHotkey}
+              inTrayMenu={inTrayMenu}
+              setInTrayMenu={setInTrayMenu}
+              isToggle={isToggle}
+              setIsToggle={setIsToggle}
+              label={label}
+              setLabel={setLabel}
+              loadAudioDevices={loadAudioDevices}
+              loadingDevices={loadingDevices}
+              longPressAction={longPressAction}
+              setLongPressAction={setLongPressAction}
+              pickFile={pickFile}
+              pickShortcut={pickShortcut}
+              radioGroup={radioGroup}
+              setRadioGroup={setRadioGroup}
+              rgbConnected={rgbConnected}
+              rgbDevices={rgbDevices}
+              rgbProfiles={rgbProfiles}
+              deckState={deckState}
+              widget={widget}
+              setWidget={setWidget}
+              sliderWidget={sliderWidget}
+              setSliderWidget={setSliderWidget}
+              setStep={setStep}
+              bgColor={bgColor}
+              brandIcon={brandIcon}
+              brandIconAlwaysAnimate={brandIconAlwaysAnimate}
+              brandIconCustomBitmap={brandIconCustomBitmap}
+              brandIconCustomColor={brandIconCustomColor}
+              brandIconCustomPalette={brandIconCustomPalette}
+              setBrandIconCustomPalette={setBrandIconCustomPalette}
+              customGlyph57={customGlyph57}
+              fgColor={fgColor}
+              icon={icon}
+              imageData={imageData}
+              pickImage={pickImage}
+              sensorList={sensorList}
+              sensorTriggerCooldown={sensorTriggerCooldown}
+              sensorTriggerId={sensorTriggerId}
+              sensorTriggerOp={sensorTriggerOp}
+              setSensorTriggerOp={setSensorTriggerOp}
+              sensorTriggerVal={sensorTriggerVal}
+              sensorWidgetCrit={sensorWidgetCrit}
+              sensorWidgetId={sensorWidgetId}
+              sensorWidgetSuffix={sensorWidgetSuffix}
+              sensorWidgetWarn={sensorWidgetWarn}
+              setBgColor={setBgColor}
+              setBrandIcon={setBrandIcon}
+              setBrandIconAlwaysAnimate={setBrandIconAlwaysAnimate}
+              setBrandIconCustomBitmap={setBrandIconCustomBitmap}
+              setBrandIconCustomColor={setBrandIconCustomColor}
+              setCustomGlyph57={setCustomGlyph57}
+              setFgColor={setFgColor}
+              setIcon={setIcon}
+              setImageData={setImageData}
+              setSensorTriggerCooldown={setSensorTriggerCooldown}
+              setSensorTriggerId={setSensorTriggerId}
+              setSensorTriggerVal={setSensorTriggerVal}
+              setSensorWidgetCrit={setSensorWidgetCrit}
+              setSensorWidgetId={setSensorWidgetId}
+              setSensorWidgetSuffix={setSensorWidgetSuffix}
+              setSensorWidgetWarn={setSensorWidgetWarn}
+              setShowBrandEditor={setShowBrandEditor}
+              setShowBrandPicker={setShowBrandPicker}
+              setShowGlyphEditor={setShowGlyphEditor}
+              setSublabel={setSublabel}
+              setTimerTriggerAt={setTimerTriggerAt}
+              setVarWidgetName={setVarWidgetName}
+              setVarWidgetPrefix={setVarWidgetPrefix}
+              setVarWidgetSuffix={setVarWidgetSuffix}
+              setVisibleIfApp={setVisibleIfApp}
+              setVisibleIfSensorId={setVisibleIfSensorId}
+              setVisibleIfSensorVal={setVisibleIfSensorVal}
+              sublabel={sublabel}
+              timerTriggerAt={timerTriggerAt}
+              varWidgetName={varWidgetName}
+              varWidgetPrefix={varWidgetPrefix}
+              varWidgetSuffix={varWidgetSuffix}
+              visibleIfApp={visibleIfApp}
+              visibleIfSensorId={visibleIfSensorId}
+              visibleIfSensorOp={visibleIfSensorOp}
+              setVisibleIfSensorOp={setVisibleIfSensorOp}
+              visibleIfSensorVal={visibleIfSensorVal}
+              currencyWidget={currencyWidget}
+              setCurrencyWidget={setCurrencyWidget}
+              pinned={pinned}
+              setPinned={setPinned}
+            />
           </div>
         </div>
 

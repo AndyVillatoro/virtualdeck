@@ -15,7 +15,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-054** | P1 | Presets Web Ampliados | Claude / Gemini Pair | `actionData.ts`, `formularios/basicos.tsx` | `DONE` ✅ | 2026-09-14 |
 | **T-055** | P2 | Hardening Spotify & Discord | Claude / Gemini Pair | `discord.ts`, `spotify.ts`, `terceros.ts`, `SeccionIntegraciones.tsx` | `DONE` ✅ | 2026-09-14 |
 | **T-P3A** | P3 | Modularización Diccionarios Idiomas | Muse Spark | `es.ts`, `en.ts`, `es*.ts`, `en*.ts`, `check-i18n.mjs` | `DONE` ✅ | 2026-09-15 |
-| **T-P3B** | P3 | Reducción Complejidad Pantallas | *Disponible* | `EditorB.tsx`, `MainB.tsx` | `READY` ⬜ | - |
+| **T-P3B** | P3 | Reducción Complejidad Pantallas | Muse Spark | `EditorB.tsx`, `MainB.tsx` (+ piezas en `editor/`, `main/`) | `DONE` ✅ | 2026-09-15 |
 | **T-P4**  | P4 | Galería de Perfiles en Vivo | *Disponible* | `GallerySection.tsx`, `galeria.ts` | `READY` ⬜ | - |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca | *Disponible* | `brandIcons.ts`, `BrandIconPicker.tsx` | `READY` ⬜ | - |
 
@@ -31,6 +31,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P3B DONE)
+- **Contexto**: `T-P3B DONE` en rama `task/p3-pantallas`. `EditorB` (33) → piezas `botonConfigurado`, `CabeceraEditorB`, `FranjaPasosEditorB` (+`STEPS`), `FormularioPasoEditorB`. `MainB` (30 + flecha 22) → `useAtajosSeleccion`/`resolverAtajoSeleccion`, `BarraSuperiorMain`, `AvisosContextuales`, `PanelMusicaLateral`, `CeldaPrincipal`. Cero cambios de comportamiento; `onSelect` alterna selección (no arrastre).
+- **Pruebas**: `npm run check` 0 errores (41 warnings, antes 44), 6 guardianes verdes. `npm run build` ok.
+- **Recomendación**: siguiente `T-P4` (galería viva). Ojo: el guardián i18n marca identificadores en español aunque sean código — usar inglés en nombres internos (`AtajoSeleccion` es `'copy'|'paste'|'duplicate'|'delete'` por eso).
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo
 - **Contexto**: `T-P3A DONE` en rama `task/p3-idiomas`. `es.ts/en.ts` (802 líneas) → 4 fragmentos por dominio (`Comun/Editor/Acciones/Ajustes`, máx 329 líneas) + merge con spreads. `check-i18n.mjs` ahora fusiona fragmentos (`FRAGMENTOS` + `clavesEnBloque`).
