@@ -29,6 +29,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-WEB-01** | - | Landing Pages: rediseño DOT 480 OLED + registro de features | Muse Spark | `docs/index.html` | `DONE` ✅ | 2026-09-15 |
+| **T-WEB-02** | - | Landing: botón Store solo contorno + ES/EN en secciones y tabs | Muse Spark | `docs/index.html` | `DONE` ✅ | 2026-09-15 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

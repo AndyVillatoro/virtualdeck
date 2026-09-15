@@ -161,8 +161,10 @@
     transition: border-color .15s, background .15s, transform .15s; font-weight: 600;
   }
   .btn:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .btn.principal { background: var(--accent); border-color: var(--accent); color: #0a0505; }
-  .btn.principal:hover { background: #ff5147; border-color: #ff5147; color: #0a0505; }
+  .btn.principal { background: transparent; border-color: var(--accent); color: var(--accent); }
+  .btn.principal:hover { background: var(--accent-dim); border-color: #ff5147; color: #ff5147; }
+  .btn.principal .store-main { color: var(--text); }
+  .btn.principal .store-sub { color: var(--dim); }
   .btn svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
   .store-text { display: flex; flex-direction: column; text-align: left; line-height: 1.25; }
   .store-sub { font-size: 10px; letter-spacing: 1px; opacity: 0.75; font-weight: 400; }
@@ -376,19 +378,19 @@
 <section>
   <div class="env">
     <div class="sec-head">
-      <span class="sec-code">[ 01 · GALERÍA ]</span>
+      <span class="sec-code" data-es>[ 01 · GALERÍA ]</span><span class="sec-code" data-en>[ 01 · GALLERY ]</span>
       <p class="sec-sub" data-es>La interfaz, pantalla por pantalla</p>
       <p class="sec-sub" data-en>The interface, screen by screen</p>
     </div>
     <div class="gallery-box">
       <div class="gallery-tabs">
-        <button type="button" class="gallery-tab active" data-img="prensa/01-deck.png?v=0.13.0" data-desc-es="<strong>Pantalla principal (v0.13.0):</strong> Sliders continuos táctiles de volumen y brillo, celdas modulares 2×2, botón anclado global (PIN), reproductor multimedia integrado y barra lateral de telemetría." data-desc-en="<strong>Main Deck View (v0.13.0):</strong> Continuous touch sliders for volume &amp; brightness, 2×2 modular cells, pinned global button, integrated media panel, and live telemetry sidebar.">01 · Deck Principal</button>
-        <button type="button" class="gallery-tab" data-img="prensa/02-editor.png?v=0.13.0" data-desc-es="<strong>Editor visual paso a paso:</strong> Configura más de 37 tipos de acción nativos, grabación de macros de teclado y ratón, sliders analógicos continuos o cuadrantes 2×2." data-desc-en="<strong>Step-by-step Visual Editor:</strong> Configure over 37 native action types, keyboard &amp; mouse macro recording, continuous touch sliders, or 2×2 quadrant cells.">02 · Editor de Acciones</button>
-        <button type="button" class="gallery-tab" data-img="prensa/03-kiosko.png?v=0.13.0" data-desc-es="<strong>Modo Kiosko dedicado:</strong> Interfaz inmersiva sin marcos diseñada para pantallas táctiles secundarias o tabletas, con bloqueo de seguridad por PIN." data-desc-en="<strong>Dedicated Kiosk Mode:</strong> Immersive frameless interface designed for secondary touchscreens or tablets, with optional secure PIN lock.">03 · Modo Kiosko</button>
-        <button type="button" class="gallery-tab" data-img="prensa/04-barra-lateral.png?v=0.13.0" data-desc-es="<strong>Widgets y sensores en vivo:</strong> Monitorización térmica y eléctrica de CPU, GPU, RAM, ventiladores y reloj digital en estética dot-matrix." data-desc-en="<strong>Live Sensors &amp; Telemetry:</strong> Real-time temperature, power, and clock telemetry for CPU, GPU, RAM, fan RPMs, and weather in dot-matrix aesthetic.">04 · Sensores &amp; Widgets</button>
-        <button type="button" class="gallery-tab" data-img="prensa/05-rgb.png?v=0.13.0" data-desc-es="<strong>Gestor OpenRGB integrado:</strong> Control de zonas LED, calibración precisa y 18 presets dinámicos sin consumir ciclos de CPU." data-desc-en="<strong>Integrated OpenRGB Engine:</strong> LED zone control, individual LED painting, and 18 dynamic lighting presets with near-zero CPU footprint.">05 · Luces RGB</button>
-        <button type="button" class="gallery-tab" data-img="prensa/06-galeria.png?v=0.13.0" data-desc-es="<strong>Galería comunitaria y tienda:</strong> Explora e importa perfiles comunitarios en ventana propia, con buscador, filtros y auditoría anticipada de seguridad para atajos y scripts." data-desc-en="<strong>Community Gallery &amp; Store:</strong> Discover and import community profiles in their own window, with search, filters and advance security auditing for shortcuts and scripts.">06 · Galería de Perfiles</button>
-        <button type="button" class="gallery-tab" data-img="prensa/07-barra-flotante.png?v=0.13.0" data-desc-es="<strong>Columna Flotante HUD:</strong> Barra compacta siempre visible superpuesta sobre tus programas de diseño, modelado, streaming o juegos favoritos sin ocupar espacio." data-desc-en="<strong>Floating HUD Bar:</strong> Compact always-on-top vertical strip overlaying your CAD, design, streaming, or favorite applications without stealing screen space.">07 · Barra Flotante</button>
+        <button type="button" class="gallery-tab active" data-img="prensa/01-deck.png?v=0.13.0" data-desc-es="<strong>Pantalla principal (v0.13.0):</strong> Sliders continuos táctiles de volumen y brillo, celdas modulares 2×2, botón anclado global (PIN), reproductor multimedia integrado y barra lateral de telemetría." data-desc-en="<strong>Main Deck View (v0.13.0):</strong> Continuous touch sliders for volume &amp; brightness, 2×2 modular cells, pinned global button, integrated media panel, and live telemetry sidebar."><span data-es>01 · Deck Principal</span><span data-en>01 · Main Deck</span></button>
+        <button type="button" class="gallery-tab" data-img="prensa/02-editor.png?v=0.13.0" data-desc-es="<strong>Editor visual paso a paso:</strong> Configura más de 37 tipos de acción nativos, grabación de macros de teclado y ratón, sliders analógicos continuos o cuadrantes 2×2." data-desc-en="<strong>Step-by-step Visual Editor:</strong> Configure over 37 native action types, keyboard &amp; mouse macro recording, continuous touch sliders, or 2×2 quadrant cells."><span data-es>02 · Editor de Acciones</span><span data-en>02 · Action Editor</span></button>
+        <button type="button" class="gallery-tab" data-img="prensa/03-kiosko.png?v=0.13.0" data-desc-es="<strong>Modo Kiosko dedicado:</strong> Interfaz inmersiva sin marcos diseñada para pantallas táctiles secundarias o tabletas, con bloqueo de seguridad por PIN." data-desc-en="<strong>Dedicated Kiosk Mode:</strong> Immersive frameless interface designed for secondary touchscreens or tablets, with optional secure PIN lock."><span data-es>03 · Modo Kiosko</span><span data-en>03 · Kiosk Mode</span></button>
+        <button type="button" class="gallery-tab" data-img="prensa/04-barra-lateral.png?v=0.13.0" data-desc-es="<strong>Widgets y sensores en vivo:</strong> Monitorización térmica y eléctrica de CPU, GPU, RAM, ventiladores y reloj digital en estética dot-matrix." data-desc-en="<strong>Live Sensors &amp; Telemetry:</strong> Real-time temperature, power, and clock telemetry for CPU, GPU, RAM, fan RPMs, and weather in dot-matrix aesthetic."><span data-es>04 · Sensores &amp; Widgets</span><span data-en>04 · Sensors &amp; Widgets</span></button>
+        <button type="button" class="gallery-tab" data-img="prensa/05-rgb.png?v=0.13.0" data-desc-es="<strong>Gestor OpenRGB integrado:</strong> Control de zonas LED, calibración precisa y 18 presets dinámicos sin consumir ciclos de CPU." data-desc-en="<strong>Integrated OpenRGB Engine:</strong> LED zone control, individual LED painting, and 18 dynamic lighting presets with near-zero CPU footprint."><span data-es>05 · Luces RGB</span><span data-en>05 · RGB Lights</span></button>
+        <button type="button" class="gallery-tab" data-img="prensa/06-galeria.png?v=0.13.0" data-desc-es="<strong>Galería comunitaria y tienda:</strong> Explora e importa perfiles comunitarios en ventana propia, con buscador, filtros y auditoría anticipada de seguridad para atajos y scripts." data-desc-en="<strong>Community Gallery &amp; Store:</strong> Discover and import community profiles in their own window, with search, filters and advance security auditing for shortcuts and scripts."><span data-es>06 · Galería de Perfiles</span><span data-en>06 · Profile Gallery</span></button>
+        <button type="button" class="gallery-tab" data-img="prensa/07-barra-flotante.png?v=0.13.0" data-desc-es="<strong>Columna Flotante HUD:</strong> Barra compacta siempre visible superpuesta sobre tus programas de diseño, modelado, streaming o juegos favoritos sin ocupar espacio." data-desc-en="<strong>Floating HUD Bar:</strong> Compact always-on-top vertical strip overlaying your CAD, design, streaming, or favorite applications without stealing screen space."><span data-es>07 · Barra Flotante</span><span data-en>07 · Floating Bar</span></button>
       </div>
       <div class="gallery-view">
         <img src="prensa/01-deck.png?v=0.13.0" alt="VirtualDeck" class="gallery-img" id="gallery-current-img">
@@ -403,7 +405,7 @@
 <section>
   <div class="env">
     <div class="sec-head">
-      <span class="sec-code">[ 02 · CAPACIDADES ]</span>
+      <span class="sec-code" data-es>[ 02 · CAPACIDADES ]</span><span class="sec-code" data-en>[ 02 · CAPABILITIES ]</span>
       <p class="sec-sub" data-es>Potencia sin dependencias ni suscripciones</p>
       <p class="sec-sub" data-en>Full power without subscriptions or external dependencies</p>
     </div>
@@ -483,7 +485,7 @@
 <section>
   <div class="env">
     <div class="sec-head">
-      <span class="sec-code">[ 03 · REGISTRO ]</span>
+      <span class="sec-code" data-es>[ 03 · REGISTRO ]</span><span class="sec-code" data-en>[ 03 · RELEASE LOG ]</span>
       <p class="sec-sub" data-es>Cada versión añade celdas aquí</p>
       <p class="sec-sub" data-en>Every release adds cells here</p>
       <p class="sec-desc" data-es>El escaparate de novedades. Las correcciones de errores viven en el repositorio, no aquí.</p>
