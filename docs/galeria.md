@@ -150,19 +150,18 @@ flujo entero.
 
 ## Estado actual
 
-- Repo de galería: **pendiente de crear** — es lo único que falta, y es una
-  decisión del dueño del proyecto: qué perfiles se publican y con qué criterio.
-  Diferido a otra versión hasta tenerla bien completa.
-- UI de "Importar desde URL": **hecha** (⚙ → Galería de perfiles).
-- Manifest schema: **estable** desde la spec inicial (este doc).
+- Repo de galería: **existe** (`github.com/AndyVillatoro/virtualdeck-gallery`,
+  `manifest.json` con 4 perfiles en formato v1: esencial, streaming, trabajo, rgb).
+  Los 4 validan en verde con `npm run check:galeria` (tipos, widgets, presets).
+- UI de "Importar desde URL": **hecha** (⚙ → Galería de perfiles) y tienda `#tienda`.
+- Manifest schema: **estable** desde la spec inicial (este doc) + v2 (páginas,
+  versiones, README) soportado por la app.
+- Diferido a otra versión por decisión del dueño: dejar la galería bien completa
+  (versionado v2 de las entradas para activar los avisos UPDATE, más perfiles).
 
-### Lo que no se ha podido comprobar todavía
+### Lo comprobado contra el servidor de verdad
 
-El camino completo —manifiesto real, elegir un perfil, importarlo— **no se ha
-probado contra un servidor de verdad**, porque no hay ninguno publicado. Lo que
-sí está medido: el rechazo de `http`, de `127.0.0.1`, de las tres redes privadas
-y de `169.254.169.254`; una descarga `https` real que llega y se rechaza por
-forma; y el resumen de riesgo sobre un JSON descargado de verdad.
-
-En cuanto el repositorio exista, la prueba es pegar su `manifest.json` en el
-campo y comprobar que la lista sale y que el aviso enseña los scripts.
+El manifiesto se baja, las 4 entradas pasan el filtro y cada perfil valida su
+forma y sus tipos con el guardián en vivo. Lo que falta por clicar en la app:
+pegar la URL, ver la lista, abrir la ficha y comprobar que el aviso enseña los
+scripts.

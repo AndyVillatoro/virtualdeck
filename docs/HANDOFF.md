@@ -115,6 +115,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Cambios:** `ROADMAP.md` al día (matriz P1–P5 DONE, iteración 4 ✅ lado app, 6.1 con repo diferido); `galeria.md` anota el diferimiento; `compararVersiones` y `precargarCatalogoMarcas` privatizadas (knip limpio de huella propia).
 * **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes, `npm run build` ok.
 
+## Turno 2026-09-15 — T-FIX-04 Docs galería (repo existe) (DONE)
+
+* **Modelo:** Muse Spark, rama `task/fix-galeria-docs` (fusionada a main).
+* **Hallazgo:** el repo público existe (4 perfiles v1); los docs decían "pendiente de crear".
+* **Cambios:** solo docs (`galeria.md`, `ROADMAP.md` ×3): existe, validado en vivo, diferido versionado v2 + curation.
+* **Verificación:** `npm run check` 0 errores, 6 guardianes verdes; `npm run check:galeria` en vivo ok (4 revisados).
+
 ## Proximo paso concreto
 
 * **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).

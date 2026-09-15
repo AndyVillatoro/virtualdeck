@@ -19,6 +19,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P4-F2** | P4 | Tienda: ventana #tienda (buscador/filtros/ficha/updates) | Muse Spark | `tienda.ts`, `TiendaB.tsx`, `tiendaAplicar.ts` | `DONE` ✅ | 2026-09-15 |
+| **T-FIX-04** | - | Docs galería: el repo público ya existe (verificar + actualizar) | Muse Spark | `galeria.md`, `ROADMAP.md` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-03** | - | Higiene pre-release: ROADMAP al día + knip sin huella propia | Muse Spark | `ROADMAP.md`, `galeriaComun.ts`, `catalogoMarcas.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
@@ -35,6 +36,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-04 DONE)
+- **Contexto**: el dueño avisó de que el repo público existe. Verificado: `manifest.json` sirve 4 perfiles v1 (esencial, streaming, trabajo, rgb) y `npm run check:galeria` da verde (4 revisados, 40 tipos). Docs actualizados (`galeria.md` Estado actual + `ROADMAP` iteración 4 / matriz P4 / 6.1): existe, falta clicarlo en la app y versionarlo a v2. Solo docs, sin tocar código.
+- **Pruebas**: `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes + `check:galeria` en vivo ok.
+- **Recomendación**: listo para release v0.13.0. En el repo-galería (otro repo) faltaría `version` por entrada para activar los UPDATE.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-03 DONE)
 - **Contexto**: higiene pre-release en rama `task/fix-higiene-prerelease` (fusionada a main). ROADMAP al día: matriz P1–P5 marcada DONE con fechas, iteración 4 en ✅ (lado app), 6.1 con repo diferido; `galeria.md` anota el diferimiento. knip sin huella propia: `compararVersiones` y `precargarCatalogoMarcas` privatizadas (el preload externo no aportaba: el hook ya carga al montar el paso de estilo).

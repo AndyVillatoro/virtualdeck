@@ -36,8 +36,9 @@ Auditoría sobre el código (no solo el doc):
   electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
   en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
   galería de perfiles ✅ en la app (manifiesto v2, ficha de riesgo, tienda `#tienda`;
-  ver [galeria.md](galeria.md)). Lo único fuera es el **repo público**, diferido a
-  otra versión por decisión del dueño (qué se publica y con qué criterio).
+  ver [galeria.md](galeria.md)). El **repo público existe** (4 perfiles v1, validados
+  con `npm run check:galeria`); diferido a otra versión dejarlo bien completo
+  (versionado v2, más perfiles).
 - **Publicado / Versión actual:** **v0.12.0** en GitHub Releases, con `latest.yml` y `.blockmap`
   —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
   separado (ítem 30). Incluye Bloque 7 completo (DOT/480, multi-monitor, auto-perfiles,
@@ -171,7 +172,7 @@ como registro:
 | **P2 — Alta** | **55. Hardening Spotify & Discord** | ✅ 2026-09-14 |
 | **P3 — Media** | **Auditoría Deuda Técnica: Idiomas (`max-lines: 600`)** | ✅ 2026-09-15 (fragmentos por dominio) |
 | **P3 — Media** | **Auditoría SRP: Complejidad en `EditorB` / `MainB`** | ✅ 2026-09-15 (piezas puras extraídas) |
-| **P4 — Ecosistema** | **24/6.1. Galería de Perfiles en Vivo** | ✅ 2026-09-15 app (Fase 1: manifiesto v2; Fase 2: ventana `#tienda`); repo público diferido |
+| **P4 — Ecosistema** | **24/6.1. Galería de Perfiles en Vivo** | ✅ 2026-09-15 app (Fase 1: manifiesto v2; Fase 2: ventana `#tienda`); repo público existe (4 perfiles); completarla (v2 + más) diferido |
 | **P5 — Mantenimiento** | **4.1 / 30. Lazy Loading de Iconos & Store MSIX** | ✅ 2026-09-15 (chunk `brandIcons` + `build-store.mjs`) |
 
 
@@ -248,8 +249,9 @@ como registro:
 
 - **6.1 Galería de perfiles ★★ · L** — ✅ HECHO en la app (manifiesto v2 con
   páginas/versiones, ficha de riesgo, tienda `#tienda` con buscador/filtros/updates).
-  Spec en [galeria.md](galeria.md). Diferido a otra versión: el repo público
-  (decisión del dueño: qué se publica y con qué criterio).
+  El repo público existe (4 perfiles v1, en verde con `npm run check:galeria`).
+  Spec en [galeria.md](galeria.md). Diferido a otra versión dejarla bien completa
+  (versionado v2 de las entradas, más perfiles).
 - **6.2 Auto-update ★ · M** — ✅ HECHO (`electron-updater` + GitHub Releases).
 - **6.3 Empaquetado firmado ★ · M** — Documentado en [CONTRIBUTING.md](../CONTRIBUTING.md) (sección Firma y distribución).
 - **6.4 Documentación ★ · S** — ✅ HECHO (wiki bilingüe).
