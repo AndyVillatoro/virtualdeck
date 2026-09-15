@@ -31,6 +31,32 @@ const DICCIONARIOS = {
   'EN: Dict': 'src/utils/idiomas/en.ts',
   'FIELDS_EN': 'src/utils/idiomas/campos.ts',
 };
+// Los diccionarios ES/EN superan las 600 lineas y viven repartidos en
+// fragmentos por dominio (`esComun.ts`, `esEditor.ts`, ...). Cada fragmento
+// exporta `const NOMBRE: Dict = { ... }` y `es.ts`/`en.ts` solo los fusionan
+// con spreads. La auditoria lee los fragmentos, no el merge (que no tiene
+// claves literales).
+const FRAGMENTOS = {
+  'ES: Dict': [
+    ['src/utils/idiomas/esComun.ts', 'ES_COMUN'],
+    ['src/utils/idiomas/esEditor.ts', 'ES_EDITOR'],
+    ['src/utils/idiomas/esAcciones.ts', 'ES_ACCIONES'],
+    ['src/utils/idiomas/esAjustes.ts', 'ES_AJUSTES'],
+  ],
+  'EN: Dict': [
+    ['src/utils/idiomas/enComun.ts', 'EN_COMUN'],
+    ['src/utils/idiomas/enEditor.ts', 'EN_EDITOR'],
+    ['src/utils/idiomas/enAcciones.ts', 'EN_ACCIONES'],
+    ['src/utils/idiomas/enAjustes.ts', 'EN_AJUSTES'],
+  ],
+  'FIELDS_EN': [['src/utils/idiomas/campos.ts', 'FIELDS_EN']],
+};
+// Todo archivo que sea diccionario o fragmento: sus literales son datos, no
+// interfaz sin traducir, y el barrido de texto del punto 4 los salta.
+const ARCHIVOS_DICCIONARIO = new Set([
+  ...Object.values(DICCIONARIOS),
+  ...Object.values(FRAGMENTOS).flat().map(([ruta]) => ruta),
+]);
 
 function archivos(dir) {
   const salida = [];
@@ -42,9 +68,8 @@ function archivos(dir) {
   return salida;
 }
 
-/** Extrae las claves de un objeto literal `const NOMBRE ... = { 'k': 'v', ... }`. */
-function clavesDe(nombre) {
-  const ruta = DICCIONARIOS[nombre];
+/** Extrae las claves de un bloque `const NOMBRE ... = { 'k': 'v', ... }` en un archivo. */
+function clavesEnBloque(ruta, nombre) {
   const fuente = readFileSync(ruta, 'utf-8');
   const inicio = fuente.indexOf(`const ${nombre}`);
   if (inicio < 0) throw new Error(`no encuentro ${nombre} en ${ruta}`);
@@ -54,6 +79,18 @@ function clavesDe(nombre) {
   for (const m of cuerpo.matchAll(/'((?:[^'\\]|\\.)*)':/g)) {
     const clave = m[1].replace(/\\'/g, "'");
     claves.set(clave, (claves.get(clave) ?? 0) + 1);
+  }
+  return claves;
+}
+
+/** Fusiona los fragmentos de un diccionario (ver FRAGMENTOS). */
+function clavesDe(nombre) {
+  const partes = FRAGMENTOS[nombre] ?? [[DICCIONARIOS[nombre], nombre]];
+  const claves = new Map();
+  for (const [ruta, constNombre] of partes) {
+    for (const [clave, veces] of clavesEnBloque(ruta, constNombre)) {
+      claves.set(clave, (claves.get(clave) ?? 0) + veces);
+    }
   }
   return claves;
 }
@@ -222,7 +259,7 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
   const esMain = rel.startsWith(RAIZ_MAIN);
   let enConsola = false;
   let enComentario = false;
-  if (rel === I18N || rel === IDIOMA_MAIN || Object.values(DICCIONARIOS).includes(rel)) continue;
+  if (rel === I18N || rel === IDIOMA_MAIN || ARCHIVOS_DICCIONARIO.has(rel)) continue;
   if (TRADUCEN_APARTE.has(rel)) continue;
   // Se parte por `\r?\n`, no por `\n`: los archivos del repo están en CRLF, y
   // partiendo solo por `\n` cada línea queda terminada en `\r`. Eso rompe el
@@ -384,7 +421,8 @@ const REGISTRO = [
   [/\bsnape(a|ar)\b/i, 'usar «ajustar»'],
 ];
 {
-  const fuente = readFileSync('src/utils/idiomas/es.ts', 'utf-8')
+  const fuentesES = FRAGMENTOS['ES: Dict'].map(([ruta]) => readFileSync(ruta, 'utf-8')).join('\n');
+  const fuente = fuentesES
     + '\n' + readFileSync('src/utils/idiomas/campos.ts', 'utf-8')
     + '\n' + readFileSync('electron/main/idioma.ts', 'utf-8');
   for (const [i, linea] of fuente.split(/\r?\n/).entries()) {
@@ -447,14 +485,16 @@ const DOTTEXT_DECLARADOS = new Set([
   // comprueba exactamente lo que va a buscar en el mapa.
   const comoLoBusca = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 
-  for (const [nombre, ruta] of Object.entries(DICCIONARIOS)) {
+  for (const [nombre, partes] of Object.entries(FRAGMENTOS)) {
     if (nombre === 'FIELDS_EN') continue;
-    const fuente = readFileSync(ruta, 'utf-8');
-    for (const m of fuente.matchAll(/^\s*'([^']+)':\s*'((?:[^'\\]|\\.)*)',/gm)) {
-      if (!CLAVES_EN_PUNTOS.some((re) => re.test(m[1]))) continue;
-      const faltan = [...new Set([...comoLoBusca(m[2])].filter((c) => !glifos.has(c)))];
-      if (faltan.length) {
-        problemas.push(`puntos: ${nombre} "${m[1]}" usa ${faltan.map((c) => `«${c}»`).join(', ')}, que no está en GLYPHS_5x7 — se dibujaría como un hueco`);
+    for (const [ruta] of partes) {
+      const fuente = readFileSync(ruta, 'utf-8');
+      for (const m of fuente.matchAll(/^\s*'([^']+)':\s*'((?:[^'\\]|\\.)*)',/gm)) {
+        if (!CLAVES_EN_PUNTOS.some((re) => re.test(m[1]))) continue;
+        const faltan = [...new Set([...comoLoBusca(m[2])].filter((c) => !glifos.has(c)))];
+        if (faltan.length) {
+          problemas.push(`puntos: ${nombre} "${m[1]}" usa ${faltan.map((c) => `«${c}»`).join(', ')}, que no está en GLYPHS_5x7 — se dibujaría como un hueco`);
+        }
       }
     }
   }

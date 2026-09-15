@@ -14,7 +14,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-053** | P1 | Acordeón Colapsable Ajustes | Claude / Gemini Pair | `PanelAjustes.tsx`, `SeccionAjustes.tsx`, `SeccionPerfiles.tsx` | `DONE` ✅ | 2026-09-14 |
 | **T-054** | P1 | Presets Web Ampliados | Claude / Gemini Pair | `actionData.ts`, `formularios/basicos.tsx` | `DONE` ✅ | 2026-09-14 |
 | **T-055** | P2 | Hardening Spotify & Discord | Claude / Gemini Pair | `discord.ts`, `spotify.ts`, `terceros.ts`, `SeccionIntegraciones.tsx` | `DONE` ✅ | 2026-09-14 |
-| **T-P3A** | P3 | Modularización Diccionarios Idiomas | *Disponible* | `es.ts`, `en.ts`, `check-i18n.mjs` | `READY` ⬜ | - |
+| **T-P3A** | P3 | Modularización Diccionarios Idiomas | Muse Spark | `es.ts`, `en.ts`, `es*.ts`, `en*.ts`, `check-i18n.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P3B** | P3 | Reducción Complejidad Pantallas | *Disponible* | `EditorB.tsx`, `MainB.tsx` | `READY` ⬜ | - |
 | **T-P4**  | P4 | Galería de Perfiles en Vivo | *Disponible* | `GallerySection.tsx`, `galeria.ts` | `READY` ⬜ | - |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca | *Disponible* | `brandIcons.ts`, `BrandIconPicker.tsx` | `READY` ⬜ | - |
@@ -31,6 +31,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo
+- **Contexto**: `T-P3A DONE` en rama `task/p3-idiomas`. `es.ts/en.ts` (802 líneas) → 4 fragmentos por dominio (`Comun/Editor/Acciones/Ajustes`, máx 329 líneas) + merge con spreads. `check-i18n.mjs` ahora fusiona fragmentos (`FRAGMENTOS` + `clavesEnBloque`).
+- **Pruebas**: `npm run check` 0 errores (44 warnings, antes 46), 6 guardianes verdes con conteos idénticos (`i18n 834 claves`, `acciones 40`, `ipc 115+12`, `wiki 14`, `campos 62`, `perfiles 1`). `npm run build` ok.
+- **Recomendación**: siguiente `T-P3B` (`EditorB` complejidad 33, `MainB` 30). Añadir claves nuevas al fragmento de su dominio, nunca al merge.
 
 ### [2026-09-14 23:20] De: Agente Saliente → Para: Siguiente Modelo
 - **Contexto**: Se han completado y comiteado en `main` los ítems P1 (52, 53, 54) y P2 (55: Hardening de Discord y Spotify).
