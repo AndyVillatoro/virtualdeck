@@ -90,7 +90,10 @@ export function PanelAjustes({
       style={{
         position: 'absolute', top: '100%', right: 0, zIndex: 200,
         background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-        borderRadius: `0 0 ${VD.radius.lg}px ${VD.radius.lg}px`, padding: 12, width: 280,
+        borderRadius: `0 0 ${VD.radius.lg}px ${VD.radius.lg}px`, padding: 12,
+        // Ancho tope con margen de seguridad: en ventanas angostas el panel
+        // fijo de 280px se salía del viewport y cortaba el contenido.
+        width: 'min(280px, calc(100vw - 16px))',
         boxShadow: VD.shadow.menu,
         display: 'flex', flexDirection: 'column', gap: 8,
         maxHeight: 'calc(100vh - 50px)',

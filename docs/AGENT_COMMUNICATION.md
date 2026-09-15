@@ -18,6 +18,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P3B** | P3 | Reducción Complejidad Pantallas | Muse Spark | `EditorB.tsx`, `MainB.tsx` (+ piezas en `editor/`, `main/`) | `DONE` ✅ | 2026-09-15 |
 | **T-P4**  | P4 | Galería de Perfiles en Vivo | *Disponible* | `GallerySection.tsx`, `galeria.ts` | `READY` ⬜ | - |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca | *Disponible* | `brandIcons.ts`, `BrandIconPicker.tsx` | `READY` ⬜ | - |
+| **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
@@ -31,6 +32,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-01 DONE)
+- **Contexto**: reporte de usuario — con ventana baja o zoom grande los títulos del acordeón de ajustes se perdían al hacer scroll. Fix en rama `fix/ajustes-sticky`: cabecera de `SeccionAjustes` con `position: sticky; top: -12; zIndex: 2` (se quitó el `overflow: hidden` de la sección porque anulaba el sticky; esquinas redondeadas por piezas) y panel con `width: min(280px, calc(100vw - 16px))`.
+- **Pruebas**: `npm run check` 0 errores (41 warnings, igual que antes), 6 guardianes verdes. `npm run build` ok. Sin cambios visuales a tamaño normal.
+- **Recomendación**: pendiente `T-P4` y `T-P5`.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P3B DONE)
 - **Contexto**: `T-P3B DONE` en rama `task/p3-pantallas`. `EditorB` (33) → piezas `botonConfigurado`, `CabeceraEditorB`, `FranjaPasosEditorB` (+`STEPS`), `FormularioPasoEditorB`. `MainB` (30 + flecha 22) → `useAtajosSeleccion`/`resolverAtajoSeleccion`, `BarraSuperiorMain`, `AvisosContextuales`, `PanelMusicaLateral`, `CeldaPrincipal`. Cero cambios de comportamiento; `onSelect` alterna selección (no arrastre).

@@ -45,7 +45,6 @@ export function SeccionAjustes({
       style={{
         border: `1px solid ${estaAbierto ? VD.borderStrong : VD.border}`,
         borderRadius: VD.radius.md,
-        overflow: 'hidden',
         background: estaAbierto ? VD.elevated : 'transparent',
         transition: 'border-color 0.15s, background 0.15s',
       }}
@@ -61,6 +60,17 @@ export function SeccionAjustes({
           padding: '7px 10px',
           background: estaAbierto ? VD.overlay : VD.elevated,
           border: 'none',
+          // La cabecera queda fija arriba del panel mientras su contenido
+          // hace scroll: con ventana baja o zoom grande los títulos se
+          // perdían y no se sabía qué sección se estaba leyendo. `top: -12`
+          // compensa el padding del panel para pegar al borde. Sin `zIndex`
+          // el contenido pasaría por encima. Ojo: el `overflow: hidden` que
+          // había aquí convertía la sección en el contenedor de scroll y el
+          // sticky no salía de ella; las esquinas se redondean por piezas.
+          position: 'sticky',
+          top: -12,
+          zIndex: 2,
+          borderRadius: estaAbierto ? `${VD.radius.md}px ${VD.radius.md}px 0 0` : VD.radius.md,
           cursor: 'pointer',
           textAlign: 'left',
           color: estaAbierto ? accent : VD.text,
@@ -101,6 +111,7 @@ export function SeccionAjustes({
             flexDirection: 'column',
             gap: 10,
             borderTop: `1px solid ${VD.border}`,
+            borderRadius: `0 0 ${VD.radius.md}px ${VD.radius.md}px`,
           }}
         >
           {children}

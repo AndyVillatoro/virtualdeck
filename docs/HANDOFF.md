@@ -69,6 +69,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
   * Los 6 guardianes en verde con conteos idénticos.
 * `npm run build`: **ok**.
 
+## Turno 2026-09-15 — T-FIX-01 Panel ajustes sticky (DONE)
+
+* **Modelo:** Muse Spark, rama `fix/ajustes-sticky`.
+* **Motivo:** con ventana baja o zoom grande, los títulos del acordeón se escondían al hacer scroll y no se sabía qué sección se leía.
+* **Cambio:** `SeccionAjustes.tsx` (cabecera `sticky`, `top: -12`, `zIndex: 2`; fuera el `overflow: hidden` de la sección; radios por piezas) y `PanelAjustes.tsx` (`width: min(280px, calc(100vw - 16px))`).
+* **Verificación:** `npm run check` 0 errores (41 warnings, sin cambios), 6 guardianes verdes, `npm run build` ok.
+
 ## Proximo paso concreto
 
 * Tomar **`T-P4 Galeria de Perfiles en Vivo`** (`src/components/settings/GallerySection.tsx`, `electron/main/galeria.ts`).
