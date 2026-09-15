@@ -172,3 +172,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Diferidos a otra versión:** galería completa, fino del escáner RGB.
 
 ## Proximo paso historico (T-P3B, hecho)
+
+## Turno 2026-09-15 � T-WEB-01 Landing DOT 480 OLED + registro de features (DONE)
+
+* **Modelo:** Muse Spark, en `main` (solo Pages; `src/` y `electron/` sin tocar).
+* **Cambios:** `docs/index.html` (1236 -> 719 lineas): acento RED #FF3B30, 0 azul IA, 0 blur, fuera Three.js/CDN; consola DOT 12 teclas con HUD + clic; seccion [03 - REGISTRO] con array FEATURES (v0.13.0 x12, v0.12.0 x6; sin fixes) + plantilla v0.14.0 comentada.
+* **Tablero:** `docs/AGENT_COMMUNICATION.md` con `T-WEB-01 DONE` + mensaje en buzon.
+* **Verificacion:** `npm run check` 0 errores (39 warnings preexistentes), 6 guardianes verdes; prohibidos (4a8ef0, blur, three, unpkg): 0.
+
+## Proximo paso concreto
+
+* Push a `main` = publicado (Pages sirve `/docs`). Siguiente feature de Pages = anadir objeto a `FEATURES` en `docs/index.html`.

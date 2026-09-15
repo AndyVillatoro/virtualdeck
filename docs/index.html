@@ -4,26 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VirtualDeck — Stream Deck interactivo para Windows</title>
-<meta name="description" content="Una cuadrícula de botones para controlar música, audio, atajos, macros, programas y luces RGB en cualquier monitor o tableta. Gratuito, 100% local y sin cuentas.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23070809' rx='3'/%3E%3Cg fill='%234a8ef0'%3E%3Crect x='3' y='3' width='4' height='4' rx='1'/%3E%3Crect x='9' y='3' width='4' height='4' rx='1'/%3E%3Crect x='3' y='9' width='4' height='4' rx='1'/%3E%3Crect x='9' y='9' width='4' height='4' rx='1'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="description" content="Cuadrícula de botones para controlar música, audio, atajos, macros, programas y luces RGB en cualquier monitor o tableta. Gratuito, 100% local y sin cuentas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23070809' rx='3'/%3E%3Cg fill='%23FF3B30'%3E%3Crect x='3' y='3' width='4' height='4' rx='1'/%3E%3Crect x='9' y='3' width='4' height='4' rx='1'/%3E%3Crect x='3' y='9' width='4' height='4' rx='1'/%3E%3Crect x='9' y='9' width='4' height='4' rx='1'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #070809;
-    --surface: #111316;
-    --elevated: #181b20;
-    --border: #23272e;
-    --border-hover: #373e4a;
-    --text: #e2e4e9;
-    --dim: #9096a2;
-    --muted: #5a606d;
-    --accent: #4a8ef0;
-    --accent-glow: rgba(74, 142, 240, 0.28);
-    --accent-bg: rgba(74, 142, 240, 0.12);
-    --neon-green: #10b981;
-    --neon-amber: #f59e0b;
+    --surface: #111315;
+    --elevated: #16191d;
+    --border: #26292e;
+    --border-hi: #3a3f47;
+    --text: #e8e9eb;
+    --dim: #9ba0a8;
+    --muted: #5c6169;
+    --accent: #ff3b30;
+    --accent-ink: #0a0505;
+    --accent-dim: rgba(255, 59, 48, 0.14);
     --font: "Inter", system-ui, -apple-system, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, monospace;
   }
@@ -35,185 +33,170 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
-    background-image:
-      radial-gradient(circle at 50% -10%, rgba(74,142,240,0.14) 0%, transparent 60%),
-      repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 32px),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 32px);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+    background-size: 16px 16px;
   }
   .env { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
-  a { color: var(--accent); text-decoration: none; transition: color .18s; }
-  a:hover { color: #72a8f8; }
+  a { color: var(--accent); text-decoration: none; transition: color .15s; }
+  a:hover { color: #ff6a61; }
+  ::selection { background: var(--accent); color: #070809; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* Selector de idioma y barra superior */
+  /* Barra superior: sólida, sin blur */
   .topbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: rgba(7, 8, 9, 0.85); backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
     padding: 12px 24px;
     display: flex; justify-content: space-between; align-items: center;
   }
   .top-brand {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 12px;
     font-family: var(--mono); font-weight: 700; font-size: 15px; letter-spacing: 2px;
   }
   .top-brand span { color: var(--accent); }
-  .top-links { display: flex; align-items: center; gap: 18px; }
+  .top-links { display: flex; align-items: center; gap: 20px; }
   .top-links a { font-family: var(--mono); font-size: 12px; color: var(--dim); letter-spacing: 1px; }
   .top-links a:hover { color: var(--text); }
   .idioma-bar { display: flex; gap: 4px; }
   .idioma-bar button {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 1px; padding: 5px 9px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 1px; padding: 4px 8px;
     background: var(--surface); border: 1px solid var(--border); color: var(--muted);
-    border-radius: 4px; cursor: pointer; transition: all .18s;
+    border-radius: 4px; cursor: pointer; transition: border-color .15s, color .15s;
   }
   .idioma-bar button[aria-pressed="true"] {
-    border-color: var(--accent); color: var(--accent); background: var(--accent-bg);
+    border-color: var(--accent); color: var(--accent); background: var(--accent-dim);
   }
 
-  /* Hero */
-  header { padding: 110px 0 40px; text-align: center; }
+  /* Hero: pantalla de arranque de consola */
+  header { padding: 112px 0 40px; text-align: center; }
   .badge-tag {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 5px 12px; border-radius: 20px; font-family: var(--mono); font-size: 11px;
-    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 4px 12px; border-radius: 4px; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 2px;
     background: var(--surface); border: 1px solid var(--border); color: var(--dim);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
-  .badge-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+  .badge-tag .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
   .marca {
-    font-family: var(--mono); font-weight: 700; font-size: clamp(32px, 7vw, 54px);
-    letter-spacing: 6px; margin: 0 0 12px; text-shadow: 0 0 35px rgba(74, 142, 240, 0.3);
+    font-family: var(--mono); font-weight: 700; font-size: clamp(32px, 7vw, 56px);
+    letter-spacing: 6px; margin: 0 0 12px;
   }
   .marca span { color: var(--accent); }
   .lema {
-    color: var(--dim); font-size: clamp(16px, 3.2vw, 19px); margin: 0 auto 12px; max-width: 620px;
-    font-weight: 400;
+    color: var(--dim); font-size: clamp(15px, 3vw, 18px); margin: 0 auto 12px; max-width: 640px;
   }
   .version-tag {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 2.5px; color: var(--muted);
-    margin-bottom: 28px; text-transform: uppercase;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--muted);
+    margin-bottom: 28px;
   }
 
-  /* Escenario 3D */
-  .stage-3d-wrap {
-    position: relative; max-width: 760px; height: 450px; margin: 0 auto 32px;
-    background: radial-gradient(circle at 50% 50%, #15181f 0%, #0c0d10 80%);
-    border: 1px solid var(--border); border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
-    overflow: hidden; cursor: grab;
+  /* Deck DOT físico: rejilla 4x3 sin WebGL */
+  .dotdeck-wrap {
+    max-width: 640px; margin: 0 auto 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 20px;
   }
-  .stage-3d-wrap:active { cursor: grabbing; }
-  #deck-3d-canvas { width: 100%; height: 100%; display: block; outline: none; }
-  .stage-overlay {
-    position: absolute; bottom: 14px; left: 16px; right: 16px;
+  .dotdeck-head {
     display: flex; justify-content: space-between; align-items: center;
-    pointer-events: none; z-index: 5;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--muted);
+    margin-bottom: 16px;
   }
-  .stage-tip {
-    font-family: var(--mono); font-size: 11px; color: var(--muted);
-    background: rgba(10, 11, 14, 0.7); backdrop-filter: blur(8px);
-    padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);
-    pointer-events: auto;
+  .dotdeck-head .led { display: inline-flex; align-items: center; gap: 8px; }
+  .dotdeck-head .led i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  .dotdeck {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
   }
-  .stage-hud {
-    font-family: var(--mono); font-size: 11px; color: var(--accent);
-    background: rgba(10, 11, 14, 0.85); backdrop-filter: blur(8px);
-    padding: 6px 12px; border-radius: 6px; border: 1px solid var(--accent-glow);
-    display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity .25s;
+  .dotkey {
+    appearance: none; cursor: pointer; text-align: center;
+    background: var(--elevated); border: 1px solid var(--border); border-radius: 4px;
+    border-bottom-width: 4px;
+    padding: 12px 4px 10px; color: var(--text);
+    font-family: var(--mono);
+    transition: transform .06s, border-color .15s, background .15s;
   }
-  .stage-hud.active { opacity: 1; }
-  .stage-audio-toggle {
-    background: rgba(10, 11, 14, 0.7); border: 1px solid rgba(255,255,255,0.06);
-    color: var(--dim); padding: 6px 10px; border-radius: 6px; cursor: pointer;
-    font-family: var(--mono); font-size: 11px; pointer-events: auto; transition: all .18s;
+  .dotkey:hover { border-color: var(--border-hi); }
+  .dotkey:active, .dotkey.hit {
+    transform: translateY(3px); border-bottom-width: 1px;
+    background: var(--accent); border-color: var(--accent);
   }
-  .stage-audio-toggle:hover { color: var(--text); border-color: var(--border-hover); }
+  .dotkey:active .dk-sub, .dotkey.hit .dk-sub,
+  .dotkey:active .dk-glyph, .dotkey.hit .dk-glyph,
+  .dotkey:active .dk-title, .dotkey.hit .dk-title { color: #070809; }
+  .dk-dots {
+    height: 20px; margin-bottom: 8px;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+    background-size: 6px 6px; background-position: center;
+  }
+  .dotkey:active .dk-dots, .dotkey.hit .dk-dots {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.35) 1px, transparent 1px);
+  }
+  .dk-glyph { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--accent); }
+  .dk-title { font-size: 11px; font-weight: 600; letter-spacing: 1px; margin-top: 2px; }
+  .dk-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+  .dotdeck-hud {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);
+    font-family: var(--mono); font-size: 12px;
+  }
+  .hud-read { color: var(--accent); letter-spacing: 1px; min-height: 20px; text-align: left; }
+  .hud-read .idle { color: var(--muted); }
+  .hud-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--dim);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
+    padding: 6px 12px; border-radius: 4px; cursor: pointer; flex-shrink: 0;
+  }
+  .hud-btn:hover { color: var(--text); border-color: var(--border-hi); }
 
-  /* Fallback 2D si WebGL no está disponible */
-  .deck-fallback {
-    display: none; grid-template-columns: repeat(4, 1fr); gap: 12px;
-    max-width: 440px; margin: 30px auto; padding: 20px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-  }
-  .deck-fallback.show { display: grid; }
-  .deck-fallback .tile {
-    aspect-ratio: 1; background: var(--elevated); border: 1px solid var(--border);
-    border-radius: 8px; display: grid; place-items: center; font-size: 24px;
-    transition: transform .18s, border-color .18s; cursor: pointer;
-  }
-  .deck-fallback .tile:hover { transform: translateY(-3px); border-color: var(--accent); }
-
-  /* Acciones y Badges CTA */
+  /* Acciones: bloque sólido, sin degradados */
   .acciones {
-    display: flex; gap: 14px; justify-content: center; align-items: center;
+    display: flex; gap: 12px; justify-content: center; align-items: stretch;
     flex-wrap: wrap; margin: 24px 0 16px;
   }
-  .btn-store {
-    display: inline-flex; align-items: center; gap: 12px;
-    padding: 11px 24px; border-radius: 9px;
-    background: #000; border: 1px solid #333; color: #fff;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.5);
-    transition: transform .18s, border-color .18s, background .18s, box-shadow .18s;
-  }
-  .btn-store:hover {
-    border-color: var(--accent); background: #0c0e12; transform: translateY(-2px); color: #fff;
-  }
-  .btn-store.principal {
-    border-color: rgba(74, 142, 240, 0.45);
-    background: linear-gradient(180deg, #111418 0%, #08090b 100%);
-    box-shadow: 0 6px 24px var(--accent-glow);
-  }
-  .btn-store.principal:hover {
-    border-color: var(--accent);
-    background: linear-gradient(180deg, #161b22 0%, #0d1015 100%);
-    box-shadow: 0 8px 30px rgba(74, 142, 240, 0.38);
-  }
-  .store-icon { width: 22px; height: 22px; flex-shrink: 0; }
-  .store-text { display: flex; flex-direction: column; text-align: left; line-height: 1.15; }
-  .store-sub { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; font-family: var(--mono); }
-  .store-main { font-size: 15px; font-weight: 600; color: #fff; }
-
   .btn {
-    display: inline-flex; align-items: center; gap: 9px;
-    padding: 13px 24px; border-radius: 8px;
-    font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
-    border: 1px solid var(--border); color: var(--text); background: var(--elevated);
-    transition: all .18s; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 12px 24px; border-radius: 4px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 2px;
+    border: 1px solid var(--border); color: var(--text); background: var(--surface);
+    transition: border-color .15s, background .15s, transform .15s; font-weight: 600;
   }
   .btn:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .btn.principal {
-    background: var(--accent); border-color: var(--accent); color: #fff;
-    box-shadow: 0 4px 20px var(--accent-glow);
-  }
-  .btn.principal:hover { background: #3d7ad8; color: #fff; }
-  .btn svg { width: 16px; height: 16px; fill: currentColor; }
-  .meta-detail { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; }
+  .btn.principal { background: var(--accent); border-color: var(--accent); color: #0a0505; }
+  .btn.principal:hover { background: #ff5147; border-color: #ff5147; color: #0a0505; }
+  .btn svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
+  .store-text { display: flex; flex-direction: column; text-align: left; line-height: 1.25; }
+  .store-sub { font-size: 10px; letter-spacing: 1px; opacity: 0.75; font-weight: 400; }
+  .store-main { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
+  .meta-detail { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; letter-spacing: 1px; }
 
-  /* Galería interactiva de capturas */
-  section { padding: 68px 0; border-top: 1px solid var(--border); }
-  .sec-header { margin-bottom: 36px; text-align: center; }
-  h2.sec-title {
-    font-family: var(--mono); font-size: 13px; letter-spacing: 3.5px; text-transform: uppercase;
-    color: var(--accent); margin: 0 0 10px;
+  /* Secciones: cabecera técnica alineada a la izquierda */
+  section { padding: 64px 0; border-top: 1px solid var(--border); }
+  .sec-head { margin-bottom: 28px; text-align: left; }
+  .sec-code {
+    display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: 3px;
+    color: var(--accent); border: 1px solid var(--accent); border-radius: 4px;
+    padding: 4px 12px; margin-bottom: 12px; background: var(--accent-dim);
   }
-  p.sec-sub { font-size: 22px; font-weight: 600; color: var(--text); }
+  p.sec-sub { font-size: 22px; font-weight: 600; color: var(--text); text-align: left; }
+  p.sec-desc { font-size: 15px; color: var(--dim); margin-top: 8px; max-width: 680px; }
 
+  /* Galería */
   .gallery-box {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden;
   }
   .gallery-tabs {
-    display: flex; gap: 2px; background: rgba(0,0,0,0.3); padding: 8px;
+    display: flex; gap: 4px; background: var(--bg); padding: 8px;
     overflow-x: auto; border-bottom: 1px solid var(--border);
   }
   .gallery-tab {
-    padding: 9px 16px; border-radius: 6px; font-family: var(--mono); font-size: 11px;
+    padding: 8px 16px; border-radius: 4px; font-family: var(--mono); font-size: 11px;
     letter-spacing: 1px; background: transparent; border: 1px solid transparent;
-    color: var(--dim); cursor: pointer; white-space: nowrap; transition: all .18s;
+    color: var(--dim); cursor: pointer; white-space: nowrap; transition: all .15s;
   }
   .gallery-tab:hover { color: var(--text); background: var(--elevated); }
   .gallery-tab.active {
-    background: var(--elevated); border-color: var(--border-hover); color: var(--accent); font-weight: 600;
+    background: var(--elevated); border-color: var(--accent); color: var(--accent); font-weight: 600;
   }
   .gallery-view { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; overflow: hidden; }
   .gallery-img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -223,48 +206,75 @@
   }
   .gallery-footer strong { color: var(--text); }
 
-  /* Cuadrícula de características */
-  .cuadros { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  /* Capacidades */
+  .cuadros { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   .cuadro {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px;
-    transition: border-color .2s, transform .2s;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 20px;
+    transition: border-color .15s, transform .15s;
+  }
+  .cuadro:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .cuadro-top {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
   }
   .cuadro-icon {
-    margin-bottom: 14px; display: inline-flex; align-items: center; justify-content: center;
-    width: 44px; height: 44px; background: var(--elevated); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; background: var(--elevated);
+    border: 1px solid var(--border); border-radius: 4px; color: var(--accent);
   }
+  .cuadro-code { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--muted); }
   .cuadro h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
   .cuadro p { margin: 0; font-size: 14px; color: var(--dim); line-height: 1.55; }
 
-  /* Tabla de especificaciones */
-  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; }
+  /* Registro de features: el archivo vivo de novedades */
+  .rel-block { margin-bottom: 28px; }
+  .rel-block:last-child { margin-bottom: 0; }
+  .rel-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .rel-ver {
+    font-family: var(--mono); font-weight: 700; font-size: 15px; letter-spacing: 1px;
+    background: var(--accent); color: #0a0505; border-radius: 4px; padding: 2px 12px;
+  }
+  .rel-date { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+  .rel-count { font-family: var(--mono); font-size: 11px; letter-spacing: 1px; color: var(--dim); margin-left: auto; }
+  .rel-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .feat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 16px;
+    border-top: 2px solid var(--accent);
+  }
+  .feat-code { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
+  .feat h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+  .feat p { margin: 0; font-size: 13px; color: var(--dim); line-height: 1.55; }
+  .rel-next {
+    border: 1px dashed var(--border-hi); border-radius: 4px; padding: 16px 20px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 1px; color: var(--muted);
+  }
+  .rel-next b { color: var(--dim); }
+
+  /* Especificaciones */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   td { padding: 12px 0; border-bottom: 1px solid var(--border); vertical-align: top; }
   td:first-child { font-family: var(--mono); font-size: 12px; color: var(--muted); width: 220px; padding-right: 20px; }
 
-  /* Pie de página */
-  footer {
-    padding: 48px 0 64px; border-top: 1px solid var(--border);
-    font-family: var(--mono); font-size: 12px; color: var(--muted);
-  }
-  .footer-inner {
-    display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center;
-  }
+  /* Pie */
+  footer { padding: 44px 0 60px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .footer-inner { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
   .footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
   .footer-links a { color: var(--muted); }
   .footer-links a:hover { color: var(--accent); }
 
-  /* Manejo de idioma */
   [data-en] { display: none; }
   html[lang="en"] [data-es] { display: none; }
   html[lang="en"] [data-en] { display: revert; }
 
   @media (max-width: 768px) {
-    .stage-3d-wrap { height: 350px; }
+    .dotdeck { grid-template-columns: repeat(3, 1fr); }
     .topbar { padding: 10px 16px; }
     .top-links a { display: none; }
     .top-links .idioma-bar { display: flex; }
     td:first-child { width: 130px; }
+    p.sec-sub { font-size: 19px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
@@ -273,21 +283,20 @@
 </head>
 <body>
 
-<!-- Barra de navegación superior fija -->
 <div class="topbar">
   <div class="top-brand">
-    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-      <rect width="16" height="16" rx="3" fill="#181b20"/>
-      <rect x="3" y="3" width="4" height="4" rx="1" fill="#4a8ef0"/>
-      <rect x="9" y="3" width="4" height="4" rx="1" fill="#4a8ef0"/>
-      <rect x="3" y="9" width="4" height="4" rx="1" fill="#4a8ef0"/>
-      <rect x="9" y="9" width="4" height="4" rx="1" fill="#4a8ef0"/>
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect width="16" height="16" rx="3" fill="#111315"/>
+      <rect x="3" y="3" width="4" height="4" rx="1" fill="#ff3b30"/>
+      <rect x="9" y="3" width="4" height="4" rx="1" fill="#ff3b30"/>
+      <rect x="3" y="9" width="4" height="4" rx="1" fill="#ff3b30"/>
+      <rect x="9" y="9" width="4" height="4" rx="1" fill="#ff3b30"/>
     </svg>
     VIRTUAL<span>DECK</span>
   </div>
   <div class="top-links">
     <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-es>Wiki y Guías</a>
-    <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-en>Wiki & Guides</a>
+    <a href="https://github.com/AndyVillatoro/virtualdeck/wiki" target="_blank" rel="noopener" data-en>Wiki &amp; Guides</a>
     <a href="https://github.com/AndyVillatoro/virtualdeck" target="_blank" rel="noopener">GitHub</a>
     <a href="https://apps.microsoft.com/detail/9N92JRF820JP" target="_blank" rel="noopener">Store</a>
     <div class="idioma-bar">
@@ -302,94 +311,83 @@
     <div class="badge-tag">
       <span class="dot"></span>
       <span data-es>VirtualDeck v0.13.0 · 100% Local y Gratuito</span>
-      <span data-en>VirtualDeck v0.13.0 · 100% Local & Free</span>
+      <span data-en>VirtualDeck v0.13.0 · 100% Local &amp; Free</span>
     </div>
 
     <h1 class="marca">VIRTUAL<span>DECK</span></h1>
     <p class="lema" data-es>El Stream Deck táctil para Windows sin comprar hardware dedicado. Sliders continuos de volumen y brillo, celdas modulares 2×2, cambio automático de perfiles y telemetría en tiempo real.</p>
-    <p class="lema" data-en>Tactile software Stream Deck for Windows without dedicated hardware. Continuous volume & brightness sliders, 2×2 modular cells, auto-profile switching by active app, and live hardware telemetry.</p>
-    <p class="version-tag" data-es>Para Windows 10 y 11 · 0 Telemetría · Núcleo Nativo Rust · Código Abierto</p>
-    <p class="version-tag" data-en>For Windows 10 & 11 · 0 Telemetry · Native Rust Core · Open Source</p>
+    <p class="lema" data-en>Tactile software Stream Deck for Windows without dedicated hardware. Continuous volume &amp; brightness sliders, 2×2 modular cells, auto-profile switching by active app, and live hardware telemetry.</p>
+    <p class="version-tag" data-es>[ WIN10 · WIN11 ] [ 0 TELEMETRÍA ] [ NÚCLEO RUST ] [ CÓDIGO ABIERTO ]</p>
+    <p class="version-tag" data-en>[ WIN10 · WIN11 ] [ 0 TELEMETRY ] [ RUST CORE ] [ OPEN SOURCE ]</p>
 
-    <!-- Escenario 3D interactivo con Three.js -->
-    <div class="stage-3d-wrap" id="stage-wrap" title="Haz clic en los botones para interactuar">
-      <canvas id="deck-3d-canvas"></canvas>
-      <div class="stage-overlay">
-        <div class="stage-tip" data-es>Clic en los botones o arrastra para inclinar</div>
-        <div class="stage-tip" data-en>Click buttons or drag to tilt</div>
-        <div class="stage-hud" id="stage-hud">
-          <span id="hud-icon">VOL</span>
-          <span id="hud-text">VOLUMEN 78%</span>
-        </div>
-        <button type="button" class="stage-audio-toggle" id="audio-toggle" title="Alternar sonido táctil">AUDIO: ON</button>
+    <!-- Consola DOT física: pulsa las teclas -->
+    <div class="dotdeck-wrap">
+      <div class="dotdeck-head">
+        <span class="led"><i></i><span data-es>CONSOLA DOT · 12 TECLAS</span><span data-en>DOT CONSOLE · 12 KEYS</span></span>
+        <span>4PX GRID</span>
+      </div>
+      <div class="dotdeck" id="dotdeck">
+        <button type="button" class="dotkey" data-hud-es="PIN · MIC SILENCIO ANCLADO" data-hud-en="PIN · MIC MUTED PINNED"><span class="dk-dots"></span><span class="dk-glyph">PIN</span><div class="dk-title">MIC MUTE</div><div class="dk-sub">GLOBAL</div></button>
+        <button type="button" class="dotkey" data-hud-es="VOL · DESLIZA 78% CONTINUO" data-hud-en="VOL · SLIDE 78% CONTINUOUS"><span class="dk-dots"></span><span class="dk-glyph">VOL</span><div class="dk-title">VOLUMEN</div><div class="dk-sub">SLIDER</div></button>
+        <button type="button" class="dotkey" data-hud-es="2×2 · MOSAICO 4 ACCIONES" data-hud-en="2×2 · MOSAIC 4 ACTIONS"><span class="dk-dots"></span><span class="dk-glyph">2×2</span><div class="dk-title">MEDIOS</div><div class="dk-sub">MOSAICO</div></button>
+        <button type="button" class="dotkey" data-hud-es="HW · CPU 54° / GPU 61°" data-hud-en="HW · CPU 54° / GPU 61°"><span class="dk-dots"></span><span class="dk-glyph">HW</span><div class="dk-title">SENSORES</div><div class="dk-sub">LHM LIVE</div></button>
+        <button type="button" class="dotkey" data-hud-es="RELOJ · HORA LOCAL DOT" data-hud-en="CLOCK · LOCAL TIME DOT"><span class="dk-dots"></span><span class="dk-glyph">TIME</span><div class="dk-title">RELOJ</div><div class="dk-sub">DOT 5×7</div></button>
+        <button type="button" class="dotkey" data-hud-es="NOW · SYNTHWAVE EN CURSO" data-hud-en="NOW · SYNTHWAVE PLAYING"><span class="dk-dots"></span><span class="dk-glyph">WAVE</span><div class="dk-title">NOW PLAY</div><div class="dk-sub">MEDIA</div></button>
+        <button type="button" class="dotkey" data-hud-es="OUT · AURICULARES HD 660S" data-hud-en="OUT · HEADPHONES HD 660S"><span class="dk-dots"></span><span class="dk-glyph">OUT</span><div class="dk-title">AUDIO</div><div class="dk-sub">WIN32</div></button>
+        <button type="button" class="dotkey" data-hud-es="RGB · PRESET CHROMA 18/18" data-hud-en="RGB · PRESET CHROMA 18/18"><span class="dk-dots"></span><span class="dk-glyph">RGB</span><div class="dk-title">CHROMA</div><div class="dk-sub">OPENRGB</div></button>
+        <button type="button" class="dotkey" data-hud-es="APP · PERFIL VS CODE AUTO" data-hud-en="APP · PROFILE VS CODE AUTO"><span class="dk-dots"></span><span class="dk-glyph">APP</span><div class="dk-title">VS CODE</div><div class="dk-sub">AUTO-PERFIL</div></button>
+        <button type="button" class="dotkey" data-hud-es="MON · KIOSKO MONITOR 2" data-hud-en="MON · KIOSK MONITOR 2"><span class="dk-dots"></span><span class="dk-glyph">MON</span><div class="dk-title">MONITOR 2</div><div class="dk-sub">KIOSKO</div></button>
+        <button type="button" class="dotkey" data-hud-es="REC · MACRO GRABADA" data-hud-en="REC · MACRO RECORDED"><span class="dk-dots"></span><span class="dk-glyph">REC</span><div class="dk-title">CAPTURA</div><div class="dk-sub">MACRO</div></button>
+        <button type="button" class="dotkey" data-hud-es="CFG · AJUSTES ACORDEÓN" data-hud-en="CFG · SETTINGS ACCORDION"><span class="dk-dots"></span><span class="dk-glyph">CFG</span><div class="dk-title">AJUSTES</div><div class="dk-sub">DOT UI</div></button>
+      </div>
+      <div class="dotdeck-hud">
+        <div class="hud-read" id="hud-read"><span class="idle" data-es="[ LISTO ] Pulsa una tecla de la consola" data-en="[ READY ] Press a console key">_</span></div>
+        <button type="button" class="hud-btn" id="audio-toggle" title="Sonido táctil">AUDIO: ON</button>
       </div>
     </div>
 
-    <!-- Rejilla de respaldo 2D (si WebGL está deshabilitado) -->
-    <div class="deck-fallback" id="deck-fallback">
-      <div class="tile" data-hud="PIN ANCLADO GLOBAL">PIN</div>
-      <div class="tile" data-hud="VOLUMEN SLIDER 78%">VOL</div>
-      <div class="tile" data-hud="MOSAICO 2×2 MEDIOS">2×2</div>
-      <div class="tile" data-hud="CPU 58°C · 48W">CPU</div>
-      <div class="tile" data-hud="RELOJ OLED 14:32">TIME</div>
-      <div class="tile" data-hud="NOW PLAYING WAVE">NOW</div>
-      <div class="tile" data-hud="AURICULARES PRINCIPAL">HEADSET</div>
-      <div class="tile" data-hud="RGB AURA SYNC">RGB</div>
-      <div class="tile" data-hud="OBS STUDIO LIVE">OBS</div>
-      <div class="tile" data-hud="VS CODE PROYECTO">CODE</div>
-      <div class="tile" data-hud="DISCORD MUTE MIC">MIC</div>
-      <div class="tile" data-hud="AJUSTES V0.12.0">SET</div>
-    </div>
-
-    <!-- Botones de Tienda Oficial y Código Abierto -->
     <div class="acciones">
-      <!-- Badge Oficial Microsoft Store -->
-      <a class="btn-store principal" href="https://apps.microsoft.com/detail/9N92JRF820JP" target="_blank" rel="noopener" title="Abrir en Microsoft Store">
-        <svg class="store-icon" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="9.5" height="9.5" fill="#f25022"/>
-          <rect x="12.5" y="2" width="9.5" height="9.5" fill="#7fba00"/>
-          <rect x="2" y="12.5" width="9.5" height="9.5" fill="#00a4ef"/>
-          <rect x="12.5" y="12.5" width="9.5" height="9.5" fill="#ffb900"/>
+      <a class="btn principal" href="https://apps.microsoft.com/detail/9N92JRF820JP" target="_blank" rel="noopener" title="Abrir en Microsoft Store">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="2" width="9.5" height="9.5"/>
+          <rect x="12.5" y="2" width="9.5" height="9.5"/>
+          <rect x="2" y="12.5" width="9.5" height="9.5"/>
+          <rect x="12.5" y="12.5" width="9.5" height="9.5"/>
         </svg>
-        <div class="store-text">
+        <span class="store-text">
           <span class="store-sub" data-es>Obtener de</span><span class="store-sub" data-en>Get it from</span>
           <span class="store-main">Microsoft Store</span>
-        </div>
+        </span>
       </a>
-
-      <!-- Código Fuente en GitHub -->
       <a class="btn" href="https://github.com/AndyVillatoro/virtualdeck" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         <span data-es>Ver en GitHub</span>
         <span data-en>View on GitHub</span>
       </a>
     </div>
 
-    <p class="meta-detail" id="detalle">
+    <p class="meta-detail">
       <span data-es>Microsoft Store (Paquete Certificado) · Windows 10 y 11 · 100% Local</span>
-      <span data-en>Microsoft Store (Certified Package) · Windows 10 & 11 · 100% Local</span>
+      <span data-en>Microsoft Store (Certified Package) · Windows 10 &amp; 11 · 100% Local</span>
     </p>
   </div>
 </header>
 
-<!-- Galería interactiva de capturas de pantalla -->
 <section>
   <div class="env">
-    <div class="sec-header">
-      <h2 class="sec-title" data-es>Interfaz y Funciones</h2>
-      <h2 class="sec-title" data-en>Interface & Capabilities</h2>
-      <p class="sec-sub" data-es>Diseñado para responder al instante en cualquier monitor</p>
-      <p class="sec-sub" data-en>Engineered for instantaneous control across any display</p>
+    <div class="sec-head">
+      <span class="sec-code">[ 01 · GALERÍA ]</span>
+      <p class="sec-sub" data-es>La interfaz, pantalla por pantalla</p>
+      <p class="sec-sub" data-en>The interface, screen by screen</p>
     </div>
-
     <div class="gallery-box">
       <div class="gallery-tabs">
-        <button type="button" class="gallery-tab active" data-img="prensa/01-deck.png?v=0.13.0" data-desc-es="<strong>Pantalla principal (v0.13.0):</strong> Sliders continuos táctiles de volumen y brillo, celdas modulares 2×2, botón anclado global (PIN), reproductor multimedia integrado y barra lateral de telemetría." data-desc-en="<strong>Main Deck View (v0.13.0):</strong> Continuous touch sliders for volume & brightness, 2×2 modular cells, pinned global button, integrated media panel, and live telemetry sidebar.">01 · Deck Principal</button>
-        <button type="button" class="gallery-tab" data-img="prensa/02-editor.png?v=0.13.0" data-desc-es="<strong>Editor visual paso a paso:</strong> Configura más de 37 tipos de acción nativos, grabación de macros de teclado y ratón, sliders analógicos continuos o cuadrantes 2×2." data-desc-en="<strong>Step-by-step Visual Editor:</strong> Configure over 37 native action types, keyboard & mouse macro recording, continuous touch sliders, or 2×2 quadrant cells.">02 · Editor de Acciones</button>
+        <button type="button" class="gallery-tab active" data-img="prensa/01-deck.png?v=0.13.0" data-desc-es="<strong>Pantalla principal (v0.13.0):</strong> Sliders continuos táctiles de volumen y brillo, celdas modulares 2×2, botón anclado global (PIN), reproductor multimedia integrado y barra lateral de telemetría." data-desc-en="<strong>Main Deck View (v0.13.0):</strong> Continuous touch sliders for volume &amp; brightness, 2×2 modular cells, pinned global button, integrated media panel, and live telemetry sidebar.">01 · Deck Principal</button>
+        <button type="button" class="gallery-tab" data-img="prensa/02-editor.png?v=0.13.0" data-desc-es="<strong>Editor visual paso a paso:</strong> Configura más de 37 tipos de acción nativos, grabación de macros de teclado y ratón, sliders analógicos continuos o cuadrantes 2×2." data-desc-en="<strong>Step-by-step Visual Editor:</strong> Configure over 37 native action types, keyboard &amp; mouse macro recording, continuous touch sliders, or 2×2 quadrant cells.">02 · Editor de Acciones</button>
         <button type="button" class="gallery-tab" data-img="prensa/03-kiosko.png?v=0.13.0" data-desc-es="<strong>Modo Kiosko dedicado:</strong> Interfaz inmersiva sin marcos diseñada para pantallas táctiles secundarias o tabletas, con bloqueo de seguridad por PIN." data-desc-en="<strong>Dedicated Kiosk Mode:</strong> Immersive frameless interface designed for secondary touchscreens or tablets, with optional secure PIN lock.">03 · Modo Kiosko</button>
-        <button type="button" class="gallery-tab" data-img="prensa/04-barra-lateral.png?v=0.13.0" data-desc-es="<strong>Widgets y sensores en vivo:</strong> Monitorización térmica y eléctrica de CPU, GPU, RAM, ventiladores y reloj digital en estética dot-matrix." data-desc-en="<strong>Live Sensors & Telemetry:</strong> Real-time temperature, power, and clock telemetry for CPU, GPU, RAM, fan RPMs, and weather in dot-matrix aesthetic.">04 · Sensores & Widgets</button>
+        <button type="button" class="gallery-tab" data-img="prensa/04-barra-lateral.png?v=0.13.0" data-desc-es="<strong>Widgets y sensores en vivo:</strong> Monitorización térmica y eléctrica de CPU, GPU, RAM, ventiladores y reloj digital en estética dot-matrix." data-desc-en="<strong>Live Sensors &amp; Telemetry:</strong> Real-time temperature, power, and clock telemetry for CPU, GPU, RAM, fan RPMs, and weather in dot-matrix aesthetic.">04 · Sensores &amp; Widgets</button>
         <button type="button" class="gallery-tab" data-img="prensa/05-rgb.png?v=0.13.0" data-desc-es="<strong>Gestor OpenRGB integrado:</strong> Control de zonas LED, calibración precisa y 18 presets dinámicos sin consumir ciclos de CPU." data-desc-en="<strong>Integrated OpenRGB Engine:</strong> LED zone control, individual LED painting, and 18 dynamic lighting presets with near-zero CPU footprint.">05 · Luces RGB</button>
-        <button type="button" class="gallery-tab" data-img="prensa/06-galeria.png?v=0.13.0" data-desc-es="<strong>Galería comunitaria y tienda:</strong> Explora e importa perfiles comunitarios en ventana propia, con buscador, filtros y auditoría anticipada de seguridad para atajos y scripts." data-desc-en="<strong>Community Gallery & Store:</strong> Discover and import community profiles in their own window, with search, filters and advance security auditing for shortcuts and scripts.">06 · Galería de Perfiles</button>
+        <button type="button" class="gallery-tab" data-img="prensa/06-galeria.png?v=0.13.0" data-desc-es="<strong>Galería comunitaria y tienda:</strong> Explora e importa perfiles comunitarios en ventana propia, con buscador, filtros y auditoría anticipada de seguridad para atajos y scripts." data-desc-en="<strong>Community Gallery &amp; Store:</strong> Discover and import community profiles in their own window, with search, filters and advance security auditing for shortcuts and scripts.">06 · Galería de Perfiles</button>
         <button type="button" class="gallery-tab" data-img="prensa/07-barra-flotante.png?v=0.13.0" data-desc-es="<strong>Columna Flotante HUD:</strong> Barra compacta siempre visible superpuesta sobre tus programas de diseño, modelado, streaming o juegos favoritos sin ocupar espacio." data-desc-en="<strong>Floating HUD Bar:</strong> Compact always-on-top vertical strip overlaying your CAD, design, streaming, or favorite applications without stealing screen space.">07 · Barra Flotante</button>
       </div>
       <div class="gallery-view">
@@ -402,100 +400,111 @@
   </div>
 </section>
 
-<!-- 37 tipos de acción y pilares -->
 <section>
   <div class="env">
-    <div class="sec-header">
-      <h2 class="sec-title" data-es>Qué Puedes Hacer</h2>
-      <h2 class="sec-title" data-en>What You Can Do</h2>
+    <div class="sec-head">
+      <span class="sec-code">[ 02 · CAPACIDADES ]</span>
       <p class="sec-sub" data-es>Potencia sin dependencias ni suscripciones</p>
       <p class="sec-sub" data-en>Full power without subscriptions or external dependencies</p>
     </div>
-
     <div class="cuadros">
       <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+        <div class="cuadro-top">
+          <span class="cuadro-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg></span>
+          <span class="cuadro-code">MOD.01</span>
         </div>
         <h3 data-es>Sliders Continuos Táctiles</h3>
         <h3 data-en>Continuous Touch Sliders</h3>
-        <p data-es>Desliza directamente sobre cualquier celda para ajustar el volumen maestro, el brillo de monitores DDC/CI o variables de estado con respuesta instantánea a 0 ms.</p>
-        <p data-en>Slide directly over any cell to adjust master volume, DDC/CI display brightness, or state variables with instant zero-latency feedback.</p>
+        <p data-es>Desliza sobre cualquier celda para ajustar volumen maestro, brillo DDC/CI o variables de estado con respuesta de 0 ms.</p>
+        <p data-en>Slide over any cell to adjust master volume, DDC/CI brightness, or state variables with 0 ms response.</p>
       </div>
-
       <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <div class="cuadro-top">
+          <span class="cuadro-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
+          <span class="cuadro-code">MOD.02</span>
         </div>
         <h3 data-es>Mosaico Modular 2×2</h3>
         <h3 data-en>2×2 Modular Mosaic</h3>
-        <p data-es>Subdivide celdas en cuatro cuadrantes táctiles independientes (reproducción, mutear, atajos rápidos) para cuadruplicar los controles en espacios reducidos.</p>
-        <p data-en>Subdivide single cells into four independent touch quadrants (media controls, mute, quick shortcuts) to quadruple control density in compact screens.</p>
+        <p data-es>Subdivide celdas en cuatro cuadrantes independientes para cuadruplicar los controles en espacios reducidos.</p>
+        <p data-en>Subdivide single cells into four independent quadrants to quadruple control density in compact screens.</p>
       </div>
-
       <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <div class="cuadro-top">
+          <span class="cuadro-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span>
+          <span class="cuadro-code">MOD.03</span>
         </div>
         <h3 data-es>Perfiles Automáticos por App</h3>
         <h3 data-en>Active App Auto-Profiles</h3>
-        <p data-es>Detecta en segundo plano la ventana en primer plano (GetForegroundWindow sub-ms) y conmuta al perfil de OBS, VS Code, Blender o juegos al instante.</p>
-        <p data-en>Background active window tracker (GetForegroundWindow sub-ms) automatically switches pages when focusing OBS, VS Code, Blender, or games.</p>
+        <p data-es>Detecta la ventana en primer plano y conmuta al perfil de OBS, VS Code, Blender o juegos al instante.</p>
+        <p data-en>Tracks the foreground window and switches to your OBS, VS Code, Blender, or game profile instantly.</p>
       </div>
-
       <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        <div class="cuadro-top">
+          <span class="cuadro-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></span>
+          <span class="cuadro-code">MOD.04</span>
         </div>
         <h3 data-es>Multi-Monitor Inteligente</h3>
         <h3 data-en>Smart Multi-Monitor</h3>
-        <p data-es>Detección en caliente de pantallas conectadas y desconectadas con auto-clamping de seguridad para garantizar que la ventana nunca quede fuera de vista.</p>
-        <p data-en>Hot detection of connected and disconnected displays with automatic boundary clamping so your window is never lost off-screen.</p>
+        <p data-es>Detección en caliente de pantallas con auto-clamping: la ventana nunca queda fuera de vista.</p>
+        <p data-en>Hot detection of displays with auto-clamping: your window is never lost off-screen.</p>
       </div>
-
       <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <div class="cuadro-top">
+          <span class="cuadro-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span>
+          <span class="cuadro-code">MOD.05</span>
         </div>
-        <h3 data-es>Telemetría de Hardware en Vivo</h3>
-        <h3 data-en>Live Hardware Telemetry</h3>
-        <p data-es>Monitorea temperaturas de CPU/GPU, vatios, voltajes, uso de RAM y RPM de ventiladores en tiempo real mediante LibreHardwareMonitor local sin software invasivo.</p>
-        <p data-en>Monitor CPU/GPU temperatures, wattage, voltages, RAM usage, and fan RPMs in real time through local LibreHardwareMonitor without invasive bloatware.</p>
+        <h3 data-es>Telemetría en Vivo</h3>
+        <h3 data-en>Live Telemetry</h3>
+        <p data-es>Temperaturas de CPU/GPU, vatios, RAM y RPM de ventiladores vía LibreHardwareMonitor local.</p>
+        <p data-en>CPU/GPU temperatures, wattage, RAM, and fan RPMs through local LibreHardwareMonitor.</p>
       </div>
-
       <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <div class="cuadro-top">
+          <span class="cuadro-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
+          <span class="cuadro-code">MOD.06</span>
         </div>
         <h3 data-es>100% Local · 0 Telemetría</h3>
         <h3 data-en>100% Local · 0 Telemetry</h3>
-        <p data-es>Sin cuentas, sin analíticas y sin conexiones externas. Toda la configuración reside en un archivo JSON transparente en tu equipo (%APPDATA%\VirtualDeck).</p>
-        <p data-en>No accounts, no analytics, and zero external telemetry. All configurations reside in a plain JSON file on your machine (%APPDATA%\VirtualDeck).</p>
-      </div>
-
-      <div class="cuadro">
-        <div class="cuadro-icon" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="18" y="3" width="4" height="18" rx="1"></rect><rect x="2" y="3" width="13" height="18" rx="2"></rect></svg>
-        </div>
-        <h3 data-es>Columna Flotante HUD</h3>
-        <h3 data-en>Floating HUD Strip</h3>
-        <p data-es>Una tira vertical compacta siempre visible superpuesta sobre cualquier juego, DAW, CAD o app con tus atajos y estado esenciales sin robar pantalla.</p>
-        <p data-en>A compact always-on-top vertical strip overlaying any game, DAW, CAD, or desktop app with your essential macros and state at a glance.</p>
+        <p data-es>Sin cuentas ni analíticas. Todo vive en un JSON transparente en tu equipo.</p>
+        <p data-en>No accounts, no analytics. Everything lives in a plain JSON file on your machine.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Requisitos del sistema -->
+<!-- ============================================================
+  REGISTRO DE FEATURES · ARCHIVO VIVO DE NOVEDADES
+  Para publicar una feature nueva:
+  1. Copia el bloque de plantilla de abajo (v0.14.0).
+  2. Pégalo ARRIBA del bloque v0.13.0 con su versión y fecha.
+  3. Añade una entrada por feature: { code, t (título ES/EN), d (detalle ES/EN) }.
+  No se listan correcciones: esta página es escaparate, el repo es taller.
+============================================================ -->
 <section>
   <div class="env">
-    <div class="sec-header">
-      <h2 class="sec-title" data-es>Especificaciones</h2>
-      <h2 class="sec-title" data-en>Specifications</h2>
-      <p class="sec-sub" data-es>Requisitos técnicos del sistema</p>
+    <div class="sec-head">
+      <span class="sec-code">[ 03 · REGISTRO ]</span>
+      <p class="sec-sub" data-es>Cada versión añade celdas aquí</p>
+      <p class="sec-sub" data-en>Every release adds cells here</p>
+      <p class="sec-desc" data-es>El escaparate de novedades. Las correcciones de errores viven en el repositorio, no aquí.</p>
+      <p class="sec-desc" data-en>The feature showcase. Bug fixes live in the repository, not here.</p>
+    </div>
+    <div id="registro"></div>
+    <div class="rel-next" style="margin-top: 28px;">
+      <b data-es>PRÓXIMA VERSIÓN ·</b><b data-en>NEXT RELEASE ·</b>
+      <span data-es>Este bloque espera la v0.14.0. Duplica la plantilla FEATURES del código y añade tus celdas.</span>
+      <span data-en>This slot waits for v0.14.0. Duplicate the FEATURES template in the source and add your cells.</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="env">
+    <div class="sec-head">
+      <span class="sec-code">[ 04 · SPECS ]</span>
+      <p class="sec-sub" data-es>Requisitos del sistema</p>
       <p class="sec-sub" data-en>System requirements</p>
     </div>
-
     <table>
       <tr>
         <td data-es>Sistema Operativo</td><td data-en>Operating System</td>
@@ -514,19 +523,18 @@
       </tr>
       <tr>
         <td data-es>Telemetría</td><td data-en>Telemetry</td>
-        <td data-es>0%. No se recopila ni se transmite ningún dato a servidores externos.</td>
-        <td data-en>0%. Absolutely no telemetry or user data is collected or sent to external servers.</td>
+        <td data-es>0%. Ningún dato sale de tu equipo.</td>
+        <td data-en>0%. No data ever leaves your machine.</td>
       </tr>
       <tr>
         <td data-es>Distribución</td><td data-en>Distribution</td>
-        <td data-es>Microsoft Store (paquete oficial MSIX verificado y certificado por Microsoft) y código abierto en GitHub.</td>
-        <td data-en>Microsoft Store (official MSIX package verified & certified by Microsoft) and open source on GitHub.</td>
+        <td data-es>Microsoft Store (paquete MSIX verificado) y código abierto en GitHub.</td>
+        <td data-en>Microsoft Store (verified MSIX package) and open source on GitHub.</td>
       </tr>
     </table>
   </div>
 </section>
 
-<!-- Pie de página -->
 <footer>
   <div class="env">
     <div class="footer-inner">
@@ -551,17 +559,102 @@
   </div>
 </footer>
 
-<!-- Selector de idioma y actualización dinámica de versión -->
 <script>
 (function () {
-  function recordado() { try { return localStorage.getItem('vd-lang'); } catch (e) { return null; } }
-  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch (e) { } }
+  /* ============ REGISTRO DE FEATURES (editar aquí) ============
+     Plantilla para la próxima versión (pegar arriba de v0.13.0):
+     { version: "v0.14.0", date: "2026-XX-XX", items: [
+       { code: "F-14-01", t: { es: "Título", en: "Title" }, d: { es: "Detalle.", en: "Detail." } }
+     ] },
+  ============================================================ */
+  var FEATURES = [
+    { version: "v0.13.0", date: "2026-09-15", items: [
+      { code: "F-13-01", t: { es: "Tienda en ventana propia", en: "Store in its own window" }, d: { es: "Manifiesto v2, buscador, filtros y ficha con auditoría de riesgo antes de instalar.", en: "Manifest v2, search, filters, and risk-audit card before installing." } },
+      { code: "F-13-02", t: { es: "Radial Dot Sweep", en: "Radial Dot Sweep" }, d: { es: "Onda expansiva de micro-puntos LED al pulsar, acelerada por GPU.", en: "GPU-accelerated micro-dot sweep on every key press." } },
+      { code: "F-13-03", t: { es: "Editor de glifos 5×7", en: "5×7 glyph editor" }, d: { es: "Diseña iconos punto a punto con espejo, invertir y deshacer.", en: "Design icons dot by dot with mirror, invert, and undo." } },
+      { code: "F-13-04", t: { es: "Portapapeles de botones", en: "Button clipboard" }, d: { es: "Copiar, pegar, duplicar y vaciar celdas con deshacer en toast.", en: "Copy, paste, duplicate, and clear cells with toast undo." } },
+      { code: "F-13-05", t: { es: "PIN real de kiosko", en: "Real kiosk PIN" }, d: { es: "La pantalla completa ahora sí se bloquea con PIN de salida.", en: "Fullscreen now truly locks behind an exit PIN." } },
+      { code: "F-13-06", t: { es: "Núcleo nativo Rust", en: "Native Rust core" }, d: { es: "Procesos, ventanas y monitores migrados de PowerShell a Rust.", en: "Processes, windows, and monitors moved from PowerShell to Rust." } },
+      { code: "F-13-07", t: { es: "Discord + Spotify", en: "Discord + Spotify" }, d: { es: "Mute por RPC local y control de playlists y dispositivos.", en: "Mute via local RPC plus playlist and device control." } },
+      { code: "F-13-08", t: { es: "Automatización Store", en: "Store automation" }, d: { es: "Empaquetado y validación MSIX con build-store.mjs.", en: "MSIX packaging and validation with build-store.mjs." } },
+      { code: "F-13-09", t: { es: "Presets web ampliados", en: "Extended web presets" }, d: { es: "Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch y más.", en: "Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch, and more." } },
+      { code: "F-13-10", t: { es: "Modo claro anti-glare", en: "Anti-glare light mode" }, d: { es: "Grises cemento mate en vez de blanco puro deslumbrante.", en: "Matte cement grays instead of glaring pure white." } },
+      { code: "F-13-11", t: { es: "Ajustes colapsables", en: "Collapsible settings" }, d: { es: "Acordeón modular con memoria de estado por sección.", en: "Modular accordion with per-section state memory." } },
+      { code: "F-13-12", t: { es: "Transporte en carátula", en: "On-artwork transport" }, d: { es: "Anterior, reproducir y siguiente sobre la imagen en franja DOT.", en: "Previous, play, and next over the artwork in a DOT strip." } }
+    ] },
+    { version: "v0.12.0", date: "2026-09-13", items: [
+      { code: "F-12-01", t: { es: "Mando móvil con 2×2", en: "Mobile remote with 2×2" }, d: { es: "Mosaico y sliders táctiles proyectados al teléfono en red local.", en: "Mosaic and touch sliders mirrored to your phone over LAN." } },
+      { code: "F-12-02", t: { es: "Monitores hotplug", en: "Hotplug monitors" }, d: { es: "Detección en caliente con auto-clamping anti-pérdida.", en: "Hot detection with anti-loss auto-clamping." } },
+      { code: "F-12-03", t: { es: "Auto-perfiles + anclados", en: "Auto-profiles + pinned" }, d: { es: "Cambio por app activa y botones PIN persistentes.", en: "Active-app switching plus persistent PIN buttons." } },
+      { code: "F-12-04", t: { es: "Mosaico modular 2×2", en: "Modular 2×2 mosaic" }, d: { es: "Cuatro mini-botones independientes por celda.", en: "Four independent mini-buttons per cell." } },
+      { code: "F-12-05", t: { es: "Dial rotativo DOT", en: "DOT rotary dial" }, d: { es: "Anillo de 16 LEDs que responde a la rueda del ratón.", en: "16-LED ring that answers the mouse wheel." } },
+      { code: "F-12-06", t: { es: "Sistema DOT / 480", en: "DOT / 480 system" }, d: { es: "Iconografía bitmask 8×8, cero emojis, OLED puro.", en: "8×8 bitmask icons, zero emojis, pure OLED." } }
+    ] }
+  ];
 
-  const delNavegador = (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
+  function lang() { return document.documentElement.lang === "en" ? "en" : "es"; }
+
+  function renderRegistro() {
+    var host = document.getElementById("registro");
+    if (!host) return;
+    host.innerHTML = "";
+    FEATURES.forEach(function (rel) {
+      var block = document.createElement("div");
+      block.className = "rel-block";
+      var head = document.createElement("div");
+      head.className = "rel-head";
+      var n = rel.items.length;
+      head.innerHTML = '<span class="rel-ver">' + rel.version + '</span>' +
+        '<span class="rel-date">' + rel.date + '</span>' +
+        '<span class="rel-count" data-es>' + n + ' FEATURES</span>' +
+        '<span class="rel-count" data-en>' + n + ' FEATURES</span>';
+      block.appendChild(head);
+      var grid = document.createElement("div");
+      grid.className = "rel-grid";
+      rel.items.forEach(function (f) {
+        var cell = document.createElement("div");
+        cell.className = "feat";
+        var h = document.createElement("div");
+        h.className = "feat-code";
+        h.textContent = f.code;
+        var t = document.createElement("h3");
+        t.textContent = f.t[lang()];
+        t.setAttribute("data-feat", f.code);
+        var p = document.createElement("p");
+        p.textContent = f.d[lang()];
+        p.setAttribute("data-feat-d", f.code);
+        cell.appendChild(h);
+        cell.appendChild(t);
+        cell.appendChild(p);
+        grid.appendChild(cell);
+      });
+      block.appendChild(grid);
+      host.appendChild(block);
+    });
+    applyLangToFeatures();
+  }
+
+  function applyLangToFeatures() {
+    var l = lang();
+    FEATURES.forEach(function (rel) {
+      rel.items.forEach(function (f) {
+        var t = document.querySelector('[data-feat="' + f.code + '"]');
+        var p = document.querySelector('[data-feat-d="' + f.code + '"]');
+        if (t) t.textContent = f.t[l];
+        if (p) p.textContent = f.d[l];
+      });
+    });
+  }
+
+  /* ============ Idioma ============ */
+  function recordado() { try { return localStorage.getItem("vd-lang"); } catch (e) { return null; } }
+  function recordar(l) { try { localStorage.setItem("vd-lang", l); } catch (e) {} }
+
+  var delNavegador = (navigator.language || "").toLowerCase().indexOf("es") === 0 ? "es" : "en";
   aplicar(recordado() || delNavegador);
 
-  document.querySelectorAll('.idioma-bar button').forEach(function (b) {
-    b.addEventListener('click', function () {
+  document.querySelectorAll(".idioma-bar button").forEach(function (b) {
+    b.addEventListener("click", function () {
       aplicar(b.dataset.lang);
       recordar(b.dataset.lang);
     });
@@ -569,666 +662,95 @@
 
   function aplicar(l) {
     document.documentElement.lang = l;
-    document.querySelectorAll('.idioma-bar button').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b.dataset.lang === l));
+    document.querySelectorAll(".idioma-bar button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.lang === l));
     });
-    // Actualizar caption de la galería al idioma seleccionado
-    const activeTab = document.querySelector('.gallery-tab.active');
+    applyLangToFeatures();
+    var activeTab = document.querySelector(".gallery-tab.active");
     if (activeTab) {
-      const desc = l === 'es' ? activeTab.dataset.descEs : activeTab.dataset.descEn;
-      if (desc) document.getElementById('gallery-caption').innerHTML = desc;
+      var desc = l === "es" ? activeTab.dataset.descEs : activeTab.dataset.descEn;
+      if (desc) document.getElementById("gallery-caption").innerHTML = desc;
     }
   }
 
-  // Pestañas de la galería
-  document.querySelectorAll('.gallery-tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      document.querySelectorAll('.gallery-tab').forEach(function (t) { t.classList.remove('active'); });
-      tab.classList.add('active');
-      const img = document.getElementById('gallery-current-img');
-      img.src = tab.dataset.img;
-      const l = document.documentElement.lang || 'es';
-      const desc = l === 'es' ? tab.dataset.descEs : tab.dataset.descEn;
-      document.getElementById('gallery-caption').innerHTML = desc;
+  /* ============ Galería ============ */
+  document.querySelectorAll(".gallery-tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      document.querySelectorAll(".gallery-tab").forEach(function (t) { t.classList.remove("active"); });
+      tab.classList.add("active");
+      document.getElementById("gallery-current-img").src = tab.dataset.img;
+      var l = lang();
+      var desc = l === "es" ? tab.dataset.descEs : tab.dataset.descEn;
+      document.getElementById("gallery-caption").innerHTML = desc;
     });
   });
 
-  // Sincronizar etiqueta con la versión más reciente en GitHub
-  fetch('https://api.github.com/repos/AndyVillatoro/virtualdeck/releases/latest')
+  /* ============ Versión viva desde GitHub ============ */
+  fetch("https://api.github.com/repos/AndyVillatoro/virtualdeck/releases/latest")
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
       if (!d || !d.tag_name) return;
-      const tagEs = document.querySelector('.badge-tag [data-es]');
-      const tagEn = document.querySelector('.badge-tag [data-en]');
-      if (tagEs) tagEs.textContent = 'VirtualDeck ' + d.tag_name + ' · 100% Local y Gratuito';
-      if (tagEn) tagEn.textContent = 'VirtualDeck ' + d.tag_name + ' · 100% Local & Free';
+      var tagEs = document.querySelector(".badge-tag [data-es]");
+      var tagEn = document.querySelector(".badge-tag [data-en]");
+      if (tagEs) tagEs.textContent = "VirtualDeck " + d.tag_name + " · 100% Local y Gratuito";
+      if (tagEn) tagEn.textContent = "VirtualDeck " + d.tag_name + " · 100% Local & Free";
     })
     .catch(function () {});
-})();
-</script>
 
-<!-- Three.js 3D Stream Deck Interactivo con física de botones y pantallas OLED -->
-<script type="module">
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+  /* ============ Consola DOT: pulsación + HUD + clic ============ */
+  var hud = document.getElementById("hud-read");
+  var audioBtn = document.getElementById("audio-toggle");
+  var audioEnabled = true;
+  var audioCtx = null;
 
-(function init3DDeck() {
-  const container = document.getElementById('stage-wrap');
-  const canvas = document.getElementById('deck-3d-canvas');
-  const fallback = document.getElementById('deck-fallback');
-  const hud = document.getElementById('stage-hud');
-  const hudIcon = document.getElementById('hud-icon');
-  const hudText = document.getElementById('hud-text');
-  const audioBtn = document.getElementById('audio-toggle');
-
-  if (!canvas || !container) return;
-
-  // Detección de soporte WebGL
-  function isWebGLAvailable() {
-    try {
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      return !!gl;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  if (!isWebGLAvailable()) {
-    container.style.display = 'none';
-    fallback.classList.add('show');
-    return;
-  }
-
-  // Sintetizador de audio táctil (Web Audio API)
-  let audioContext = null;
-  let audioEnabled = true;
-
-  function playClickSound() {
+  function click() {
     if (!audioEnabled) return;
     try {
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-      const now = audioContext.currentTime;
-      // Impulso de clic mecánico: transitorio corto
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const filter = audioContext.createBiquadFilter();
-
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1400, now);
-      filter.Q.setValueAtTime(3.5, now);
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(280, now);
-      osc.frequency.exponentialRampToValueAtTime(80, now + 0.025);
-
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(audioContext.destination);
-
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(1800, now);
+      osc.frequency.exponentialRampToValueAtTime(900, now + 0.02);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
       osc.start(now);
       osc.stop(now + 0.03);
     } catch (e) {}
   }
 
-  audioBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    audioEnabled = !audioEnabled;
-    audioBtn.textContent = audioEnabled ? 'AUDIO: ON' : 'AUDIO: OFF';
-    audioBtn.style.color = audioEnabled ? 'var(--text)' : 'var(--muted)';
-  });
-
-  // Configuración de escena, cámara y renderizador
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0b0e);
-
-  const camera = new THREE.PerspectiveCamera(36, container.clientWidth / container.clientHeight, 0.1, 100);
-  camera.position.set(0, 6.4, 3.8);
-  camera.lookAt(0, -0.15, 0.1);
-
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-  // Iluminación
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
-  scene.add(ambientLight);
-
-  const dirLight = new THREE.DirectionalLight(0xddeeff, 1.85);
-  dirLight.position.set(3, 11, 6);
-  dirLight.castShadow = true;
-  dirLight.shadow.mapSize.width = 1024;
-  dirLight.shadow.mapSize.height = 1024;
-  dirLight.shadow.camera.near = 0.5;
-  dirLight.shadow.camera.far = 25;
-  dirLight.shadow.bias = -0.0005;
-  scene.add(dirLight);
-
-  const rimLight = new THREE.DirectionalLight(0x4a8ef0, 1.2);
-  rimLight.position.set(-6, -2, -4);
-  scene.add(rimLight);
-
-  const deckGroup = new THREE.Group();
-  deckGroup.rotation.x = -0.14; // Vista aérea con inclinación sutil hacia el usuario
-  scene.add(deckGroup);
-
-  // 1. Chasis del deck (geometría paramétrica)
-  const chassisWidth = 5.2;
-  const chassisHeight = 0.6;
-  const chassisDepth = 3.9;
-
-  const chassisGeo = new THREE.BoxGeometry(chassisWidth, chassisHeight, chassisDepth);
-  const chassisMat = new THREE.MeshStandardMaterial({
-    color: 0x14161a,
-    metalness: 0.5,
-    roughness: 0.35
-  });
-  const chassis = new THREE.Mesh(chassisGeo, chassisMat);
-  chassis.position.y = -chassisHeight / 2;
-  chassis.castShadow = true;
-  chassis.receiveShadow = true;
-  deckGroup.add(chassis);
-
-  // Borde biselado superior con acento
-  const bezelGeo = new THREE.BoxGeometry(chassisWidth + 0.04, 0.08, chassisDepth + 0.04);
-  const bezelMat = new THREE.MeshStandardMaterial({
-    color: 0x22262e,
-    metalness: 0.8,
-    roughness: 0.2
-  });
-  const bezel = new THREE.Mesh(bezelGeo, bezelMat);
-  bezel.position.y = 0.02;
-  deckGroup.add(bezel);
-
-  // Cuña / soporte de escritorio posterior
-  const standGeo = new THREE.BoxGeometry(chassisWidth * 0.85, 0.8, 1.6);
-  const standMat = new THREE.MeshStandardMaterial({ color: 0x0d0e11, roughness: 0.6 });
-  const stand = new THREE.Mesh(standGeo, standMat);
-  stand.position.set(0, -0.6, -0.9);
-  deckGroup.add(stand);
-
-  // Sombra de contacto en el suelo
-  const shadowGeo = new THREE.PlaneGeometry(8, 6);
-  const shadowMat = new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.45
-  });
-  const shadowPlane = new THREE.Mesh(shadowGeo, shadowMat);
-  shadowPlane.rotation.x = -Math.PI / 2;
-  shadowPlane.position.y = -1.2;
-  scene.add(shadowPlane);
-
-  // 2. Definición de los 12 botones OLED dinámicos (3 filas x 4 columnas)
-  const buttonConfigs = [
-    { id: 'pin', glyph: 'PIN', title: 'MIC MUTE', sub: 'ANCLADO', color: '#ef4444', type: 'pinned' },
-    { id: 'vol', glyph: 'VOL', title: 'VOLUMEN', sub: '78% CONTINUO', color: '#10b981', type: 'slider' },
-    { id: 'mosaic', glyph: '2×2', title: 'MEDIOS', sub: 'MOSAICO 2×2', color: '#38bdf8', type: 'mosaic' },
-    { id: 'sensors', glyph: 'HW', title: 'CPU 54°', sub: 'GPU 61°', color: '#f59e0b', type: 'sensor' },
-
-    { id: 'clock', glyph: 'TIME', title: 'RELOJ', sub: '14:32:00', color: '#10b981', type: 'clock' },
-    { id: 'music', glyph: 'WAVE', title: 'SYNTHWAVE', sub: 'EN CURSO', color: '#ec4899', type: 'music' },
-    { id: 'audio', glyph: 'DEV', title: 'HD 660S', sub: 'ENDPOINT 0', color: '#4a8ef0', type: 'audio' },
-    { id: 'rgb', glyph: 'RGB', title: 'CHROMA', sub: 'AMBER 0xFF88', color: '#f59e0b', type: 'rgb' },
-
-    { id: 'profile', glyph: 'APP', title: 'VS CODE', sub: 'AUTO-PERFIL', color: '#8b5cf6', type: 'profile' },
-    { id: 'monitor', glyph: 'MON', title: 'MONITOR 2', sub: 'KIOSKO ACTIVO', color: '#06b6d4', type: 'monitor' },
-    { id: 'macro', glyph: 'REC', title: 'CAPTURA', sub: 'WIN32 DISPARO', color: '#ef4444', type: 'shot' },
-    { id: 'settings', glyph: 'SET', title: 'AJUSTES', sub: 'V0.12.0 RUST', color: '#94a3b8', type: 'settings' },
-  ];
-
-  const buttons = [];
-  const interactiveMeshes = [];
-
-  const rows = 3;
-  const cols = 4;
-  const btnSize = 0.88;
-  const btnHeight = 0.35;
-  const spacingX = 1.14;
-  const spacingZ = 1.02;
-  const startX = -((cols - 1) * spacingX) / 2;
-  const startZ = -((rows - 1) * spacingZ) / 2;
-
-  // Generador de Canvas 2D para cada textura OLED
-  function createButtonTexture(cfg, idx) {
-    const c = document.createElement('canvas');
-    c.width = 128;
-    c.height = 128;
-    const ctx = c.getContext('2d');
-    const tex = new THREE.CanvasTexture(c);
-    tex.generateMipmaps = true;
-    tex.minFilter = THREE.LinearMipmapLinearFilter;
-    return { canvas: c, ctx, texture: tex, cfg, flash: 0, state: 0 };
-  }
-
-  let buttonIndex = 0;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cfg = buttonConfigs[buttonIndex];
-      const texData = createButtonTexture(cfg, buttonIndex);
-
-      // Material de botón con pantalla OLED en la cara superior (índice 2 en BoxGeometry: +Y)
-      const capMatSides = new THREE.MeshStandardMaterial({
-        color: 0x1b1d22,
-        roughness: 0.4,
-        metalness: 0.3
-      });
-      const oledMat = new THREE.MeshStandardMaterial({
-        map: texData.texture,
-        roughness: 0.15,
-        metalness: 0.1,
-        emissive: new THREE.Color(0x000000),
-        emissiveMap: texData.texture,
-        emissiveIntensity: 0.45
-      });
-
-      const materials = [
-        capMatSides, capMatSides, // +X, -X
-        oledMat, capMatSides,     // +Y (pantalla), -Y
-        capMatSides, capMatSides  // +Z, -Z
-      ];
-
-      const btnGeo = new THREE.BoxGeometry(btnSize, btnHeight, btnSize);
-      const mesh = new THREE.Mesh(btnGeo, materials);
-      mesh.position.set(startX + c * spacingX, btnHeight / 2 + 0.05, startZ + r * spacingZ);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-
-      // Almacenar metadatos para la física y la pulsación
-      mesh.userData = {
-        texData,
-        baseY: mesh.position.y,
-        currentY: mesh.position.y,
-        targetY: mesh.position.y,
-        velocity: 0,
-        cfg
-      };
-
-      deckGroup.add(mesh);
-      buttons.push(mesh);
-      interactiveMeshes.push(mesh);
-      buttonIndex++;
-    }
-  }
-
-  // Dibujar texturas dinámicas de los botones estilo Dot-Matrix táctil
-  let waveTick = 0;
-  function updateTextures() {
-    waveTick += 0.08;
-    const now = new Date();
-    const timeStr = [
-      String(now.getHours()).padStart(2, '0'),
-      String(now.getMinutes()).padStart(2, '0'),
-      String(now.getSeconds()).padStart(2, '0')
-    ].join(':');
-
-    buttons.forEach((btn) => {
-      const { ctx, cfg, texture, flash } = btn.userData.texData;
-      const w = 128;
-      const h = 128;
-
-      // Fondo OLED negro profundo
-      ctx.fillStyle = '#060709';
-      ctx.fillRect(0, 0, w, h);
-
-      // Rejilla de píxeles micro dot-matrix sutil
-      ctx.fillStyle = 'rgba(255,255,255,0.035)';
-      for (let x = 6; x < w - 6; x += 6) {
-        for (let y = 6; y < h - 6; y += 6) {
-          ctx.fillRect(x, y, 2, 2);
-        }
-      }
-
-      // Renderizado según el tipo de botón
-      if (cfg.type === 'slider') {
-        // Slider táctil continuo de volumen con indicador segmentado
-        ctx.font = 'bold 11px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#9ca3af';
-        ctx.textAlign = 'left';
-        ctx.fillText('VOL', 14, 28);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#10b981';
-        ctx.fillText('78%', w - 14, 28);
-
-        // Barra segmentada horizontal
-        const segCount = 8;
-        const segW = 10;
-        const segH = 24;
-        const startX = 14;
-        const activeSegs = 6;
-        for (let i = 0; i < segCount; i++) {
-          ctx.fillStyle = i < activeSegs ? '#10b981' : 'rgba(255,255,255,0.12)';
-          ctx.fillRect(startX + i * (segW + 2), 44, segW, segH);
-        }
-
-        ctx.font = '10px "Inter", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#9ca3af';
-        ctx.fillText('SLIDER CONTINUO', w / 2, 94);
-        ctx.font = '9px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#10b981';
-        ctx.fillText('WIN32 AUDIO', w / 2, 110);
-      } else if (cfg.type === 'mosaic') {
-        // Mosaico modular 2x2
-        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(12, 12, w - 24, 72);
-        ctx.beginPath();
-        ctx.moveTo(w / 2, 12);
-        ctx.lineTo(w / 2, 84);
-        ctx.moveTo(12, 48);
-        ctx.lineTo(w - 12, 48);
-        ctx.stroke();
-
-        ctx.font = 'bold 10px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#9ca3af';
-        ctx.fillText('PREV', 38, 34);
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillText('PLAY', w - 38, 34);
-        ctx.fillStyle = '#9ca3af';
-        ctx.fillText('NEXT', 38, 70);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('MUTE', w - 38, 70);
-
-        ctx.font = 'bold 10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('MOSAICO 2×2', w / 2, 102);
-        ctx.font = '9px "Inter", sans-serif';
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillText('4 ACCIONES', w / 2, 116);
-      } else if (cfg.type === 'pinned') {
-        // Botón fijado / anclado
-        ctx.fillStyle = 'rgba(239,68,68,0.15)';
-        ctx.fillRect(w - 44, 10, 34, 14);
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(w - 44, 10, 34, 14);
-        ctx.font = 'bold 8px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ef4444';
-        ctx.textAlign = 'center';
-        ctx.fillText('PIN', w - 27, 20);
-
-        ctx.font = 'bold 20px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('[MUT]', w / 2, 58);
-
-        ctx.font = 'bold 11px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('MIC SILENCIO', w / 2, 86);
-        ctx.font = '9px "Inter", sans-serif';
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('GLOBAL ANCLADO', w / 2, 106);
-      } else if (cfg.type === 'clock') {
-        ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 22px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(timeStr.slice(0, 5), w / 2, 54);
-        ctx.font = '11px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#059669';
-        ctx.fillText(timeStr.slice(6) + ' SEC', w / 2, 76);
-        ctx.font = '10px "Inter", sans-serif';
-        ctx.fillStyle = '#9ca3af';
-        ctx.fillText('HORA LOCAL', w / 2, 104);
-      } else if (cfg.type === 'music') {
-        // Barras ecualizadoras en puntos
-        ctx.fillStyle = cfg.color;
-        const bars = 5;
-        const barWidth = 12;
-        const startX = (w - (bars * 18 - 6)) / 2;
-        for (let i = 0; i < bars; i++) {
-          const barHeight = Math.sin(waveTick + i * 1.2) * 18 + 22;
-          for (let dotY = 66; dotY >= 66 - barHeight; dotY -= 6) {
-            ctx.fillRect(startX + i * 18, dotY, 10, 4);
-          }
-        }
-        ctx.font = 'bold 11px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('SYNTHWAVE', w / 2, 92);
-        ctx.fillStyle = '#ec4899';
-        ctx.font = '9px "JetBrains Mono", monospace';
-        ctx.fillText('▶ EN REPRODUCCIÓN', w / 2, 108);
-      } else if (cfg.type === 'sensor') {
-        const cpuTemp = Math.round(48 + Math.sin(waveTick * 0.3) * 3);
-        const gpuTemp = Math.round(54 + Math.cos(waveTick * 0.25) * 4);
-        ctx.font = 'bold 13px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#f59e0b';
-        ctx.fillText('CPU ' + cpuTemp + '°C', w / 2, 44);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('GPU ' + gpuTemp + '°C', w / 2, 68);
-        ctx.font = '10px "Inter", sans-serif';
-        ctx.fillStyle = '#6b7280';
-        ctx.fillText('TELEMETRÍA LHM', w / 2, 100);
-      } else if (cfg.type === 'audio') {
-        ctx.font = 'bold 16px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#4a8ef0';
-        ctx.fillText('[AUDIO]', w / 2, 46);
-
-        ctx.font = 'bold 12px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('HD 660S', w / 2, 78);
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#4a8ef0';
-        ctx.fillText('SALIDA WIN32', w / 2, 102);
-      } else if (cfg.type === 'rgb') {
-        // Indicador de color RGB
-        ctx.fillStyle = '#f59e0b';
-        ctx.beginPath();
-        ctx.arc(w / 2, 42, 14, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.font = 'bold 12px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('RGB CHROMA', w / 2, 78);
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#f59e0b';
-        ctx.fillText('PUERTO 16742', w / 2, 102);
-      } else if (cfg.type === 'profile') {
-        ctx.font = 'bold 14px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#8b5cf6';
-        ctx.fillText('[PERFIL]', w / 2, 46);
-
-        ctx.font = 'bold 12px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('VS CODE', w / 2, 78);
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#8b5cf6';
-        ctx.fillText('AUTO: DETECTADO', w / 2, 102);
-      } else if (cfg.type === 'monitor') {
-        ctx.strokeStyle = '#06b6d4';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(32, 28, 28, 20);
-        ctx.fillStyle = '#06b6d4';
-        ctx.fillRect(66, 28, 30, 20);
-
-        ctx.font = 'bold 12px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('MONITOR 2', w / 2, 78);
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#06b6d4';
-        ctx.fillText('KIOSKO DOCK', w / 2, 102);
-      } else if (cfg.type === 'shot') {
-        ctx.font = 'bold 18px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('[ + ]', w / 2, 46);
-
-        ctx.font = 'bold 12px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText('CAPTURA', w / 2, 78);
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ef4444';
-        ctx.fillText('DISPARAR', w / 2, 102);
-      } else {
-        // Ajustes y sistema
-        ctx.font = 'bold 16px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillText('[CFG]', w / 2, 46);
-
-        ctx.font = 'bold 12px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(cfg.title, w / 2, 78);
-
-        ctx.font = '10px "JetBrains Mono", monospace';
-        ctx.fillStyle = cfg.color;
-        ctx.fillText(cfg.sub, w / 2, 102);
-      }
-
-      // Flash y onda de pulso al presionar
-      if (btn.userData.texData.flash > 0) {
-        ctx.fillStyle = 'rgba(255,255,255,' + (btn.userData.texData.flash * 0.5) + ')';
-        ctx.fillRect(0, 0, w, h);
-        btn.userData.texData.flash -= 0.08;
-        if (btn.userData.texData.flash < 0) btn.userData.texData.flash = 0;
-      }
-
-      texture.needsUpdate = true;
+  if (audioBtn) {
+    audioBtn.addEventListener("click", function () {
+      audioEnabled = !audioEnabled;
+      audioBtn.textContent = audioEnabled ? "AUDIO: ON" : "AUDIO: OFF";
     });
   }
 
-  // Raycasting e interactividad
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2(-100, -100);
-  let isDragging = false;
-  let prevMouseX = 0;
-  let prevMouseY = 0;
-  let targetRotX = -0.14;
-  let targetRotY = 0;
-
-  function onPointerMove(e) {
-    const rect = container.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-
-    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
-    if (isDragging) {
-      const deltaX = clientX - prevMouseX;
-      const deltaY = clientY - prevMouseY;
-      targetRotY += deltaX * 0.005;
-      targetRotX += deltaY * 0.004;
-      targetRotX = Math.max(-0.45, Math.min(0.12, targetRotX));
-      targetRotY = Math.max(-0.5, Math.min(0.5, targetRotY));
-      prevMouseX = clientX;
-      prevMouseY = clientY;
-    } else {
-      // Parallax sutil con el movimiento del ratón
-      targetRotY = mouse.x * 0.14;
-      targetRotX = -0.14 - mouse.y * 0.10;
-    }
-
-    // Comprobar cursor encima de botones
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(interactiveMeshes);
-    container.style.cursor = intersects.length > 0 ? 'pointer' : (isDragging ? 'grabbing' : 'grab');
-  }
-
-  function onPointerDown(e) {
-    const rect = container.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-    const clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-
-    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(interactiveMeshes);
-
-    if (intersects.length > 0) {
-      const btn = intersects[0].object;
-      // Desplazar físicamente hacia abajo
-      btn.userData.targetY = btn.userData.baseY - 0.14;
-      btn.userData.texData.flash = 1.0;
-      playClickSound();
-
-      // Feedback en el HUD interactivo
-      hudIcon.textContent = btn.userData.cfg.glyph || '◆';
-      hudText.textContent = btn.userData.cfg.title + ' — ' + btn.userData.cfg.sub;
-      hud.classList.add('active');
-      clearTimeout(btn.userData.hudTimer);
-      btn.userData.hudTimer = setTimeout(() => { hud.classList.remove('active'); }, 1800);
-    } else {
-      isDragging = true;
-      prevMouseX = clientX;
-      prevMouseY = clientY;
-    }
-  }
-
-  function onPointerUp() {
-    isDragging = false;
-    buttons.forEach((btn) => {
-      btn.userData.targetY = btn.userData.baseY;
+  var hudTimer = null;
+  document.querySelectorAll(".dotkey").forEach(function (key) {
+    key.addEventListener("click", function () {
+      click();
+      key.classList.add("hit");
+      setTimeout(function () { key.classList.remove("hit"); }, 160);
+      var l = lang();
+      var msg = l === "es" ? key.dataset.hudEs : key.dataset.hudEn;
+      if (hud) hud.textContent = "[>] " + msg;
+      if (hudTimer) clearTimeout(hudTimer);
+      hudTimer = setTimeout(function () {
+        if (hud) hud.innerHTML = "";
+        var idle = document.createElement("span");
+        idle.className = "idle";
+        idle.textContent = l === "es" ? "[ LISTO ] Pulsa una tecla de la consola" : "[ READY ] Press a console key";
+        if (hud) hud.appendChild(idle);
+      }, 2200);
     });
-  }
+  });
 
-  container.addEventListener('pointermove', onPointerMove, { passive: true });
-  container.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointerup', onPointerUp);
-
-  // Redimensionamiento
-  function onResize() {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-  }
-  window.addEventListener('resize', onResize);
-
-  // Optimización de batería con IntersectionObserver
-  let isVisible = true;
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      isVisible = entry.isIntersecting;
-    });
-  }, { threshold: 0.1 });
-  observer.observe(container);
-
-  // Bucle de renderizado a 60 FPS con física de resorte
-  let lastTime = performance.now();
-  function animate(now) {
-    requestAnimationFrame(animate);
-    if (!isVisible) return;
-
-    // Física elástica Hooke de retorno en cada tecla
-    buttons.forEach((btn) => {
-      const spring = 0.35;
-      const damping = 0.65;
-      const force = (btn.userData.targetY - btn.position.y) * spring;
-      btn.userData.velocity = (btn.userData.velocity + force) * damping;
-      btn.position.y += btn.userData.velocity;
-    });
-
-    // Interpolación suave de rotación del chasis (lerp)
-    deckGroup.rotation.y += (targetRotY - deckGroup.rotation.y) * 0.08;
-    deckGroup.rotation.x += (targetRotX - deckGroup.rotation.x) * 0.08;
-
-    // Actualizar pantallas animadas cada ~30ms
-    if (now - lastTime > 30) {
-      updateTextures();
-      lastTime = now;
-    }
-
-    renderer.render(scene, camera);
-  }
-
-  requestAnimationFrame(animate);
+  renderRegistro();
 })();
 </script>
 

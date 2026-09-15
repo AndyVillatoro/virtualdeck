@@ -28,6 +28,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-FIX-03** | - | Higiene pre-release: ROADMAP al día + knip sin huella propia | Muse Spark | `ROADMAP.md`, `galeriaComun.ts`, `catalogoMarcas.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
+| **T-WEB-01** | - | Landing Pages: rediseño DOT 480 OLED + registro de features | Muse Spark | `docs/index.html` | `DONE` ✅ | 2026-09-15 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
@@ -39,6 +40,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ---
 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-WEB-01 DONE)
+- **Contexto**: rediseño de la landing de Pages (`docs/index.html`, 1236 → 719 líneas) a DOT 480 OLED: fuera azul IA `#4a8ef0`, blurs y Three.js por CDN; acento `RED #FF3B30`, consola DOT de 12 teclas (CSS puro + HUD + clic), y sección `[03 · REGISTRO]` que renderiza features desde el array `FEATURES` (v0.13.0 ×12 + v0.12.0 ×6, sin fixes). Próxima feature = añadir objeto al array (plantilla comentada en el código).
+- **Pruebas**: `npm run check` 0 errores (39 warnings preexistentes en `src/`, sin tocar), 6 guardianes verdes. Escaneo de prohibidos (`4a8ef0`, `blur(`, `three`, `unpkg`): 0 coincidencias.
+- **Recomendación**: commit directo en `main` (solo Pages, sin código). Publicar = push a `main` (Pages sirve `/docs`).
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
 
