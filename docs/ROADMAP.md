@@ -31,11 +31,13 @@ Auditoría sobre el código (no solo el doc):
   drag entre páginas, toast de undo, celda viva de preview, backups, toasts de error.
 - **Iteración 3 (diferencial): ✅ 1.2 Variables** (interpolación `{var}`, `set-var`/
   `incr-var`, persistencia, `branch`, widget `variable`).
-- **Iteración 4 (comunidad): 🟡** — auto-update ✅ (**el código estaba desde el
+- **Iteración 4 (comunidad): ✅** — auto-update ✅ (**el código estaba desde el
   principio, pero no funcionaba**: ninguna publicación subía el `latest.yml` que
   electron-updater pide, así que la comprobación daba 404 en silencio. Arreglado
   en la 0.9.2 y verificado descargando el manifiesto), docs ✅, firma documentada ✅;
-  falta **galería de perfiles** (ver [galeria.md](galeria.md)).
+  galería de perfiles ✅ en la app (manifiesto v2, ficha de riesgo, tienda `#tienda`;
+  ver [galeria.md](galeria.md)). Lo único fuera es el **repo público**, diferido a
+  otra versión por decisión del dueño (qué se publica y con qué criterio).
 - **Publicado / Versión actual:** **v0.12.0** en GitHub Releases, con `latest.yml` y `.blockmap`
   —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
   separado (ítem 30). Incluye Bloque 7 completo (DOT/480, multi-monitor, auto-perfiles,
@@ -158,18 +160,19 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 
 ### 🎯 Matriz de Prioridades de Nuevas Características y Pendientes (v0.13.0+)
 
-Orden de ejecución recomendado según impacto en el usuario, ergonomía y estabilidad del sistema:
+Completada el 2026-09-15 (todo en `main`; ver `docs/HANDOFF.md`). Se conserva
+como registro:
 
-| Prioridad | Ítem | Impacto / Justificación | Esfuerzo |
-|-----------|------|--------------------------|----------|
-| **P1 — Inmediata** | **52. Modo Claro Refinado (Anti-Glare)** | **Ergonomía visual y confort**: Elimina el blanco deslumbrante (#ffffff) reemplazándolo por grises industriales/cemento (#e2e4e8), alineándolo al diseño DOT / 480 sin fatiga visual. | **S** (Pequeño) |
-| **P1 — Inmediata** | **53. Menú de Configuración Colapsable** | **Usabilidad crítica de Ajustes**: El panel actual tiene 12 secciones que desbordan la pantalla en vertical; el acordeón modular colapsable permite navegar cómodamente en monitores de cualquier tamaño. | **S-M** (Pequeño-Medio) |
-| **P1 — Inmediata** | **54. Presets Web Ampliados (Gemini, etc.)** | **Ahorro de tiempo en configuración**: Chips rápidos para autocompletar Gemini, Claude, ChatGPT, GitHub, etc., en 1 clic en el editor de acciones web. | **S** (Pequeño) |
-| **P2 — Alta** | **55. Hardening Spotify & Discord** | **Fiabilidad de integraciones**: Robustecer el manejo de pipes IPC de Discord (cuando Discord no está iniciado) y validación de tokens/endpoints en Spotify con feedback de estado en celda. | **M** (Medio) |
-| **P3 — Media** | **Auditoría Deuda Técnica: Idiomas (`max-lines: 600`)** | **Salud de la suite `npm run check`**: Los diccionarios `es.ts` y `en.ts` (786 líneas) son los únicos que exceden el umbral de 600 líneas de ESLint. Modularizar por dominios (acciones, editor, ajustes). | **M** (Medio) |
-| **P3 — Media** | **Auditoría SRP: Complejidad en `EditorB` / `MainB`** | **Mantenibilidad frontend**: Reducir complejidad ciclomática en pantallas secundarias para dejar todo el codebase con 0 advertencias de complejidad. | **M** (Medio) |
-| **P4 — Ecosistema** | **24/6.1. Galería de Perfiles en Vivo** | **Comunidad**: Conexión directa a repositorio GitHub para descargar e importar perfiles compartidos con previsualización segura de acciones y teclas. | **L** (Grande) |
-| **P5 — Mantenimiento** | **4.1 / 30. Lazy Loading de Iconos & Store MSIX** | **Empaquetado**: Import dinámico del catálogo pesado de marcas y documentación del ciclo semver continuo de Windows Store. | **S-M** (Pequeño) |
+| Prioridad | Ítem | Estado |
+|-----------|------|--------|
+| **P1 — Inmediata** | **52. Modo Claro Refinado (Anti-Glare)** | ✅ 2026-09-14 |
+| **P1 — Inmediata** | **53. Menú de Configuración Colapsable** | ✅ 2026-09-14 |
+| **P1 — Inmediata** | **54. Presets Web Ampliados (Gemini, etc.)** | ✅ 2026-09-14 |
+| **P2 — Alta** | **55. Hardening Spotify & Discord** | ✅ 2026-09-14 |
+| **P3 — Media** | **Auditoría Deuda Técnica: Idiomas (`max-lines: 600`)** | ✅ 2026-09-15 (fragmentos por dominio) |
+| **P3 — Media** | **Auditoría SRP: Complejidad en `EditorB` / `MainB`** | ✅ 2026-09-15 (piezas puras extraídas) |
+| **P4 — Ecosistema** | **24/6.1. Galería de Perfiles en Vivo** | ✅ 2026-09-15 app (Fase 1: manifiesto v2; Fase 2: ventana `#tienda`); repo público diferido |
+| **P5 — Mantenimiento** | **4.1 / 30. Lazy Loading de Iconos & Store MSIX** | ✅ 2026-09-15 (chunk `brandIcons` + `build-store.mjs`) |
 
 
 ---
@@ -243,8 +246,10 @@ Orden de ejecución recomendado según impacto en el usuario, ergonomía y estab
 
 ### 6. Distribución y comunidad
 
-- **6.1 Galería de perfiles ★★ · L** — Repo público de perfiles compartibles. Spec en
-  [galeria.md](galeria.md). Pendiente: repo + UI de importar desde URL.
+- **6.1 Galería de perfiles ★★ · L** — ✅ HECHO en la app (manifiesto v2 con
+  páginas/versiones, ficha de riesgo, tienda `#tienda` con buscador/filtros/updates).
+  Spec en [galeria.md](galeria.md). Diferido a otra versión: el repo público
+  (decisión del dueño: qué se publica y con qué criterio).
 - **6.2 Auto-update ★ · M** — ✅ HECHO (`electron-updater` + GitHub Releases).
 - **6.3 Empaquetado firmado ★ · M** — Documentado en [CONTRIBUTING.md](../CONTRIBUTING.md) (sección Firma y distribución).
 - **6.4 Documentación ★ · S** — ✅ HECHO (wiki bilingüe).

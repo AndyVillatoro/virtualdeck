@@ -20,7 +20,7 @@ let prom: Promise<Catalogo> | null = null;
 const oyentes = new Set<() => void>();
 
 /** Baja el chunk si hace falta. Compartida: un solo vuelo aunque la pidan varios. */
-export function precargarCatalogoMarcas(): Promise<void> {
+function precargarCatalogoMarcas(): Promise<void> {
   if (!prom) {
     prom = import('../data/brandIcons').then((m) => {
       mod = m;

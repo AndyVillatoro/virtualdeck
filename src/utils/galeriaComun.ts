@@ -7,7 +7,7 @@
  */
 
 /** Compara semver simple: 1 si a > b, -1 si a < b, 0 si empatan. */
-export function compararVersiones(a: string, b: string): number {
+function compararVersiones(a: string, b: string): number {
   const pa = a.split('.').map((x) => parseInt(x, 10) || 0);
   const pb = b.split('.').map((x) => parseInt(x, 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {

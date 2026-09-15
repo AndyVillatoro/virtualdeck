@@ -152,6 +152,7 @@ flujo entero.
 
 - Repo de galería: **pendiente de crear** — es lo único que falta, y es una
   decisión del dueño del proyecto: qué perfiles se publican y con qué criterio.
+  Diferido a otra versión hasta tenerla bien completa.
 - UI de "Importar desde URL": **hecha** (⚙ → Galería de perfiles).
 - Manifest schema: **estable** desde la spec inicial (este doc).
 

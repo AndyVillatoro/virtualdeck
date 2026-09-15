@@ -109,6 +109,12 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes (`i18n 865 claves`, `ipc 121 canales y 14 eventos`), `npm run build` ok. Lógica pura ejecutada en node (19 aserciones).
 * **Notas:** canales en inglés por el guardián (`tienda:import/apply`); `GALERIA_OFICIAL`+semver viven en `utils/galeriaComun.ts` por las capas; la tienda nunca escribe config.
 
+## Turno 2026-09-15 — T-FIX-03 Higiene pre-release (DONE)
+
+* **Modelo:** Muse Spark, rama `task/fix-higiene-prerelease` (fusionada a main).
+* **Cambios:** `ROADMAP.md` al día (matriz P1–P5 DONE, iteración 4 ✅ lado app, 6.1 con repo diferido); `galeria.md` anota el diferimiento; `compararVersiones` y `precargarCatalogoMarcas` privatizadas (knip limpio de huella propia).
+* **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes, `npm run build` ok.
+
 ## Proximo paso concreto
 
 * **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).

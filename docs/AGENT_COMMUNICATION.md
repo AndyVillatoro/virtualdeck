@@ -19,6 +19,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P4-F2** | P4 | Tienda: ventana #tienda (buscador/filtros/ficha/updates) | Muse Spark | `tienda.ts`, `TiendaB.tsx`, `tiendaAplicar.ts` | `DONE` ✅ | 2026-09-15 |
+| **T-FIX-03** | - | Higiene pre-release: ROADMAP al día + knip sin huella propia | Muse Spark | `ROADMAP.md`, `galeriaComun.ts`, `catalogoMarcas.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
 
@@ -34,6 +35,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-FIX-03 DONE)
+- **Contexto**: higiene pre-release en rama `task/fix-higiene-prerelease` (fusionada a main). ROADMAP al día: matriz P1–P5 marcada DONE con fechas, iteración 4 en ✅ (lado app), 6.1 con repo diferido; `galeria.md` anota el diferimiento. knip sin huella propia: `compararVersiones` y `precargarCatalogoMarcas` privatizadas (el preload externo no aportaba: el hook ya carga al montar el paso de estilo).
+- **Pruebas**: `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes. `npm run build` ok. `lint:dead` ya no lista archivos propios.
+- **Recomendación**: listo para release v0.13.0. Galería pública diferida por decisión del dueño.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P4-F2 DONE)
 - **Contexto**: Fase 2 en rama `task/p4-tienda-f2` (fusionada a main). Ventana `#tienda` (patrón `#barra`): `electron/main/tienda.ts` + `ipc/tiendaIpc.ts` (`tienda:open/close/isOpen/import/resultado`, eventos `tienda:apply/hecho`); `TiendaB` + piezas `tienda/` (buscador, filtros tipo/app/tags, ficha con README inline/`readmeUrl` vía `gallery:readme`, insignias INSTALADO/UPDATE desde `origen`); la tienda no escribe — `tiendaAplicar.ts` valida y aplica en la principal (misma forma + `tiposDesconocidos` que la empotrada); cada `config:save` reavisa a la tienda. Canales en inglés por el guardián i18n (`tienda:import/apply`, no `importar/aplicar`). `GALERIA_OFICIAL`+semver a `utils/galeriaComun.ts` (components no puede importar de screens).
