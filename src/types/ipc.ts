@@ -181,6 +181,7 @@ export interface ElectronAPI {
     spawnServer: (exePath?: string) => Promise<{ ok: boolean; error?: string }>;
     killServer: () => Promise<void>;
     listDevices: () => Promise<RGBDeviceInfo[]>;
+    rescan: () => Promise<{ count: number; error?: string }>;
     setDeviceColor: (deviceId: number, color: string, duradero?: boolean) => Promise<boolean>;
     setZoneColors: (deviceId: number, zoneId: number, colors: string[]) => Promise<boolean>;
     setSingleLed: (deviceId: number, ledId: number, color: string) => Promise<boolean>;

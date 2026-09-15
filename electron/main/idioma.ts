@@ -23,7 +23,7 @@ type Clave =
   | 'filter.images' | 'filter.text'
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
-  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
+  | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'rgb.sinConexion' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
   | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject'
   // Fragmentos del resumen de riesgo de la galería (los enseña el renderer).
@@ -57,6 +57,7 @@ const ES: Record<Clave, string> = {
   'media.noArtist': '(sin artista)',
   'rgb.onlyDirect': 'solo ofrece Direct, el color se perderá al cerrar OpenRGB.',
   'rgb.sinRuta': 'Falta la ruta a OpenRGB.exe',
+  'rgb.sinConexion': 'Sin conexión al servidor OpenRGB',
   'enlace.noReconocido': 'enlace no reconocido',
   'enlace.sinVentana': 'sin ventana',
   'enlace.sinPagina': 'no hay ninguna página {n}',
@@ -116,6 +117,7 @@ const EN: Record<Clave, string> = {
   'media.noArtist': '(no artist)',
   'rgb.onlyDirect': 'only offers Direct; the color is lost when OpenRGB closes.',
   'rgb.sinRuta': 'The path to OpenRGB.exe is missing',
+  'rgb.sinConexion': 'Not connected to the OpenRGB server',
   'enlace.noReconocido': 'link not recognised',
   'enlace.sinVentana': 'no window',
   'enlace.sinPagina': 'there is no page {n}',

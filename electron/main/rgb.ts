@@ -258,6 +258,37 @@ export async function listDevices(): Promise<RGBDeviceInfo[]> {
 }
 
 /**
+ * Reescaneo de verdad: pedir al servidor que detecte hardware de nuevo.
+ *
+ * Releer la lista (`listDevices`) no encuentra nada conectado después de
+ * arrancar el servidor —OpenRGB detecta al inicio y luego sirve lo que vio—,
+ * así que el botón de reescanear no traía nunca nada nuevo. `requestRescan`
+ * sí dispara la detección en el servidor; como es asíncrona, se espera a que
+ * cambie la cuenta (o al tope) y se relee todo, zonas y LEDs incluidos.
+ */
+export async function rescanDevices(): Promise<{ count: number; error?: string }> {
+  if (!client?.isConnected) return { count: 0, error: tm('rgb.sinConexion') };
+  try {
+    let antes = devicesCache.length;
+    try { antes = await client.getControllerCount(); } catch {}
+    client.requestRescan();
+    const TOPE = 8000;
+    const PASO = 500;
+    for (let ms = 0; ms < TOPE; ms += PASO) {
+      await new Promise((r) => setTimeout(r, PASO));
+      if (!client?.isConnected) break;
+      try {
+        if ((await client.getControllerCount()) !== antes) break;
+      } catch { break; }
+    }
+    const lista = await refreshDevices();
+    return { count: lista.length };
+  } catch (e) {
+    return { count: devicesCache.length, error: (e as Error).message };
+  }
+}
+
+/**
  * Pinta un dispositivo entero de un color.
  *
  * `duradero` cambia **qué modo se elige**, y con ello si el color sobrevive a

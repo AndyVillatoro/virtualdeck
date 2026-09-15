@@ -109,6 +109,26 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
     }
   };
 
+  /**
+   * Reescaneo de verdad (no solo releer): pide al servidor OpenRGB que
+   * detecte hardware de nuevo y avisa cuántos aparatos vio.
+   *
+   * Antes el botón llamaba a `refresh`, que relee la lista que el servidor
+   * ya conocía: lo conectado después no aparecía nunca y, como no había ni
+   * espera ni aviso, parecía que el botón no hacía nada.
+   */
+  const handleRescan = async () => {
+    if (!api) return;
+    setBusy(true);
+    try {
+      const r = await api.rgb.rescan();
+      await refresh();
+      showToast(r.error
+        ? t('rgb.rescanFailed', { err: r.error })
+        : t('rgb.rescanned', { n: r.count }));
+    } finally { setBusy(false); }
+  };
+
   // Aplicar zoneSizes guardados al conectar (resizeZone para cada zona conocida).
   useEffect(() => {
     if (!api || !status.connected || !rgbCfg.zoneSizes) return;
@@ -347,7 +367,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
         ) : (
           <button onClick={handleConnect} disabled={busy} style={{ ...btnPrimary, borderColor: accent, color: accent }}>{t('rgb.connect')}</button>
         )}
-        <button onClick={refresh} disabled={busy || !status.connected} style={{ ...btnSecondary, display: 'flex', alignItems: 'center', padding: '5px 8px' }} title={t('rgb.rescan')}>
+        <button onClick={handleRescan} disabled={busy || !status.connected} style={{ ...btnSecondary, display: 'flex', alignItems: 'center', padding: '5px 8px' }} title={t('rgb.rescan')}>
           <DotGlyphIcon glyph="DOTS" size={8} color={VD.textDim} />
         </button>
       </div>

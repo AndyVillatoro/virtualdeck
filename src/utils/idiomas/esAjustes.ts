@@ -15,6 +15,8 @@ export const ES_AJUSTES: Dict = {
   'rgb.disconnect': 'DESCONECTAR',
   'rgb.connect': 'CONECTAR',
   'rgb.rescan': 'Reescanear dispositivos',
+  'rgb.rescanned': 'Detectados {n} dispositivos.',
+  'rgb.rescanFailed': 'No se pudo reescanear: {err}',
   'rgb.notConnected': 'NO CONECTADO',
   'rgb.setPath': '· Configure la ruta de OpenRGB.exe en el panel de ajustes (botón de ajustes de la pantalla principal → sección RGB).',
   'rgb.serverHint': '· Asegúrese de que el servidor SDK esté activo (puerto {port}). VirtualDeck inicia OpenRGB en modo --server, sin interfaz, de modo que no aparece el diálogo de tamaño de zonas.',

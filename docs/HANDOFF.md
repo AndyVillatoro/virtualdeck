@@ -130,6 +130,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Bandeja** (`windowManager.ts`, `trayManager.ts`, `index.ts`): `skipTaskbar: true` + 3 `setSkipTaskbar(false)` fuera; verificado que `window:minimize` es `hide()` y que las 4 rutas de mostrar (bandeja, second-instance, deep-link, arranque) no dependen del taskbar.
 * **Verificación:** `npm run check` 0 errores, 6 guardianes verdes (`i18n 862`), `npm run build` ok. Sin display aquí: sin captura de verificación.
 
+## Turno 2026-09-15 — T-FIX-06 RGB reescaneo real (DONE)
+
+* **Modelo:** Muse Spark, rama `task/fix-rgb-rescan` (fusionada a main).
+* **Causa:** el botón llamaba a `refresh` (relee lista vieja), sin busy ni toast; `requestRescan()` del SDK sin usar en todo el repo.
+* **Cambios:** `rgb.rescanDevices()` + `rgb:rescan` (main/preload/tipos) + `handleRescan` con busy y toast + `rgb.rescanned/rescanFailed` (ES/EN) + `rgb.sinConexion` (`idioma.ts` ES/EN).
+* **Verificación:** `npm run check` 0 errores, 6 guardianes verdes (`i18n 864`, `ipc 122+14`), `npm run build` ok. Sin OpenRGB aquí: camino con hardware no ejecutado.
+
 ## Proximo paso concreto
 
 * **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
