@@ -158,8 +158,17 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Cambios:** CHANGELOG sin rescan + faltantes (Dot Sweep, 5×7, portapapeles, PIN, Rust, Discord/Spotify) + bandeja como fix; ficha dist con texto corto; notas del release GH actualizadas.
 * **Sin código:** sin rebuild, sin retag (tag sigue en el commit del release).
 
+## Turno 2026-09-15 — Cierre post-release 0.13.0 (notas Store ES/EN + ficha, DONE)
+
+* **Modelo:** Muse Spark, en `main` (solo docs de coordinación; `dist/` ignorado por git).
+* **Hecho tras T-REL-014:**
+  - Bloque "What's new (English)" añadido a `dist/store-submission-0.13.0.md` (no versionado).
+  - Corrección de la Description de Partner Center (texto externo, no está en el repo): "turns any touchscreen… into a touch control surface" → "gives your PC a customizable control surface on any tablet, secondary monitor, or touchscreen" (+ espejo ES). Motivo: no prometer convertir pantallas en táctiles.
+* **Estado release:** tag `v0.13.0` en su commit; `main` en `6764367`; release GH con notas ES corregidas; MSIX + ficha listos para Partner Center.
+
 ## Proximo paso concreto
 
-* Nada pendiente salvo diferidos del dueño: galería completa y fino del escáner RGB (otra versión).
+* **Dueño en Partner Center:** pegar Description EN corregida + bloque "Novedades"/"What's new", subir `dist/VirtualDeck-0.13.0.msix`, notas runFullTrust (`docs/MICROSOFT-STORE.md` §4).
+* **Diferidos a otra versión:** galería completa, fino del escáner RGB.
 
 ## Proximo paso historico (T-P3B, hecho)

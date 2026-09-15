@@ -42,6 +42,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
 
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (CIERRE SESIÓN post-0.13.0)
+- **Contexto**: T-REL-014 fusionada a `main` (`6764367`). Después: bloque EN en ficha dist + corrección de la Description de Partner Center (externa al repo) + release GH ya con notas ES corregidas.
+- **Estado**: `main` limpio, tag `v0.13.0` fijo, release publicado. Pendiente solo el dueño en Partner Center + diferidos (galería, RGB fino).
+- **Recomendación**: próxima sesión parte de este HANDOFF; no rebuild/retag salvo cambio de código.
+
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-REL-014 DONE)
 - **Contexto**: el dueño corrigió las notas (rescan fuera por no quedar bien; faltaban Dot Sweep, editor 5×7, portapapeles, PIN kiosko, Rust, acciones Discord/Spotify; bandeja como fix). Rama `task/fix-release-notes`: CHANGELOG corregido, ficha `dist/store-submission-0.13.0.md` con texto corto, `gh release edit` con notas nuevas. Sin cambios de código: sin rebuild ni retag.
 - **Recomendación**: nada pendiente salvo diferidos (galería completa, escáner RGB fino).
