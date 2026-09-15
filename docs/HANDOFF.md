@@ -144,6 +144,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Picker:** `onCommit` en `ColorPicker` (soltar/hex), `DeviceDetail` con `onChange` local + efecto solo `[device.id]`.
 * **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes, `npm run build` ok. Sin hardware: no ejecutado contra servidor.
 
+## Turno 2026-09-15 — T-REL-013 Release v0.13.0 (DONE)
+
+* **Modelo:** Muse Spark, rama `task/release-v0-13-0` (fusionada a main) + tag `v0.13.0` pusheado.
+* **Cambios:** CHANGELOG 0.13.0; bump minor (package + lock); Pages a 0.13.0.
+* **Artefactos (local, `dist/`):** `VirtualDeck-Setup-0.13.0.exe` (80.3MB) + `.blockmap` + `latest.yml` fresco; `VirtualDeck-0.13.0.msix` (116.6MB) + `store-submission-0.13.0.md`.
+* **GitHub:** release v0.13.0 publicado con exe + blockmap + latest.yml (auto-update encadenado).
+* **Verificación:** `npm run check` 0 errores, 6 guardianes verdes.
+
 ## Proximo paso concreto
 
 * **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
