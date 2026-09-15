@@ -18,6 +18,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-P3B** | P3 | Reducción Complejidad Pantallas | Muse Spark | `EditorB.tsx`, `MainB.tsx` (+ piezas en `editor/`, `main/`) | `DONE` ✅ | 2026-09-15 |
 | **T-P4**  | P4 | Tienda plugins/perfiles (Fase 1: modelo+main) | Muse Spark | `galeria.ts`, `config.ts`, `GallerySection.tsx`, `useDeck.ts`, `check-perfiles.mjs` | `DONE` ✅ | 2026-09-15 |
 | **T-P5**  | P5 | Lazy Loading Iconos de Marca + Store MSIX | Muse Spark | `brandIcons.ts`, `BrandIconPicker.tsx`, `build-store.mjs` | `DONE` ✅ | 2026-09-15 |
+| **T-P4-F2** | P4 | Tienda: ventana #tienda (buscador/filtros/ficha/updates) | Muse Spark | `tienda.ts`, `TiendaB.tsx`, `tiendaAplicar.ts` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-01** | - | Panel ajustes: cabeceras sticky + ancho responsive | Muse Spark | `SeccionAjustes.tsx`, `PanelAjustes.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
 
@@ -33,6 +34,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P4-F2 DONE)
+- **Contexto**: Fase 2 en rama `task/p4-tienda-f2` (fusionada a main). Ventana `#tienda` (patrón `#barra`): `electron/main/tienda.ts` + `ipc/tiendaIpc.ts` (`tienda:open/close/isOpen/import/resultado`, eventos `tienda:apply/hecho`); `TiendaB` + piezas `tienda/` (buscador, filtros tipo/app/tags, ficha con README inline/`readmeUrl` vía `gallery:readme`, insignias INSTALADO/UPDATE desde `origen`); la tienda no escribe — `tiendaAplicar.ts` valida y aplica en la principal (misma forma + `tiposDesconocidos` que la empotrada); cada `config:save` reavisa a la tienda. Canales en inglés por el guardián i18n (`tienda:import/apply`, no `importar/aplicar`). `GALERIA_OFICIAL`+semver a `utils/galeriaComun.ts` (components no puede importar de screens).
+- **Pruebas**: `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes (i18n 865, ipc 121+14). `npm run build` ok. Lógica pura ejecutada: 19 aserciones (versiones, estados, filtros, instalados).
+- **Recomendación**: backlog P1-P5 + tienda completos. Siguiente: release v0.13.0 (hay `feat:` acumulado → MINOR; CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (T-P5 DONE)
 - **Contexto**: T-P5 en rama `task/p5-tienda` (fusionada a main). (1) Lazy marcas: `brandIconTypes.ts` (tipos+geometría) + `utils/catalogoMarcas.ts` (`import()` + hook); Display/Picker/Editor/PasoEstilo consumen diferido con fallback; índice −37KB, chunk `brandIcons` propio. (2) `build-store.mjs`: `--bump`, `--check-only`, `--preflight`, `--skip-assets/build`, validaciones previas y ficha `dist/store-submission-VERSION.md` (probado en fixture). AGENTS apuntaba a `docs/STORE.md` inexistente → `docs/MICROSOFT-STORE.md`.

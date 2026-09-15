@@ -80,15 +80,13 @@ Cuando múltiples modelos de IA colaboran simultáneamente o por turnos en este 
 
 ## 4. Próximas Tareas Pendientes (Backlog Priorizado)
 
-Cualquier modelo orquestado por OpenCode debe seleccionar su próxima tarea de esta lista (reflejada en `docs/ROADMAP.md`):
+Backlog P1–P5 y tienda **completos y en `main`** (ver `docs/ROADMAP.md` y `docs/HANDOFF.md`):
 
-| Prioridad | Tarea | Archivos Involucrados | Objetivo Técnico |
-|-----------|-------|-----------------------|------------------|
-| **P3 — Media** | **Modularización de Diccionarios de Idiomas** | `src/utils/idiomas/es.ts`, `en.ts`, `scripts/check-i18n.mjs` | Los archivos superan las 800 líneas (`max-lines: 600` en ESLint). Subdividirlos por dominios (ej. `esAcciones.ts`, `esEditor.ts`, `esAjustes.ts`) asegurando que `check-i18n.mjs` siga pasando al 100%. |
-| **P3 — Media** | **Reducción de Complejidad en Pantallas Secundarias** | `src/screens/EditorB.tsx`, `src/screens/MainB.tsx` | Extraer subcomponentes puros para llevar la complejidad ciclomática de las pantallas por debajo de 18 (eliminar warnings restantes de ESLint). |
-| **P4 — Ecosistema** | **Galería de Perfiles en Vivo (Ítem 24/6.1)** | `src/components/settings/GallerySection.tsx`, `electron/main/` | Conexión directa a repositorio de perfiles comunitarios en GitHub con previsualización de riesgo de teclas y scripts. |
-| **P5 — Mantenimiento** | **Lazy Loading de Catálogo de Marcas (Ítem 4.1)** | `src/data/brandIcons.ts`, `src/components/BrandIconPicker.tsx` | Carga diferida (`import()`) del catálogo de marcas SVG pesadas para optimizar tiempo de inicio y consumo de memoria. |
-| **P5 — Mantenimiento** | **Automatización y Checklist de Publicación MSIX (Ítem 30)** | `scripts/build-store.mjs`, `docs/MICROSOFT-STORE.md` | Automatizar bump semver y empaquetado para la tienda de Microsoft Windows. |
+- **P3**: Diccionarios por dominios (`esComun/esEditor/esAcciones/esAjustes` + espejos EN) y pantallas bajo complejidad 18 — DONE.
+- **P4**: Tienda en ventana propia `#tienda` (Fase 1: manifiesto v2 + riesgo extendido; Fase 2: buscador/filtros/ficha README/updates) — DONE.
+- **P5**: Lazy loading de marcas (chunk `brandIcons` aparte) y automatización MSIX (`build-store.mjs`) — DONE.
+
+Siguiente: **release v0.13.0** (`feat:` acumulado desde v0.12.0 → MINOR según CONTRIBUTING).
 
 ---
 

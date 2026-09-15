@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { FloatingBarB } from './screens/FloatingBarB'
+import { TiendaB } from './screens/TiendaB'
 import './index.css'
 import './vd-icons.css'
 import './brand-icons.css'
@@ -23,7 +24,9 @@ if (fuentes) {
 // La barra flotante es otra ventana de Electron, pero el mismo bundle: se
 // distingue por el hash con el que se abre (ver electron/main/floatingBar.ts).
 // Asi no hay que compilar un segundo renderer solo para una columna de tiles.
+// La tienda va igual (`electron/main/tienda.ts`): mismo bundle, otra ventana.
 const esBarra = window.location.hash === '#barra';
+const esTienda = window.location.hash === '#tienda';
 
 if (esBarra) {
   // Sin fondo: la ventana es transparente y lo unico que debe verse son los
@@ -39,6 +42,6 @@ if (esBarra) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {esBarra ? <FloatingBarB /> : <App />}
+    {esBarra ? <FloatingBarB /> : esTienda ? <TiendaB /> : <App />}
   </React.StrictMode>,
 )

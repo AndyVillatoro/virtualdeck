@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
-  DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo } from '../../src/types';
+  DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
+  PedidoTienda, ResultadoTienda } from '../../src/types';
 
 
 /**
@@ -75,6 +76,32 @@ const api = {
   gallery: {
     manifest: (url: string): Promise<GalleryManifest> => ipcRenderer.invoke('gallery:manifest', url),
     profile: (url: string): Promise<GalleryProfile> => ipcRenderer.invoke('gallery:profile', url),
+    readme: (url: string): Promise<GalleryReadme> => ipcRenderer.invoke('gallery:readme', url),
+  },
+  tienda: {
+    open: (): Promise<boolean> => ipcRenderer.invoke('tienda:open'),
+    close: (): Promise<boolean> => ipcRenderer.invoke('tienda:close'),
+    isOpen: (): Promise<boolean> => ipcRenderer.invoke('tienda:isOpen'),
+    importar: (pedido: PedidoTienda): Promise<boolean> => ipcRenderer.invoke('tienda:import', pedido),
+    resultado: (r: ResultadoTienda): Promise<boolean> => ipcRenderer.invoke('tienda:resultado', r),
+    /** La principal recibe un pedido de instalar desde la tienda. */
+    onAplicar: (cb: (pedido: PedidoTienda) => void) => {
+      const h = (_e: unknown, pedido: PedidoTienda) => cb(pedido);
+      ipcRenderer.on('tienda:apply', h);
+      return () => ipcRenderer.removeListener('tienda:apply', h);
+    },
+    /** La tienda recibe la respuesta a su pedido. */
+    onHecho: (cb: (r: ResultadoTienda) => void) => {
+      const h = (_e: unknown, r: ResultadoTienda) => cb(r);
+      ipcRenderer.on('tienda:hecho', h);
+      return () => ipcRenderer.removeListener('tienda:hecho', h);
+    },
+    /** La configuración cambió: releer instalados. */
+    onConfigChanged: (cb: (data: unknown) => void) => {
+      const h = (_e: unknown, data: unknown) => cb(data);
+      ipcRenderer.on('config:changed', h);
+      return () => ipcRenderer.removeListener('config:changed', h);
+    },
   },
   audio: {
     list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),
@@ -285,6 +312,7 @@ type GalleryEntry = EntradaGaleria;
 type RiskSummary = ResumenRiesgo;
 type GalleryManifest = { ok: true; profiles: GalleryEntry[] } | { ok: false; error: string };
 type GalleryProfile = { ok: true; perfil: unknown; riesgo: RiskSummary } | { ok: false; error: string };
+type GalleryReadme = { ok: true; texto: string } | { ok: false; error: string };
 type EstadoActualizacion = { status: 'disabled' | 'error' | 'checking' | 'available' | 'not-available'; version?: string; error?: string };
 type AvisoActualizacion = { status: 'error' | 'available' | 'downloaded'; version?: string; error?: string };
 interface RemoteStatus { corriendo: boolean; port: number; lan: string[] }

@@ -20,6 +20,7 @@ import { useDeck } from './utils/useDeck';
 import { pulsarBoton } from './utils/pulsarBoton';
 import { useAutoProfile } from './utils/useAutoProfile';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
+import { aplicarPedidoTienda } from './utils/tiendaAplicar';
 import type { ButtonConfig, DeckConfig, PageConfig } from './types';
 
 type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb' | 'barra';
@@ -311,6 +312,28 @@ export default function App() {
   toggledRef.current = toggledIds;
 
   const handleToggle = toggleButton;
+
+  /**
+   * Pedidos de la tienda (`#tienda`): validar y aplicar aquí.
+   *
+   * La tienda no escribe configuración —esta ventana es la única con el
+   * estado al día— así que el pedido cruza por IPC y se aplica con las mismas
+   * funciones de la galería empotrada. Se lee `configRef` y no `config`: el
+   * pedido puede llegar en cualquier momento y el cierre mentiría.
+   */
+  useEffect(() => {
+    if (!api?.tienda) return;
+    return api.tienda.onAplicar((pedido) => {
+      const r = aplicarPedidoTienda(pedido, {
+        config: configRef.current,
+        guardar: (siguiente) => saveConfig(siguiente),
+        agregarPaginasDePerfil: appendPagesFromProfile,
+        agregarPagina: appendPageFromGallery,
+        t,
+      });
+      api.tienda.resultado(r).catch(() => {});
+    });
+  }, [api, saveConfig, appendPagesFromProfile, appendPageFromGallery, t]);
 
 
 

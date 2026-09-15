@@ -6,6 +6,8 @@ import type {
   FirewallStatus,
   EntradaGaleria,
   ResumenRiesgo,
+  PedidoTienda,
+  ResultadoTienda,
 } from './config';
 import type {
   DisplayInfo,
@@ -69,6 +71,22 @@ export interface ElectronAPI {
   gallery: {
     manifest: (url: string) => Promise<{ ok: boolean; profiles?: EntradaGaleria[]; error?: string }>;
     profile: (url: string) => Promise<{ ok: boolean; perfil?: unknown; riesgo?: ResumenRiesgo; error?: string }>;
+    readme: (url: string) => Promise<{ ok: boolean; texto?: string; error?: string }>;
+  };
+  tienda: {
+    open: () => Promise<boolean>;
+    close: () => Promise<boolean>;
+    isOpen: () => Promise<boolean>;
+    /** La tienda pide instalar; la principal lo aplica y responde por `resultado`. */
+    importar: (pedido: PedidoTienda) => Promise<boolean>;
+    /** La principal responde al pedido (lo ve la tienda). */
+    resultado: (r: ResultadoTienda) => Promise<boolean>;
+    /** La principal recibe un pedido de la tienda. Devuelve desuscripción. */
+    onAplicar: (cb: (pedido: PedidoTienda) => void) => () => void;
+    /** La tienda recibe la respuesta a su pedido. Devuelve desuscripción. */
+    onHecho: (cb: (r: ResultadoTienda) => void) => () => void;
+    /** La configuración cambió (misma señal que la barra): releer instalados. */
+    onConfigChanged: (cb: (data: unknown) => void) => () => void;
   };
   audio: {
     list: () => Promise<AudioDevice[]>;

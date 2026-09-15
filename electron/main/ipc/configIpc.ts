@@ -10,6 +10,7 @@ import { tm, fijarIdioma } from '../idioma';
 import * as remoto from '../servidorLocal';
 import { mandar, type OrdenRemota } from '../mandoRemoto';
 import * as galeria from '../galeria';
+import { avisarTienda } from '../tienda';
 import { comprobarReglaFirewall, abrirReglaFirewall } from '../firewall';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
@@ -37,6 +38,9 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
     if (rCfg?.enabled) remoto.aplicar(rCfg, win);
     else remoto.parar();
     avisarCambioDeConfig(data, win);
+    // La tienda también lee la configuración (instalados para los avisos de
+    // update): si no se le avisa, sigue con lo de al abrir.
+    avisarTienda(data);
     return true;
   });
 
@@ -55,6 +59,7 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   // solo deja conectar con `self` y los dos servicios del clima.
   ipcMain.handle('gallery:manifest', (_e: any, url: string) => galeria.manifiesto(url));
   ipcMain.handle('gallery:profile', (_e: any, url: string) => galeria.perfil(url));
+  ipcMain.handle('gallery:readme', (_e: any, url: string) => galeria.leerTexto(url));
 
   ipcMain.handle('config:listBackups', () => listBackups());
   ipcMain.handle('config:restoreBackup', (_e: any, filename: string) => restoreBackup(filename));

@@ -5,9 +5,12 @@ import type { EntradaGaleria } from '../../types';
 
 /**
  * Una fila de la lista de la galería: nombre, versión, tipo, app y requisitos.
+ * `marca` es la insignia de la tienda (instalado / update); la galería
+ * empotrada no la usa y no cambia nada para ella.
  */
-export function FilaEntradaGaleria({ entrada, onMirar }: {
+export function FilaEntradaGaleria({ entrada, marca, onMirar }: {
   entrada: EntradaGaleria;
+  marca?: { texto: string; color: string } | null;
   onMirar: (e: EntradaGaleria) => void;
 }) {
   const VD = useTheme();
@@ -25,6 +28,7 @@ export function FilaEntradaGaleria({ entrada, onMirar }: {
       <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.text }}>
         {entrada.label}{entrada.author ? ` · ${entrada.author}` : ''}
         {entrada.version ? <span style={{ color: VD.textMuted }}> · v{entrada.version}</span> : null}
+        {marca ? <span style={{ ...insignia, color: marca.color, borderColor: marca.color, marginLeft: 6 }}>{marca.texto}</span> : null}
       </div>
       <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap' }}>
         <span style={insignia}>

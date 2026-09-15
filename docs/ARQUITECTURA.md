@@ -35,6 +35,7 @@ Node.js con acceso al SO. No conoce React. Expone todo vía IPC.
 | `macro.ts` | Grabar macros (uiohook-napi) y reproducirlas (PowerShell). | ✅ |
 | `rgb.ts` | Control RGB vía OpenRGB SDK. | ✅ |
 | `launcher.ts` | Ejecutar apps / scripts / abrir URLs y carpetas. | ✅ |
+| `tienda.ts` | Ventana `#tienda`: abrir/enfocar/cerrar + reavisar config a la tienda. | ✅ |
 | `sensors.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL. | ✅ |
 | `ps-helpers.ts` | Ejecutar PowerShell con prefijo UTF-8 (parser de `param()`). | ✅ |
 
@@ -43,7 +44,8 @@ Cada archivo registra los handlers de **un** dominio. Responsabilidad: traducir
 mensajes IPC ↔ módulo correspondiente. Sin lógica de negocio propia.
 
 `audioIpc` · `mediaIpc` · `macroIpc` · `configIpc` · `windowIpc` · `appIpc` ·
-`pageIpc` · `dialogIpc` · `launcherIpc` · `rgbIpc` · `sensorsIpc` · `logIpc` · `updateIpc`
+`pageIpc` · `dialogIpc` · `launcherIpc` · `rgbIpc` · `sensorsIpc` · `logIpc` · `updateIpc` ·
+`floatingBarIpc` · `tiendaIpc` (puentes tienda→principal: `tienda:import`/`resultado`; eventos `tienda:apply`/`hecho`)
 
 ---
 
@@ -77,6 +79,12 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `main/AvisosContextuales.tsx` | Hints contextuales (uno a la vez, descartables). | ✅ |
 | `main/PanelesMusica.tsx` | Panel de música lateral (una instancia por lado). | ✅ |
 | `main/CeldaPrincipal.tsx` | Una celda de la rejilla principal con su cableado. | ✅ |
+| `TiendaB.tsx` | Raíz de la ventana `#tienda`: carga config y delega en `tienda/`. | ✅ |
+| `tienda/ContenidoTienda.tsx` | Manifiesto, selección, ficha e instalación (pide, no aplica). | ✅ |
+| `tienda/BarraTienda.tsx` | Buscador + filtros por tipo/app/etiqueta. | ✅ |
+| `tienda/ListaTienda.tsx` | Filas con insignia INSTALADO / UPDATE. | ✅ |
+| `tienda/FichaTienda.tsx` | Nota del autor + ficha de riesgo + botones de instalar. | ✅ |
+| `tienda/tiendaUtils.ts` | Estados, filtros e instalados desde config (puro). | ✅ |
 
 ---
 
@@ -113,6 +121,8 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `logger.ts` | Bridge de errores del renderer → log del main. | ✅ |
 | `bugReport.ts` | Armar el issue de GitHub pre-llenado. | ✅ |
 | `configMigration.ts` | Versionar/migrar/validar la config. | ✅ |
+| `tiendaAplicar.ts` | Validar y aplicar un pedido de la tienda (puro + callbacks). | ✅ |
+| `galeriaComun.ts` | Versiones semver + manifiesto oficial (compartido galería/tienda). | ✅ |
 
 ---
 

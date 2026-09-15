@@ -17,6 +17,8 @@ import { tm } from './idioma';
 /** Un perfil descargado no debería pasar de esto ni de lejos. */
 const TOPE_BYTES = 2 * 1024 * 1024;
 const MS_ESPERA = 10000;
+/** Un README es texto para leer, no un deck: tope aparte y más chico. */
+const TOPE_README = 64 * 1024;
 
 export type TipoEntradaGaleria = 'profile' | 'page';
 
@@ -37,6 +39,10 @@ export interface EntradaGaleria {
   targetApp?: string;
   /** Requisitos en texto libre (ej. "OBS instalado", "cuenta de Spotify"). */
   requires?: string[];
+  /** Texto del autor para la ficha de la tienda (se muestra tal cual). */
+  readme?: string;
+  /** Dirección de un texto del autor (mismo filtro https que el resto). */
+  readmeUrl?: string;
 }
 
 /** Cuántas acciones de cada clase de las que preocupan trae un perfil. */
@@ -101,6 +107,8 @@ export async function manifiesto(url: string): Promise<{ ok: true; profiles: Ent
         minAppVersion: typeof p.minAppVersion === 'string' ? p.minAppVersion : undefined,
         targetApp: typeof p.targetApp === 'string' ? p.targetApp : undefined,
         requires: Array.isArray(p.requires) ? p.requires.map(String) : undefined,
+        readme: typeof p.readme === 'string' ? p.readme.slice(0, TOPE_README) : undefined,
+        readmeUrl: typeof p.readmeUrl === 'string' && direccionAceptable(p.readmeUrl) ? p.readmeUrl : undefined,
       }));
     return { ok: true, profiles };
   } catch (e) {
@@ -256,6 +264,23 @@ export async function perfil(url: string): Promise<{ ok: true; perfil: unknown; 
     const j = await traerJson(url);
     if (!j || typeof j !== 'object') return { ok: false, error: tm('gal.notObject') };
     return { ok: true, perfil: j, riesgo: resumirRiesgo(j) };
+  } catch (e) {
+    return { ok: false, error: String((e as Error).message ?? e) };
+  }
+}
+
+/**
+ * El README de una entrada (`readmeUrl`): texto plano para la ficha.
+ * Pasa por el mismo filtro de direcciones que el resto —un manifiesto
+ * ajeno no puede hacer que la app lea la red interna— y se corta al tope.
+ */
+export async function leerTexto(url: string): Promise<{ ok: true; texto: string } | { ok: false; error: string }> {
+  try {
+    if (!direccionAceptable(url)) throw new Error(tm('gal.badUrl'));
+    const res = await net.fetch(url, { signal: AbortSignal.timeout(MS_ESPERA) });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const texto = await res.text();
+    return { ok: true, texto: texto.slice(0, TOPE_README) };
   } catch (e) {
     return { ok: false, error: String((e as Error).message ?? e) };
   }

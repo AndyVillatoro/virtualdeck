@@ -100,8 +100,17 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Store MSIX:** `build-store.mjs` con `--bump patch|minor|major` (sincroniza lock), `--check-only`, `--preflight`, `--skip-assets/--skip-build`, validaciones previas (appx, extensions, makeappx, CHANGELOG, git) y ficha `dist/store-submission-VERSION.md`. Probado: check-only OK + bump/validación en fixture (positivo y negativo).
 * **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes, `npm run build` ok.
 
+## Turno 2026-09-15 — T-P4 Fase 2 Tienda en ventana propia (DONE)
+
+* **Modelo:** Muse Spark, rama `task/p4-tienda-f2` (fusionada a main).
+* **Ventana:** `electron/main/tienda.ts` (abrir/enfocar/cerrar, 980×680, hash `#tienda` en `main.tsx`) + `ipc/tiendaIpc.ts` registrado en `ipc/index.ts`; `config:save` reavisa a la tienda.
+* **UI:** `TiendaB` + `screens/tienda/` (`ContenidoTienda`, `BarraTienda`, `ListaTienda`, `FichaTienda`, `tiendaUtils`); `gallery:readme` en main+preload; `readme`/`readmeUrl` en `EntradaGaleria` (main y renderer); 19 claves `tienda.*` + `gal.openStore*` ES/EN; botón ABRIR TIENDA en `GallerySection` (+ insignia opcional en `FilaEntradaGaleria`).
+* **Relay:** `utils/tiendaAplicar.ts` + efecto en `App` (`onAplicar` → validar/aplicar → `tienda:resultado`); `PedidoTienda`/`ResultadoTienda`/`InstaladoTienda` en `types/config.ts` + `api.tienda` en `types/ipc.ts` y preload.
+* **Verificación:** `npm run check` 0 errores (39 warnings, igual), 6 guardianes verdes (`i18n 865 claves`, `ipc 121 canales y 14 eventos`), `npm run build` ok. Lógica pura ejecutada en node (19 aserciones).
+* **Notas:** canales en inglés por el guardián (`tienda:import/apply`); `GALERIA_OFICIAL`+semver viven en `utils/galeriaComun.ts` por las capas; la tienda nunca escribe config.
+
 ## Proximo paso concreto
 
-* **Backlog P1-P5 vacío.** Opciones: **T-P4 Fase 2** (ventana `#tienda`) o **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
+* **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
 
 ## Proximo paso historico (T-P3B, hecho)

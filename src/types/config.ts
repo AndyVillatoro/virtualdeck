@@ -197,6 +197,10 @@ export interface EntradaGaleria {
   targetApp?: string;
   /** Requisitos en texto libre (ej. "OBS instalado", "cuenta de Spotify"). */
   requires?: string[];
+  /** Texto libre del autor (se muestra tal cual en la ficha de la tienda). */
+  readme?: string;
+  /** Dirección de un texto del autor (se trae como la ficha: solo https, tope 64 KiB). */
+  readmeUrl?: string;
 }
 
 /** De qué entrada de qué manifiesto se instaló un perfil o página. */
@@ -204,6 +208,36 @@ export interface OrigenInstalacion {
   manifestUrl?: string;
   entryId?: string;
   version?: string;
+}
+
+/**
+ * Lo instalado desde la tienda, resumido para comparar con un manifiesto.
+ * Sale de `profiles[].origen` y `pages[].origen` (ver `instaladosDeConfig`).
+ */
+export interface InstaladoTienda {
+  kind: TipoEntradaGaleria;
+  label: string;
+  entryId?: string;
+  manifestUrl?: string;
+  version?: string;
+}
+
+/**
+ * Pedido de la ventana `#tienda` a la principal: instalar esto.
+ * La ventana de la tienda no escribe configuración —no ve los cambios sin
+ * guardar de la principal y la pisaría—; la principal valida y aplica.
+ */
+export type PedidoTienda =
+  | { kind: 'profile'; profile: unknown; origen?: OrigenInstalacion; agregarAlDeck?: boolean; label?: string }
+  | { kind: 'page'; page: unknown; buttons: unknown; origen?: OrigenInstalacion };
+
+/** Respuesta de la principal: se aplicó, o por qué no. */
+export interface ResultadoTienda {
+  ok: boolean;
+  /** Error ya traducido, para mostrar tal cual en la tienda. */
+  error?: string;
+  /** Páginas: cuántos atajos globales se limpiaron por chocar (aviso). */
+  limpiados?: number;
 }
 
 export interface ResumenRiesgo {

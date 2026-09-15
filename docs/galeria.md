@@ -69,6 +69,24 @@ quitan y se avisa cuántos fueron. El aviso de riesgo enseña además lo que se
 ejecuta solo (temporizadores, sensores) y otros efectos al pulsar (voz, cierre
 de apps, portapapeles, Discord/Spotify).
 
+- `readme`: nota del autor en texto plano, se enseña tal cual en la ficha.
+- `readmeUrl`: dirección de un texto del autor (mismo filtro `https` y tope de
+  64 KiB que el resto; se trae al abrir la ficha).
+
+## Tienda en ventana propia (T-P4 Fase 2)
+
+⚙ → **GALERÍA** → **ABRIR TIENDA**: el manifiesto en ventana aparte
+(`index.html#tienda`, patrón de la barra flotante), con buscador por
+nombre/autor/texto, filtros por tipo (perfil/página), app destino y etiquetas,
+ficha con nota del autor + riesgo completo, e insignias de **INSTALADO** y
+**UPDATE → vX** comparando cada entrada con el `origen` sellado al instalar.
+
+La tienda no escribe configuración: pide instalar por `tienda:import` y la
+ventana principal valida (forma + tipos de acción conocidos, igual que la
+galería empotrada) y aplica con las mismas funciones. La respuesta vuelve por
+`tienda:hecho`; cada guardado reavisa a la tienda para que las insignias se
+actualicen solas.
+
 ## Importar desde URL en VirtualDeck
 
 La app expone `api.config.import()` para JSONs locales. Para galería remota, el flujo equivalente:

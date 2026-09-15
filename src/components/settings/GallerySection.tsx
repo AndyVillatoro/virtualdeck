@@ -6,16 +6,7 @@ import { SettingLabel, estiloEntradaAjustes, estiloBotonMiniAjustes } from './se
 import { FilaEntradaGaleria } from './FilaEntradaGaleria';
 import { FichaRiesgoGaleria } from './FichaRiesgoGaleria';
 import { tiposDesconocidos } from '../../utils/configMigration';
-
-/** Compara semver simple: "1.2.0" > "0.12.0". Las partes no numéricas valen 0. */
-function versionMayor(a: string, b: string): boolean {
-  const pa = a.split('.').map((x) => parseInt(x, 10) || 0);
-  const pb = b.split('.').map((x) => parseInt(x, 10) || 0);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0);
-  }
-  return false;
-}
+import { GALERIA_OFICIAL, versionMayor } from '../../utils/galeriaComun';
 
 /**
  * La galería de perfiles (6.1): traerse el deck de otra persona.
@@ -28,17 +19,10 @@ function versionMayor(a: string, b: string): boolean {
  *
  * Se importa **como perfil**, no como configuración: el deck que ya tienes no
  * se toca, y para probarlo hay que cargarlo a mano desde la lista de perfiles.
- */
-/**
- * La galería que mantiene el proyecto. Se lee igual que cualquier otra: por
- * `manifest.json`, y pasando por el mismo aviso de lo que el perfil ejecuta.
- * Tener una por defecto no la convierte en de fiar — solo ahorra teclearla.
  *
- * Va por `raw.githubusercontent.com` y no por Pages: el repo no tiene Pages
- * activado, y el archivo crudo se sirve igual sin depender de eso.
+ * La galería del proyecto sale por defecto por `GALERIA_OFICIAL`, pero tener
+ * una por defecto no la convierte en de fiar — solo ahorra teclearla.
  */
-const GALERIA_OFICIAL =
-  'https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/manifest.json';
 
 export function GallerySection({
   accent, onImportar, onAppendPage,
@@ -152,6 +136,13 @@ export function GallerySection({
         </div>
         <button onClick={() => cargar(GALERIA_OFICIAL)} disabled={cargando} style={{ ...miniBtn(accent), alignSelf: 'flex-start' }}>
           {t('gal.official')}
+        </button>
+        <button
+          onClick={() => api?.tienda.open().catch(() => {})}
+          title={t('gal.openStoreHint')}
+          style={{ ...miniBtn(accent), alignSelf: 'flex-start' }}
+        >
+          {t('gal.openStore')}
         </button>
         <div style={menudo}>{t('gal.hint')}</div>
         {error && <div style={{ ...menudo, color: VD.danger }}>{error}</div>}
