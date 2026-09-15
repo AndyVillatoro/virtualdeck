@@ -16,7 +16,12 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   - La tienda no escribe configuración: pide por `tienda:import` y la ventana principal valida y aplica (`tienda:hecho` de vuelta).
   - **Riesgo extendido**: lo que se ejecuta solo (temporizadores, sensores) y otros efectos al pulsar (voz, cierre de apps, portapapeles, captura, Discord/Spotify); recorre macros (teclas, texto, clics), ramas, carpetas y cuadrantes 2×2 sin recortar.
   - **Páginas sueltas instalables**: sanea, remapea ids y limpia los atajos globales que choquen (avisando cuántos).
-- **Reescaneo RGB real**: pide detección al servidor OpenRGB (`requestRescan`), con espera, aviso de cuenta y apertura automática del calibrador si hay zonas sin contar.
+- **Animación de pulsación Radial Dot Sweep**: onda expansiva de micro-puntos LED desde el centro de la celda, acelerada por GPU, en botones y celdas vacías.
+- **Editor de iconos 5×7 interactivo**: diseña glifos punto a punto (pintar/borrar, espejo, invertir, deshacer) con vista previa en celda OLED.
+- **Portapapeles de botones**: copiar (`Ctrl+C`), pegar (`Ctrl+V`), duplicar (`Ctrl+D`), vaciar (`Supr`) y duplicación de página completa, con deshacer en toast.
+- **PIN real de modo kiosko**: la pantalla completa se protege con PIN de salida (antes figuraba y no protegía).
+- **Núcleo nativo Rust (`vd-core`)**: búsqueda de procesos, ventanas y monitor multi-pantalla migrados de PowerShell a Rust.
+- **Acciones de Discord y Spotify**: push-to-talk / mute / deafen por RPC local y control de Spotify (playlists, dispositivos) vía Web API, con sección Integraciones.
 - **Automatización Microsoft Store**: `scripts/build-store.mjs` (`--bump`, `--check-only`, `--preflight`, validaciones previas y ficha de envío).
 - **Presets web ampliados**: Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch, Reddit, Discord/WhatsApp Web, Notion, Spotify Web (catálogo + chips en el editor).
 - **Modo claro anti-glare**: grises cemento mate en vez de blanco puro.
@@ -26,7 +31,6 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 ### Changed
 
 - **Transporte dentro de la carátula**: anterior/reproducir/siguiente sobre la imagen en franja DOT; la carátula no se encoge ni se esconde.
-- **Solo bandeja**: VirtualDeck ya no sale en la barra de tareas (minimizar manda a la bandeja, como siempre hizo).
 - **Mando móvil en registro usted** y tarjeta más densa, a juego con los ajustes.
 - **ColorPicker con commit al soltar**: el selector se mueve en local y escribe al hardware al soltar (antes cada píxel disparaba IPC + relectura y se trababa).
 - **Diccionarios ES/EN por dominios** y pantallas `EditorB`/`MainB` bajo complejidad 18 (piezas puras extraídas).
@@ -35,8 +39,8 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ### Fixed
 
+- El icono volvía a salir en la barra de tareas: VirtualDeck vive solo en la bandeja (minimizar siempre mandó allí).
 - Discord congelaba ~10 s si la app estaba cerrada; Spotify fallaba con URLs no URI y sin dispositivo visible.
-- El reescaneo RGB no detectaba hardware nuevo ni avisaba nada.
 - La galería no entraba en ramas, temporizadores, carpetas ni cuadrantes al resumir riesgo.
 
 ## [0.12.0] — 2026-09-13

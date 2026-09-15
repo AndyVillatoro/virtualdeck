@@ -152,8 +152,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **GitHub:** release v0.13.0 publicado con exe + blockmap + latest.yml (auto-update encadenado).
 * **Verificación:** `npm run check` 0 errores, 6 guardianes verdes.
 
+## Turno 2026-09-15 — T-REL-014 Corrección notas 0.13.0 (DONE)
+
+* **Modelo:** Muse Spark, rama `task/fix-release-notes` (fusionada a main).
+* **Cambios:** CHANGELOG sin rescan + faltantes (Dot Sweep, 5×7, portapapeles, PIN, Rust, Discord/Spotify) + bandeja como fix; ficha dist con texto corto; notas del release GH actualizadas.
+* **Sin código:** sin rebuild, sin retag (tag sigue en el commit del release).
+
 ## Proximo paso concreto
 
-* **Backlog P1-P5 + tienda completos.** Siguiente: **release v0.13.0** (hay `feat:` acumulado desde v0.12.0 → MINOR; seguir CONTRIBUTING: bump + CHANGELOG + tag + installer + `latest.yml`/`.blockmap`).
+* Nada pendiente salvo diferidos del dueño: galería completa y fino del escáner RGB (otra versión).
 
 ## Proximo paso historico (T-P3B, hecho)
