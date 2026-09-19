@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/muse-spark-1.3-contributor",
+  "small_model": "opencode/nemotron-3.5-lightning-free",
+  "instructions": ["AGENTS.md"],
+  "permission": {
+    "bash": {
+      "npm run check": "allow",
+      "npx tsc --noEmit": "allow",
+      "npx eslint *": "allow",
+      "git push --force *": "deny",
+      "git push * --force": "deny",
+      "*": "ask"
+    },
+    "edit": {
+      "*.env": "deny",
+      ".env*": "deny",
+      "*": "allow"
+    },
+    "external_directory": {
+      ".env*": "deny",
+      "*": "allow"
+    }
+  }
+}
