@@ -173,7 +173,7 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 
 ## Proximo paso historico (T-P3B, hecho)
 
-## Turno 2026-09-15 � T-WEB-01 Landing DOT 480 OLED + registro de features (DONE)
+## Turno 2026-09-15 � T-WEB-01 Landing DOT 480 OLED + registro de features (DONE)
 
 * **Modelo:** Muse Spark, en `main` (solo Pages; `src/` y `electron/` sin tocar).
 * **Cambios:** `docs/index.html` (1236 -> 719 lineas): acento RED #FF3B30, 0 azul IA, 0 blur, fuera Three.js/CDN; consola DOT 12 teclas con HUD + clic; seccion [03 - REGISTRO] con array FEATURES (v0.13.0 x12, v0.12.0 x6; sin fixes) + plantilla v0.14.0 comentada.
@@ -183,3 +183,108 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 ## Proximo paso concreto
 
 * Push a `main` = publicado (Pages sirve `/docs`). Siguiente feature de Pages = anadir objeto a `FEATURES` en `docs/index.html`.
+
+## Turno 2026-09-19 — Integración global Gemini-vía-agy (DONE)
+
+* **Modelo:** big-pickle (OpenCode), fuera de `main` (solo docs de coordinación del repo; cambios globales fuera del repo).
+* **Qué se modificó:**
+  * `.config/opencode/AGENTS.md`: bloque nuevo `Gemini-Pro via agy (CLI externa v1.2.7)` (sintaxis directa, wrapper, uso P1/P2, privacidad entrenable, cuota aparte).
+  * `.config/opencode/bin/agy-gemini.ps1` (nuevo): wrapper PowerShell — `-Prompt` obligatorio, `-Model` ValidateSet (gemini-3.8/3.7/3.6-flash-high/medium/low, gemini-3.1-pro-high/low, default `gemini-3.8-flash-medium`), `-Dir` default `Get-Location`, `-Timeout` default `60s`, switches `-Json`/`-Schema` (`--output-format json`, `--json-schema`), flags `-p/--model/--print-timeout/--add-dir`, `exit $LASTEXITCODE`. Solo modo print.
+  * `.config/opencode/agents/orchestrator.md`: frontmatter `permission.bash` con `agy*` y `*agy-gemini*` allow + regla 3b de uso de Gemini-pro vía shell/wrapper.
+  * `docs/AGENT_COMMUNICATION.md`: claim `T-AGY-01` → `DONE` ✅ + sección Antigravity actualizada con comando verificado.
+* **Verificación del wrapper** (llamada mínima real): `& "$env:USERPROFILE\.config\opencode\bin\agy-gemini.ps1" "Reply with exactly: OK" -Model gemini-3.6-flash-low -Timeout 60s` → **OK** (exit 0). Syntax PowerShell ok.
+* **No verificado:** no se ejecutó `npm run check` completo (tarea instrumental, no toca `src/` ni `electron/`; no hay commit en el repo).
+* **Próximo paso concreto:** usar el wrapper en tareas P1/P2 pesadas (`& bin\agy-gemini.ps1 "<prompt>" -Model gemini-3.6-flash-low -Timeout 60s`); si GitHub Pages/docs del repo requieren algo, seguir el flujo normal de commit. OpenCode quizá necesite recargar la config de agentes para tomar el nuevo `permission.bash`.
+
+## Turno 2026-09-26 — Auditoría de seguridad +compactación (P0 abierto, sin fixes de código aún)
+
+* **Modelos:** `pickle` y `zen-muse-free` (ambos Zen free). Cuota `opencode-go/` = 0. Nada por agy.
+* **Naturaleza:** turno de **auditoría read-only** + configuración. **No se tocó `src/` ni `electron/`.**
+* **Detalle completo: `auditorias/2026-09-26-sesion-01.md` — DIRECTORIO IGNORADO POR GIT A PROPÓSITO.**
+  Contiene vulnerabilidades sin parchear; el repo es público, así que versionar el
+  hallazgo le regalaría el mapa al atacante. Los docs versionados solo llevan índice.
+* **Hecho (verificado):**
+  - `.gitignore`: añadidos `opencode-export/`, `.opencode/.archivado-*/` y `auditorias/`.
+    `opencode-export/` contenía la config global de opencode completa (orchestrator,
+    9 subagentes, `agy-gemini.ps1` con rutas absolutas del perfil de usuario) y **no estaba ignorada** →
+    un `git add -A` lo subía al repo público. Landmine neutralizada.
+  - Redacción forward-only de rutas personales en `docs/HANDOFF.md` (esta línea) y
+    `docs/AGENT_COMMUNICATION.md` (`$env:USERPROFILE` en lugar de la ruta literal).
+  - `npm run check`: **PASS, 0 errores**, 6 guardianes verdes.
+* **Resultado de seguridad:**
+  - **Credenciales: LIMPIO.** Cero secretos en árbol e historial. Nada que rotar.
+  - **Identidad: fuga forward-only pendiente** (decidida: NO reescribir historial, porque
+    rompería 16 tags + 14 Releases y no hay credencial comprometida). Pendientes:
+    `CHANGELOG.md:119-126` (4 enlaces `file:///` con la ruta local de checkout), `electron/main/ipc/appIpc.ts:30`,
+    `electron/main/macro.ts:256`, `docs/MIGRACION-RUST.md`, y el email
+    `noc@metronethn.com` en `package.json:7` + `Cargo.toml:15` (que además viaja en el
+    paquete publicado).
+  - **⚠️ P0 NUEVO, más grave que lo anterior: vulnerabilidades Electron sin parchear.**
+    2 CRIT (`no-sandbox` global en `index.ts:23-24`; ausencia total de
+    `setWindowOpenHandler`/`will-navigate` con preload de ~70 métodos heredado), 6 ALTO
+    (traversal en el handler `vd://`, inyección en los numéricos de `macro.ts`visible
+    porque `galeria.ts` no tiene `case 'delay'` en el resumen de riesgos, dos
+    `shell.openExternal` sin allowlist, primitiva de elevación en `sensors.ts`).
+    Ver §4 del fichero de auditoría.
+* **Resultado `src/utils` (módulo del turno, 42 ficheros):** **cero ficheros muertos**,
+  cero exports huérfanos, cero ciclos. `useDeck.ts` está en 488/600 por la métrica de
+  ESLint, no en riesgo. Solo 2 funciones pasan de complejidad 18. Ganancia principal:
+  `pulsarBoton.ts` repite un bloque de 9 líneas **4 veces**. La auditoría de i18n quedó
+  **incompleta** (el subagente agotó pasos) y su recuento de claves muertas **no es
+  fiable** — no tocar esas cifras sin re-verificar.
+* **Herramientas:** skill `security-audit` de Cloudflare instalada global
+  (`~/.agents/skills/security-audit/`, auto-cargada). Agent-Reach v1.5.0 instalado pero
+  **inerte** (4/16 canales, sin config, sin tokens, sin elevación).
+* **Próximo paso concreto:** verificar las 2 incertidumbres de §4.3 de la auditoría
+  (si `window.open()` hereda el preload, y si `%2f` sobrevive al parser) y luego atacar
+  los 2 CRIT + el traversal de `vd://`. Orden y fixes propuestos en §8 de la auditoría.
+  La redacción de identidad es trivial y sin riesgo si se prefiere cerrar eso primero.
+
+## Turno 2026-09-26 — T-SEC-01 Electron: sandbox y ventanas hijas (DONE)
+
+* **Modelo:** space-bunny-free, rama `task/p0-sec-01-sandbox-navegacion` (desde el commit `1a99d51`; el código de `src/` y `electron/` es idéntico a `main`).
+* **Los 2 CRIT de §4 de la auditoría (los P0 de la lista de §8):**
+  * `index.ts`: fuera `appendSwitch('no-sandbox')` y `appendSwitch('disable-gpu-sandbox')`. Se queda solo `app.disableHardwareAcceleration()`, que es el arreglo real de los tiles negros y no toca seguridad. Los switches venían del commit `ea94139` (landing 3D) y nunca se documentaron como arreglo de nada.
+  * `electron/main/seguridadVentana.ts` (nuevo, 100 líneas): `asegurarVentana(win)` / `asegurarWebContents(wc)` con `setWindowOpenHandler` → `deny`, `will-navigate` y `will-redirect` con allowlist por origen (propio `file:` o origen de vite) y `will-attach-webview` bloqueado. Llamado en `windowManager`, `tienda` y `floatingBar`, más `app.on('web-contents-created')` en `index.ts` como red de seguridad para la ventana que alguien añada mañana (excluye `devtools://`).
+* **Hallazgo propio, no estaba en la auditoría:** los tres `webPreferences` llevaban `sandbox: false`. Eso era lo que apagaba el sandbox **de los renderers**; la bandera global era redundante para esas ventanas. El preload solo usa `contextBridge` e `ipcRenderer` (el bundle tiene un único `require("electron")`), o sea que es válido con sandbox: puesto → los tres pasaron a `sandbox: true`.
+* **Decisión de diseño:** `deny` sin reenviar a `shell.openExternal`. En el renderer no hay ni un `target="_blank"` ni un `window.open()`; los enlaces externos ya salen por `launch:url`, que es donde va la allowlist de esquemas (T-SEC-04). Reenviar aquí sería un segundo `openExternal` sin validar.
+* **Sin cambios de comportamiento** para el usuario: los cambios de hash (`#barra`, `#tienda`) no emiten `will-navigate`, y `loadURL`/`loadFile` del proceso principal tampoco.
+
+### Verificacion
+
+* `npm run check`: **0 errores, 40 warnings** (39 previos y uno de `opencode-export/`, que está sin versionar a propósito; `electron/main/seguridadVentana.ts` sin avisos). Guardianes: `i18n 864`, `acciones 40`, `ipc 122+14`, `wiki 14`, `campos 62`, `perfiles 2`.
+* `npm run build`: **ok** (`main` 228.67 kB, `preload` 14.63 kB, renderer 202 módulos).
+* Comprobado en el bundle: 0 apariciones de `no-sandbox`, `sandbox: true` ×3, `setWindowOpenHandler` presente.
+* **Arranque real:** `npx electron . --user-data-dir=<tmp>` con `VD_DIAG=1` → `[arranque] ventana visible a los 354 ms`, `[diag] DOM: {"nodos":2319,…}` y captura de 1650×1080. El preload carga con el sandbox puesto y el renderer monta. Sin errores de GPU ni de caché.
+  * Trampa para el siguiente: **`npm run dev` no sirve como prueba si la app del Store está corriendo**. Su `lockfile` en `%APPDATA%\virtualdeck` hace que la instancia de desarrollo salga por `requestSingleInstanceLock` antes de pintar nada, y el `ERROR:cache_util_win.cc / disk_cache.cc` que se ve en el log es de esa colisión, no de este cambio. Con `--user-data-dir` propio desaparece.
+  * La prueba anterior deja la config en onboarding, así que **barra flotante y tienda no se abrieron**. Es lo único que queda por mirar con un clic: el guard es por origen y los cambios de hash no emiten `will-navigate`, pero conviene abrirlas.
+
+### Sigue abierto
+
+* **T-SEC-02** es el siguiente P0 (traversal en el handler `vd://` + `img-src` de `index.html`), y ya tiene el patrón correcto a mano en `servidorLocal.ts:354-355`.
+* La incertidumbre §4.3.1 de la auditoría (si `window.open()` hereda el preload) **queda sin efecto**: con `deny` da igual. La §4.3.2 (`%2f`) sí importa y es de T-SEC-02.
+* Los cambios de configuración del turno anterior (`.gitignore`, `opencode.json`, borrados de `.opencode/`) siguen **sin commitear a propósito**. Los dos `docs/` sí entran en este commit porque el tablero y el buzón de T-SEC-01 viven ahí; de paso quedan versionadas las filas T-SEC-01..05 y la redacción forward-only de rutas personales.
+
+## Apéndice A - Referencias Rápidas
+
+### Guardianes Verificables (para `npm run check`)
+- `check-i18n.mjs`: 834 claves ES/EN, 235 textos FIELDS_EN; paridad exacta y neutralidad de registro.
+- `check-acciones.mjs`: 40 tipos de acción, 35 con manejador, 5 resueltos por quien llama, 40 con formulario, 18 presets RGB, 40 elegibles en el paso 1.
+- `check-ipc.mjs`: 115 canales y 12 eventos; los dos lados cuadran.
+- `check-wiki.mjs`: 14 páginas, 7 parejas ES/EN, 39 tipos de acción documentados.
+- `check-campos.mjs`: 62 campos de acción, 59 los lee el ejecutor, todos rellenables.
+- `check-perfiles.mjs`: integridad de perfiles de la galería.
+
+### Rutas y Convenios Clave
+- `src/types/index.ts` - Tipos principales del sistema.
+- `docs/AGENT_COMMUNICATION.md` - Tablero de tareas y estados (`T-P3A`, `T-P3B`, etc.).
+- `docs/HANDOFF.md` - Registro de traspaso entre modelos en turnos sucesivos.
+- `design.ts` - Paleta de colores OLED: modo oscuro `#070809`, `#111315`, acento `#FF3B30`; modo claro `#d8dbe0`, `#cbcfd5`, `#9da4ae`.
+- `docs/ROADMAP.md` - Estado P1–P5 y siguiente release.
+- `package.json check` - Cubre validaciones de pages/ y config.
+
+### Comandos de Verificación Obligatorios
+```powershell
+npm run check
+npm run build
+```

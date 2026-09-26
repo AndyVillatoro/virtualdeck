@@ -10,6 +10,18 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 
 | ID | Prioridad | Tarea / Módulo | Modelo / Agente Asignado | Archivos Bloqueados | Estado | Actualizado |
 |---|-----------|----------------|--------------------------|---------------------|--------|-------------|
+| **T-SEC-01** | **P0** | Electron: quitar `no-sandbox` global + `setWindowOpenHandler`/`will-navigate` | space-bunny-free | `electron/main/index.ts`, `windowManager.ts`, `tienda.ts`, `floatingBar.ts`, `seguridadVentana.ts` (nuevo) | `DONE` ✅ | 2026-09-26 |
+| **T-SEC-02** | **P0** | Electron: traversal en el handler `vd://` + `img-src` sin `file:`/`https:` | (sin asignar) | `electron/main/index.ts`, `index.html` | `PENDING` | 2026-09-26 |
+| **T-SEC-03** | **P1** | Inyección en numéricos de `macro.ts` + `case 'delay'` ausente en el resumen de riesgos de galería | (sin asignar) | `electron/main/macro.ts`, `ipc/macroIpc.ts`, `galeria.ts` | `PENDING` | 2026-09-26 |
+| **T-SEC-04** | **P1** | Allowlist de esquema en los dos `shell.openExternal` (`launch:url`, `spotify:playUri`) | (sin asignar) | `ipc/launcherIpc.ts`, `electron/main/spotify.ts` | `PENDING` | 2026-09-26 |
+| **T-SEC-05** | **P1** | XSS almacenado en origen LAN: validar `fgColor`/`customGlyph57` antes del `innerHTML` | (sin asignar) | `electron/main/paginaMando.ts` | `PENDING` | 2026-09-26 |
+| **T-IDT-01** | P1 | Redacción forward-only de identidad (el historial NO se reescribe) | (sin asignar) | `CHANGELOG.md`, `ipc/appIpc.ts`, `macro.ts`, `docs/MIGRACION-RUST.md`, `package.json`, `Cargo.toml` | `PENDING` | 2026-09-26 |
+| **T-IDT-02** | P1 | Sanear config de orquestación/agy en docs versionados | (sin asignar) | `AGENTS.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md`, `docs/EXPORTAR-CONFIG.md`, `scripts/export-opencode-config.ps1` | `PENDING` | 2026-09-26 |
+| **T-UTL-01** | P2 | Tranche SAFE de `src/utils`: extraer bloque ×4 de `pulsarBoton`, comentarios huérfanos, `sensors.tsx`→`.ts`, repoint de `interpolate` | (sin asignar) | `src/utils/pulsarBoton.ts`, `useDeck.ts`, `estadoSistema.ts`, `sensors.tsx`, `formatos.ts` | `PENDING` | 2026-09-26 |
+| **T-UTL-02** | P2 | Mergear `acciones/media.ts` en `terceros.ts` — **arregla el bug de now-playing desactualizado** | (sin asignar) | `src/utils/acciones/media.ts`, `acciones/terceros.ts` | `PENDING` | 2026-09-26 |
+| **T-UTL-03** | P3 | Re-verificar el recuento de claves i18n muertas antes de borrar nada (el dato previo no es fiable) | (sin asignar) | `src/utils/idiomas/**`, `scripts/check-i18n.mjs` | `PENDING` | 2026-09-26 |
+| **T-UTL-04** | P3 | Partir `useDeck.ts` (644 L) en 5 hooks por responsabilidad; `App.tsx` no debe cambiar | (sin asignar) | `src/utils/useDeck.ts` | `PENDING` | 2026-09-26 |
+| **T-AGY-01** | P2 | Integración global Gemini-vía-agy (wrapper + docs) | big-pickle | `.config/opencode/AGENTS.md`, `.config/opencode/bin/agy-gemini.ps1`, `.config/opencode/agents/orchestrator.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-09-19 |
 | **T-052** | P1 | Modo Claro Anti-Glare | Claude / Gemini Pair | `design.ts`, `index.css` | `DONE` ✅ | 2026-09-14 |
 | **T-053** | P1 | Acordeón Colapsable Ajustes | Claude / Gemini Pair | `PanelAjustes.tsx`, `SeccionAjustes.tsx`, `SeccionPerfiles.tsx` | `DONE` ✅ | 2026-09-14 |
 | **T-054** | P1 | Presets Web Ampliados | Claude / Gemini Pair | `actionData.ts`, `formularios/basicos.tsx` | `DONE` ✅ | 2026-09-14 |
@@ -48,6 +60,15 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 - **Recomendación**: commit directo en `main` (solo Pages, sin código). Publicar = push a `main` (Pages sirve `/docs`).
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-26] De: space-bunny-free → Para: Siguiente Modelo (T-SEC-01 DONE)
+- **Qué se hizo:** los 2 CRIT de §4 de la auditoría. (1) `index.ts`: fuera `appendSwitch('no-sandbox')` **y** `appendSwitch('disable-gpu-sandbox')` (los dos venían del commit `ea94139` de la landing 3D, sin relación con el problema de los tiles negros); se queda `disableHardwareAcceleration()`, que es el arreglo real y no toca seguridad. (2) Nuevo `electron/main/seguridadVentana.ts` (`asegurarVentana` / `asegurarWebContents`): `setWindowOpenHandler` → `deny` total, `will-navigate` y `will-redirect` con allowlist por origen (el `index.html` propio en `file:` o el origen de vite en dev; los cambios de hash no disparan evento, así que `#barra`/`#tienda` no se rompen) y `will-attach-webview` → `preventDefault`. Cableado en las 3 ventanas + red de seguridad `app.on('web-contents-created')` en `index.ts` (excluye `devtools://`).
+- **Hallazgo extra (no estaba en la auditoría):** los 3 `webPreferences` tenían **`sandbox: false`**, que es lo que de verdad apagaba el sandbox del renderer — la bandera global era redundante para ellas. Como el preload solo usa `contextBridge` + `ipcRenderer` (verificado también en el bundle: un único `require("electron")`), se puso **`sandbox: true`** en las 3. Con eso el sandbox queda puesto de verdad, no solo la bandera global.
+- **Por qué `deny` y sin reenviar a `openExternal`:** no hay ni un `target="_blank"` ni un `window.open()` en el renderer; los enlaces externos van por `launch:url`, que es donde toca la allowlist (T-SEC-04). Reenviar aquí abriría un segundo `openExternal` sin validar.
+- **Pruebas:** `npm run check` **0 errores, 40 warnings** (39 previos + 1 de `opencode-export/`, que está sin versionar a propósito); los 6 guardianes verdes; `npm run build` ok. En el bundle: 0 `no-sandbox`, `sandbox: true` ×3, `setWindowOpenHandler` presente.
+- **Arranque verificado de verdad:** `npx electron . --user-data-dir=<tmp>` con `VD_DIAG=1` (el `npm run dev` normal no vale aquí: la app del Store está corriendo y su `lockfile` en `%APPDATA%\virtualdeck` hace que la de desarrollo salga sola por instancia única). Resultado: `[arranque] ventana visible a los 354 ms`, `[diag] DOM: {"nodos":2319,…}`, captura de 1650×1080 — **el preload carga con el sandbox puesto** y el renderer monta. Sin errores de GPU ni de caché (los que salían antes eran de la colisión de `userData`).
+- **Lo que no se ha probado:** la barra flotante y la tienda no se abrieron en esa prueba (config nueva, todo en onboarding). El guard se basa en origen y los cambios de hash no emiten `will-navigate`, pero un clic del dueño las abre es lo que falta.
+- **Sigue abierto:** T-SEC-02 (`vd://` traversal + CSP de `index.html`) es el siguiente P0. La incertidumbre §4.3.1 de la auditoría (si `window.open()` hereda el preload) queda **sin efecto**: con `deny` el resultado es el mismo haya herencia o no, así que no hace falta ejecutarlo.
 
 ### [2026-09-15] De: Muse Spark → Para: Siguiente Modelo (CIERRE SESIÓN post-0.13.0)
 - **Contexto**: T-REL-014 fusionada a `main` (`6764367`). Después: bloque EN en ficha dist + corrección de la Description de Partner Center (externa al repo) + release GH ya con notas ES corregidas.
@@ -143,4 +164,13 @@ Antes de liberar tu turno o enviar tu commit, marca que has cumplido:
 - [ ] ¿Se verificó `npm run build` sin errores de bundle?
 - [ ] ¿Se actualizó el estado de la tarea en la tabla a `DONE`?
 - [ ] ¿Se dejó un mensaje en el buzón explicando qué se hizo y qué falta?
+
+---
+
+## Sección Antigravity (2026-09-19)
+- Sesión base: repositorio local del proyecto (ruta absoluta no versionada por higiene de repo público).
+- OpenCode orquesta en terminal, Antigravity ejecuta (extensión + agy CLI 1.2.7, Gemini 3.8 Flash, auth Pro OAuth).
+- **Comando verificado (print mode headless, sin permisos peligrosos)**: `& "$env:USERPROFILE\.config\opencode\bin\agy-gemini.ps1" "<prompt>" -Model gemini-3.6-flash-low -Timeout 60s` → responde en modo print. Equivalente directo: `agy -p="<prompt>" --model gemini-3.8-flash-medium --print-timeout 60s --add-dir <cwd>`.
+- Wrapper global `agy-gemini.ps1` (v1.2.7): `-Prompt` obligatorio, `-Model` ValidateSet (gemini-3.8/3.7/3.6-flash-high/medium/low, gemini-3.1-pro-high/low, default `gemini-3.8-flash-medium`), `-Dir` default `Get-Location`, `-Timeout` default `60s`, switches `-Json`/`-Schema`. Solo modo print; prohibido `--dangerously-skip-permissions` y `--mode accept-edits` (o allow-rules en settings.json). Cuota aparte: no cuenta contra Go/Zen.
+- CWD obligatorio para toda sesión nueva.
 

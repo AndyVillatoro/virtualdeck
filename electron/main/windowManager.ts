@@ -2,6 +2,7 @@ import { BrowserWindow, screen } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { app } from 'electron';
+import { asegurarVentana } from './seguridadVentana';
 
 export interface WindowBounds { x: number; y: number; width: number; height: number; maximized?: boolean }
 
@@ -98,7 +99,12 @@ export function createMainWindow(): BrowserWindow {
     show: !ARRANQUE_OCULTO,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false, contextIsolation: true, nodeIntegration: false,
+      // Renderer **sandboxeado**, como debe: el preload solo usa
+      // `contextBridge` e `ipcRenderer`, que es exactamente lo que Electron
+      // deja disponible con el sandbox puesto. Si algún día el preload
+      // necesitara Node de verdad, esto salta y hay que replantearlo, no
+      // desactivar el sandbox.
+      sandbox: true, contextIsolation: true, nodeIntegration: false,
       // Los temporizadores siguen corriendo con la ventana escondida.
       //
       // Chromium estrangula los `setInterval` de una ventana oculta a uno por
@@ -111,6 +117,12 @@ export function createMainWindow(): BrowserWindow {
   });
 
   if (savedRaw?.maximized && !isDev && !process.argv.includes('--primary')) win.maximize();
+
+  // Antes de cargarle nada: esta ventana lleva el preload completo delante
+  // (unos setenta métodos, incluido `launch.script`), así que una ventana
+  // hija que se abriera desde ella heredaría los mismos poderes. Ver
+  // `seguridadVentana`.
+  asegurarVentana(win);
 
   // When moving between monitors with different DPI, a 1px size nudge forces
   // Chromium to re-evaluate the scale factor — fixes blurry text on HiDPI moves.

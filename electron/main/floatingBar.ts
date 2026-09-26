@@ -1,5 +1,6 @@
 import { BrowserWindow, screen, app } from 'electron';
 import { join } from 'path';
+import { asegurarVentana } from './seguridadVentana';
 
 /**
  * Barra flotante: una columna de tiles que vive por encima de todo.
@@ -121,7 +122,8 @@ export function abrirBarra(g: GeometriaBarra): void {
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false, contextIsolation: true, nodeIntegration: false,
+      // Renderer sandboxeado: el preload no usa Node (ver `windowManager`).
+      sandbox: true, contextIsolation: true, nodeIntegration: false,
       // Sesión propia, y no la del deck, por el **zoom**.
       //
       // Chromium guarda el nivel de zoom por origen y por sesión. El deck y la
@@ -136,6 +138,8 @@ export function abrirBarra(g: GeometriaBarra): void {
       zoomFactor: 1,
     },
   });
+
+  asegurarVentana(ventana);
 
   ventana.setAlwaysOnTop(true, 'screen-saver');
   // Que siga visible aunque el usuario cambie de escritorio virtual.

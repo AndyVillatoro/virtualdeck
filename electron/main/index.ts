@@ -14,14 +14,49 @@ import { arrancarSondeo, pararSondeo } from './estadoSistema';
 import { startActiveWindowTracker, stopActiveWindowTracker } from './activeWindow';
 import { setupDisplayListeners } from './displays';
 import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
+import { asegurarWebContents } from './seguridadVentana';
 import * as remoto from './servidorLocal';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
 // which fixes black tiles, artifacts, and partial redraws on secondary and virtual monitors.
 app.disableHardwareAcceleration();
-app.commandLine.appendSwitch('disable-gpu-sandbox');
-app.commandLine.appendSwitch('no-sandbox');
+
+/*
+ * Ninguna ventana se queda con el sandbox de Chromium apagado.
+ *
+ * `app.commandLine.appendSwitch('no-sandbox')` se estuvo usando aquí (junto a
+ * `disable-gpu-sandbox`, los dos añadidos de un tirón al experimentar con la
+ * landing 3D). Apagaba el sandbox **de todos los renderers, en la build
+ * empaquetada y sin condiciones**: con eso, un fallo de seguridad en cualquier
+ * página que la aplicación llegara a cargar —un recurso remoto, un README, un
+ * error de red— se convertía en ejecución de código con los permisos de
+ * VirtualDeck, que guarda la configuración, escribe ficheros y lanza procesos.
+ * El precio de esa bandera era invisible y el riesgo, no.
+ *
+ * El arreglo de los tiles negros es el de las tres líneas de arriba, que es
+ * distinto y no toca la seguridad: `disableHardwareAcceleration()` fuerza el
+ * pintado por software y deja el sandbox en su sitio. Si algún equipo con un
+ * controlador raro no arrancara, el camino estrecho es `--disable-gpu`, nunca
+ * `no-sandbox`.
+ *
+ * El otro lado de esto es `seguridadVentana`: con el sandbox apagado, una
+ * ventana hija abierta por el renderer sería directamente código nuestro con
+ * permisos de ventana. Las tres ventanas llevan además `sandbox: true` en sus
+ * `webPreferences`, que es lo que deja el sandbox de verdad puesto (esta
+ * bandera era global; el sandbox también se puede pedir ventana a ventana, y
+ * el preload no usa nada de Node, así que se pide).
+ */
+
+// Red de seguridad para las ventanas que se creen en el futuro: las tres
+// actuales se cierran a mano al crearse (`asegurarVentana` en cada módulo), y
+// esto es para que una cuarta no nazca abierta por descuido. Las herramientas
+// de desarrollo quedan fuera — son del navegador, no nuestras.
+app.on('web-contents-created', (_evento, contents) => {
+  if (contents.getType() !== 'window') return;
+  if (contents.getURL().startsWith('devtools://')) return;
+  asegurarWebContents(contents);
+});
 
 /**
  * La identidad con la que Windows atribuye las notificaciones.
