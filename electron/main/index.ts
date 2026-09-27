@@ -15,6 +15,7 @@ import { startActiveWindowTracker, stopActiveWindowTracker } from './activeWindo
 import { setupDisplayListeners } from './displays';
 import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
 import { asegurarWebContents } from './seguridadVentana';
+import { rutaImagenDesdeUrl } from './protocoloVd';
 import * as remoto from './servidorLocal';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
@@ -23,30 +24,40 @@ import * as remoto from './servidorLocal';
 app.disableHardwareAcceleration();
 
 /*
- * Ninguna ventana se queda con el sandbox de Chromium apagado.
+ * DEUDA CONOCIDA — el sandbox de Chromium está apagado a propósito, y medido que
+ * aquí no se puede encender. No lo toques sin leer antes esto.
  *
- * `app.commandLine.appendSwitch('no-sandbox')` se estuvo usando aquí (junto a
- * `disable-gpu-sandbox`, los dos añadidos de un tirón al experimentar con la
- * landing 3D). Apagaba el sandbox **de todos los renderers, en la build
- * empaquetada y sin condiciones**: con eso, un fallo de seguridad en cualquier
- * página que la aplicación llegara a cargar —un recurso remoto, un README, un
- * error de red— se convertía en ejecución de código con los permisos de
- * VirtualDeck, que guarda la configuración, escribe ficheros y lanza procesos.
- * El precio de esa bandera era invisible y el riesgo, no.
+ * `no-sandbox` apaga el sandbox de **todos** los renderers, también en la build
+ * empaquetada. Es un hole real: un fallo en cualquier página que la aplicación
+ * cargara —un recurso remoto, un README, un error de red— se convertiría en
+ * ejecución de código con los permisos de VirtualDeck, que guarda la
+ * configuración, escribe ficheros y lanza procesos. Por eso las ventanas van
+ * cerradas a abrirse (`seguridadVentana`): sin sandbox, una ventana hija sería
+ * directamente código nuestro.
  *
- * El arreglo de los tiles negros es el de las tres líneas de arriba, que es
- * distinto y no toca la seguridad: `disableHardwareAcceleration()` fuerza el
- * pintado por software y deja el sandbox en su sitio. Si algún equipo con un
- * controlador raro no arrancara, el camino estrecho es `--disable-gpu`, nunca
- * `no-sandbox`.
+ * La razón por la que sigue aquí es otra, y es de producto: el fondo de los
+ * botones se dibuja en un `<canvas>` (el dot-matrix), y en este equipo
+ * **cualquier renderer con sandbox que dibuje un canvas revienta**. Medido el
+ * 2026-09-26 con un botón de fondo con imagen, que es el caso que lo dispara:
  *
- * El otro lado de esto es `seguridadVentana`: con el sandbox apagado, una
- * ventana hija abierta por el renderer sería directamente código nuestro con
- * permisos de ventana. Las tres ventanas llevan además `sandbox: true` en sus
- * `webPreferences`, que es lo que deja el sandbox de verdad puesto (esta
- * bandera era global; el sandbox también se puede pedir ventana a ventana, y
- * el preload no usa nada de Node, así que se pide).
+ * | sandbox del renderer | bandera global            | Resultado                    |
+ * |----------------------|---------------------------|------------------------------|
+ * | no                    | (ninguna)                 | revienta el renderer         |
+ * | no                    | `--in-process-gpu`        | funciona                     |
+ * | sí                    | `--in-process-gpu`        | revienta el renderer         |
+ * | sí                    | `--no-sandbox`            | funciona (la bandera global gana) |
+ *
+ * Las otras dos opciones estrechas que se probaron (`--disable-gpu-sandbox`,
+ * `--disable-gpu`, `--use-angle=swiftshader`) también revientan. El aviso del
+ * proceso gráfico es `GPU process exited unexpectedly: exit_code=-1073741515`
+ * (`0xC0000135`, DLL que falta) y se lleva por delante el renderer entero.
+ *
+ * Encenderlo necesita dos cosas, ninguna rápida: averiguar por qué el renderer
+ * s sandboxeado no aguanta un canvas aquí, y que el fondo dot-matrix tenga un
+ * camino de reserva cuando el canvas no esté. Está anotado como T-SEC-06.
  */
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('no-sandbox');
 
 // Red de seguridad para las ventanas que se creen en el futuro: las tres
 // actuales se cierran a mano al crearse (`asegurarVentana` en cada módulo), y
@@ -206,12 +217,22 @@ function setupWindow() {
 }
 
 app.whenReady().then(() => {
-  // Serve userData files via vd:// — keeps imageData references small in config JSON.
-  // Se registra tanto en la sesión por defecto como en la partición de la barra flotante.
+  // Sirve las imágenes de `userData\images` por `vd://` — así el `imageData`
+  // de la configuración es una dirección corta y no la imagen entera en el JSON.
+  //
+  // **Qué se sirve lo decide `rutaImagenDesdeUrl`**, no esta_URL: un perfil
+  // importado puede traer cualquier `imageData`, y antes esto acababa en
+  // `join(userData, decodeURIComponent(ruta))`, que con `%2f` se salía de
+  // `userData` y leía ficheros del disco (ver el módulo para la medida).
+  //
+  // Se registra tanto en la sesión por defecto como en la partición de la barra
+  // flotante.
+  const dirImagenes = join(app.getPath('userData'), 'images');
+  const noHayImagen = new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   const handleVd = (request: Request) => {
-    const path = request.url.slice('vd://'.length);
-    const filePath = join(app.getPath('userData'), decodeURIComponent(path));
-    return net.fetch(`file:///${filePath.replace(/\\/g, '/')}`);
+    const destino = rutaImagenDesdeUrl(request.url, dirImagenes);
+    if (!destino) return noHayImagen;
+    return net.fetch(`file:///${destino.replace(/\\/g, '/')}`).catch(() => noHayImagen);
   };
   protocol.handle('vd', handleVd);
   session.fromPartition(SESION_BARRA).protocol.handle('vd', handleVd);

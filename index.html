@@ -3,10 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: vd: https: file:; connect-src 'self' https://ipapi.co https://api.open-meteo.com" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: vd: https:; connect-src 'self' https://ipapi.co https://api.open-meteo.com"
+    />
     <title>VirtualDeck</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      `img-src` sin `file:`.
+
+      Nadie carga una imagen de `file://`: el selector de ficheros y el
+      portapapeles devuelven `vd://images/...` o un `data:` (ver
+      `ipc/dialogIpc.ts`), la carátula de Spotify es una URL `https:` y las
+      miniaturas de Windows llegan ya convertidas en `data:`. Lo único que
+      `file:` permitía era que un `imageData` de un perfil importado —contenido
+      de terceros— se trayera cualquier fichero del disco al renderer. Se
+      quitó junto al traversal del handler `vd://` (ver `protocoloVd.ts`).
+
+      `https:` se queda: hace falta para la carátula de Spotify y para las
+      imágenes remotas que pueda traer un perfil.
+    -->
+
     <!--
       Las fuentes se cargan SIN bloquear el primer pintado.
 

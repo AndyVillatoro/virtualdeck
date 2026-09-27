@@ -99,12 +99,11 @@ export function createMainWindow(): BrowserWindow {
     show: !ARRANQUE_OCULTO,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      // Renderer **sandboxeado**, como debe: el preload solo usa
-      // `contextBridge` e `ipcRenderer`, que es exactamente lo que Electron
-      // deja disponible con el sandbox puesto. Si algún día el preload
-      // necesitara Node de verdad, esto salta y hay que replantearlo, no
-      // desactivar el sandbox.
-      sandbox: true, contextIsolation: true, nodeIntegration: false,
+      // Renderer **sin** sandbox, y es a conciencia: con sandbox, un canvas
+      // revienta el proceso en este equipo (ver la nota de `index.ts`). El
+      // preload no usa Node, así que cuando se pueda encender no habrá que
+      // tocarlo, solo esta línea.
+      sandbox: false, contextIsolation: true, nodeIntegration: false,
       // Los temporizadores siguen corriendo con la ventana escondida.
       //
       // Chromium estrangula los `setInterval` de una ventana oculta a uno por

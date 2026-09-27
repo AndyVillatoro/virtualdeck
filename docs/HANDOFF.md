@@ -265,6 +265,36 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * La incertidumbre §4.3.1 de la auditoría (si `window.open()` hereda el preload) **queda sin efecto**: con `deny` da igual. La §4.3.2 (`%2f`) sí importa y es de T-SEC-02.
 * Los cambios de configuración del turno anterior (`.gitignore`, `opencode.json`, borrados de `.opencode/`) siguen **sin commitear a propósito**. Los dos `docs/` sí entran en este commit porque el tablero y el buzón de T-SEC-01 viven ahí; de paso quedan versionadas las filas T-SEC-01..05 y la redacción forward-only de rutas personales.
 
+## Turno 2026-09-26 — T-SEC-02 `vd://` traversal + CSP (DONE) · T-SEC-01 a medias
+
+* **Modelo:** space-bunny-free, misma rama `task/p0-sec-01-sandbox-navegacion`. Nada commiteado todavía en este tramo.
+* **T-SEC-02 — hecho.** `electron/main/protocoloVd.ts` (nuevo, función pura) decide qué se sirve; `index.ts` solo llama a `net.fetch` con esa ruta. Se acepta únicamente `images/<nombre de imagen>`: sin carpetas, `..`, rutas absolutas, `:` (ADS y unidades), sin controles, y con allowlist de extensiones de imagen; más una contención final `resolve`+`startsWith` que no depende del regex. `index.html`: fuera `file:` del `img-src`; **se queda `https:`** porque la carátula de Spotify es una URL remota y las miniaturas de Windows ya llegan convertidas en `data:`.
+* **La duda de §4.3.2 resuelta midiendo.** En Chromium con `standard:true` el parser colapsa los `..` sueltos pero `%2f` **llega entero**: solo se vuelve separador tras `decodeURIComponent`. Con el código viejo, `vd://images/..%2f..%2fsecreto.txt` acababa en `C:\Users\<usuario>\AppData\Roaming\secreto.txt`. Y sin traversal tampoco vale: `vd://deck-config.json` servía la configuración con el token del mando LAN.
+* **T-SEC-01 — la mitad del sandbox se deshace.** Se queda todo lo de las ventanas hijas. El sandbox del renderer **no se puede encender en esta máquina**: con sandbox, cualquier `<canvas>` revienta el proceso, y el fondo de los botones se dibuja en un canvas. A/B medido (botón con fondo de imagen, 30 s por caso):
+
+  | sandbox del renderer | bandera global | Resultado |
+  |---|---|---|
+  | sí | (ninguna) | revienta el renderer |
+  | sí | `--in-process-gpu` | revienta el renderer |
+  | sí | `--no-sandbox` | funciona (la global gana) |
+  | no | (ninguna) | funciona |
+  | no | `--in-process-gpu` | funciona |
+
+  `--disable-gpu-sandbox`, `--disable-gpu` y `--use-angle=swiftshader` también revientan. El aviso es `GPU process exited unexpectedly: exit_code=-1073741515` (`0xC0000135`, DLL que falta). `no-sandbox`, `disable-gpu-sandbox` y `sandbox: false` quedan **restaurados y documentados** en el código; abrirlos es **T-SEC-06** (en el tablero).
+
+### Verificacion
+
+* **Unidad, con la función real** (`node --experimental-strip-types` importa el `.ts`, no una copia): **31 vectores bloqueados, 7 URLs legítimas aceptadas**.
+* **Extremo a extremo en la app** (`npx electron . --user-data-dir=<tmp>` + `VD_DIAG=1` + un `deck-config.json` escrito a mano): `vd://images/img_1737000000000.png=64` (carga, 64 px), `..%2f..%2f..%2fsecreto.txt=0`, `..%2fdeck-config.json=0`, `file:///C:/Windows/win.ini=0`.
+* `npm run check`: **0 errores, 40 warnings** (los 39 de siempre + 1 de `opencode-export/`). Guardianes verdes. `npm run build`: ok.
+* **agy no disponible**: 429 `RESOURCE_EXHAUSTED` en Pro, 3.8-flash-high y Claude Sonnet; *print timeout* en los pequeños incluso con `Reply with exactly: OK`. `agy models` responde, así que el catálogo va y lo agotado es la generación. Reintentar cuando haya cuota.
+
+### Trampas de este turno
+
+* **Para arrancar una build sin tocar `%APPDATA%`:** `npx electron . --user-data-dir=<tmp>`. Con la app del Store corriendo, `npm run dev` sale por `requestSingleInstanceLock` y los `ERROR:cache_util_win.cc` del log son de esa colisión, no del código.
+* **Probar imágenes kills el renderer** (por lo de arriba), así que una prueba de humo con `imageData` no vale como señal si no se compara contra el baseline.
+* `Set-Content -Encoding utf8` en Windows PowerShell 5.1 **mete BOM** y `deck-config.json` deja de cargar en silencio. Usar `[System.IO.File]::WriteAllText($ruta, $json, (New-Object System.Text.UTF8Encoding($false)))`. Además `hintsDismissed` es un array, no un booleano: con `true` el renderer revienta con `dismissed.includes is not a function`.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

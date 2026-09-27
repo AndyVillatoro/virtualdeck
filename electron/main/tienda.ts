@@ -41,8 +41,8 @@ export function abrirTienda(): void {
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      // Renderer sandboxeado: el preload no usa Node (ver `windowManager`).
-      sandbox: true, contextIsolation: true, nodeIntegration: false,
+      // Renderer sin sandbox, igual que la principal (ver `windowManager`).
+      sandbox: false, contextIsolation: true, nodeIntegration: false,
     },
   });
   asegurarVentana(ventana);
