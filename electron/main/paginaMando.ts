@@ -13,6 +13,21 @@
  * quedado en el historial del navegador del teléfono y en cualquier captura de
  * pantalla que alguien mande para pedir ayuda.
  *
+ * **Esta página es un origen con el token dentro** (`localStorage['vd-token']`)
+ * y su contenido se construye con datos de `deck-config.json`, que pueden venir
+ * de un perfil importado. Por eso lleva dos barreras y no una:
+ *
+ * 1. **Nada se pinta con `innerHTML`.** Todo el DOM se construye con
+ *    `createElement`/`textContent`, incluido el SVG del glifo 5x7. Donde el
+ *    `fgColor` del botón llegaba concatenado a un `fill="…"`, ahora es un
+ *    `setAttribute`, que es texto y se escapa solo.
+ * 2. **CSP con `nonce` por respuesta** (`servidorLocal.ts` la genera y la pasa
+ *    aquí). El `<script>` y el `<style>` de la página son en línea, así que
+ *    necesitan `'unsafe-inline'`… y con `'unsafe-inline'` una inyección en
+ *    línea seguiría ejecutando. Con un `nonce` aleatorio en cada respuesta, no:
+ *    un `<script>` inyectado sin ese valor no corre. Por eso el parámetro es
+ *    obligatorio y hay que generarlo en cada petición, no reutilizarlo.
+ *
  * Los textos van en los dos idiomas dentro de la propia página: no puede usar
  * el i18n de `src/` (otro proceso, y encima otro dispositivo) ni el de
  * `idioma.ts`, porque el idioma que manda aquí es el del **teléfono**, no el
@@ -52,7 +67,7 @@ const TEXTOS = {
   },
 };
 
-export function paginaMando(): string {
+export function paginaMando(nonceScript: string, nonceEstilo: string): string {
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -64,7 +79,7 @@ export function paginaMando(): string {
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#070809">
 <title>VirtualDeck</title>
-<style>
+<style nonce="${nonceEstilo}">
   :root {
     --bg: #070809;
     --sup: #121417;
@@ -202,6 +217,11 @@ export function paginaMando(): string {
   }
   p { font-size: 12px; line-height: 1.6; color: var(--ten); margin: 6px 0; }
   .mal { color: #ef4444; }
+  /* El boton de olvidar arranca escondido, y lo escondia un atributo style en
+     linea que la CSP de esta pagina bloquea (con style-src y nonce, un atributo
+     style no se aplica). El script lo vuelve a ensenar con
+     style.display = inline-flex, que si manda sobre esta regla. */
+  #btn-olvidar { display: none; }
 </style>
 </head>
 <body>
@@ -209,11 +229,11 @@ export function paginaMando(): string {
   <div class="logo"><span class="punto"></span><span id="titulo"></span></div>
   <div class="cab-acciones">
     <button id="btn-fullscreen" class="cab-btn" title="Pantalla completa">⛶</button>
-    <button id="btn-olvidar" class="cab-btn" style="display:none" title="Desconectar">✕</button>
+    <button id="btn-olvidar" class="cab-btn" title="Desconectar">✕</button>
   </div>
 </header>
 <div id="app"></div>
-<script>
+<script nonce="${nonceScript}">
 const T = ${JSON.stringify(TEXTOS)};
 const t = T[(navigator.language || 'es').slice(0,2) === 'es' ? 'es' : 'en'];
 document.getElementById('titulo').textContent = t.titulo;
@@ -260,17 +280,51 @@ function nodo(tag, props, ...hijos) {
   return e;
 }
 
+/*
+ * El glifo 5x7 como SVG, construido con el DOM y no con una cadena.
+ *
+ * Antes se concatenaba en un innerHTML, y el fill llevaba dentro el fgColor
+ * del boton SIN VALIDAR. Ese campo viene de deck-config.json, o sea que de un
+ * perfil importado de la galeria, asi que un fgColor de '"><img src=x
+ * onerror=...>' era XSS almacenado servido en el origen de la red local, que es
+ * donde vive el localStorage del token: el mismo origen desde el que se habla
+ * con el deck.
+ *
+ * Con setAttribute el color deja de ser markup y pasa a ser el valor de un
+ * atributo, que es texto y se escapa solo. Por eso aqui NO hay ninguna
+ * expresion regular: la lista de "colores validos" ya no es la barrera de
+ * seguridad (la barrera es que no se interpretan marcas) y una lista asi solo
+ * serviria para rechazar un color exotico que el usuario haya escrito a mano.
+ * Lo unico que se acota es el tamano, por no meter un atributo de un megabyte
+ * en el DOM.
+ *
+ * Las filas si se validan, y eso no es seguridad sino sentido comun: se leen
+ * con un desplazamiento de bits, asi que solo importan los cinco primeros, y
+ * una fila que no sea un entero no es una fila.
+ */
 function svgGlifo57(filas, color) {
-  let puntos = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 26 36');
+  svg.setAttribute('width', '22');
+  svg.setAttribute('height', '30');
+  svg.setAttribute('style', 'display:block;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8))');
+  const relleno = typeof color === 'string' && color.length <= 40 && color ? color : 'currentColor';
   for (let y = 0; y < 7; y++) {
-    const fila = filas[y] || 0;
+    const bruta = filas[y];
+    const fila = (typeof bruta === 'number' && isFinite(bruta) ? Math.trunc(bruta) : 0) & 31;
     for (let x = 0; x < 5; x++) {
       if ((fila >> (4 - x)) & 1) {
-        puntos += '<circle cx="' + (x * 5 + 3) + '" cy="' + (y * 5 + 3) + '" r="1.8" fill="' + (color || 'currentColor') + '" />';
+        const punto = document.createElementNS(NS, 'circle');
+        punto.setAttribute('cx', String(x * 5 + 3));
+        punto.setAttribute('cy', String(y * 5 + 3));
+        punto.setAttribute('r', '1.8');
+        punto.setAttribute('fill', relleno);
+        svg.append(punto);
       }
     }
   }
-  return '<svg viewBox="0 0 26 36" width="22" height="30" style="display:block;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));">' + puntos + '</svg>';
+  return svg;
 }
 
 function simboloGlifo(nombre) {
@@ -444,7 +498,7 @@ async function pantallaDeck() {
 
     if (b.customGlyph57 && b.customGlyph57.length === 7) {
       const wrap = nodo('div');
-      wrap.innerHTML = svgGlifo57(b.customGlyph57, b.fgColor);
+      wrap.append(svgGlifo57(b.customGlyph57, b.fgColor));
       celda.append(wrap);
     } else if (b.icon) {
       celda.append(nodo('div', { className: 'icono-centro', textContent: simboloGlifo(b.icon) }));

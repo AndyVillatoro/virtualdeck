@@ -334,12 +334,37 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
 
   // El mando móvil. Se sirve sin token: es solo la carcasa, y lo primero que
   // hace es pedir el código de emparejamiento.
+  //
+  // **La CSP va con `nonce` y no con `'unsafe-inline'`.** El script y el estilo
+  // de la página están en línea, así que necesitan algo: con `'unsafe-inline'`
+  // una inyección en línea seguiría ejecutando, y esta página es un origen con
+  // el token del mando en `localStorage`. Un nonce aleatorio por respuesta solo
+  // lo tienen el `<script>` y el `<style>` que genera esta misma función.
+  //
+  // `img-src` es ancho a propósito: un botón puede tener una imagen remota
+  // (`https:`) y una pegada del portapapeles (`data:`), y `vd:` no resuelve
+  // aquí —esta página no tiene el protocolo registrado— pero dejarlo no cuesta
+  // nada y evita un breakage si algún día se sirve también desde el deck.
   if (url.pathname === '/' || url.pathname === '/index.html') {
-    const html = paginaMando();
+    const nonceScript = randomBytes(16).toString('base64');
+    const nonceEstilo = randomBytes(16).toString('base64');
+    const html = paginaMando(nonceScript, nonceEstilo);
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
       'Content-Length': Buffer.byteLength(html),
       'Cache-Control': 'no-store',
+      'Content-Security-Policy': [
+        "default-src 'none'",
+        `script-src 'nonce-${nonceScript}'`,
+        `style-src 'nonce-${nonceEstilo}'`,
+        "img-src 'self' data: blob: vd: http: https:",
+        "connect-src 'self'",
+        "base-uri 'none'",
+        "form-action 'none'",
+        "frame-ancestors 'none'",
+      ].join('; '),
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'no-referrer',
     });
     return void res.end(html);
   }

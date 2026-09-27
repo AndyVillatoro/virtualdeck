@@ -333,6 +333,26 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 
 * **Al escribir ficheros, el `write`/`edit` coló palabras inglesas en comentarios en español** (`seemingly`, `toughest`, `seRelaxa`) y un `U+FFFD` en un `—`. Y **`WriteAllLines` con cadenas de PowerShell en doble comilla se come los backticks** (son su carácter de escape): una línea de markdown se quedó sin ellos. Detector en `%TEMP%\opencode\buscar-basura.mjs` — pasarlo antes de commitear.
 
+## Turno 2026-09-26 — T-SEC-05 XSS en la página del mando (DONE)
+
+* **Modelo:** space-bunny-free, misma rama.
+* **El `innerHTML` ya no existe.** `svgGlifo57` concatenaba el `fgColor` del botón —de `deck-config.json`, o sea de un perfil importado— dentro de un `fill="…"` y lo pintaba con `innerHTML`: XSS almacenado en el origen de la red local, que es donde vive el `localStorage` con el token del mando. Ahora el SVG se construye con `createElementNS` + `setAttribute`.
+* **No hay regex de colores, a propósito.** La auditoría pedía validar `fgColor` contra un patrón, que es lo correcto *si te quedas con el `innerHTML`*. Al quitar el markup, esa lista deja de ser la barrera y solo rechazaría colores exóticos escritos a mano. Las filas del glifo sí se validan (entero, 5 bits), y eso es sentido común.
+* **CSP con `nonce` por respuesta** en la página del mando, más `nosniff` y `no-referrer`. El script y el estilo están en línea, así que `'unsafe-inline'` no habría servido de nada contra una inyección.
+* **Un efecto de la CSP que hubo que arreglar:** `#btn-olvidar` se escondía con `style="display:none"` en línea, y con `style-src` + nonce eso no se aplica. Movido al `<style>` con nonce; el script lo sigue enseñando con `style.display`, que sí manda. La página queda con **0** atributos `style`.
+
+### Verificacion
+
+* Página generada analizada: nonces puestos, ningún `innerHTML` con datos, `createElementNS`/`setAttribute` presentes, filas acotadas, estructura y `fetch` intactos.
+* **Extremo a extremo con el servidor de verdad**: `remote.enabled` en un `userData` de prueba + `Invoke-WebRequest` → CSP con los dos nonces correctos, `nosniff`, `no-referrer`, 0 estilos en línea. App arranca (313 ms).
+* `npm run check`: **0 errores, 39 warnings**. Guardianes verdes. `npm run build` ok.
+* **Sin verificar:** el *render* con la CSP puesta (hace falta un navegador). Lo comprobado es que no queda nada que la CSP pueda bloquear.
+
+### Trampas
+
+* **`paginaMando()` es un template literal: cualquier backtick en el JS de la página rompe el compilado.** Me pasó con un `style=` y con un `onerror=…` de un comentario. `${` solo si es interpolación de verdad.
+* **Sigue abierto (MED de la auditoría):** `/media/images/` sirve `.svg` como `image/svg+xml` desde el origen del token; navegado directamente, ejecutaría su script. Se cierra con `Content-Security-Policy: default-src 'none'; sandbox` + `nosniff` en esas respuestas.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
