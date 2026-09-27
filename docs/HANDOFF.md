@@ -292,8 +292,27 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 ### Trampas de este turno
 
 * **Para arrancar una build sin tocar `%APPDATA%`:** `npx electron . --user-data-dir=<tmp>`. Con la app del Store corriendo, `npm run dev` sale por `requestSingleInstanceLock` y los `ERROR:cache_util_win.cc` del log son de esa colisión, no del código.
-* **Probar imágenes kills el renderer** (por lo de arriba), así que una prueba de humo con `imageData` no vale como señal si no se compara contra el baseline.
+* **Probar imagenes mata el renderer** (por lo de arriba), asi que una prueba de humo con `imageData` no vale como senal si no se compara contra el baseline.
 * `Set-Content -Encoding utf8` en Windows PowerShell 5.1 **mete BOM** y `deck-config.json` deja de cargar en silencio. Usar `[System.IO.File]::WriteAllText($ruta, $json, (New-Object System.Text.UTF8Encoding($false)))`. Además `hintsDismissed` es un array, no un booleano: con `true` el renderer revienta con `dismissed.includes is not a function`.
+
+## Turno 2026-09-26 - T-SEC-03 numericos de macro + resumen de riesgos (DONE)
+
+* **Modelo:** space-bunny-free, misma rama. Nada commiteado de este tramo todavía.
+* **Inyección cerrada.** `delayMs`, `x`, `y` y `scrollY` se interpolaban crudos en el PowerShell de reproducción. `{"type":"key","value":"a","delayMs":"1; Start-Process calc.exe"}` pasaba el guardián `(delayMs ?? 0) > 0` por coacción de JS. Ahora todo pasa por `entero()`: solo `number` (las cadenas no se coaccionan), redondeo y topes (±32768, 600 000 ms, ±2000 muescas, 1000 repeticiones).
+* **Bloque movido a `electron/main/macroScript.ts`** (`macro.ts` 430 → 224 líneas, y un warning menos). Motivo: el generador es lo único que **interpreta**, y en su propio módulo `buildPlaybackScript` se puede probar **sin ejecutar la macro** —devuelve una cadena, así que un test le mete payloads y mira el texto; dentro de `macro.ts` la única forma de probarlo era mover el ratón y escribir en el escritorio de quien lo prueba—.
+* **Camino nativo confirmado leyendo Rust** (la auditoría no lo había leído, §4.3.3): `Option<i64>` y enums, así que serde **falla** ante un string. Cierra en falso.
+* **Hallazgo de la prueba:** un campo numérico de sobra **rompe** la macro. `x: "1; calc"` en un paso `key` no lo lee nadie pero llega al JSON de Rust, donde serde rechaza el paso entero. `pasoSeguro` borra los numéricos que el tipo no usa.
+* **Riesgos de galería:** un numérico no numérico se canta como `gal.risk.macroNumerico` (ES/EN). **No** se añade una línea por `case 'delay'`: `Start-Sleep` se emite para cualquier paso con `delayMs` y el grabador lo pone en todos, así que sería ruido. Lo que se mira es el tipo del campo, antes del switch.
+
+### Verificacion
+
+* Generador real con 11 pasos maliciosos (payload en cada campo, `toString` malicioso, array, `NaN`, `Infinity`, `1e21`): el script no contiene `Start-Process`, `Remove-Item`, `whoami` ni `calc`; toda llamada `SetCursorPos` lleva dos enteros; topes correctos (600000 / 32768 / 240000).
+* 8 asserts de que **lo grabado no cambia**: `SetCursorPos(800, 450)`, `mouse_event(0x0800,0,0,-360,0)`, `SendWait("^c")`, `SendWait("hola mundo")`, `repeat=2` repite, `scrollY: 0` no emite rueda.
+* `npm run check`: **0 errores, 39 warnings** (antes 40; el split de complejidad se lleva uno). Guardianes verdes. `npm run build` ok. App arranca (307 ms, DOM 2360 nodos).
+
+### Decisión pendiente para el dueño
+
+* Un perfil con un numérico no numérico **¿se rechaza al instalar o solo se avisa?** Ahora avisa (en la ficha) y el motor acota. Bloquearlo es una línea en la validación del renderer (`tiendaAplicar.ts`).
 
 ## Apéndice A - Referencias Rápidas
 

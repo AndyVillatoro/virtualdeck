@@ -170,9 +170,27 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   /** Coordenada de un paso de macro que puede faltar. */
   const coord = (v: unknown): string => String(v ?? '?');
 
+  /**
+   * Los campos que el reproductor de macros intercala en un script.
+   *
+   * Van aquí todos, no solo los del tipo de paso que se esté mirando: el
+   * `Start-Sleep` se emite para cualquier paso con `delayMs`, y las coordenadas
+   * se leen en `click` y `move`.
+   */
+  const CAMPO_NUMERICO = ['delayMs', 'x', 'y', 'scrollY'];
+
   /** Un paso suelto de macro. */
   const mirarPasoMacro = (paso: any, c: Colector): void => {
     if (!paso || typeof paso !== 'object') return;
+    // Un campo numérico que no es número no es una macro grabada: es un
+    // intento de colar código en el script de PowerShell que genera el
+    // reproductor (`delayMs: "1; Start-Process …"`). El motor ya lo acota, pero
+    // el resumen de riesgos es lo único que ve la persona antes de instalar, y
+    // un perfil que lleva eso dentro no es un perfil: es un ataque. Se dice.
+    if (CAMPO_NUMERICO.some((k) => paso[k] !== undefined && typeof paso[k] !== 'number')) {
+      c.integraciones.push(tm('gal.risk.macroNumerico'));
+      return;
+    }
     const v = paso.value;
     switch (paso.type) {
       case 'hotkey':
@@ -190,6 +208,11 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
         break;
       case 'scroll':
         c.teclas.push(tm('gal.risk.scroll', { n: coord(paso.scrollY) }));
+        break;
+      case 'delay':
+        // Una pausa no hace nada por sí sola. Lo que sí puede llevar un payload
+        // es el `delayMs` de **cualquier** paso —el `Start-Sleep` se emite para
+        // todos ellos—, y eso es lo que se comprueba arriba, antes del switch.
         break;
     }
   };
