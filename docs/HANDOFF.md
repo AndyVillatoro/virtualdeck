@@ -353,6 +353,22 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **`paginaMando()` es un template literal: cualquier backtick en el JS de la página rompe el compilado.** Me pasó con un `style=` y con un `onerror=…` de un comentario. `${` solo si es interpolación de verdad.
 * **Sigue abierto (MED de la auditoría):** `/media/images/` sirve `.svg` como `image/svg+xml` desde el origen del token; navegado directamente, ejecutaría su script. Se cierra con `Content-Security-Policy: default-src 'none'; sandbox` + `nosniff` en esas respuestas.
 
+## Turno 2026-09-26 — Corrección: la medición del sandbox **no** era válida
+
+* **Modelo:** space-bunny-free, misma rama. Sin cambios de código de la app: esto es documentación y una corrección.
+* **Lo que dije antes era falso.** Escribí que con el sandbox del renderer puesto «cualquier `<canvas>` revienta el proceso» en este equipo, y presenté una tabla A/B de banderas. Al volver a medirlo:
+  * El aviso `GPU process exited unexpectedly: exit_code=-1073741515` sale **también en un Electron pelado** (una app mínima de una sola pantalla, sin nada de este repo). O sea que **es del entorno**.
+  * **La misma build y el mismo `deck-config.json` pasaron a las 18:50 y reventaron a las 21:50** del mismo día, sin que cambiara una línea del repositorio. Con la máquina así, una tabla de «sandbox sí / sandbox no» mide el estado de la máquina, no el sandbox.
+  * La causa que le atribuía era además **inventada**: el fondo dot-matrix **no usa canvas**. `DotMatrixImageOverlay` es una máscara de `radial-gradient` de CSS sobre un `<img>` con `imageRendering: 'pixelated'`. No hay ningún `<canvas>` en el camino.
+* **Qué queda en pie, y es poco:** el proceso gráfico de Chromium no arranca en este equipo (`0xC0000135`) y, cuando algo lo necesita, el renderer se va con él (`GPU process isn't usable. Goodbye.`). Eso es reproducible.
+* **Qué he hecho:** `no-sandbox` y `disable-gpu-sandbox` **vuelven a estar puestos** (es lo que se sabe que funciona), `sandbox: false` en las tres ventanas, y la nota del código reescrita para decir explícitamente **qué no está medido**. T-SEC-06 queda `PENDING (bloqueado)`: hace falta un entorno donde el proceso gráfico arranque, o una interfaz que no dependa de él.
+* **Lo que no se toca:** la mitad de T-SEC-01 que sí es un win sin coste —`setWindowOpenHandler`, `will-navigate`, `will-redirect`, `will-attach-webview`— y las cuatro tareas siguientes.
+
+### Lección para el resto de la sesión
+
+* En esta máquina **no se puede medir nada que dependa del proceso gráfico**, y el síntoma (renderer muerto) es el mismo que el de un error de código. Cualquier A/B de aquí sobre GPU/canvas/sandbox es sospechoso salvo que se repita al día siguiente.
+* Antes de escribir «medido que X» en un comentario o en un doc: **¿se puede repetir mañana con el mismo resultado?** Si la respuesta es que no, lo que va escrito es «no se ha podido medir», que es igual de útil y no miente.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

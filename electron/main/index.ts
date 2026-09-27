@@ -24,8 +24,8 @@ import * as remoto from './servidorLocal';
 app.disableHardwareAcceleration();
 
 /*
- * DEUDA CONOCIDA — el sandbox de Chromium está apagado a propósito, y medido que
- * aquí no se puede encender. No lo toques sin leer antes esto.
+ * DEUDA CONOCIDA — el sandbox de Chromium está apagado a propósito. No lo toques
+ * sin leer antes esto.
  *
  * `no-sandbox` apaga el sandbox de **todos** los renderers, también en la build
  * empaquetada. Es un hole real: un fallo en cualquier página que la aplicación
@@ -35,26 +35,29 @@ app.disableHardwareAcceleration();
  * cerradas a abrirse (`seguridadVentana`): sin sandbox, una ventana hija sería
  * directamente código nuestro.
  *
- * La razón por la que sigue aquí es otra, y es de producto: el fondo de los
- * botones se dibuja en un `<canvas>` (el dot-matrix), y en este equipo
- * **cualquier renderer con sandbox que dibuje un canvas revienta**. Medido el
- * 2026-09-26 con un botón de fondo con imagen, que es el caso que lo dispara:
+ * **Por qué sigue aquí: porque no se ha podido medir que se pueda quitar.** En
+ * este equipo el proceso gráfico de Chromium no arranca:
+ * `GPU process exited unexpectedly: exit_code=-1073741515` (`0xC0000135`, DLL que
+ * no encuentra), y cuando algo lo necesita, el renderer se va con él
+ * (`GPU process isn't usable. Goodbye.`).
  *
- * | sandbox del renderer | bandera global            | Resultado                    |
- * |----------------------|---------------------------|------------------------------|
- * | no                    | (ninguna)                 | revienta el renderer         |
- * | no                    | `--in-process-gpu`        | funciona                     |
- * | sí                    | `--in-process-gpu`        | revienta el renderer         |
- * | sí                    | `--no-sandbox`            | funciona (la bandera global gana) |
+ * Ojo con lo que **no** está medido, porque se dio por bueno y no lo está:
  *
- * Las otras dos opciones estrechas que se probaron (`--disable-gpu-sandbox`,
- * `--disable-gpu`, `--use-angle=swiftshader`) también revientan. El aviso del
- * proceso gráfico es `GPU process exited unexpectedly: exit_code=-1073741515`
- * (`0xC0000135`, DLL que falta) y se lleva por delante el renderer entero.
+ * - El aviso sale **también en un Electron pelado**, sin nada de este proyecto
+ *   (probado el 2026-09-26 con una app mínima de una sola pantalla). O sea que es
+ *   del entorno, no de este código.
+ * - La misma build y la misma configuración **pasaron a las 18:50 y reventaron a
+ *   las 21:50** del mismo día, sin que cambiara nada en el repositorio. Con la
+ *   máquina en ese estado, cualquier tabla de "sandbox sí / sandbox no" que se
+ *   mida aquí mide el estado de la máquina, no el sandbox.
+ * - Durante un rato se creyó que el culpable era el `<canvas>` del fondo
+ *   dot-matrix. **No lo es**: `DotMatrixImageOverlay` no usa canvas, es una
+ *   máscara de `radial-gradient` de CSS sobre un `<img>`. La regla de oro es
+ *   que aquí no se afirma ninguna causalidad que no se pueda repetir mañana.
  *
- * Encenderlo necesita dos cosas, ninguna rápida: averiguar por qué el renderer
- * s sandboxeado no aguanta un canvas aquí, y que el fondo dot-matrix tenga un
- * camino de reserva cuando el canvas no esté. Está anotado como T-SEC-06.
+ * Encenderlo (T-SEC-06) necesita un entorno donde el proceso gráfico arranque, o
+ * una forma de que la interfaz no dependa de él. Con lo que hay, apagarlo es lo
+ * que se sabe que funciona; quitarlo sería apostar sin red.
  */
 app.commandLine.appendSwitch('disable-gpu-sandbox');
 app.commandLine.appendSwitch('no-sandbox');

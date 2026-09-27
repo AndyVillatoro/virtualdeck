@@ -99,10 +99,10 @@ export function createMainWindow(): BrowserWindow {
     show: !ARRANQUE_OCULTO,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      // Renderer **sin** sandbox, y es a conciencia: con sandbox, un canvas
-      // revienta el proceso en este equipo (ver la nota de `index.ts`). El
-      // preload no usa Node, así que cuando se pueda encender no habrá que
-      // tocarlo, solo esta línea.
+      // Renderer **sin** sandbox. Es deuda, no diseño: está apagado porque
+      // quitarlo no se ha podido medir (ver la nota de `index.ts`, que explica
+      // por qué aquí no se puede afirmar la causa). El preload no usa Node, así
+      // que cuando se pueda encender no habrá que tocarlo, solo esta línea.
       sandbox: false, contextIsolation: true, nodeIntegration: false,
       // Los temporizadores siguen corriendo con la ventana escondida.
       //

@@ -11,8 +11,8 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | ID | Prioridad | Tarea / Módulo | Modelo / Agente Asignado | Archivos Bloqueados | Estado | Actualizado |
 |---|-----------|----------------|--------------------------|---------------------|--------|-------------|
 | **T-SEC-01** | **P0** | Electron: quitar `no-sandbox` global + `setWindowOpenHandler`/`will-navigate` | space-bunny-free | `electron/main/index.ts`, `windowManager.ts`, `tienda.ts`, `floatingBar.ts`, `seguridadVentana.ts` (nuevo) | `DONE` ✅ (mitad) | 2026-09-26 |
+| **T-SEC-06** | **P0** | **Encender el sandbox del renderer**: apagado por deuda, y **no se ha podido medir** que se pueda quitar (el proceso gráfico de Chromium no arranca en este equipo, y eso es del entorno) | (sin asignar) | `electron/main/index.ts`, `windowManager.ts` | `PENDING` (bloqueado) | 2026-09-26 |
 | **T-SEC-02** | **P0** | Electron: traversal en el handler `vd://` + `img-src` sin `file:`/`https:` | space-bunny-free | `electron/main/protocoloVd.ts` (nuevo), `index.ts`, `index.html` | `DONE` ✅ | 2026-09-26 |
-| **T-SEC-06** | **P0** | **Encender el sandbox del renderer**: aquí revienta con cualquier `<canvas>` (fondo dot-matrix). Averiguar por qué y dar un camino de reserva al overlay | (sin asignar) | `electron/main/index.ts`, `windowManager.ts`, `DotMatrixImageOverlay.tsx` | `PENDING` | 2026-09-26 |
 | **T-SEC-03** | **P1** | Inyección en numéricos de `macro.ts` + `case 'delay'` ausente en el resumen de riesgos de galería | space-bunny-free | `electron/main/macroScript.ts` (nuevo), `macro.ts`, `galeria.ts`, `idioma.ts` | `DONE` ✅ | 2026-09-26 |
 | **T-SEC-04** | **P1** | Allowlist de esquema en los dos `shell.openExternal` (`launch:url`, `spotify:playUri`) | space-bunny-free | `electron/main/abrirExterno.ts` (nuevo), `spotifyUri.ts` (nuevo), `spotify.ts`, `ipc/launcherIpc.ts`, `galeria.ts`, `FichaRiesgoGaleria.tsx` | `DONE` ✅ | 2026-09-26 |
 | **T-SEC-05** | **P1** | XSS almacenado en origen LAN: validar `fgColor`/`customGlyph57` antes del `innerHTML` | space-bunny-free | `electron/main/paginaMando.ts`, `servidorLocal.ts` | `DONE` ✅ | 2026-09-26 |
@@ -50,6 +50,26 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 > - `IN_PROGRESS`: Código siendo modificado y probado.
 > - `VERIFYING`: Ejecutando `npm run check` y `npm run build`.
 > - `DONE`: Completado, verificado con 0 errores y comiteado en git.
+
+---
+
+## 1b. Pruebas que quedan pendientes (las hace el dueño)
+
+Todo lo de aquí está **verificado por inspección o por prueba automatizada**, pero no en la app real. Ninguna ha bloqueado un commit: cada fix llega con lo que sí se pudo comprobar y con esta lista como deuda explícita.
+
+| # | Qué probar | Cómo | Qué mira | Por qué no lo hice aquí |
+|---|---|---|---|---|
+| **P1** | **La build nueva arranca y el deck se ve bien** | `npm run build:installer` → instalar → abrir | Ventana, bandeja, barra flotante, tienda, un par de macros, el tema claro y el oscuro | Instalar en el equipo del dueño |
+| **P2** | **Las imágenes de fondo siguen pintándose** (T-SEC-01 y T-SEC-02) | Un botón con foto de fondo, y otro con un GIF | Que se vea la imagen, no un cuadrado vacío | En esta máquina **cualquier `<canvas>` revienta el renderer** con el sandbox puesto: es justo el bug de T-SEC-06, así que aquí una prueba con `imageData` no vale como señal (hay que compararla contra el baseline) |
+| **P3** | **El mando móvil con la CSP** (T-SEC-05) | `remote.enabled` → abrir en el móvil → emparejar | Que cargue, que se vea el botón de olvidar solo cuando toca, que los colores del glifo 5×7 sean los del botón, que las imágenes de fondo aparezcan | Necesita un navegador y un teléfono; aquí comprobé las cabeceras y el HTML, no el render |
+| **P4** | **El botón `web` sale en la ficha de riesgo** (T-SEC-04) | Importar un perfil de la galería con algún botón `web` | Que aparezca la lista «Abre estas direcciones en el navegador» | No hay ningún perfil con botón `web` en el repo |
+| **P5** | **`sandbox: true` no rompe nada** (T-SEC-01/06) | Con el sandbox encendido: macro, RGB, sensores, mando LAN, un par de acciones | Que todo siga igual | Aquí el sandbox **no se puede probar** porque el canvas lo revienta (T-SEC-06) |
+| **P6** | **Los enlaces externos siguen abriéndose** (T-SEC-04) | Ayuda → soporte, Ko-fi, PayPal; el enlace de LHM; «abrir sensors» (`http://127.0.0.1`); el recorte de pantalla | Que abran | Habría que abrir un navegador en cada prueba |
+| **P7** | **La macro importada con números raros** (T-SEC-03) | Un perfil con `delayMs` enorme o negativo | Que no se cuelgue y que la espera sea la acotada | Lanzar una macro mueve el ratón y escribe en el escritorio |
+
+> **Cómo arrancar una build sin tocar `%APPDATA%`** (la app del Store en marcha
+> bloquea la de desarrollo por el `lockfile` de instancia única):
+> `npx electron . --user-data-dir=<tmp>`, con `VD_DIAG=1` para ver qué se ha pintado.
 
 ---
 
@@ -94,15 +114,7 @@ Utiliza este apartado para dejar mensajes, advertencias técnicas o instruccione
 - **T-SEC-02 (hecho):** `electron/main/protocoloVd.ts` (nuevo) decide qué se sirve; el handler de `index.ts` solo llama a `net.fetch` con esa ruta. Se acepta **únicamente** `images/<nombre de imagen>`: nada de carpetas, `..`, rutas absolutas, `:` (ADS/unidades), caracteres de control, ni extensiones que no sean de imagen; y una contención final por `resolve`+`startsWith` que no depende del regex. `index.html`: fuera `file:` del `img-src` (se queda `https:` porque la carátula de Spotify es una URL remota, y las miniaturas de Windows ya llegan como `data:`).
 - **La incertidumbre §4.3.2 de la auditoría está resuelta por medición, no por opinión:** en Chromium, con `standard:true`, el parser **colapsa** los `..` sueltos pero **`%2f` llega entero** al handler y solo se vuelve separador al decodificar. Con el código viejo, `vd://images/..%2f..%2fsecreto.txt` acababa en `C:\Users\<usuario>\AppData\Roaming\secreto.txt`. Sin traversal tampoco basta con no salir de `userData`: `vd://deck-config.json` servía la configuración (con el token del mando LAN) tal cual.
 - **Pruebas:** (1) función real probada con `node --experimental-strip-types` (importa el `.ts` de verdad, sin copiarlo): **31 vectores bloqueados, 7 URLs legítimas aceptadas** — `%2f`, `%2e%2e%2f`, `%252f`, `....//`, `\`, `%00`, `::$DATA`, `C:`, `?`/`#`, `.oculto`, `x.html`, subcarpetas, `x.png `, `x.SVGZ`… (2) **extremo a extremo en la app real**, con `VD_DIAG=1` y una configuración escrita a mano con esos cuatro `imageData`: `vd://images/img_….png=64` (carga), `..%2f..%2f..%2fsecreto.txt=0`, `..%2fdeck-config.json=0`, `file:///C:/Windows/win.ini=0`. (3) `npm run check` 0 errores, 6 guardianes verdes, build ok.
-- **⚠️ T-SEC-01 queda a medias, y es importante:** la mitad de la ventana hija (`setWindowOpenHandler`/`will-navigate`/`will-redirect`) se queda y es gratis. La mitad del **sandbox se ha tenido que deshacer**: con el sandbox del renderer puesto, **cualquier `<canvas>` revienta el proceso** en esta máquina, y el fondo de los botones se dibuja en un canvas (el dot-matrix). Medido A/B con un botón de fondo con imagen:
-  - renderer con sandbox, sin banderas → **revierte el renderer**
-  - renderer con sandbox + `--in-process-gpu` → **revierte el renderer**
-  - renderer con sandbox + `--no-sandbox` → funciona (la bandera global gana)
-  - renderer sin sandbox (como estaba) → funciona
-  - `--disable-gpu-sandbox`, `--disable-gpu`, `--use-angle=swiftshader` → **reviertan**
-  - El aviso es `GPU process exited unexpectedly: exit_code=-1073741515` (`0xC0000135`, DLL que falta) y se lleva el renderer entero.
-  - **`no-sandbox` y `disable-gpu-sandbox` se han restaurado** con una nota larga en `index.ts` que explica la medición, para que nadie los quite sin leerla. `sandbox: false` en las tres ventanas, también documentado.
-  - Esto es **T-SEC-06**: encender el sandbox necesita averiguar por qué el renderer sandboxeado no aguanta un canvas aquí y darle un camino de reserva al overlay.
+- **⚠️ T-SEC-01 queda a medias, y la parte del sandbox es DEUDA NO MEDIDA:** la mitad de la ventana hija (`setWindowOpenHandler`/`will-navigate`/`will-redirect`) se queda y es gratis. El sandbox del renderer **no se ha podido medir**: `no-sandbox` y `disable-gpu-sandbox` están restaurados, y `sandbox: false` en las tres ventanas, con una nota larga en el código que explica por qué. **Corrijo lo que dije antes en este mismo mensaje:** affirmé que con el sandbox puesto «cualquier canvas revienta el proceso». **Es falso, o no está probado**: (1) el aviso `GPU process exited unexpectedly: exit_code=-1073741515` sale **también en un Electron pelado**, sin nada de este repo, así que es del entorno; (2) **la misma build y el mismo config pasaron a las 18:50 y reventaron a las 21:50** sin que cambiara el repositorio, así que aquí no se puede medir una tabla de sandbox sí/no; (3) el fondo dot-matrix **no usa canvas** —`DotMatrixImageOverlay` es una máscara de `radial-gradient` de CSS sobre un `<img>`—, así que la causa que se le atribuía era inventada. Lo que sí es cierto y reproducible: el proceso gráfico de Chromium no arranca en este equipo, y cuando algo lo necesita el renderer se va con él. Encender el sandbox es **T-SEC-06** y está **bloqueado** hasta que se pueda medir en un entorno donde el proceso gráfico arranque.
 - **agy no se pudo usar:** `gemini-3.1-pro-high`, `gemini-3.8-flash-high` y `claude-sonnet-4-6` devuelven `RESOURCE_EXHAUSTED (429)`; los pequeños (`gemini-3.6-flash-low`, `gpt-oss-120b-medium`) dan *print timeout* incluso con `Reply with exactly: OK`. `agy models` sí responde, o sea que el catálogo va y lo que se ha agotado es la generación. **No es un fallo de configuración**: reintentar cuando haya cuota.
 
 ### [2026-09-26] De: space-bunny-free → Para: Siguiente Modelo (T-SEC-01 DONE)
