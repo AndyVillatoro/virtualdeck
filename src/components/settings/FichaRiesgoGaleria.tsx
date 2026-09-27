@@ -8,7 +8,8 @@ import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 /** Nada que enseñar: ninguna lista trae nada. */
 function nadaRiesgoso(r: ResumenRiesgo): boolean {
   return r.scripts.length === 0 && r.programas.length === 0 &&
-    (r.webhooks?.length ?? 0) === 0 && (r.teclas?.length ?? 0) === 0 &&
+    (r.webhooks?.length ?? 0) === 0 && (r.urls?.length ?? 0) === 0 &&
+    (r.teclas?.length ?? 0) === 0 &&
     r.automaticos.length === 0 && r.integraciones.length === 0;
 }
 
@@ -38,6 +39,14 @@ function BloquesRiesgo({ riesgo }: { riesgo: ResumenRiesgo }) {
         <div style={menudo}>
           {t('gal.sends')}
           {riesgo.webhooks!.map((w, i) => <div key={i} style={{ color: VD.textDim }}>· {w}</div>)}
+        </div>
+      )}
+      {(riesgo.urls?.length ?? 0) > 0 && (
+        <div style={menudo}>
+          {t('gal.opens')}
+          {riesgo.urls!.map((u, i) => (
+            <div key={i} style={{ color: VD.textDim, wordBreak: 'break-all' }}>· {u}</div>
+          ))}
         </div>
       )}
       {(riesgo.teclas?.length ?? 0) > 0 && (

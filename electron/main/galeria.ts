@@ -55,6 +55,8 @@ export interface ResumenRiesgo {
   webhooks: string[];
   /** Lo que el perfil teclea o pulsa: atajos, texto y macros. Teclear es ejecutar. */
   teclas: string[];
+  /** Direcciones que el perfil abre en el navegador al pulsar. */
+  urls: string[];
   /** Disparadores que se ejecutan solos, sin pulsar: temporizadores y sensores. */
   automaticos: string[];
   /** Efectos al pulsar no cubiertos arriba: voz, cierre de apps, portapapeles, integraciones. */
@@ -129,19 +131,21 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   const programas: string[] = [];
   const atajosGlobales: string[] = [];
   const webhooks: string[] = [];
+  const urls: string[] = [];
   const teclas: string[] = [];
   const automaticos: string[] = [];
   const integraciones: string[] = [];
 
-  /** Las cinco listas que se llenan al mirar acciones. */
+  /** Las listas que se llenan al mirar acciones. */
   interface Colector {
     scripts: string[];
     programas: string[];
     webhooks: string[];
+    urls: string[];
     teclas: string[];
     integraciones: string[];
   }
-  const c: Colector = { scripts, programas, webhooks, teclas, integraciones };
+  const c: Colector = { scripts, programas, webhooks, urls, teclas, integraciones };
 
   /**
    * Una accion puede llevar otras dentro, y hay que entrar en todas.
@@ -165,6 +169,10 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     // Teclear tambien es ejecutar: `Win+R` y un comando abre lo que sea.
     if (x.type === 'hotkey' && x.hotkey) c.teclas.push(String(x.hotkey));
     if (x.type === 'type-text' && x.typeText) c.teclas.push(`"${String(x.typeText)}"`);
+    // Abrir una dirección también es salir: con `file:` el sistema ejecuta lo
+    // que tenga asociado. No cabía en `webhooks` porque esa lista es «a dónde
+    // manda datos», y aquí no se manda nada: se abre.
+    if (x.type === 'web' && x.url) c.urls.push(String(x.url));
   };
 
   /** Coordenada de un paso de macro que puede faltar. */
@@ -279,7 +287,7 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   };
 
   for (const b of botones) mirarBoton(b);
-  return { botones: botones.length, scripts, programas, atajosGlobales, webhooks, teclas, automaticos, integraciones };
+  return { botones: botones.length, scripts, programas, atajosGlobales, webhooks, urls, teclas, automaticos, integraciones };
 }
 
 export async function perfil(url: string): Promise<{ ok: true; perfil: unknown; riesgo: ResumenRiesgo } | { ok: false; error: string }> {

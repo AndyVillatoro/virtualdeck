@@ -246,6 +246,8 @@ export interface ResumenRiesgo {
   programas: string[];
   atajosGlobales: string[];
   webhooks?: string[];
+  /** Direcciones que el perfil abre en el navegador al pulsar un botón. */
+  urls?: string[];
   teclas?: string[];
   /** Disparadores que se ejecutan solos, sin pulsar: temporizadores y sensores. */
   automaticos: string[];

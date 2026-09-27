@@ -92,6 +92,7 @@ export const EN_AJUSTES: Dict = {
   'gal.launches': 'It opens these programs or files:',
   'gal.runs': 'It runs these scripts:',
   'gal.sends': 'Sends data to these addresses when pressed:',
+  'gal.opens': 'Opens these addresses in your browser when pressed:',
   'gal.types': 'Types or presses this on your machine (typing is running, too):',
   'gal.hotkeys': 'It registers these global hotkeys: {list}',
   'gal.nothingRisky': 'It launches no programs and runs no scripts.',

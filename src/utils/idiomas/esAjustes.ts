@@ -92,6 +92,7 @@ export const ES_AJUSTES: Dict = {
   'gal.launches': 'Abre estos programas o archivos:',
   'gal.runs': 'Ejecuta estos scripts:',
   'gal.sends': 'Manda datos a estas direcciones al pulsar:',
+  'gal.opens': 'Abre estas direcciones en el navegador al pulsar:',
   'gal.types': 'Teclea o pulsa esto en su equipo (teclear tambien es ejecutar):',
   'gal.hotkeys': 'Registra estos atajos globales: {list}',
   'gal.nothingRisky': 'No lanza programas ni ejecuta scripts.',

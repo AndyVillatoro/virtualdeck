@@ -1,6 +1,7 @@
 import { intentarNativo } from '../native';
 import { estadoActual } from '../estadoSistema';
 import { ipcMain, shell, BrowserWindow } from 'electron';
+import { urlAbrible } from '../abrirExterno';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
   sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume,
@@ -9,7 +10,18 @@ import {
 
 export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:app', (_e: any, path: string, args: string[]) => launchApp(path, args));
-  ipcMain.handle('launch:url', (_e: any, url: string) => shell.openExternal(url));
+  ipcMain.handle('launch:url', (_e: any, url: string) => {
+    // `openExternal` entrega la dirección al programa que el sistema tenga
+    // asociado a ese esquema, así que sin esta lista un `file:` o un `ms-msdt:`
+    // en el campo de un botón es ejecución de código. Llega de perfiles
+    // importados, que son contenido de terceros.
+    const segura = urlAbrible(url);
+    if (!segura) {
+      console.error('[lanzar] direccion rechazada:', String(url).slice(0, 200));
+      return false;
+    }
+    return shell.openExternal(segura).then(() => true).catch(() => false);
+  });
   ipcMain.handle('launch:script', (_e: any, script: string, sh: string) => runScript(script, sh));
   ipcMain.handle('launch:script:capture', (_e: any, script: string, sh: string) => runScriptCapture(script, sh));
   ipcMain.handle('launch:shortcut', (_e: any, path: string) => openShortcut(path));

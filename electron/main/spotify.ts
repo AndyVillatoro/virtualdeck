@@ -1,5 +1,6 @@
 import { shell } from 'electron';
 import { tm } from './idioma';
+import { normalizeSpotifyUri } from './spotifyUri';
 
 export interface SpotifyDevice {
   id: string;
@@ -23,39 +24,6 @@ export interface SpotifyPlaybackState {
 }
 
 /**
- * Normaliza cualquier enlace o URI de Spotify a formato URI estándar (spotify:tipo:id).
- * Soporta tracks, playlists, álbumes, artistas, episodios, podcasts y búsquedas.
- */
-export function normalizeSpotifyUri(input: string): string {
-  const trimmed = input.trim();
-  if (!trimmed) return '';
-
-  if (trimmed.startsWith('spotify:')) return trimmed;
-
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.hostname.includes('spotify.com')) {
-      const parts = parsed.pathname.split('/').filter(Boolean);
-      // Omitir prefijos de internacionalización como /intl-es/, /intl-en/, etc.
-      const meaningfulParts = parts.filter((p) => !p.startsWith('intl-'));
-
-      if (meaningfulParts.length >= 2) {
-        const tipo = meaningfulParts[0];
-        const id = meaningfulParts[1].split('?')[0]; // Limpiar cualquier querystring
-        return `spotify:${tipo}:${id}`;
-      } else if (meaningfulParts.length === 1 && meaningfulParts[0] === 'search') {
-        const query = parsed.searchParams.get('q') || '';
-        if (query) return `spotify:search:${encodeURIComponent(query)}`;
-      }
-    }
-  } catch {
-    // Si no es URL estándar de navegador, se mantiene tal cual
-  }
-
-  return trimmed;
-}
-
-/**
  * Reproduce un URI o enlace de Spotify.
  * Si se proporciona un token de la Web API, inicia la reproducción directamente en segundo plano
  * en el dispositivo activo o indicado. Si no hay token o la API falla, recurre de forma transparente
@@ -68,6 +36,9 @@ export async function playUri(
 ): Promise<{ ok: boolean; error?: string }> {
   const uri = normalizeSpotifyUri(uriOrUrl);
   if (!uri) {
+    // Vacío, o lleno pero no es de Spotify. El mensaje dice «no válido» y sirve
+    // para los dos casos: pegar un enlace de YouTube no es un URI de Spotify, y
+    // decirlo es más útil que un error genérico.
     return { ok: false, error: tm('spotify.noUri') };
   }
 

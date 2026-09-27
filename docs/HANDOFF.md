@@ -173,7 +173,7 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 
 ## Proximo paso historico (T-P3B, hecho)
 
-## Turno 2026-09-15 � T-WEB-01 Landing DOT 480 OLED + registro de features (DONE)
+## Turno 2026-09-15 — T-WEB-01 Landing DOT 480 OLED + registro de features (DONE)
 
 * **Modelo:** Muse Spark, en `main` (solo Pages; `src/` y `electron/` sin tocar).
 * **Cambios:** `docs/index.html` (1236 -> 719 lineas): acento RED #FF3B30, 0 azul IA, 0 blur, fuera Three.js/CDN; consola DOT 12 teclas con HUD + clic; seccion [03 - REGISTRO] con array FEATURES (v0.13.0 x12, v0.12.0 x6; sin fixes) + plantilla v0.14.0 comentada.
@@ -313,6 +313,25 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 ### Decisión pendiente para el dueño
 
 * Un perfil con un numérico no numérico **¿se rechaza al instalar o solo se avisa?** Ahora avisa (en la ficha) y el motor acota. Bloquearlo es una línea en la validación del renderer (`tiendaAplicar.ts`).
+
+## Turno 2026-09-26 — T-SEC-04 allowlist de los dos `openExternal` (DONE)
+
+* **Modelo:** space-bunny-free, misma rama.
+* **`launch:url`.** `shell.openExternal` no es un visor de enlaces: se lo pasa al sistema, que lo abre con lo que tenga asociado a ese esquema. Sin lista, un `{"type":"web","url":"file:///C:/…/evil.exe"}` de un perfil importado es ejecutar un programa; igual con `ms-msdt:`, `search-ms:` o `ldap:`. Permitidos `http:`, `https:`, `mailto:` y **`ms-screenclip:`** (el recorte de pantalla de `lanzar.ts`, que no tiene otro camino). Se queda `http:` porque el panel del router y el mando de la red local son usos normales, y abrir en el navegador no da acceso a la respuesta.
+* **`spotify:playUri`.** `normalizeSpotifyUri` devolvía la entrada tal cual y `playUri` la pasaba a `openExternal`: segundo sumidero sin lista y **alcanzable sin token**. Ahora devuelve `null` si no encaja, el dominio se compara **exacto por etiquetas** (`evil-spotify.com` y `spotify.com.evil.tld` no pasan; `hostname.includes('spotify.com')` los dejaba), el tipo tiene que estar en la lista, y la salida vuelve a pasar por la comprobación.
+* **La acción `web` sale en la ficha de riesgo**, en un bucket nuevo `urls` con etiqueta `gal.opens` (ES/EN). No cabía en `webhooks`, que es «a dónde manda datos».
+* **Los dos módulos de lógica pura aparte** (`abrirExterno.ts`, `spotifyUri.ts`) por lo mismo que en T-SEC-03: la primera versión del test de Spotify **probaba una copia** porque `spotify.ts` importa `shell`, y probar una copia no es probar nada.
+
+### Verificacion
+
+* `launch:url`: 9 direcciones que deben pasar (incluidos `http://127.0.0.1:8085` de los sensores, `ms-screenclip:` y el esquema en mayúsculas) y 19 que no (`file:` local y UNC, `ms-msdt:`, `search-ms:`, `ldap:`, `javascript:`, `data:`, `vbscript:`, `C:\…` sin esquema, `chrome://`, `ws://`, y valores que no son cadena).
+* `spotify`: 8 válidos (incluidos `intl-es`, búsqueda y `user:spotify:playlist:`) y 20 rechazados.
+* `npm run check`: **0 errores, 39 warnings**. Guardianes verdes (`i18n 865`). `npm run build` ok. App arranca (316 ms).
+* **Sin verificar en runtime:** que un botón `web` aparezca en la ficha. El camino compila y está cableado, pero comprobarlo necesita un perfil de galería con un botón `web` y no hay ninguno en el repo.
+
+### Trampa de este turno
+
+* **Al escribir ficheros, el `write`/`edit` coló palabras inglesas en comentarios en español** (`seemingly`, `toughest`, `seRelaxa`) y un `U+FFFD` en un `—`. Y **`WriteAllLines` con cadenas de PowerShell en doble comilla se come los backticks** (son su carácter de escape): una línea de markdown se quedó sin ellos. Detector en `%TEMP%\opencode\buscar-basura.mjs` — pasarlo antes de commitear.
 
 ## Apéndice A - Referencias Rápidas
 
