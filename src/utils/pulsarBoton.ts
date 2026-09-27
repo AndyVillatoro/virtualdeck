@@ -96,6 +96,27 @@ function ganchoScripts(acciones: DeckConfig['buttons'][number]['action'][], e: E
   };
 }
 
+/**
+ * Traslada al estado global **solo lo que cambió de verdad**.
+ *
+ * Este bloque estaba copiado tres veces en este fichero —en `pulsarBoton`, en
+ * `ejecutarUna` y en `pulsacionLarga`— y las tres copias eran idénticas byte a
+ * byte, así que cada sitio nuevo tenía otra oportunidad de olvidarse del aviso
+ * de error. Ahora es una función y las tres la llaman.
+ */
+function persistirYCrujir(
+  r: { ok: boolean; error?: string; stateUpdate?: Record<string, unknown> },
+  base: Record<string, string>, e: EntornoPulsacion,
+): void {
+  const update = r.stateUpdate ?? {};
+  const cambio: Record<string, string> = {};
+  for (const [k, v] of Object.entries(update)) {
+    if (v !== base[k]) cambio[k] = v as string;
+  }
+  if (Object.keys(cambio).length > 0) e.onStateUpdate(cambio);
+  if (!r.ok && r.error) e.avisar(r.error);
+}
+
 export interface ResultadoPulsacion {
   ok: boolean;
   error?: string;
@@ -123,8 +144,7 @@ export async function pulsarBoton(
         executeAction(btn.actionToggleOff, e.api, e.config.state, e.config.rgb?.profiles, e.t),
         { ok: false, error: e.t('act.err.timeout') },
       );
-      if (r.stateUpdate) e.onStateUpdate(r.stateUpdate as Record<string, string>);
-      if (!r.ok && r.error) e.avisar(r.error);
+      persistirYCrujir(r, e.config.state ?? {}, e);
       return { ok: r.ok, error: r.error, tipo: btn.actionToggleOff.type };
     }
   }
@@ -135,14 +155,7 @@ export async function pulsarBoton(
     runActionSequence(acciones, e.api, base, ganchoScripts(acciones, e), e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
-  // Solo se persiste lo que cambió de verdad.
-  const nuevas = Object.keys(r.stateUpdate ?? {}).filter((k) => r.stateUpdate![k] !== base[k]);
-  if (nuevas.length > 0 && r.stateUpdate) {
-    const cambio: Record<string, string> = {};
-    for (const k of nuevas) cambio[k] = r.stateUpdate[k] as string;
-    e.onStateUpdate(cambio);
-  }
-  if (!r.ok && r.error) e.avisar(r.error);
+  persistirYCrujir(r, base, e);
   return { ok: r.ok, error: r.error, tipo: btn.action.type };
 }
 
@@ -167,13 +180,7 @@ export async function ejecutarUna(
     runActionSequence([accion], e.api, base, ganchoScripts([accion], e), e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
-  const nuevas = Object.keys(r.stateUpdate ?? {}).filter((k) => r.stateUpdate![k] !== base[k]);
-  if (nuevas.length > 0 && r.stateUpdate) {
-    const cambio: Record<string, string> = {};
-    for (const k of nuevas) cambio[k] = r.stateUpdate[k] as string;
-    e.onStateUpdate(cambio);
-  }
-  if (!r.ok && r.error) e.avisar(r.error);
+  persistirYCrujir(r, base, e);
   return { ok: r.ok, error: r.error, tipo: accion.type };
 }
 
@@ -186,7 +193,6 @@ export async function pulsacionLarga(
     executeAction(btn.longPressAction, e.api, e.config.state, e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout') },
   );
-  if (r.stateUpdate) e.onStateUpdate(r.stateUpdate as Record<string, string>);
-  if (!r.ok && r.error) e.avisar(r.error);
+  persistirYCrujir(r, e.config.state ?? {}, e);
   return { ok: r.ok, error: r.error, tipo: btn.longPressAction.type };
 }

@@ -14,7 +14,9 @@ import { formatoDia, formatoDiaMes } from '../utils/formatos';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { resolverBotonesPagina } from '../utils/botonesPagina';
 import { FolderOverlay } from './main/OverlayCarpeta';
-import { interpolate } from '../utils/actions';
+// `interpolate` viene de `acciones/base` y no del barril `utils/actions`: es un
+// sustituto de texto sin dependencias y el barril arrastra el ejecutor entero.
+import { interpolate } from '../utils/acciones/base';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';

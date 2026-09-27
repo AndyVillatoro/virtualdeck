@@ -3,7 +3,10 @@ import { ButtonCell } from '../components/ButtonCell';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { ThemeProvider, useTheme } from '../utils/theme';
 import { LanguageProvider, useT } from '../utils/i18n';
-import { interpolate } from '../utils/actions';
+// `interpolate` se importa de donde está definido y no del barril `utils/actions`:
+// es un sustituto de texto sin dependencias, y el barril se lleva el ejecutor
+// entero detrás. Los manejadores de acciones también lo sacan de `acciones/base`.
+import { interpolate } from '../utils/acciones/base';
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import type { ButtonConfig, DeckConfig, FloatingBarSettings } from '../types';
