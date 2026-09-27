@@ -1,4 +1,5 @@
 import { OK, fail, interpolate, type Manejador } from './base';
+import { MEDIA } from './media';
 import type { ElectronAPI, ButtonAction } from '../../types';
 
 function getToken(action: ButtonAction): string | undefined {
@@ -61,14 +62,15 @@ export const TERCEROS: Record<string, Manejador> = {
     if (act === 'transfer-playback') {
       return ejecutarSpotifyTransfer(action, api, state, t);
     }
-    if (act === 'toggle-shuffle') {
-      const ok = await api.media.shuffle();
-      return ok ? OK : fail(t('act.err.shuffle'));
-    }
-    if (act === 'toggle-repeat') {
-      const ok = await api.media.repeat();
-      return ok ? OK : fail(t('act.err.repeat'));
-    }
+    // Shuffle y repeat de Spotify **son** los de media (mismo `api.media.*` por
+    // debajo), así que se delegan en vez de reescribirse. Antes estaban
+    // duplicados aquí y esta copia se olvidaba de `refrescarNowPlayingGlobal()`:
+    // usar el shuffle desde un botón de Spotify dejaba el panel de música
+    // enseñando el estado anterior hasta el siguiente sondeo. Delegar deja una
+    // sola definición de "qué es dar la vuelta al shuffle", que es lo que
+    // evita que vuelvan a separarse.
+    if (act === 'toggle-shuffle') return MEDIA['media-shuffle']({ action, api, state, t });
+    if (act === 'toggle-repeat') return MEDIA['media-repeat']({ action, api, state, t });
 
     return OK;
   },
