@@ -394,6 +394,20 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
     res.writeHead(200, {
       'Content-Type': contentType,
       'Cache-Control': 'public, max-age=86400',
+      // Estas imágenes se sirven **desde el mismo origen que tiene el token del
+      // mando** en `localStorage`, así que un SVG con script dentro —un `.svg`
+      // es un documento, no un dibujo— solo necesita que alguien lo abra en una
+      // pestaña para ejecutarse con los permisos de ese origen. Por ejemplo,
+      // `<img src="…/algo.svg">` no ejecuta nada (ahí es un dibujo), pero
+      // escribir la dirección a mano en el navegador del teléfono, sí.
+      //
+      // `sandbox` sin `allow-scripts` la deja en un origen opaco y sin
+      // ejecución, y `default-src 'none'` quita cualquier subrecurso. A un
+      // `<img>` no le afecta nada de esto: no es un documento, así que se
+      // sigue viendo igual. Por eso el SVG **no** se sirve como `text/plain`:
+      // eso sí que lo rompería, y el tipo se queda.
+      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      'X-Content-Type-Options': 'nosniff',
     });
     createReadStream(filePath).pipe(res);
     return;
