@@ -17,8 +17,8 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-SEC-04** | **P1** | Allowlist de esquema en los dos `shell.openExternal` (`launch:url`, `spotify:playUri`) | space-bunny-free | `electron/main/abrirExterno.ts` (nuevo), `spotifyUri.ts` (nuevo), `spotify.ts`, `ipc/launcherIpc.ts`, `galeria.ts`, `FichaRiesgoGaleria.tsx` | `DONE` ✅ | 2026-09-26 |
 | **T-SEC-05** | **P1** | XSS almacenado en origen LAN: validar gColor/customGlyph57 antes del innerHTML | space-bunny-free | electron/main/paginaMando.ts, servidorLocal.ts | DONE ✅ | 2026-09-26 |
 | **T-SEC-07** | MED | `/media/images/` sirve `.svg` desde el origen que tiene el token | space-bunny-free | `electron/main/servidorLocal.ts` | `DONE` ✅ | 2026-09-26 |
-| **T-IDT-01** | P1 | Redacción forward-only de identidad (el historial NO se reescribe) | (sin asignar) | `CHANGELOG.md`, `ipc/appIpc.ts`, `macro.ts`, `docs/MIGRACION-RUST.md`, `package.json`, `Cargo.toml` | `PENDING` | 2026-09-26 |
-| **T-IDT-02** | P1 | Sanear config de orquestación/agy en docs versionados | (sin asignar) | `AGENTS.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md`, `docs/EXPORTAR-CONFIG.md`, `scripts/export-opencode-config.ps1` | `PENDING` | 2026-09-26 |
+| **T-IDT-01** | P1 | Redacción forward-only de identidad: **hecha** (el historial NO se reescribe) | space-bunny-free | `CHANGELOG.md`, `AGENTS.md`, `package.json`, `Cargo.toml`, `appIpc.ts`, `macroScript.ts` | `DONE` ✅ | 2026-09-26 |
+| **T-IDT-02** | P1 | Sanear config de orquestación/agy en docs versionados: **hecha** (rutas a `$env:USERPROFILE`) | space-bunny-free | `AGENTS.md`, `docs/EXPORTAR-CONFIG.md`, `scripts/export-opencode-config.ps1` | `DONE` ✅ | 2026-09-26 |
 | **T-UTL-01** | P2 | Tranche SAFE de `src/utils`: extraer bloque ×4 de `pulsarBoton`, comentarios huérfanos, `sensors.tsx`→`.ts`, repoint de `interpolate` | (sin asignar) | `src/utils/pulsarBoton.ts`, `useDeck.ts`, `estadoSistema.ts`, `sensors.tsx`, `formatos.ts` | `PENDING` | 2026-09-26 |
 | **T-UTL-02** | P2 | Mergear `acciones/media.ts` en `terceros.ts` — **arregla el bug de now-playing desactualizado** | (sin asignar) | `src/utils/acciones/media.ts`, `acciones/terceros.ts` | `PENDING` | 2026-09-26 |
 | **T-UTL-03** | P3 | Re-verificar el recuento de claves i18n muertas antes de borrar nada (el dato previo no es fiable) | (sin asignar) | `src/utils/idiomas/**`, `scripts/check-i18n.mjs` | `PENDING` | 2026-09-26 |
@@ -58,6 +58,13 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 
 Todo lo de aquí está **verificado por inspección o por prueba automatizada**, pero no en la app real. Ninguna ha bloqueado un commit: cada fix llega con lo que sí se pudo comprobar y con esta lista como deuda explícita.
 
+> **✅ 2026-09-26: el dueño las hizo todas y todo está bien** (prueba de la build
+> nueva, imágenes de fondo, mando móvil con la CSP, ficha de riesgo, enlaces
+> externos, macro con números raros). La columna «sin verificar» de las filas
+> P2, P3, P4 y P6 queda cerrada. P1, P5 y P7 no aplican o siguen abiertas: P5 es
+> el sandbox, que no se puede encender aquí, y P7 no se puede comprobar sin
+> ejecutar una macro de verdad.
+
 | # | Qué probar | Cómo | Qué mira | Por qué no lo hice aquí |
 |---|---|---|---|---|
 | **P1** | **La build nueva arranca y el deck se ve bien** | `npm run build:installer` → instalar → abrir | Ventana, bandeja, barra flotante, tienda, un par de macros, el tema claro y el oscuro | Instalar en el equipo del dueño |
@@ -82,6 +89,14 @@ Todo lo de aquí está **verificado por inspección o por prueba automatizada**,
 - **Recomendación**: commit directo en `main` (solo Pages, sin código). Publicar = push a `main` (Pages sirve `/docs`).
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+### [2026-09-26] De: space-bunny-free → Para: Siguiente Modelo (T-IDT-01 y T-IDT-02 DONE)
+- **T-IDT-01, redacción de identidad (decisión del dueño: NO se reescribe el historial).** Fuera del árbol versionado: los 4 enlaces `file:///c:/Users/<cuenta>/…` del `CHANGELOG.md` (ahora rutas relativas al repo, que GitHub resuelve bien desde la raíz), la ruta de ejemplo de `appIpc.ts` (`C:\Users\<usuario>\code.exe`), el nombre de cuenta que aparecía como salida de ejemplo de `$env:USERNAME` en `macroScript.ts` (antes `macro.ts:256`), y **el email del autor en `package.json` + `Cargo.toml`** —que además viajaba dentro del paquete publicado y de los metadatos del crate—. El nombre se queda: los créditos de la app lo muestran y no es lo que hay que esconder.
+- **`docs/MIGRACION-RUST.md`, que citaba la auditoría, no existe en el repo.** Y `docs/EXPORTAR-CONFIG.md` y `scripts/export-opencode-config.ps1` ya usaban `$env:USERPROFILE` / `C:\ruta\al\zip`.
+- **T-IDT-02.** `AGENTS.md` llevaba tres rutas absolutas del perfil de Windows (el binario de agy y el wrapper, dos veces). Ahora `$env:USERPROFILE`, que es la forma que ya usan el resto de docs del repo.
+- **Verificado con un barrido de todo el árbol versionado:** cero coincidencias de la cuenta, del email o de `Users\<cuenta>`. Lo que queda fuera del barrido es deliberado: `.claude/` (ignorado por git), `auditorias/` (ignorado a propósito, contiene las vulnerabilidades sin parchear) y el **historial**, que se acepta.
+- **Ojo con esto al publicar:** el cambio del autor solo afecta a las publicaciones **siguientes**. Las versiones ya publicadas llevan el email dentro, igual que los commits. Quitarlo del árbol no lo borra de ningún lado; es higiene, no borrado.
+- `npm run check` 0 errores, 39 warnings, 6 guardianes verdes.
 
 ### [2026-09-26] De: space-bunny-free → Para: Siguiente Modelo (T-SEC-07 DONE, el MED que quedaba de la zona del mando)
 - **`/media/images/` se sirve ya con `default-src 'none'; style-src 'unsafe-inline'; sandbox` + `nosniff`.** Estas imágenes salen del **mismo origen que tiene el token del mando** en `localStorage`, y un `.svg` no es un dibujo: es un documento. En `<img>` no ejecuta nada (el contexto de imagen no corre script), pero con la dirección escrita a mano en la pestaña del teléfono, sí —y con los permisos de ese origen.

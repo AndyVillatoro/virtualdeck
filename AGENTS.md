@@ -75,10 +75,10 @@ Cuando múltiples modelos de IA colaboran simultáneamente o por turnos en este 
 
 ## 2c. Gemini-Pro vía agy (CLI externa v1.2.7)
 
-- **Qué es**: integración de Gemini vía **Antigravity CLI** (`C:\Users\andyf\AppData\Local\agy\bin\agy.exe` v1.2.7), no es un provider de `opencode.json` (binario cerrado sin servidor). Integración vía shell en modo print headless.
-- **Wrapper recomendado**: `C:\Users\andyf\.config\opencode\bin\agy-gemini.ps1` (global, fuera del repo; **no copiar a `bin/` del repo**). Parámetros: `-Prompt` obligatorio, `-Model` ValidateSet (`gemini-3.8/3.7/3.6-flash-high/medium/low`, `gemini-3.1-pro-high/low`, default `gemini-3.8-flash-medium`), `-Dir` default `Get-Location`, `-Timeout` default `60s`, switches `-Json`/`-Schema`. Uso:
+- **Qué es**: integración de Gemini vía **Antigravity CLI** (`"$env:USERPROFILE\AppData\Local\agy\bin\agy.exe"` v1.2.7), no es un provider de `opencode.json` (binario cerrado sin servidor). Integración vía shell en modo print headless.
+- **Wrapper recomendado**: `"$env:USERPROFILE\.config\opencode\bin\agy-gemini.ps1"` (global, fuera del repo; **no copiar a `bin/` del repo**). Parámetros: `-Prompt` obligatorio, `-Model` ValidateSet (`gemini-3.8/3.7/3.6-flash-high/medium/low`, `gemini-3.1-pro-high/low`, default `gemini-3.8-flash-medium`), `-Dir` default `Get-Location`, `-Timeout` default `60s`, switches `-Json`/`-Schema`. Uso:
   ```powershell
-  & C:\Users\andyf\.config\opencode\bin\agy-gemini.ps1 "<prompt>" -Model gemini-3.6-flash-low -Timeout 60s
+  & "$env:USERPROFILE\.config\opencode\bin\agy-gemini.ps1" "<prompt>" -Model gemini-3.6-flash-low -Timeout 60s
   ```
   Equivalente directo: `agy -p="<prompt>" --model gemini-3.8-flash-medium --print-timeout 60s --add-dir <cwd>`.
 - **Uso**: tareas P1/P2 o trabajo pesado (arquitectura, drafts, síntesis multi-fuente, segunda opinión fuerte) cuando Go/Zen no bastan o se quiere cuota aparte. Solo modo print; prohibido `--dangerously-skip-permissions` y `--mode accept-edits`.

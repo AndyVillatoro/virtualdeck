@@ -4,7 +4,7 @@
   "description": "VirtualDeck – Stream Deck alternativo para Windows",
   "main": "out/main/index.js",
   "private": true,
-  "author": "Andy Villatoro <noc@metronethn.com>",
+  "author": "Andy Villatoro",
   "license": "UNLICENSED",
   "homepage": "https://github.com/AndyVillatoro/virtualdeck",
   "repository": {

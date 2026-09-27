@@ -27,7 +27,7 @@ export function fijarArranqueAutomatico(activado: boolean) {
  * deja elegir la carpeta, asi que cualquiera puede acabar en una con espacios.
  *
  * Windows entonces prueba las interpretaciones por orden: primero
- * `C:\Users\andyf\code.exe` y solo despues el ejecutable de verdad. Funciona de
+ * `C:\Users\<usuario>\code.exe` y solo despues el ejecutable de verdad. Funciona de
  * casualidad, mientras no exista un ejecutable con ese nombre — que es la clase
  * de fallo de «ruta sin comillas» de toda la vida.
  */

@@ -215,7 +215,7 @@ function traducirNombres(t: string): string {
  *   precio $100 USD  →  «precio  USD»      `$1` se expande a nada
  *   dijo "hola"      →  error de sintaxis  la macro entera no se reproduce
  *   a`b              →  «ab»              la tilde es el escape de PS
- *   $env:USERNAME    →  «andyf»           se evalúa en vez de escribirse
+ *   $env:USERNAME    →  «el nombre de tu cuenta»           se evalúa en vez de escribirse
  *
  * Lo último es lo grave: un paso de texto es datos, y por aquí `$(...)`
  * ejecuta — una macro importada de la galería dejaba de ser «teclea esto».

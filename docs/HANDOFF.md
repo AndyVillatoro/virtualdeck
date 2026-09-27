@@ -213,12 +213,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
   - `npm run check`: **PASS, 0 errores**, 6 guardianes verdes.
 * **Resultado de seguridad:**
   - **Credenciales: LIMPIO.** Cero secretos en árbol e historial. Nada que rotar.
-  - **Identidad: fuga forward-only pendiente** (decidida: NO reescribir historial, porque
-    rompería 16 tags + 14 Releases y no hay credencial comprometida). Pendientes:
-    `CHANGELOG.md:119-126` (4 enlaces `file:///` con la ruta local de checkout), `electron/main/ipc/appIpc.ts:30`,
-    `electron/main/macro.ts:256`, `docs/MIGRACION-RUST.md`, y el email
-    `noc@metronethn.com` en `package.json:7` + `Cargo.toml:15` (que además viaja en el
-    paquete publicado).
+  - **Identidad: fuga forward-only ARREGLADA este turno** (decisión del dueño: NO
+    reescribir historial, porque rompería 16 tags + 14 Releases y no hay
+    credencial comprometida). Redactado: los 4 enlaces `file:///` del
+    `CHANGELOG.md` (ahora rutas relativas al repo), la ruta de ejemplo de
+    `appIpc.ts`, el nombre de cuenta de un ejemplo en `macroScript.ts`, las
+    rutas absolutas de `AGENTS.md` (ahora `$env:USERPROFILE`) y el email del
+    autor en `package.json` + `Cargo.toml` (que además viajaba en el paquete
+    publicado). `docs/MIGRACION-RUST.md`, que citaba la auditoría, **no existe
+    en el repo**. Queda solo el historial, que se acepta.
   - **⚠️ P0 NUEVO, más grave que lo anterior: vulnerabilidades Electron sin parchear.**
     2 CRIT (`no-sandbox` global en `index.ts:23-24`; ausencia total de
     `setWindowOpenHandler`/`will-navigate` con preload de ~70 métodos heredado), 6 ALTO
