@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type React from 'react';
 import type { ElectronAPI } from '../types';
 import { useDeckEstado } from './useDeck/estado';
@@ -58,9 +59,12 @@ interface Opciones {
 export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
   const estado = useDeckEstado({ api, showUndoToast });
 
-  // Un solo objeto para los cinco grupos: es lo que hace que cambiar un grupo
-  // no altere a los otros, porque todos ven la misma referencia de `config`.
-  const contexto: ContextoDeck = {
+  // Un solo objeto para los cinco grupos. Va con `useMemo` por una razón concreta:
+  // hoy es inocuo, porque los cinco destructuran en la firma y solo dependen de
+  // valores sueltos. Pero si alguien escribe un `useCallback(..., [contexto])`,
+  // un objeto nuevo en cada render recrearía los ~25 callbacks de golpe en cada
+  // cambio de configuración. Con el `useMemo` ese día llega y no rompe nada.
+  const contexto: ContextoDeck = useMemo(() => ({
     api,
     config: estado.config,
     setConfig: estado.setConfig,
@@ -68,7 +72,7 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     withHistory: estado.withHistory,
     saveConfig: estado.saveConfig,
     setActivePage,
-  };
+  }), [api, estado.config, estado.setConfig, estado.t, estado.withHistory, estado.saveConfig, setActivePage]);
 
   const botones = useDeckBotones(contexto);
   const paginas = useDeckPaginas(contexto);

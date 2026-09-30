@@ -79,10 +79,28 @@ for (const [fich, nombre] of [
     if (!ES.has(k)) ES.set(k, `${fich}.ts`);
   }
 }
-const CAMPOS = new Set(
-  [...readFileSync('src/utils/idiomas/campos.ts', 'utf-8').matchAll(/^\s{2}'((?:[^'\\]|\\.)*)':/gm)]
-    .map((m) => m[1].replace(/\\'/g, "'")),
-);
+// Los textos de campo: cualquier nivel de sangría, y anclado al **`export`
+// del objeto**, no a una cuenta de espacios.
+//
+// Antes era `/^\s{2}'/` — dos espacios exactos, los mismos que el guardian.
+// Con el formato actual daba 228; pasado el fichero a 4 espacios, el conjunto se
+// vaciaba en silencio y el script imprimía "textos de campo sin ningún tf():
+// ninguno" **con el autotest en verde**, porque los 17 controles eran todos
+// claves ES y ninguno de FIELDS_EN. Un falso limpio, justo lo que el autotest
+// existe para evitar. Por eso hay dos anclas y por eso el autotest mira también
+// un texto de campo.
+const CAMPOS = (() => {
+  const fuente = readFileSync('src/utils/idiomas/campos.ts', 'utf-8');
+  const cuerpo = fuente.slice(fuente.indexOf('FIELDS_EN'));
+  const set = new Set([...cuerpo.matchAll(/^\s+'((?:[^'\\]|\\.)*)':/gm)].map((m) => m[1].replace(/\\'/g, "'")));
+  if (set.size === 0) {
+    console.error('EL DICCIONARIO DE CAMPOS SE HA VACIADO — la mitad de textos de campo del informe');
+    console.error('no vale. Se ha cambiado la forma de leer src/utils/idiomas/campos.ts: revisa la');
+    console.error('expresión regular de CAMPOS, no el diccionario.\n');
+    process.exit(2);
+  }
+  return set;
+})();
 
 // ── Referencias ──────────────────────────────────────────────────────────────
 const ref = { codigo: new Set(), scripts: new Set(), docs: new Set() };
@@ -194,8 +212,15 @@ const DEBEN_VERSE = [
   ['onb.7.title', 'familia onb.*, ULTIMO paso (n = step + 1)'],
   ['wx.0', 'familia wx.*'],
   ['wx.99', 'familia wx.*, ultimo codigo'],
+  // Y dos de FIELDS_EN. Los 15 controles anteriores son todos claves ES, con lo
+  // que la mitad de "textos de campo" del informe no estaba validada por nada:
+  // si la lectura de campos se rompia, el autotest se ponia verde igual. Estos
+  // dos se piden con `tf('TITULO')` y `tf('A')` en el codigo, con comillas
+  // dobles y con un solo caracter, que es justo lo que rompia el matcher.
+  ['TÍTULO', 'FIELDS_EN, tf("TÍTULO") en formularios/sistema.tsx'],
+  ['A', 'FIELDS_EN, placeholder={tf(\'A\')} en CamposDivisa.tsx'],
 ];
-const noLasVe = DEBEN_VERSE.filter(([k]) => !ref.codigo.has(k) && !DINAMICAS.has(k));
+const noLasVe = DEBEN_VERSE.filter(([k]) => !ref.codigo.has(k) && !DINAMICAS.has(k) && !CAMPOS.has(k));
 if (noLasVe.length) {
   console.error('\nEL DETECTOR ESTA ROTO — su recuento de claves muertas NO vale:\n');
   for (const [k, de] of noLasVe) console.error(`  · no encuentra '${k}' (${de})`);

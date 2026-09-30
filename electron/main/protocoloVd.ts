@@ -66,12 +66,30 @@ const EXTENSIONES = new Set([
  */
 const PROHIBIDOS = /[/\\:*?"<>|]/;
 
+/**
+ * Nombres reservados de Windows, que se saltan la extensión.
+ *
+ * `CON.png` no es un fichero: es el dispositivo de consola, y `fs` lo abre sin
+ * que exista. Pasa los otros filtros —no empieza por punto, no tiene carácter
+ * prohibido y su extensión es `.png`—, así que sin esta lista el handler
+ * devolvería una imagen para un nombre que en disco es otra cosa. Se comparan en
+ * mayúsculas porque Windows no distingue, y se corta en el primer punto porque
+ * el nombre del dispositivo es lo que hay antes de la extensión: `NUL.png`,
+ * `NUL.jpg` y `nul` son el mismo.
+ */
+const RESERVADOS = new Set([
+  'con', 'prn', 'aux', 'nul',
+  'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
+  'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9',
+]);
+
 /** C0: incluye el NUL, que en Node lanza al tocar el disco. */
 function esNombreValido(nombre: string): boolean {
   // `.` y `..` empiezan por punto, y los ocultos también quedan fuera: aquí no
   // hay nada que ver, y un fichero llamado `.png` no es una imagen.
   if (!nombre || nombre.startsWith('.')) return false;
   if (PROHIBIDOS.test(nombre)) return false;
+  if (RESERVADOS.has(nombre.split('.')[0].toLowerCase())) return false;
   for (let i = 0; i < nombre.length; i++) {
     if (nombre.charCodeAt(i) < 0x20) return false;
   }

@@ -46,6 +46,21 @@ async function ejecutarSpotifyTransfer(
 }
 
 /** Integraciones nativas de terceros: Discord y Spotify. */
+/**
+ * Busca un manejador en el mapa de media y se queja si no está.
+ *
+ * `MEDIA` es `Record<string, Manejador>` y el proyecto va con `strict: false`,
+ * así que un `MEDIA['media-shufle']` con un typo **no lo ve TypeScript** y
+ * revienta en pantalla con «is not a function», en el momento de pulsar el
+ * botón y sin decir qué clave faltaba. Con este paso, el fallo sale al cargar el
+ * módulo y con el nombre dentro.
+ */
+function manejadorMedia(tipo: string): Manejador {
+  const h = MEDIA[tipo];
+  if (!h) throw new Error(`MEDIA['${tipo}'] no existe en acciones/media.ts`);
+  return h;
+}
+
 export const TERCEROS: Record<string, Manejador> = {
   'discord': async ({ action, api, t }) => {
     const act = action.discordAction ?? 'toggle-mute';
@@ -69,8 +84,8 @@ export const TERCEROS: Record<string, Manejador> = {
     // enseñando el estado anterior hasta el siguiente sondeo. Delegar deja una
     // sola definición de "qué es dar la vuelta al shuffle", que es lo que
     // evita que vuelvan a separarse.
-    if (act === 'toggle-shuffle') return MEDIA['media-shuffle']({ action, api, state, t });
-    if (act === 'toggle-repeat') return MEDIA['media-repeat']({ action, api, state, t });
+    if (act === 'toggle-shuffle') return manejadorMedia('media-shuffle')({ action, api, state, t });
+    if (act === 'toggle-repeat') return manejadorMedia('media-repeat')({ action, api, state, t });
 
     return OK;
   },

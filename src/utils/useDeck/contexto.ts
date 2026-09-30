@@ -9,10 +9,11 @@ import type { TFunc } from '../i18n';
  * lo importaran de su padre se montaría un ciclo (`useDeck` → hijo → `useDeck`).
  * El padre es quien compone, nunca quien exporta el tipo a sus hijos.
  *
- * Todos reciben el **mismo objeto**, construido una vez por `useDeck`. Por eso
- * un cambio en un grupo no puede invalidar la identidad de los callbacks de otro
- * grupo: los dos grupos reciben la misma referencia de `config`, y eso es
- * exactamente lo que ya pasaba cuando todo estaba en un solo hook.
+ * Todos reciben el **mismo objeto**, construido una vez por `useDeck` y con
+ * `useMemo`, para que exista aunque hoy no haga falta: los cinco grupos
+ * destructuran en la firma, así que la identidad del objeto no les afecta —lo
+ * que les afecta es la de cada campo—, y un `useCallback(..., [contexto])`
+ * escrito mañana no recrearía los ~25 callbacks en cada cambio.
  */
 export interface ContextoDeck {
   api: ElectronAPI | undefined;

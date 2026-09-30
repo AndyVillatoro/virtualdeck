@@ -97,13 +97,22 @@ function ganchoScripts(acciones: DeckConfig['buttons'][number]['action'][], e: E
 }
 
 /**
- * Traslada al estado global **solo lo que cambió de verdad**.
+ * Traslada al estado global **solo lo que cambió de verdad**, y avisa del error.
  *
- * Este bloque estaba copiado tres veces en este fichero —en `pulsarBoton`, en
- * `ejecutarUna` y en `pulsacionLarga`— y las tres copias eran idénticas byte a
- * byte, así que cada sitio nuevo tenía otra oportunidad de olvidarse del aviso
- * de error. Ahora es una función y las tres la llaman.
+ * El bloque estaba en **cuatro** puntos de este fichero, y no era el mismo los
+ * cuatro: en `pulsarBoton` (la secuencia) y en `ejecutarUna` filtraba las
+ * variables que no habían cambiado; en `pulsarBoton` (la rama de *toggle-off*) y
+ * en `pulsacionLarga` se pasaba el `stateUpdate` entero, sin filtrar. Esa
+ * diferencia no era intencionada: el bloque se copió a mano y dos de las copias
+ * se quedaron a medias.
+ *
+ * Ahora es una función y la llaman los cuatro, así que no puede volver a
+ * separarse. Lo único que cambia de verdad es que un `stateUpdate` cuyos valores
+ * ya son los que había deja de avisar a la app con una escritura que no cambia
+ * nada: el estado resultante es el mismo, solo se ahorra el re-render y el
+ * guardado en disco.
  */
+
 function persistirYCrujir(
   r: { ok: boolean; error?: string; stateUpdate?: Record<string, unknown> },
   base: Record<string, string>, e: EntornoPulsacion,
