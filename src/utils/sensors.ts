@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import type { Sensor, SensorsStatus, SensorCondition } from '../types';
-
 // Singleton poller — multiple components consume the same data without each
 // spinning their own setInterval. Polling auto-starts on first subscriber and
 // auto-stops when the last unsubscribes. Tick is 5 s, matching the rest of
 // MainB's polled state.
+
+import { useEffect, useState } from 'react';
+import type { Sensor, SensorsStatus, SensorCondition } from '../types';
 
 let sensorsCache: Sensor[] = [];
 let statusCache: SensorsStatus | null = null;

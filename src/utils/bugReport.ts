@@ -4,7 +4,6 @@ import type { PlatformInfo } from '../types';
 // Construye una URL de "nuevo issue" en GitHub con título y cuerpo pre-llenados.
 // GitHub tiene un límite práctico de ~8KB en la URL; truncamos el log y, si aun
 // así es grande, sugerimos adjuntar el log exportado.
-
 const MAX_URL_LEN = 7500;
 const MAX_LOG_TAIL = 2500;
 /** Marca de que el cuerpo se recortó, para que el que lo lea lo sepa. */

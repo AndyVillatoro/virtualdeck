@@ -1,9 +1,9 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import type { NowPlaying } from '../types';
-
 // Polling centralizado de medios. Antes MainB y FullscreenB tenían su propio
 // interval — duplicaban el query a PowerShell cada 5s. Un único provider en App
 // comparte el estado entre vistas.
+
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { NowPlaying } from '../types';
 
 interface NowPlayingContextValue {
   nowPlaying: NowPlaying | null;

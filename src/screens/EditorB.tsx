@@ -461,5 +461,3 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
     </div>
   );
 }
-
-// Compact slot editor for folder sub-buttons

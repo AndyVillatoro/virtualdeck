@@ -1,14 +1,13 @@
+// i18n ligero (6.x del roadmap). Sin dependencias: un diccionario plano por
+// idioma + un provider que resuelve 'system' al locale del SO. Las claves son
+// estables (no el texto), así el español también pasa por el diccionario y se
+// evita el drift entre idiomas. Fallback: es → clave cruda.
+
 import React, { createContext, useContext, useMemo } from 'react';
 import { ES } from './idiomas/es';
 import { EN } from './idiomas/en';
 import { FIELDS_EN } from './idiomas/campos';
 import type { Dict } from './idiomas/tipos';
-
-
-// i18n ligero (6.x del roadmap). Sin dependencias: un diccionario plano por
-// idioma + un provider que resuelve 'system' al locale del SO. Las claves son
-// estables (no el texto), así el español también pasa por el diccionario y se
-// evita el drift entre idiomas. Fallback: es → clave cruda.
 
 export type Lang = 'es' | 'en';
 export type LangPref = 'system' | Lang;

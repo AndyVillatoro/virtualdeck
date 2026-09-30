@@ -1,3 +1,16 @@
+/**
+ * Editor compacto de los cuatro sub-botones de una carpeta.
+ *
+ * Se extrajo de `screens/EditorB.tsx`, que hasta entonces tenía aquí todo el
+ * formulario de los cuadrantes y acababa con el comentario que ahora está aquí.
+ * Se separó en dos: este es el **editor**, y `components/celda/Subdivision2x2.tsx`
+ * es la celda que los pinta en la rejilla.
+ *
+ * Los cuatro sub-botones siempre son cuatro: si un botón tiene `subButtons` con
+ * otra longitud no se considera subdividido (ver `editor/botonConfigurado.ts`),
+ * y al abrir el editor se rellenan los huecos con sub-botones vacíos para que no
+ * haya que comprobar el tamaño en cada sitio.
+ */
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
