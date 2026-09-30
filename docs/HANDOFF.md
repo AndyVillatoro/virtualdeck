@@ -184,6 +184,33 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 
 * Push a `main` = publicado (Pages sirve `/docs`). Siguiente feature de Pages = anadir objeto a `FEATURES` en `docs/index.html`.
 
+## Turno 2026-09-29 - Correccion del diagnostico de agy (sin cambios de codigo)
+
+* **Que se modifico:** solo este fichero y el tablero, para no dejar un diagnostico equivocado escrito.
+  * `docs/HANDOFF.md`: esta seccion.
+
+* **Que se comprobe:**
+  * `agy -p="/quota"` dice **100%** en las cuatro filas (semanal y de 5 horas, Gemini y Claude/GPT), con
+    reinicio el `2026-09-30T09:54:38Z` para el limite de 5 horas.
+  * Y sin embargo la generacion falla: `RESOURCE_EXHAUSTED (code 429)` en
+    `https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent`.
+  * Probado con `gemini-3.8-flash-high` (se quedó esperando hasta el timeout de impresión, con el turno en curso),
+    `gemini-3.8-flash-medium`, `gemini-3.1-pro-low` y `gemini-3.7-flash-low` (los tres ultimos, 429 a los
+    ~145-150 s). El wrapper y el binario directo fallan igual.
+
+* **Conclusion, y corrige lo que decia antes:** el 429 **no es throttling de la cuenta**, asi que
+  `agy -p="/quota"` **no sirve para saber si agy va a funcionar**. El turno anterior dejo escrito
+  "reintentar cuando se agote el limite de 5 horas", con la hora de reinicio sacada de ahi: esa espera
+  no iba a arreglar nada, porque el limite estaba al 100%. Lo que falla es el endpoint de generacion,
+  para todos los modelos a la vez.
+
+* **Como reintentar sin quemarse:** un `Reply with exactly: OK` con 60-90 s de margen. Si no responde,
+  no insistir con mas modelos ni con timeouts mas largos: son ~150 s por intento. Y **no** fiarse del
+  `/quota` como senal.
+
+* **Modelos usados en este turno:** space-bunny-free (este). **Sin cuota de pago.** agy se intento y no
+  respondio; no se paso nada por el.
+
 ## Turno 2026-09-19 — Integración global Gemini-vía-agy (DONE)
 
 * **Modelo:** big-pickle (OpenCode), fuera de `main` (solo docs de coordinación del repo; cambios globales fuera del repo).
