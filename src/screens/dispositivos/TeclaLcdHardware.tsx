@@ -11,6 +11,8 @@ interface TeclaLcdHardwareProps {
   seleccionada: boolean;
   brillo?: number;
   disabled?: boolean;
+  /** Última imagen que se mandó al aparato (data URL, sin rotar). Si está, se enseña tal cual. */
+  imagen?: string;
   onSelect: () => void;
   onEditar: () => void;
 }
@@ -121,6 +123,7 @@ export function TeclaLcdHardware({
   seleccionada,
   brillo = 80,
   disabled = false,
+  imagen,
   onSelect,
   onEditar,
 }: TeclaLcdHardwareProps) {
@@ -154,43 +157,59 @@ export function TeclaLcdHardware({
           filter: `brightness(${brilloFactor})`,
         }}
       >
-        <span
-          style={{
-            position: 'absolute',
-            top: 2,
-            left: 4,
-            fontSize: 8,
-            color: VD.textMuted,
-            fontFamily: VD.mono,
-            letterSpacing: 0.5,
-          }}
-        >
-          {`K${indice + 1}`}
-        </span>
+        {imagen ? (
+          <img
+            src={imagen}
+            alt=""
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'fill',
+              imageRendering: 'pixelated',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <>
+            <span
+              style={{
+                position: 'absolute',
+                top: 2,
+                left: 4,
+                fontSize: 8,
+                color: VD.textMuted,
+                fontFamily: VD.mono,
+                letterSpacing: 0.5,
+              }}
+            >
+              {`K${indice + 1}`}
+            </span>
 
-        <ContenidoGlifo
-          glifo={datos.glifo}
-          tieneContenido={datos.tieneContenido}
-          fgColor={datos.fgColor}
-          defaultFg={VD.text}
-          accent={VD.accent}
-        />
+            <ContenidoGlifo
+              glifo={datos.glifo}
+              tieneContenido={datos.tieneContenido}
+              fgColor={datos.fgColor}
+              defaultFg={VD.text}
+              accent={VD.accent}
+            />
 
-        <span
-          style={{
-            fontSize: 8,
-            textAlign: 'center',
-            color: datos.colorTexto,
-            fontFamily: VD.mono,
-            maxWidth: '90%',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            letterSpacing: 0.5,
-          }}
-        >
-          {datos.labelTexto}
-        </span>
+            <span
+              style={{
+                fontSize: 8,
+                textAlign: 'center',
+                color: datos.colorTexto,
+                fontFamily: VD.mono,
+                maxWidth: '90%',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                letterSpacing: 0.5,
+              }}
+            >
+              {datos.labelTexto}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );

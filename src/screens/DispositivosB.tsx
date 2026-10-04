@@ -20,6 +20,8 @@ export interface DispositivosBProps {
   superficies: InfoSuperficie[];
   /** Todas las disposiciones por id de modelo: para dibujar también dispositivos desconectados. */
   modelos: Record<string, DisposicionSuperficie>;
+  /** Última imagen pintada de cada tecla, por serial e indexada por hueco. */
+  imagenes?: Record<string, (string | undefined)[]>;
   onEditarBoton: (id: string) => void;
   onBrilloVivo: (serial: string, valor: number) => void;
   onBrillo: (serial: string, valor: number) => void;
@@ -85,6 +87,7 @@ export function DispositivosB({
   config,
   superficies,
   modelos,
+  imagenes,
   onEditarBoton,
   onBrilloVivo,
   onBrillo,
@@ -320,6 +323,7 @@ export function DispositivosB({
                   selectedHueco={selectedHueco}
                   brillo={brilloLocal}
                   conectado={dispositivoActivo.conectado}
+                  imagenes={serialActivo ? imagenes?.[serialActivo] : undefined}
                   onSelectHueco={(h) => setSelectedHueco(h)}
                   onEditarBoton={onEditarBoton}
                 />

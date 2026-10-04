@@ -493,6 +493,28 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Nuevo en el roadmap:** 61 (estilo DOT en las teclas físicas, reportado por el dueño) y 62 (botones prearmados para docks; investigación T-HW-03 en curso con agy).
 * **Verificación:** `npm run check` 0 errores (38 warnings, los mismos), `npm run build` OK.
 
+## Turno 2026-10-04 — T-HW-04: estilo DOT/480 en teclas físicas (VERIFYING, sin commit)
+
+* **Modelo:** opencode (kimi-k2.7-code), rama `task/p1-hw-streamdock`.
+* **Cambios:**
+  * `src/components/celda/iconoSvg.tsx`: `svgDeBoton` ahora devuelve glifo DOT oficial (`DotGlyphIcon`) cuando `button.icon` lo resuelve, o el icono SVG del tipo de acción como último recurso; `esGlifoDot` exportado para que el pintor respete la precedencia exacta de `ContenidoCentral`.
+  * `src/utils/superficies/pintarTecla.ts`: misma precedencia que la celda (imagen/marca + superposición → glifo 5×7 → glifo DOT → texto corto `DotGothic16` → texto largo `JetBrains Mono` → icono de acción); trama de puntos sobre imágenes; etiqueta con franja oscura y fuentes reales; `dimColor` ajustado para LCD; firma incluye si las fuentes ya cargaron.
+  * `src/utils/superficies/useSuperficies.ts`: expone `imagenes` (última preview pintada por serial/hueco) y repinta cuando llegan las fuentes.
+  * `src/screens/dispositivos/TeclaLcdHardware.tsx`, `VistaHardware.tsx`, `DispositivosB.tsx`: la pantalla de dispositivos muestra la imagen que recibió el aparato cuando existe; `DispositivosBProps.imagenes` queda preparada para que el supervisor conecte `App.tsx`.
+* **No se tocó:** `src/App.tsx` (el supervisor conecta la prop `imagenes`), `src/types/**`, `src/utils/superficies/disposicion.ts`, `electron/**`.
+* **Muestras visuales:** 8 teclas (`vacia`, `etiqueta`, `glifo-dot`, `glifo-57`, `texto-corto`, `imagen-trama`, `brand-icon`, `icono-accion`) a 64×64 y ampliadas ×4. Guardadas en `C:\Users\andyf\Pictures\render-teclas\` y en `C:\Users\andyf\AppData\Local\Temp\opencode\render-teclas-output\` (la ruta pedida `_referencias\render-teclas` limpia archivos nuevos en este entorno).
+* **Verificación:** `npm run check` 0 errores, 38 warnings preexistentes, 6 guardianes verdes.
+* **Pendiente:** conectar `App.tsx` para pasar `superficies.imagenes` a `DispositivosB`; widgets en teclas físicas (quedan fuera, apuntado como pendiente).
+
+## Turno 2026-10-04 — T-HW-04 cierre del supervisor (DONE)
+
+* **Quién hizo qué:** el primer intento (opencode/DeepSeek V4.1 Flash, en su pane) se cortó con `SSE read timed out` tras 5 min pensando, sin dejar cambios; se relanzó **sin pane** con `opencode run -m opencode-go/kimi-k2.7-code` y contexto limpio, y ese sí terminó.
+* **Lo que se salió del encargo:** kimi escribió en `HANDOFF.md` y en el tablero (no estaban en su lista; cambios solo añadidos, se dejaron) y guardó las muestras en `Pictures/render-teclas` en vez de `_referencias`.
+* **Las muestras PNG no valían como verificación:** se generaron en Node con el paquete `canvas`, que no dibuja SVG ni tiene las fuentes de Google; glifos, iconos y logos salían como texto. Verificación válida = la app real (canvas de Chromium), con la pantalla de dispositivos enseñando la imagen exacta que recibe el aparato.
+* **Correcciones del supervisor tras la prueba con el N3:** (1) `App` no inyectaba `esGlifoDot` y el pintor trataba todos los iconos como texto (`BATTERY` salía gigante y cortado) — fallo de integración del supervisor; (2) el texto largo no se encogía para caber: ahora encoge hasta 8 px y luego recorta con «…»; (3) las teclas vacías pintaban el círculo de «sin acción» en blanco: ahora en gris apagado (`#555a64`, `textMuted` OLED), como la celda.
+* **Validado por el dueño** con el N3 y una captura de la pantalla de dispositivos.
+* **Verificación:** `npm run check` 0 errores (38 warnings, los mismos), `npm run build` OK.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

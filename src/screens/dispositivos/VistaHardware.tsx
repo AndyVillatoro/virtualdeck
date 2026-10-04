@@ -16,6 +16,8 @@ export interface VistaHardwareProps {
   selectedHueco: number | null;
   brillo: number;
   conectado: boolean;
+  /** Última imagen pintada de cada tecla, indexada por hueco. */
+  imagenes?: (string | undefined)[];
   onSelectHueco: (hueco: number) => void;
   onEditarBoton: (id: string) => void;
 }
@@ -27,6 +29,7 @@ interface ControlElementoProps {
   selectedHueco: number | null;
   brillo: number;
   conectado: boolean;
+  imagenes?: (string | undefined)[];
   onSelectHueco: (hueco: number) => void;
   onEditarBoton: (id: string) => void;
 }
@@ -49,6 +52,7 @@ function ControlElemento({
   selectedHueco,
   brillo,
   conectado,
+  imagenes,
   onSelectHueco,
   onEditarBoton,
 }: ControlElementoProps) {
@@ -72,6 +76,7 @@ function ControlElemento({
           seleccionada={selectedHueco === h}
           brillo={brillo}
           disabled={!conectado}
+          imagen={imagenes?.[h]}
           onSelect={() => onSelectHueco(h)}
           onEditar={() => handleEditar(h)}
         />
@@ -175,6 +180,7 @@ export function VistaHardware({
   selectedHueco,
   brillo,
   conectado,
+  imagenes,
   onSelectHueco,
   onEditarBoton,
 }: VistaHardwareProps) {
@@ -268,6 +274,7 @@ export function VistaHardware({
               selectedHueco={selectedHueco}
               brillo={brillo}
               conectado={conectado}
+              imagenes={imagenes}
               onSelectHueco={onSelectHueco}
               onEditarBoton={onEditarBoton}
             />

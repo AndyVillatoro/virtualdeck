@@ -16,7 +16,7 @@ import { migrateConfig, validateConfig, sanearConfig, sanearPagina, CURRENT_CONF
 import { useDisparadores } from './utils/useDisparadores';
 import { useSuperficies } from './utils/superficies/useSuperficies';
 import { COLORES_LCD } from './utils/superficies/pintarTecla';
-import { svgDeBoton } from './components/celda/iconoSvg';
+import { esGlifoDot, svgDeBoton } from './components/celda/iconoSvg';
 import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
@@ -475,7 +475,7 @@ export default function App() {
   // en kiosko y con la ventana oculta en la bandeja.
   // El icono lo pinta la capa de componentes: `src/utils` no puede importarlos.
   const superficies = useSuperficies({
-    api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD, iconoSvg: svgDeBoton,
+    api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD, iconoSvg: svgDeBoton, esGlifoDot,
   });
 
   // Se manda `config`, lo que hay en pantalla, y no se deja que el proceso
@@ -680,6 +680,7 @@ export default function App() {
           config={config}
           superficies={superficies.dispositivos}
           modelos={superficies.modelos}
+          imagenes={superficies.imagenes}
           onEditarBoton={(id) => setEditingId(id)}
           onBrilloVivo={(serial, valor) => { void api?.superficies.brillo(serial, valor); }}
           onBrillo={fijarBrilloSuperficie}

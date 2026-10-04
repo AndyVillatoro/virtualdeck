@@ -3,16 +3,24 @@ import type {
   ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, InfoSuperficie,
 } from '../../types';
 import { huecoDeEntrada, teclasLcd } from './disposicion';
-import { pintarTecla, type ColoresSuperficie, type OpcionesPintado } from './pintarTecla';
+import {
+  fuentesLcdListas, pintarTecla, prepararFuentesLcd,
+  type ColoresSuperficie, type OpcionesPintado,
+} from './pintarTecla';
 
 /**
  * El pegamento entre el deck y los dispositivos físicos.
  *
- * Mantiene la lista viva de superficies y la tabla de modelos, crea la página
- * propia de cada dispositivo la primera vez que aparece, convierte cada
- * entrada del hardware en la pulsación del botón de su hueco y mantiene las
- * teclas LCD pintadas —solo las que cambiaron, comparando una firma por
- * tecla— con el brillo aplicado.
+ * Mantiene la lista viva de superficies, la tabla de modelos y **la última
+ * imagen que se mandó a cada tecla** (sin rotar, como data URL) para que la
+ * pantalla enseñe exactamente lo que recibió el aparato.
+ *
+ * Crea la página propia de cada dispositivo la primera vez que aparece,
+ * convierte cada entrada del hardware en la pulsación del botón de su hueco y
+ * mantiene las teclas LCD pintadas —solo las que cambiaron, comparando una
+ * firma por tecla— con el brillo aplicado. La firma incluye si las fuentes
+ * reales (JetBrains Mono, DotGothic16) ya cargaron, para repintar cuando
+ * lleguen.
  *
  * `config` y `dispararBoton` se leen **por referencia** dentro de los
  * manejadores: son funciones/valores que se registran una sola vez en el
@@ -32,6 +40,13 @@ export interface OpcionesSuperficies extends OpcionesPintado {
   dispararBoton: (boton: ButtonConfig) => void;
   crearPaginaSuperficie: (info: InfoSuperficie) => void;
   colores: ColoresSuperficie;
+}
+
+export interface Superficies {
+  dispositivos: InfoSuperficie[];
+  modelos: Record<string, DisposicionSuperficie>;
+  /** Última imagen pintada por serial, indexada por hueco. */
+  imagenes: Record<string, (string | undefined)[]>;
 }
 
 interface PaginaDispositivo {
@@ -58,16 +73,20 @@ function paginaDe(config: DeckConfig, serial: string, disposicion: DisposicionSu
 }
 
 /** Lo que se dibuja de una tecla. Si no cambia, no se vuelve a pintar. */
-function firmaDe(boton: ButtonConfig | undefined, ancho: number, alto: number, rotacion: number, colores: ColoresSuperficie): string {
-  if (!boton) return 'empty';
+function firmaDe(
+  boton: ButtonConfig | undefined, ancho: number, alto: number, rotacion: number,
+  colores: ColoresSuperficie, fuentes: boolean,
+): string {
+  if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
   return JSON.stringify([
     boton.label, boton.icon, boton.imageData, boton.customGlyph57, boton.brandIcon,
     boton.brandIconCustomBitmap, boton.brandIconCustomColor, boton.brandIconCustomPalette,
     boton.bgColor, boton.fgColor, boton.action?.type,
-    ancho, alto, rotacion, colores.fondo, colores.texto,
+    ancho, alto, rotacion, colores.fondo, colores.texto, fuentes,
   ]);
 }
 
+/** Pinta las teclas cuya firma cambió y devuelve las imágenes nuevas por hueco. */
 async function pintarCambiadas(
   api: ElectronAPI,
   serial: string,
@@ -75,19 +94,23 @@ async function pintarCambiadas(
   colores: ColoresSuperficie,
   opciones: OpcionesPintado,
   firmas: Map<string, string[]>,
-): Promise<void> {
+  fuentes: boolean,
+): Promise<Record<number, string>> {
   const previas = firmas.get(serial) ?? [];
   const nuevas: string[] = [];
+  const pintadas: Record<number, string> = {};
   for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
     const boton = pagina.botones[hueco];
     const rotacion = pagina.rotacion ?? lcd.rotacion;
-    const firma = firmaDe(boton, lcd.ancho, lcd.alto, rotacion, colores);
+    const firma = firmaDe(boton, lcd.ancho, lcd.alto, rotacion, colores, fuentes);
     nuevas[hueco] = firma;
     if (previas[hueco] === firma) continue;
-    const jpeg = await pintarTecla(boton ?? null, lcd, colores, opciones, rotacion);
-    await api.superficies.imagen(serial, indice, jpeg);
+    const imagen = await pintarTecla(boton ?? null, lcd, colores, opciones, rotacion);
+    await api.superficies.imagen(serial, indice, imagen.jpegBase64);
+    if (imagen.dataUrl) pintadas[hueco] = imagen.dataUrl;
   }
   firmas.set(serial, nuevas);
+  return pintadas;
 }
 
 function aplicarBrillo(
@@ -102,21 +125,27 @@ function aplicarBrillo(
 }
 
 export function useSuperficies({
-  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg,
-}: OpcionesSuperficies): { dispositivos: InfoSuperficie[]; modelos: Record<string, DisposicionSuperficie> } {
+  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot,
+}: OpcionesSuperficies): Superficies {
   const [dispositivos, setDispositivos] = useState<InfoSuperficie[]>([]);
   const [modelos, setModelos] = useState<Record<string, DisposicionSuperficie>>({});
+  const [imagenes, setImagenes] = useState<Record<string, (string | undefined)[]>>({});
+  const [fuentesListas, setFuentesListas] = useState(false);
 
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
+  const imagenesRef = useRef(imagenes);
   const dispararRef = useRef(dispararBoton);
   const crearRef = useRef(crearPaginaSuperficie);
   const iconoRef = useRef(iconoSvg);
+  const esGlifoDotRef = useRef(esGlifoDot);
   configRef.current = config;
   dispositivosRef.current = dispositivos;
+  imagenesRef.current = imagenes;
   dispararRef.current = dispararBoton;
   crearRef.current = crearPaginaSuperficie;
   iconoRef.current = iconoSvg;
+  esGlifoDotRef.current = esGlifoDot;
 
   const creadas = useRef(new Set<string>());
   const firmas = useRef(new Map<string, string[]>());
@@ -135,6 +164,22 @@ export function useSuperficies({
     const desuscribir = api.superficies.onCambio((lista) => { if (vivo) setDispositivos(lista); });
     return () => { vivo = false; desuscribir(); };
   }, [api]);
+
+  // Las fuentes pueden llegar después del primer pintado: `loadingdone` repinta.
+  useEffect(() => {
+    let vivo = true;
+    const alListo = () => { if (vivo) setFuentesListas(fuentesLcdListas()); };
+    void prepararFuentesLcd().then(alListo);
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.addEventListener('loadingdone', alListo);
+    }
+    return () => {
+      vivo = false;
+      if (typeof document !== 'undefined' && document.fonts) {
+        document.fonts.removeEventListener('loadingdone', alListo);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -166,22 +211,33 @@ export function useSuperficies({
     }
     conectadosAntes.current = ahora;
 
-    for (const dispositivo of conectados) {
-      const pagina = paginaDe(config, dispositivo.serial, dispositivo.disposicion);
-      if (!pagina) {
-        if (!creadas.current.has(dispositivo.serial)) {
-          creadas.current.add(dispositivo.serial);
-          crearRef.current(dispositivo);
+    void (async () => {
+      const nuevasImagenes = { ...imagenesRef.current };
+      let cambio = false;
+      for (const dispositivo of conectados) {
+        const pagina = paginaDe(config, dispositivo.serial, dispositivo.disposicion);
+        if (!pagina) {
+          if (!creadas.current.has(dispositivo.serial)) {
+            creadas.current.add(dispositivo.serial);
+            crearRef.current(dispositivo);
+          }
+          continue;
         }
-        continue;
+        aplicarBrillo(api, dispositivo.serial, pagina.brillo, brillos.current);
+        const pintadas = await pintarCambiadas(
+          api, dispositivo.serial, pagina, { fondo, texto },
+          { iconoSvg: iconoRef.current, esGlifoDot: esGlifoDotRef.current }, firmas.current, fuentesListas,
+        );
+        const huecos = Object.keys(pintadas);
+        if (huecos.length === 0) continue;
+        const previas = nuevasImagenes[dispositivo.serial] ? [...nuevasImagenes[dispositivo.serial]] : [];
+        for (const hueco of huecos) previas[Number(hueco)] = pintadas[Number(hueco)];
+        nuevasImagenes[dispositivo.serial] = previas;
+        cambio = true;
       }
-      aplicarBrillo(api, dispositivo.serial, pagina.brillo, brillos.current);
-      void pintarCambiadas(
-        api, dispositivo.serial, pagina, { fondo, texto },
-        { iconoSvg: iconoRef.current }, firmas.current,
-      );
-    }
-  }, [api, config, dispositivos, fondo, texto]);
+      if (cambio) setImagenes(nuevasImagenes);
+    })();
+  }, [api, config, dispositivos, fondo, texto, fuentesListas]);
 
-  return { dispositivos, modelos };
+  return { dispositivos, modelos, imagenes };
 }
