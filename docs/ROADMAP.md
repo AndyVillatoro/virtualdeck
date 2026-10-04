@@ -159,6 +159,30 @@ Detalle de cada ítem en el [apéndice](#apéndice--catálogo-de-ideas) abajo.
 | 54 | Presets de navegación web ampliados (IA y utilidades) | Expansión del catálogo de accesos web en `actionData.ts` y chips de autocompletado en el editor: Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch, Reddit, Discord Web, WhatsApp Web, Notion, Spotify Web. | ✅ 2026-09-14 |
 | 55 | Hardening y auditoría de integraciones Spotify y Discord | Pruebas exhaustivas y validación end-to-end de Discord (RPC local / pipes / mute / deafen / manejo ante app cerrada) y Spotify (flujo de tokens / play URI / selección de dispositivo / reconexión y feedback en celda). | ✅ 2026-09-14 |
 
+| 56 | Controladores físicos, fase 1: Stream Dock N3 | Detección, página propia por dispositivo, teclas LCD pintadas, teclas/botones/perillas disparan acciones, pantalla `Dispositivos`. Medido con el N3 real (T-HW-01). | ✅ 2026-10-04 (rama `task/p1-hw-streamdock`) |
+| 57 | Controladores, fase 1b: tabla de modelos | La página y el dibujo salen de un **descriptor por modelo** (distribución, imagen, rotación, códigos) en vez del N3 escrito a mano; importar los 12 modelos Mirabox/Ajazz de Bitfocus (MIT) marcados **sin verificar**; ajuste de rotación por dispositivo como válvula de seguridad; arreglar el **brillo lento** al deslizar; iconos de librería en la tecla física. | ⬜ |
+| 58 | Controladores, fase 1c: página según la aplicación | Varias páginas por dispositivo, cada una con `targetApp`; cada dispositivo cambia la suya por su cuenta (reutiliza `activeWindow` / `useAutoProfile`) y vuelve a la predeterminada. | ⬜ |
+| 59 | Controladores, fase 1d: Elgato | Familia Elgato vía `@elgato-stream-deck/node` (MIT): Mini, MK.2, XL, Plus (perillas + tira táctil), Neo, Pedal. Sin hardware aquí: **sin verificar** hasta que alguien lo conecte. | ⬜ |
+| 60 | Controladores, fase 2: plugins | Host de plugins del SDK de Stream Deck / VSD Craft (WebSocket, `manifest.json`, Property Inspector). Ejecuta código de terceros: pasa por la misma lógica de aviso de riesgo que la galería. Protocolo documentado en `_referencias/informes/opendeck.md` (fuera del repo). | ⬜ |
+
+**Ojo con T-SEC-06 (sandbox del renderer, bloqueado):** el pintor de las teclas LCD usa
+`<canvas>`, y en este equipo el canvas revienta el renderer con el sandbox encendido. Si se
+desbloquea T-SEC-06, probar el N3 en esa misma sesión.
+
+### 🚢 Entregas a la Microsoft Store (la app ya está publicada)
+
+**Decidido (2026-10-04): todo junto en la 0.14.0** — seguridad (T-SEC), refactors (T-UTL), orquestación (T-ORC) y controladores fases 1, 1b y 1c. Elgato (59) y plugins (60) en versiones posteriores. Cada entrega cumple:
+
+- **Compatibilidad de configuración:** `PageConfig.superficie` es opcional; quien actualiza desde la
+  0.13 no necesita migración. Cualquier campo nuevo de las fases siguientes, igual: opcional o con
+  paso de migración en `configMigration`.
+- **Puerta antes de enviar a Partner Center:** `npm run package:store`, instalar el MSIX en local y
+  probar el N3 **desde el paquete** (`node-hid` va en `asarUnpack`; la app es FullTrust, así que el
+  acceso HID debería funcionar, pero no se ha medido dentro del MSIX).
+- **Lo no verificado se dice en la app** (insignia «experimental» en modelos sin probar) y en la ficha
+  de la Store, para no prometer hardware que nadie ha conectado.
+- **Ritual por entrega:** CHANGELOG + página de wiki ES/EN de controladores físicos + bump semver.
+
 ### 🎯 Matriz de Prioridades de Nuevas Características y Pendientes (v0.13.0+)
 
 Completada el 2026-09-15 (todo en `main`; ver `docs/HANDOFF.md`). Se conserva
