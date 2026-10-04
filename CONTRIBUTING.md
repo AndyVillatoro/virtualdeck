@@ -374,7 +374,7 @@ Todos los cambios notables...
 
 Si sos un agente AI retomando este proyecto, este es el contexto mínimo que necesitás:
 
-1. **Lee primero**: `CLAUDE.md` (arquitectura), `CHANGELOG.md` (qué cambió recientemente), este `CONTRIBUTING.md` (cómo trabajar).
+1. **Lee primero**: `CLAUDE.md` (arquitectura, reglas sagradas y protocolo de coordinación multi-agente si hay trabajo concurrente con OpenCode/agy), `CHANGELOG.md` (qué cambió recientemente), este `CONTRIBUTING.md` (cómo trabajar).
 2. **Antes de cualquier cambio**: corré `npx tsc --noEmit` para confirmar que el árbol está limpio. Si no, hay trabajo previo sin terminar — preguntá al usuario antes de seguir.
 3. **Antes de commitear**: confirmá que `npx tsc --noEmit` sigue pasando sin errores.
 4. **Antes de release**:

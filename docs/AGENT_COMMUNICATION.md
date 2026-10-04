@@ -44,6 +44,9 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-FIX-02** | - | Ayuda: quitar colapsable interior duplicado | Muse Spark | `HelpAboutPanel.tsx` | `DONE` ✅ | 2026-09-15 |
 | **T-WEB-01** | - | Landing Pages: rediseño DOT 480 OLED + registro de features | Muse Spark | `docs/index.html` | `DONE` ✅ | 2026-09-15 |
 | **T-WEB-02** | - | Landing: botón Store solo contorno + ES/EN en secciones y tabs | Muse Spark | `docs/index.html` | `DONE` ✅ | 2026-09-15 |
+| **T-ORC-01** | P2 | Integrar Claude Code al protocolo (Canales 1/2/3) + prueba cruzada vía herdr | Claude Sonnet 5 | `CLAUDE.md`, `CONTRIBUTING.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-10-03 |
+| **T-ORC-02** | P2 | Borrar `AGENTS.md` y fusionar su contenido en `CLAUDE.md` (agy lo cargaba como reglas propias y se colgaba) | Claude Sonnet 5 | `AGENTS.md` (borrado), `CLAUDE.md`, `CONTRIBUTING.md`, `opencode.json`, `.opencode/agents/guardian-dot480.md`, `.opencode/skills/vd-check/SKILL.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-10-03 |
+| **T-ORC-03** | P2 | Matriz de pruebas cruzadas vía herdr (6 direcciones entre claude, opencode y agy) + hooks de herdr instalados | Claude Sonnet 5 | `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-10-03 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

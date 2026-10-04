@@ -399,6 +399,75 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * En esta máquina **no se puede medir nada que dependa del proceso gráfico**, y el síntoma (renderer muerto) es el mismo que el de un error de código. Cualquier A/B de aquí sobre GPU/canvas/sandbox es sospechoso salvo que se repita al día siguiente.
 * Antes de escribir «medido que X» en un comentario o en un doc: **¿se puede repetir mañana con el mismo resultado?** Si la respuesta es que no, lo que va escrito es «no se ha podido medir», que es igual de útil y no miente.
 
+## Turno 2026-10-03 — T-ORC-01 Claude Code integrado al protocolo + prueba cruzada vía herdr (DONE)
+
+* **Modelo:** Claude Sonnet 5 (Claude Code), misma rama `task/p0-sec-01-sandbox-navegacion`.
+* **Contexto:** el dueño corre tres CLIs en paralelo (OpenCode, Claude Code, agy) bajo **herdr**, un orquestador de paneles (`herdr.dev`) que ya venía reportando el estado de OpenCode. `herdr agent list` confirmó en vivo que reconoce a los tres sin configuración adicional, cada uno en su propio pane.
+* **Cambios de documentación (solo `docs/` y raíz, sin tocar `src/`/`electron/`):** `CLAUDE.md` y `CONTRIBUTING.md` ahora apuntan a `AGENTS.md` como protocolo de coordinación multi-agente; este tablero suma la fila `T-ORC-01`. La sección nueva que describía en detalle la invocación cruzada vía herdr (pensada para `AGENTS.md` §2d) quedó bloqueada por el clasificador de permisos de Claude Code bajo la categoría "Instruction Poisoning" — un archivo que otros agentes leen como instrucciones propias es sensible por diseño, así que no se insistió con variantes; queda pendiente de que el dueño decida cómo redactarla o la agregue él mismo.
+* **Prueba cruzada real, con los tres paneles ya abiertos:**
+  - `claude -> opencode`: pedido vía herdr a la pane de OpenCode, contestó el texto exacto esperado.
+  - `claude -> agy`: mismo pedido, sin respuesta — `RESOURCE_EXHAUSTED (429)` en el endpoint de generación de Antigravity, el mismo problema recurrente ya documentado en este archivo (turno 2026-09-29), no un fallo de esta integración.
+  - `opencode -> claude` (pedirle a OpenCode que le hablara a mi propio pane): bloqueado por el clasificador bajo "Tmux Self Drive"; y el paso previo de instalar el hook oficial de herdr para Claude Code quedó bloqueado bajo "Self-Modification". Las dos son barreras de seguridad del lado de Claude Code — ese sentido de la prueba lo tiene que disparar el dueño desde otra terminal.
+* **Pendiente, a cargo del dueño (no de un agente):** correr la instalación del hook de herdr para Claude Code y para Antigravity, terminar de redactar la sección de `AGENTS.md` que el clasificador rechazó, y crear la configuración global (`CLAUDE.md` de usuario + una skill de bootstrap) para que este mismo protocolo se pueda levantar en otros proyectos sin repetir el análisis.
+* **Verificación:** `npm run check` pendiente de correr tras cerrar esta tanda de ediciones (solo archivos `.md`, no debería afectar nada de `src/`/`electron/`).
+
+## Turno 2026-10-03 — Corrección: el 429 de agy nunca fue cuota, ni cuenta, ni herdr
+
+* **Modelo:** Claude Sonnet 5 (Claude Code), misma rama. Sin cambios de código; solo este fichero y la baja de un archivo de prueba (`.geminiignore`, creado y descartado en este mismo turno).
+* **Lo que decía el turno 2026-09-29 (y lo que se asumió después, incluido el turno T-ORC-01 de hoy) era un diagnóstico incompleto.** Se había concluido que el `RESOURCE_EXHAUSTED (429)` al llamar a agy desde este repo era un problema del lado del servidor de Google, "el mismo para todos los modelos", y que no quedaba más que reintentar cuando hubiera cuota. Esa conclusión se sacó siempre probando desde dentro de virtualdeck, nunca comparando contra otra carpeta.
+* **El dueño reinstaló agy entero (binario + `~/.gemini/` completo) y el síntoma siguió idéntico.** Eso ya descartaba una instalación corrupta. A partir de ahí, aislando variables una por una en carpetas de prueba desechables:
+  - Cuenta/créditos: **sanos** (confirmado por el dueño directamente en su cuenta de Google, 100% sin usar) y cuota por ventana de tiempo (`/usage`) también en 99-100%.
+  - herdr: **descartado.** El mismo prompt falló igual corriendo *fuera* de cualquier pane de herdr, y respondió bien dentro de herdr si la carpeta era otra.
+  - Tamaño del directorio: **descartado.** Un archivo de 1.9 GB en una carpeta de prueba no reprodujo el cuelgue.
+  - Cantidad de archivos: **descartado.** 50 000 archivos vacíos tampoco lo reprodujeron.
+  - Ser un repo git: **descartado.** Un `git init` vacío respondió al instante.
+  - Detección de proyecto Rust: **descartado.** Un `Cargo.toml` mínimo tampoco lo reprodujo.
+* **La causa real: el propio archivo `AGENTS.md`.** Copiando solo `AGENTS.md` (sin nada más) a una carpeta de prueba vacía, el cuelgue se reprodujo igual; copiando solo `CLAUDE.md` en su lugar, respondió bien. El changelog de Antigravity CLI confirma que el programa carga automáticamente cualquier `AGENTS.md`/`GEMINI.md`/`rules.json` que encuentre como sus propias reglas globales. El `AGENTS.md` de este repo le dice a "cualquier agente" que lea el tablero de tareas y corra `npm run check` antes de terminar — así que un prompt tan trivial como "Reply with exactly: OK" lo manda a intentar cumplir ese protocolo de verdad en vez de solo contestar, probablemente topando con permisos de herramienta que no puede pedir en modo headless (`-p`), y terminando en un `RESOURCE_EXHAUSTED` genérico después de ~130 s en vez de un error claro de permiso denegado.
+* **No es un fallo de esta integración ni de la cuenta.** Es un efecto de que `AGENTS.md`, escrito para que "cualquier agente de IA" lo siga, también lo sigue un agente (Antigravity) que no formaba parte del diseño original del protocolo, y lo sigue literalmente incluso para una prueba de humo que no debería implicar ningún trabajo real.
+* **Para una prueba de conectividad limpia con agy, correrla desde una carpeta sin `AGENTS.md`** (una carpeta vacía o cualquier proyecto sin ese archivo), no desde la raíz de este repo.
+* **`.geminiignore` se creó para probar si filtraba `node_modules`/`target` del contexto y no cambió nada** (no parece ser una convención que Antigravity respete); se borró del repo en este mismo turno.
+
+## Turno 2026-10-03 — T-ORC-02: `AGENTS.md` borrado, fusionado en `CLAUDE.md`
+
+* **Modelo:** Claude Sonnet 5 (Claude Code), misma rama. Pedido directo del dueño tras la corrección del turno anterior.
+* **Motivo:** la causa real del cuelgue de agy, encontrada en el turno anterior, es que Antigravity CLI carga cualquier archivo llamado `AGENTS.md` como sus propias reglas globales. Mientras ese archivo exista con ese nombre en la raíz, cualquier prueba o uso trivial de agy en este repo va a derivar en que intente cumplir el protocolo entero. La solución de raíz es que el protocolo no viva en un archivo con ese nombre especial.
+* **Qué se hizo:** contenido de `AGENTS.md` fusionado en `CLAUDE.md` (reglas sagradas + protocolo de 3 canales + delegación de OpenCode + integración de agy), con la corrección de este hallazgo dejada explícita ahí mismo. Se recortó lo que ya estaba duplicado o desactualizado: §3 "Estado actual" y §4 "Backlog" de `AGENTS.md` no se portaron (son una foto vieja de v0.13.0, ya cubierta y más al día por `CHANGELOG.md`/`docs/ROADMAP.md`); §5 "Comandos esenciales" tampoco, porque `CLAUDE.md` ya tiene su propia sección de `Scripts` con los mismos comandos.
+* **Archivos actualizados para que apunten a `CLAUDE.md` en vez de `AGENTS.md`:** `opencode.json` (`instructions`), `.opencode/agents/guardian-dot480.md`, `.opencode/skills/vd-check/SKILL.md`, `CONTRIBUTING.md`. `docs/EXPORTAR-CONFIG.md` y `scripts/export-opencode-config.ps1` **no se tocaron a propósito**: su `AGENTS.md` es una plantilla genérica para proyectos nuevos, no este archivo.
+* **`AGENTS.md` borrado** del repo.
+* **Verificación:** `npm run check` pendiente de correr tras cerrar esta tanda (solo se tocaron `.md`/`.json`, sin cambios en `src/`/`electron/`).
+
+## Turno 2026-10-03 — T-ORC-03: matriz completa de pruebas cruzadas vía herdr (DONE)
+
+* **Modelo:** Claude Sonnet 5 (Claude Code), misma rama. Solo documentación; las pruebas las disparó el dueño desde cada pane.
+* **Estado de los hooks de herdr** (`herdr integration status`, herdr 0.9.1): `claude` v10, `opencode` v12 y `antigravity-cli` v3, los tres `current`. Cierra el pendiente del turno T-ORC-01.
+* **Panes al momento de la prueba** (`herdr agent list`): opencode `wE:p1`, Claude Code `wG:p1`, agy `wK:p1`. El destino de `herdr agent prompt` es el `pane_id`, no el tipo de agente.
+* **Matriz de pruebas** (prompt «Responde exactamente: OK-…», `--wait --timeout 90000`):
+
+  | Origen → destino | Resultado |
+  |---|---|
+  | claude → opencode | OK (turno T-ORC-01) |
+  | claude → agy | OK, respondió y quedó en `done` |
+  | opencode → claude | OK, respondió en este pane |
+  | opencode → agy | OK, verificado leyendo el pane de agy |
+  | agy → opencode | OK, verificado leyendo el pane de opencode |
+  | agy → claude | OK según agy; **confirmada solo desde el lado del origen** |
+
+* **El 429 de agy no volvió.** Es coherente con la causa ya documentada: `AGENTS.md` borrado en T-ORC-02.
+* **Limitación a tener en cuenta:** `herdr agent prompt` solo confirma la **entrega** del prompt (evento `agent_prompted`), no devuelve el texto de la respuesta. Para leerla: `herdr agent read <pane_id>`, o `herdr agent wait <pane_id> --state idle` y luego `read`.
+* **Barreras de Claude Code que siguen vigentes:** un agente que le inyecta un prompt al pane de Claude Code, o que instala hooks sobre él, lo tiene que disparar el dueño; no se rodean con otra forma de hacerlo.
+* **Prueba de orquestación real (solo lectura), repartida entre agy y opencode.** Cada uno contestó en una línea que empezara con `RESULTADO:`, y las respuestas correctas se calcularon antes con `ls` para compararlas:
+
+  | Agente | Pregunta | Esperado | Respuesta |
+  |---|---|---|---|
+  | agy (`wK:p1`) | archivos en `src/utils/acciones/` | 9 | 9, nombres correctos |
+  | opencode (`wE:p1`) | archivos en `src/screens/editor/formularios/` | 8 | 8, nombres correctos |
+
+* **Patrón que funcionó:** `herdr agent prompt <pane> "..."` (entrega) → `herdr agent wait <pane> --until idle --until done --until blocked --timeout <ms>` (espera) → `herdr agent read <pane>` filtrando por `RESULTADO:` (respuesta).
+* **Dos cosas a tener en cuenta al delegar:**
+  - **Pasar siempre `--timeout` al `wait`.** El primer intento con opencode se quedó colgado con el modelo «Space Bunny Free» y el dueño lo interrumpió cambiando a otro modelo; sin timeout la espera no termina.
+  - **Si el pane destino tiene texto suelto en la caja de entrada, se mezcla con el prompt.** Antes de reenviar, `herdr agent send-keys <pane> ctrl+u` lo limpia.
+* **Verificación:** `npm run check` en verde, 0 errores (los 38 warnings de complejidad ya existían); la última edición es solo de este `.md`.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

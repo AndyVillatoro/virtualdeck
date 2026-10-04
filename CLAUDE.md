@@ -13,6 +13,53 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 
 **Antes y después de cualquier cambio**: corré `npm run check` (tsc + arquitectura + eslint). Cero **errores** antes y después (los *warnings* de eslint son señal de deuda SRP, no bloquean — ver Bloque B del roadmap). Tooling: `npm run lint:acciones` (cobertura de tipos de acción), `npm run lint:arch` (dependency-cruiser, límites de capas SRP), `npm run lint` (eslint), `npm run lint:dead` (knip, código muerto). `scripts/check-ipc.mjs` cruza los 85 canales IPC del proceso principal contra el puente del preload: los dos lados son cadenas sueltas, así que un renombrado en uno solo revienta en la máquina del usuario, y solo al pulsar justo eso. Los **nombres** los cruza ese script; las **firmas** las cruza el propio compilador, porque el objeto del preload va con `satisfies ElectronAPI`. Sin eso, `ElectronAPI` describía lo que la pantalla cree que existe y el preload construía otra cosa: así estuvo `onEstadoSistema` colgado de `bar` en vez de `events`, con la llamada en `?.` tragándoselo en silencio.
 
+## Reglas sagradas del proyecto (NO VIOLAR)
+
+(Antes vivían en un `AGENTS.md` aparte — ver la nota al final de este bloque sobre por qué se fusionó acá.)
+
+1. **Estética DOT / 480 OLED Micro Interface**:
+   - Modo oscuro: fondo OLED puro `#070809`, superficie `#111315`, bordes `#26292e`, acento `#FF3B30` o preset.
+   - Modo claro: grises industriales cemento mate (`#d8dbe0` fondo, `#cbcfd5` superficie, bordes `#9da4ae`, texto `#111418`). **Prohibido el blanco puro `#ffffff`**.
+   - Grilla estricta de 4px.
+   - **0 emojis**: todo icono es un glifo dot-matrix SVG o mapa de puntos 8×8/5×7 de `src/components/dot480/`.
+   - Colores obligatorios vía `const VD = useTheme();`. Prohibido importar `VD`/`VD_LIGHT` directo de `design.ts` en componentes de UI (ESLint lo bloquea).
+2. `npm run check` **obligatorio antes de dar una tarea por terminada y antes de hacer commit**, con los 6 guardianes en verde (`check-i18n`, `check-acciones`, `check-ipc`, `check-wiki`, `check-campos`, `check-perfiles`).
+3. Complejidad ciclomática máxima por función: **18**. Líneas máximas por archivo: **600**.
+
+## Protocolo de coordinación multi-agente
+
+Este repo lo trabajan, por turnos o en paralelo, OpenCode (con varios modelos propios), Claude
+Code y agy/Antigravity (Gemini). La coordinación va por **archivos compartidos**, no por un
+archivo de instrucciones aparte — ver la corrección más abajo sobre por qué.
+
+- **Canal 1 — tablero de reclamos** (`docs/AGENT_COMMUNICATION.md`): antes de tocar archivos,
+  leerlo y confirmar que nada relevante esté `CLAIMED`; registrar el propio reclamo; al
+  terminar y verificar, pasar a `DONE`.
+- **Canal 2 — log de handoff** (`docs/HANDOFF.md`): qué se tocó, resultado de `npm run check`/
+  `npm run build`, próximo paso concreto para quien continúe.
+- **Canal 3 — ramas**: una rama por tarea significativa, `task/<prioridad>-<nombre>`; commits
+  atómicos tras verificar.
+- **Delegación entre los modelos propios de OpenCode** (pickle, mimo-worker, zen-muse-free,
+  lightning-exec, ling-fin, go-flash/go-kimi-code): elegir siempre el más capaz para la
+  subtarea; `opencode-go/` y los locales no entrenan con el prompt, el resto de los modelos
+  free sí — si el mensaje trae `[privado]`, usar uno zero-retention aunque pierda calidad.
+  Reportar `Delegación usada: [tarea -> subagent_type, ...]` al cerrar la tarea.
+- **agy/Antigravity (Gemini) vía shell**: no es un provider de `opencode.json`, es un binario
+  aparte (`agy.exe`) invocado en modo print/headless: `agy -p="<prompt>" --model
+  gemini-3.8-flash-medium --print-timeout 60s --add-dir <cwd>`. Solo modo print — nunca
+  `--dangerously-skip-permissions` ni `--mode accept-edits`. Cuota aparte de la de OpenCode.
+  virtualdeck es un proyecto abierto, así que no rige acá la restricción habitual de no
+  mandarle contenido `[privado]`/sensible (decisión explícita del dueño).
+
+**Corrección (2026-10-03): este protocolo vivía en un `AGENTS.md` en la raíz, y se fusionó acá
+a propósito.** Antigravity CLI carga automáticamente cualquier archivo que se llame
+`AGENTS.md` como sus propias reglas globales (confirmado en su changelog y reproducido en
+aislado: un `AGENTS.md` copiado solo, sin nada más, ya le hacía intentar seguir el protocolo
+al pie de la letra — leer el tablero, correr `npm run check` — para un prompt tan trivial
+como "responde OK", colgándose ~130s y fallando con un `RESOURCE_EXHAUSTED` que no tenía nada
+que ver con la cuota ni la cuenta). `opencode.json` apunta su `instructions` a este archivo en
+vez de a `AGENTS.md` por lo mismo.
+
 ## Stack
 - **Electron 33** (main: `electron/main/index.ts`, preload: `electron/preload/index.ts`)
 - **React 18 + Vite 5** (renderer en `src/`)

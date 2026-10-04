@@ -34,3 +34,10 @@ _cdp.mjs
 docs/prensa/hero.mp4
 docs/prensa/miniatura.png
 docs/prensa/.cuadros/
+
+# Export de config global de OpenCode (contiene rutas de usuario + orquestacion; NUNCA versionar)
+opencode-export/
+.opencode/.archivado-*/
+
+# Auditorias locales con hallazgos de seguridad: NUNCA versionar (repo publico + vulns sin parchear)
+auditorias/

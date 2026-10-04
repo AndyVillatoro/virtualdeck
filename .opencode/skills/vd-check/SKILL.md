@@ -5,7 +5,7 @@ description: Cómo ejecutar, interpretar y reparar `npm run check` en VirtualDec
 
 # vd-check: interpretar `npm run check` en VirtualDeck
 
-`npm run check` es **obligatorio antes de dar una tarea por terminada y antes de commit** (AGENTS.md §1.2). Debe pasar con **0 errores**. Este skill explica qué hace cada eslabón, cómo leer su salida y dónde arreglar cada familia de fallos.
+`npm run check` es **obligatorio antes de dar una tarea por terminada y antes de commit** (`CLAUDE.md` § Reglas sagradas del proyecto). Debe pasar con **0 errores**. Este skill explica qué hace cada eslabón, cómo leer su salida y dónde arreglar cada familia de fallos.
 
 ## 0. Qué es realmente `npm run check`
 
