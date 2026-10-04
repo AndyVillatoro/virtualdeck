@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { findSensor, evalCondition } from './sensors';
+import { normalizarApp } from './apps';
 import type { ButtonConfig, RGBStatus, Sensor } from '../types';
 
 /**
@@ -93,7 +94,7 @@ export function botonActivo(b: ButtonConfig, e: EstadoSistema): boolean {
     return !!nombre && e.runningProcesses.has(nombre);
   }
   if (a.type === 'kill-process' && a.processName) {
-    return e.runningProcesses.has(a.processName.replace(/\.exe$/i, '').toLowerCase());
+    return e.runningProcesses.has(normalizarApp(a.processName));
   }
   return false;
 }
@@ -110,7 +111,7 @@ export function botonVisible(b: ButtonConfig, e: EstadoSistema, sensores: Sensor
   const v = b.visibleIf;
   if (!v) return true;
   if (v.app) {
-    const nombre = v.app.replace(/\.exe$/i, '').toLowerCase();
+    const nombre = normalizarApp(v.app);
     if (!e.runningProcesses.has(nombre)) return false;
   }
   if (v.sensor && sensores !== null) {

@@ -1,6 +1,7 @@
 ﻿import type React from 'react';
 import { useCallback, useRef } from 'react';
 import type { DeckConfig, SoundProfileId, ThemeMode } from '../../types';
+import { sonidoActivo } from '../sound';
 import type { ContextoDeck } from './contexto';
 
 /**
@@ -48,7 +49,7 @@ export function useDeckPreferencias({ api, config, setConfig, saveConfig }: Cont
   // Sound on press toggle
   const toggleSoundOnPress = useCallback(() => {
     setConfig((prev) => {
-      const next = { ...prev, soundOnPress: !(prev.soundOnPress ?? true) };
+      const next = { ...prev, soundOnPress: !sonidoActivo(prev) };
       api?.config.save(next).catch(() => {});
       return next;
     });
@@ -64,7 +65,7 @@ export function useDeckPreferencias({ api, config, setConfig, saveConfig }: Cont
 
   const setKioskPin = useCallback((pin: string) => {
     setConfig((prev) => {
-      const next = { ...prev, kiosk: { enabled: true, pin } };
+      const next = { ...prev, kiosk: { pin } };
       api?.config.save(next).catch(() => {});
       return next;
     });

@@ -563,3 +563,35 @@ export function FormWindowSnap(p: PropsFormulario) {
     </>
   );
 }
+
+export function FormWindowCycle(p: PropsFormulario) {
+  const VD = useTheme();
+  const tf = useFieldText();
+  const { accent, action, setAction } = p;
+  const dir = action.windowCycle ?? 'next';
+  return (
+    <>
+          <Field label={tf("DIRECCIÓN")}>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {(['prev', 'next'] as const).map((o) => (
+                <button
+                  key={o}
+                  type="button"
+                  onClick={() => setAction((a) => ({ ...a, windowCycle: o }))}
+                  style={{
+                    flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
+                    background: dir === o ? VD.accentBg : VD.elevated,
+                    border: `1px solid ${dir === o ? accent : VD.border}`,
+                    color: dir === o ? accent : VD.textDim,
+                    fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+                  }}
+                >{o === 'prev' ? tf('ANTERIOR') : tf('SIGUIENTE')}</button>
+              ))}
+            </div>
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+              {tf('Recorre las ventanas abiertas en orden estable (por programa), no como Alt+Tab.')}
+            </div>
+          </Field>
+    </>
+  );
+}

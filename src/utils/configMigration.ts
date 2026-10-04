@@ -5,7 +5,7 @@
 // porque la cadena de migrate(v1 → v2 → ...) se aplica en orden.
 import type { DeckConfig, ButtonAction, ButtonConfig, PageConfig } from '../types';
 
-export const CURRENT_CONFIG_VERSION = 4;
+export const CURRENT_CONFIG_VERSION = 5;
 
 export interface ValidationResult {
   ok: boolean;
@@ -17,12 +17,12 @@ const ACTION_TYPES = new Set([
   'none', 'app', 'web', 'shortcut', 'script', 'audio-device', 'hotkey',
   'media-play-pause', 'media-next', 'media-prev', 'volume-up', 'volume-down',
   'mute', 'brightness', 'clipboard', 'type-text', 'kill-process',
-  'volume-set', 'folder', 'notify',
+  'volume-set', 'folder', 'page-nav', 'notify',
   // 1.2 / 1.5 / 2.1
   'set-var', 'incr-var', 'webhook', 'remote', 'tts', 'region-capture',
   // 2.x / 3.x / 4.x
   'rgb-color', 'rgb-mode', 'rgb-profile', 'rgb-preset',
-  'window-snap', 'branch', 'countdown',
+  'window-snap', 'window-cycle', 'branch', 'countdown',
   // 5.x — media extendido + macros
   'media-shuffle', 'media-repeat', 'macro',
   // Faltaba, y no era inocuo: un deck con botones ± de brillo o volumen
@@ -96,6 +96,46 @@ export function validateConfig(raw: unknown, t: (k: string, v?: Record<string, s
 }
 
 // Cadena de migraciones. Cada entrada toma un config en versión N y lo lleva a N+1.
+type MapaSuperficies = Record<string, { brillo?: number; rotacion?: number }>;
+
+/**
+ * v4 → v5, fuera de la tabla para no sumar complejidad al `apply`.
+ *
+ * El brillo y el giro se copiaban en cada página del mismo serial; ahora
+ * viven en un mapa por serial en la raíz. Se toma el de la primera página de
+ * cada serial que lo diga y se quita de todas las páginas.
+ *
+ * Idempotente a propósito: quien probó la rama de docks ya tiene docks, y
+ * migrar dos veces no puede cambiar nada la segunda. Si el mapa ya trae un
+ * valor para un serial, manda el del mapa y las páginas solo se limpian.
+ */
+function migrarSuperficiesPorSerial(
+  paginas: any[], previo: unknown,
+): { mapa: MapaSuperficies; limpias: any[] } {
+  const mapa: MapaSuperficies = { ...((previo ?? {}) as MapaSuperficies) };
+  const vistos = new Set<string>();
+  for (const p of paginas) {
+    const serial = p?.superficie?.serial;
+    if (typeof serial !== 'string' || serial === '' || vistos.has(serial)) continue;
+    vistos.add(serial);
+    const primera = paginas.find((q) => q?.superficie?.serial === serial);
+    const ya = mapa[serial] ?? {};
+    mapa[serial] = {
+      ...ya,
+      ...(ya.brillo === undefined && typeof primera?.superficie?.brillo === 'number'
+        ? { brillo: primera.superficie.brillo } : {}),
+      ...(ya.rotacion === undefined && typeof primera?.superficie?.rotacion === 'number'
+        ? { rotacion: primera.superficie.rotacion } : {}),
+    };
+    if (Object.keys(mapa[serial]).length === 0) delete mapa[serial];
+  }
+  const limpias = paginas.map((p) => {
+    if (!p?.superficie || !('brillo' in p.superficie) && !('rotacion' in p.superficie)) return p;
+    const { brillo: _b, rotacion: _r, ...resto } = p.superficie;
+    return { ...p, superficie: resto };
+  });
+  return { mapa, limpias };
+}
 const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = [
   {
     from: 1, to: 2,
@@ -134,6 +174,18 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
         language: c.language ?? 'system',
         onboardingCompleted: c.onboardingCompleted ?? yaUsaba,
       };
+    },
+  },
+  {
+    from: 4, to: 5,
+    apply: (c) => {
+      // v4 → v5: brillo y giro del dock por dispositivo, no por página (ver
+      // `migrarSuperficiesPorSerial`: idempotente, el mapa previo manda).
+      // Sin `pages` no se inventa un `[]`: `App` rellena con `s.pages || PAGES_DEFAULT`
+      // y un array vacío pasaría como válido, dejando el deck sin páginas.
+      if (!Array.isArray(c.pages)) return { ...c, configVersion: 5 };
+      const { mapa, limpias } = migrarSuperficiesPorSerial(c.pages, c.superficies);
+      return { ...c, configVersion: 5, pages: limpias, superficies: mapa };
     },
   },
 ];

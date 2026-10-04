@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { indicesPaginasDeck } from '../../utils/paginasDeck';
 import type { DeckConfig } from '../../types';
 
 /**
@@ -46,6 +47,10 @@ interface Props {
 export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, onPageExport, onPageImport, onPageReorder, onMoveButtonToPage, renamingPageId, setRenamingPageId, renameValue, setRenameValue, setPageContextMenu, dragPageIdx, setDragPageIdx, dragOverPageIdx, setDragOverPageIdx, dragSourceId, setDragSourceId, showSidebar, setShowSidebar, showToast, confirmRename, compact = false }: Props) {
   const VD = useTheme();
   const t = useT();
+  // Solo las páginas del deck: las de los docks se editan en `Dispositivos`
+  // (ver `utils/paginasDeck`). Los índices que viajan son reales (posición en
+  // `config.pages`), porque `activePage` y el arrastre los usan tal cual.
+  const indicesDeck = indicesPaginasDeck(config.pages);
 
   return (
       <div style={{
@@ -53,7 +58,9 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
         borderBottom: `1px solid ${VD.border}`,
         background: VD.surface, flexShrink: 0, alignItems: 'flex-end',
       }}>
-        {config.pages.map((p, i) => (
+        {indicesDeck.map((i) => {
+          const p = config.pages[i];
+          return (
           <div
             key={p.id}
             draggable
@@ -148,7 +155,8 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
               </span>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {config.pages.length < 8 && (
           <div

@@ -185,8 +185,28 @@ export function useDeckBotones({ config, withHistory, t }: ContextoDeck) {
     });
   }, [withHistory, t]);
 
+  /**
+   * Rellenar varios huecos de golpe con un contenido nuevo: un preset de
+   * perilla son tres huecos (izq, pulsar, der) y tiene que ser **un** paso de
+   * deshacer, no tres. Cada botón se rehace entero (conserva solo id y página)
+   * para que no se cuele nada del botón anterior, como un `fgColor` o un widget.
+   */
+  const rellenarBotones = useCallback((
+    ids: string[], contenidos: Omit<ButtonConfig, 'id' | 'page'>[], nombre: string,
+  ) => {
+    if (ids.length === 0) return;
+    const nuevo = new Map(ids.map((id, i) => [id, contenidos[i]] as const));
+    withHistory(t('undo.applyPreset', { nombre }), (prev) => ({
+      ...prev,
+      buttons: prev.buttons.map((b) => {
+        const contenido = nuevo.get(b.id);
+        return contenido ? { ...contenido, id: b.id, page: b.page } : b;
+      }),
+    }));
+  }, [withHistory, t]);
+
   return {
     updateButton, duplicateButton, copyButton, pasteButton, buttonClipboard, clearButton,
-    moveButtonToPage, swapButtons, clearButtons, moveButtonsToPage,
+    moveButtonToPage, swapButtons, clearButtons, moveButtonsToPage, rellenarBotones,
   };
 }

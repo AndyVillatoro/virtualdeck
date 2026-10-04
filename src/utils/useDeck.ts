@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { indicesPaginasDeck } from './paginasDeck';
 import type React from 'react';
 import type { ElectronAPI } from '../types';
 import { useDeckEstado } from './useDeck/estado';
@@ -73,6 +74,15 @@ export function useDeck({ api, showUndoToast, setActivePage }: Opciones) {
     saveConfig: estado.saveConfig,
     setActivePage,
   }), [api, estado.config, estado.setConfig, estado.t, estado.withHistory, estado.saveConfig, setActivePage]);
+
+  // La principal nunca enseña una página de dock (se editan en Dispositivos):
+  // si la activa resulta serlo —se borró o se reordenó lo de alrededor—, se
+  // pasa a la primera del deck. `activePage` es un índice de `config.pages`.
+  const todasLasPaginas = estado.config.pages;
+  useEffect(() => {
+    setActivePage((prev) => (todasLasPaginas[prev]?.superficie
+      ? (indicesPaginasDeck(todasLasPaginas)[0] ?? prev) : prev));
+  }, [todasLasPaginas, setActivePage]);
 
   const botones = useDeckBotones(contexto);
   const paginas = useDeckPaginas(contexto);

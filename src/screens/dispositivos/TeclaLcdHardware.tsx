@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
+import { BRILLO_SUPERFICIE_POR_DEFECTO } from '../../utils/superficies/ajustesSuperficie';
 import type { ButtonConfig } from '../../types';
 
 interface TeclaLcdHardwareProps {
@@ -121,7 +122,7 @@ export function TeclaLcdHardware({
   indice,
   boton,
   seleccionada,
-  brillo = 80,
+  brillo = BRILLO_SUPERFICIE_POR_DEFECTO,
   disabled = false,
   imagen,
   onSelect,

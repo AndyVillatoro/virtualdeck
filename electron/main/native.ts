@@ -65,6 +65,9 @@ export interface NucleoNativo {
   isMuted: () => boolean | null;
   setMuted: (muted: boolean) => boolean;
   snapWindow: (position: string, processName?: string) => boolean;
+  /** Siguiente (`true`) o anterior (`false`) en orden estable por proceso. */
+  cycleWindow: (adelante: boolean) => boolean;
+  openApps: () => string[];
   getActiveWindow: () => { processName: string | null; windowTitle: string | null } | null;
   focusWindow: (processName: string) => boolean;
   minimizeWindow: (processName?: string) => boolean;

@@ -1,5 +1,5 @@
 import type React from 'react';
-import type { AudioDevice, ButtonAction, FolderButton, RGBDeviceInfo, RGBProfile, SliderWidgetConfig, TipoWidget } from '../../../types';
+import type { AudioDevice, ButtonAction, FolderButton, PageConfig, RGBDeviceInfo, RGBProfile, SliderWidgetConfig, TipoWidget } from '../../../types';
 
 /**
  * El bag que reciben todos los formularios.
@@ -46,4 +46,11 @@ export interface PropsFormulario {
   sliderWidget?: SliderWidgetConfig;
   setSliderWidget?: React.Dispatch<React.SetStateAction<SliderWidgetConfig | undefined>>;
   setStep?: (step: number) => void;
+  /** Todas las páginas, para que `page-nav` liste destinos por nombre. */
+  pages?: PageConfig[];
+  /** Índice de la página del botón que se edita: define el contexto (dock o deck). */
+  indicePaginaBoton?: number;
+  /** T-HW-12 — fijo en su grupo, con su setter. */
+  fijo: boolean;
+  setFijo: (v: boolean) => void;
 }

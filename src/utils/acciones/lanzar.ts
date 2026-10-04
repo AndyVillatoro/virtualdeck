@@ -36,6 +36,13 @@ export const LANZAR: Record<string, Manejador> = {
     return ok ? OK : fail(t('act.err.snap'));
   },
 
+  // Recorre las ventanas abiertas: la siguiente o la anterior, en orden
+  // estable por proceso. Vacío = siguiente.
+  'window-cycle': async ({ action, api, t }) => {
+    const ok = await api.launch.cycleWindow(action.windowCycle !== 'prev');
+    return ok ? OK : fail(t('act.err.windowCycle'));
+  },
+
   // Lanza la herramienta nativa de recorte de Windows.
   'region-capture': async ({ api, t }) => {
     const ok = await api.launch.url('ms-screenclip:');

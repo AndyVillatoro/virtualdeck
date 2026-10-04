@@ -11,13 +11,15 @@ import { FormularioPasoEditorB } from './editor/FormularioPasoEditorB';
 import { useTheme } from '../utils/theme';
 import { PieEditorB } from './editor/PieEditorB';
 import { ModalesIconosEditor } from './editor/ModalesIconosEditor';
-import type { ButtonConfig, RGBProfile, SubButtonConfig } from '../types';
+import type { ButtonConfig, PageConfig, RGBProfile, SubButtonConfig } from '../types';
 
 interface EditorBProps {
   button: ButtonConfig;
   rgbProfiles?: RGBProfile[];
   /** Variables de estado actuales — para autocompletar el nombre en el widget 'variable'. */
   deckState?: Record<string, string>;
+  /** Todas las páginas — para que `page-nav` liste destinos por nombre. */
+  pages?: PageConfig[];
   onClose: () => void;
   onSave: (updated: ButtonConfig) => void;
   /** 7.6: Vaciar botón con confirmación y soporte de deshacer */
@@ -31,7 +33,7 @@ import { useCapturaHotkey } from './editor/useCapturaHotkey';
 import { usePegarImagen } from './editor/usePegarImagen';
 
 
-export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onSave, onClear }: EditorBProps) {
+export function EditorB({ button, rgbProfiles = [], deckState = {}, pages = [], onClose, onSave, onClear }: EditorBProps) {
   const VD = useTheme();
   const api = window.electronAPI;
   const isConfigured = botonConfigurado(button);
@@ -76,6 +78,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
   const [bgColor, setBgColor] = useState(est.bgColor);
   const [fgColor, setFgColor] = useState(est.fgColor);
   const [pinned, setPinned] = useState(est.pinned);
+  const [fijo, setFijo] = useState(est.fijo);
   // 1.4 — Disparadores externos
   const [globalHotkey, setGlobalHotkey] = useState(dis.globalHotkey);
   const [inTrayMenu, setInTrayMenu] = useState(dis.inTrayMenu);
@@ -184,6 +187,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
       sensorTriggerVal,
       sensorTriggerCooldown,
       pinned,
+      fijo,
     }));
   };
 
@@ -194,6 +198,9 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
     setIcon(preset.icon ?? '');
     setBgColor(preset.bgColor ?? '');
     setFgColor(preset.fgColor ?? '');
+    setIsToggle(preset.isToggle ?? false);
+    setActionToggleOff(preset.actionToggleOff ?? { type: 'none' });
+    if (preset.fijo) setFijo(true);
     if (preset.widget) {
       setWidget(preset.widget);
       if (preset.sliderWidget) setSliderWidget(preset.sliderWidget);
@@ -283,7 +290,7 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               label, sublabel, icon, imageData, brandIcon,
               brandIconAlwaysAnimate, brandIconCustomBitmap,
               brandIconCustomColor, brandIconCustomPalette,
-              customGlyph57, bgColor, fgColor, pinned,
+              customGlyph57, bgColor, fgColor, pinned, fijo,
               widget, sliderWidget,
             }}
           />
@@ -344,6 +351,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               rgbDevices={rgbDevices}
               rgbProfiles={rgbProfiles}
               deckState={deckState}
+              pages={pages}
+              indicePaginaBoton={button.page}
               widget={widget}
               setWidget={setWidget}
               sliderWidget={sliderWidget}
@@ -412,6 +421,8 @@ export function EditorB({ button, rgbProfiles = [], deckState = {}, onClose, onS
               setCurrencyWidget={setCurrencyWidget}
               pinned={pinned}
               setPinned={setPinned}
+              fijo={fijo}
+              setFijo={setFijo}
             />
           </div>
         </div>

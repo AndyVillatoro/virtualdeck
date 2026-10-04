@@ -13,6 +13,7 @@ import { MenuContextualPagina } from './main/MenuContextualPagina';
 import { BarraSeleccionLote } from './main/BarraSeleccionLote';
 import { ModalVincularApp } from './main/ModalVincularApp';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
+import { navegarDeck, indicesPaginasDeck } from '../utils/acciones/pageNav';
 import { logError } from '../utils/logger';
 import { Wallpaper } from '../components/Wallpaper';
 import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
@@ -32,7 +33,7 @@ export function MainB({
   onConfigExport, onConfigImport, onSwapButtons,
   onPageRename, onPageAdd, onDuplicatePage, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
   onSaveProfile, onLoadProfile, onAppendProfilePages, onAppendPagesFromProfile, onAppendPageFromGallery, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
-  uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding,
+  uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding, onFijarTargetApp, onCrearDesdePlantilla,
 }: MainBProps) {
   const VD = useTheme();
   const t = useT();
@@ -153,13 +154,22 @@ export function MainB({
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
 
+  // La página actual también por referencia: la celda conserva el manejador de
+  // su primer render y `activePage` del cierre sería el de entonces.
+  const activePageRef = useRef(activePage);
+  activePageRef.current = activePage;
+
   const entorno = useCallback((): EntornoPulsacion => ({
     api: api!,
     config: configRef.current, toggledIds: () => toggledRef.current, onToggle, onStateUpdate,
     avisar: showToast, t,
+    // Navega entre las páginas del deck (sin las de docks) con el mismo
+    // `onPageChange` de siempre: así `useAutoProfile` lo toma como elección
+    // manual y la guarda como base.
+    navegar: (a) => navegarDeck(a, configRef.current.pages, configRef.current.pages[activePageRef.current]?.id, onPageChange),
   // `toggledIds` no va aqui: se lee por referencia. Dejarlo ademas recreaba
   // el entorno en cada encendido, sin ninguna falta.
-  }), [api, onToggle, onStateUpdate, showToast, t]);
+  }), [api, onToggle, onStateUpdate, showToast, t, onPageChange]);
 
   /** Anota lo ejecutado en el registro lateral. Es lo unico propio de esta pantalla. */
   const anotar = useCallback((etiqueta: string, tipo: string, ok: boolean, error?: string) => {
@@ -193,7 +203,7 @@ export function MainB({
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
   const gridRows = currentPage?.gridRows ?? gridSize;
-  const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows);
+  const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows, config.pages);
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
   const divisas = useDivisas(config.buttons, api);
@@ -351,12 +361,18 @@ export function MainB({
               const debounced = now - lastSwipeAtRef.current < 300;
               if (!isHorizontal || debounced || Math.abs(dx) < threshold) return;
               lastSwipeAtRef.current = now;
-              if (dx < 0 && activePage < config.pages.length - 1) onPageChange(activePage + 1);
-              else if (dx > 0 && activePage > 0) onPageChange(activePage - 1);
+              // Solo entre páginas del deck (índices reales, sin renumerar).
+              const indices = indicesPaginasDeck(config.pages);
+              const pos = indices.indexOf(activePage);
+              if (pos === -1) return;
+              if (dx < 0 && pos < indices.length - 1) onPageChange(indices[pos + 1]);
+              else if (dx > 0 && pos > 0) onPageChange(indices[pos - 1]);
             }}
             celda={(btn) => (
               <CeldaPrincipal
                 btn={btn}
+                // Fijo visto desde otra página: se edita el original (mismo id).
+                esFija={btn.fijo === true && btn.page !== activePage}
                 accent={config.accent}
                 toggledIds={toggledIds}
                 selectedIds={selectedIds}
@@ -473,13 +489,19 @@ export function MainB({
             accent={config.accent}
             runningProcesses={estadoSistema.runningProcesses}
             onSave={(cleaned) => {
-              const updatedPages = config.pages.map((p) =>
-                p.id === bindingAppPageId ? { ...p, targetApp: cleaned || undefined } : p,
-              );
-              onConfigChange({ ...config, pages: updatedPages });
+              // Con deshacer, como en Dispositivos: antes era un
+              // `onConfigChange` directo sin historial.
+              if (onFijarTargetApp) onFijarTargetApp(bindingAppPageId, cleaned);
+              else {
+                const updatedPages = config.pages.map((p) =>
+                  p.id === bindingAppPageId ? { ...p, targetApp: cleaned || undefined } : p,
+                );
+                onConfigChange({ ...config, pages: updatedPages });
+              }
               setBindingAppPageId(null);
             }}
             onClose={() => setBindingAppPageId(null)}
+            onCrearDesdePlantilla={onCrearDesdePlantilla}
           />
         );
       })()}

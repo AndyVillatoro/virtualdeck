@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import type { SensorsSettings, SensorsStatus, SensorCategory } from '../../types';
+import { SENSORES_POR_DEFECTO } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 import { LINKS } from '../../data/links';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
@@ -155,7 +156,7 @@ export function SensorsSection({
             <input
               value={config.host}
               onChange={(e) => setHost(e.target.value)}
-              placeholder="127.0.0.1"
+              placeholder={SENSORES_POR_DEFECTO.host}
               style={{ ...inputStyleSettings, marginTop: 4 }}
             />
             {config.host?.trim() === '0.0.0.0' && (
@@ -169,7 +170,7 @@ export function SensorsSection({
             <input
               type="number"
               value={config.port}
-              onChange={(e) => setPort(parseInt(e.target.value, 10) || 8085)}
+              onChange={(e) => setPort(parseInt(e.target.value, 10) || SENSORES_POR_DEFECTO.port)}
               style={{ ...inputStyleSettings, marginTop: 4 }}
             />
           </div>

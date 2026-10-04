@@ -57,6 +57,8 @@ export const FIELDS_EN: Record<string, string> = {
   'BOTÓN ANCLADO GLOBAL': 'GLOBAL PINNED BUTTON',
   'ANCLAR EN TODAS LAS PÁGINAS': 'PIN TO ALL PAGES',
   'Los botones anclados se mantienen en este hueco a través de todas las páginas.': 'Pinned buttons stay in this slot across all pages.',
+  'FIJO EN TODAS LAS PÁGINAS': 'FIXED ON ALL PAGES',
+  'Vive en su página y se ve en el mismo hueco en las demás páginas de su grupo: el deck, o el mismo dock.': 'Lives on its page and shows in the same slot on the other pages of its group: the deck, or the same dock.',
   'GRUPO RADIO (toggles mutuamente exclusivos)': 'RADIO GROUP (mutually exclusive toggles)',
   'WIDGET (MUESTRA DATOS EN EL BOTÓN)': 'WIDGET (SHOWS LIVE DATA ON THE BUTTON)',
   'VISIBLE SOLO SI ESTA APP ESTÁ ACTIVA (opcional)': 'VISIBLE ONLY IF THIS APP IS ACTIVE (optional)',
@@ -243,5 +245,16 @@ export const FIELDS_EN: Record<string, string> = {
   'PORTAPAPELES': 'CLIPBOARD',
   'VALOR': 'VALUE',
   'INCREMENTO': 'INCREMENT',
+  // Navegación entre páginas
+  'MODO DE NAVEGACIÓN': 'NAVIGATION MODE',
+  'SIGUIENTE': 'NEXT',
+  'ANTERIOR': 'PREVIOUS',
+  'PRIMERA': 'FIRST',
+  'CAMBIAR PÁGINA': 'CHANGE PAGE',
+  'IR A UNA PÁGINA': 'GO TO A PAGE',
+  'PÁGINA DESTINO': 'TARGET PAGE',
+  'Anterior y siguiente se paran en los extremos; cambiar página da la vuelta. En un dock mueve entre sus páginas; en el deck, entre las del deck.': 'Previous and next stop at the ends; change page wraps around. On a dock it moves between its pages; on the deck, between the deck pages.',
+  'DIRECCIÓN': 'DIRECTION',
+  'Recorre las ventanas abiertas en orden estable (por programa), no como Alt+Tab.': 'Steps through open windows in stable order (by program), unlike Alt+Tab.',
 };
 

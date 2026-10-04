@@ -1,4 +1,5 @@
 import { intentarNativo } from './native';
+import { getUio } from './macro';
 import { exec, spawn } from 'child_process';
 import { shell, BrowserWindow } from 'electron';
 import { runPS, runPSBool, runCmd, injectUtf8Prefix } from './ps-helpers';
@@ -575,6 +576,44 @@ switch ($Pos) {
   return runPSBool(script, { timeoutMs: 15000, args: [pname, position] });
 }
 
+/**
+ * Trae al frente la ventana siguiente (`adelante`) o la anterior, en un orden
+ * estable por proceso —no el de uso reciente de `Alt+Tab`, donde «la
+ * siguiente» cambia cada vez—. La actual es la de arriba de la pila, así que
+ * funciona aunque se pulse desde la propia pantalla de VirtualDeck.
+ *
+ * **Sin núcleo no hay nada que hacer, y no hay respaldo en PowerShell.**
+ * Recorrer en orden estable exige enumerar las ventanas por Z-order y robar el
+ * primer plano con pegado de hilos (`AttachThreadInput`); un `AppActivate` por
+ * nombre de proceso no garantiza ni el orden ni qué ventana de ese proceso
+ * queda delante. Así que sin núcleo —o con un `.node` viejo que aún no trae
+ * `cycleWindow`, que llega como `undefined` y revienta al llamarla— se devuelve
+ * `false` con el error en el registro, y quien llama lo enseña.
+ */
+export async function cycleWindow(adelante: boolean): Promise<boolean> {
+  const r = intentarNativo('cycleWindow', (n) => {
+    if (typeof n.cycleWindow !== 'function') {
+      throw new Error('loaded native core has no cycleWindow: rebuild it with `npm run build:native`');
+    }
+    return n.cycleWindow(adelante);
+  });
+  if (r !== undefined) return r;
+  console.error('[ventanas] cycleWindow sin núcleo nativo (o núcleo viejo sin esa función): hace falta compilar con `npm run build:native`');
+  return false;
+}
+
+/**
+ * Las apps con una ventana abierta (nombre de proceso, sin `.exe`, sin
+ * repetir), para elegir la app de una página sin teclear. Sin núcleo —o con uno
+ * viejo sin la función— la lista sale vacía y la pantalla deja escribirla o
+ * buscar el `.exe`: no hay respaldo en PowerShell que distinga ventanas de
+ * aplicación de los cientos de procesos de fondo.
+ */
+export async function openApps(): Promise<string[]> {
+  const r = intentarNativo('openApps', (n) => (typeof n.openApps === 'function' ? n.openApps() : undefined));
+  return r ?? [];
+}
+
 export async function focusWindow(processName: string): Promise<boolean> {
   const r = intentarNativo('focusWindow', (n) => n.focusWindow(processName));
   if (r !== undefined) return r;
@@ -641,14 +680,65 @@ function buildSendKeys(combo: string): string {
     if (lo === 'alt') { mods += '%'; continue; }
     if (lo === 'shift') { mods += '+'; continue; }
     if (lo === 'win' || lo === 'windows') { mods += '^{ESC}'; continue; }
-    key = HOTKEY_MAP[part] ?? (part.length === 1 ? part.toUpperCase() : `{${part.toUpperCase()}}`);
+    key = HOTKEY_MAP[part] ?? (part.length === 1 ? teclaSendKeys(part) : `{${part.toUpperCase()}}`);
   }
   return mods + key;
 }
 
+/** SendKeys da significado a `+^%~(){}[]`: sueltos hay que ponerlos entre llaves. */
+function teclaSendKeys(c: string): string {
+  return '+^%~(){}[]'.includes(c) ? `{${c}}` : c.toUpperCase();
+}
+
+/**
+ * Atajos cuya tecla es un signo (`Ctrl+-`, `Ctrl+=`, `[`): el núcleo nativo
+ * solo sabe letras, dígitos y teclas con nombre (`char_key` en
+ * `crates/vd-core/src/macros/keys.rs`) y con cualquier otra devuelve `false`
+ * en vez de fallar, así que el respaldo no se intentaba nunca y el atajo no
+ * hacía nada. Mientras el `.node` no se pueda recompilar, van por PowerShell.
+ */
+function teclaFueraDelNucleo(combo: string): boolean {
+  const tecla = combo.split('+').map((s) => s.trim()).filter(Boolean).pop() ?? '';
+  return (tecla.length === 1 && !/[a-z0-9]/i.test(tecla)) || tecla.toLowerCase() in TECLAS_UIOHOOK;
+}
+
+/**
+ * Teclas que no dependen del idioma del teclado y que el núcleo nativo no
+ * sabe enviar: el teclado numérico. Van por `uiohook-napi`, que ya está en la
+ * app (grabador de macros, que es quien la carga: `getUio`) y envía en el propio proceso, sin arrancar
+ * PowerShell (~400 ms por pulsación: una perilla que se gira rápido las
+ * encolaba). Clave: el nombre en el atajo, en minúsculas; valor: el de `UiohookKey`.
+ */
+const TECLAS_UIOHOOK: Record<string, string> = {
+  add: 'NumpadAdd', subtract: 'NumpadSubtract', multiply: 'NumpadMultiply', divide: 'NumpadDivide',
+};
+const MODIFICADORES_UIOHOOK: Record<string, string> = {
+  ctrl: 'Ctrl', control: 'Ctrl', alt: 'Alt', shift: 'Shift', win: 'Meta', windows: 'Meta',
+};
+
+/** `true` si se envió por uiohook; `false` si no aplica o no se pudo (sigue el camino de siempre). */
+function enviarPorUiohook(combo: string): boolean {
+  const partes = combo.split('+').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const tecla = TECLAS_UIOHOOK[partes[partes.length - 1] ?? ''];
+  const u = tecla ? getUio() : null;
+  if (!tecla || !u) return false;
+  const mods = partes.slice(0, -1).map((m) => u.UiohookKey[MODIFICADORES_UIOHOOK[m] ?? '']);
+  if (mods.some((m) => m === undefined)) return false;
+  try {
+    u.uIOhook.keyTap(u.UiohookKey[tecla], mods);
+    return true;
+  } catch (e) {
+    console.error('[hotkey] uiohook falló:', (e as Error).message);
+    return false;
+  }
+}
+
 export async function sendHotkey(combo: string): Promise<boolean> {
-  const r = intentarNativo('sendHotkey', (n) => n.sendHotkey(combo));
-  if (r !== undefined) return r;
+  if (enviarPorUiohook(combo)) return true;
+  if (!teclaFueraDelNucleo(combo)) {
+    const r = intentarNativo('sendHotkey', (n) => n.sendHotkey(combo));
+    if (r !== undefined) return r;
+  }
 
   const keys = buildSendKeys(combo);
   if (!keys) return false;

@@ -77,6 +77,7 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     case 'rgb-profile': return a.rgbProfileName ? `${t('act.lbl.rgbProfile')} "${a.rgbProfileName}"` : t('act.lbl.rgbProfile');
     case 'rgb-preset':   return a.rgbPresetId ? `${t('act.lbl.rgbPreset')} "${a.rgbPresetId}"` : t('act.lbl.rgbPreset');
     case 'window-snap':    return a.snapPosition ? `Snap ${a.snapPosition}` : t('act.lbl.snap');
+    case 'window-cycle':   return t(a.windowCycle === 'prev' ? 'act.lbl.windowPrev' : 'act.lbl.windowNext');
     case 'branch':         return `If {${a.branchVar ?? '?'}} ${a.branchOp ?? '=='} "${a.branchValue ?? ''}"`;
     case 'media-shuffle':  return t('act.lbl.shuffle');
     case 'media-repeat':   return t('act.lbl.repeat');

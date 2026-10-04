@@ -58,18 +58,22 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
           position: 'absolute', top: 0, left: 0, right: 0,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '16px 20px', background: 'rgba(0,0,0,0.4)', zIndex: 1,
-        }}>
+          WebkitAppRegion: 'drag',
+        } as React.CSSProperties}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={onBack} style={{
               padding: '6px 12px', background: 'rgba(0,0,0,0.5)',
               border: `1px solid ${VD.border}`, fontFamily: VD.mono,
               fontSize: 10, color: VD.text, letterSpacing: 1, cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', gap: 6,
-            }}>
+              WebkitAppRegion: 'no-drag',
+            } as React.CSSProperties}>
               <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={VD.text} />
               <span>{t('wp.back')}</span>
             </button>
-            <DotLabel size={10} color={VD.text} spacing={2}>{t('wp.preview')}</DotLabel>
+            <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+              <DotLabel size={10} color={VD.text} spacing={2}>{t('wp.preview')}</DotLabel>
+            </div>
           </div>
         </div>
 

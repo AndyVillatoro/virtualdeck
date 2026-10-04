@@ -8,6 +8,7 @@ import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
 import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
 import { paginaMando } from './paginaMando';
+import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../src/types';
 
 /**
  * El servidor local: mandar sobre el deck por HTTP.
@@ -39,20 +40,7 @@ import { paginaMando } from './paginaMando';
  * dice en la interfaz en vez de fingir que es seguro.
  */
 
-export interface AjustesRemoto {
-  enabled: boolean;
-  port: number;
-  token: string;
-  /** false = solo este equipo (127.0.0.1). true = toda la red local. */
-  allowLan: boolean;
-}
-
-const REMOTO_POR_DEFECTO: AjustesRemoto = {
-  enabled: false,
-  port: 8787,
-  token: '',
-  allowLan: false,
-};
+export type AjustesRemoto = RemoteSettings;
 
 export function nuevoToken(): string {
   return randomBytes(24).toString('base64url');
@@ -224,6 +212,9 @@ interface BotonMandoMovil {
 /** Los botones que se pueden pulsar, para que el cliente sepa qué pedir. */
 function listaDeBotones(): BotonMandoMovil[] {
   const cfg = loadConfig() as {
+    pages?: Array<{
+      superficie?: unknown;
+    }>;
     buttons?: Array<{
       id: string;
       label?: string;
@@ -251,8 +242,10 @@ function listaDeBotones(): BotonMandoMovil[] {
       }>;
     }>;
   };
+  const paginas = cfg?.pages ?? [];
   return (cfg?.buttons ?? [])
     .filter((b) => {
+      if (paginas[b.page ?? 0]?.superficie) return false;
       const tieneAccion = b.action && b.action.type !== 'none';
       const es2x2 = b.subButtons && b.subButtons.length === 4;
       const esSlider = b.widget === 'slider' || !!b.sliderWidget;
@@ -313,120 +306,71 @@ function leerCuerpo(req: IncomingMessage): Promise<string> {
   });
 }
 
+function origenAceptable(origen: string | undefined): boolean {
+  if (!origen) return true;
+  try {
+    return hostAceptable(new URL(origen).host);
+  } catch {
+    return false;
+  }
+}
+
+function atenderMedia(url: URL, res: ServerResponse): void {
+  const filename = decodeURIComponent(url.pathname.slice('/media/images/'.length)).replace(/\\/g, '/');
+  if (filename.includes('..') || filename.includes('/')) {
+    return responder(res, 403, { ok: false, error: 'denegado' });
+  }
+  const imagesDir = join(app.getPath('userData'), 'images');
+  const filePath = normalize(join(imagesDir, filename));
+  if (!filePath.startsWith(imagesDir) || !existsSync(filePath)) {
+    return responder(res, 404, { ok: false, error: 'no existe' });
+  }
+  const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+  const mimes: Record<string, string> = {
+    gif: 'image/gif', png: 'image/png', jpg: 'image/jpeg',
+    jpeg: 'image/jpeg', webp: 'image/webp', svg: 'image/svg+xml', ico: 'image/x-icon',
+  };
+  const contentType = mimes[ext] ?? 'application/octet-stream';
+  res.writeHead(200, {
+    'Content-Type': contentType,
+    'Cache-Control': 'public, max-age=86400',
+    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    'X-Content-Type-Options': 'nosniff',
+  });
+  createReadStream(filePath).pipe(res);
+}
+
+function atenderPair(req: IncomingMessage, res: ServerResponse): void {
+  void leerCuerpo(req).then((cuerpo) => {
+    let codigo = '';
+    try { codigo = String(JSON.parse(cuerpo).code ?? ''); } catch { /* cuerpo ilegible */ }
+    const token = canjear(codigo.trim());
+    responder(res, token ? 200 : 401, token ? { ok: true, token } : { ok: false, error: 'codigo invalido' });
+  });
+}
+
+function atenderEnlace(url: URL, res: ServerResponse): boolean {
+  const press = url.pathname.match(/^\/api\/press\/(.+)$/);
+  if (press) { conEnlace(res, `virtualdeck://press/${press[1]}`); return true; }
+  if (url.pathname === '/api/press' && url.searchParams.get('label')) {
+    conEnlace(res, `virtualdeck://press?label=${encodeURIComponent(url.searchParams.get('label')!)}`);
+    return true;
+  }
+  const page = url.pathname.match(/^\/api\/page\/(\d+)$/);
+  if (page) { conEnlace(res, `virtualdeck://page/${page[1]}`); return true; }
+  return false;
+}
+
 function manejar(req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(req.url ?? '/', 'http://localhost');
 
   if (!hostAceptable(req.headers.host)) return responder(res, 403, { ok: false, error: 'host no permitido' });
-  // Una petición con `Origin` viene de una página web. Solo se acepta el de la
-  // nuestra —el mando móvil, servido desde aquí mismo—; cualquier otro es una
-  // página de otro sitio hablando con tu equipo.
-  const origen = req.headers.origin;
-  if (origen) {
-    try {
-      const origHost = new URL(origen).host;
-      if (!hostAceptable(origHost)) {
-        return responder(res, 403, { ok: false, error: 'origen no permitido' });
-      }
-    } catch {
-      return responder(res, 403, { ok: false, error: 'origen no permitido' });
-    }
-  }
+  if (!origenAceptable(req.headers.origin)) return responder(res, 403, { ok: false, error: 'origen no permitido' });
 
-  // El mando móvil. Se sirve sin token: es solo la carcasa, y lo primero que
-  // hace es pedir el código de emparejamiento.
-  //
-  // **La CSP va con `nonce` y no con `'unsafe-inline'`.** El script y el estilo
-  // de la página están en línea, así que necesitan algo: con `'unsafe-inline'`
-  // una inyección en línea seguiría ejecutando, y esta página es un origen con
-  // el token del mando en `localStorage`. Un nonce aleatorio por respuesta solo
-  // lo tienen el `<script>` y el `<style>` que genera esta misma función.
-  //
-  // `img-src` es ancho a propósito: un botón puede tener una imagen remota
-  // (`https:`) y una pegada del portapapeles (`data:`), y `vd:` no resuelve
-  // aquí —esta página no tiene el protocolo registrado— pero dejarlo no cuesta
-  // nada y evita un breakage si algún día se sirve también desde el deck.
-  if (url.pathname === '/' || url.pathname === '/index.html') {
-    const nonceScript = randomBytes(16).toString('base64');
-    const nonceEstilo = randomBytes(16).toString('base64');
-    const html = paginaMando(nonceScript, nonceEstilo);
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Content-Length': Buffer.byteLength(html),
-      'Cache-Control': 'no-store',
-      'Content-Security-Policy': [
-        "default-src 'none'",
-        `script-src 'nonce-${nonceScript}'`,
-        `style-src 'nonce-${nonceEstilo}'`,
-        "img-src 'self' data: blob: vd: http: https:",
-        "connect-src 'self'",
-        "base-uri 'none'",
-        "form-action 'none'",
-        "frame-ancestors 'none'",
-      ].join('; '),
-      'X-Content-Type-Options': 'nosniff',
-      'Referrer-Policy': 'no-referrer',
-    });
-    return void res.end(html);
-  }
-
-  // 1.1 — Servir imágenes y GIFs de botones para el mando móvil web.
-  if (url.pathname.startsWith('/media/images/')) {
-    const filename = decodeURIComponent(url.pathname.slice('/media/images/'.length)).replace(/\\/g, '/');
-    if (filename.includes('..') || filename.includes('/')) {
-      return responder(res, 403, { ok: false, error: 'denegado' });
-    }
-    const imagesDir = join(app.getPath('userData'), 'images');
-    const filePath = normalize(join(imagesDir, filename));
-    if (!filePath.startsWith(imagesDir) || !existsSync(filePath)) {
-      return responder(res, 404, { ok: false, error: 'no existe' });
-    }
-    const ext = filename.split('.').pop()?.toLowerCase() ?? '';
-    const mimes: Record<string, string> = {
-      gif: 'image/gif',
-      png: 'image/png',
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      webp: 'image/webp',
-      svg: 'image/svg+xml',
-      ico: 'image/x-icon',
-    };
-    const contentType = mimes[ext] ?? 'application/octet-stream';
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': 'public, max-age=86400',
-      // Estas imágenes se sirven **desde el mismo origen que tiene el token del
-      // mando** en `localStorage`, así que un SVG con script dentro —un `.svg`
-      // es un documento, no un dibujo— solo necesita que alguien lo abra en una
-      // pestaña para ejecutarse con los permisos de ese origen. Por ejemplo,
-      // `<img src="…/algo.svg">` no ejecuta nada (ahí es un dibujo), pero
-      // escribir la dirección a mano en el navegador del teléfono, sí.
-      //
-      // `sandbox` sin `allow-scripts` la deja en un origen opaco y sin
-      // ejecución, y `default-src 'none'` quita cualquier subrecurso. A un
-      // `<img>` no le afecta nada de esto: no es un documento, así que se
-      // sigue viendo igual. Por eso el SVG **no** se sirve como `text/plain`:
-      // eso sí que lo rompería, y el tipo se queda.
-      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-      'X-Content-Type-Options': 'nosniff',
-    });
-    createReadStream(filePath).pipe(res);
-    return;
-  }
-
-  // `ping` no pide token: es como se comprueba desde la interfaz que el
-  // servidor esta vivo, y no dice nada que no sea publico.
+  if (url.pathname === '/' || url.pathname === '/index.html') return void atenderMando(res);
+  if (url.pathname.startsWith('/media/images/')) return atenderMedia(url, res);
   if (url.pathname === '/api/ping') return responder(res, 200, { ok: true, app: 'VirtualDeck' });
-
-  // Emparejar tampoco: es justo lo que hace el teléfono cuando aún no tiene
-  // token. `canjear` gasta un intento aunque el código no exista.
-  if (url.pathname === '/api/pair' && req.method === 'POST') {
-    return void leerCuerpo(req).then((cuerpo) => {
-      let codigo = '';
-      try { codigo = String(JSON.parse(cuerpo).code ?? ''); } catch { /* cuerpo ilegible */ }
-      const token = canjear(codigo.trim());
-      responder(res, token ? 200 : 401, token ? { ok: true, token } : { ok: false, error: 'codigo invalido' });
-    });
-  }
+  if (url.pathname === '/api/pair' && req.method === 'POST') return atenderPair(req, res);
 
   const token = req.headers['x-vd-token'];
   if (!tokenValido(Array.isArray(token) ? token[0] : token)) {
@@ -434,6 +378,7 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
   }
 
   if (url.pathname === '/api/buttons') return responder(res, 200, { ok: true, buttons: listaDeBotones() });
+  if (url.pathname === '/api/tema') return atenderTema(res);
 
   if (url.pathname.startsWith('/api/value/')) {
     return void atenderValor(url, req, res).then((atendido) => {
@@ -441,16 +386,7 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
     });
   }
 
-  // El resto se traduce a un enlace y lo resuelve `enlacesExternos`: lo que se
-  // puede hacer por HTTP y lo que se puede hacer por `virtualdeck://` tienen
-  // que ser lo mismo, y con dos implementaciones acabarian separandose.
-  const press = url.pathname.match(/^\/api\/press\/(.+)$/);
-  if (press) return conEnlace(res, `virtualdeck://press/${press[1]}`);
-  if (url.pathname === '/api/press' && url.searchParams.get('label')) {
-    return conEnlace(res, `virtualdeck://press?label=${encodeURIComponent(url.searchParams.get('label')!)}`);
-  }
-  const page = url.pathname.match(/^\/api\/page\/(\d+)$/);
-  if (page) return conEnlace(res, `virtualdeck://page/${page[1]}`);
+  if (atenderEnlace(url, res)) return;
 
   responder(res, 404, { ok: false, error: 'no existe' });
 }
@@ -487,6 +423,40 @@ async function atenderValor(url: URL, req: IncomingMessage, res: ServerResponse)
 function conEnlace(res: ServerResponse, enlace: string): void {
   const r = atender(enlace, ventana);
   responder(res, r.ok ? 200 : 404, r);
+}
+
+function atenderMando(res: ServerResponse): void {
+  const cfg = loadConfig() as { theme?: 'dark' | 'light' | 'dot480' | 'system'; accent?: string } | null;
+  const theme = cfg?.theme ?? 'dark';
+  const accent = cfg?.accent || (theme === 'dot480' ? '#ff3b30' : '#4a8ef0');
+  const nonceScript = randomBytes(16).toString('base64');
+  const nonceEstilo = randomBytes(16).toString('base64');
+  const html = paginaMando(nonceScript, nonceEstilo, { theme, accent });
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': Buffer.byteLength(html),
+    'Cache-Control': 'no-store',
+    'Content-Security-Policy': [
+      "default-src 'none'",
+      `script-src 'nonce-${nonceScript}'`,
+      `style-src 'nonce-${nonceEstilo}'`,
+      "img-src 'self' data: blob: vd: http: https:",
+      "connect-src 'self'",
+      "base-uri 'none'",
+      "form-action 'none'",
+      "frame-ancestors 'none'",
+    ].join('; '),
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+  });
+  res.end(html);
+}
+
+function atenderTema(res: ServerResponse): void {
+  const cfg = loadConfig() as { theme?: 'dark' | 'light' | 'dot480' | 'system'; accent?: string } | null;
+  const theme = cfg?.theme ?? 'dark';
+  const accent = cfg?.accent || (theme === 'dot480' ? '#ff3b30' : '#4a8ef0');
+  responder(res, 200, { ok: true, theme, accent });
 }
 
 /**

@@ -32,7 +32,7 @@ export function FormularioPasoEditorB(props: FormularioPasoEditorBProps) {
     inTrayMenu, setInTrayMenu, isToggle, setIsToggle, label, setLabel,
     loadAudioDevices, loadingDevices, longPressAction, setLongPressAction,
     pickFile, pickShortcut, radioGroup, setRadioGroup, rgbConnected, rgbDevices,
-    rgbProfiles, deckState, widget, setWidget, sliderWidget, setSliderWidget, setStep,
+    rgbProfiles, deckState, pages, indicePaginaBoton, fijo, setFijo, widget, setWidget, sliderWidget, setSliderWidget, setStep,
     bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap,
     brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette,
     customGlyph57, fgColor, icon, imageData, pickImage, sensorList,
@@ -118,6 +118,10 @@ export function FormularioPasoEditorB(props: FormularioPasoEditorBProps) {
           rgbDevices={rgbDevices}
           rgbProfiles={rgbProfiles}
           deckState={deckState}
+          pages={pages}
+          indicePaginaBoton={indicePaginaBoton}
+          fijo={fijo}
+          setFijo={setFijo}
           widget={widget}
           setWidget={setWidget}
           sliderWidget={sliderWidget}

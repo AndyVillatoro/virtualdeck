@@ -9,6 +9,8 @@ import type { ButtonConfig, SoundProfileId } from '../../types';
 
 interface CeldaPrincipalProps {
   btn: ButtonConfig;
+  /** T-HW-12 — el botón es fijo y se ve desde otra página de su grupo. */
+  esFija?: boolean;
   accent: string;
   toggledIds: Set<string>;
   selectedIds: Set<string>;
@@ -39,7 +41,7 @@ interface CeldaPrincipalProps {
 /** Una celda de la rejilla principal, con todo su cableado. */
 export function CeldaPrincipal(props: CeldaPrincipalProps) {
   const {
-    btn, accent, toggledIds, selectedIds, estadoSistema, sensorList, widgetDataMap,
+    btn, esFija, accent, toggledIds, selectedIds, estadoSistema, sensorList, widgetDataMap,
     runningButtons, soundOnPress, soundProfile, deckState, canPasteButton,
     onEditButton, executeButton, executeLongPressButton, onStateUpdate,
     onDuplicateButton, onCopyButton, onPasteButton, onClearButton, onUpdateButton,
@@ -54,6 +56,7 @@ export function CeldaPrincipal(props: CeldaPrincipalProps) {
       toggled={toggledIds.has(btn.id)}
       subToggled={btn.subButtons?.map((s) => toggledIds.has(s.id))}
       isSelected={selectedIds.has(btn.id)}
+      esFija={esFija}
       isActive={botonActivo(btn, estadoSistema)}
       isHidden={!botonVisible(btn, estadoSistema, sensorList)}
       isRunning={runningButtons.has(btn.id)}

@@ -20,6 +20,11 @@ export interface ButtonPreset {
   action: ButtonAction;
   widget?: TipoWidget;
   sliderWidget?: SliderWidgetConfig;
+  /** El preset alterna (pulsar otra vez deshace): lo copia `applyPreset`. */
+  /** Fijo en todas las páginas de su grupo (los de cambiar de página: si no, una página queda sin salida). */
+  fijo?: boolean;
+  isToggle?: boolean;
+  actionToggleOff?: ButtonAction;
 }
 
 // label/desc son CLAVES i18n (ver `act.*` en src/utils/i18n.tsx). Se resuelven
@@ -37,6 +42,7 @@ export const ACTION_TYPES: { type: ActionType; label: string; Icon: React.Compon
   { type: 'kill-process',     label: 'act.kill-process.label',     Icon: IconKillProcess,     desc: 'act.kill-process.desc' },
   { type: 'volume-set',       label: 'act.volume-set.label',       Icon: IconVolumeSet,       desc: 'act.volume-set.desc' },
   { type: 'folder',           label: 'act.folder.label',           Icon: IconFolder,          desc: 'act.folder.desc' },
+  { type: 'page-nav',         label: 'act.page-nav.label',         Icon: IconMediaNext,       desc: 'act.page-nav.desc' },
   { type: 'media-play-pause', label: 'act.media-play-pause.label', Icon: IconMediaPlayPause,  desc: 'act.media-play-pause.desc' },
   { type: 'media-next',       label: 'act.media-next.label',       Icon: IconMediaNext,       desc: 'act.media-next.desc' },
   { type: 'media-prev',       label: 'act.media-prev.label',       Icon: IconMediaPrev,       desc: 'act.media-prev.desc' },
@@ -57,6 +63,7 @@ export const ACTION_TYPES: { type: ActionType; label: string; Icon: React.Compon
   { type: 'rgb-preset',       label: 'act.rgb-preset.label',       Icon: IconNotify,          desc: 'act.rgb-preset.desc' },
   { type: 'remote',           label: 'act.remote.label',           Icon: IconNotify,          desc: 'act.remote.desc' },
   { type: 'window-snap',      label: 'act.window-snap.label',      Icon: IconScript,          desc: 'act.window-snap.desc' },
+  { type: 'window-cycle',     label: 'act.window-cycle.label',     Icon: IconScript,          desc: 'act.window-cycle.desc' },
   { type: 'branch',           label: 'act.branch.label',           Icon: IconNotify,          desc: 'act.branch.desc' },
   { type: 'countdown',        label: 'act.countdown.label',        Icon: IconScript,          desc: 'act.countdown.desc' },
   { type: 'media-shuffle',    label: 'act.media-shuffle.label',    Icon: IconMediaPlayPause,  desc: 'act.media-shuffle.desc' },
@@ -131,6 +138,12 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'SISTEMA', label: 'Portapapeles', icon: 'STORAGE', action: { type: 'hotkey', hotkey: 'Win+V' } },
   { category: 'SISTEMA', label: 'Vincular Móvil', icon: 'KEY', bgColor: '#111827', fgColor: '#38bdf8', action: { type: 'mobile-remote', mobileRemoteAction: 'pair-code' } },
   { category: 'SISTEMA', label: 'Servidor Móvil', icon: 'BOLT', bgColor: '#181b20', fgColor: '#4ade80', action: { type: 'mobile-remote', mobileRemoteAction: 'toggle-server' } },
+  { category: 'SISTEMA', label: 'PÁG. SIGUIENTE', icon: 'NEXT', action: { type: 'page-nav', pageNav: 'next' }, fijo: true },
+  { category: 'SISTEMA', label: 'PÁG. ANTERIOR', icon: 'PREV', action: { type: 'page-nav', pageNav: 'prev' }, fijo: true },
+  { category: 'SISTEMA', label: 'CAMBIAR PÁGINA', icon: 'NEXT', action: { type: 'page-nav', pageNav: 'cycle' }, fijo: true },
+  { category: 'SISTEMA', label: 'Multitarea', icon: 'MONITOR', action: { type: 'hotkey', hotkey: 'Win+Tab' }, isToggle: true, actionToggleOff: { type: 'hotkey', hotkey: 'Esc' } },
+  { category: 'SISTEMA', label: 'VENTANA ANT.', icon: 'PREV', action: { type: 'window-cycle', windowCycle: 'prev' } },
+  { category: 'SISTEMA', label: 'VENTANA SIG.', icon: 'NEXT', action: { type: 'window-cycle', windowCycle: 'next' } },
   // CREATIVO — Illustrator
   { category: 'CREATIVO', label: 'AI Selección', icon: 'V', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'hotkey', hotkey: 'V' } },
   { category: 'CREATIVO', label: 'AI Sel. Dir.', icon: 'A', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'hotkey', hotkey: 'A' } },

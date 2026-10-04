@@ -46,6 +46,16 @@ export function rejillaDe(d: DisposicionSuperficie): { columnas: number; filas: 
   return filas > FILAS_MAX ? null : { columnas, filas };
 }
 
+/**
+ * Columnas de la página de un dock a partir de las de su `rejillaDe`.
+ *
+ * Estaba escrito dos veces en `useDeck/paginas` con dos condiciones
+ * distintas (`=== 3` al crear, `<= 3` al añadir): una sola función.
+ */
+export function columnasDock(columnasRejilla: number): 3 | 6 {
+  return columnasRejilla <= 3 ? 3 : 6;
+}
+
 /** Hueco de la página para una entrada, o `null` si no dispara nada (un `up`, o un control que el modelo no tiene). */
 export function huecoDeEntrada(
   d: DisposicionSuperficie,

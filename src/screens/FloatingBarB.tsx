@@ -9,7 +9,9 @@ import { LanguageProvider, useT } from '../utils/i18n';
 import { interpolate } from '../utils/acciones/base';
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
-import type { ButtonConfig, DeckConfig, FloatingBarSettings } from '../types';
+import { sonidoActivo, perfilSonido } from '../utils/sound';
+import type { ButtonConfig, DeckConfig } from '../types';
+import { BARRA_POR_DEFECTO } from '../types';
 
 /**
  * Contenido de la ventana de la barra flotante (`index.html#barra`).
@@ -17,16 +19,11 @@ import type { ButtonConfig, DeckConfig, FloatingBarSettings } from '../types';
  * Se dibuja sobre una ventana transparente: aquí **no se pinta ningún fondo**.
  * Lo único opaco son los tiles, así que sobre el escritorio se ven flotando.
  * Cualquier `background` que se añada al contenedor rompe justo eso.
+ *
+ * `BARRA_POR_DEFECTO` vive en `src/types` para que el proceso principal use la
+ * misma (ver `electron/main/index.ts`).
  */
-
-export const BARRA_POR_DEFECTO: FloatingBarSettings = {
-  enabled: false,
-  slots: [null, null, null, null],
-  opacity: 0.9,
-  side: 'right',
-  y: null,
-  tileSize: 64,
-};
+export { BARRA_POR_DEFECTO };
 
 const SEPARACION = 8;
 const MARGEN = 12;
@@ -36,7 +33,7 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const t = useT();
   const api = window.electronAPI;
   const barra = config.floatingBar ?? BARRA_POR_DEFECTO;
-  const tile = barra.tileSize ?? 64;
+  const tile = barra.tileSize ?? BARRA_POR_DEFECTO.tileSize;
   const [hover, setHover] = useState(false);
   const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
   // Los interruptores salen de la configuracion, igual que en el deck: es lo
@@ -198,7 +195,7 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
             key={`${i}-${id ?? 'vacio'}`}
             style={{
               width: tile, height: tile, position: 'relative', flexShrink: 0,
-              opacity: barra.opacity ?? 0.9,
+              opacity: barra.opacity ?? BARRA_POR_DEFECTO.opacity,
               WebkitAppRegion: 'no-drag',
             } as React.CSSProperties}
           >
@@ -215,8 +212,8 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                 isRunning={ejecutando.has(btn.id)}
                 resolvedLabel={btn.label.includes('{')
                   ? interpolate(btn.label, config.state ?? {}) : undefined}
-                soundEnabled={config.soundOnPress ?? false}
-                soundProfile={config.soundProfile ?? 'click'}
+                soundEnabled={sonidoActivo(config)}
+                soundProfile={perfilSonido(config)}
                 showContextMenu={false}
                 onEdit={() => { /* la barra no edita: para eso está el deck */ }}
                 onExecute={(target) => ejecutar(target ?? btn)}

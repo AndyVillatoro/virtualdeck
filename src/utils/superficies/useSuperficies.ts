@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, InfoSuperficie,
 } from '../../types';
+import { botonesResueltos } from '../botonesFijos';
 import { huecoDeEntrada, teclasLcd } from './disposicion';
+import {
+  esAppPropia, idPaginaSegunApp, idPaginaPredeterminada, normalizarApp,
+} from './paginaSegunApp';
+import { brilloDeSuperficie, rotacionDeSuperficie } from './ajustesSuperficie';
 import {
   fuentesLcdListas, pintarTecla, prepararFuentesLcd,
   type ColoresSuperficie, type OpcionesPintado,
@@ -22,6 +27,14 @@ import {
  * reales (JetBrains Mono, DotGothic16) ya cargaron, para repintar cuando
  * lleguen.
  *
+ * Cada dispositivo puede tener **varias páginas** (todas las que lleven su
+ * serial) y enseña la **activa**, que se guarda por id de página en `activas`
+ * y no en la config: borrar o reordenar renumera los índices. La activa
+ * cambia sola con la aplicación en primer plano (`idPaginaSegunApp`, con el
+ * mismo evento y filtro que `useAutoProfile`) o a mano con `activarPagina`.
+ * Lo elegido a mano es además la **base**: cuando la app en primer plano no
+ * tiene página vinculada, se vuelve a la base y no a la primera.
+ *
  * `config` y `dispararBoton` se leen **por referencia** dentro de los
  * manejadores: son funciones/valores que se registran una sola vez en el
  * proceso principal y quedarían con el estado del primer render (ver
@@ -37,7 +50,7 @@ import {
 export interface OpcionesSuperficies extends OpcionesPintado {
   api: ElectronAPI | undefined;
   config: DeckConfig;
-  dispararBoton: (boton: ButtonConfig) => void;
+  dispararBoton: (boton: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => void;
   crearPaginaSuperficie: (info: InfoSuperficie) => void;
   colores: ColoresSuperficie;
 }
@@ -47,6 +60,10 @@ export interface Superficies {
   modelos: Record<string, DisposicionSuperficie>;
   /** Última imagen pintada por serial, indexada por hueco. */
   imagenes: Record<string, (string | undefined)[]>;
+  /** Página activa de cada serial, por id de página (ver `paginaSegunApp`). */
+  paginasActivas: Record<string, string>;
+  /** Pone una página activa en el aparato (la pestaña elegida en DispositivosB). */
+  activarPagina: (serial: string, paginaId: string) => void;
 }
 
 interface PaginaDispositivo {
@@ -57,18 +74,31 @@ interface PaginaDispositivo {
   botones: ButtonConfig[];
 }
 
-/** La página de un serial y sus botones, en orden de hueco (por posición). */
-function paginaDe(config: DeckConfig, serial: string, disposicion: DisposicionSuperficie): PaginaDispositivo | null {
-  const indice = config.pages.findIndex((p) => p.superficie?.serial === serial);
-  if (indice < 0) return null;
-  const superficie = config.pages[indice].superficie;
-  if (!superficie) return null;
+/** La página activa de un serial y sus botones, en orden de hueco (por posición). */
+function paginaDe(
+  config: DeckConfig, serial: string, disposicion: DisposicionSuperficie, paginaId?: string,
+): PaginaDispositivo | null {
+  const delSerial: number[] = [];
+  config.pages.forEach((p, i) => { if (p.superficie?.serial === serial) delSerial.push(i); });
+  if (delSerial.length === 0) return null;
+  // Por id, nunca por índice: borrar o reordenar páginas renumera los
+  // índices. Si el id ya no existe, se vuelve a la predeterminada.
+  let indice = paginaId !== undefined
+    ? delSerial.find((i) => config.pages[i].id === paginaId)
+    : undefined;
+  if (indice === undefined) {
+    const predeterminada = idPaginaPredeterminada(config.pages, serial);
+    indice = delSerial.find((i) => config.pages[i].id === predeterminada) ?? delSerial[0];
+  }
+  if (!config.pages[indice].superficie) return null;
   return {
     indice,
     disposicion,
-    rotacion: superficie.rotacion,
-    brillo: superficie.brillo,
-    botones: config.buttons.filter((b) => b.page === indice),
+    rotacion: rotacionDeSuperficie(config, serial),
+    brillo: brilloDeSuperficie(config, serial),
+    // Resueltos con los fijos del dock: lo que se pinta es lo que se dispara
+    // al pulsar (y viceversa), en el mismo hueco.
+    botones: botonesResueltos(config, indice),
   };
 }
 
@@ -131,10 +161,16 @@ export function useSuperficies({
   const [modelos, setModelos] = useState<Record<string, DisposicionSuperficie>>({});
   const [imagenes, setImagenes] = useState<Record<string, (string | undefined)[]>>({});
   const [fuentesListas, setFuentesListas] = useState(false);
+  /** Página activa de cada serial, por id de página. En memoria: no se guarda. */
+  const [activas, setActivas] = useState<Record<string, string>>({});
+  /** Base elegida a mano de cada serial, por id de página. En memoria. */
+  const [bases, setBases] = useState<Record<string, string>>({});
 
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
   const imagenesRef = useRef(imagenes);
+  const activasRef = useRef(activas);
+  const basesRef = useRef(bases);
   const dispararRef = useRef(dispararBoton);
   const crearRef = useRef(crearPaginaSuperficie);
   const iconoRef = useRef(iconoSvg);
@@ -142,6 +178,8 @@ export function useSuperficies({
   configRef.current = config;
   dispositivosRef.current = dispositivos;
   imagenesRef.current = imagenes;
+  activasRef.current = activas;
+  basesRef.current = bases;
   dispararRef.current = dispararBoton;
   crearRef.current = crearPaginaSuperficie;
   iconoRef.current = iconoSvg;
@@ -186,14 +224,96 @@ export function useSuperficies({
     return api.superficies.onEntrada((entrada) => {
       const dispositivo = dispositivosRef.current.find((d) => d.serial === entrada.serial);
       if (!dispositivo) return;
-      const pagina = paginaDe(configRef.current, entrada.serial, dispositivo.disposicion);
+      const pagina = paginaDe(
+        configRef.current, entrada.serial, dispositivo.disposicion, activasRef.current[entrada.serial],
+      );
       if (!pagina) return;
       const hueco = huecoDeEntrada(pagina.disposicion, entrada);
       if (hueco === null) return;
       const boton = pagina.botones[hueco];
-      if (boton && boton.action.type !== 'none') dispararRef.current(boton);
+      if (!boton || boton.action.type === 'none') return;
+      // Girar una perilla o deslizar una tira (izq/der) suena con el tic de
+      // giro; pulsar (down) suena como siempre. El serial viaja en `opts` para
+      // que un botón `page-nav` navegue entre las páginas de **este** dock.
+      if (entrada.gesto === 'izq' || entrada.gesto === 'der') {
+        dispararRef.current(boton, { sonido: 'giro', serial: entrada.serial });
+      } else {
+        dispararRef.current(boton, { serial: entrada.serial });
+      }
     });
   }, [api]);
+
+  // Cada dispositivo cambia su página con la aplicación en primer plano,
+  // por su cuenta: mismo evento, misma normalización y mismo filtro que
+  // `useAutoProfile`, y el mismo `autoProfileSwitch === false` para apagarlo.
+  useEffect(() => {
+    if (!api?.events?.onActiveAppChanged) return;
+    const aplicarApp = (nombre: string | null | undefined) => {
+      const app = normalizarApp(nombre);
+      if (esAppPropia(app)) return;
+      const paginas = configRef.current.pages;
+      if (configRef.current.autoProfileSwitch === false) return;
+      const seriales = new Set<string>();
+      for (const p of paginas) if (p.superficie) seriales.add(p.superficie.serial);
+      if (seriales.size === 0) return;
+      setActivas((prev) => {
+        let cambio = false;
+        const next = { ...prev };
+        for (const serial of seriales) {
+          // Sin vínculo se vuelve a la base elegida a mano, no a la primera.
+          const id = idPaginaSegunApp(paginas, serial, app, basesRef.current[serial] ?? null);
+          if (id && next[serial] !== id) { next[serial] = id; cambio = true; }
+        }
+        return cambio ? next : prev;
+      });
+    };
+    const alCambiar = (info: { processName: string | null; windowTitle: string | null } | null) => {
+      if (info) aplicarApp(info.processName);
+    };
+    api.window?.getActiveApp?.()
+      .then((app) => { if (app) aplicarApp(app.processName); })
+      .catch(() => {});
+    const off = api.events.onActiveAppChanged(alCambiar);
+    return () => { off?.(); };
+  }, [api]);
+
+  // Si la página activa o la base de un serial ya no existe (borrada), se
+  // olvida: al resolver se vuelve a la predeterminada.
+  useEffect(() => {
+    setActivas((prev) => {
+      const seriales = Object.keys(prev);
+      if (seriales.length === 0) return prev;
+      let cambio = false;
+      const next = { ...prev };
+      for (const serial of seriales) {
+        const vive = config.pages.some((p) => p.id === next[serial] && p.superficie?.serial === serial);
+        if (!vive) { delete next[serial]; cambio = true; }
+      }
+      return cambio ? next : prev;
+    });
+    setBases((prev) => {
+      const seriales = Object.keys(prev);
+      if (seriales.length === 0) return prev;
+      let cambio = false;
+      const next = { ...prev };
+      for (const serial of seriales) {
+        const vive = config.pages.some((p) => p.id === next[serial] && p.superficie?.serial === serial);
+        if (!vive) { delete next[serial]; cambio = true; }
+      }
+      return cambio ? next : prev;
+    });
+  }, [config.pages]);
+
+  /** Pone una página activa en el aparato. El id tiene que ser de ese serial. */
+  const activarPagina = useCallback((serial: string, paginaId: string) => {
+    const esDelSerial = configRef.current.pages
+      .some((p) => p.id === paginaId && p.superficie?.serial === serial);
+    if (!esDelSerial) return;
+    // Lo elegido a mano es la base: ahí se vuelve cuando la app en primer
+    // plano no tiene página vinculada.
+    setBases((prev) => (prev[serial] === paginaId ? prev : { ...prev, [serial]: paginaId }));
+    setActivas((prev) => (prev[serial] === paginaId ? prev : { ...prev, [serial]: paginaId }));
+  }, []);
 
   const fondo = colores.fondo;
   const texto = colores.texto;
@@ -215,7 +335,9 @@ export function useSuperficies({
       const nuevasImagenes = { ...imagenesRef.current };
       let cambio = false;
       for (const dispositivo of conectados) {
-        const pagina = paginaDe(config, dispositivo.serial, dispositivo.disposicion);
+        const pagina = paginaDe(
+          config, dispositivo.serial, dispositivo.disposicion, activas[dispositivo.serial],
+        );
         if (!pagina) {
           if (!creadas.current.has(dispositivo.serial)) {
             creadas.current.add(dispositivo.serial);
@@ -237,7 +359,7 @@ export function useSuperficies({
       }
       if (cambio) setImagenes(nuevasImagenes);
     })();
-  }, [api, config, dispositivos, fondo, texto, fuentesListas]);
+  }, [api, config, dispositivos, activas, fondo, texto, fuentesListas]);
 
-  return { dispositivos, modelos, imagenes };
+  return { dispositivos, modelos, imagenes, paginasActivas: activas, activarPagina };
 }

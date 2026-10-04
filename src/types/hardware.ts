@@ -158,6 +158,18 @@ export interface SensorsSettings {
   showWidget?: boolean;
 }
 
+/**
+ * Sensores de una instalación nueva.
+ *
+ * Vive en `src/types` por lo mismo que `BARRA_POR_DEFECTO`: lo necesitan el
+ * renderer y `electron/main/sensors.ts`, y el proceso principal solo puede
+ * importar tipos compartidos.
+ */
+export const SENSORES_POR_DEFECTO: Pick<SensorsSettings, 'host' | 'port'> = {
+  host: '127.0.0.1',
+  port: 8085,
+};
+
 export interface SensorsStatus {
   enabled: boolean;
   connected: boolean;

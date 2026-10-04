@@ -160,6 +160,8 @@ const api = {
     closeWindow: (processName?: string): Promise<boolean> => ipcRenderer.invoke('launch:closeWindow', processName),
     setVolume: (percent: number): Promise<boolean> => ipcRenderer.invoke('launch:setVolume', percent),
     snapWindow: (position: string, processName?: string): Promise<boolean> => ipcRenderer.invoke('launch:snapWindow', position, processName),
+    cycleWindow: (adelante: boolean): Promise<boolean> => ipcRenderer.invoke('launch:cycleWindow', adelante),
+    openApps: (): Promise<string[]> => ipcRenderer.invoke('launch:openApps'),
   },
   dialog: {
     openFile: (opts?: object): Promise<string | null> => ipcRenderer.invoke('dialog:openFile', opts),

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { SettingLabel, ToggleRow } from './settingHelpers';
@@ -20,6 +20,42 @@ interface SeccionPerfilesProps {
   autoProfileRestoreDefault?: boolean;
   onAutoProfileRestoreDefaultToggle?: () => void;
   onCerrar: () => void;
+}
+
+/**
+ * La app vinculada de un perfil: se edita en borrador y se guarda al salir.
+ *
+ * Antes cada tecla llamaba a `onUpdateProfileTargetApp`, que limpia
+ * (`trim` + sin `.exe` + minúsculas): el espacio recién escrito desaparecía
+ * al instante y no había forma de escribir «obs studio». La limpieza va al
+ * guardar (ver `normalizarApp`), no al teclear.
+ */
+function EntradaTargetApp({
+  valor, placeholder, accent, onGuardar,
+}: {
+  valor: string;
+  placeholder: string;
+  accent: string;
+  onGuardar: (texto: string) => void;
+}) {
+  const VD = useTheme();
+  const [texto, setTexto] = useState(valor);
+  useEffect(() => { setTexto(valor); }, [valor]);
+  return (
+    <input
+      value={texto}
+      onChange={(e) => setTexto(e.target.value)}
+      onBlur={() => { if (texto !== valor) onGuardar(texto); }}
+      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+      placeholder={placeholder}
+      style={{
+        flex: 1, background: 'transparent', border: 'none',
+        borderBottom: `1px solid ${valor ? accent : VD.border}`,
+        fontFamily: VD.mono, fontSize: 8, color: valor ? accent : VD.textDim,
+        outline: 'none', padding: '1px 2px',
+      }}
+    />
+  );
 }
 
 export function SeccionPerfiles({
@@ -91,16 +127,11 @@ export function SeccionPerfiles({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <DotGlyphIcon glyph="APP_WINDOW" size={7} color={p.targetApp ? effectiveAccent : VD.textMuted} />
-                  <input
-                    value={p.targetApp ?? ''}
-                    onChange={(e) => onUpdateProfileTargetApp?.(p.id, e.target.value)}
+                  <EntradaTargetApp
+                    valor={p.targetApp ?? ''}
                     placeholder={t('set.profileTargetApp')}
-                    style={{
-                      flex: 1, background: 'transparent', border: 'none',
-                      borderBottom: `1px solid ${p.targetApp ? effectiveAccent : VD.border}`,
-                      fontFamily: VD.mono, fontSize: 8, color: p.targetApp ? effectiveAccent : VD.textDim,
-                      outline: 'none', padding: '1px 2px',
-                    }}
+                    accent={effectiveAccent}
+                    onGuardar={(texto) => onUpdateProfileTargetApp?.(p.id, texto)}
                   />
                 </div>
               </div>

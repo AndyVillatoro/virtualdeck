@@ -4,8 +4,8 @@ import { DotLabel } from '../components/DotLabel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
-import { BARRA_POR_DEFECTO } from './FloatingBarB';
 import type { DeckConfig, FloatingBarSettings } from '../types';
+import { BARRA_POR_DEFECTO } from '../types';
 
 /**
  * Pantalla para armar la barra flotante: cuántos huecos tiene y qué botón va en
@@ -38,7 +38,7 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
 
   useEffect(() => {
     if (!api) return;
-    api.bar.maxSlots(barra.tileSize ?? 64)
+    api.bar.maxSlots(barra.tileSize ?? BARRA_POR_DEFECTO.tileSize)
       .then((n) => setMaximo(Math.max(MIN_HUECOS, Math.min(MAX_HUECOS, n))))
       .catch(() => {});
   }, [api, barra.tileSize]);
@@ -53,8 +53,8 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
     if (!api) return;
     const g = {
       huecos: barra.slots.length,
-      lado: barra.side ?? 'right',
-      tile: barra.tileSize ?? 64,
+      lado: barra.side ?? BARRA_POR_DEFECTO.side,
+      tile: barra.tileSize ?? BARRA_POR_DEFECTO.tileSize,
       y: barra.y ?? null,
     };
     if (barra.enabled) api.bar.open(g).catch(() => {});
@@ -95,15 +95,19 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 18px', borderBottom: `1px solid ${VD.border}`,
-      }}>
+        WebkitAppRegion: 'drag',
+      } as React.CSSProperties}>
         <button onClick={onBack} style={{
           background: 'none', border: `1px solid ${VD.border}`, borderRadius: VD.radius.sm,
           color: VD.textDim, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
           padding: '5px 10px', cursor: 'pointer',
-        }}>{t('bar.back')}</button>
-        <DotLabel size={11} color={VD.text} spacing={2}>{t('bar.title')}</DotLabel>
+          WebkitAppRegion: 'no-drag',
+        } as React.CSSProperties}>{t('bar.back')}</button>
+        <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <DotLabel size={11} color={VD.text} spacing={2}>{t('bar.title')}</DotLabel>
+        </div>
         <div style={{ flex: 1 }} />
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <input
             type="checkbox"
             checked={barra.enabled}
@@ -208,12 +212,12 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
               <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
                 {t('bar.side')}
               </DotLabel>
-              <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
                 {(['left', 'right'] as const).map((lado) => (
                   <button key={lado} onClick={() => guardar({ side: lado })} style={{
                     ...estiloMini(VD),
-                    borderColor: (barra.side ?? 'right') === lado ? (config.accent ?? VD.accent) : VD.border,
-                    color: (barra.side ?? 'right') === lado ? (config.accent ?? VD.accent) : VD.textDim,
+                    borderColor: (barra.side ?? BARRA_POR_DEFECTO.side) === lado ? (config.accent ?? VD.accent) : VD.border,
+                    color: (barra.side ?? BARRA_POR_DEFECTO.side) === lado ? (config.accent ?? VD.accent) : VD.textDim,
                   }}>{t(lado === 'left' ? 'bar.side.left' : 'bar.side.right')}</button>
                 ))}
               </div>
@@ -221,18 +225,18 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
 
             <div>
               <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
-                {t('bar.opacity', { n: Math.round((barra.opacity ?? 0.9) * 100) })}
+                {t('bar.opacity', { n: Math.round((barra.opacity ?? BARRA_POR_DEFECTO.opacity) * 100) })}
               </DotLabel>
-              <input type="range" min={30} max={100} value={Math.round((barra.opacity ?? 0.9) * 100)}
+              <input type="range" min={30} max={100} value={Math.round((barra.opacity ?? BARRA_POR_DEFECTO.opacity) * 100)}
                 onChange={(e) => guardar({ opacity: parseInt(e.target.value, 10) / 100 })}
                 style={{ width: 160, accentColor: config.accent ?? VD.accent }} />
             </div>
 
             <div>
               <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
-                {t('bar.tileSize', { n: barra.tileSize ?? 64 })}
+                {t('bar.tileSize', { n: barra.tileSize ?? BARRA_POR_DEFECTO.tileSize })}
               </DotLabel>
-              <input type="range" min={40} max={120} step={4} value={barra.tileSize ?? 64}
+              <input type="range" min={40} max={120} step={4} value={barra.tileSize ?? BARRA_POR_DEFECTO.tileSize}
                 onChange={(e) => guardar({ tileSize: parseInt(e.target.value, 10) })}
                 style={{ width: 160, accentColor: config.accent ?? VD.accent }} />
             </div>

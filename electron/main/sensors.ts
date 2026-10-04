@@ -4,6 +4,8 @@ import { spawn, ChildProcess } from 'child_process';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tm } from './idioma';
+// Host y puerto por defecto, compartidos con el renderer (ver `src/types`).
+import { SENSORES_POR_DEFECTO } from '../../src/types';
 
 // Integration with LibreHardwareMonitor (LHM). LHM exposes its full sensor
 // tree at http://host:port/data.json when "Run Web Server" is enabled in its
@@ -42,8 +44,8 @@ export interface SensorsStatus {
   bundledRunning: boolean;
 }
 
-let host = '127.0.0.1';
-let port = 8085;
+let host = SENSORES_POR_DEFECTO.host;
+let port = SENSORES_POR_DEFECTO.port;
 let enabled = false;
 let lastError: string | undefined;
 let lastFetchAt = 0;
@@ -382,7 +384,7 @@ export function rutaLHMConocida(): string | null {
  * Asegura que el archivo .config de LibreHardwareMonitor tenga el servidor web habilitado
  * y configurado en el puerto correcto. Si no existe, genera una configuración básica.
  */
-export function asegurarConfigLHM(exePath: string, targetPort = 8085): boolean {
+export function asegurarConfigLHM(exePath: string, targetPort = SENSORES_POR_DEFECTO.port): boolean {
   try {
     if (!exePath || !existsSync(exePath)) return false;
     const dir = exePath.substring(0, exePath.lastIndexOf('\\')) || '.';

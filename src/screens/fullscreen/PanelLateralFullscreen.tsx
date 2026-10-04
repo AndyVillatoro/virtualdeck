@@ -5,6 +5,7 @@ import { DotText } from '../../components/DotText';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { SensorCard, type HardwareGroup } from '../../components/SensorPanel';
+import { indicesPaginasDeck } from '../../utils/paginasDeck';
 import type { PageConfig, SensorsStatus } from '../../types';
 
 interface PanelLateralFullscreenProps {
@@ -43,6 +44,10 @@ export function PanelLateralFullscreen({
     : sensorStatus?.enabled
     ? 'OFFLINE'
     : 'DISABLED';
+
+  // Solo las páginas del deck, como en las pestañas de la principal: las de
+  // dock se editan en `Dispositivos`. `activePage` es índice real.
+  const indicesDeck = indicesPaginasDeck(pages);
 
   return (
     <div
@@ -103,12 +108,13 @@ export function PanelLateralFullscreen({
 
       {/* Page selector */}
       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-        {pages.map((p, i) => {
-          const isActive = i === activePage;
+        {indicesDeck.map((realIdx, pos) => {
+          const p = pages[realIdx];
+          const isActive = realIdx === activePage;
           return (
             <button
               key={p.id}
-              onClick={() => setActivePage(i)}
+              onClick={() => setActivePage(realIdx)}
               style={{
                 flex: 1,
                 padding: '4px 0',
@@ -122,7 +128,7 @@ export function PanelLateralFullscreen({
                 borderRadius: VD.radius.sm,
               }}
             >
-              {i + 1}
+              {pos + 1}
             </button>
           );
         })}

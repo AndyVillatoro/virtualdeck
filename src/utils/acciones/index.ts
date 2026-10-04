@@ -27,7 +27,7 @@ export const MANEJADORES: Record<string, Manejador> = {
  * abrir una carpeta en pantalla, decidir una rama, o esperar un temporizador).
  */
 export const RESUELTAS_POR_EL_LLAMADOR = new Set([
-  'none', 'script', 'folder', 'branch', 'countdown',
+  'none', 'script', 'folder', 'page-nav', 'branch', 'countdown',
 ]);
 
 // Sin reexportar nada: todo el mundo importa de './base' directamente, y el

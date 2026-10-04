@@ -1,6 +1,7 @@
 // 5.4 — Catálogo de timbres para press. Antes existía un único click; ahora el
 // usuario elige entre cuatro perfiles (incluido 'off'). Todos generados por
 // Web Audio para no enviar archivos al bundle.
+import type { DeckConfig } from '../types';
 
 export type SoundProfile = 'click' | 'tick' | 'thud' | 'off';
 
@@ -78,5 +79,58 @@ export function playSound(profile: SoundProfile = 'click') {
       case 'thud':  playThudTimbre(ac); return;
     }
   } catch {}
+}
+
+// Ganancia de cada perfil (la misma que su timbre): el giro suena al 50 %.
+const GANANCIA_PERFIL: Record<Exclude<SoundProfile, 'off'>, number> = {
+  click: 0.12, tick: 0.18, thud: 0.22,
+};
+
+let ultimoGiro = 0;
+
+/**
+ * Tic de giro de perilla o tira: más grave y corto que el click (700→350 Hz
+ * en 0.045 s frente a 1400→700 Hz en 0.09 s), al 50 % de la ganancia del
+ * perfil elegido y con tope de uno cada 40 ms — girando rápido no se encolan.
+ * Respeta el perfil `off` (quien llama respeta `soundOnPress`).
+ */
+export function playGiro(profile: SoundProfile = 'click') {
+  if (profile === 'off') return;
+  const ahora = Date.now();
+  if (ahora - ultimoGiro < 40) return;
+  ultimoGiro = ahora;
+  try {
+    const ac = ctx();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(700, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(350, ac.currentTime + 0.03);
+    gain.gain.setValueAtTime((GANANCIA_PERFIL[profile] ?? 0.12) * 0.5, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.045);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + 0.045);
+  } catch {}
+}
+
+/**
+ * Si suena al pulsar, en un solo sitio.
+ *
+ * Estaba repetido con `?? true` en `App`, `preferencias` y `TitleBar`, y con
+ * `?? false` en la barra flotante: el mismo interruptor sonaba en el deck y
+ * no en la barra. Todo el que lo necesite pasa por aquí.
+ */
+export function sonidoActivo(cfg: Pick<DeckConfig, 'soundOnPress'>): boolean {
+  return cfg.soundOnPress ?? true;
+}
+
+/**
+ * El timbre elegido, en un solo sitio (lo mismo que `sonidoActivo`, con el
+ * `?? 'click'` que estaba copiado en cada pantalla).
+ */
+export function perfilSonido(cfg: Pick<DeckConfig, 'soundProfile'>): SoundProfile {
+  return cfg.soundProfile ?? 'click';
 }
 

@@ -1,5 +1,5 @@
 import { executeAction, runActionSequence } from './actions';
-import type { ButtonConfig, DeckConfig, ElectronAPI } from '../types';
+import type { ButtonAction, ButtonConfig, DeckConfig, ElectronAPI } from '../types';
 
 /**
  * Lo que pasa cuando se pulsa un botón. **Un solo sitio.**
@@ -50,6 +50,15 @@ export interface EntornoPulsacion {
   /** Dónde se enseña un error o la salida de un script. */
   avisar: (texto: string) => void;
   t: (k: string, v?: Record<string, string | number>) => string;
+  /**
+   * Resuelve un paso `page-nav` en el contexto del llamador.
+   *
+   * Solo él sabe desde dónde se pulsa: un dock navega entre sus páginas con
+   * `activarPagina`, el deck entre las suyas con `onPageChange`. Sin callback
+   * (la barra flotante, que no tiene página que cambiar —igual que no tiene
+   * overlay de carpetas—) el paso no hace nada y da OK, como `folder`.
+   */
+  navegar?: (accion: ButtonAction) => boolean;
 }
 
 /**
@@ -133,6 +142,24 @@ export interface ResultadoPulsacion {
   tipo: string;
 }
 
+/**
+ * Aparta los pasos `page-nav` de una secuencia y los resuelve con el llamador.
+ *
+ * Van fuera del `runActionSequence` a propósito: la navegación no es una
+ * acción del sistema, es cambiar de página en la interfaz, y solo quien llama
+ * sabe entre qué páginas (ver `pageNav.ts`). Lo que queda se ejecuta normal;
+ * si no queda nada, es OK —igual que `folder` cuando abre su overlay—.
+ */
+function apartarNavegacion(acciones: ButtonAction[], e: EntornoPulsacion): ButtonAction[] {
+  if (!e.navegar) return acciones;
+  const resto: ButtonAction[] = [];
+  for (const a of acciones) {
+    if (a.type === 'page-nav') e.navegar(a);
+    else resto.push(a);
+  }
+  return resto;
+}
+
 export async function pulsarBoton(
   btn: ButtonConfig, e: EntornoPulsacion,
 ): Promise<ResultadoPulsacion> {
@@ -149,23 +176,43 @@ export async function pulsarBoton(
       }
     }
     if (estaba && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-      const r = await conPlazo(
-        executeAction(btn.actionToggleOff, e.api, e.config.state, e.config.rgb?.profiles, e.t),
-        { ok: false, error: e.t('act.err.timeout') },
-      );
-      persistirYCrujir(r, e.config.state ?? {}, e);
-      return { ok: r.ok, error: r.error, tipo: btn.actionToggleOff.type };
+      return ejecutarApagado(btn, e);
     }
   }
 
   const acciones = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
+  // Los pasos `page-nav` los resuelve el llamador; lo que queda —si queda—
+  // se ejecuta normal. Con la lista vacía la secuencia es OK sin hacer nada,
+  // igual que `folder` cuando abre su overlay.
+  const resto = apartarNavegacion(acciones, e);
   const base = e.config.state ?? {};
   const r = await conPlazo(
-    runActionSequence(acciones, e.api, base, ganchoScripts(acciones, e), e.config.rgb?.profiles, e.t),
+    runActionSequence(resto, e.api, base, ganchoScripts(resto, e), e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
   persistirYCrujir(r, base, e);
   return { ok: r.ok, error: r.error, tipo: btn.action.type };
+}
+
+/**
+ * La acción de apagado de un toggle.
+ *
+ * Se extrajo de `pulsarBoton` para que la navegación no le sume ramas: con el
+ * `page-nav` del apagado llegaba a 20 sobre un límite de 18.
+ */
+async function ejecutarApagado(btn: ButtonConfig, e: EntornoPulsacion): Promise<ResultadoPulsacion> {
+  const off = btn.actionToggleOff!;
+  // El apagado también puede ser navegar: no hay nada que ejecutar.
+  if (off.type === 'page-nav') {
+    e.navegar?.(off);
+    return { ok: true, tipo: 'page-nav' };
+  }
+  const r = await conPlazo(
+    executeAction(off, e.api, e.config.state, e.config.rgb?.profiles, e.t),
+    { ok: false, error: e.t('act.err.timeout') },
+  );
+  persistirYCrujir(r, e.config.state ?? {}, e);
+  return { ok: r.ok, error: r.error, tipo: off.type };
 }
 
 /**
@@ -184,6 +231,12 @@ export async function pulsarBoton(
 export async function ejecutarUna(
   accion: ButtonConfig['action'], e: EntornoPulsacion,
 ): Promise<ResultadoPulsacion> {
+  // Los sub-botones de una carpeta también pueden navegar: mismo callback que
+  // una celda del deck, con el mismo contexto (el overlay recibe `entorno`).
+  if (accion.type === 'page-nav') {
+    e.navegar?.(accion);
+    return { ok: true, tipo: 'page-nav' };
+  }
   const base = e.config.state ?? {};
   const r = await conPlazo(
     runActionSequence([accion], e.api, base, ganchoScripts([accion], e), e.config.rgb?.profiles, e.t),
@@ -198,6 +251,10 @@ export async function pulsacionLarga(
   btn: ButtonConfig, e: EntornoPulsacion,
 ): Promise<ResultadoPulsacion | null> {
   if (!btn.longPressAction || btn.longPressAction.type === 'none') return null;
+  if (btn.longPressAction.type === 'page-nav') {
+    e.navegar?.(btn.longPressAction);
+    return { ok: true, tipo: 'page-nav' };
+  }
   const r = await conPlazo(
     executeAction(btn.longPressAction, e.api, e.config.state, e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout') },

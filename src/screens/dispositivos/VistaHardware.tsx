@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
@@ -187,98 +187,165 @@ export function VistaHardware({
   const VD = useTheme();
   const t = useT();
 
+  const contenedorRef = useRef<HTMLDivElement>(null);
+  const chasisRef = useRef<HTMLDivElement>(null);
+  const [contenedorDims, setContenedorDims] = useState<{ ancho: number; alto: number }>({ ancho: 0, alto: 0 });
+  const [altoChasis, setAltoChasis] = useState<number>(0);
+
+  useEffect(() => {
+    const el = contenedorRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setContenedorDims({
+          ancho: entry.contentRect.width,
+          alto: entry.contentRect.height,
+        });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = chasisRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      if (chasisRef.current) {
+        setAltoChasis(chasisRef.current.offsetHeight);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [disposicion]);
+
   const numFilas = Math.max(...disposicion.controles.map((c) => c.fila), 0) + 1;
   const numColumnas = Math.max(...disposicion.controles.map((c) => c.columna), 0) + 1;
   const anchoChasis = Math.min(840, Math.max(460, numColumnas * 136 + 64));
+  const altoBase = altoChasis > 0 ? altoChasis : numFilas * 128 + 96;
+
+  let escala = 1;
+  if (contenedorDims.ancho > 0 && contenedorDims.alto > 0) {
+    const pad = 12;
+    const anchoDisp = Math.max(20, contenedorDims.ancho - pad);
+    const altoDisp = Math.max(20, contenedorDims.alto - pad);
+    const escalaX = anchoDisp / anchoChasis;
+    const escalaY = altoDisp / altoBase;
+    escala = Math.min(1, Math.min(escalaX, escalaY));
+  }
+
+  const anchoEscalado = Math.round(anchoChasis * escala);
+  const altoEscalado = Math.round(altoBase * escala);
 
   return (
     <div
+      ref={contenedorRef}
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: VD.space.lg,
+        padding: VD.space.xs,
         flex: 1,
+        minHeight: 0,
+        minWidth: 0,
+        width: '100%',
+        overflow: 'hidden',
+        position: 'relative',
       }}
     >
       <div
         style={{
-          background: VD.surface,
-          border: `2px solid ${VD.borderStrong}`,
-          borderRadius: 14,
-          padding: `${VD.space.xl}px ${VD.space.xl}px`,
-          boxShadow: VD.shadow.modal,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: VD.space.lg,
+          width: anchoEscalado,
+          height: altoEscalado,
           position: 'relative',
-          maxWidth: anchoChasis,
-          width: '100%',
-          opacity: conectado ? 1 : 0.7,
-          transition: 'opacity 0.2s',
+          flexShrink: 0,
         }}
       >
-        <ChasisTornillos color={VD.borderStrong} />
-
-        {/* Serigrafía central del chasis */}
         <div
+          ref={chasisRef}
           style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: anchoChasis,
+            transform: `scale(${escala})`,
+            transformOrigin: 'top left',
+            background: VD.surface,
+            border: `2px solid ${VD.borderStrong}`,
+            borderRadius: 14,
+            padding: `${VD.space.xl}px ${VD.space.xl}px`,
+            boxShadow: VD.shadow.modal,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: VD.space.xs,
-            fontSize: 8,
-            letterSpacing: 2,
-            color: VD.textMuted,
-            fontFamily: VD.mono,
-            fontWeight: 700,
-            textAlign: 'center',
-            textTransform: 'uppercase',
+            gap: VD.space.lg,
+            opacity: conectado ? 1 : 0.7,
+            transition: 'opacity 0.2s',
+            boxSizing: 'border-box',
           }}
         >
-          <span>{disposicion.nombre}</span>
-          {!disposicion.verificado && (
-            <span
-              style={{
-                fontSize: 7.5,
-                color: VD.warning,
-                letterSpacing: 1,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 2,
-              }}
-            >
-              (<DotGlyphIcon glyph="WARN" size={8} color={VD.warning} />
-              {t('disp.experimental')})
-            </span>
-          )}
-        </div>
+          <ChasisTornillos color={VD.borderStrong} />
 
-        {/* Rejilla de controles según fila y columna físicas */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${numColumnas}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${numFilas}, auto)`,
-            gap: VD.space.md,
-            width: '100%',
-            alignItems: 'center',
-          }}
-        >
-          {disposicion.controles.map((ctrl) => (
-            <ControlElemento
-              key={`${ctrl.tipo}_${ctrl.indice}_${ctrl.fila}_${ctrl.columna}`}
-              control={ctrl}
-              disposicion={disposicion}
-              botones={botones}
-              selectedHueco={selectedHueco}
-              brillo={brillo}
-              conectado={conectado}
-              imagenes={imagenes}
-              onSelectHueco={onSelectHueco}
-              onEditarBoton={onEditarBoton}
-            />
-          ))}
+          {/* Serigrafía central del chasis */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: VD.space.xs,
+              fontSize: 8,
+              letterSpacing: 2,
+              color: VD.textMuted,
+              fontFamily: VD.mono,
+              fontWeight: 700,
+              textAlign: 'center',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span>{disposicion.nombre}</span>
+            {!disposicion.verificado && (
+              <span
+                style={{
+                  fontSize: 7.5,
+                  color: VD.warning,
+                  letterSpacing: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 2,
+                }}
+              >
+                (<DotGlyphIcon glyph="WARN" size={8} color={VD.warning} />
+                {t('disp.experimental')})
+              </span>
+            )}
+          </div>
+
+          {/* Rejilla de controles según fila y columna físicas */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${numColumnas}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${numFilas}, auto)`,
+              gap: VD.space.md,
+              width: '100%',
+              alignItems: 'center',
+            }}
+          >
+            {disposicion.controles.map((ctrl) => (
+              <ControlElemento
+                key={`${ctrl.tipo}_${ctrl.indice}_${ctrl.fila}_${ctrl.columna}`}
+                control={ctrl}
+                disposicion={disposicion}
+                botones={botones}
+                selectedHueco={selectedHueco}
+                brillo={brillo}
+                conectado={conectado}
+                imagenes={imagenes}
+                onSelectHueco={onSelectHueco}
+                onEditarBoton={onEditarBoton}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

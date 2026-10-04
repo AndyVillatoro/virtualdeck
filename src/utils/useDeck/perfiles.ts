@@ -35,6 +35,12 @@ export function useDeckPerfiles({ config, withHistory, setActivePage, t }: Conte
         // El fondo va con el resto del aspecto. Sin el, cargar un perfil
         // devolvia su color de acento pero dejaba el fondo del anterior.
         wallpaper: prev.wallpaper,
+        // Volver a guardar con el mismo nombre actualiza el perfil, no lo
+        // reinicia: la app vinculada y el origen (tienda) que ya tenía se
+        // conservan. Sin esto, re-guardar borraba el `targetApp` y el aviso
+        // de updates perdía de qué entrada vino.
+        ...(yaEsta?.targetApp ? { targetApp: yaEsta.targetApp } : {}),
+        ...(yaEsta?.origen ? { origen: yaEsta.origen } : {}),
       };
       return {
         ...prev,

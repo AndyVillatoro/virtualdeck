@@ -1,6 +1,7 @@
 import React from 'react';
 import { TitleBar } from '../../components/TitleBar';
-import type { DeckConfig, Profile } from '../../types';
+import { REMOTO_POR_DEFECTO, SENSORES_POR_DEFECTO, type DeckConfig, type Profile } from '../../types';
+import { normalizarApp } from '../../utils/apps';
 
 type PropsTitleBar = React.ComponentProps<typeof TitleBar>;
 
@@ -35,9 +36,9 @@ export function BarraSuperiorMain(props: BarraSuperiorMainProps) {
       profiles={config.profiles ?? []}
       rgbConfig={config.rgb}
       onRGBConfigChange={(rgb) => onConfigChange({ ...config, rgb })}
-      sensorsConfig={config.sensors ?? { enabled: false, host: '127.0.0.1', port: 8085 }}
+      sensorsConfig={config.sensors ?? { enabled: false, ...SENSORES_POR_DEFECTO }}
       onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
-      remoteConfig={config.remote ?? { enabled: false, port: 8787, token: '', allowLan: false }}
+      remoteConfig={config.remote ?? REMOTO_POR_DEFECTO}
       onRemoteConfigChange={(remote) => onConfigChange({ ...config, remote })}
       onImportarDeGaleria={(p, agregarAlDeck) => {
         onConfigChange({ ...config, profiles: [...(config.profiles ?? []), p] });
@@ -55,7 +56,7 @@ export function BarraSuperiorMain(props: BarraSuperiorMainProps) {
       targetDisplayId={config.targetDisplayId}
       onTargetDisplayChange={(targetDisplayId) => onConfigChange({ ...config, targetDisplayId })}
       onUpdateProfileTargetApp={(profId, targetApp) => {
-        const cleaned = targetApp.trim().replace(/\.exe$/i, '').toLowerCase();
+        const cleaned = normalizarApp(targetApp);
         const nextProfiles = (config.profiles ?? []).map((p) =>
           p.id === profId ? { ...p, targetApp: cleaned || undefined } : p,
         );

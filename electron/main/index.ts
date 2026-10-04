@@ -18,6 +18,10 @@ import { asegurarWebContents } from './seguridadVentana';
 import { rutaImagenDesdeUrl } from './protocoloVd';
 import * as remoto from './servidorLocal';
 import { detener as detenerSuperficies } from './superficies/gestor';
+// Los valores por defecto de la barra y los sensores viven en `src/types`
+// (único `src/` que el proceso principal puede importar, ver `lint:arch`):
+// repetirlos aquí los desincroniza en silencio.
+import { BARRA_POR_DEFECTO, SENSORES_POR_DEFECTO } from '../../src/types';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -158,8 +162,8 @@ function setupWindow() {
   if (barraCfg?.enabled && Array.isArray(barraCfg.slots) && barraCfg.slots.length > 0) {
     abrirBarra({
       huecos: barraCfg.slots.length,
-      lado: barraCfg.side === 'left' ? 'left' : 'right',
-      tile: typeof barraCfg.tileSize === 'number' ? barraCfg.tileSize : 64,
+      lado: barraCfg.side === 'left' ? 'left' : BARRA_POR_DEFECTO.side,
+      tile: typeof barraCfg.tileSize === 'number' ? barraCfg.tileSize : BARRA_POR_DEFECTO.tileSize,
       y: typeof barraCfg.y === 'number' ? barraCfg.y : null,
     });
   }
@@ -185,7 +189,7 @@ function setupWindow() {
   // Asegurar siempre la configuración del servidor web si se detecta LHM en el equipo
   const rutaLhm = sensorsCfg?.lhmPath || sensors.rutaLHMConocida();
   if (rutaLhm) {
-    sensors.asegurarConfigLHM(rutaLhm, sensorsCfg?.port || 8085);
+    sensors.asegurarConfigLHM(rutaLhm, sensorsCfg?.port || SENSORES_POR_DEFECTO.port);
   }
 
   // RGB autostart — non-blocking so the rest of the app stays functional if OpenRGB fails.

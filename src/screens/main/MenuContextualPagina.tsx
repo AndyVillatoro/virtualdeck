@@ -34,6 +34,9 @@ export function MenuContextualPagina({
 
   const ctxPage = pages.find((pp) => pp.id === contextMenu.id);
   if (!ctxPage) return null;
+  // Las páginas de dock no salen en las pestañas de la principal y no tienen
+  // menú aquí: su cuadrícula la manda `rejillaDe` y se editan en Dispositivos.
+  if (ctxPage.superficie) return null;
 
   const ctxGs = ctxPage.gridSize ?? 4;
   const ctxRows = ctxPage.gridRows ?? ctxGs;

@@ -1,8 +1,8 @@
 import { FormNone, FormApp, FormWeb, FormShortcut, FormScript } from './basicos';
-import { FormAudioDevice, FormHotkey, FormClipboard, FormTypeText, FormKillProcess, FormVolumeSet, FormBrightness, FormAdjust, FormNotify, FormTts, FormRegionCapture, FormMediaPlayPause, FormWindowSnap } from './sistema';
+import { FormAudioDevice, FormHotkey, FormClipboard, FormTypeText, FormKillProcess, FormVolumeSet, FormBrightness, FormAdjust, FormNotify, FormTts, FormRegionCapture, FormMediaPlayPause, FormWindowSnap, FormWindowCycle } from './sistema';
 import { FormSetVar, FormIncrVar, FormWebhook, FormRemote, FormMobileRemote, FormBranch, FormCountdown } from './datos';
 import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb';
-import { FormFolder, FormMacro } from './compuestos';
+import { FormFolder, FormMacro, FormPageNav } from './compuestos';
 import { FormDiscord, FormSpotify } from './terceros';
 import type { PropsFormulario } from './base';
 
@@ -40,6 +40,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'rgb-profile': FormRgbProfile,
   'rgb-preset': FormRgbPreset,
   'folder': FormFolder,
+  'page-nav': FormPageNav,
   'media-play-pause': FormMediaPlayPause,
   'media-next': FormMediaPlayPause,
   'media-prev': FormMediaPlayPause,
@@ -52,6 +53,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'volume-down': FormMediaPlayPause,
   'mute': FormMediaPlayPause,
   'window-snap': FormWindowSnap,
+  'window-cycle': FormWindowCycle,
   'branch': FormBranch,
   'countdown': FormCountdown,
   'macro': FormMacro,

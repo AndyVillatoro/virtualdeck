@@ -25,7 +25,7 @@ import { tm } from './idioma';
 // to record a macro.
 let _uio: any | null = null;
 
-function getUio() {
+export function getUio() {
   if (_uio) return _uio;
   try {
     _uio = require('uiohook-napi');

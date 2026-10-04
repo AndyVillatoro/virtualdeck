@@ -138,6 +138,9 @@ export interface ElectronAPI {
     closeWindow: (processName?: string) => Promise<boolean>;
     setVolume: (percent: number) => Promise<boolean>;
     snapWindow: (position: string, processName?: string) => Promise<boolean>;
+    cycleWindow: (adelante: boolean) => Promise<boolean>;
+    /** Apps con ventana abierta (proceso sin `.exe`); vacía sin núcleo nativo. */
+    openApps: () => Promise<string[]>;
   };
   dialog: {
     openFile: (opts?: object) => Promise<string | null>;

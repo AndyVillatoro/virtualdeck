@@ -196,6 +196,8 @@ const PALABRAS_SUELTAS = new Set([
 // asi se colo el rotulo de deshacer de `useDeck.ts`, que si es interfaz viva.
 const DATOS_SEMBRADOS = new Set([
   'src/screens/editor/actionData.ts',
+  'src/data/presetsDock.ts',
+  'src/data/plantillasApp.ts',
   'src/data/brandIcons.ts',
 ]);
 

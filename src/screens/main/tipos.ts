@@ -30,6 +30,10 @@ export interface MainBProps {
   onPageDelete: (id: string) => void;
   onPageReorder: (fromIdx: number, toIdx: number) => void;
   onPageSetGrid: (pageId: string, gs: 3 | 4 | 5 | 6, gridRows?: number) => void;
+  /** Vincular una app a una página, con deshacer (ver `useDeck/paginas`). */
+  onFijarTargetApp?: (pageId: string, app: string) => void;
+  /** Crear página preconfigurada desde plantilla (roadmap 75). */
+  onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
   onMoveButtonToPage: (buttonId: string, targetPage: number, copy: boolean) => boolean;
   onMoveButtonsToPage: (ids: string[], targetPage: number, copy: boolean) => number;
   onClearButtons: (ids: string[]) => void;

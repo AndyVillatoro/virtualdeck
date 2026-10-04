@@ -1,226 +1,156 @@
 /**
  * El mando móvil (1.1): la página que sirve el servidor local en `/`.
  *
- * Es una sola página sin compilar y sin dependencias — el renderer de
- * VirtualDeck es React con Vite, pero meter ese build aquí significaría un
- * segundo bundle para algo que son dos pantallas: pedir el código y una
- * rejilla de botones. Va como cadena porque tiene que salir del proceso
- * principal, que es quien tiene el servidor.
- *
- * **El token no viaja en la dirección.** El teléfono escribe
- * `http://<ip>:<puerto>` a mano, que es corto, y el emparejamiento se hace con
- * un código de seis cifras que caduca. Un enlace con el token dentro habría
- * quedado en el historial del navegador del teléfono y en cualquier captura de
- * pantalla que alguien mande para pedir ayuda.
- *
- * **Esta página es un origen con el token dentro** (`localStorage['vd-token']`)
- * y su contenido se construye con datos de `deck-config.json`, que pueden venir
- * de un perfil importado. Por eso lleva dos barreras y no una:
- *
- * 1. **Nada se pinta con `innerHTML`.** Todo el DOM se construye con
- *    `createElement`/`textContent`, incluido el SVG del glifo 5x7. Donde el
- *    `fgColor` del botón llegaba concatenado a un `fill="…"`, ahora es un
- *    `setAttribute`, que es texto y se escapa solo.
- * 2. **CSP con `nonce` por respuesta** (`servidorLocal.ts` la genera y la pasa
- *    aquí). El `<script>` y el `<style>` de la página son en línea, así que
- *    necesitan `'unsafe-inline'`… y con `'unsafe-inline'` una inyección en
- *    línea seguiría ejecutando. Con un `nonce` aleatorio en cada respuesta, no:
- *    un `<script>` inyectado sin ese valor no corre. Por eso el parámetro es
- *    obligatorio y hay que generarlo en cada petición, no reutilizarlo.
- *
- * Los textos van en los dos idiomas dentro de la propia página: no puede usar
- * el i18n de `src/` (otro proceso, y encima otro dispositivo) ni el de
- * `idioma.ts`, porque el idioma que manda aquí es el del **teléfono**, no el
- * del equipo. Por eso `check-i18n.mjs` la trata aparte.
+ * Página web ligera sin dependencias ni build. Estética DOT / 480 OLED Micro Interface:
+ * mono, mayúsculas, grilla de 4 px, sin emojis. Los colores y acento reflejan
+ * el tema del usuario (oscuro, claro o sistema según prefers-color-scheme).
  */
 
 const TEXTOS = {
   es: {
     titulo: 'VIRTUALDECK',
-    pedirCodigo: 'Escriba el código de seis cifras que aparece en VirtualDeck',
-    emparejar: 'EMPAREJAR',
-    codigoMal: 'El código no vale o ya caducó.',
-    sinBotones: 'No hay botones con acción en este deck.',
-    reintentar: 'REINTENTAR',
-    sinConexion: 'Sin conexión con VirtualDeck.',
-    olvidar: 'DESCONECTAR',
-    pagina: 'PÁGINA',
-    pantallaCompleta: 'PANTALLA COMPLETA',
-    salirPantallaCompleta: 'SALIR DE PANTALLA COMPLETA',
-    volumen: 'VOL',
-    brillo: 'BRILLO',
+    pedirCodigo: 'ESCRIBA EL CÓDIGO DE SEIS CIFRAS QUE APARECE EN VIRTUALDECK',
+    emparejar: 'EMPAREJAR', codigoMal: 'EL CÓDIGO NO VALE O YA CADUCÓ.',
+    sinBotones: 'NO HAY BOTONES CON ACCIÓN EN ESTE DECK.', reintentar: 'REINTENTAR',
+    sinConexion: 'SIN CONEXIÓN CON VIRTUALDECK.', olvidar: 'DESCONECTAR',
+    pagina: 'PÁGINA', pantallaCompleta: 'PANTALLA COMPLETA',
+    salirPantallaCompleta: 'SALIR DE PANTALLA COMPLETA', volumen: 'VOL', brillo: 'BRILLO',
   },
   en: {
     titulo: 'VIRTUALDECK',
-    pedirCodigo: 'Enter the six-digit code shown in VirtualDeck',
-    emparejar: 'PAIR',
-    codigoMal: 'That code is wrong or has expired.',
-    sinBotones: 'This deck has no buttons with an action.',
-    reintentar: 'RETRY',
-    sinConexion: 'No connection to VirtualDeck.',
-    olvidar: 'DISCONNECT',
-    pagina: 'PAGE',
-    pantallaCompleta: 'FULLSCREEN',
-    salirPantallaCompleta: 'EXIT FULLSCREEN',
-    volumen: 'VOL',
-    brillo: 'BRIGHTNESS',
+    pedirCodigo: 'ENTER THE SIX-DIGIT CODE SHOWN IN VIRTUALDECK',
+    emparejar: 'PAIR', codigoMal: 'THAT CODE IS WRONG OR HAS EXPIRED.',
+    sinBotones: 'THIS DECK HAS NO BUTTONS WITH AN ACTION.', reintentar: 'RETRY',
+    sinConexion: 'NO CONNECTION TO VIRTUALDECK.', olvidar: 'DISCONNECT',
+    pagina: 'PAGE', pantallaCompleta: 'FULLSCREEN',
+    salirPantallaCompleta: 'EXIT FULLSCREEN', volumen: 'VOL', brillo: 'BRIGHTNESS',
   },
 };
 
-export function paginaMando(nonceScript: string, nonceEstilo: string): string {
+export interface DatosTemaMando {
+  theme?: 'dark' | 'light' | 'dot480' | 'system';
+  accent?: string;
+}
+
+export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?: DatosTemaMando): string {
+  const modo = datosTema?.theme ?? 'dark';
+  const acento = datosTema?.accent || (modo === 'dot480' ? '#ff3b30' : '#4a8ef0');
+  const temaInicial = modo === 'system' ? 'system' : modo === 'light' ? 'light' : 'dark';
+  const colorScheme = modo === 'system' ? 'dark light' : modo === 'light' ? 'light' : 'dark';
+  const metaThemeColor = modo === 'light' ? '#d8dbe0' : '#070809';
+
   return `<!doctype html>
-<html lang="es">
+<html lang="es" data-theme="${temaInicial}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="${colorScheme}">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#070809">
+<meta id="meta-theme-color" name="theme-color" content="${metaThemeColor}">
 <title>VirtualDeck</title>
 <style nonce="${nonceEstilo}">
   :root {
-    --bg: #070809;
-    --sup: #121417;
-    --alt: #181b20;
-    --bor: #282c35;
-    --txt: #e2e4e8;
-    --ten: #78808d;
-    --ac: #4a8ef0;
+    --bg: #070809; --sup: #111315; --alt: #181b1e; --bor: #26292e;
+    --txt: #e6e8eb; --ten: #8e929b; --ac: ${acento}; --ac-bg: ${acento}26; --btn-txt: #070809;
+    --rotulo-bg: rgba(7, 8, 9, 0.85); --rotulo-bor: rgba(255, 255, 255, 0.08);
+    --sub-bg: rgba(255, 255, 255, 0.05); --sub-bor: rgba(255, 255, 255, 0.08);
+  }
+  :root[data-theme="light"] {
+    --bg: #d8dbe0; --sup: #cbcfd5; --alt: #c0c5cc; --bor: #9da4ae;
+    --txt: #111418; --ten: #4d5560; --btn-txt: #111418;
+    --rotulo-bg: rgba(203, 207, 213, 0.88); --rotulo-bor: rgba(0, 0, 0, 0.12);
+    --sub-bg: rgba(0, 0, 0, 0.05); --sub-bor: rgba(0, 0, 0, 0.10);
+  }
+  :root[data-theme="dark"] {
+    --bg: #070809; --sup: #111315; --alt: #181b1e; --bor: #26292e;
+    --txt: #e6e8eb; --ten: #8e929b; --btn-txt: #070809;
+    --rotulo-bg: rgba(7, 8, 9, 0.85); --rotulo-bor: rgba(255, 255, 255, 0.08);
+    --sub-bg: rgba(255, 255, 255, 0.05); --sub-bor: rgba(255, 255, 255, 0.08);
+  }
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="system"] {
+      --bg: #d8dbe0; --sup: #cbcfd5; --alt: #c0c5cc; --bor: #9da4ae;
+      --txt: #111418; --ten: #4d5560; --btn-txt: #111418;
+      --rotulo-bg: rgba(203, 207, 213, 0.88); --rotulo-bor: rgba(0, 0, 0, 0.12);
+      --sub-bg: rgba(0, 0, 0, 0.05); --sub-bor: rgba(0, 0, 0, 0.10);
+    }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     margin: 0; background: var(--bg); color: var(--txt);
     font-family: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
     padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
-    min-height: 100vh; display: flex; flex-direction: column;
+    min-height: 100vh; display: flex; flex-direction: column; text-transform: uppercase;
   }
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 2px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;
-  }
-  .logo { display: flex; align-items: center; gap: 8px; letter-spacing: 3px; font-size: 12px; font-weight: 700; }
+  input, button { font-family: inherit; text-transform: uppercase; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 12px; border-bottom: 1px solid var(--bor); margin-bottom: 12px; }
+  .logo { display: flex; align-items: center; gap: 8px; letter-spacing: 2px; font-size: 12px; font-weight: 700; }
   .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); box-shadow: 0 0 8px var(--ac); }
   .cab-btn {
-    background: var(--sup); border: 1px solid var(--bor); border-radius: 6px;
-    color: var(--txt); font-size: 11px; padding: 6px 10px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 5px; font-family: inherit;
-    transition: background 0.12s, border-color 0.12s;
+    background: var(--sup); border: 1px solid var(--bor); border-radius: 4px;
+    color: var(--txt); font-size: 10px; padding: 4px 8px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+    min-width: 28px; min-height: 28px; transition: background 0.12s, border-color 0.12s;
   }
   .cab-btn:active { background: var(--alt); border-color: var(--ac); }
-  .cab-acciones { display: flex; gap: 6px; align-items: center; }
-  .rejilla {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 8px; padding-bottom: 24px; width: 100%;
-  }
+  .cab-acciones { display: flex; gap: 8px; align-items: center; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; padding-bottom: 24px; width: 100%; }
   .celda {
-    aspect-ratio: 1; background: var(--alt); border: 1px solid var(--bor); border-radius: 10px;
+    aspect-ratio: 1; background: var(--alt); border: 1px solid var(--bor); border-radius: 4px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    position: relative; overflow: hidden; user-select: none; cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    position: relative; overflow: hidden; user-select: none; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.35);
     transition: transform 0.08s ease, border-color 0.12s, box-shadow 0.12s;
   }
-  .celda:active {
-    transform: scale(0.93); border-color: var(--ac);
-    box-shadow: 0 0 14px rgba(74, 142, 240, 0.4);
-  }
-  .celda.ok { border-color: #22c55e !important; box-shadow: 0 0 16px rgba(34, 197, 94, 0.5) !important; }
-  .celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 16px rgba(239, 68, 68, 0.5) !important; }
-  .pin-insignia {
-    position: absolute; top: 4px; right: 4px; font-size: 9px; z-index: 3;
-    opacity: 0.75; pointer-events: none;
-  }
-  .mosaico-2x2 {
-    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-    gap: 3px; width: 100%; height: 100%; padding: 3px; box-sizing: border-box;
-  }
+  .celda:active { transform: scale(0.94); border-color: var(--ac); box-shadow: 0 0 12px var(--ac); }
+  .celda.ok { border-color: #22c55e !important; box-shadow: 0 0 12px rgba(34, 197, 94, 0.5) !important; }
+  .celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important; }
+  .pin-insignia { position: absolute; top: 4px; right: 4px; font-size: 8px; z-index: 3; opacity: 0.85; pointer-events: none; letter-spacing: 1px; color: var(--ac); font-weight: 700; }
+  .mosaico-2x2 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; width: 100%; height: 100%; padding: 4px; }
   .sub-celda {
-    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 6px; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; overflow: hidden; cursor: pointer; position: relative;
-    user-select: none; transition: transform 0.08s ease, border-color 0.12s, box-shadow 0.12s;
+    background: var(--sub-bg); border: 1px solid var(--sub-bor); border-radius: 4px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; overflow: hidden; cursor: pointer; position: relative; user-select: none;
+    padding: 2px; transition: transform 0.08s ease, border-color 0.12s, box-shadow 0.12s;
   }
   .sub-celda:active { transform: scale(0.92); border-color: var(--ac); }
-  .sub-celda.ok { border-color: #22c55e !important; box-shadow: 0 0 10px rgba(34, 197, 94, 0.4) !important; }
-  .sub-celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4) !important; }
-  .sub-icono { font-size: 13px; line-height: 1; pointer-events: none; }
-  .sub-txt {
-    font-size: 7px; font-weight: 600; max-width: 90%; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; margin-top: 1px; pointer-events: none;
-  }
-  .slider-celda {
-    width: 100%; height: 100%; display: flex; flex-direction: column;
-    align-items: center; justify-content: space-between; padding: 8px 10px; box-sizing: border-box;
-  }
-  .slider-cab {
-    display: flex; align-items: center; justify-content: space-between; width: 100%;
-    font-size: 8px; font-weight: 700; color: var(--ten);
-  }
-  .slider-val { font-size: 9px; font-weight: 700; color: var(--ac); }
-  .slider-control {
-    width: 100%; -webkit-appearance: none; appearance: none;
-    height: 6px; border-radius: 3px; background: var(--sup); outline: none; margin: 8px 0;
-  }
-  .slider-control::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
-    border-radius: 50%; background: var(--ac); cursor: pointer; box-shadow: 0 0 8px rgba(74, 142, 240, 0.5);
-  }
-  .slider-control::-moz-range-thumb {
-    width: 18px; height: 18px; border-radius: 50%; background: var(--ac);
-    cursor: pointer; border: none; box-shadow: 0 0 8px rgba(74, 142, 240, 0.5);
-  }
-  .fondo-img {
-    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-    opacity: 0.88; border-radius: inherit; pointer-events: none;
-  }
-  .icono-centro {
-    font-size: 26px; line-height: 1; z-index: 1;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.9)); pointer-events: none;
-  }
+  .sub-celda.ok { border-color: #22c55e !important; box-shadow: 0 0 8px rgba(34, 197, 94, 0.4) !important; }
+  .sub-celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4) !important; }
+  .sub-txt { font-size: 8px; font-weight: 700; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; pointer-events: none; letter-spacing: 0.5px; }
+  .slider-celda { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 8px; }
+  .slider-cab { display: flex; align-items: center; justify-content: space-between; width: 100%; font-size: 8px; font-weight: 700; color: var(--ten); gap: 4px; }
+  .slider-eti { display: inline-flex; align-items: center; gap: 4px; }
+  .slider-val { font-size: 8px; font-weight: 700; color: var(--ac); }
+  .slider-control { width: 100%; -webkit-appearance: none; appearance: none; height: 8px; border-radius: 4px; background: var(--sup); outline: none; margin: 8px 0; }
+  .slider-control::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 4px; background: var(--ac); cursor: pointer; box-shadow: 0 0 8px var(--ac); }
+  .slider-control::-moz-range-thumb { width: 16px; height: 16px; border-radius: 4px; background: var(--ac); cursor: pointer; border: none; box-shadow: 0 0 8px var(--ac); }
+  .fondo-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.88; border-radius: inherit; pointer-events: none; }
+  .icono-centro { font-size: 20px; line-height: 1; z-index: 1; font-weight: 700; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); pointer-events: none; }
   .rotulo {
-    position: absolute; bottom: 0; left: 0; right: 0; padding: 4px 6px;
-    background: rgba(7, 8, 9, 0.82); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    border-top: 1px solid rgba(255, 255, 255, 0.06); border-radius: 0 0 9px 9px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 4px; background: var(--rotulo-bg);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-top: 1px solid var(--rotulo-bor);
+    border-radius: 0 0 4px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; pointer-events: none; z-index: 2;
   }
-  .label-txt {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.5px;
-    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .sublabel-txt {
-    font-size: 7px; color: var(--ten); letter-spacing: 0.5px;
-    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;
-  }
-  input {
-    width: 100%; background: var(--sup); border: 1px solid var(--bor); border-radius: 8px;
-    color: var(--txt); font: inherit; font-size: 24px; letter-spacing: 8px; text-align: center;
-    padding: 14px; outline: none; margin-top: 12px;
-  }
-  input:focus { border-color: var(--ac); box-shadow: 0 0 10px rgba(74, 142, 240, 0.25); }
+  .label-txt { font-size: 8px; font-weight: 700; letter-spacing: 0.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sublabel-txt { font-size: 8px; color: var(--ten); letter-spacing: 0.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  input { width: 100%; background: var(--sup); border: 1px solid var(--bor); border-radius: 4px; color: var(--txt); font-size: 24px; letter-spacing: 8px; text-align: center; padding: 12px; outline: none; margin-top: 12px; }
+  input:focus { border-color: var(--ac); box-shadow: 0 0 8px var(--ac); }
   button.principal {
-    width: 100%; margin-top: 12px; padding: 14px; background: var(--ac); border: none; border-radius: 8px;
-    color: #fff; font: inherit; font-size: 13px; font-weight: 700; letter-spacing: 2px; cursor: pointer;
-    box-shadow: 0 2px 10px rgba(74, 142, 240, 0.35);
+    width: 100%; margin-top: 12px; padding: 12px; background: var(--ac); border: none; border-radius: 4px;
+    color: var(--btn-txt); font-size: 12px; font-weight: 700; letter-spacing: 2px; cursor: pointer; box-shadow: 0 4px 12px var(--ac-bg);
   }
   button.principal:active { transform: scale(0.98); }
-  .paginas { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 12px; scrollbar-width: none; }
+  .paginas { display: flex; gap: 8px; overflow-x: auto; padding: 0 0 12px; scrollbar-width: none; }
   .paginas::-webkit-scrollbar { display: none; }
   .pest {
-    flex: 0 0 auto; padding: 7px 14px; border: 1px solid var(--bor); background: var(--sup);
-    border-radius: 7px; font-size: 10px; letter-spacing: 1px; color: var(--ten); cursor: pointer;
-    transition: border-color 0.12s, color 0.12s, background 0.12s;
+    flex: 0 0 auto; padding: 4px 12px; border: 1px solid var(--bor); background: var(--sup);
+    border-radius: 4px; font-size: 8px; letter-spacing: 1px; color: var(--ten); cursor: pointer;
+    font-weight: 700; transition: border-color 0.12s, color 0.12s, background 0.12s;
   }
-  .pest.viva {
-    border-color: var(--ac); color: var(--ac); background: rgba(74, 142, 240, 0.12); font-weight: 700;
-  }
-  p { font-size: 12px; line-height: 1.6; color: var(--ten); margin: 6px 0; }
+  .pest.viva { border-color: var(--ac); color: var(--ac); background: var(--ac-bg); }
+  p { font-size: 12px; line-height: 1.5; color: var(--ten); margin: 8px 0; }
   .mal { color: #ef4444; }
-  /* El boton de olvidar arranca escondido, y lo escondia un atributo style en
-     linea que la CSP de esta pagina bloquea (con style-src y nonce, un atributo
-     style no se aplica). El script lo vuelve a ensenar con
-     style.display = inline-flex, que si manda sobre esta regla. */
   #btn-olvidar { display: none; }
 </style>
 </head>
@@ -228,8 +158,8 @@ export function paginaMando(nonceScript: string, nonceEstilo: string): string {
 <header>
   <div class="logo"><span class="punto"></span><span id="titulo"></span></div>
   <div class="cab-acciones">
-    <button id="btn-fullscreen" class="cab-btn" title="Pantalla completa">⛶</button>
-    <button id="btn-olvidar" class="cab-btn" title="Desconectar">✕</button>
+    <button id="btn-fullscreen" class="cab-btn"></button>
+    <button id="btn-olvidar" class="cab-btn"></button>
   </div>
 </header>
 <div id="app"></div>
@@ -239,8 +169,64 @@ const t = T[(navigator.language || 'es').slice(0,2) === 'es' ? 'es' : 'en'];
 document.getElementById('titulo').textContent = t.titulo;
 const btnFs = document.getElementById('btn-fullscreen');
 const btnOlvidar = document.getElementById('btn-olvidar');
-btnFs.title = t.pantallaCompleta;
-btnOlvidar.title = t.olvidar;
+
+const G8 = {
+  SPEAKER: [0x10,0x34,0x72,0xf1,0xf1,0x72,0x34,0x10], MUTE: [0x11,0x32,0x74,0xf8,0xf8,0x74,0x32,0x11],
+  MIC: [0x3c,0x66,0x66,0x7e,0xbd,0x42,0x18,0x3c], WEATHER_SUN: [0x24,0x18,0xbd,0x7e,0x7e,0xbd,0x18,0x24],
+  GEAR: [0x3c,0x66,0xdb,0xa5,0xa5,0xdb,0x66,0x3c], PLAY: [0x20,0x30,0x38,0x3c,0x3c,0x38,0x30,0x20],
+  PAUSE: [0x66,0x66,0x66,0x66,0x66,0x66,0x66,0x66], NEXT: [0x44,0x64,0x74,0x7c,0x7c,0x74,0x64,0x44],
+  PREV: [0x22,0x26,0x2e,0x3e,0x3e,0x2e,0x26,0x22], FULLSCREEN: [0xe7,0xc3,0x81,0,0,0x81,0xc3,0xe7],
+  MINIMIZE: [0,0,0,0,0,0x7e,0x7e,0], CLOSE: [0xc3,0x66,0x3c,0x18,0x18,0x3c,0x66,0xc3],
+  CHECK: [0,1,3,6,0x8c,0xd8,0x70,0x20], LOCK: [0x3c,0x66,0x66,0xff,0xff,0xe7,0xff,0xff],
+  BOLT: [0x0c,0x18,0x30,0x7e,0x0c,0x18,0x30,0x60], WEB: [0x3c,0x7e,0xdb,0x99,0xff,0xdb,0x7e,0x3c],
+  TERMINAL: [0x80,0xc0,0x60,0x30,0x60,0xc0,0x80,0x0f], CLOCK: [0x3c,0x42,0x91,0x9d,0x81,0x81,0x42,0x3c],
+  STORAGE: [0x7e,0xbd,0x81,0x81,0xbd,0xbd,0xbd,0xff], CPU: [0x24,0x7e,0xc3,0xdb,0xdb,0xc3,0x7e,0x24],
+  ARROW_UP: [0x18,0x3c,0x7e,0xdb,0x18,0x18,0x18,0x18], ARROW_DOWN: [0x18,0x18,0x18,0x18,0xdb,0x7e,0x3c,0x18],
+  ARROW_LEFT: [0x10,0x30,0x70,0xff,0xff,0x70,0x30,0x10], ARROW_RIGHT: [0x08,0x0c,0x0e,0xff,0xff,0x0e,0x0c,0x08],
+  ADD: [0x18,0x18,0x18,0xff,0xff,0x18,0x18,0x18], SUBTRACT: [0,0,0,0xff,0xff,0,0,0],
+  EDIT: [6,0x0f,0x1e,0x3c,0x78,0xf0,0xe0,0x80], FOLDER: [0x70,0xfe,0x81,0x81,0x81,0x81,0xff,0],
+  CODE: [4,0x44,0x88,0x89,0x91,0x52,0x20,0x20]
+};
+
+const ALIAS = {
+  VOLUME: 'SPEAKER', VOL: 'SPEAKER', SUN: 'WEATHER_SUN', CONFIG: 'GEAR', SETTINGS: 'GEAR',
+  '\\uD83D\\uDD0A': 'SPEAKER', '\\u2600': 'WEATHER_SUN', '\\u2699': 'GEAR', '\\u25B6': 'PLAY',
+  '\\u23F8': 'PAUSE', '\\u23ED': 'NEXT', '\\u23EE': 'PREV', '\\uD83C\\uDF99': 'MIC', '\\uD83C\\uDF10': 'WEB',
+  '\\uD83D\\uDD12': 'LOCK', '\\u26A1': 'BOLT', '\\uD83D\\uDCBE': 'STORAGE', '\\uD83D\\uDD32': 'CPU',
+  '\\uD83D\\uDCCA': 'CPU', '\\uD83D\\uDCC1': 'FOLDER', '\\u25F7': 'CLOCK', '\\u2713': 'CHECK',
+  '\\u2715': 'CLOSE', '\\u00D7': 'CLOSE', '\\u26F6': 'FULLSCREEN', '\\uD83D\\uDDD7': 'MINIMIZE',
+};
+
+let temaConfig = ${JSON.stringify(modo)};
+let acentoConfig = ${JSON.stringify(acento)};
+
+function aplicarTema(modoNuevo, acentoNuevo) {
+  if (modoNuevo) temaConfig = modoNuevo;
+  if (acentoNuevo) {
+    acentoConfig = acentoNuevo;
+    document.documentElement.style.setProperty('--ac', acentoConfig);
+    document.documentElement.style.setProperty('--ac-bg', acentoConfig + '26');
+  }
+  let efectivo = temaConfig;
+  if (temaConfig === 'system') {
+    const esClaro = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    efectivo = esClaro ? 'light' : 'dark';
+  } else if (temaConfig === 'dot480') {
+    efectivo = 'dark';
+  }
+  document.documentElement.setAttribute('data-theme', efectivo);
+  const metaTc = document.getElementById('meta-theme-color');
+  if (metaTc) metaTc.setAttribute('content', efectivo === 'light' ? '#d8dbe0' : '#070809');
+}
+
+aplicarTema(temaConfig, acentoConfig);
+
+if (window.matchMedia) {
+  const mql = window.matchMedia('(prefers-color-scheme: light)');
+  const onChangeScheme = () => { if (temaConfig === 'system') aplicarTema('system', acentoConfig); };
+  if (mql.addEventListener) mql.addEventListener('change', onChangeScheme);
+  else if (mql.addListener) mql.addListener(onChangeScheme);
+}
 
 function alternarFullscreen() {
   const doc = document;
@@ -254,18 +240,28 @@ function alternarFullscreen() {
     else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
   }
 }
-btnFs.onclick = alternarFullscreen;
-document.addEventListener('fullscreenchange', () => {
-  const estaFs = !!document.fullscreenElement;
-  btnFs.textContent = estaFs ? '🗗' : '⛶';
+
+function actualizarBotonFs() {
+  const doc = document;
+  const estaFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
   btnFs.title = estaFs ? t.salirPantallaCompleta : t.pantallaCompleta;
-});
+  while (btnFs.firstChild) btnFs.removeChild(btnFs.firstChild);
+  btnFs.append(svgGlifo8(estaFs ? G8.MINIMIZE : G8.FULLSCREEN, 'currentColor', 12));
+}
+
+btnFs.onclick = alternarFullscreen;
+document.addEventListener('fullscreenchange', actualizarBotonFs);
+document.addEventListener('webkitfullscreenchange', actualizarBotonFs);
+actualizarBotonFs();
+
+btnOlvidar.title = t.olvidar;
+while (btnOlvidar.firstChild) btnOlvidar.removeChild(btnOlvidar.firstChild);
+btnOlvidar.append(svgGlifo8(G8.CLOSE, 'currentColor', 12));
 
 const app = document.getElementById('app');
 let token = null;
 try { token = localStorage.getItem('vd-token'); } catch (e) { /* privado */ }
 let paginaViva = 0;
-
 btnOlvidar.onclick = olvidar;
 
 const pedir = (ruta, opciones) => fetch(ruta, {
@@ -273,42 +269,46 @@ const pedir = (ruta, opciones) => fetch(ruta, {
   headers: { 'X-VD-Token': token || '', ...(opciones && opciones.headers) },
 });
 
-function vaciar() { app.innerHTML = ''; }
+function vaciar() { while (app.firstChild) app.removeChild(app.firstChild); }
 function nodo(tag, props, ...hijos) {
   const e = Object.assign(document.createElement(tag), props);
   for (const h of hijos) if (h) e.append(h);
   return e;
 }
 
-/*
- * El glifo 5x7 como SVG, construido con el DOM y no con una cadena.
- *
- * Antes se concatenaba en un innerHTML, y el fill llevaba dentro el fgColor
- * del boton SIN VALIDAR. Ese campo viene de deck-config.json, o sea que de un
- * perfil importado de la galeria, asi que un fgColor de '"><img src=x
- * onerror=...>' era XSS almacenado servido en el origen de la red local, que es
- * donde vive el localStorage del token: el mismo origen desde el que se habla
- * con el deck.
- *
- * Con setAttribute el color deja de ser markup y pasa a ser el valor de un
- * atributo, que es texto y se escapa solo. Por eso aqui NO hay ninguna
- * expresion regular: la lista de "colores validos" ya no es la barrera de
- * seguridad (la barrera es que no se interpretan marcas) y una lista asi solo
- * serviria para rechazar un color exotico que el usuario haya escrito a mano.
- * Lo unico que se acota es el tamano, por no meter un atributo de un megabyte
- * en el DOM.
- *
- * Las filas si se validan, y eso no es seguridad sino sentido comun: se leen
- * con un desplazamiento de bits, asi que solo importan los cinco primeros, y
- * una fila que no sea un entero no es una fila.
- */
+function svgGlifo8(filas, color, tam) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  const d = tam || 22;
+  svg.setAttribute('viewBox', '0 0 28 28');
+  svg.setAttribute('width', String(d));
+  svg.setAttribute('height', String(d));
+  svg.setAttribute('style', 'display:block;margin:auto;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));flex-shrink:0;');
+  const relleno = typeof color === 'string' && color.length <= 40 && color ? color : 'currentColor';
+  for (let y = 0; y < 8; y++) {
+    const b = filas[y];
+    const fila = (typeof b === 'number' && isFinite(b) ? Math.trunc(b) : 0) & 255;
+    for (let x = 0; x < 8; x++) {
+      if ((fila >> (7 - x)) & 1) {
+        const p = document.createElementNS(NS, 'circle');
+        p.setAttribute('cx', String(x * 3.2 + 2.8));
+        p.setAttribute('cy', String(y * 3.2 + 2.8));
+        p.setAttribute('r', '1.3');
+        p.setAttribute('fill', relleno);
+        svg.append(p);
+      }
+    }
+  }
+  return svg;
+}
+
 function svgGlifo57(filas, color) {
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 26 36');
   svg.setAttribute('width', '22');
   svg.setAttribute('height', '30');
-  svg.setAttribute('style', 'display:block;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8))');
+  svg.setAttribute('style', 'display:block;margin:auto;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));flex-shrink:0;');
   const relleno = typeof color === 'string' && color.length <= 40 && color ? color : 'currentColor';
   for (let y = 0; y < 7; y++) {
     const bruta = filas[y];
@@ -327,19 +327,12 @@ function svgGlifo57(filas, color) {
   return svg;
 }
 
-function simboloGlifo(nombre) {
-  if (!nombre) return '';
-  const mapa = {
-    PLAY: '▶', PAUSE: '❚❚', NEXT: '⏭', PREV: '⏮', MUTE: '✕',
-    SPEAKER: '🔊', VOLUME: '🔊', MIC: '🎙',
-    ARROW_UP: '▲', ARROW_DOWN: '▼', ARROW_LEFT: '◀', ARROW_RIGHT: '▶',
-    UP: '▲', DOWN: '▼', LEFT: '◀', RIGHT: '▶',
-    TERMINAL: '>_', CODE: '</>', WEB: '🌐', GEAR: '⚙',
-    CLOCK: '◷', ADD: '+', SUBTRACT: '−', CHECK: '✓', CLOSE: '✕',
-    EDIT: '✎', LOCK: '🔒', BOLT: '⚡', WEATHER_SUN: '☀',
-    FULLSCREEN: '⛶', MINIMIZE: '🗕', STORAGE: '💾', CPU: '🔲'
-  };
-  return mapa[String(nombre).toUpperCase()] || nombre;
+function resolverIcono(icono, fgColor, tam) {
+  if (!icono) return null;
+  const k = String(icono).trim().toUpperCase();
+  const c = ALIAS[k] || ALIAS[icono] || k;
+  if (G8[c]) return svgGlifo8(G8[c], fgColor, tam);
+  return nodo('span', { className: 'icono-centro', textContent: String(icono).slice(0, 4) });
 }
 
 function pantallaEmparejar(error) {
@@ -376,9 +369,16 @@ async function pantallaDeck() {
   btnOlvidar.style.display = 'inline-flex';
   let datos;
   try {
-    const r = await pedir('/api/buttons');
-    if (r.status === 401) { olvidar(); return; }
-    datos = await r.json();
+    const [rBtn, rTema] = await Promise.all([
+      pedir('/api/buttons'),
+      pedir('/api/tema').catch(() => null),
+    ]);
+    if (rBtn.status === 401) { olvidar(); return; }
+    datos = await rBtn.json();
+    if (rTema && rTema.ok) {
+      const dt = await rTema.json();
+      if (dt.ok && dt.theme) aplicarTema(dt.theme, dt.accent);
+    }
   } catch (e) {
     vaciar();
     app.append(nodo('p', { className: 'mal', textContent: t.sinConexion }),
@@ -388,24 +388,31 @@ async function pantallaDeck() {
   const botones = datos.buttons || [];
   vaciar();
   const paginas = [...new Set(botones.map((b) => b.page))].sort((a, b) => a - b);
+  if (paginas.length > 0 && !paginas.includes(paginaViva)) {
+    paginaViva = paginas[0];
+  }
   if (paginas.length > 1) {
     const barra = nodo('div', { className: 'paginas' });
-    for (const p of paginas) {
+    paginas.forEach((p, idx) => {
       barra.append(nodo('div', {
         className: 'pest' + (p === paginaViva ? ' viva' : ''),
-        textContent: t.pagina + ' ' + (p + 1),
+        textContent: t.pagina + ' ' + (idx + 1),
         onclick: () => { paginaViva = p; pantallaDeck(); },
       }));
-    }
+    });
     app.append(barra);
   }
   const rejilla = nodo('div', { className: 'rejilla' });
   const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva || b.pinned);
   if (visibles.length === 0) app.append(nodo('p', { textContent: t.sinBotones }));
+  const esClaro = document.documentElement.getAttribute('data-theme') === 'light';
+
   for (const b of visibles) {
     const celda = nodo('div', { className: 'celda' });
+    let colorFrente = b.fgColor;
+    if (esClaro && colorFrente && colorFrente.toLowerCase() === '#ffffff') colorFrente = '#111418';
     if (b.bgColor) celda.style.backgroundColor = b.bgColor;
-    if (b.fgColor) celda.style.color = b.fgColor;
+    if (colorFrente) celda.style.color = colorFrente;
 
     if (b.pinned) {
       celda.append(nodo('span', { className: 'pin-insignia', textContent: '•PIN•' }));
@@ -416,10 +423,12 @@ async function pantallaDeck() {
       const m2x2 = nodo('div', { className: 'mosaico-2x2' });
       for (const sub of b.subButtons) {
         const sc = nodo('div', { className: 'sub-celda' });
+        let subFrente = sub.fgColor;
+        if (esClaro && subFrente && subFrente.toLowerCase() === '#ffffff') subFrente = '#111418';
         if (sub.bgColor) sc.style.backgroundColor = sub.bgColor;
-        if (sub.fgColor) sc.style.color = sub.fgColor;
-        const ico = simboloGlifo(sub.icon || sub.dotGlyph);
-        if (ico && ico !== sub.label) sc.append(nodo('span', { className: 'sub-icono', textContent: ico }));
+        if (subFrente) sc.style.color = subFrente;
+        const icoEl = resolverIcono(sub.icon || sub.dotGlyph, subFrente, 12);
+        if (icoEl && (sub.icon || sub.dotGlyph) !== sub.label) sc.append(icoEl);
         if (sub.label) sc.append(nodo('span', { className: 'sub-txt', textContent: sub.label }));
         sc.onclick = async (e) => {
           e.stopPropagation();
@@ -445,9 +454,12 @@ async function pantallaDeck() {
       const step = sw.step ?? (target === 'variable' ? 1 : 5);
       const sc = nodo('div', { className: 'slider-celda' });
       const cab = nodo('div', { className: 'slider-cab' });
-      const icono = target === 'volume' ? '🔊' : target === 'brightness' ? '☀️' : '📊';
+      const gly = target === 'volume' ? G8.SPEAKER : target === 'brightness' ? G8.WEATHER_SUN : G8.CPU;
       const eti = sw.label || (target === 'volume' ? t.volumen : target === 'brightness' ? t.brillo : (sw.varName || 'VAR'));
-      cab.append(nodo('span', { textContent: icono + ' ' + eti }));
+      const cabEti = nodo('span', { className: 'slider-eti' });
+      if (gly) cabEti.append(svgGlifo8(gly, 'currentColor', 10));
+      cabEti.append(document.createTextNode(' ' + eti));
+      cab.append(cabEti);
       const valSpan = nodo('span', { className: 'slider-val', textContent: '50%' });
       cab.append(valSpan);
       sc.append(cab);
@@ -498,10 +510,11 @@ async function pantallaDeck() {
 
     if (b.customGlyph57 && b.customGlyph57.length === 7) {
       const wrap = nodo('div');
-      wrap.append(svgGlifo57(b.customGlyph57, b.fgColor));
+      wrap.append(svgGlifo57(b.customGlyph57, colorFrente));
       celda.append(wrap);
     } else if (b.icon) {
-      celda.append(nodo('div', { className: 'icono-centro', textContent: simboloGlifo(b.icon) }));
+      const icoEl = resolverIcono(b.icon, colorFrente, 22);
+      if (icoEl) celda.append(icoEl);
     }
 
     if (b.label || b.sublabel) {

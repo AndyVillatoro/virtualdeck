@@ -18,6 +18,7 @@ import { FolderOverlay } from './main/OverlayCarpeta';
 // sustituto de texto sin dependencias y el barril arrastra el ejecutor entero.
 import { interpolate } from '../utils/acciones/base';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
+import { navegarDeck, indicesPaginasDeck, posicionEnDeck } from '../utils/acciones/pageNav';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import { groupSensorsByHardware } from '../components/SensorPanel';
@@ -74,6 +75,16 @@ export function FullscreenB({
 
   const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [activePage, setActivePage] = useState(0);
+  // Kiosko enseña las páginas del deck, como la principal: las de dock se
+  // editan en `Dispositivos` (ver `utils/paginasDeck`). `activePage` sigue
+  // siendo un índice real de `config.pages`; si apunta a una de dock (config
+  // de antes), se vuelve a la primera del deck.
+  const indicesDeck = useMemo(() => indicesPaginasDeck(config.pages), [config.pages]);
+  useEffect(() => {
+    if (indicesDeck.length > 0 && !indicesDeck.includes(activePage)) {
+      setActivePage(indicesDeck[0]);
+    }
+  }, [indicesDeck, activePage]);
   const toggledIds = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   const errorTimer = useRef<number>();
@@ -105,12 +116,15 @@ export function FullscreenB({
 
   useFullscreenHotkeys({
     onExit,
-    totalPages: config.pages.length,
+    totalPages: indicesDeck.length,
     kioskActive,
     pinPrompt,
     setPinPrompt,
     requestExitKiosk,
-    setActivePage,
+    setActivePage: (pos) => {
+      const real = indicesDeck[pos];
+      if (real !== undefined) setActivePage(real);
+    },
   });
 
   const configRef = useRef(config);
@@ -118,6 +132,11 @@ export function FullscreenB({
 
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
+
+  // Por referencia, como `config`: la celda conserva el manejador de su primer
+  // render y la página del cierre sería la de entonces.
+  const activePageRef = useRef(activePage);
+  activePageRef.current = activePage;
 
   const entorno = useCallback((): EntornoPulsacion => ({
     api: window.electronAPI!,
@@ -127,6 +146,9 @@ export function FullscreenB({
     onStateUpdate,
     avisar: setRuntimeError,
     t,
+    // Kiosko navega entre las páginas del deck igual que la principal, con su
+    // propio `setActivePage` (la principal no está montada aquí).
+    navegar: (a) => navegarDeck(a, configRef.current.pages, configRef.current.pages[activePageRef.current]?.id, setActivePage),
   }), [onToggle, onStateUpdate, t]);
 
   const [ejecutando, setEjecutando] = useState<Set<string>>(new Set());
@@ -154,9 +176,10 @@ export function FullscreenB({
   const dateStr = formatoDiaMes(lang).format(now).toUpperCase();
 
   const currentPage = config.pages[activePage];
+  const posDeck = posicionEnDeck(config.pages, activePage);
   const gridSize = currentPage?.gridSize ?? 4;
   const gridRows = currentPage?.gridRows ?? gridSize;
-  const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows);
+  const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows, config.pages);
   const isPlaying = nowPlaying?.status === 'Playing';
   const sourceName = nowPlaying ? getSourceName(nowPlaying.source) : '';
 
@@ -222,6 +245,7 @@ export function FullscreenB({
               key={btn.id}
               button={btn}
               accent={config.accent}
+              esFija={btn.fijo === true && btn.page !== activePage}
               toggled={toggledIds.has(btn.id)}
               subToggled={btn.subButtons?.map((s) => toggledIds.has(s.id))}
               isActive={botonActivo(btn, estadoSistema)}
@@ -301,7 +325,7 @@ export function FullscreenB({
         }}>
           <DotLabel size={7} color={VD.textMuted} spacing={2}>{t('full.page')}</DotLabel>
           <div style={{ fontFamily: VD.mono, fontSize: 15, color: VD.text, lineHeight: 1 }}>
-            {String(activePage + 1).padStart(2, '0')}/{config.pages.length}
+            {posDeck === null ? '--' : String(posDeck + 1).padStart(2, '0')}/{indicesDeck.length}
           </div>
           <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {currentPage?.name}

@@ -57,6 +57,7 @@ export interface CamposDelEditor {
   sensorTriggerVal: string;
   sensorTriggerCooldown: string;
   pinned?: boolean;
+  fijo?: boolean;
 }
 
 /** Un número escrito por el usuario, o `undefined` si no escribió uno válido. */
@@ -179,6 +180,7 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     timerTriggerAt: c.timerTriggerAt.trim() || undefined,
     sensorTrigger: disparadorDeSensor(c),
     pinned: c.pinned || undefined,
+    fijo: c.fijo || undefined,
     subButtons: c.is2x2Mode && c.subButtons && c.subButtons.length === 4 ? c.subButtons : undefined,
   };
 }

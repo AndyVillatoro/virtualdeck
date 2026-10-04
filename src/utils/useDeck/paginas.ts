@@ -1,7 +1,19 @@
 import { useCallback, useRef } from 'react';
-import type { ActionType, ButtonConfig, InfoSuperficie, PageConfig } from '../../types';
-import { rejillaDe, totalHuecos } from '../superficies/disposicion';
+import type { ActionType, ButtonConfig, DisposicionSuperficie, InfoSuperficie, PageConfig } from '../../types';
+import { PLANTILLAS_APP, repartirPlantillaDock } from '../../data/plantillasApp';
+import { columnasDock, rejillaDe, totalHuecos } from '../superficies/disposicion';
+import { normalizarApp } from '../apps';
 import type { ContextoDeck } from './contexto';
+
+/**
+ * Destino de `crearPaginaDesdePlantilla`: `null` = página del deck (4×4);
+ * con serial y disposición = página del dock de ese dispositivo.
+ */
+export type DestinoPlantilla = null | {
+  serial: string;
+  modelo: string;
+  disposicion: DisposicionSuperficie;
+};
 
 /**
  * Las páginas: crearlas, duplicarlas, renombrarlas, borrarlas, reordenarlas y
@@ -59,6 +71,14 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
   }, [config.pages.length, withHistory, t, setActivePage]);
 
   const deletePage = useCallback((id: string) => {
+    // La última página de su grupo no se borra —la de un dispositivo, ni la
+    // última del deck—: el aparato o la principal se quedarían sin nada que
+    // enseñar. Con un deck de una página y un dock había dos en total y se
+    // podía borrar la del deck. El chequeo va antes del historial para no
+    // apilar un «deshacer» que no cambió nada.
+    const serial = config.pages.find((pg) => pg.id === id)?.superficie?.serial;
+    const mismoGrupo = (pg: PageConfig) => pg.id !== id && pg.superficie?.serial === serial;
+    if (!config.pages.some(mismoGrupo)) return;
     withHistory(t('undo.delPage'), (prev) => {
       if (prev.pages.length <= 1) return prev;
       const pageIdx = prev.pages.findIndex((p) => p.id === id);
@@ -138,9 +158,9 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
       const newPage: PageConfig = {
         id: `page_${Date.now()}`,
         name: info.nombre,
-        gridSize: rejilla.columnas === 3 ? 3 : 6,
+        gridSize: columnasDock(rejilla.columnas),
         gridRows: rejilla.filas,
-        superficie: { serial: info.serial, modelo: info.modelo, brillo: 70 },
+        superficie: { serial: info.serial, modelo: info.modelo },
       };
       const total = totalHuecos(info.disposicion);
       const newButtons: ButtonConfig[] = Array.from({ length: total }, (_, slot) => ({
@@ -153,7 +173,122 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
   }, [withHistory, t]);
 
   /**
-   * El brillo de las teclas de un dispositivo, en su página.
+   * Otra página para el mismo dispositivo, a partir de una suya que ya existe.
+   *
+   * Copia la marca `superficie` (serial y modelo) y la cuadrícula, y crea los
+   * huecos vacíos de su `disposicion`. El brillo y el giro no se copian: viven
+   * por serial en `config.superficies`, no en cada página. Es la que usa el
+   * `+` de la franja de pestañas de DispositivosB. Con historial, como
+   * `duplicatePage`, y con su mismo tope de 8 páginas.
+   */
+  const agregarPaginaSuperficie = useCallback((origenId: string, disposicion: DisposicionSuperficie) => {
+    withHistory(t('undo.addSurfacePage', { nombre: '' }), (prev) => {
+      if (prev.pages.length >= 8) return prev;
+      const origen = prev.pages.find((p) => p.id === origenId);
+      if (!origen?.superficie) return prev;
+      const rejilla = rejillaDe(disposicion);
+      if (!rejilla) return prev;
+      const newIdx = prev.pages.length;
+      const newPage: PageConfig = {
+        id: `page_${Date.now()}`,
+        name: `${origen.name} (2)`,
+        gridSize: origen.gridSize ?? columnasDock(rejilla.columnas),
+        gridRows: origen.gridRows ?? rejilla.filas,
+        superficie: { serial: origen.superficie.serial, modelo: origen.superficie.modelo },
+      };
+      const total = totalHuecos(disposicion);
+      const newButtons: ButtonConfig[] = Array.from({ length: total }, (_, slot) => ({
+        id: `p${Date.now()}_${slot}`,
+        page: newIdx,
+        label: '', icon: '', action: { type: 'none' as ActionType },
+      }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+    }, (prev) => {
+      const origen = prev.pages.find((p) => p.id === origenId);
+      return t('undo.addSurfacePage', { nombre: origen ? `${origen.name} (2)` : '' });
+    });
+  }, [withHistory, t]);
+
+  /**
+   * Crear una página entera desde una plantilla de app (roadmap 75).
+   *
+   * Deck (`destino` null): página 4×4 con los 16 huecos de la plantilla.
+   * Dock: los huecos salen del orden de `controles` (`repartirPlantillaDock`);
+   * lo que no quepa se descarta y lo que falte queda vacío. La página lleva
+   * `targetApp` y va con historial, como `addPage`. Devuelve el id para que
+   * quien llama la active; `undefined` si no se creó (tope de 8 páginas,
+   * plantilla desconocida, app vacía o modelo que no cabe). No mueve la
+   * vista: la activa quien llama.
+   */
+  const crearPaginaDesdePlantilla = useCallback((
+    plantillaId: string,
+    app: string,
+    destino: DestinoPlantilla,
+  ): string | undefined => {
+    const plantilla = PLANTILLAS_APP.find((p) => p.id === plantillaId);
+    if (!plantilla) return undefined;
+    const limpio = normalizarApp(app);
+    if (!limpio) return undefined;
+    if (destino && !rejillaDe(destino.disposicion)) return undefined;
+    if (config.pages.length >= 8) return undefined;
+    const id = `page_${Date.now()}`;
+    const nombre = t(plantilla.nombre);
+    withHistory(destino ? t('undo.addSurfacePage', { nombre }) : t('undo.addPage'), (prev) => {
+      if (prev.pages.length >= 8) return prev;
+      const newIdx = prev.pages.length;
+      if (!destino) {
+        const newPage: PageConfig = { id, name: nombre, gridSize: 4, targetApp: limpio };
+        const newButtons: ButtonConfig[] = plantilla.deck.map((contenido, slot) => ({
+          ...(contenido ?? { label: '', icon: '', action: { type: 'none' as ActionType } }),
+          id: `p${Date.now()}_${slot}`,
+          page: newIdx,
+        }));
+        return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+      }
+      const rejilla = rejillaDe(destino.disposicion);
+      if (!rejilla) return prev;
+      const contenidos = repartirPlantillaDock(plantilla.dock, destino.disposicion);
+      const newPage: PageConfig = {
+        id,
+        name: nombre,
+        gridSize: columnasDock(rejilla.columnas),
+        gridRows: rejilla.filas,
+        superficie: { serial: destino.serial, modelo: destino.modelo },
+        targetApp: limpio,
+      };
+      const newButtons: ButtonConfig[] = contenidos.map((contenido, slot) => ({
+        ...(contenido ?? { label: '', icon: '', action: { type: 'none' as ActionType } }),
+        id: `p${Date.now()}_${slot}`,
+        page: newIdx,
+      }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+    });
+    return id;
+  }, [config.pages.length, withHistory, t]);
+
+  /**
+   * Vincular una página a una aplicación (o desvincularla con `''`).
+   *
+   * La limpieza es `normalizarApp` (ver `utils/apps`): sin `.exe`,
+   * minúsculas, sin espacios — y lo vacío es «sin vínculo». El rótulo del
+   * historial se calcula del estado anterior, que es donde sigue estando el
+   * nombre de la página.
+   */
+  const fijarTargetAppPagina = useCallback((id: string, app: string) => {
+    const cleaned = normalizarApp(app);
+    withHistory('', (prev) => ({
+      ...prev,
+      pages: prev.pages.map((p) => p.id === id ? { ...p, targetApp: cleaned || undefined } : p),
+    }), (prev) => {
+      const pagina = prev.pages.find((p) => p.id === id);
+      return cleaned
+        ? t('undo.bindSurfaceApp', { nombre: cleaned })
+        : t('undo.unbindSurfaceApp', { nombre: pagina?.name ?? '' });
+    });
+  }, [withHistory, t]);
+
+  /**
+   * El brillo de las teclas de un dispositivo, en su mapa por serial.
    *
    * No pasa por el historial (como la escala de la interfaz): es un control
    * continuo y cada paso del deslizador apilaría un «deshacer». La escritura en
@@ -165,9 +300,7 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
   const fijarBrilloSuperficie = useCallback((serial: string, valor: number) => {
     const brillo = Math.max(0, Math.min(100, Math.round(valor)));
     setConfig((prev) => {
-      const pages = prev.pages.map((p) =>
-        p.superficie?.serial === serial ? { ...p, superficie: { ...p.superficie, brillo } } : p);
-      const next = { ...prev, pages };
+      const next = { ...prev, superficies: { ...prev.superficies, [serial]: { ...prev.superficies?.[serial], brillo } } };
       if (brilloTimer.current === undefined) api?.config.save(next).catch(() => {});
       clearTimeout(brilloTimer.current);
       brilloTimer.current = window.setTimeout(() => {
@@ -179,7 +312,7 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
   }, [api, setConfig]);
 
   /**
-   * El giro de la pantalla de un dispositivo (0/90/180/270).
+   * El giro de la pantalla de un dispositivo (0/90/180/270), en su mapa por serial.
    *
    * Es la válvula de seguridad de los modelos sin verificar: si la imagen sale
    * girada, el usuario la corrige aquí y `useSuperficies` repinta al ver la
@@ -190,13 +323,13 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
     const rotacion = ((Math.round(grados / 90) * 90) % 360 + 360) % 360;
     withHistory(t('undo.rotateSurface', { grados: rotacion }), (prev) => ({
       ...prev,
-      pages: prev.pages.map((p) =>
-        p.superficie?.serial === serial ? { ...p, superficie: { ...p.superficie, rotacion } } : p),
+      superficies: { ...prev.superficies, [serial]: { ...prev.superficies?.[serial], rotacion } },
     }));
   }, [withHistory, t]);
 
   return {
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
-    crearPaginaSuperficie, fijarBrilloSuperficie, fijarRotacionSuperficie,
+    crearPaginaSuperficie, agregarPaginaSuperficie, fijarTargetAppPagina,
+    fijarBrilloSuperficie, fijarRotacionSuperficie, crearPaginaDesdePlantilla,
   };
 }

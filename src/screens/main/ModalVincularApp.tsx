@@ -1,38 +1,42 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { normalizarApp } from '../../utils/apps';
+import { SelectorApp } from '../../components/SelectorApp';
 import type { PageConfig } from '../../types';
 
 interface ModalVincularAppProps {
   page: PageConfig;
   accent: string;
-  runningProcesses: Set<string>;
+  runningProcesses?: Set<string>;
   onSave: (targetApp: string) => void;
   onClose: () => void;
+  onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
 }
 
 export function ModalVincularApp({
   page,
   accent,
-  runningProcesses,
+  runningProcesses: _runningProcesses,
   onSave,
   onClose,
+  onCrearDesdePlantilla,
 }: ModalVincularAppProps) {
   const VD = useTheme();
   const t = useT();
   const [customBindingApp, setCustomBindingApp] = useState(page.targetApp ?? '');
 
-  const runningList = useMemo(() => {
-    return Array.from(runningProcesses)
-      .filter((proc) => proc !== 'virtualdeck' && proc !== 'electron')
-      .sort();
-  }, [runningProcesses]);
-
   const saveBinding = (app: string) => {
-    const cleaned = app.trim().replace(/\.exe$/i, '').toLowerCase();
-    onSave(cleaned);
+    onSave(normalizarApp(app));
   };
+
+  const handleCrearDesdePlantilla = onCrearDesdePlantilla
+    ? (plantillaId: string, app: string) => {
+        onCrearDesdePlantilla(plantillaId, app);
+        onClose();
+      }
+    : undefined;
 
   return (
     <div
@@ -73,35 +77,21 @@ export function ModalVincularApp({
           {t('page.bindDesc')}
         </div>
 
-        {/* Input manual */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, letterSpacing: 1 }}>
-            {t('page.targetApp')}
-          </span>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              autoFocus
-              value={customBindingApp}
-              onChange={(e) => setCustomBindingApp(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveBinding(customBindingApp);
-                if (e.key === 'Escape') onClose();
-              }}
-              placeholder={t('page.customAppPlaceholder')}
-              style={{
-                flex: 1,
-                background: VD.elevated,
-                border: `1px solid ${VD.border}`,
-                borderRadius: VD.radius.sm,
-                padding: '7px 10px',
-                color: VD.text,
-                fontFamily: VD.mono,
-                fontSize: 10,
-                outline: 'none',
-              }}
-            />
+        {/* Selector de aplicación */}
+        <SelectorApp
+          valor={customBindingApp}
+          onElegir={setCustomBindingApp}
+          onCrearDesdePlantilla={handleCrearDesdePlantilla}
+          onEnter={() => saveBinding(customBindingApp)}
+          autoFocus
+        />
+
+        {/* Botones de acción */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+          <div>
             {page.targetApp && (
               <button
+                type="button"
                 onClick={() => saveBinding('')}
                 style={{
                   padding: '7px 12px',
@@ -113,102 +103,54 @@ export function ModalVincularApp({
                   cursor: 'pointer',
                   borderRadius: VD.radius.sm,
                   letterSpacing: 1,
+                  textTransform: 'uppercase',
                 }}
               >
                 {t('page.unbindApp')}
               </button>
             )}
           </div>
-        </div>
-
-        {/* Apps en ejecución */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, letterSpacing: 1 }}>
-            {t('page.runningApps')} ({runningList.length})
-          </span>
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 6,
-              maxHeight: 140,
-              overflowY: 'auto',
-              padding: 8,
-              background: VD.elevated,
-              borderRadius: VD.radius.sm,
-              border: `1px solid ${VD.border}`,
-            }}
-          >
-            {runningList.length === 0 ? (
-              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>-</span>
-            ) : (
-              runningList.map((proc) => {
-                const isSelected = customBindingApp.toLowerCase().trim() === proc.toLowerCase();
-                return (
-                  <button
-                    key={proc}
-                    onClick={() => {
-                      setCustomBindingApp(proc);
-                    }}
-                    style={{
-                      padding: '3px 7px',
-                      background: isSelected ? `${accent}24` : VD.surface,
-                      border: `1px solid ${isSelected ? accent : VD.border}`,
-                      borderRadius: VD.radius.sm,
-                      color: isSelected ? accent : VD.textDim,
-                      fontFamily: VD.mono,
-                      fontSize: 8,
-                      cursor: 'pointer',
-                      letterSpacing: 0.5,
-                      textTransform: 'lowercase',
-                    }}
-                  >
-                    {proc}
-                  </button>
-                );
-              })
-            )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '7px 14px',
+                background: 'transparent',
+                border: `1px solid ${VD.border}`,
+                color: VD.textDim,
+                fontFamily: VD.mono,
+                fontSize: 9,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                borderRadius: VD.radius.sm,
+              }}
+            >
+              {t('ui.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={() => saveBinding(customBindingApp)}
+              style={{
+                padding: '7px 18px',
+                background: VD.accentBg,
+                border: `1px solid ${accent}`,
+                color: accent,
+                fontFamily: VD.mono,
+                fontSize: 9,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                borderRadius: VD.radius.sm,
+                fontWeight: 600,
+              }}
+            >
+              {t('ui.saveShort')}
+            </button>
           </div>
-        </div>
-
-        {/* Botones de acción */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 6 }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '7px 14px',
-              background: 'transparent',
-              border: `1px solid ${VD.border}`,
-              color: VD.textDim,
-              fontFamily: VD.mono,
-              fontSize: 9,
-              letterSpacing: 1,
-              cursor: 'pointer',
-              borderRadius: VD.radius.sm,
-            }}
-          >
-            {t('ui.cancel')}
-          </button>
-          <button
-            onClick={() => saveBinding(customBindingApp)}
-            style={{
-              padding: '7px 18px',
-              background: accent,
-              border: 'none',
-              color: '#fff',
-              fontFamily: VD.mono,
-              fontSize: 9,
-              letterSpacing: 1,
-              cursor: 'pointer',
-              borderRadius: VD.radius.sm,
-              fontWeight: 600,
-            }}
-          >
-            {t('ui.saveShort')}
-          </button>
         </div>
       </div>
     </div>
   );
 }
-

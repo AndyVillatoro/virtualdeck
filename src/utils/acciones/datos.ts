@@ -1,4 +1,5 @@
 import { OK, fail, interpolate, type Manejador } from './base';
+import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../types';
 
 /** Variables del deck y llamadas HTTP. */
 export const DATOS: Record<string, Manejador> = {
@@ -77,20 +78,23 @@ export const DATOS: Record<string, Manejador> = {
       return OK;
     }
     if (modo === 'toggle-server') {
-      const cfg = (await api.config.load()) as { remote?: { enabled?: boolean; port?: number; token?: string; allowLan?: boolean } };
-      const r = cfg.remote ?? { enabled: false, port: 8787, allowLan: true };
+      const cfg = (await api.config.load()) as { remote?: Partial<RemoteSettings> };
+      const r: RemoteSettings = { ...REMOTO_POR_DEFECTO, ...cfg.remote };
       const nextEnabled = !r.enabled;
       let token = r.token;
       if (nextEnabled && !token) {
         token = (await api.remote.newToken()) ?? '';
       }
-      const updatedRemote = { ...r, enabled: nextEnabled, token, allowLan: nextEnabled ? (r.allowLan ?? true) : r.allowLan };
-      const nextCfg = { ...cfg, remote: updatedRemote };
-      await api.config.save(nextCfg);
-      await api.notify.show(
-        'VirtualDeck',
-        t(nextEnabled ? 'act.mobile.serverStarted' : 'act.mobile.serverStopped', { port: updatedRemote.port }),
-      );
+      // Este botón es el del teléfono, que solo llega por la red local: si
+      // nadie ha elegido todavía, se abre a la red. Queda **escrito** en la
+      // configuración (Ajustes lo enseña, y `App` lo adopta al recibir
+      // `config:changed`) y el aviso lo dice. Si se eligió «solo local», manda.
+      const allowLan = nextEnabled && cfg.remote?.allowLan === undefined ? true : r.allowLan;
+      const updatedRemote: RemoteSettings = { ...r, enabled: nextEnabled, token: token ?? '', allowLan };
+      await api.config.save({ ...cfg, remote: updatedRemote });
+      const aviso = !nextEnabled ? 'act.mobile.serverStopped'
+        : allowLan ? 'act.mobile.serverStartedLan' : 'act.mobile.serverStarted';
+      await api.notify.show('VirtualDeck', t(aviso, { port: updatedRemote.port }));
       return OK;
     }
     return OK;

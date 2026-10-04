@@ -19,6 +19,7 @@ export type ActionType =
   | 'kill-process'
   | 'volume-set'
   | 'folder'
+  | 'page-nav'
   | 'notify'
   // 1.2 — Variables persistentes
   | 'set-var'
@@ -35,6 +36,7 @@ export type ActionType =
   | 'rgb-preset'
   // 3.x — Nuevas acciones
   | 'window-snap'
+  | 'window-cycle'
   | 'branch'
   // 4.x — Temporizador
   | 'countdown'
@@ -79,6 +81,11 @@ export interface ButtonAction {
   processName?: string;
   volumePercent?: number;
   folderButtons?: FolderButton[];
+  // Navegación entre páginas (tipo 'page-nav', la resuelve quien la llama).
+  // `pageNavTarget` es el **id** de la página, nunca el índice: borrar una
+  // página renumera los índices pero no los ids (ver CLAUDE.md).
+  pageNav?: 'next' | 'prev' | 'first' | 'goto' | 'cycle';
+  pageNavTarget?: string;
   notifyTitle?: string;
   notifyBody?: string;
   // 1.2 — Variables
@@ -129,6 +136,9 @@ export interface ButtonAction {
   snapPosition?: 'left-half' | 'right-half' | 'top-half' | 'bottom-half' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'maximize' | 'center' | 'restore';
   /** Nombre del proceso a snapear (ej. "chrome"). Vacío = ventana en foco al ejecutar. */
   snapProcessName?: string;
+  // 3.x — Recorrer ventanas abiertas (tipo 'window-cycle').
+  /** 'next' trae la siguiente, 'prev' la anterior. Opcional: vacío = siguiente. */
+  windowCycle?: 'next' | 'prev';
   // 3.x — Branch condicional
   /** Nombre de variable a evaluar (branch). */
   branchVar?: string;

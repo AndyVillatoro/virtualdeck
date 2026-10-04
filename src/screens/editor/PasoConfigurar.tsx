@@ -19,7 +19,8 @@ type PropsPasoConfigurar = PropsFormulario;
 export function PasoConfigurar(p: PropsPasoConfigurar) {
   const { accent, action, isToggle, setIsToggle, actionToggleOff, setActionToggleOff,
           longPressAction, setLongPressAction, radioGroup, setRadioGroup,
-          globalHotkey, setGlobalHotkey, inTrayMenu, setInTrayMenu } = p;
+          globalHotkey, setGlobalHotkey, inTrayMenu, setInTrayMenu,
+          fijo, setFijo } = p;
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
@@ -98,6 +99,27 @@ export function PasoConfigurar(p: PropsPasoConfigurar) {
                 {t('ed.radioHint')}
               </div>
             </Field>
+          </div>
+        )}
+
+        {/* T-HW-12 — Fijo en su grupo: vive en su página y se ve en el mismo
+            hueco en las demás páginas del deck, o del mismo dock. */}
+        {action.type !== 'none' && (
+          <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 14 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={fijo}
+                onChange={(e) => setFijo(e.target.checked)}
+                style={{ accentColor: accent }}
+              />
+              <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
+                {tf('FIJO EN TODAS LAS PÁGINAS')}
+              </span>
+            </label>
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+              {tf('Vive en su página y se ve en el mismo hueco en las demás páginas de su grupo: el deck, o el mismo dock.')}
+            </div>
           </div>
         )}
 

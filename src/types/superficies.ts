@@ -88,12 +88,14 @@ export interface InfoSuperficie {
 export interface PaginaSuperficie {
   serial: string;
   modelo: ModeloSuperficie;
-  /** Brillo de las teclas LCD, 0–100. */
+  /**
+   * @deprecated Desde la migración v4→v5 el brillo y el giro viven por serial
+   * en `DeckConfig.superficies`. Se conserva para leer configs antiguas; no se
+   * escribe nada nuevo aquí.
+   */
   brillo?: number;
   /**
-   * Giro de la imagen elegido por el usuario (0/90/180/270). Si existe, manda
-   * sobre el del modelo: es la válvula de seguridad para modelos sin verificar
-   * (Bitfocus tenía mal el del N3).
+   * @deprecated Como `brillo`: ver `DeckConfig.superficies`.
    */
   rotacion?: number;
 }

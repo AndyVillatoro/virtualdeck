@@ -102,6 +102,10 @@ export interface ButtonConfig {
   subButtons?: SubButtonConfig[];
   /** 7.4 — Botón anclado global: persiste en su celda en todas las páginas. */
   pinned?: boolean;
+  /** T-HW-12 — Botón fijo por grupo: vive en su página y se ve en el mismo
+   * hueco (por posición) en las demás páginas de su grupo —el deck (páginas
+   * sin `superficie`) o el dock de su mismo `superficie.serial`—. */
+  fijo?: boolean;
   /** 7.8 — Configuración del widget 'slider': barra táctil continua horizontal/vertical. */
   sliderWidget?: SliderWidgetConfig;
 }
@@ -132,6 +136,21 @@ export interface Profile {
   origen?: OrigenInstalacion;
 }
 
+/**
+ * Brillo y giro de un dispositivo físico, por serial (ver
+ * `utils/superficies/ajustesSuperficie.ts`). Antes vivían copiados en cada
+ * página del mismo serial; la migración v4→v5 los trae aquí.
+ */
+export interface AjustesSuperficie {
+  /** Brillo de las teclas LCD, 0–100. Ausente = el por defecto. */
+  brillo?: number;
+  /**
+   * Giro de la imagen elegido por el usuario (0/90/180/270). Ausente = el del
+   * modelo. Válvula de seguridad para modelos sin verificar.
+   */
+  rotacion?: number;
+}
+
 export type SoundProfileId = 'click' | 'tick' | 'thud' | 'off';
 
 export type ThemeMode = 'dark' | 'light' | 'dot480' | 'system';
@@ -144,7 +163,7 @@ export interface DeckConfig {
   profiles?: Profile[];
   soundOnPress?: boolean;
   soundProfile?: SoundProfileId;
-  kiosk?: { enabled: boolean; pin?: string };
+  kiosk?: { pin?: string };
   toggledIds?: string[];
   state?: Record<string, string>;
   configVersion?: number;
@@ -163,6 +182,8 @@ export interface DeckConfig {
   autoProfileSwitch?: boolean;
   autoProfileRestoreDefault?: boolean;
   targetDisplayId?: number;
+  /** Brillo y giro por dispositivo físico, por serial (ya no por página). */
+  superficies?: Record<string, AjustesSuperficie>;
 }
 
 export interface BarGeometry {
@@ -180,6 +201,23 @@ export interface FloatingBarSettings {
   y?: number | null;
   tileSize?: number;
 }
+
+/**
+ * La barra flotante de una instalación nueva.
+ *
+ * Vive en `src/types` y no en una pantalla a propósito: la necesitan los dos
+ * procesos (`FloatingBarB`/`BarConfigB` y `electron/main`), y el proceso
+ * principal no puede importar de `src/` salvo tipos compartidos (ver
+ * `lint:arch`, regla `main-no-renderer`).
+ */
+export const BARRA_POR_DEFECTO: Required<FloatingBarSettings> = {
+  enabled: false,
+  slots: [null, null, null, null],
+  opacity: 0.9,
+  side: 'right',
+  y: null,
+  tileSize: 64,
+};
 
 export type TipoEntradaGaleria = 'profile' | 'page';
 
@@ -270,8 +308,21 @@ export interface RemoteSettings {
   enabled: boolean;
   port: number;
   token: string;
+  /** false = solo este equipo (127.0.0.1). true = toda la red local. */
   allowLan: boolean;
 }
+
+/**
+ * El servidor remoto cuando la configuración no dice nada. **Un solo sitio**
+ * para los dos procesos: estaba escrito tres veces y la acción del mando
+ * móvil daba `allowLan: true` donde el servidor y Ajustes daban `false`.
+ */
+export const REMOTO_POR_DEFECTO: RemoteSettings = {
+  enabled: false,
+  port: 8787,
+  token: '',
+  allowLan: false,
+};
 
 export interface RemoteStatus {
   corriendo: boolean;

@@ -23,6 +23,8 @@ interface ButtonCellProps {
   isHidden?: boolean;
   isRunning?: boolean;
   isSelected?: boolean;
+  /** T-HW-12 — el botón es fijo y se ve desde otra página de su grupo (insignia). */
+  esFija?: boolean;
   widgetData?: { line1: string; line2?: string; tone?: 'warn' | 'crit' };
   soundEnabled?: boolean;
   soundProfile?: SoundProfileId;
@@ -221,6 +223,7 @@ function ButtonCellInner(props: ButtonCellProps) {
           isTouch={isTouch}
           toggled={toggled}
           multiCount={multiCount}
+          esFija={props.esFija}
           onEdit={onEdit}
         />
 
@@ -279,7 +282,7 @@ function ButtonCellInner(props: ButtonCellProps) {
  * Props que obligan a redibujar la celda.
  */
 const REDIBUJAN = [
-  'button', 'toggled', 'isActive', 'isHidden', 'isRunning', 'isSelected',
+  'button', 'toggled', 'isActive', 'isHidden', 'isRunning', 'isSelected', 'esFija',
   'accent', 'showContextMenu', 'soundEnabled', 'soundProfile', 'resolvedLabel', 'canPaste',
 ] as const;
 

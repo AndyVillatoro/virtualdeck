@@ -43,6 +43,7 @@ export function estiloInicial(button: ButtonConfig) {
     fgColor: button.fgColor || '',
     widget: button.widget,
     pinned: button.pinned ?? false,
+    fijo: button.fijo ?? false,
   };
 }
 

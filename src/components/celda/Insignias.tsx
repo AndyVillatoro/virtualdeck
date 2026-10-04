@@ -27,11 +27,13 @@ interface Props {
   isTouch: boolean;
   toggled: boolean;
   multiCount: number;
+  /** T-HW-12 — el botón es fijo y se ve desde otra página de su grupo. */
+  esFija?: boolean;
   onEdit: () => void;
 }
 
 export function Insignias({
-  button, accent, isEmpty, isActive, isSelected, hovered, isTouch, toggled, multiCount, onEdit,
+  button, accent, isEmpty, isActive, isSelected, hovered, isTouch, toggled, multiCount, esFija, onEdit,
 }: Props) {
   const VD = useTheme();
   const t = useT();
@@ -114,6 +116,24 @@ export function Insignias({
       {button.pinned && !hovered && (
         <div
           title={t('btn.pinnedHint')}
+          style={{
+            position: 'absolute', top: 4, right: 4,
+            width: 12, height: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2,
+          }}
+        >
+          <DotGlyphIcon glyph="PIN" size={8} color={accent} />
+        </div>
+      )}
+
+      {/* T-HW-12 — Botón fijo visto desde otra página de su grupo: la misma
+          chincheta del anclado, arriba a la derecha. Si además es anclado, la
+          de anclado ya lo dice y no se duplica; con el cursor encima se esconde
+          igual, para dejar sitio al lápiz. */}
+      {esFija && !button.pinned && !hovered && (
+        <div
+          title={t('btn.fijoHint')}
           style={{
             position: 'absolute', top: 4, right: 4,
             width: 12, height: 12,

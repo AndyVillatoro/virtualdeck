@@ -17,15 +17,18 @@ import { useDisparadores } from './utils/useDisparadores';
 import { useSuperficies } from './utils/superficies/useSuperficies';
 import { COLORES_LCD } from './utils/superficies/pintarTecla';
 import { esGlifoDot, svgDeBoton } from './components/celda/iconoSvg';
-import { playSound } from './utils/sound';
+import { playGiro, playSound, sonidoActivo, perfilSonido } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
+import { botonesResueltos } from './utils/botonesFijos';
 import { useDeck } from './utils/useDeck';
 import { pulsarBoton } from './utils/pulsarBoton';
+import { navegarDesdeApp, indiceRealPorNumero } from './utils/acciones/pageNav';
 import { useAutoProfile } from './utils/useAutoProfile';
+import { useConfigExterna } from './utils/useConfigExterna';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
 import { aplicarPedidoTienda } from './utils/tiendaAplicar';
-import type { ButtonConfig, DeckConfig, PageConfig } from './types';
+import type { ButtonConfig, PageConfig } from './types';
 
 type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb' | 'barra' | 'devices';
 
@@ -163,9 +166,10 @@ export default function App() {
     config, setConfig, loaded, setLoaded, t,
     withHistory, undo, saveConfig,
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
-    clearButtons, moveButtonsToPage,
+    clearButtons, moveButtonsToPage, rellenarBotones,
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
-    crearPaginaSuperficie, fijarBrilloSuperficie, fijarRotacionSuperficie,
+    crearPaginaSuperficie, agregarPaginaSuperficie, crearPaginaDesdePlantilla, fijarTargetAppPagina,
+    fijarBrilloSuperficie, fijarRotacionSuperficie,
     saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, appendPageFromGallery, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
@@ -247,32 +251,7 @@ export default function App() {
     });
   }, []);
 
-  /**
-   * Lo que la barra flotante cambia, adoptado aquí.
-   *
-   * Son dos ventanas con dos copias de la configuración, y hasta ahora el
-   * aviso solo iba en un sentido. Se adopta **solo** lo que la barra puede
-   * tocar —sus variables y su propia geometría— y **no se vuelve a guardar**:
-   * guardar aquí cerraría el bucle con el aviso que acaba de llegar.
-   */
-  useEffect(() => {
-    if (!api) return;
-    return api.bar.onConfigChanged((data) => {
-      const llegado = data as Partial<DeckConfig>;
-      setConfig((prev) => {
-        const igual = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-        if (igual(prev.state, llegado.state)
-          && igual(prev.floatingBar, llegado.floatingBar)
-          && igual(prev.toggledIds, llegado.toggledIds)) return prev;
-        return {
-          ...prev,
-          state: llegado.state ?? prev.state,
-          floatingBar: llegado.floatingBar ?? prev.floatingBar,
-          toggledIds: llegado.toggledIds ?? prev.toggledIds,
-        };
-      });
-    });
-  }, [api, setConfig]);
+  useConfigExterna(api, setConfig);
 
   // Marca el onboarding como completado (o saltado) y persiste el flag.
   const finishOnboarding = useCallback(() => {
@@ -315,6 +294,11 @@ export default function App() {
   configRef.current = config;
   const toggledRef = useRef(toggledIds);
   toggledRef.current = toggledIds;
+  // Lo mismo que `configRef`: el hardware y los disparadores llaman en
+  // cualquier momento y el cierre mentiría.
+  const activePageRef = useRef(activePage);
+  activePageRef.current = activePage;
+  const superficiesRef = useRef<ReturnType<typeof useSuperficies> | null>(null);
 
   const handleToggle = toggleButton;
 
@@ -351,7 +335,8 @@ export default function App() {
   const handlePageExport = useCallback(async (pageIdx: number) => {
     if (!api) return;
     const page = config.pages[pageIdx];
-    const buttons = config.buttons.filter((b) => b.page === pageIdx);
+    // Lo que se ve, pero la copia de un fijo de otra página sale como botón normal.
+    const buttons = botonesResueltos(config, pageIdx).map((b) => (b.page === pageIdx ? b : { ...b, fijo: undefined }));
     await api.page.export({ page, buttons }).catch(() => {});
   }, [api, config]);
 
@@ -412,18 +397,30 @@ export default function App() {
    * kiosko** — justo el modo de dejar el deck solo, que es donde una accion
    * programada tiene mas sentido.
    */
-  const dispararBoton = useCallback(async (btn: ButtonConfig) => {
+  const dispararBoton = useCallback(async (btn: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => {
     if (!api) return;
     if (btn.action.type === 'folder') return; // Una carpeta necesita interfaz.
     // Suena igual que si lo hubieras pulsado. Un boton que se dispara solo —a
     // una hora, por un sensor, por un atajo global— no da ninguna otra señal
-    // de que ha pasado algo, que es justo cuando mas falta hace.
-    if (config.soundOnPress ?? true) playSound(config.soundProfile ?? 'click');
+    // de que ha pasado algo, que es justo cuando mas falta hace. Los giros de
+    // perilla o tira suenan con el tic de giro. Se lee `configRef` y no
+    // `config`: el cierre no tiene `config` en las dependencias y si no el
+    // hardware se quedaría con el sonido del primer render.
+    const cfg = configRef.current;
+    if (sonidoActivo(cfg)) {
+      if (opts?.sonido === 'giro') playGiro(perfilSonido(cfg));
+      else playSound(perfilSonido(cfg));
+    }
+    // `page-nav`: desde un dock entre sus páginas, desde lo demás entre las
+    // del deck (así `useAutoProfile` lo toma como elección manual).
     await pulsarBoton(btn, {
       api, config: configRef.current, toggledIds: () => toggledRef.current,
       onToggle: handleToggle, onStateUpdate: updateState,
       // Un fallo de una accion disparada sola no se veia en ninguna parte.
       avisar: setImportError, t,
+      // `page-nav`: desde un dock entre sus páginas, desde lo demás entre las
+      // del deck (así `useAutoProfile` lo toma como elección manual).
+      navegar: (a) => navegarDesdeApp(a, configRef.current.pages, activePageRef.current, opts?.serial, setActivePage, superficiesRef.current),
     });
   }, [api, handleToggle, updateState, t]);
 
@@ -477,6 +474,7 @@ export default function App() {
   const superficies = useSuperficies({
     api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD, iconoSvg: svgDeBoton, esGlifoDot,
   });
+  superficiesRef.current = superficies;
 
   // Se manda `config`, lo que hay en pantalla, y no se deja que el proceso
   // principal lo relea del disco: si el archivo estuviera ilegible saldria un
@@ -558,15 +556,15 @@ export default function App() {
         if (view === 'devices') { setView('main'); return; }
         return;
       }
-      // 1-5+: switch pages
+      // 1-9: solo páginas del deck (las de dock no tienen número aquí).
       if (editingId !== null || searchOpen) return;
       if (inField) return;
-      const num = parseInt(e.key);
-      if (!isNaN(num) && num >= 1 && num <= config.pages.length) setActivePage(num - 1);
+      const destino = indiceRealPorNumero(config.pages, e.key);
+      if (destino !== null) setActivePage(destino);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [editingId, view, config.pages.length, undo, searchOpen]);
+  }, [editingId, view, config.pages, undo, searchOpen]);
 
   if (!loaded) {
     // Envuelta en el proveedor de tema porque `App` renderiza el proveedor: su
@@ -588,6 +586,7 @@ export default function App() {
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       {view === 'main' && (
         <MainB
+          onCrearDesdePlantilla={(p, a) => { const i = config.pages.length; if (crearPaginaDesdePlantilla(p, a, null)) setActivePage(i); }}
           config={config}
           activePage={activePage}
           autostart={autostart}
@@ -626,8 +625,8 @@ export default function App() {
           onMoveButtonToPage={moveButtonToPage}
           onMoveButtonsToPage={moveButtonsToPage}
           onClearButtons={clearButtons}
-          soundOnPress={config.soundOnPress ?? true}
-          soundProfile={config.soundProfile ?? 'click'}
+          soundOnPress={sonidoActivo(config)}
+          soundProfile={perfilSonido(config)}
           onSoundToggle={toggleSoundOnPress}
           onSoundProfileChange={setSoundProfile}
           onStateUpdate={updateState}
@@ -643,6 +642,7 @@ export default function App() {
           onDismissHint={dismissHint}
           onPageExport={handlePageExport}
           onPageImport={handlePageImport}
+          onFijarTargetApp={fijarTargetAppPagina}
           onReplayOnboarding={() => setShowOnboarding(true)}
         />
       )}
@@ -650,8 +650,8 @@ export default function App() {
       {view === 'fullscreen' && (
         <FullscreenB
           config={config}
-          soundOnPress={config.soundOnPress ?? true}
-          soundProfile={config.soundProfile ?? 'click'}
+          soundOnPress={sonidoActivo(config)}
+          soundProfile={perfilSonido(config)}
           onExit={handleExitFullscreen}
           onSetKioskPin={setKioskPin}
           onStateUpdate={updateState}
@@ -681,10 +681,18 @@ export default function App() {
           superficies={superficies.dispositivos}
           modelos={superficies.modelos}
           imagenes={superficies.imagenes}
+          paginasActivas={superficies.paginasActivas}
           onEditarBoton={(id) => setEditingId(id)}
           onBrilloVivo={(serial, valor) => { void api?.superficies.brillo(serial, valor); }}
           onBrillo={fijarBrilloSuperficie}
           onRotacion={fijarRotacionSuperficie}
+          onActivarPagina={superficies.activarPagina}
+          onAgregarPagina={agregarPaginaSuperficie}
+          onFijarTargetApp={fijarTargetAppPagina}
+          onRenombrarPagina={renamePage}
+          onBorrarPagina={deletePage}
+          onRellenarHuecos={rellenarBotones}
+          onCrearDesdePlantilla={crearPaginaDesdePlantilla}
           onVolver={() => setView('main')}
         />
       )}
@@ -702,6 +710,7 @@ export default function App() {
           button={editingButton}
           rgbProfiles={config.rgb?.profiles ?? []}
           deckState={config.state ?? {}}
+          pages={config.pages}
           onClose={() => setEditingId(null)}
           onSave={(updated) => { updateButton(updated); setEditingId(null); }}
           onClear={(id) => { clearButton(id); setEditingId(null); }}
