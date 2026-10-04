@@ -7,13 +7,14 @@ licencias que corresponden.
 
 ## 1. Bitfocus — `companion-surface-mirabox-stream-dock`
 
-El protocolo HID del Stream Dock N3 que implementa el driver de superficies
-(`electron/main/superficies/modelos.ts`, `protocoloMirabox.ts` y
-`dispositivoMirabox.ts`) está adaptado del módulo
+El protocolo HID de los Stream Dock / Mirabox / Ajazz y la tabla de modelos
+que implementa el driver de superficies (`electron/main/superficies/modelos/`,
+`protocoloMirabox.ts` y `dispositivoMirabox.ts`) están adaptados del módulo
 [`bitfocus/companion-surface-mirabox-stream-dock`](https://github.com/bitfocus/companion-surface-mirabox-stream-dock),
-en particular de `src/streamdock.ts`, `src/models/list.ts`,
-`src/models/N3-293N3.ts` y `src/main.ts`. No se usa código de OpenDeck ni de
-`opendeck-akp03` (GPL).
+en particular de `src/streamdock.ts`, `src/main.ts` y las doce definiciones de
+`src/models/*.ts` (N3-293N3, 293V3, Mirabox-XL, N4-1234, N4-1245, HSV-293S,
+HSV-293S-2, HSV-293S-3, M18V3, Ajazz-AKP03E, Ajazz-AKP153 y Ajazz-AKP153E).
+No se usa código de OpenDeck ni de `opendeck-akp03` (GPL).
 
 Licencia MIT completa:
 

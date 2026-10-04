@@ -16,6 +16,7 @@ import { migrateConfig, validateConfig, sanearConfig, sanearPagina, CURRENT_CONF
 import { useDisparadores } from './utils/useDisparadores';
 import { useSuperficies } from './utils/superficies/useSuperficies';
 import { COLORES_LCD } from './utils/superficies/pintarTecla';
+import { svgDeBoton } from './components/celda/iconoSvg';
 import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
@@ -164,7 +165,7 @@ export default function App() {
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
-    crearPaginaSuperficie, fijarBrilloSuperficie,
+    crearPaginaSuperficie, fijarBrilloSuperficie, fijarRotacionSuperficie,
     saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, appendPageFromGallery, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
@@ -472,7 +473,10 @@ export default function App() {
   // Controladores físicos (Stream Dock N3...). Como los disparadores, vive en
   // `App`, que está montada siempre: el hardware tiene que responder también
   // en kiosko y con la ventana oculta en la bandeja.
-  const superficies = useSuperficies({ api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD });
+  // El icono lo pinta la capa de componentes: `src/utils` no puede importarlos.
+  const superficies = useSuperficies({
+    api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD, iconoSvg: svgDeBoton,
+  });
 
   // Se manda `config`, lo que hay en pantalla, y no se deja que el proceso
   // principal lo relea del disco: si el archivo estuviera ilegible saldria un
@@ -674,9 +678,12 @@ export default function App() {
       {view === 'devices' && (
         <DispositivosB
           config={config}
-          superficies={superficies}
+          superficies={superficies.dispositivos}
+          modelos={superficies.modelos}
           onEditarBoton={(id) => setEditingId(id)}
+          onBrilloVivo={(serial, valor) => { void api?.superficies.brillo(serial, valor); }}
           onBrillo={fijarBrilloSuperficie}
+          onRotacion={fijarRotacionSuperficie}
           onVolver={() => setView('main')}
         />
       )}

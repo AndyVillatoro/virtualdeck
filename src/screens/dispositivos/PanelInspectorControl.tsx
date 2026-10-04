@@ -33,6 +33,13 @@ function obtenerNombreYTipoControl(
       tipo: t('disp.tipo.boton'),
     };
   }
+  if (meta.control === 'swipe') {
+    const gestoStr = meta.gesto === 'der' ? t('disp.der') : t('disp.izq');
+    return {
+      nombre: `${t('disp.tira', { n: meta.indice + 1 })} · ${gestoStr}`,
+      tipo: t('disp.tipo.tira'),
+    };
+  }
   let gestoStr = t('disp.pulsar');
   if (meta.gesto === 'izq') {
     gestoStr = t('disp.izq');
@@ -77,16 +84,25 @@ function PanelVacio({
   );
 }
 
+function iconoFallback(tipo?: ControlSuperficie): string {
+  if (tipo === 'knob') return 'KNOB';
+  if (tipo === 'swipe') return 'SWIPE';
+  if (tipo === 'button') return 'DOTS';
+  return 'ADD';
+}
+
 function MiniPreview({
   boton,
   glifo,
   nombreControl,
+  controlTipo,
   vd,
   vacioTexto,
 }: {
   boton?: ButtonConfig;
   glifo: string | null;
   nombreControl: string;
+  controlTipo?: ControlSuperficie;
   vd: ReturnType<typeof useTheme>;
   vacioTexto: string;
 }) {
@@ -125,7 +141,7 @@ function MiniPreview({
         {glifo ? (
           <DotGlyphIcon glyph={glifo} size={18} color={fg} />
         ) : (
-          <DotGlyphIcon glyph="KNOB" size={18} color={vd.accent} />
+          <DotGlyphIcon glyph={iconoFallback(controlTipo)} size={18} color={vd.accent} />
         )}
         <span
           style={{
@@ -213,6 +229,7 @@ export function PanelInspectorControl({
           boton={boton}
           glifo={glifo}
           nombreControl={nombre}
+          controlTipo={controlMeta.control}
           vd={VD}
           vacioTexto={t('disp.vacio')}
         />

@@ -1,5 +1,5 @@
 /**
- * Envoltorio de un Stream Dock N3 conectado: cola de escritura serializada,
+ * Envoltorio de un Stream Dock conectado: cola de escritura serializada,
  * latido y ciclo de vida.
  *
  * La secuencia de comandos (BAT + trozos + STP, LIG, CONNECT, CLE DC) está
@@ -7,9 +7,13 @@
  * (`src/streamdock.ts`). Ver THIRD_PARTY_NOTICES.md. No se usa código de
  * OpenDeck ni de opendeck-akp03 (GPL).
  *
- * Regla de oro: **un error de HID es una desconexión, nunca una excepción que
- * tumbe el proceso**. Todas las escrituras pasan por la cola y los fallos
- * terminan en el callback de desconexión.
+ * Reglas del driver:
+ * - **Un error de HID es una desconexión, nunca una excepción que tumbe el
+ *   proceso.**
+ * - Cada modelo tiene su `packetSize` (512 en los viejos, 1024 en el resto) y
+ *   su id de salida LCD por tecla (no siempre `indice + 1`).
+ * - El **brillo se fusiona**: si el deslizador manda cincuenta valores mientras
+ *   la cola está ocupada, solo se escribe el último.
  */
 
 import { HIDAsync } from 'node-hid';
@@ -34,6 +38,8 @@ export class DispositivoMirabox {
   private cerrando = false;
   private cerrado = false;
   private desconectado = false;
+  private brilloPendiente: number | null = null;
+  private brilloEnCola = false;
 
   private constructor(
     readonly serial: string,
@@ -62,11 +68,11 @@ export class DispositivoMirabox {
 
   /** Despierta la pantalla (`DIS`) y arranca el latido cada 8 s. */
   private async iniciar(brillo: number): Promise<void> {
-    await this.enCola(() => this.escribir(proto.paqueteComando(proto.DESPERTAR)));
+    await this.enCola(() => this.escribir(proto.paqueteComando(proto.DESPERTAR, this.modelo.packetSize)));
     await esperar(MS_DESPERTAR);
     await this.brillo(brillo);
     this.latido = setInterval(() => {
-      void this.enCola(() => this.escribir(proto.paqueteComando(proto.LATIDO)));
+      void this.enCola(() => this.escribir(proto.paqueteComando(proto.LATIDO, this.modelo.packetSize)));
     }, MS_LATIDO);
   }
 
@@ -74,32 +80,52 @@ export class DispositivoMirabox {
     return !this.cerrando && !this.cerrado && !this.desconectado;
   }
 
-  /** Pinta una tecla LCD. `tecla0` es 0-based; el hardware usa keyId 1–6. */
+  /** Pinta una tecla LCD. `tecla0` es el índice de la tecla (0-based). */
   async imagen(tecla0: number, jpeg: Buffer): Promise<void> {
     if (!this.estaVivo) return;
-    // Llega por IPC: una tecla que no existe no puede convertirse en un keyId que el firmware interprete.
-    if (!Number.isInteger(tecla0) || tecla0 < 0 || tecla0 >= this.modelo.teclas) return;
-    const keyId = tecla0 + 1;
+    const control = this.modelo.controles.find((c) => c.tipo === 'key' && c.indice === tecla0);
+    const lcdId = control?.lcdId;
+    if (lcdId === undefined) return;
     await this.enCola(async () => {
-      await this.escribir(proto.paqueteComando(proto.cabeceraImagen(jpeg.byteLength, keyId)));
-      for (const trozo of proto.trozosDeImagen(jpeg)) {
-        await this.escribir(proto.paqueteTrozo(trozo));
+      await this.escribir(proto.paqueteComando(proto.cabeceraImagen(jpeg.byteLength, lcdId), this.modelo.packetSize));
+      for (const trozo of proto.trozosDeImagen(jpeg, this.modelo.packetSize)) {
+        await this.escribir(proto.paqueteTrozo(trozo, this.modelo.packetSize));
       }
-      await this.escribir(proto.paqueteComando(proto.REFRESCO));
+      await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
     });
   }
 
-  async brillo(valor: number): Promise<void> {
-    if (!this.estaVivo) return;
-    await this.enCola(() => this.escribir(proto.paqueteComando(proto.comandoBrillo(valor))));
+  /**
+   * Brillo en vivo, fusionado: cada llamada guarda el último valor y la cola
+   * tiene **una sola** tarea que va escribiendo el más reciente. Un deslizador
+   * a 60 Hz no encola 60 escrituras: la cola nunca crece y el aparato recibe
+   * siempre el último valor, no una cola de valores viejos.
+   */
+  brillo(valor: number): Promise<void> {
+    if (!this.estaVivo) return Promise.resolve();
+    this.brilloPendiente = valor;
+    if (this.brilloEnCola) return Promise.resolve();
+    this.brilloEnCola = true;
+    return this.enCola(() => this.escribirBrilloPendiente());
+  }
+
+  private async escribirBrilloPendiente(): Promise<void> {
+    while (this.brilloPendiente !== null) {
+      const valor = this.brilloPendiente;
+      this.brilloPendiente = null;
+      await this.escribir(proto.paqueteComando(proto.comandoBrillo(valor), this.modelo.packetSize));
+    }
+    this.brilloEnCola = false;
+    // Una llamada que llegó justo entre el último chequeo y este punto.
+    if (this.brilloPendiente !== null) void this.brillo(this.brilloPendiente);
   }
 
   /** Borra todas las teclas y refresca. */
   async limpiar(): Promise<void> {
     if (!this.estaVivo) return;
     await this.enCola(async () => {
-      await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO));
-      await this.escribir(proto.paqueteComando(proto.REFRESCO));
+      await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO, this.modelo.packetSize));
+      await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
     });
   }
 
@@ -109,10 +135,10 @@ export class DispositivoMirabox {
     this.cerrando = true;
     if (this.latido) { clearInterval(this.latido); this.latido = null; }
     await this.enCola(async () => {
-      await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO));
-      await this.escribir(proto.paqueteComando(proto.REFRESCO));
+      await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO, this.modelo.packetSize));
+      await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
       await esperar(150);
-      await this.escribir(proto.paqueteComando(proto.APAGAR));
+      await this.escribir(proto.paqueteComando(proto.APAGAR, this.modelo.packetSize));
     });
     this.cerrado = true;
     try { await this.hid.close(); } catch { /* ya no está */ }

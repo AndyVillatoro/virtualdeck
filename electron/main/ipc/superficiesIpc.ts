@@ -1,5 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import * as gestor from '../superficies/gestor';
+import { disposiciones } from '../superficies/modelos';
 
 /**
  * Puente IPC de las superficies físicas: los cuatro comandos y los dos
@@ -17,6 +18,7 @@ export function registerSuperficiesIpc(win: BrowserWindow) {
   });
 
   ipcMain.handle('surfaces:list', () => gestor.listar());
+  ipcMain.handle('surfaces:models', () => disposiciones());
   ipcMain.handle('surfaces:image', (_e: any, serial: string, tecla: number, jpegBase64: string) =>
     gestor.imagen(serial, tecla, jpegBase64));
   ipcMain.handle('surfaces:brightness', (_e: any, serial: string, valor: number) =>

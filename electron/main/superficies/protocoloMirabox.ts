@@ -14,12 +14,10 @@
 import type { EntradaSuperficie } from '../../../src/types';
 import type { ModeloMirabox } from './modelos';
 import { MODELOS } from './modelos';
+import { TAMANO_PAQUETE } from './modelos/tipos';
 
 /** Una entrada ya interpretada, sin el serial (lo añade el gestor). */
 export type EntradaHardware = Omit<EntradaSuperficie, 'serial'>;
-
-/** Bytes útiles por paquete de salida (el report id va aparte). */
-export const TAMANO_PAQUETE = 1024;
 
 /** Prefijo ASCII "CRT\0\0" que abre todos los comandos de control. */
 const PREFIJO = [0x43, 0x52, 0x54, 0x00, 0x00];
@@ -57,26 +55,26 @@ export function cabeceraImagen(longitud: number, keyId: number): number[] {
   ];
 }
 
-/** Report id 0 + prefijo CRT + datos, rellenado con ceros hasta 1025 bytes. */
-export function paqueteComando(datos: readonly number[]): Buffer {
-  const buffer = Buffer.alloc(TAMANO_PAQUETE + 1);
+/** Report id 0 + prefijo CRT + datos, rellenado con ceros hasta `tamano` + 1. */
+export function paqueteComando(datos: readonly number[], tamano = TAMANO_PAQUETE): Buffer {
+  const buffer = Buffer.alloc(tamano + 1);
   Buffer.from(PREFIJO).copy(buffer, 1);
   Buffer.from(datos).copy(buffer, 1 + PREFIJO.length);
   return buffer;
 }
 
-/** Report id 0 + trozo crudo de imagen, rellenado con ceros hasta 1025 bytes. */
-export function paqueteTrozo(trozo: Buffer): Buffer {
-  const buffer = Buffer.alloc(TAMANO_PAQUETE + 1);
+/** Report id 0 + trozo crudo de imagen, rellenado con ceros hasta `tamano` + 1. */
+export function paqueteTrozo(trozo: Buffer, tamano = TAMANO_PAQUETE): Buffer {
+  const buffer = Buffer.alloc(tamano + 1);
   trozo.copy(buffer, 1);
   return buffer;
 }
 
-/** Parte el JPEG en trozos de 1024 bytes, como los manda Bitfocus. */
-export function trozosDeImagen(jpeg: Buffer): Buffer[] {
+/** Parte el JPEG en trozos del tamaño del modelo (1024 salvo los viejos). */
+export function trozosDeImagen(jpeg: Buffer, tamano = TAMANO_PAQUETE): Buffer[] {
   const trozos: Buffer[] = [];
-  for (let offset = 0; offset < jpeg.byteLength; offset += TAMANO_PAQUETE) {
-    trozos.push(jpeg.subarray(offset, offset + TAMANO_PAQUETE));
+  for (let offset = 0; offset < jpeg.byteLength; offset += tamano) {
+    trozos.push(jpeg.subarray(offset, offset + tamano));
   }
   return trozos;
 }

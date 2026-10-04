@@ -1,13 +1,16 @@
-import type { ButtonConfig, ModeloSuperficie } from '../../types';
-import { DISPOSICIONES } from './disposicion';
+import type { ButtonConfig, LcdControl } from '../../types';
 
 /**
  * Convierte el botón de un hueco en el JPEG que espera la tecla LCD.
  *
  * Corre en el renderer (usa canvas) y por eso no puede mirar el tema: los
- * colores entran por parámetro. El tamaño y la rotación salen de
- * `DISPOSICIONES` — en el N3, 64×64 y 90° en sentido horario (medido con el
- * hardware real, no el 270 de Bitfocus).
+ * colores entran por parámetro. El tamaño y el giro salen del `lcd` del
+ * contrato (`DisposicionSuperficie`), y la rotación efectiva la decide quien
+ * llama (la de la página si existe).
+ *
+ * Los iconos de acción llegan **inyectados** (`opciones.iconoSvg`): viven en
+ * `components/` y esta capa no puede importarlos. Los de marca se cargan del
+ * catálogo con el mismo `import()` diferido que usa la interfaz.
  *
  * Un hueco vacío es negro. El JPEG se baja de calidad hasta caber en 10240
  * bytes, el límite del búfer del microcontrolador.
@@ -21,20 +24,27 @@ export interface ColoresSuperficie {
 }
 
 /**
- * La tecla LCD es una pantalla física oscura: se pinta siempre con la paleta
- * OLED (`VD_DOT480`), sea cual sea el tema de la app. El gris cemento del modo
- * claro, en un LCD retroiluminado, se ve lavado.
+ * Paleta OLED fija de las teclas LCD: no depende del tema de la aplicación
+ * (una tecla física no tiene modo claro). La usa `App` al llamar al hook.
  */
-export const COLORES_LCD: ColoresSuperficie = { fondo: '#111315', texto: '#e6e8eb' };
+export const COLORES_LCD: ColoresSuperficie = {
+  fondo: '#070809',
+  texto: '#e6e8eb',
+};
+
+export interface OpcionesPintado {
+  /** SVG del icono del tipo de acción; lo pasa la capa de componentes. */
+  iconoSvg?: (boton: ButtonConfig, color: string) => string | null;
+}
 
 const LIMITE_JPEG = 10240;
 const CALIDAD_MAXIMA = 0.9;
 const CALIDAD_MINIMA = 0.1;
 
-function crearLienzo(lado: number): HTMLCanvasElement {
+function crearLienzo(ancho: number, alto: number): HTMLCanvasElement {
   const lienzo = document.createElement('canvas');
-  lienzo.width = lado;
-  lienzo.height = lado;
+  lienzo.width = ancho;
+  lienzo.height = alto;
   return lienzo;
 }
 
@@ -63,19 +73,55 @@ function cargarImagen(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
-function dibujarImagen(ctx: CanvasRenderingContext2D, imagen: HTMLImageElement, lado: number): void {
-  const escala = Math.max(lado / imagen.width, lado / imagen.height);
-  const ancho = imagen.width * escala;
-  const alto = imagen.height * escala;
-  ctx.drawImage(imagen, (lado - ancho) / 2, (lado - alto) / 2, ancho, alto);
+/** Dibuja una imagen cubriendo el hueco (recorte centrado). */
+async function dibujarImagen(ctx: CanvasRenderingContext2D, src: string, ancho: number, alto: number): Promise<void> {
+  const imagen = await cargarImagen(src);
+  if (!imagen) return;
+  const escala = Math.max(ancho / imagen.width, alto / imagen.height);
+  const w = imagen.width * escala;
+  const h = imagen.height * escala;
+  ctx.drawImage(imagen, (ancho - w) / 2, (alto - h) / 2, w, h);
+}
+
+/** Dibuja un SVG (texto) encajado en una caja cuadrada centrada. */
+async function dibujarSvg(
+  ctx: CanvasRenderingContext2D, svg: string, ancho: number, alto: number, caja: number, centroY: number,
+): Promise<boolean> {
+  const imagen = await cargarImagen('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+  if (!imagen || !imagen.width || !imagen.height) return false;
+  const escala = Math.min(caja / imagen.width, caja / imagen.height);
+  const w = imagen.width * escala;
+  const h = imagen.height * escala;
+  ctx.drawImage(imagen, (ancho - w) / 2, centroY - h / 2, w, h);
+  return true;
+}
+
+/** Icono de marca desde el catálogo (diferido, el mismo chunk que la interfaz). */
+async function dibujarMarca(
+  ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number, centroY: number,
+): Promise<boolean> {
+  if (!boton.brandIcon) return false;
+  try {
+    const { BRAND_ICONS_MAP, generateSvgFromBitmap, mergePalette } = await import('../../data/brandIcons');
+    const icono = BRAND_ICONS_MAP[boton.brandIcon];
+    const bitmap = boton.brandIconCustomBitmap?.length ? boton.brandIconCustomBitmap : icono?.bitmap;
+    if (!bitmap?.length) return false;
+    const color = boton.brandIconCustomColor || icono?.color || '#e6e8eb';
+    const palette = boton.brandIconCustomPalette
+      ? mergePalette(boton.brandIcon, boton.brandIconCustomPalette)
+      : (icono?.palette ?? {});
+    return await dibujarSvg(ctx, generateSvgFromBitmap(bitmap, color, palette), ancho, alto, Math.min(ancho, alto) * 0.72, centroY);
+  } catch {
+    return false;
+  }
 }
 
 /** Glifo dibujado a mano: 7 filas, 5 bits por fila (bit 4 = izquierda). */
-function dibujarGlifo57(ctx: CanvasRenderingContext2D, filas: number[], lado: number, color: string): void {
-  const ancho = lado * 0.5;
-  const paso = ancho / 5;
-  const x0 = (lado - ancho) / 2;
-  const y0 = lado * 0.5 - (paso * 7) / 2;
+function dibujarGlifo57(ctx: CanvasRenderingContext2D, filas: number[], ancho: number, alto: number, color: string, centroY: number): void {
+  const caja = Math.min(ancho, alto) * 0.5;
+  const paso = caja / 5;
+  const x0 = (ancho - caja) / 2;
+  const y0 = centroY - (paso * 7) / 2;
   ctx.fillStyle = color;
   for (let fila = 0; fila < filas.length; fila++) {
     for (let columna = 0; columna < 5; columna++) {
@@ -87,26 +133,38 @@ function dibujarGlifo57(ctx: CanvasRenderingContext2D, filas: number[], lado: nu
   }
 }
 
-/** Icono de texto corto (≤3 caracteres) centrado; lo demás se omite. */
-function dibujarIcono(ctx: CanvasRenderingContext2D, boton: ButtonConfig, lado: number, color: string): void {
+/** Icono de texto corto (≤3 caracteres) centrado. */
+function dibujarTextoIcono(ctx: CanvasRenderingContext2D, texto: string, ancho: number, alto: number, color: string, centroY: number): void {
+  ctx.fillStyle = color;
+  ctx.font = `bold ${Math.round(Math.min(ancho, alto) * 0.34)}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(texto, ancho / 2, centroY);
+}
+
+/** Lo que va en el centro: glifo propio, texto corto o el icono inyectado. */
+async function dibujarIcono(
+  ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
+  color: string, centroY: number, opciones: OpcionesPintado,
+): Promise<void> {
   if (boton.customGlyph57?.length === 7) {
-    dibujarGlifo57(ctx, boton.customGlyph57, lado, color);
+    dibujarGlifo57(ctx, boton.customGlyph57, ancho, alto, color, centroY);
     return;
   }
   const texto = (boton.icon ?? '').trim();
-  if (!texto || texto.length > 3) return;
-  ctx.fillStyle = color;
-  ctx.font = `bold ${Math.round(lado * 0.34)}px monospace`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(texto, lado / 2, boton.label ? lado * 0.38 : lado * 0.5);
+  if (texto && texto.length <= 3) {
+    dibujarTextoIcono(ctx, texto, ancho, alto, color, centroY);
+    return;
+  }
+  const svg = opciones.iconoSvg?.(boton, color);
+  if (svg) await dibujarSvg(ctx, svg, ancho, alto, Math.min(ancho, alto) * 0.6, centroY);
 }
 
 /** Etiqueta abajo, en hasta dos líneas, con recorte por ancho. */
-function dibujarEtiqueta(ctx: CanvasRenderingContext2D, texto: string, lado: number, color: string): void {
+function dibujarEtiqueta(ctx: CanvasRenderingContext2D, texto: string, ancho: number, alto: number, color: string): void {
   const limpio = texto.trim();
   if (!limpio) return;
-  const tamano = Math.max(7, Math.round(lado * 0.16));
+  const tamano = Math.max(7, Math.round(alto * 0.16));
   ctx.fillStyle = color;
   ctx.font = `${tamano}px sans-serif`;
   ctx.textAlign = 'center';
@@ -117,7 +175,7 @@ function dibujarEtiqueta(ctx: CanvasRenderingContext2D, texto: string, lado: num
   let actual = '';
   for (const palabra of palabras) {
     const intento = actual ? `${actual} ${palabra}` : palabra;
-    if (actual && ctx.measureText(intento).width > lado - 4) {
+    if (actual && ctx.measureText(intento).width > ancho - 4) {
       lineas.push(actual);
       actual = palabra;
     } else {
@@ -129,51 +187,50 @@ function dibujarEtiqueta(ctx: CanvasRenderingContext2D, texto: string, lado: num
   if (lineas.length === 0) return;
 
   let ultima = lineas[lineas.length - 1];
-  while (ultima.length > 1 && ctx.measureText(`${ultima}…`).width > lado - 4) {
+  while (ultima.length > 1 && ctx.measureText(`${ultima}…`).width > ancho - 4) {
     ultima = ultima.slice(0, -1);
   }
   if (ultima !== lineas[lineas.length - 1]) lineas[lineas.length - 1] = `${ultima}…`;
 
-  const alto = tamano * 1.15;
-  const base = lado - 3 - (lineas.length - 1) * alto;
-  lineas.forEach((linea, indice) => ctx.fillText(linea, lado / 2, base + indice * alto));
+  const altoLinea = tamano * 1.15;
+  const base = alto - 3 - (lineas.length - 1) * altoLinea;
+  lineas.forEach((linea, indice) => ctx.fillText(linea, ancho / 2, base + indice * altoLinea));
 }
 
 async function pintarContenido(
-  ctx: CanvasRenderingContext2D,
-  boton: ButtonConfig,
-  lado: number,
-  colores: ColoresSuperficie,
+  ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
+  colores: ColoresSuperficie, opciones: OpcionesPintado,
 ): Promise<void> {
   const color = colorTexto(boton, colores);
+  const centroY = boton.label ? alto * 0.4 : alto * 0.5;
   if (boton.imageData) {
-    const imagen = await cargarImagen(boton.imageData);
-    if (imagen) dibujarImagen(ctx, imagen, lado);
-  } else {
-    dibujarIcono(ctx, boton, lado, color);
+    await dibujarImagen(ctx, boton.imageData, ancho, alto);
+  } else if (!(await dibujarMarca(ctx, boton, ancho, alto, centroY))) {
+    await dibujarIcono(ctx, boton, ancho, alto, color, centroY, opciones);
   }
-  dibujarEtiqueta(ctx, boton.label ?? '', lado, color);
+  dibujarEtiqueta(ctx, boton.label ?? '', ancho, alto, color);
 }
 
-/** Rota el lienzo en sentido horario. En el N3, 90°. */
+/** Rota el lienzo en sentido horario; a 90/270 se intercambian los lados. */
 function rotar(lienzo: HTMLCanvasElement, grados: number): HTMLCanvasElement {
-  if (!grados) return lienzo;
-  const lado = lienzo.width;
-  const salida = crearLienzo(lado);
+  const limpio = ((Math.round(grados / 90) * 90) % 360 + 360) % 360;
+  if (!limpio) return lienzo;
+  const cambia = limpio === 90 || limpio === 270;
+  const salida = cambia ? crearLienzo(lienzo.height, lienzo.width) : crearLienzo(lienzo.width, lienzo.height);
   const ctx = contexto(salida);
   if (!ctx) return lienzo;
-  ctx.translate(lado / 2, lado / 2);
-  ctx.rotate((grados * Math.PI) / 180);
-  ctx.drawImage(lienzo, -lado / 2, -lado / 2);
+  ctx.translate(salida.width / 2, salida.height / 2);
+  ctx.rotate((limpio * Math.PI) / 180);
+  ctx.drawImage(lienzo, -lienzo.width / 2, -lienzo.height / 2);
   return salida;
 }
 
-function codificarNegro(lado: number): string {
-  const lienzo = crearLienzo(lado);
+function codificarNegro(ancho: number, alto: number): string {
+  const lienzo = crearLienzo(ancho, alto);
   const ctx = contexto(lienzo);
   if (ctx) {
     ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, lado, lado);
+    ctx.fillRect(0, 0, ancho, alto);
   }
   return lienzo.toDataURL('image/jpeg', 0.5).split(',')[1] ?? '';
 }
@@ -185,27 +242,33 @@ function codificar(lienzo: HTMLCanvasElement): string {
     try {
       dataUrl = lienzo.toDataURL('image/jpeg', calidad);
     } catch {
-      return codificarNegro(lienzo.width);
+      return codificarNegro(lienzo.width, lienzo.height);
     }
     const base64 = dataUrl.split(',')[1] ?? '';
     if (base64.length * 0.75 <= LIMITE_JPEG) return base64;
   }
-  return codificarNegro(lienzo.width);
+  return codificarNegro(lienzo.width, lienzo.height);
 }
 
+/**
+ * Pinta un hueco. `rotacion` manda sobre la del `lcd` (la válvula de seguridad
+ * de los modelos sin verificar); si no se pasa, se usa la del modelo.
+ */
 export async function pintarTecla(
   boton: ButtonConfig | null,
-  modelo: ModeloSuperficie,
+  lcd: LcdControl,
   colores: ColoresSuperficie,
+  opciones: OpcionesPintado = {},
+  rotacion?: number,
 ): Promise<string> {
-  const { ladoTecla, rotacion } = DISPOSICIONES[modelo];
-  const lienzo = crearLienzo(ladoTecla);
+  const { ancho, alto } = lcd;
+  const lienzo = crearLienzo(ancho, alto);
   const ctx = contexto(lienzo);
-  if (!ctx) return codificarNegro(ladoTecla);
+  if (!ctx) return codificarNegro(ancho, alto);
 
   ctx.fillStyle = colorFondo(boton, colores);
-  ctx.fillRect(0, 0, ladoTecla, ladoTecla);
-  if (boton) await pintarContenido(ctx, boton, ladoTecla, colores);
+  ctx.fillRect(0, 0, ancho, alto);
+  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones);
 
-  return codificar(rotar(lienzo, rotacion));
+  return codificar(rotar(lienzo, rotacion ?? lcd.rotacion));
 }

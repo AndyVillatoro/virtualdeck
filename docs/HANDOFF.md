@@ -482,6 +482,17 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
   - Fase 2 (host de plugins del SDK de Stream Deck / VSD Craft) y Elgato vía `@elgato-stream-deck/node`.
 * **Verificación:** `npm run check` 0 errores (38 warnings, los mismos de antes), `npm run build` OK.
 
+## Turno 2026-10-04 — T-HW-02 fase 1b: tabla de modelos (DONE)
+
+* **Modelos:** Claude Opus 5.5 supervisa (contrato + integración + correcciones); opencode (DeepSeek V4.1 Flash, Go, ~$0.34 en esta tarea) driver y lógica; agy (Gemini 3.8 Flash) pantalla genérica.
+* **Contrato nuevo** (`src/types/superficies.ts`, `src/utils/superficies/disposicion.ts`): cada modelo es una lista de `controles` con tipo (`key` con LCD / `button` / `knob` / `swipe`) y **posición física**; huecos por orden (1 / 1 / 3 / 2). La tabla vive en el **proceso principal** (`electron/main/superficies/modelos/`) porque la regla de capas no deja a `electron/main` importar datos de `src/`; el renderer la recibe por `surfaces:models` y en `InfoSuperficie.disposicion`.
+* **12 modelos** de Bitfocus (no 13: el encargo contaba mal). Soportados también los de protocolo viejo (paquete de 512 bytes, sin `up`). N4-1245 entra pero Bitfocus no le da VID/PID; LED del XL y pantallas de las tiras del N4, ignorados por ahora. **Solo el N3 está verificado**; el resto sale con insignia «experimental».
+* **Brillo:** en vivo por `api.superficies.brillo` (no toca la config) y fusionado en el driver; se guarda al soltar. Medido por opencode con HID simulado: 50 escrituras → 15, última a 120 ms → 50 ms. Con el aparato real el dueño lo notó fluido.
+* **Iconos en la tecla:** primero opencode empezó a **duplicar** los SVG de `VDIcon` en `src/utils`; corregido a mitad de tarea: `src/components/celda/iconoSvg.tsx` hace `renderToStaticMarkup` del mismo icono de la celda y `App` lo inyecta al hook (`iconoSvg`). `src/utils` sigue sin importar componentes.
+* **Probado con el N3 real por el dueño:** iconos, dibujo genérico, brillo fluido, rotación por dispositivo.
+* **Nuevo en el roadmap:** 61 (estilo DOT en las teclas físicas, reportado por el dueño) y 62 (botones prearmados para docks; investigación T-HW-03 en curso con agy).
+* **Verificación:** `npm run check` 0 errores (38 warnings, los mismos), `npm run build` OK.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

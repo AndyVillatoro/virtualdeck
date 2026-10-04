@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import type { ActionType, ButtonConfig, InfoSuperficie, PageConfig } from '../../types';
+import { rejillaDe, totalHuecos } from '../superficies/disposicion';
 import type { ContextoDeck } from './contexto';
 
 /**
@@ -121,22 +122,28 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
   /**
    * La página propia de un dispositivo físico (ver `types/superficies.ts`).
    *
-   * Son 3×6 = 18 huecos: 6 teclas LCD, 3 botones y los 3 gestos de cada una de
-   * las 3 perillas. Los botones se emparejan con su hueco **por posición**,
-   * como todo el deck (`conHuecosCompletos`).
+   * Los huecos salen de su `disposicion` (contrato): teclas, botones, perillas
+   * (3 huecos) y tiras (2). Si el modelo no cabe en una página (`rejillaDe`
+   * devuelve `null`), no se crea y se registra.
    */
   const crearPaginaSuperficie = useCallback((info: InfoSuperficie) => {
+    const rejilla = rejillaDe(info.disposicion);
+    if (!rejilla) {
+      console.warn(`[superficies] model ${info.modelo} does not fit in a page`);
+      return;
+    }
     withHistory(t('undo.addSurfacePage', { nombre: info.nombre }), (prev) => {
       if (prev.pages.some((p) => p.superficie?.serial === info.serial)) return prev;
       const newIdx = prev.pages.length;
       const newPage: PageConfig = {
         id: `page_${Date.now()}`,
         name: info.nombre,
-        gridSize: 3,
-        gridRows: 6,
+        gridSize: rejilla.columnas === 3 ? 3 : 6,
+        gridRows: rejilla.filas,
         superficie: { serial: info.serial, modelo: info.modelo, brillo: 70 },
       };
-      const newButtons: ButtonConfig[] = Array.from({ length: 18 }, (_, slot) => ({
+      const total = totalHuecos(info.disposicion);
+      const newButtons: ButtonConfig[] = Array.from({ length: total }, (_, slot) => ({
         id: `p${Date.now()}_${slot}`,
         page: newIdx,
         label: '', icon: '', action: { type: 'none' as ActionType },
@@ -171,5 +178,25 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
     });
   }, [api, setConfig]);
 
-  return { renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize, crearPaginaSuperficie, fijarBrilloSuperficie };
+  /**
+   * El giro de la pantalla de un dispositivo (0/90/180/270).
+   *
+   * Es la válvula de seguridad de los modelos sin verificar: si la imagen sale
+   * girada, el usuario la corrige aquí y `useSuperficies` repinta al ver la
+   * firma distinta. Va por el historial porque es una elección, no un
+   * deslizador.
+   */
+  const fijarRotacionSuperficie = useCallback((serial: string, grados: number) => {
+    const rotacion = ((Math.round(grados / 90) * 90) % 360 + 360) % 360;
+    withHistory(t('undo.rotateSurface', { grados: rotacion }), (prev) => ({
+      ...prev,
+      pages: prev.pages.map((p) =>
+        p.superficie?.serial === serial ? { ...p, superficie: { ...p.superficie, rotacion } } : p),
+    }));
+  }, [withHistory, t]);
+
+  return {
+    renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
+    crearPaginaSuperficie, fijarBrilloSuperficie, fijarRotacionSuperficie,
+  };
 }

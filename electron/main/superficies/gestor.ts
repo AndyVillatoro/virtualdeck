@@ -12,7 +12,7 @@ import { devicesAsync, type Device } from 'node-hid';
 import type { EntradaSuperficie, InfoSuperficie } from '../../../src/types';
 import { logEntry } from '../logger';
 import { DispositivoMirabox } from './dispositivoMirabox';
-import { modeloPorVidPid, type ModeloMirabox } from './modelos';
+import { disposicionDe, modeloPorVidPid, type ModeloMirabox } from './modelos';
 import { interpretarEntrada } from './protocoloMirabox';
 
 const CADA_MS = 3000;
@@ -67,7 +67,13 @@ async function abrir(serial: string, modelo: ModeloMirabox, path: string): Promi
     abriendo.delete(serial);
     if (!dispositivo.estaVivo) return;
     dispositivos.set(serial, dispositivo);
-    infos.set(serial, { serial, modelo: modelo.modelo, nombre: modelo.nombre, conectado: true });
+    infos.set(serial, {
+      serial,
+      modelo: modelo.id,
+      nombre: modelo.nombre,
+      conectado: true,
+      disposicion: disposicionDe(modelo),
+    });
     registrar('info', `connected ${modelo.nombre} (${serial})`);
     avisarCambio();
   } catch (error) {

@@ -1,65 +1,105 @@
-import type { ControlSuperficie, EntradaSuperficie, ModeloSuperficie } from '../../types/superficies';
+import type {
+  ControlFisico, ControlSuperficie, DisposicionSuperficie, EntradaSuperficie, LcdControl,
+} from '../../types/superficies';
 
 /**
- * Qué hueco de la página del dispositivo corresponde a cada control físico.
+ * De los controles de un modelo a los huecos de su página, y vuelta.
  *
- * La página de un N3 tiene 3 columnas y 6 filas (18 huecos):
- *
- * | huecos | control |
- * |---|---|
- * | 0–5   | teclas LCD 1–6 (fila a fila, de izquierda a derecha) |
- * | 6–8   | botones físicos 1–3 |
- * | 9–11  | perilla 1: girar a la izquierda, pulsar, girar a la derecha |
- * | 12–14 | perilla 2: ídem |
- * | 15–17 | perilla 3: ídem |
- *
- * Así el editor, el pintado, deshacer e importar/exportar funcionan sin
- * cambios: son huecos de una página normal.
+ * Los huecos siguen el orden de `DisposicionSuperficie.controles`: una tecla o
+ * un botón ocupan 1, una perilla 3 (girar a la izquierda, pulsar, girar a la
+ * derecha) y una tira táctil 2 (deslizar a la izquierda, a la derecha). Así el
+ * editor, el pintado, deshacer e importar/exportar funcionan sin cambios: son
+ * huecos de una página normal. En el N3 (6 teclas, 3 botones, 3 perillas)
+ * salen los mismos 18 huecos que en la fase 1.
  */
-export interface DisposicionModelo {
-  nombre: string;
-  columnas: number;
-  filas: number;
-  teclas: number;
-  botones: number;
-  perillas: number;
-  /** Lado en píxeles de la imagen de una tecla LCD. */
-  ladoTecla: number;
-  /** Giro en grados (sentido horario) que necesita la imagen antes de mandarla. Medido: 90 en el N3. */
-  rotacion: number;
+
+const HUECOS_POR_TIPO: Record<ControlSuperficie, number> = { key: 1, button: 1, knob: 3, swipe: 2 };
+
+/** Lo que admite una página: 6 columnas × 8 filas (`configMigration`). */
+const COLUMNAS_MAX = 6;
+const FILAS_MAX = 8;
+
+/** Primer hueco de cada control, en el mismo orden que `controles`. */
+function bases(d: DisposicionSuperficie): number[] {
+  const salida: number[] = [];
+  let acumulado = 0;
+  for (const c of d.controles) {
+    salida.push(acumulado);
+    acumulado += HUECOS_POR_TIPO[c.tipo];
+  }
+  return salida;
 }
 
-export const DISPOSICIONES: Record<ModeloSuperficie, DisposicionModelo> = {
-  n3: {
-    nombre: 'Stream Dock N3',
-    columnas: 3, filas: 6,
-    teclas: 6, botones: 3, perillas: 3,
-    ladoTecla: 64,
-    rotacion: 90,
-  },
-};
+export function totalHuecos(d: DisposicionSuperficie): number {
+  return d.controles.reduce((n, c) => n + HUECOS_POR_TIPO[c.tipo], 0);
+}
 
-/** Hueco de la página para una entrada, o `null` si la entrada no dispara nada (un `up`). */
-export function huecoDeEntrada(modelo: ModeloSuperficie, e: Pick<EntradaSuperficie, 'control' | 'indice' | 'gesto'>): number | null {
-  const d = DISPOSICIONES[modelo];
+/**
+ * Rejilla de la página que se crea para un dispositivo. Tres columnas mientras
+ * quepa en 18 huecos (el N3 queda en 3×6, como en la fase 1); si no, seis.
+ * Un modelo de más de 48 huecos no cabe en una página: `null`.
+ */
+export function rejillaDe(d: DisposicionSuperficie): { columnas: number; filas: number } | null {
+  const total = totalHuecos(d);
+  const columnas = total <= 18 ? 3 : COLUMNAS_MAX;
+  const filas = Math.max(1, Math.ceil(total / columnas));
+  return filas > FILAS_MAX ? null : { columnas, filas };
+}
+
+/** Hueco de la página para una entrada, o `null` si no dispara nada (un `up`, o un control que el modelo no tiene). */
+export function huecoDeEntrada(
+  d: DisposicionSuperficie,
+  e: Pick<EntradaSuperficie, 'control' | 'indice' | 'gesto'>,
+): number | null {
   if (e.gesto === 'up') return null;
-  if (e.control === 'key') return e.indice;
-  if (e.control === 'button') return d.teclas + e.indice;
-  const base = d.teclas + d.botones + e.indice * 3;
-  if (e.gesto === 'izq') return base;
-  if (e.gesto === 'der') return base + 2;
-  return base + 1;
+  const i = d.controles.findIndex((c) => c.tipo === e.control && c.indice === e.indice);
+  if (i < 0) return null;
+  const base = bases(d)[i];
+  switch (e.control) {
+    case 'key':
+    case 'button':
+      return base;
+    case 'knob':
+      if (e.gesto === 'izq') return base;
+      if (e.gesto === 'der') return base + 2;
+      return base + 1;
+    case 'swipe':
+      return e.gesto === 'der' ? base + 1 : base;
+  }
 }
+
+export type GestoHueco = 'izq' | 'pulsar' | 'der';
 
 /** El control físico al que pertenece un hueco (para la pantalla de dispositivos). */
-export function controlDeHueco(modelo: ModeloSuperficie, hueco: number):
-  { control: ControlSuperficie; indice: number; gesto?: 'izq' | 'pulsar' | 'der' } | null {
-  const d = DISPOSICIONES[modelo];
+export function controlDeHueco(d: DisposicionSuperficie, hueco: number):
+  { control: ControlSuperficie; indice: number; gesto?: GestoHueco } | null {
   if (hueco < 0) return null;
-  if (hueco < d.teclas) return { control: 'key', indice: hueco };
-  if (hueco < d.teclas + d.botones) return { control: 'button', indice: hueco - d.teclas };
-  const resto = hueco - d.teclas - d.botones;
-  if (resto >= d.perillas * 3) return null;
-  const gestos = ['izq', 'pulsar', 'der'] as const;
-  return { control: 'knob', indice: Math.floor(resto / 3), gesto: gestos[resto % 3] };
+  const b = bases(d);
+  for (let i = 0; i < d.controles.length; i++) {
+    const c = d.controles[i];
+    const resto = hueco - b[i];
+    if (resto < 0 || resto >= HUECOS_POR_TIPO[c.tipo]) continue;
+    if (c.tipo === 'knob') return { control: c.tipo, indice: c.indice, gesto: (['izq', 'pulsar', 'der'] as const)[resto] };
+    if (c.tipo === 'swipe') return { control: c.tipo, indice: c.indice, gesto: resto === 0 ? 'izq' : 'der' };
+    return { control: c.tipo, indice: c.indice };
+  }
+  return null;
+}
+
+/** Los huecos de un control (1, 2 o 3), en orden. */
+export function huecosDeControl(d: DisposicionSuperficie, control: ControlFisico): number[] {
+  const i = d.controles.indexOf(control);
+  if (i < 0) return [];
+  const base = bases(d)[i];
+  return Array.from({ length: HUECOS_POR_TIPO[control.tipo] }, (_, k) => base + k);
+}
+
+/** Las teclas con pantalla, con su hueco y su LCD: lo que hay que pintar. */
+export function teclasLcd(d: DisposicionSuperficie): Array<{ hueco: number; indice: number; lcd: LcdControl }> {
+  const b = bases(d);
+  const salida: Array<{ hueco: number; indice: number; lcd: LcdControl }> = [];
+  d.controles.forEach((c, i) => {
+    if (c.tipo === 'key' && c.lcd) salida.push({ hueco: b[i], indice: c.indice, lcd: c.lcd });
+  });
+  return salida;
 }

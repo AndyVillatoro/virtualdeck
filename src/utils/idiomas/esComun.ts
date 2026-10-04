@@ -183,6 +183,7 @@ export const ES_COMUN: Dict = {
   'undo.action': 'DESHACER',
   'undo.addPage': 'agregar página',
   'undo.addSurfacePage': 'agregar la página de {nombre}',
+  'undo.rotateSurface': 'girar la pantalla a {grados}°',
   'undo.delPage': 'eliminar página',
   'undo.movePage': 'reordenar páginas',
   'undo.importPage': 'importar página',

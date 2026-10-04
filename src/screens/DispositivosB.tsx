@@ -2,63 +2,102 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
-import { DISPOSICIONES, controlDeHueco } from '../utils/superficies/disposicion';
+import { controlDeHueco, teclasLcd } from '../utils/superficies/disposicion';
 import { ListaDispositivosHardware, type DispositivoItem } from './dispositivos/ListaDispositivosHardware';
-import { VistaHardwareN3 } from './dispositivos/VistaHardwareN3';
+import { VistaHardware } from './dispositivos/VistaHardware';
 import { PanelInspectorControl } from './dispositivos/PanelInspectorControl';
+import {
+  AvisoModeloDesconocido,
+  BannersDispositivoActivo,
+  generarResumenControles,
+  HeaderDispositivoActivo,
+} from './dispositivos/BarraHardwareActivo';
 import type { DeckConfig } from '../types';
-import type { InfoSuperficie } from '../types/superficies';
+import type { DisposicionSuperficie, InfoSuperficie } from '../types/superficies';
 
 export interface DispositivosBProps {
   config: DeckConfig;
   superficies: InfoSuperficie[];
+  /** Todas las disposiciones por id de modelo: para dibujar también dispositivos desconectados. */
+  modelos: Record<string, DisposicionSuperficie>;
   onEditarBoton: (id: string) => void;
+  onBrilloVivo: (serial: string, valor: number) => void;
   onBrillo: (serial: string, valor: number) => void;
+  onRotacion: (serial: string, grados: number) => void;
   onVolver: () => void;
+}
+
+function obtenerTodosDispositivos(
+  superficies: InfoSuperficie[],
+  pages: DeckConfig['pages'],
+  modelos: Record<string, DisposicionSuperficie>,
+): DispositivoItem[] {
+  const mapa = new Map<string, DispositivoItem>();
+
+  for (const sup of superficies) {
+    const pag = pages.find((p) => p.superficie?.serial === sup.serial);
+    mapa.set(sup.serial, {
+      ...sup,
+      paginaNombre: pag?.name,
+    });
+  }
+
+  for (const pag of pages) {
+    if (pag.superficie && !mapa.has(pag.superficie.serial)) {
+      const modeloId = pag.superficie.modelo;
+      const disp = modelos[modeloId];
+      const nombreModelo = disp?.nombre ?? modeloId;
+      mapa.set(pag.superficie.serial, {
+        serial: pag.superficie.serial,
+        modelo: modeloId,
+        nombre: nombreModelo,
+        conectado: false,
+        disposicion: disp,
+        paginaNombre: pag.name,
+      });
+    }
+  }
+
+  return Array.from(mapa.values());
+}
+
+function obtenerDisposicionActiva(
+  dispositivoActivo: DispositivoItem | null,
+  superficies: InfoSuperficie[],
+  paginaConfig: DeckConfig['pages'][number] | undefined,
+  modelos: Record<string, DisposicionSuperficie>,
+): DisposicionSuperficie | null {
+  if (!dispositivoActivo) return null;
+  if (dispositivoActivo.conectado && dispositivoActivo.disposicion) {
+    return dispositivoActivo.disposicion;
+  }
+  const supViva = superficies.find((s) => s.serial === dispositivoActivo.serial);
+  if (supViva?.disposicion) return supViva.disposicion;
+
+  const modeloId = paginaConfig?.superficie?.modelo || dispositivoActivo.modelo;
+  if (modeloId && modelos[modeloId]) {
+    return modelos[modeloId];
+  }
+  return null;
 }
 
 export function DispositivosB({
   config,
   superficies,
+  modelos,
   onEditarBoton,
+  onBrilloVivo,
   onBrillo,
+  onRotacion,
   onVolver,
 }: DispositivosBProps) {
   const VD = useTheme();
   const t = useT();
 
-  // 1. Unificar lista de dispositivos: los reportados en vivo + los que tienen página en config
-  const todosDispositivos: DispositivoItem[] = useMemo(() => {
-    const mapa = new Map<string, DispositivoItem>();
+  const todosDispositivos = useMemo(() => {
+    return obtenerTodosDispositivos(superficies, config.pages, modelos);
+  }, [superficies, config.pages, modelos]);
 
-    // Añadir primero los dispositivos reportados por el hardware
-    for (const sup of superficies) {
-      const pag = config.pages.find((p) => p.superficie?.serial === sup.serial);
-      mapa.set(sup.serial, {
-        ...sup,
-        paginaNombre: pag?.name,
-      });
-    }
-
-    // Añadir páginas guardadas de dispositivos que actualmente no estén conectados
-    for (const pag of config.pages) {
-      if (pag.superficie && !mapa.has(pag.superficie.serial)) {
-        const modelo = pag.superficie.modelo;
-        const nombreModelo = DISPOSICIONES[modelo]?.nombre ?? t('disp.titulo');
-        mapa.set(pag.superficie.serial, {
-          serial: pag.superficie.serial,
-          modelo,
-          nombre: nombreModelo,
-          conectado: false,
-          paginaNombre: pag.name,
-        });
-      }
-    }
-
-    return Array.from(mapa.values());
-  }, [superficies, config.pages, t]);
-
-  // 2. Selección de dispositivo actual
   const [selectedSerial, setSelectedSerial] = useState<string | null>(() => {
     return todosDispositivos[0]?.serial ?? null;
   });
@@ -71,7 +110,6 @@ export function DispositivosB({
     return todosDispositivos[0] ?? null;
   }, [todosDispositivos, selectedSerial]);
 
-  // 3. Obtener página y botones del dispositivo activo
   const indicePagina = useMemo(() => {
     if (!dispositivoActivo) return -1;
     return config.pages.findIndex((p) => p.superficie?.serial === dispositivoActivo.serial);
@@ -84,28 +122,50 @@ export function DispositivosB({
     return config.buttons.filter((b) => b.page === indicePagina);
   }, [config.buttons, indicePagina]);
 
-  // 4. Hueco seleccionado para el inspector (0..17)
+  const disposicionActiva = useMemo(() => {
+    return obtenerDisposicionActiva(dispositivoActivo, superficies, paginaConfig, modelos);
+  }, [dispositivoActivo, superficies, paginaConfig, modelos]);
+
   const [selectedHueco, setSelectedHueco] = useState<number | null>(null);
 
-  // 5. Control de brillo
   const brilloActual = paginaConfig?.superficie?.brillo ?? 80;
   const [brilloLocal, setBrilloLocal] = useState<number>(brilloActual);
-  // Al cambiar de dispositivo, el deslizador tiene que enseñar el brillo del nuevo.
   const serialActivo = dispositivoActivo?.serial;
-  useEffect(() => { setBrilloLocal(brilloActual); }, [serialActivo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleBrilloChange = (val: number) => {
+  useEffect(() => {
+    setBrilloLocal(brilloActual);
+  }, [serialActivo, brilloActual]);
+
+  const handleBrilloMoving = (val: number) => {
     setBrilloLocal(val);
     if (dispositivoActivo) {
-      onBrillo(dispositivoActivo.serial, val);
+      onBrilloVivo(dispositivoActivo.serial, val);
     }
   };
 
-  // 6. Metadata del control seleccionado
+  const handleBrilloCommit = () => {
+    if (dispositivoActivo) {
+      onBrillo(dispositivoActivo.serial, brilloLocal);
+    }
+  };
+
+  const lcds = useMemo(() => {
+    return disposicionActiva ? teclasLcd(disposicionActiva) : [];
+  }, [disposicionActiva]);
+
+  const rotacionDefecto = lcds.length > 0 ? lcds[0].lcd.rotacion : 0;
+  const rotacionActual = paginaConfig?.superficie?.rotacion ?? rotacionDefecto;
+
+  const handleCambiarRotacion = (grados: number) => {
+    if (dispositivoActivo) {
+      onRotacion(dispositivoActivo.serial, grados);
+    }
+  };
+
   const controlSeleccionado = useMemo(() => {
-    if (selectedHueco === null || !dispositivoActivo) return null;
-    return controlDeHueco(dispositivoActivo.modelo, selectedHueco);
-  }, [selectedHueco, dispositivoActivo]);
+    if (selectedHueco === null || !disposicionActiva) return null;
+    return controlDeHueco(disposicionActiva, selectedHueco);
+  }, [selectedHueco, disposicionActiva]);
 
   const botonSeleccionado = selectedHueco !== null ? botonesPagina[selectedHueco] : undefined;
 
@@ -114,6 +174,8 @@ export function DispositivosB({
       onEditarBoton(botonSeleccionado.id);
     }
   };
+
+  const resumenControles = disposicionActiva ? generarResumenControles(disposicionActiva, t) : '';
 
   return (
     <div
@@ -128,7 +190,6 @@ export function DispositivosB({
         overflow: 'hidden',
       }}
     >
-      {/* Barra superior de navegación */}
       <header
         style={{
           height: 40,
@@ -181,9 +242,7 @@ export function DispositivosB({
         </div>
       </header>
 
-      {/* Cuerpo principal con 3 columnas */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Columna 1: Lista de dispositivos */}
         <ListaDispositivosHardware
           dispositivos={todosDispositivos}
           selectedSerial={dispositivoActivo?.serial ?? null}
@@ -193,15 +252,14 @@ export function DispositivosB({
           }}
         />
 
-        {/* Columna 2: Lienzo central del hardware seleccionado */}
         <main
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',
-            padding: `${VD.space.xl}px ${VD.space['2xl']}px`,
-            gap: VD.space.lg,
+            padding: `${VD.space.lg}px ${VD.space.xl}px`,
+            gap: VD.space.md,
           }}
         >
           {!dispositivoActivo ? (
@@ -228,109 +286,48 @@ export function DispositivosB({
             </div>
           ) : (
             <>
-              {/* Barra de herramientas superior del hardware */}
-              <div
-                style={{
-                  background: VD.surface,
-                  border: `1px solid ${VD.border}`,
-                  borderRadius: VD.radius.md,
-                  padding: `${VD.space.sm}px ${VD.space.lg}px`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: VD.space.lg,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: VD.text }}>
-                    {dispositivoActivo.nombre}
-                  </div>
-                  <div style={{ fontSize: 8.5, color: VD.textMuted, marginTop: 2 }}>
-                    {t('disp.resumenN3')}
-                  </div>
-                </div>
-
-                {/* Control de brillo */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: VD.space.md }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: VD.space.sm }}>
-                    <DotGlyphIcon glyph="BRIGHTNESS" size={12} color={VD.textMuted} />
-                    <label style={{ fontSize: 8.5, color: VD.textMuted, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      {t('disp.brillo')}:
-                    </label>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={brilloLocal}
-                      disabled={!dispositivoActivo.conectado}
-                      onChange={(e) => handleBrilloChange(Number(e.target.value))}
-                      style={{
-                        width: 140,
-                        accentColor: VD.accent,
-                        cursor: dispositivoActivo.conectado ? 'pointer' : 'default',
-                      }}
-                    />
-                    <span style={{ fontSize: 9, minWidth: 28, color: VD.text }}>
-                      {`${brilloLocal}%`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Banners de advertencia si no está conectado o no tiene página */}
-              {!dispositivoActivo.conectado && (
-                <div
-                  style={{
-                    background: `${VD.warning}18`,
-                    border: `1px solid ${VD.warning}`,
-                    color: VD.warning,
-                    borderRadius: VD.radius.md,
-                    padding: `${VD.space.sm}px ${VD.space.md}px`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: VD.space.sm,
-                    fontSize: 9.5,
-                  }}
-                >
-                  <DotGlyphIcon glyph="WARN" size={12} color={VD.warning} />
-                  <span>{t('disp.avisoDesconectado')}</span>
-                </div>
-              )}
-
-              {indicePagina < 0 && (
-                <div
-                  style={{
-                    background: `${VD.warning}18`,
-                    border: `1px solid ${VD.warning}`,
-                    color: VD.warning,
-                    borderRadius: VD.radius.md,
-                    padding: `${VD.space.sm}px ${VD.space.md}px`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: VD.space.sm,
-                    fontSize: 9.5,
-                  }}
-                >
-                  <DotGlyphIcon glyph="WARN" size={12} color={VD.warning} />
-                  <span>{t('disp.avisoSinPagina')}</span>
-                </div>
-              )}
-
-              {/* Visualización física interactiva del N3 */}
-              <VistaHardwareN3
-                botones={botonesPagina}
-                selectedHueco={selectedHueco}
-                brillo={brilloLocal}
-                conectado={dispositivoActivo.conectado}
-                onSelectHueco={(h) => setSelectedHueco(h)}
-                onEditarBoton={onEditarBoton}
+              <HeaderDispositivoActivo
+                dispositivoActivo={dispositivoActivo}
+                disposicionActiva={disposicionActiva}
+                resumenControles={resumenControles}
+                tieneLcds={lcds.length > 0}
+                rotacionActual={rotacionActual}
+                brilloLocal={brilloLocal}
+                vd={VD}
+                t={t}
+                onCambiarRotacion={handleCambiarRotacion}
+                onBrilloMoving={handleBrilloMoving}
+                onBrilloCommit={handleBrilloCommit}
               />
+
+              <BannersDispositivoActivo
+                conectado={dispositivoActivo.conectado}
+                indicePagina={indicePagina}
+                vd={VD}
+                t={t}
+              />
+
+              {!disposicionActiva ? (
+                <AvisoModeloDesconocido
+                  vd={VD}
+                  titulo={t('disp.modeloDesconocido')}
+                  descripcion={t('disp.modeloDesconocidoDesc')}
+                />
+              ) : (
+                <VistaHardware
+                  disposicion={disposicionActiva}
+                  botones={botonesPagina}
+                  selectedHueco={selectedHueco}
+                  brillo={brilloLocal}
+                  conectado={dispositivoActivo.conectado}
+                  onSelectHueco={(h) => setSelectedHueco(h)}
+                  onEditarBoton={onEditarBoton}
+                />
+              )}
             </>
           )}
         </main>
 
-        {/* Columna 3: Inspector del control seleccionado */}
         <PanelInspectorControl
           controlMeta={controlSeleccionado}
           boton={botonSeleccionado}

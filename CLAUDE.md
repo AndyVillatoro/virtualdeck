@@ -226,6 +226,13 @@ vez de a `AGENTS.md` por lo mismo.
   eso sale al revés—; el giro de una perilla manda un evento por clic sin `up`. El LCD se pinta siempre
   con la paleta OLED (`COLORES_LCD`), sea cual sea el tema. Driver adaptado del módulo **MIT** de
   Bitfocus (`THIRD_PARTY_NOTICES.md`); OpenDeck es GPL y **no se copia** de él.
+  La **tabla de modelos** (12, de Bitfocus; solo el N3 `verificado`) vive en
+  `electron/main/superficies/modelos/` y llega al renderer por IPC: `electron/main` no puede importar
+  datos de `src/`. Los huecos salen del orden de `controles` (`disposicion.ts`); **cambiar ese orden en
+  un modelo desordena las páginas guardadas**. El icono de la tecla lo dibuja
+  `components/celda/iconoSvg.tsx` y `App` lo inyecta al hook, porque `src/utils` no puede importar
+  componentes: no duplicar los SVG. El brillo en vivo va directo al hardware (fusionado en el driver) y
+  solo se guarda al soltar el deslizador.
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)

@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
-  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie } from '../../src/types';
+  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie } from '../../src/types';
 
 
 /**
@@ -228,6 +228,7 @@ const api = {
   },
   superficies: {
     listar: (): Promise<InfoSuperficie[]> => ipcRenderer.invoke('surfaces:list'),
+    modelos: (): Promise<Record<string, DisposicionSuperficie>> => ipcRenderer.invoke('surfaces:models'),
     imagen: (serial: string, tecla: number, jpegBase64: string): Promise<boolean> =>
       ipcRenderer.invoke('surfaces:image', serial, tecla, jpegBase64),
     brillo: (serial: string, valor: number): Promise<boolean> =>
