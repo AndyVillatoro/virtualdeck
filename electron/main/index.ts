@@ -17,6 +17,7 @@ import { registrarEsquema, urlEnArgumentos, atender } from './enlacesExternos';
 import { asegurarWebContents } from './seguridadVentana';
 import { rutaImagenDesdeUrl } from './protocoloVd';
 import * as remoto from './servidorLocal';
+import { detener as detenerSuperficies } from './superficies/gestor';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -281,6 +282,7 @@ app.on('before-quit', () => {
   try { cerrarBarra(); } catch {}
   try { rgb.killServer(); } catch {}
   try { sensors.killLHM(); } catch {}
+  try { detenerSuperficies(); } catch {}
 });
 
 app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch {} });

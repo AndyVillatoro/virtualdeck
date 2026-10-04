@@ -12,6 +12,7 @@ import { EN_COMUN } from './enComun';
 import { EN_EDITOR } from './enEditor';
 import { EN_ACCIONES } from './enAcciones';
 import { EN_AJUSTES } from './enAjustes';
+import { EN_DISPOSITIVOS } from './enDispositivos';
 
 /** Diccionario ingles completo: fusion de los fragmentos por dominio. */
 export const EN: Dict = {
@@ -19,4 +20,5 @@ export const EN: Dict = {
   ...EN_EDITOR,
   ...EN_ACCIONES,
   ...EN_AJUSTES,
+  ...EN_DISPOSITIVOS,
 };

@@ -174,6 +174,7 @@ export const EN_COMUN: Dict = {
   'undo.clear': 'clear button',
   'undo.action': 'UNDO',
   'undo.addPage': 'add page',
+  'undo.addSurfacePage': 'add the {nombre} page',
   'undo.delPage': 'delete page',
   'undo.movePage': 'reorder pages',
   'undo.importPage': 'import page',

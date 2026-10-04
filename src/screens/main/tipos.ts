@@ -13,6 +13,7 @@ export interface MainBProps {
   onEditButton: (id: string) => void;
   onWallpaper: () => void;
   onRGB: () => void;
+  onDispositivos: () => void;
   onConfigChange: (c: DeckConfig) => void;
   onUpdateButton?: (btn: ButtonConfig) => void;
   onDuplicateButton: (id: string) => void;

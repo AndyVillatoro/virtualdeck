@@ -47,6 +47,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-ORC-01** | P2 | Integrar Claude Code al protocolo (Canales 1/2/3) + prueba cruzada vía herdr | Claude Sonnet 5 | `CLAUDE.md`, `CONTRIBUTING.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-10-03 |
 | **T-ORC-02** | P2 | Borrar `AGENTS.md` y fusionar su contenido en `CLAUDE.md` (agy lo cargaba como reglas propias y se colgaba) | Claude Sonnet 5 | `AGENTS.md` (borrado), `CLAUDE.md`, `CONTRIBUTING.md`, `opencode.json`, `.opencode/agents/guardian-dot480.md`, `.opencode/skills/vd-check/SKILL.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-10-03 |
 | **T-ORC-03** | P2 | Matriz de pruebas cruzadas vía herdr (6 direcciones entre claude, opencode y agy) + hooks de herdr instalados | Claude Sonnet 5 | `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` ✅ | 2026-10-03 |
+| **T-HW-01** | P1 | Controladores físicos, fase 1: Stream Dock N3 (Mirabox/Ajazz) con perfil propio por dispositivo. Driver adaptado de Bitfocus (MIT); OpenDeck (GPL) solo como referencia de protocolo | Claude Opus 5.5 (supervisa) + opencode + agy | `electron/main/superficies/` (nuevo), `electron/main/ipc/`, `electron/preload/index.ts`, `src/types/`, `src/utils/superficies/` (nuevo), `src/screens/dispositivos/` (nuevo), `package.json` | `DONE` ✅ (fase 1; pendientes en HANDOFF) | 2026-10-04 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

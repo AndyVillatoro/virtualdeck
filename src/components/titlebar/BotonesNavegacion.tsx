@@ -12,6 +12,7 @@ export interface BotonesNavegacionProps {
   onFloatingBar?: () => void;
   onWallpaper?: () => void;
   onRGB?: () => void;
+  onDispositivos?: () => void;
   rgbStatus?: RGBStatus | null;
   compact?: boolean;
 }
@@ -23,6 +24,7 @@ export function BotonesNavegacion({
   onFloatingBar,
   onWallpaper,
   onRGB,
+  onDispositivos,
   rgbStatus,
   compact = false,
 }: BotonesNavegacionProps) {
@@ -84,6 +86,16 @@ export function BotonesNavegacion({
             color={rgbStatus?.connected ? effectiveAccent : VD.textMuted}
           />
           <span>RGB</span>
+        </button>
+      )}
+      {onDispositivos && (
+        <button
+          onClick={onDispositivos}
+          title={t('disp.titulo')}
+          style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        >
+          <DotGlyphIcon glyph="USB_PLUG" size={9} color={VD.textDim} />
+          <span>{t('disp.nav')}</span>
         </button>
       )}
     </>

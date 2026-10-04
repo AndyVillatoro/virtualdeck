@@ -468,6 +468,20 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
   - **Si el pane destino tiene texto suelto en la caja de entrada, se mezcla con el prompt.** Antes de reenviar, `herdr agent send-keys <pane> ctrl+u` lo limpia.
 * **Verificación:** `npm run check` en verde, 0 errores (los 38 warnings de complejidad ya existían); la última edición es solo de este `.md`.
 
+## Turno 2026-10-04 — T-HW-01 fase 1: Stream Dock N3 funcionando (EN CURSO, sin commit)
+
+* **Modelos:** Claude Opus 5.5 supervisa e integra; opencode (DeepSeek V4.1 Flash, Go) hizo driver, IPC, preload, pintor y hook; agy (Gemini 3.8 Flash) hizo la investigación del hardware y la pantalla `Dispositivos`. Rama `task/p1-hw-streamdock`.
+* **Origen del código:** driver adaptado del módulo MIT de Bitfocus (crédito en `THIRD_PARTY_NOTICES.md`); OpenDeck y opendeck-akp03 (GPL) solo como referencia de protocolo, sin copiar código. Informes de investigación en `_referencias/informes/` (fuera del repo).
+* **Medido con el N3 real (`0x5548:0x1001`):** 30/30 entradas con el código esperado; rotación correcta **90°** (Bitfocus dice 270 y es incorrecto para este modelo); JPEG de 64×64 de ~1 KB. En la app: detecta el dispositivo, crea su página, la pantalla configura teclas/botones/perillas, las teclas se pintan y las pulsaciones disparan la acción (confirmado por el dueño).
+* **Diseño:** cada dispositivo = una página del deck (`PageConfig.superficie`), cada control = un hueco por posición (`src/utils/superficies/disposicion.ts`). El LCD se pinta siempre con la paleta OLED (`COLORES_LCD`).
+* **Correcciones del supervisor sobre lo entregado:** el pintor mandaba imagen a los 18 huecos (solo 0–5 son teclas) → acotado, y el proceso principal rechaza teclas fuera de rango; firmas anotadas antes de pintar para no repetir; agy había escrito `('tec' + 'la')` para esquivar `check-i18n` → reemplazado, y los identificadores/canales pasaron a inglés (`key`/`button`/`knob`, `surfaces:*`) en vez de engordar `PERMITIDOS`.
+* **Pendiente (siguientes iteraciones):**
+  - **Optimización: el deslizador de brillo se siente lento/pesado** (reportado por el dueño, con la versión compilada, no es cosa de `npm run dev`). Sospecha: cada paso hace `setConfig` de toda la config → re-render de `App` + guardado programado + el efecto de `useSuperficies` recorre las teclas + un comando HID. Medir antes de tocar; candidatos: aplicar el brillo al hardware directo desde la pantalla y persistir solo al soltar, y throttle del comando HID.
+  - Iconos de la librería (`volume-2`…) no se dibujan en la tecla física: solo etiqueta, color, imagen propia y glifo 5×7.
+  - `imageData` con esquema `vd://` puede no cargar en el canvas (CORS) — comprobar.
+  - Fase 2 (host de plugins del SDK de Stream Deck / VSD Craft) y Elgato vía `@elgato-stream-deck/node`.
+* **Verificación:** `npm run check` 0 errores (38 warnings, los mismos de antes), `npm run build` OK.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

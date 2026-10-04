@@ -27,7 +27,7 @@ import { type MainBProps, getSourceName } from './main/tipos';
 
 export function MainB({
   config, activePage, autostart, toggledIds, soundOnPress, soundProfile,
-  onPageChange, onToggle, onFullscreen, onEditButton, onWallpaper, onRGB,
+  onPageChange, onToggle, onFullscreen, onEditButton, onWallpaper, onRGB, onDispositivos,
   onConfigChange, onUpdateButton, onDuplicateButton, onCopyButton, onPasteButton, canPasteButton, onClearButton,
   onConfigExport, onConfigImport, onSwapButtons,
   onPageRename, onPageAdd, onDuplicatePage, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
@@ -241,6 +241,7 @@ export function MainB({
           onFullscreen={onFullscreen}
           onWallpaper={onWallpaper}
           onRGB={onRGB}
+          onDispositivos={onDispositivos}
           rgbStatus={rgbStatus}
           sensorsStatus={sensorStatus}
           onConfigExport={onConfigExport}

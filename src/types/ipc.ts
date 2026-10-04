@@ -28,6 +28,7 @@ import type {
   SensorsStatus,
   SensorCategory,
 } from './hardware';
+import type { ApiSuperficies } from './superficies';
 
 export interface ElectronAPI {
   window: {
@@ -192,6 +193,7 @@ export interface ElectronAPI {
     presetList: () => Promise<Array<{ id: string; color: string }>>;
     pickFile: () => Promise<string | null>;
   };
+  superficies: ApiSuperficies;
   sensors: {
     list: (force?: boolean) => Promise<Sensor[]>;
     get: (id: string) => Promise<Sensor | null>;

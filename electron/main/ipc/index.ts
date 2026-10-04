@@ -16,6 +16,7 @@ import { registerFloatingBarIpc } from './floatingBarIpc';
 import { registerTiendaIpc } from './tiendaIpc';
 import { registerDiscordIpc } from './discordIpc';
 import { registerSpotifyIpc } from './spotifyIpc';
+import { registerSuperficiesIpc } from './superficiesIpc';
 
 export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerWindowIpc(win);
@@ -35,5 +36,6 @@ export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerTiendaIpc(win);
   registerDiscordIpc();
   registerSpotifyIpc();
+  registerSuperficiesIpc(win);
 }
 

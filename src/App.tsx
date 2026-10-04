@@ -5,6 +5,7 @@ import { EditorB } from './screens/EditorB';
 import { WallpaperB } from './screens/WallpaperB';
 import { RGBManagerB } from './screens/RGBManagerB';
 import { BarConfigB } from './screens/BarConfigB';
+import { DispositivosB } from './screens/DispositivosB';
 import { SearchOverlay } from './components/SearchOverlay';
 import { Onboarding } from './components/Onboarding';
 import { DotGlyphIcon } from './components/dot480/DotGlyphIcon';
@@ -13,6 +14,8 @@ import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, sanearConfig, sanearPagina, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
+import { useSuperficies } from './utils/superficies/useSuperficies';
+import { COLORES_LCD } from './utils/superficies/pintarTecla';
 import { playSound } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
@@ -23,7 +26,7 @@ import { installGlobalErrorHandlers, logError } from './utils/logger';
 import { aplicarPedidoTienda } from './utils/tiendaAplicar';
 import type { ButtonConfig, DeckConfig, PageConfig } from './types';
 
-type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb' | 'barra';
+type View = 'main' | 'fullscreen' | 'wallpaper' | 'rgb' | 'barra' | 'devices';
 
 // Banner de actualización lista. Extraído como componente para que pueda usar
 // useT() (App renderiza el LanguageProvider, así que su cuerpo queda fuera del
@@ -161,6 +164,7 @@ export default function App() {
     updateButton, duplicateButton, clearButton, moveButtonToPage, swapButtons,
     clearButtons, moveButtonsToPage,
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
+    crearPaginaSuperficie, fijarBrilloSuperficie,
     saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, appendPageFromGallery, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
@@ -465,6 +469,10 @@ export default function App() {
 
   const { sensors: sensorList } = useSensors();
   useDisparadores({ botones: config.buttons, sensores: sensorList, disparar: dispararBoton });
+  // Controladores físicos (Stream Dock N3...). Como los disparadores, vive en
+  // `App`, que está montada siempre: el hardware tiene que responder también
+  // en kiosko y con la ventana oculta en la bandeja.
+  const superficies = useSuperficies({ api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD });
 
   // Se manda `config`, lo que hay en pantalla, y no se deja que el proceso
   // principal lo relea del disco: si el archivo estuviera ilegible saldria un
@@ -543,6 +551,7 @@ export default function App() {
         if (view === 'wallpaper') { setView('main'); return; }
         if (view === 'rgb') { setView('main'); return; }
         if (view === 'barra') { setView('main'); return; }
+        if (view === 'devices') { setView('main'); return; }
         return;
       }
       // 1-5+: switch pages
@@ -583,6 +592,7 @@ export default function App() {
           onEditButton={(id) => setEditingId(id)}
           onWallpaper={() => setView('wallpaper')}
           onRGB={() => setView('rgb')}
+          onDispositivos={() => setView('devices')}
           onFloatingBar={() => setView('barra')}
           onConfigChange={saveConfig}
           onUpdateButton={updateButton}
@@ -658,6 +668,16 @@ export default function App() {
           config={config}
           onConfigChange={saveConfig}
           onBack={() => setView('main')}
+        />
+      )}
+
+      {view === 'devices' && (
+        <DispositivosB
+          config={config}
+          superficies={superficies}
+          onEditarBoton={(id) => setEditingId(id)}
+          onBrillo={fijarBrilloSuperficie}
+          onVolver={() => setView('main')}
         />
       )}
 

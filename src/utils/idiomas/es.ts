@@ -12,6 +12,7 @@ import { ES_COMUN } from './esComun';
 import { ES_EDITOR } from './esEditor';
 import { ES_ACCIONES } from './esAcciones';
 import { ES_AJUSTES } from './esAjustes';
+import { ES_DISPOSITIVOS } from './esDispositivos';
 
 /** Diccionario espanol completo: fusion de los fragmentos por dominio. */
 export const ES: Dict = {
@@ -19,4 +20,5 @@ export const ES: Dict = {
   ...ES_EDITOR,
   ...ES_ACCIONES,
   ...ES_AJUSTES,
+  ...ES_DISPOSITIVOS,
 };

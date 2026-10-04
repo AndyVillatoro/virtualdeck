@@ -6,7 +6,7 @@ type PropsTitleBar = React.ComponentProps<typeof TitleBar>;
 
 interface BarraSuperiorMainProps extends Pick<PropsTitleBar,
   'autostart' | 'soundOnPress' | 'soundProfile' | 'rgbStatus' | 'sensorsStatus'
-  | 'onFullscreen' | 'onWallpaper' | 'onRGB'
+  | 'onFullscreen' | 'onWallpaper' | 'onRGB' | 'onDispositivos'
   | 'onConfigExport' | 'onConfigImport'
   | 'onAutostartToggle' | 'onSoundToggle' | 'onSoundProfileChange'
   | 'onSaveProfile' | 'onLoadProfile' | 'onAppendProfilePages' | 'onDeleteProfile'

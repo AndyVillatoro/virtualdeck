@@ -1,5 +1,6 @@
 import type { ButtonAction, TipoWidget } from './actions';
 import type { RGBSettings, SensorsSettings } from './hardware';
+import type { PaginaSuperficie } from './superficies';
 
 export interface SliderWidgetConfig {
   /** Qué controla el slider: 'volume' | 'brightness' | 'variable' */
@@ -115,6 +116,8 @@ export interface PageConfig {
   targetApp?: string;
   /** Tienda (T-P4): de qué entrada de qué manifiesto vino esta página, para avisar updates. */
   origen?: OrigenInstalacion;
+  /** Si existe, esta página es el perfil de un controlador físico (ver `types/superficies.ts`). */
+  superficie?: PaginaSuperficie;
 }
 
 export interface Profile {

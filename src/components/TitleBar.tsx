@@ -19,6 +19,7 @@ export interface TitleBarProps {
   onFullscreen?: () => void;
   onWallpaper?: () => void;
   onRGB?: () => void;
+  onDispositivos?: () => void;
   onFloatingBar?: () => void;
   onConfigExport?: () => void;
   onConfigImport?: () => void;
@@ -80,6 +81,7 @@ export function TitleBar({
   onFullscreen,
   onWallpaper,
   onRGB,
+  onDispositivos,
   onFloatingBar,
   onConfigExport,
   onConfigImport,
@@ -166,6 +168,7 @@ export function TitleBar({
               onFloatingBar={onFloatingBar}
               onWallpaper={onWallpaper}
               onRGB={onRGB}
+              onDispositivos={onDispositivos}
               rgbStatus={rgbStatus}
               compact={compact}
             />

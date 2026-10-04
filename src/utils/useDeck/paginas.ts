@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import type { ActionType, ButtonConfig, PageConfig } from '../../types';
+import { useCallback, useRef } from 'react';
+import type { ActionType, ButtonConfig, InfoSuperficie, PageConfig } from '../../types';
 import type { ContextoDeck } from './contexto';
 
 /**
@@ -11,7 +11,7 @@ import type { ContextoDeck } from './contexto';
  * `setActivePage`. Lo hace con el actualizador funcional (`p => ...`) y no
  * leyendo `config`, para no decidir la página nueva con un render de atraso.
  */
-export function useDeckPaginas({ config, withHistory, setActivePage, t }: ContextoDeck) {
+export function useDeckPaginas({ api, config, setConfig, withHistory, setActivePage, t }: ContextoDeck) {
   // Page management
   const renamePage = useCallback((id: string, name: string) => {
     withHistory(t('undo.renameTo', { nombre: name }), (prev) => ({
@@ -118,5 +118,58 @@ export function useDeckPaginas({ config, withHistory, setActivePage, t }: Contex
     });
   }, [withHistory, t]);
 
-  return { renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize };
+  /**
+   * La página propia de un dispositivo físico (ver `types/superficies.ts`).
+   *
+   * Son 3×6 = 18 huecos: 6 teclas LCD, 3 botones y los 3 gestos de cada una de
+   * las 3 perillas. Los botones se emparejan con su hueco **por posición**,
+   * como todo el deck (`conHuecosCompletos`).
+   */
+  const crearPaginaSuperficie = useCallback((info: InfoSuperficie) => {
+    withHistory(t('undo.addSurfacePage', { nombre: info.nombre }), (prev) => {
+      if (prev.pages.some((p) => p.superficie?.serial === info.serial)) return prev;
+      const newIdx = prev.pages.length;
+      const newPage: PageConfig = {
+        id: `page_${Date.now()}`,
+        name: info.nombre,
+        gridSize: 3,
+        gridRows: 6,
+        superficie: { serial: info.serial, modelo: info.modelo, brillo: 70 },
+      };
+      const newButtons: ButtonConfig[] = Array.from({ length: 18 }, (_, slot) => ({
+        id: `p${Date.now()}_${slot}`,
+        page: newIdx,
+        label: '', icon: '', action: { type: 'none' as ActionType },
+      }));
+      return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
+    });
+  }, [withHistory, t]);
+
+  /**
+   * El brillo de las teclas de un dispositivo, en su página.
+   *
+   * No pasa por el historial (como la escala de la interfaz): es un control
+   * continuo y cada paso del deslizador apilaría un «deshacer». La escritura en
+   * disco va con respiro, pero la primera es inmediata para no perder el
+   * cambio si se cierra la aplicación enseguida (mismo criterio que las
+   * variables y los interruptores de `preferencias`).
+   */
+  const brilloTimer = useRef<number>();
+  const fijarBrilloSuperficie = useCallback((serial: string, valor: number) => {
+    const brillo = Math.max(0, Math.min(100, Math.round(valor)));
+    setConfig((prev) => {
+      const pages = prev.pages.map((p) =>
+        p.superficie?.serial === serial ? { ...p, superficie: { ...p.superficie, brillo } } : p);
+      const next = { ...prev, pages };
+      if (brilloTimer.current === undefined) api?.config.save(next).catch(() => {});
+      clearTimeout(brilloTimer.current);
+      brilloTimer.current = window.setTimeout(() => {
+        brilloTimer.current = undefined;
+        api?.config.save(next).catch(() => {});
+      }, 400);
+      return next;
+    });
+  }, [api, setConfig]);
+
+  return { renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize, crearPaginaSuperficie, fijarBrilloSuperficie };
 }

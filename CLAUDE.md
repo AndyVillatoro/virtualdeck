@@ -217,6 +217,15 @@ vez de a `AGENTS.md` por lo mismo.
   `applyProfile` guarda los dispositivos **por nombre**, así que renombrar una placa o
   importar el perfil de otro equipo hacía que se saltara todo. Cierto solo si algún
   dispositivo lo aceptó; que a uno de cinco le falte el modo sigue sin ser error
+- `electron/main/superficies/` + `src/utils/superficies/` — **controladores físicos** (Stream Dock N3
+  de Mirabox/Ajazz). Cada dispositivo es **una página del deck** marcada con `PageConfig.superficie`, y
+  cada control es un hueco por posición (`disposicion.ts`: 0–5 teclas LCD, 6–8 botones, 9–17 las tres
+  perillas como izq/pulsar/der). Así el editor, deshacer e importar/exportar sirven sin cambios. Lo medido
+  con el N3 real (`0x5548:0x1001`) y que no se deduce del código: la interfaz HID de control es la
+  `interface 0` (la 1 es un teclado y no se abre); la imagen va **rotada 90°** —Bitfocus dice 270 y con
+  eso sale al revés—; el giro de una perilla manda un evento por clic sin `up`. El LCD se pinta siempre
+  con la paleta OLED (`COLORES_LCD`), sea cual sea el tema. Driver adaptado del módulo **MIT** de
+  Bitfocus (`THIRD_PARTY_NOTICES.md`); OpenDeck es GPL y **no se copia** de él.
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)

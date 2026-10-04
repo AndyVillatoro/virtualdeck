@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
-  PedidoTienda, ResultadoTienda } from '../../src/types';
+  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie } from '../../src/types';
 
 
 /**
@@ -225,6 +225,24 @@ const api = {
     smartPreset: (presetId: string) => ipcRenderer.invoke('rgb:smartPreset', presetId),
     presetList: (): Promise<Array<{ id: string; color: string }>> => ipcRenderer.invoke('rgb:presetList'),
     pickFile: () => ipcRenderer.invoke('rgb:pickFile'),
+  },
+  superficies: {
+    listar: (): Promise<InfoSuperficie[]> => ipcRenderer.invoke('surfaces:list'),
+    imagen: (serial: string, tecla: number, jpegBase64: string): Promise<boolean> =>
+      ipcRenderer.invoke('surfaces:image', serial, tecla, jpegBase64),
+    brillo: (serial: string, valor: number): Promise<boolean> =>
+      ipcRenderer.invoke('surfaces:brightness', serial, valor),
+    limpiar: (serial: string): Promise<boolean> => ipcRenderer.invoke('surfaces:clear', serial),
+    onEntrada: (handler: (e: EntradaSuperficie) => void): (() => void) => {
+      const listener = (_e: unknown, e: EntradaSuperficie) => handler(e);
+      ipcRenderer.on('surfaces:input', listener);
+      return () => ipcRenderer.removeListener('surfaces:input', listener);
+    },
+    onCambio: (handler: (lista: InfoSuperficie[]) => void): (() => void) => {
+      const listener = (_e: unknown, lista: InfoSuperficie[]) => handler(lista);
+      ipcRenderer.on('surfaces:changed', listener);
+      return () => ipcRenderer.removeListener('surfaces:changed', listener);
+    },
   },
   sensors: {
     list: (force?: boolean): Promise<Sensor[]> => ipcRenderer.invoke('sensors:list', force),
