@@ -14,14 +14,12 @@ mod procesos;
 mod ventanas;
 
 pub use brillo::{brightness, set_brightness};
-pub use procesos::{kill_process, running_processes, ProcessInfo};
-pub use ventanas::{force_foreground, snap_window, SnapPosition};
 pub use procesos::{
     find_processes, is_process_running, kill_process, kill_process_by_pid, running_processes,
     ProcessInfo,
 };
 pub use ventanas::{
-    active_app, close_window, focus_window, force_foreground, maximize_window, minimize_window,
+    active_app, close_window, cycle_window, focus_window, open_apps, force_foreground, maximize_window, minimize_window,
     restore_window, snap_window, ActiveAppInfo, SnapPosition,
 };
 
@@ -197,17 +195,8 @@ pub fn run_script(script: &str, shell: Shell) -> Result<String, LauncherError> {
     }
 
     let salida = match shell {
-        Shell::PowerShell => Command::new("powershell")
-            .args([
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-NonInteractive",
-                "-Command",
-                script,
-            ])
-            .creation_flags(CREATE_NO_WINDOW)
-            .output()?,
+        // Habia dos ramas `PowerShell`: la vieja, primero, ganaba siempre y la
+        // del prefijo UTF-8 no se ejecutaba nunca (cada acento volvia roto).
         Shell::PowerShell => {
             let script_con_utf8 = if script.contains("[Console]::OutputEncoding") {
                 script.to_string()

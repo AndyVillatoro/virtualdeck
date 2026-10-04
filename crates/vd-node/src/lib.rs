@@ -321,6 +321,20 @@ pub fn focus_window(process_name: String) -> bool {
     informar("focusWindow", vd_core::launcher::focus_window(&process_name))
 }
 
+/// Trae al frente la ventana de aplicación siguiente (`true`) o la anterior,
+/// en un orden estable (por proceso), no el de uso reciente de Alt+Tab.
+#[napi]
+pub fn cycle_window(adelante: bool) -> bool {
+    informar("cycleWindow", vd_core::launcher::cycle_window(adelante).map(|_| ()))
+}
+
+/// Procesos con una ventana de aplicación abierta (sin `.exe`, en minúsculas,
+/// sin repetir): para elegir la app de una página sin teclear su nombre.
+#[napi]
+pub fn open_apps() -> Vec<String> {
+    vd_core::launcher::open_apps()
+}
+
 /// Minimiza una ventana. Si no se especifica nombre, minimiza la activa.
 #[napi]
 pub fn minimize_window(process_name: Option<String>) -> bool {
