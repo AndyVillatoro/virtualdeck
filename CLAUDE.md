@@ -168,6 +168,12 @@ vez de a `AGENTS.md` por lo mismo.
   y **su estado de encendido sí se comparte con el deck**, en los dos sentidos: medido
   encendiendo desde cada una y comprobando el borde de acento en la otra y el
   `toggledIds` del archivo. (Esta nota decía lo contrario y estaba desactualizada.)
+  **Cualquier acción que guarde la configuración por fuera del estado de React** (con
+  `api.config.save` directo) tiene que estar en esa lista de adoptados, o el siguiente guardado
+  normal la pisa. Así pasó con el mando móvil: el botón encendía el servidor, el deck no adoptaba
+  `remote` y al siguiente cambio lo mandaba sin él, que **apagaba el servidor** sin decir nada. Hoy
+  se adoptan `state`, `floatingBar`, `toggledIds` y `remote`. Los valores por defecto del servidor
+  están una sola vez, en `REMOTO_POR_DEFECTO` (`src/types/config.ts`), para los dos procesos.
 - `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
 - `adjust` (en `acciones/audio.ts`) sube o baja brillo/volumen **desde donde estén**, en vez
   de fijar un número. Para eso hay que leer primero: el núcleo nativo ya declaraba
@@ -233,6 +239,18 @@ vez de a `AGENTS.md` por lo mismo.
   `components/celda/iconoSvg.tsx` y `App` lo inyecta al hook, porque `src/utils` no puede importar
   componentes: no duplicar los SVG. El brillo en vivo va directo al hardware (fusionado en el driver) y
   solo se guarda al soltar el deslizador.
+  **Un dispositivo puede tener varias páginas** (todas las de su serial). La que enseña el aparato
+  es la **activa**, guardada en `useSuperficies` por id y solo en memoria; cambia sola con la app en
+  primer plano (`superficies/paginaSegunApp.ts`) o al elegir su pestaña en `Dispositivos`.
+  `useAutoProfile` **salta las páginas con `superficie`**: si no, la pantalla principal se iría a la
+  página de un dock en cuanto su app vinculada pasara al primer plano.
+  **La página elegida a mano es la base** (deck y cada dock): una app con página vinculada la sustituye
+  mientras está delante y al irse se vuelve a la base, no a la primera. Sin esto, una acción que cambia
+  el primer plano (`Win+Tab`) devolvía el dock a su primera página al pulsar un botón de la segunda.
+  `page-nav` (`utils/acciones/pageNav.ts`) navega las páginas del dock que lo pulsó o las del deck.
+  **Botones fijos** (`ButtonConfig.fijo`, `utils/botonesFijos.ts`): se ven y se disparan en el mismo
+  hueco de todas las páginas de su grupo; todo lo que **pinta o dispara** usa `botonesResueltos`, lo
+  que **edita o guarda** trabaja con `config.buttons` tal cual.
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
@@ -337,6 +355,24 @@ vez de a `AGENTS.md` por lo mismo.
   aplicarse sobre la cadena entera convertía `{ENTER}` en `{{ENTER}}`. Y los clics sobre la
   propia ventana no se graban (`esNuestro` en `startRecording`): si no, toda macro acaba con un
   clic en el botón de detener.
+- **Atajos con signos (`Ctrl+-`, `Ctrl+=`, `[`) no van por el núcleo nativo.** Su `char_key`
+  (`crates/vd-core/src/macros/keys.rs`) solo sabe letras y dígitos y con lo demás devuelve `false`
+  en vez de fallar, así que `intentarNativo` no cae al respaldo y el atajo no hacía nada.
+  `sendHotkey` (`launcher.ts`) los manda directo a PowerShell hasta que el `.node` se pueda
+  recompilar con las teclas OEM.
+  El teclado numérico (`Add`, `Subtract`...) va por `uiohook-napi` (`keyTap`, en el propio proceso,
+  ~1 ms): no depende del idioma del teclado, que es por lo que el zoom usa `Ctrl+Add` y no `Ctrl+=`
+  (en el teclado latinoamericano `=` es `Shift+0`).
+- **Ventanas: `cycle_window` y `open_apps` (`crates/vd-core/src/launcher/ventanas.rs`).** Recorren las
+  ventanas que saldrían en Alt+Tab (visibles, sin dueño, con título, ni de herramientas, ni tapadas por
+  DWM, ni `Progman`, ni del propio proceso). El orden es **estable** (proceso y luego hwnd), no el de uso
+  reciente de Alt+Tab. «La actual» es la de primer plano si es de aplicación, y si no (VirtualDeck
+  delante) la de arriba de la pila; solo la pila no basta, tarda milisegundos en reordenarse y girando
+  rápido el segundo clic no avanzaba (medido). Las apps de la Tienda salen todas como
+  `applicationframehost`: en un registro parecen la misma ventana aunque sean dos. Windows solo deja traer una ventana al frente al
+  proceso con foco: se intenta `AttachThreadInput` y, si no, el desbloqueo por `Alt` con la tecla `0xE8` en
+  medio para que soltar `Alt` no abra menús. `open_apps` quita `applicationframehost` (aloja todas las apps
+  de la Tienda). Sin el `.node` nuevo las dos devuelven error claro / lista vacía.
 - **Accent presets**: `ACCENT_PRESETS` en `design.ts` — 10 colores predefinidos. El color libre via `<input type="color">` sigue disponible.
 - **Tema claro/oscuro/sistema**: `ThemeProvider` en `src/utils/theme.tsx`. Selector en TitleBar → ⚙ → TEMA. **El color siempre sale de `useTheme()`**; importar la paleta `VD` de `design` la congela en oscuro y el fallo no se ve ni en `tsc` ni en el build — solo en pantalla, y solo si alguien prueba el tema claro en esa pantalla. Por eso hay una regla `no-restricted-imports` en `eslint.config.mjs` que lo prohíbe en todo `src/` salvo `theme.tsx`.
   Los estilos que antes eran constantes de módulo (`inputStyle`, `btnPrimary`, `inputStyleSettings`…) son ahora funciones `estilo*(VD)`, y cada componente se hace un alias local con el mismo nombre — así los ~100 usos siguen escritos igual.
@@ -383,6 +419,19 @@ vez de a `AGENTS.md` por lo mismo.
   con `rundll32 ... tabletpc.cpl @1` de respaldo — comprobado en el registro que el nombre
   canónico resuelve a ese comando.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
+
+## 🦀 El núcleo Rust vuelve a compilar (2026-10-04)
+
+Las notas que dicen «el `.node` no se puede recompilar» (Smart App Control, os error 4551) **ya no
+valen**: SAC está apagado en esta máquina (`HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy`,
+`VerifiedAndReputablePolicyState = 0`) y `cargo build --release -p vd-node` compila los proc-macro sin
+problema. Lo que fallaba al probarlo era **el propio código**: el commit de la 0.13 (`4b1479b`) añadió
+516 líneas a 7 archivos de `crates/` **sin borrar ninguna** — quedaron la versión vieja y la nueva de
+cada trozo juntas (imports repetidos, una cabecera de `snap_window` sin cuerpo, dos ramas
+`Shell::PowerShell` donde la vieja ganaba y la del prefijo UTF-8 no corría). Nadie lo vio porque no se
+podía compilar. Reparado; `cargo test -p vd-core`: 165 en verde. El `native/vd-core.node` actual se
+compiló del árbol bueno, antes de ese commit, y expone las mismas 39 funciones que el nuevo: la app
+nunca corrió el código roto. Para compilar: `npm run build:native`.
 
 ## 🧪 `VD_SIN_NUCLEO=1` — probar los caminos de respaldo
 

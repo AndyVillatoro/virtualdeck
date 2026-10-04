@@ -92,6 +92,7 @@ These need OpenRGB — see [Sensors & RGB](Sensors-and-RGB).
 | Type | Fields | Description |
 |---|---|---|
 | `window-snap` | `snapPosition`, `snapProcessName?` | Positions and resizes a window: halves, quarters, maximise, centre or restore. With no process name it acts on whatever is in the foreground when it runs. |
+| `window-cycle` | `windowCycle?` (`next`, `prev`; default `next`) | Brings the next or previous window forward in a stable per-process order — not the most-recently-used order of `Alt+Tab`, where "next" changes every time. Needs the native core (`npm run build:native`); without it the button fails with an error instead of doing nothing. |
 
 ## Flow control
 
@@ -105,6 +106,12 @@ These need OpenRGB — see [Sensors & RGB](Sensors-and-RGB).
 | Type | Fields | Description |
 |---|---|---|
 | `folder` | `folderButtons` (up to 12 sub-buttons) | Opens an overlay with the sub-buttons. Each one is itself a simple action. |
+
+## Page navigation
+
+| Type | Fields | Description |
+|---|---|---|
+| `page-nav` | `pageNav` (`next`, `prev`, `first`, `cycle`, `goto`), `pageNavTarget?` (page id) | Go to another page: the next one, the previous one, the first one, cycling forward with wrap-around, or a specific one by id. `next` and `prev` stop at the ends (no effect there). From a dock it moves between that dock's pages; from the deck, between the deck pages (dock pages excluded). |
 
 ## Toggle
 

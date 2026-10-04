@@ -84,6 +84,7 @@ Requieren OpenRGB — ver [Sensores y RGB](Sensores-y-RGB).
 | Tipo | Campos | Descripción |
 |------|--------|-------------|
 | `window-snap` | `snapPosition`, `snapProcessName?` | Coloca y redimensiona una ventana: mitades, cuartos, maximizar, centrar o restaurar. Sin nombre de proceso, actúa sobre la ventana que esté en primer plano al ejecutarse. |
+| `window-cycle` | `windowCycle?` (`next`, `prev`; por defecto `next`) | Trae al frente la ventana siguiente o anterior en un orden estable por programa —no el de uso reciente de `Alt+Tab`, donde «la siguiente» cambia cada vez—. Requiere el núcleo nativo (`npm run build:native`); sin él el botón falla con error en vez de no hacer nada. |
 
 ## Control de flujo
 
@@ -112,6 +113,12 @@ Los dos necesitan una sesión de medios activa en Windows.
 | Tipo | Campos | Descripción |
 |------|--------|-------------|
 | `folder` | `folderButtons` (lista de hasta 12 sub-botones) | Al ejecutarse abre un overlay con los sub-botones. Cada sub-botón es a su vez una acción simple. |
+
+## Página (navegación)
+
+| Tipo | Campos | Descripción |
+|------|--------|-------------|
+| `page-nav` | `pageNav` (`next`, `prev`, `first`, `cycle`, `goto`), `pageNavTarget?` (id de página) | Pasa a otra página: la siguiente, la anterior, la primera, avanzar con vuelta al principio (`cycle`) o una concreta por id. `next` y `prev` se paran en los extremos (sin efecto ahí). Desde un dock navega entre las páginas de ese dock; desde el deck, entre las del deck (sin contar las de docks). |
 
 ## Toggle
 
