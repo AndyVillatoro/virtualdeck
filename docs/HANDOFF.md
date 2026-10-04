@@ -515,6 +515,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Validado por el dueño** con el N3 y una captura de la pantalla de dispositivos.
 * **Verificación:** `npm run check` 0 errores (38 warnings, los mismos), `npm run build` OK.
 
+## Pausa 2026-10-04 — dónde retomar
+
+* **Rama:** `task/p1-hw-streamdock` (encima de `task/p0-sec-01-sandbox-navegacion`, que **no** está en `main`). Todo commiteado, sin push.
+* **Hecho en esta rama:** T-ORC (protocolo multi-agente), T-HW-01/02/04 (roadmap 56, 57, 61) y la investigación T-HW-03.
+* **Próximo, propuesto en paralelo:** roadmap **58** (página según la aplicación, para opencode) y **62** (botones prearmados para docks, para agy; el informe está en `_referencias/informes/presets-docks.md`, verificado). Después: 63 (acciones `page-nav`/`app-volume`), la prueba del N3 desde el MSIX y el release **0.14.0** (todo junto, decidido por el dueño).
+* **Sesiones de los trabajadores limpias** (opencode `/new`, agy `/clear`): cada encargo nuevo va completo en `_referencias/encargos/`.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
