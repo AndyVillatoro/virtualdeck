@@ -29,6 +29,7 @@ Cualquier campo string que mencione "*acepta {variables}*" es interpolado en run
 | `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Ejecuta un script. Puede mostrar la salida en un aviso y/o guardarla en una variable. Los dos intérpretes admiten varias líneas y acentos. |
 | `audio-device` | `deviceId`, `deviceName?` | Cambia dispositivo de salida por defecto. |
 | `volume-set` | `volumePercent` (0–100) | Establece volumen master a un porcentaje exacto. |
+| `app-volume` | `appVolumeTarget?` (vacío = app activa), `appVolumeMode` (`adjust`/`set`/`mute`), `appVolumeDelta?` (±, para `adjust`), `appVolumeLevel?` (0–100, para `set`) | Sube, baja, fija o silencia el volumen de una app concreta (lo que enseña el Mezclador de volumen). Si la app no tiene sonido abierto, el botón falla con ese aviso. Requiere el núcleo nativo; sin él no hay respaldo. |
 | `volume-up` / `volume-down` / `mute` | — | Teclas multimedia. |
 | `media-play-pause` / `media-next` / `media-prev` | — | Control de medios. |
 | `brightness` | `brightnessLevel` (0–100) | Controla brillo del monitor primario (vía WMI). |

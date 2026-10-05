@@ -32,6 +32,7 @@ Any string field described as *accepts {variables}* is interpolated with
 | `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Runs a script. Can show stdout in a toast and/or store it in a variable. Both interpreters accept multiple lines and accented text. |
 | `audio-device` | `deviceId`, `deviceName?` | Switches the default output device. |
 | `volume-set` | `volumePercent` (0–100) | Sets the master volume to an exact percentage. |
+| `app-volume` | `appVolumeTarget?` (empty = active app), `appVolumeMode` (`adjust`/`set`/`mute`), `appVolumeDelta?` (±, for `adjust`), `appVolumeLevel?` (0–100, for `set`) | Raises, lowers, sets or mutes the volume of one app (what the Volume Mixer shows). If the app has no open sound, the button fails with that notice. Needs the native core; no fallback without it. |
 | `volume-up` / `volume-down` / `mute` | — | Media keys. |
 | `media-play-pause` / `media-next` / `media-prev` | — | Playback control. |
 | `media-shuffle` | — | Toggles shuffle on the active player. |

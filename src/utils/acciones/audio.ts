@@ -26,6 +26,31 @@ export const AUDIO: Record<string, Manejador> = {
   },
 
   /**
+   * Volumen de una app concreta (lo que enseña el Mezclador de volumen).
+   *
+   * El error del núcleo se devuelve **tal cual**: ya es legible
+   * (`"spotify" no tiene sonido abierto`) y traducirlo lo rompería. Solo se
+   * usa la clave genérica cuando el puente no trae ningún texto.
+   */
+  'app-volume': async ({ action, api, t }) => {
+    const proceso = (action.appVolumeTarget ?? '').trim();
+    const modo = action.appVolumeMode ?? 'adjust';
+    if (modo === 'mute') {
+      const r = await api.audio.toggleAppMute(proceso);
+      return r.ok ? OK : fail(r.error || t('act.err.appVolume'));
+    }
+    if (modo === 'set') {
+      if (action.appVolumeLevel === undefined) return fail(t('act.err.noVolume'));
+      const r = await api.audio.setAppVolume(proceso, action.appVolumeLevel);
+      return r.ok ? OK : fail(r.error || t('act.err.appVolume'));
+    }
+    const delta = action.appVolumeDelta ?? 0;
+    if (!delta) return fail(t('act.err.noDelta'));
+    const r = await api.audio.adjustAppVolume(proceso, delta);
+    return r.ok ? OK : fail(r.error || t('act.err.appVolume'));
+  },
+
+  /**
    * Subir o bajar, en vez de fijar un valor.
    *
    * Es la diferencia entre «brillo al 70%» y «diez por ciento mas de lo que

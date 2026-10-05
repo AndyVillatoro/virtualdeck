@@ -13,6 +13,7 @@ import type {
   DisplayInfo,
   BackupInfo,
   AudioDevice,
+  SesionAudioApp,
   NowPlaying,
   DiscordStatus,
   DiscordVoiceSettings,
@@ -92,6 +93,12 @@ export interface ElectronAPI {
   audio: {
     list: () => Promise<AudioDevice[]>;
     setDefault: (deviceId: string) => Promise<boolean>;
+    /** Apps con sonido abierto (vacía sin núcleo nativo). */
+    sessions: () => Promise<SesionAudioApp[]>;
+    /** Los tres devuelven el error del núcleo tal cual para enseñarlo. */
+    setAppVolume: (proceso: string, nivel: number) => Promise<{ ok: boolean; nivel?: number; error?: string }>;
+    adjustAppVolume: (proceso: string, delta: number) => Promise<{ ok: boolean; nivel?: number; error?: string }>;
+    toggleAppMute: (proceso: string) => Promise<{ ok: boolean; silenciada?: boolean; error?: string }>;
   };
   media: {
     nowPlaying: () => Promise<NowPlaying | null>;

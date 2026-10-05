@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
-  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie } from '../../src/types';
+  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie, SesionAudioApp } from '../../src/types';
 
 
 /**
@@ -106,6 +106,13 @@ const api = {
   audio: {
     list: (force?: boolean): Promise<AudioDevice[]> => ipcRenderer.invoke('audio:list', force ?? false),
     setDefault: (deviceId: string): Promise<boolean> => ipcRenderer.invoke('audio:setDefault', deviceId),
+    sessions: (): Promise<SesionAudioApp[]> => ipcRenderer.invoke('audio:sessions'),
+    setAppVolume: (proceso: string, nivel: number): Promise<{ ok: boolean; nivel?: number; error?: string }> =>
+      ipcRenderer.invoke('audio:setAppVolume', proceso, nivel),
+    adjustAppVolume: (proceso: string, delta: number): Promise<{ ok: boolean; nivel?: number; error?: string }> =>
+      ipcRenderer.invoke('audio:adjustAppVolume', proceso, delta),
+    toggleAppMute: (proceso: string): Promise<{ ok: boolean; silenciada?: boolean; error?: string }> =>
+      ipcRenderer.invoke('audio:toggleAppMute', proceso),
   },
   media: {
     nowPlaying: (): Promise<NowPlaying | null> => ipcRenderer.invoke('media:nowPlaying'),

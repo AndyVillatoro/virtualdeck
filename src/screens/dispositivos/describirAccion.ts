@@ -56,6 +56,18 @@ function describirBrightness(a: ButtonAction, t: Traductor): string {
   return t('disp.desc.fijarBrillo', { n: nivel });
 }
 
+/**
+ * Volumen de una app: «VOLUMEN SPOTIFY -5», «SILENCIAR APP ACTIVA».
+ * Sin destino es la app en primer plano, igual que al ejecutar.
+ */
+function describirAppVolume(a: ButtonAction, t: Traductor): string {
+  const quien = (a.appVolumeTarget?.trim() || t('disp.desc.appActiva')).toUpperCase();
+  if (a.appVolumeMode === 'mute') return t('disp.desc.silenciarApp', { quien });
+  if (a.appVolumeMode === 'set') return t('disp.desc.appVolumenFijo', { quien, n: a.appVolumeLevel ?? 0 });
+  const d = a.appVolumeDelta ?? 0;
+  return t('disp.desc.appVolumen', { quien, delta: `${d > 0 ? '+' : ''}${d}` });
+}
+
 function describirDiscord(a: ButtonAction, t: Traductor): string {
   const sub = a.discordAction;
   if (sub === 'toggle-mute') return t('disp.desc.discordMute');
@@ -119,6 +131,7 @@ const MAPA_DESCRIPTORES: Record<string, DescriptorFn> = {
   hotkey: (a, t) => describirHotkey(a, t),
   adjust: (a, t) => describirAdjust(a, t),
   brightness: (a, t) => describirBrightness(a, t),
+  'app-volume': (a, t) => describirAppVolume(a, t),
   mute: (_a, t) => t('disp.desc.mute'),
   'media-next': (_a, t) => t('disp.desc.mediaNext'),
   'media-prev': (_a, t) => t('disp.desc.mediaPrev'),

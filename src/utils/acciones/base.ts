@@ -65,6 +65,13 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     case 'type-text':   return t('act.lbl.type');
     case 'kill-process':return a.processName ? `${t('act.lbl.kill')} "${a.processName}"` : t('act.lbl.kill');
     case 'volume-set':  return `${t('act.lbl.volume')} ${a.volumePercent ?? 0}%`;
+    case 'app-volume': {
+      const quien = (a.appVolumeTarget?.trim() || t('act.lbl.activeApp')).toUpperCase();
+      if (a.appVolumeMode === 'mute') return `${t('act.lbl.muteApp')} ${quien}`;
+      if (a.appVolumeMode === 'set') return `${t('act.lbl.volume')} ${quien} ${a.appVolumeLevel ?? 0}%`;
+      const d = a.appVolumeDelta ?? 0;
+      return `${t('act.lbl.volume')} ${quien} ${d > 0 ? '+' : ''}${d}%`;
+    }
     case 'adjust':      return `${t(a.adjustTarget === 'volume' ? 'act.lbl.volume' : 'act.lbl.brightness')} ${(a.adjustDelta ?? 0) > 0 ? '+' : ''}${a.adjustDelta ?? 0}%`;
     case 'notify':      return t('act.lbl.notify');
     case 'set-var':     return `Set ${a.varName}=${a.varValue}`;

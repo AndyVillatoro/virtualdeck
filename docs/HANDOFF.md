@@ -565,6 +565,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Segunda prueba del dueño (page-nav):** «anterior no hace nada». En su configuración los botones de página estaban solo en la página 1 del dock (huecos 6-8) y en la página 2 vacíos. Los presets de página (dock y deck) ahora salen con `fijo: true`; sus botones actuales hay que marcarlos fijos a mano o reaplicar el preset.
 * **Pendiente:** `/media/images/` del servidor remoto se sirve sin token (desde antes, no lo introdujo este turno): revisar.
 
+## Turno 2026-10-04 — Volumen por aplicación (63) (VERIFYING)
+
+* **Commits de lo anterior:** `997e4aa` (Rust), `e60796e` (app), `be37376` (docs). El código de la app no se pudo separar por tema sin romper la compilación de cada commit (los mismos archivos los tocaron casi todas las funciones).
+* **Nativo (supervisor):** `crates/vd-core/src/audio/sesiones.rs` — sesiones de audio de Windows (todas las de un proceso, en todos los dispositivos de salida activos); `audioSessions`, `adjustAppVolume`, `setAppVolume`, `toggleAppMute`; proceso vacío = app en primer plano; error propio `SinSonido`. Medido con las apps del dueño: listar 10 ms, −5/+5 en 25 ms y vuelve exacto, silenciar ida y vuelta. `.node` instalado.
+* **TS (opencode T-HW-18, revisado):** acción `app-volume`, `electron/main/volumenApp.ts` (conserva el mensaje del núcleo), 4 canales `audio:*`, formulario con `SelectorApp` + apps con sonido, presets y plantillas de Spotify/Discord.
+* **Verificación:** `npm run check` 0 errores, 36 warnings; `npm run build` OK; `cargo test` en verde.
+* **Falta (dueño):** perilla «VOLUMEN DE APP» con la app delante, y las de Spotify/Discord.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

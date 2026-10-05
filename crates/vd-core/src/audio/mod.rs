@@ -17,6 +17,9 @@
 //!    setear se vuelve a consultar el predeterminado para confirmarlo.
 
 mod policy_config;
+mod sesiones;
+
+pub use sesiones::{adjust_app_volume, audio_sessions, set_app_volume, toggle_app_mute, SesionAudio};
 
 use std::fmt;
 
@@ -64,6 +67,10 @@ pub enum AudioError {
     #[error("no se encontro el dispositivo: {0}")]
     DeviceNotFound(String),
 
+    /// Volumen por app: la app no tiene sonido abierto, o no hay app delante.
+    #[error("{0}")]
+    SinSonido(String),
+
     #[error(
         "Windows acepto el cambio pero no lo aplico (el predeterminado sigue siendo {actual:?}). \
          Suele ser un driver que ignora la peticion."
@@ -107,7 +114,7 @@ pub(crate) fn ensure_com() {
     }
 }
 
-fn device_enumerator() -> Result<IMMDeviceEnumerator, AudioError> {
+pub(crate) fn device_enumerator() -> Result<IMMDeviceEnumerator, AudioError> {
     ensure_com();
     // SAFETY: CLSID y contexto validos.
     Ok(unsafe { CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)? })

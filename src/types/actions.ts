@@ -49,7 +49,9 @@ export type ActionType =
   | 'mobile-remote'
   // 5.0 — Integraciones de terceros
   | 'discord'
-  | 'spotify';
+  | 'spotify'
+  // Volumen de una app concreta (roadmap 63): subir/bajar, fijar o silenciar.
+  | 'app-volume';
 
 export interface FolderButton {
   label: string;
@@ -174,6 +176,15 @@ export interface ButtonAction {
   spotifyDeviceId?: string;
   /** Token de acceso de Spotify Web API (opcional por botón para transferencias o reproducción directa). */
   spotifyToken?: string;
+  // Volumen de una app (tipo 'app-volume'). Vacío = la app en primer plano.
+  /** Proceso normalizado (sin `.exe`, minúsculas); vacío = app activa. */
+  appVolumeTarget?: string;
+  /** Qué hace: subir/bajar desde donde esté, fijar un nivel, o silenciar. */
+  appVolumeMode?: 'adjust' | 'set' | 'mute';
+  /** Para `adjust`: cuánto sube o baja (±). */
+  appVolumeDelta?: number;
+  /** Para `set`: nivel 0-100. */
+  appVolumeLevel?: number;
 }
 
 export type MacroStepType = 'key' | 'hotkey' | 'text' | 'click' | 'move' | 'delay' | 'scroll';

@@ -41,6 +41,7 @@ export const ACTION_TYPES: { type: ActionType; label: string; Icon: React.Compon
   { type: 'type-text',        label: 'act.type-text.label',        Icon: IconTypeText,        desc: 'act.type-text.desc' },
   { type: 'kill-process',     label: 'act.kill-process.label',     Icon: IconKillProcess,     desc: 'act.kill-process.desc' },
   { type: 'volume-set',       label: 'act.volume-set.label',       Icon: IconVolumeSet,       desc: 'act.volume-set.desc' },
+  { type: 'app-volume',       label: 'act.app-volume.label',       Icon: IconVolumeSet,       desc: 'act.app-volume.desc' },
   { type: 'folder',           label: 'act.folder.label',           Icon: IconFolder,          desc: 'act.folder.desc' },
   { type: 'page-nav',         label: 'act.page-nav.label',         Icon: IconMediaNext,       desc: 'act.page-nav.desc' },
   { type: 'media-play-pause', label: 'act.media-play-pause.label', Icon: IconMediaPlayPause,  desc: 'act.media-play-pause.desc' },
@@ -118,6 +119,14 @@ export const PRESETS: ButtonPreset[] = [
 
   { category: 'MEDIA', label: 'Vol. 50%',   action: { type: 'volume-set', volumePercent: 50 } },
   { category: 'MEDIA', label: 'Vol. 80%',   action: { type: 'volume-set', volumePercent: 80 } },
+  // Volumen por app (roadmap 63): los equivalentes de botón de las perillas.
+  { category: 'MEDIA', label: 'App Vol. −', icon: 'SPEAKER', action: { type: 'app-volume', appVolumeMode: 'adjust', appVolumeDelta: -5 } },
+  { category: 'MEDIA', label: 'App Vol. +', icon: 'SPEAKER', action: { type: 'app-volume', appVolumeMode: 'adjust', appVolumeDelta: 5 } },
+  { category: 'MEDIA', label: 'App Mute', icon: 'VOLUME_MUTE', action: { type: 'app-volume', appVolumeMode: 'mute' } },
+  { category: 'MEDIA', label: 'Spotify Vol. −', icon: 'SPEAKER', bgColor: '#1a3320', fgColor: '#1DB954', action: { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'adjust', appVolumeDelta: -5 } },
+  { category: 'MEDIA', label: 'Spotify Vol. +', icon: 'SPEAKER', bgColor: '#1a3320', fgColor: '#1DB954', action: { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'adjust', appVolumeDelta: 5 } },
+  { category: 'MEDIA', label: 'Discord Vol. −', icon: 'SPEAKER', bgColor: '#1e1f40', fgColor: '#7289da', action: { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'adjust', appVolumeDelta: -5 } },
+  { category: 'MEDIA', label: 'Discord Vol. +', icon: 'SPEAKER', bgColor: '#1e1f40', fgColor: '#7289da', action: { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'adjust', appVolumeDelta: 5 } },
   // SISTEMA
   { category: 'SISTEMA', label: 'Brillo Táctil (H)', icon: 'WEATHER_SUN', bgColor: '#242014', fgColor: '#facc15', action: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'brightness', min: 0, max: 100, step: 5, orientation: 'horizontal', showValue: true } },
   { category: 'SISTEMA', label: 'Fader Brillo (V)', icon: 'WEATHER_SUN', bgColor: '#242014', fgColor: '#facc15', action: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: 0 }, widget: 'slider', sliderWidget: { target: 'brightness', min: 0, max: 100, step: 5, orientation: 'vertical', showValue: true } },

@@ -1,5 +1,8 @@
 import { ipcMain } from 'electron';
 import { listAudioDevices, setDefaultAudioDevice } from '../audio';
+import {
+  listarSesionesAudio, ajustarVolumenApp, fijarVolumenApp, alternarSilencioApp,
+} from '../volumenApp';
 import { hayNucleo } from '../native';
 import type { AudioDevice } from '../../../src/types';
 
@@ -42,4 +45,14 @@ export function registerAudioIpc() {
     if (ok) _cache = null; // invalidate so next list() sees the new default
     return ok;
   });
+
+  // Volumen por app (roadmap 63): van por `volumenApp.ts`, no por `audio.ts`,
+  // porque necesitan el mensaje de error del núcleo tal cual, no un boolean.
+  ipcMain.handle('audio:sessions', () => listarSesionesAudio());
+  ipcMain.handle('audio:setAppVolume', (_e: any, proceso: string, nivel: number) =>
+    fijarVolumenApp(proceso ?? '', nivel));
+  ipcMain.handle('audio:adjustAppVolume', (_e: any, proceso: string, delta: number) =>
+    ajustarVolumenApp(proceso ?? '', delta));
+  ipcMain.handle('audio:toggleAppMute', (_e: any, proceso: string) =>
+    alternarSilencioApp(proceso ?? ''));
 }

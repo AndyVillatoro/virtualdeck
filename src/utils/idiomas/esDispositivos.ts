@@ -110,4 +110,8 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.desc.ventanaAnt': 'VENTANA ANTERIOR',
   'disp.desc.ventanaSig': 'VENTANA SIGUIENTE',
   'disp.desc.otraVez': 'OTRA VEZ: {desc}',
+  'disp.desc.appActiva': 'APP ACTIVA',
+  'disp.desc.silenciarApp': 'SILENCIAR {quien}',
+  'disp.desc.appVolumen': 'VOLUMEN {quien} {delta}',
+  'disp.desc.appVolumenFijo': 'VOLUMEN {quien} {n} %',
 };

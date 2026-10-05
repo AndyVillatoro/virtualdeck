@@ -25,6 +25,7 @@ type Clave =
   // aviso en pantalla. No son logs: los lee el usuario.
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'rgb.sinConexion' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
+  | 'audio.sinNucleo'
   | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject'
   // Fragmentos del resumen de riesgo de la galería (los enseña el renderer).
   | 'gal.risk.click' | 'gal.risk.move' | 'gal.risk.scroll' | 'gal.risk.voice'
@@ -67,6 +68,7 @@ const ES: Record<Clave, string> = {
   'sensors.netshCode': 'netsh terminó con código',
   'currency.badCode': 'Moneda no válida:',
   'audio.unnamedDevice': 'Dispositivo sin nombre',
+  'audio.sinNucleo': 'Hace falta el núcleo nativo con volumen por app (`npm run build:native`).',
   'macro.unknownError': 'Error desconocido',
   'gal.badUrl': 'Direccion no permitida (debe ser https y publica)',
   'gal.tooBig': 'El archivo es demasiado grande',
@@ -128,6 +130,7 @@ const EN: Record<Clave, string> = {
   'sensors.netshCode': 'netsh exited with code',
   'currency.badCode': 'Invalid currency:',
   'audio.unnamedDevice': 'Unnamed device',
+  'audio.sinNucleo': 'Needs the native core with per-app volume (`npm run build:native`).',
   'macro.unknownError': 'Unknown error',
   'gal.badUrl': 'Address not allowed (must be https and public)',
   'gal.tooBig': 'The file is too large',

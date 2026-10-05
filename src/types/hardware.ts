@@ -73,6 +73,18 @@ export interface AudioDevice {
   isDefault: boolean;
 }
 
+/**
+ * Una app con sonido abierto, como la lista el Mezclador de volumen.
+ * `proceso` va normalizado (sin `.exe`, minúsculas).
+ */
+export interface SesionAudioApp {
+  proceso: string;
+  /** 0-100: el de su sesión más alta (lo que se oye). */
+  volumen: number;
+  /** Solo si todas sus sesiones están silenciadas. */
+  silenciada: boolean;
+}
+
 export interface BackupInfo {
   filename: string;
   timestamp: number;

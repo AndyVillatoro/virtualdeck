@@ -1,5 +1,6 @@
 import { FormNone, FormApp, FormWeb, FormShortcut, FormScript } from './basicos';
 import { FormAudioDevice, FormHotkey, FormClipboard, FormTypeText, FormKillProcess, FormVolumeSet, FormBrightness, FormAdjust, FormNotify, FormTts, FormRegionCapture, FormMediaPlayPause, FormWindowSnap, FormWindowCycle } from './sistema';
+import { FormAppVolume } from './volumenApp';
 import { FormSetVar, FormIncrVar, FormWebhook, FormRemote, FormMobileRemote, FormBranch, FormCountdown } from './datos';
 import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb';
 import { FormFolder, FormMacro, FormPageNav } from './compuestos';
@@ -25,6 +26,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'type-text': FormTypeText,
   'kill-process': FormKillProcess,
   'volume-set': FormVolumeSet,
+  'app-volume': FormAppVolume,
   'brightness': FormBrightness,
   'adjust': FormAdjust,
   'notify': FormNotify,

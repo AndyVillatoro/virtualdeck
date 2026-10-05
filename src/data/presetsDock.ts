@@ -346,6 +346,83 @@ export const PRESETS_PERILLA: PresetDock[] = [
       },
     ],
   },
+  // Volumen de una app concreta (roadmap 63): sobre la app activa,
+  // más dos fijas para los casos más comunes.
+  {
+    id: 'app-volume',
+    nombre: 'preset.dock.knob.appVolume',
+    icon: 'SPEAKER',
+    huecos: [
+      {
+        label: 'APP VOL -',
+        icon: 'SUBTRACT',
+        fgColor: '#38bdf8',
+        action: { type: 'app-volume', appVolumeMode: 'adjust', appVolumeDelta: -5 },
+      },
+      {
+        label: 'APP MUTE',
+        icon: 'MUTE',
+        fgColor: '#38bdf8',
+        action: { type: 'app-volume', appVolumeMode: 'mute' },
+      },
+      {
+        label: 'APP VOL +',
+        icon: 'ADD',
+        fgColor: '#38bdf8',
+        action: { type: 'app-volume', appVolumeMode: 'adjust', appVolumeDelta: 5 },
+      },
+    ],
+  },
+  {
+    id: 'spotify-volume',
+    nombre: 'preset.dock.knob.spotifyVolume',
+    icon: 'SPEAKER',
+    huecos: [
+      {
+        label: 'VOL -',
+        icon: 'SUBTRACT',
+        fgColor: '#1db954',
+        action: { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'adjust', appVolumeDelta: -5 },
+      },
+      {
+        label: 'MUTE',
+        icon: 'MUTE',
+        fgColor: '#1db954',
+        action: { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'mute' },
+      },
+      {
+        label: 'VOL +',
+        icon: 'ADD',
+        fgColor: '#1db954',
+        action: { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'adjust', appVolumeDelta: 5 },
+      },
+    ],
+  },
+  {
+    id: 'discord-volume',
+    nombre: 'preset.dock.knob.discordVolume',
+    icon: 'SPEAKER',
+    huecos: [
+      {
+        label: 'VOL -',
+        icon: 'SUBTRACT',
+        fgColor: '#7289da',
+        action: { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'adjust', appVolumeDelta: -5 },
+      },
+      {
+        label: 'MUTE',
+        icon: 'MUTE',
+        fgColor: '#7289da',
+        action: { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'mute' },
+      },
+      {
+        label: 'VOL +',
+        icon: 'ADD',
+        fgColor: '#7289da',
+        action: { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'adjust', appVolumeDelta: 5 },
+      },
+    ],
+  },
 ];
 
 /**

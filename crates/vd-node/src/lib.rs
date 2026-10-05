@@ -66,6 +66,43 @@ pub fn list_audio_devices() -> napi::Result<Vec<AudioDevice>> {
         .collect())
 }
 
+/// El volumen de una app (sus sesiones de audio sumadas).
+#[napi(object)]
+pub struct VolumenApp {
+    pub proceso: String,
+    pub volumen: u32,
+    pub silenciada: bool,
+}
+
+/// Las apps con sonido abierto, como en el Mezclador de volumen.
+#[napi]
+pub fn audio_sessions() -> napi::Result<Vec<VolumenApp>> {
+    let lista = vd_core::audio::audio_sessions().map_err(a_error)?;
+    Ok(lista
+        .into_iter()
+        .map(|s| VolumenApp { proceso: s.proceso, volumen: s.volumen as u32, silenciada: s.silenciada })
+        .collect())
+}
+
+/// Sube o baja el volumen de una app (`proceso` vacío = la de primer plano).
+/// Devuelve el nivel nuevo; lanza un error legible si la app no tiene sonido.
+#[napi]
+pub fn adjust_app_volume(proceso: String, delta: i64) -> napi::Result<u32> {
+    vd_core::audio::adjust_app_volume(&proceso, delta).map(u32::from).map_err(a_error)
+}
+
+/// Fija el volumen de una app (0-100). Devuelve el nivel puesto.
+#[napi]
+pub fn set_app_volume(proceso: String, nivel: i64) -> napi::Result<u32> {
+    vd_core::audio::set_app_volume(&proceso, nivel).map(u32::from).map_err(a_error)
+}
+
+/// Alterna el silencio de una app. Devuelve si quedó silenciada.
+#[napi]
+pub fn toggle_app_mute(proceso: String) -> napi::Result<bool> {
+    vd_core::audio::toggle_app_mute(&proceso).map_err(a_error)
+}
+
 /// Cambia el dispositivo de salida predeterminado.
 ///
 /// Devuelve `true` si el cambio se aplicó. `vd-core` no se fía del HRESULT:

@@ -255,9 +255,9 @@ export const PLANTILLAS_APP: PlantillaApp[] = [
       ],
       perillas: [
         [
-          h('VOL -', 'SUBTRACT', { type: 'adjust', adjustTarget: 'volume', adjustDelta: -5 }, '#1db954'),
-          h('SILENCIO', 'MUTE', { type: 'mute' }, '#1db954'),
-          h('VOL +', 'ADD', { type: 'adjust', adjustTarget: 'volume', adjustDelta: 5 }, '#1db954'),
+          h('VOL -', 'SUBTRACT', { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'adjust', appVolumeDelta: -5 }, '#1db954'),
+          h('SILENCIO', 'MUTE', { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'mute' }, '#1db954'),
+          h('VOL +', 'ADD', { type: 'app-volume', appVolumeTarget: 'spotify', appVolumeMode: 'adjust', appVolumeDelta: 5 }, '#1db954'),
         ],
         [
           h('ANTERIOR', 'PREV', { type: 'media-prev' }, '#1db954'),
@@ -318,9 +318,9 @@ export const PLANTILLAS_APP: PlantillaApp[] = [
       ],
       perillas: [
         [
-          h('VOL -', 'SUBTRACT', { type: 'adjust', adjustTarget: 'volume', adjustDelta: -5 }, '#7289da'),
-          h('SILENCIO', 'MUTE', { type: 'mute' }, '#7289da'),
-          h('VOL +', 'ADD', { type: 'adjust', adjustTarget: 'volume', adjustDelta: 5 }, '#7289da'),
+          h('VOL -', 'SUBTRACT', { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'adjust', appVolumeDelta: -5 }, '#7289da'),
+          h('SILENCIO', 'MUTE', { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'mute' }, '#7289da'),
+          h('VOL +', 'ADD', { type: 'app-volume', appVolumeTarget: 'discord', appVolumeMode: 'adjust', appVolumeDelta: 5 }, '#7289da'),
         ],
         [
           h('CANAL ANT', 'ARROW_UP', { type: 'hotkey', hotkey: 'Alt+Up' }, '#7289da'),

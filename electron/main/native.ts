@@ -75,6 +75,19 @@ export interface NucleoNativo {
   restoreWindow: (processName?: string) => boolean;
   closeWindow: (processName?: string) => boolean;
 
+  // --- medios por app (volumen por sesion de audio) ---
+  /**
+   * Apps con sonido abierto, como en el Mezclador de volumen.
+   * `proceso` va normalizado (sin `.exe`, minusculas); vacio no sale aqui.
+   */
+  audioSessions: () => SesionAudioApp[];
+  /** Sube/baja desde donde este; devuelve el nivel nuevo. Lanza si no hay sonido. */
+  adjustAppVolume: (proceso: string, delta: number) => number;
+  /** Fija 0-100; devuelve el nivel puesto. Lanza si no hay sonido. */
+  setAppVolume: (proceso: string, nivel: number) => number;
+  /** Alterna el silencio; devuelve si quedo silenciada. Lanza si no hay sonido. */
+  toggleAppMute: (proceso: string) => boolean;
+
   // --- media (SMTC) ---
   getNowPlaying: () => NowPlayingNativo | null;
   controlMedia: (cmd: string) => boolean;
@@ -98,6 +111,13 @@ export interface NucleoNativo {
 
   // --- teclas de medios ---
   sendMediaKey: (key: string) => boolean;
+}
+
+/** Una app con sonido abierto, como la lista el Mezclador de volumen. */
+export interface SesionAudioApp {
+  proceso: string;
+  volumen: number;
+  silenciada: boolean;
 }
 
 /** Lo que devuelve el núcleo. Coincide con `NowPlaying` de `src/types.ts`. */

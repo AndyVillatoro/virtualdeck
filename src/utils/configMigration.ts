@@ -34,6 +34,8 @@ const ACTION_TYPES = new Set([
   // 5.0 — Terceros
   'discord',
   'spotify',
+  // Volumen de una app (roadmap 63).
+  'app-volume',
 ]);
 
 
