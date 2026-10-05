@@ -20,9 +20,12 @@ module.exports = {
     {
       name: 'main-no-renderer',
       severity: 'error',
-      comment: 'El proceso main/preload no debe importar el renderer (src/), salvo tipos compartidos (src/types).',
+      comment: 'El proceso main/preload no debe importar el renderer (src/), salvo tipos compartidos (src/types) y los datos puros de los glifos DOT (sin React ni DOM), que el mando móvil necesita para pintar lo mismo que el deck.',
       from: { path: '^electron/(main|preload)/' },
-      to: { path: '^src/', pathNot: '^src/types(\\.ts)?$' },
+      to: {
+        path: '^src/',
+        pathNot: '^src/types(/|\\.ts$|$)|^src/components/dot480/(dotGlyphs8x8|resolveDotGlyph|dotGlyphsCatalog|glifosPorTipoAccion|puntos16)\\.ts$',
+      },
     },
     {
       name: 'renderer-no-main',

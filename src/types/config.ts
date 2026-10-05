@@ -65,6 +65,13 @@ export interface ButtonConfig {
   brandIconCustomPalette?: Record<string, string>;
   /** 2.1 — Glifo 5×7 dibujado por el usuario. 7 enteros con bits 4..0 = izquierda..derecha. */
   customGlyph57?: number[];
+  /**
+   * Icono del catálogo grande (roadmap 89), **copiado** en el botón para que
+   * pintarlo no necesite el catálogo: `bits` son 32 bytes en base64 (16×16,
+   * ver `src/components/dot480/puntos16.ts`); `origen` dice de dónde salió
+   * (`marcas:docker`, `acciones:arrow-left`) para poder buscarlo otra vez.
+   */
+  iconoPuntos?: { bits: string; origen: string };
   bgColor?: string;
   fgColor?: string;
   action: ButtonAction;
