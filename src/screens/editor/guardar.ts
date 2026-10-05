@@ -58,6 +58,9 @@ export interface CamposDelEditor {
   sensorTriggerVal: string;
   sensorTriggerCooldown: string;
   fijo?: boolean;
+  animacion?: ButtonConfig['animacion'];
+  efectoPulsar?: ButtonConfig['efectoPulsar'];
+  aspectoEncendido?: ButtonConfig['aspectoEncendido'];
 }
 
 /** Un número escrito por el usuario, o `undefined` si no escribió uno válido. */
@@ -142,6 +145,52 @@ function widgetDeSlider(c: CamposDelEditor): ButtonConfig['sliderWidget'] {
   };
 }
 
+function animacionDeBoton(c: CamposDelEditor): ButtonConfig['animacion'] {
+  if (!c.animacion?.efecto) return undefined;
+  return {
+    efecto: c.animacion.efecto,
+    cuando: c.isToggle || c.animacion.cuando !== 'encendido' ? c.animacion.cuando : 'siempre',
+  };
+}
+
+function efectoPulsarDeBoton(c: CamposDelEditor): ButtonConfig['efectoPulsar'] {
+  if (!c.efectoPulsar || c.efectoPulsar === 'destello') return undefined;
+  return c.efectoPulsar;
+}
+
+function aspectoEncendidoDeBoton(c: CamposDelEditor): ButtonConfig['aspectoEncendido'] {
+  if (!c.isToggle || !c.aspectoEncendido) return undefined;
+  const a = c.aspectoEncendido;
+  if (!a.icon && !a.iconoPuntos && !a.bgColor && !a.fgColor) return undefined;
+  return {
+    icon: a.icon || undefined,
+    iconoPuntos: a.iconoPuntos,
+    bgColor: a.bgColor || undefined,
+    fgColor: a.fgColor || undefined,
+  };
+}
+
+function brandIconPaletteDeBoton(c: CamposDelEditor) {
+  if (c.brandIconCustomPalette && Object.keys(c.brandIconCustomPalette).length > 0) {
+    return c.brandIconCustomPalette;
+  }
+  return undefined;
+}
+
+function accionDeBoton(c: CamposDelEditor) {
+  if (c.action.type === 'folder') {
+    return { ...c.action, folderButtons: c.folderButtons };
+  }
+  return c.action;
+}
+
+function subButtonsDeBoton(c: CamposDelEditor) {
+  if (c.is2x2Mode && c.subButtons && c.subButtons.length === 4) {
+    return c.subButtons;
+  }
+  return undefined;
+}
+
 export function construirBoton(button: ButtonConfig, c: CamposDelEditor): ButtonConfig {
   return {
     ...button,
@@ -153,14 +202,14 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     brandIconAlwaysAnimate: c.brandIconAlwaysAnimate || undefined,
     brandIconCustomBitmap: c.brandIconCustomBitmap,
     brandIconCustomColor: c.brandIconCustomColor,
-    brandIconCustomPalette:
-      c.brandIconCustomPalette && Object.keys(c.brandIconCustomPalette).length > 0
-        ? c.brandIconCustomPalette
-        : undefined,
+    brandIconCustomPalette: brandIconPaletteDeBoton(c),
     iconoPuntos: c.iconoPuntos,
+    animacion: animacionDeBoton(c),
+    efectoPulsar: efectoPulsarDeBoton(c),
+    aspectoEncendido: aspectoEncendidoDeBoton(c),
     bgColor: c.bgColor || undefined,
     fgColor: c.fgColor || undefined,
-    action: c.action.type === 'folder' ? { ...c.action, folderButtons: c.folderButtons } : c.action,
+    action: accionDeBoton(c),
     // Solo se guarda la lista cuando hay más de una: con una sola, `action`
     // ya la tiene y duplicarla haría que se ejecutase dos veces.
     actions: c.extraActions.length > 0 ? [c.action, ...c.extraActions] : undefined,
@@ -181,6 +230,6 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     timerTriggerAt: c.timerTriggerAt.trim() || undefined,
     sensorTrigger: disparadorDeSensor(c),
     fijo: c.fijo || undefined,
-    subButtons: c.is2x2Mode && c.subButtons && c.subButtons.length === 4 ? c.subButtons : undefined,
+    subButtons: subButtonsDeBoton(c),
   };
 }

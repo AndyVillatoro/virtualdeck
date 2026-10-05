@@ -11,9 +11,9 @@ import {
   esAppPropia, idPaginaSegunApp, normalizarApp,
 } from './paginaSegunApp';
 import { paginaDe, type PaginaDispositivo } from './paginasSuperficie';
-import { useAnimacionLcd } from './useAnimacionLcd';
+import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
 import {
-  fuentesLcdListas, pintarTecla, prepararFuentesLcd,
+  fuentesLcdListas, pintarTecla, prepararFuentesLcd, resolverBotonLcd,
   type ColoresSuperficie, type OpcionesPintado,
 } from './pintarTecla';
 
@@ -86,7 +86,8 @@ export interface Superficies {
 
 /** Lo que se dibuja de una tecla. Si no cambia, no se vuelve a pintar. */
 function firmaDe(
-  boton: ButtonConfig | undefined, ancho: number, alto: number, rotacion: number,
+  boton: ButtonConfig | undefined, encendido: boolean,
+  ancho: number, alto: number, rotacion: number,
   colores: ColoresSuperficie, fuentes: boolean,
 ): string {
   if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
@@ -94,6 +95,7 @@ function firmaDe(
     boton.label, boton.icon, boton.iconoPuntos?.bits, boton.imageData, boton.customGlyph57, boton.brandIcon,
     boton.brandIconCustomBitmap, boton.brandIconCustomColor, boton.brandIconCustomPalette,
     boton.bgColor, boton.fgColor, boton.action?.type,
+    boton.isToggle, boton.animacion, boton.efectoPulsar, boton.aspectoEncendido, encendido,
     ancho, alto, rotacion, colores.fondo, colores.texto, fuentes,
   ]);
 }
@@ -107,17 +109,20 @@ async function pintarCambiadas(
   opciones: OpcionesPintado,
   firmas: Map<string, string[]>,
   fuentes: boolean,
+  encendidos: Set<string>,
 ): Promise<Record<number, string>> {
   const previas = firmas.get(serial) ?? [];
   const nuevas: string[] = [];
   const pintadas: Record<number, string> = {};
   for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
     const boton = pagina.botones[hueco];
+    const encendido = !!boton && encendidos.has(boton.id);
+    const efectivo = boton ? resolverBotonLcd(boton, encendido) : boton;
     const rotacion = pagina.rotacion ?? lcd.rotacion;
-    const firma = firmaDe(boton, lcd.ancho, lcd.alto, rotacion, colores, fuentes);
+    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes);
     nuevas[hueco] = firma;
     if (previas[hueco] === firma) continue;
-    const imagen = await pintarTecla(boton ?? null, lcd, colores, opciones, rotacion);
+    const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion);
     await api.superficies.imagen(serial, indice, imagen.jpegBase64);
     if (imagen.dataUrl) pintadas[hueco] = imagen.dataUrl;
   }
@@ -313,6 +318,8 @@ export function useSuperficies({
       }
       const hueco = huecoDeEntrada(pagina.disposicion, entrada);
       if (hueco === null) return;
+      // El destello al pulsar (2-3 fotogramas) lo pinta el animador del LCD.
+      if (entrada.gesto === 'down') registrarPulsoLcd(entrada.serial, hueco, pagina.indice);
       const boton = pagina.botones[hueco];
       if (!boton || boton.action.type === 'none') return;
       // Girar una perilla o deslizar una tira (izq/der) suena con el tic de
@@ -431,6 +438,7 @@ export function useSuperficies({
     void (async () => {
       const nuevasImagenes = { ...imagenesRef.current };
       let cambio = false;
+      const encendidos = new Set(config.toggledIds ?? []);
       for (const dispositivo of conectados) {
         const pagina = paginaDe(
           config, dispositivo.serial, dispositivo.disposicion, activas[dispositivo.serial],
@@ -446,6 +454,7 @@ export function useSuperficies({
         const pintadas = await pintarCambiadas(
           api, dispositivo.serial, pagina, { fondo, texto },
           { iconoSvg: iconoRef.current, esGlifoDot: esGlifoDotRef.current }, firmas.current, fuentesListas,
+          encendidos,
         );
         const huecos = Object.keys(pintadas);
         if (huecos.length === 0) continue;

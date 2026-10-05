@@ -44,6 +44,9 @@ export function estiloInicial(button: ButtonConfig) {
     widget: button.widget,
     fijo: button.fijo ?? false,
     iconoPuntos: button.iconoPuntos,
+    animacion: button.animacion,
+    efectoPulsar: button.efectoPulsar ?? 'destello',
+    aspectoEncendido: button.aspectoEncendido,
   };
 }
 

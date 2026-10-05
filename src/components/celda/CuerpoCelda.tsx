@@ -28,6 +28,10 @@ export interface CuerpoCeldaProps {
   lastRotaryDir: 1 | -1;
   lastRotaryTime: number;
   hovered: boolean;
+  /** El botón es `isToggle` y está encendido: se pinta su `aspectoEncendido`. */
+  encendido: boolean;
+  /** Crece en cada pulsación (destello de `usePulsacionRaton`). */
+  pulsoId: number;
 }
 
 /**
@@ -59,6 +63,8 @@ export function CuerpoCelda({
   lastRotaryDir,
   lastRotaryTime,
   hovered,
+  encendido,
+  pulsoId,
 }: CuerpoCeldaProps) {
   if (hasSubButtons && button.subButtons) {
     return (
@@ -99,6 +105,8 @@ export function CuerpoCelda({
       iconColor={iconColor}
       actionGlyph={actionGlyph}
       widgetData={widgetData}
+      encendido={encendido}
+      pulsoId={pulsoId}
     />
   );
 

@@ -28,6 +28,30 @@ interface EditorBProps {
   onClear?: (id: string) => void;
 }
 
+function filtrarPresets(presetSearch: string, presetCategory: string) {
+  if (presetSearch.trim()) {
+    const q = presetSearch.toLowerCase();
+    return PRESETS.filter((p) => p.label.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+  }
+  return PRESETS.filter((p) => p.category === presetCategory);
+}
+
+function calcularInsignias(
+  e: ReturnType<typeof useEstadoEditor>,
+  dockInfo: ReturnType<typeof useDockPresets>,
+  t: (k: string) => string,
+) {
+  const actionTypeObj = ACTION_TYPES.find((at) => at.type === e.action.type);
+  const actionBadge = e.action.type !== 'none' && actionTypeObj ? t(actionTypeObj.label) : undefined;
+  const dockBadge = dockInfo.esDock && dockInfo.controlMeta
+    ? `${dockInfo.controlMeta.control.toUpperCase()}${dockInfo.controlMeta.gesto ? ` · ${dockInfo.controlMeta.gesto.toUpperCase()}` : ''}`
+    : undefined;
+  const appearanceBadge = e.label || (e.icon ? e.icon : undefined);
+  const behaviorBadge = e.isToggle ? 'TOGGLE' : (e.fijo ? 'FIJO' : undefined);
+  const advancedBadge = e.is2x2Mode ? '2×2' : (e.extraActions.length > 0 ? `+${e.extraActions.length}` : undefined);
+  return { actionBadge, dockBadge, appearanceBadge, behaviorBadge, advancedBadge };
+}
+
 export function EditorB({
   button,
   rgbProfiles = [],
@@ -50,23 +74,8 @@ export function EditorB({
     audioDevices, loadingDevices, audioError, loadAudioDevices, rgbDevices, rgbConnected, sensorList,
   } = useCatalogos(e.action.type, undefined, `${e.widget}|${e.visibleIfSensorId}|${e.sensorTriggerId}`);
 
-  const filteredPresets = PRESETS.filter((p) => {
-    if (e.presetSearch.trim()) {
-      const q = e.presetSearch.toLowerCase();
-      return p.label.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
-    }
-    return p.category === e.presetCategory;
-  });
-
-  // Insignias informativas para las cabeceras acordeón
-  const actionTypeObj = ACTION_TYPES.find((at) => at.type === e.action.type);
-  const actionBadge = e.action.type !== 'none' && actionTypeObj ? t(actionTypeObj.label) : undefined;
-  const dockBadge = dockInfo.esDock && dockInfo.controlMeta
-    ? `${dockInfo.controlMeta.control.toUpperCase()}${dockInfo.controlMeta.gesto ? ` · ${dockInfo.controlMeta.gesto.toUpperCase()}` : ''}`
-    : undefined;
-  const appearanceBadge = e.label || (e.icon ? e.icon : undefined);
-  const behaviorBadge = e.isToggle ? 'TOGGLE' : (e.fijo ? 'FIJO' : undefined);
-  const advancedBadge = e.is2x2Mode ? '2×2' : (e.extraActions.length > 0 ? `+${e.extraActions.length}` : undefined);
+  const filteredPresets = filtrarPresets(e.presetSearch, e.presetCategory);
+  const { actionBadge, dockBadge, appearanceBadge, behaviorBadge, advancedBadge } = calcularInsignias(e, dockInfo, t);
 
   return (
     <div
@@ -118,6 +127,8 @@ export function EditorB({
             isToggle={e.isToggle}
             subButtons={e.subButtons}
             is2x2Mode={e.is2x2Mode}
+            previewToggled={e.previewToggled}
+            onTogglePreview={() => e.setPreviewToggled(!e.previewToggled)}
             campos={{
               label: e.label,
               sublabel: e.sublabel,
@@ -138,6 +149,9 @@ export function EditorB({
               fijo: e.fijo,
               widget: e.widget,
               sliderWidget: e.sliderWidget,
+              animacion: e.animacion,
+              efectoPulsar: e.efectoPulsar,
+              aspectoEncendido: e.aspectoEncendido,
             }}
           />
 
@@ -299,6 +313,13 @@ export function EditorB({
                 iconoPuntos={e.iconoPuntos}
                 setIconoPuntos={e.setIconoPuntos}
                 onAbrirCatalogoDot={e.abrirCatalogoDot}
+                isToggle={e.isToggle}
+                animacionEfecto={e.animacionEfecto}
+                setAnimacionEfecto={e.setAnimacionEfecto}
+                animacionCuando={e.animacionCuando}
+                setAnimacionCuando={e.setAnimacionCuando}
+                efectoPulsar={e.efectoPulsar}
+                setEfectoPulsar={e.setEfectoPulsar}
               />
             </SeccionAjustes>
 
@@ -349,6 +370,17 @@ export function EditorB({
                 setVisibleIfSensorVal={e.setVisibleIfSensorVal}
                 currentButtonId={button.id}
                 pages={pages}
+                encendidoIcon={e.encendidoIcon}
+                setEncendidoIcon={e.setEncendidoIcon}
+                encendidoIconoPuntos={e.encendidoIconoPuntos}
+                setEncendidoIconoPuntos={e.setEncendidoIconoPuntos}
+                encendidoBgColor={e.encendidoBgColor}
+                setEncendidoBgColor={e.setEncendidoBgColor}
+                encendidoFgColor={e.encendidoFgColor}
+                setEncendidoFgColor={e.setEncendidoFgColor}
+                onAbrirCatalogoDot={e.abrirCatalogoDot}
+                previewToggled={e.previewToggled}
+                setPreviewToggled={e.setPreviewToggled}
               />
             </SeccionAjustes>
 
@@ -403,7 +435,7 @@ export function EditorB({
         catalogoDotAbierto={e.catalogoDotAbierto}
         onCloseCatalogoDot={e.cerrarCatalogoDot}
         onSelectIconoDot={e.seleccionarIconoCatalogo}
-        currentOrigen={e.iconoPuntos?.origen}
+        currentOrigen={e.destinoCatalogo === 'encendido' ? e.encendidoIconoPuntos?.origen : e.iconoPuntos?.origen}
         onCloseBrandPicker={() => e.setShowBrandPicker(false)}
         onCloseBrandEditor={() => e.setShowBrandEditor(false)}
         onCloseGlyphEditor={() => e.setShowGlyphEditor(false)}

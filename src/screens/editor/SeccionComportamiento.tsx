@@ -8,8 +8,10 @@ import { CampoVisibleIfApp } from './comportamiento/CampoVisibleIfApp';
 import { CampoSensorCondicion } from './comportamiento/CampoSensorCondicion';
 import { CampoTimerTrigger } from './comportamiento/CampoTimerTrigger';
 import { CampoRadioGroup } from './comportamiento/CampoRadioGroup';
+import { CampoAspectoEncendido } from './comportamiento/CampoAspectoEncendido';
 import { useConfiguracionExistente } from './comportamiento/useConfiguracionExistente';
 import type { ButtonAction, PageConfig, Sensor } from '../../types';
+import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 
 interface SeccionComportamientoProps {
   accent: string;
@@ -49,6 +51,17 @@ interface SeccionComportamientoProps {
   sensorList: Sensor[];
   currentButtonId?: string;
   pages?: PageConfig[];
+  encendidoIcon?: string;
+  setEncendidoIcon?: (s: string) => void;
+  encendidoIconoPuntos?: { bits: string; origen: string };
+  setEncendidoIconoPuntos?: (val?: { bits: string; origen: string }) => void;
+  encendidoBgColor?: string;
+  setEncendidoBgColor?: (s: string) => void;
+  encendidoFgColor?: string;
+  setEncendidoFgColor?: (s: string) => void;
+  onAbrirCatalogoDot?: (catalogo: NombreCatalogo, destino?: 'principal' | 'encendido') => void;
+  previewToggled?: boolean;
+  setPreviewToggled?: (v: boolean) => void;
 }
 
 export function SeccionComportamiento({
@@ -89,6 +102,17 @@ export function SeccionComportamiento({
   sensorList,
   currentButtonId,
   pages,
+  encendidoIcon = '',
+  setEncendidoIcon,
+  encendidoIconoPuntos,
+  setEncendidoIconoPuntos,
+  encendidoBgColor = '',
+  setEncendidoBgColor,
+  encendidoFgColor = '',
+  setEncendidoFgColor,
+  onAbrirCatalogoDot,
+  previewToggled = false,
+  setPreviewToggled,
 }: SeccionComportamientoProps) {
   const VD = useTheme();
   const t = useT();
@@ -114,18 +138,36 @@ export function SeccionComportamiento({
             </span>
           </label>
           {isToggle && (
-            <div style={{ marginLeft: 22, marginTop: 8 }}>
-              <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
-                {tf('ACCIÓN AL DESACTIVAR (opcional — si vacío, repite la misma acción)')}
-              </DotLabel>
-              <ToggleOffActionPicker
-                action={actionToggleOff}
-                onChange={setActionToggleOff}
+            <div style={{ marginLeft: 22, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
+                  {tf('ACCIÓN AL DESACTIVAR (opcional — si vacío, repite la misma acción)')}
+                </DotLabel>
+                <ToggleOffActionPicker
+                  action={actionToggleOff}
+                  onChange={setActionToggleOff}
+                  accent={accent}
+                />
+              </div>
+
+              {/* Aspecto encendido (roadmap 79) */}
+              <CampoAspectoEncendido
                 accent={accent}
+                encendidoIcon={encendidoIcon}
+                setEncendidoIcon={setEncendidoIcon ?? (() => {})}
+                encendidoIconoPuntos={encendidoIconoPuntos}
+                setEncendidoIconoPuntos={setEncendidoIconoPuntos ?? (() => {})}
+                encendidoBgColor={encendidoBgColor}
+                setEncendidoBgColor={setEncendidoBgColor ?? (() => {})}
+                encendidoFgColor={encendidoFgColor}
+                setEncendidoFgColor={setEncendidoFgColor ?? (() => {})}
+                onAbrirCatalogoDot={onAbrirCatalogoDot}
+                previewToggled={previewToggled}
+                setPreviewToggled={setPreviewToggled ?? (() => {})}
               />
 
               {/* Grupo Radio */}
-              <div style={{ marginTop: 12 }}>
+              <div>
                 <Field label={tf("GRUPO RADIO (toggles mutuamente exclusivos)")}>
                   <CampoRadioGroup
                     value={radioGroup}

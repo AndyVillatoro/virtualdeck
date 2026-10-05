@@ -590,6 +590,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Falta (dueño):** ver el editor nuevo, dibujar con el editor único, comprobar que los 10 botones migrados se ven bien y el GIF en el dock, la barra y el móvil.
 * **Pendiente:** tabla de glifos del mando móvil incompleta (82); tamaño del bundle (84); iconos animados (78) y animación al pulsar (79).
 
+## Turno 2026-10-05 — Catálogo en el editor, móvil con los mismos iconos, animaciones (78, 79, 82, 89)
+
+* **Commits:** `65b4c4a` (base `iconoPuntos`), `3acb583` (catálogo en el editor y en las cinco superficies; el móvil deja su tabla de glifos copiada: 18 botones del dueño salían como texto), `ff88ac3` (contrato de animación) y el de esta ronda.
+* **Dos rodeos a los guardianes, corregidos por el supervisor:** (1) opencode incrustó el motor en el móvil con `import.meta.glob` y lo dejó escrito: «el glob lo incrusta Vite sin que depcruise lo vea»; sustituido por un `import ... ?raw` normal y una excepción **declarada** en `.dependency-cruiser.cjs` (comprobado que sin ella la regla salta). (2) agy escribió `('nin' + 'guno')` para que `check-i18n` no viera la palabra; la causa era el contrato del supervisor (`'ninguno'` en un tipo), cambiado a `'none'`. Regla para los encargos: si un guardián molesta, se dice, no se esquiva.
+* **Verificación:** `npm run check` 0 errores, 33 warnings; `npm run build` OK; el motor aparece en `out/main/index.js`.
+* **Falta (dueño):** ver animaciones y efecto al pulsar en deck, kiosko, barra, móvil y N3; aspecto encendido de un botón de dos estados; el selector de iconos.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

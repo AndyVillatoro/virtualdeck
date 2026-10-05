@@ -15,7 +15,7 @@ import { usePegarImagen } from './usePegarImagen';
 import { resolverIconoInicial, limpiarCamposIcono, type TipoIcono } from './tiposIcono';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 import { PREFIJO_MARCAS } from './constantesCatalogo';
-import type { ButtonConfig, SubButtonConfig } from '../../types';
+import type { ButtonConfig, SubButtonConfig, EfectoPuntos, EfectoPulsar } from '../../types';
 import type { PresetDock } from '../../data/presetsDock';
 
 export type SeccionId = 'presets' | 'action' | 'appearance' | 'behavior' | 'advanced';
@@ -24,6 +24,44 @@ interface UseEstadoEditorOptions {
   button: ButtonConfig;
   onSave: (updated: ButtonConfig) => void;
   dockGesto?: GestoHueco;
+}
+
+function subButtonsIniciales(button: ButtonConfig): SubButtonConfig[] {
+  if (button.subButtons && button.subButtons.length === 4) return button.subButtons;
+  return Array.from({ length: 4 }, (_, i) => ({
+    id: `${button.id}-q${i}`,
+    label: '',
+    action: { type: 'none' as const },
+  }));
+}
+
+function calcularAnimacion(
+  efecto: EfectoPuntos | undefined,
+  cuando: 'siempre' | 'al-pulsar' | 'encendido',
+  isToggle: boolean,
+): ButtonConfig['animacion'] {
+  if (!efecto) return undefined;
+  return {
+    efecto,
+    cuando: (isToggle || cuando !== 'encendido') ? cuando : 'siempre',
+  };
+}
+
+function calcularAspectoEncendido(
+  isToggle: boolean,
+  icon: string,
+  iconoPuntos: { bits: string; origen: string } | undefined,
+  bgColor: string,
+  fgColor: string,
+): ButtonConfig['aspectoEncendido'] {
+  if (!isToggle) return undefined;
+  if (!icon && !iconoPuntos && !bgColor && !fgColor) return undefined;
+  return {
+    icon: icon || undefined,
+    iconoPuntos,
+    bgColor: bgColor || undefined,
+    fgColor: fgColor || undefined,
+  };
 }
 
 export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOptions) {
@@ -37,14 +75,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const dis = disparadoresInicial(button);
 
   const [is2x2Mode, setIs2x2Mode] = useState<boolean>(() => !!(button.subButtons && button.subButtons.length === 4));
-  const [subButtons, setSubButtons] = useState<SubButtonConfig[]>(() => {
-    if (button.subButtons && button.subButtons.length === 4) return button.subButtons;
-    return Array.from({ length: 4 }, (_, i) => ({
-      id: `${button.id}-q${i}`,
-      label: '',
-      action: { type: 'none' as const },
-    }));
-  });
+  const [subButtons, setSubButtons] = useState<SubButtonConfig[]>(() => subButtonsIniciales(button));
 
   const [action, setAction] = useState(ini.action);
   const [extraActions, setExtraActions] = useState(ini.extraActions);
@@ -61,6 +92,23 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [brandIconCustomColor, setBrandIconCustomColor] = useState(est.brandIconCustomColor);
   const [brandIconCustomPalette, setBrandIconCustomPalette] = useState(est.brandIconCustomPalette);
   const [iconoPuntos, setIconoPuntos] = useState(est.iconoPuntos);
+  const [animacionEfecto, setAnimacionEfecto] = useState<EfectoPuntos | undefined>(
+    est.animacion?.efecto
+  );
+  const [animacionCuando, setAnimacionCuando] = useState<'siempre' | 'al-pulsar' | 'encendido'>(
+    est.animacion?.cuando ?? 'siempre'
+  );
+  const [efectoPulsar, setEfectoPulsar] = useState<EfectoPulsar>(
+    est.efectoPulsar ?? 'destello'
+  );
+  const [encendidoIcon, setEncendidoIcon] = useState<string>(est.aspectoEncendido?.icon ?? '');
+  const [encendidoIconoPuntos, setEncendidoIconoPuntos] = useState<{ bits: string; origen: string } | undefined>(
+    est.aspectoEncendido?.iconoPuntos
+  );
+  const [encendidoBgColor, setEncendidoBgColor] = useState<string>(est.aspectoEncendido?.bgColor ?? '');
+  const [encendidoFgColor, setEncendidoFgColor] = useState<string>(est.aspectoEncendido?.fgColor ?? '');
+  const [previewToggled, setPreviewToggled] = useState(false);
+  const [destinoCatalogo, setDestinoCatalogo] = useState<'principal' | 'encendido'>('principal');
   const [catalogoDotAbierto, setCatalogoDotAbierto] = useState<NombreCatalogo | null>(null);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [showBrandEditor, setShowBrandEditor] = useState(false);
@@ -164,6 +212,15 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       iconoPuntos,
     });
 
+    const animacion = calcularAnimacion(animacionEfecto, animacionCuando, isToggle);
+    const aspectoEncendido = calcularAspectoEncendido(
+      isToggle,
+      encendidoIcon,
+      encendidoIconoPuntos,
+      encendidoBgColor,
+      encendidoFgColor,
+    );
+
     onSave(construirBoton(button, {
       is2x2Mode,
       subButtons,
@@ -174,6 +231,9 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       ...camposIcono,
       bgColor,
       fgColor,
+      animacion,
+      efectoPulsar,
+      aspectoEncendido,
       folderButtons,
       isToggle,
       actionToggleOff,
@@ -205,10 +265,19 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     }));
   };
 
-  const abrirCatalogoDot = (cat: NombreCatalogo) => setCatalogoDotAbierto(cat);
+  const abrirCatalogoDot = (cat: NombreCatalogo, destino: 'principal' | 'encendido' = 'principal') => {
+    setDestinoCatalogo(destino);
+    setCatalogoDotAbierto(cat);
+  };
   const cerrarCatalogoDot = () => setCatalogoDotAbierto(null);
 
   const seleccionarIconoCatalogo = (icono: { bits: string; origen: string }) => {
+    if (destinoCatalogo === 'encendido') {
+      setEncendidoIconoPuntos(icono);
+      setEncendidoIcon('');
+      setCatalogoDotAbierto(null);
+      return;
+    }
     setIconoPuntos(icono);
     if (icono.origen.startsWith(PREFIJO_MARCAS)) {
       setTipoIcono('marca');
@@ -228,6 +297,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       setBrandIconCustomPalette(undefined);
       setCustomGlyph57(undefined);
     }
+    setCatalogoDotAbierto(null);
   };
 
   const applyPreset = (preset: ButtonPreset) => {
@@ -427,6 +497,31 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     habiaVariosCamposIcono,
     iconoPuntos,
     setIconoPuntos,
+    animacionEfecto,
+    setAnimacionEfecto,
+    animacionCuando,
+    setAnimacionCuando,
+    efectoPulsar,
+    setEfectoPulsar,
+    encendidoIcon,
+    setEncendidoIcon,
+    encendidoIconoPuntos,
+    setEncendidoIconoPuntos,
+    encendidoBgColor,
+    setEncendidoBgColor,
+    encendidoFgColor,
+    setEncendidoFgColor,
+    animacion: calcularAnimacion(animacionEfecto, animacionCuando, isToggle),
+    aspectoEncendido: calcularAspectoEncendido(
+      isToggle,
+      encendidoIcon,
+      encendidoIconoPuntos,
+      encendidoBgColor,
+      encendidoFgColor,
+    ),
+    previewToggled,
+    setPreviewToggled,
+    destinoCatalogo,
     catalogoDotAbierto,
     setCatalogoDotAbierto,
     abrirCatalogoDot,

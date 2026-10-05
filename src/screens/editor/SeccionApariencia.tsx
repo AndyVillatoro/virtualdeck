@@ -5,9 +5,10 @@ import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { Field, Btn, estiloEntrada } from './comunes';
 import { BloqueWidgetApariencia } from './BloqueWidgetApariencia';
 import { CampoIconoUnificado } from './CampoIconoUnificado';
+import { SubseccionAnimacion } from './SubseccionAnimacion';
 import type { TipoIcono } from './tiposIcono';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
-import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig } from '../../types';
+import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig, EfectoPuntos, EfectoPulsar } from '../../types';
 
 export interface SeccionAparienciaProps {
   accent: string;
@@ -70,6 +71,13 @@ export interface SeccionAparienciaProps {
   iconoPuntos?: { bits: string; origen: string };
   setIconoPuntos?: React.Dispatch<React.SetStateAction<{ bits: string; origen: string } | undefined>>;
   onAbrirCatalogoDot?: (catalogo: NombreCatalogo) => void;
+  isToggle?: boolean;
+  animacionEfecto: EfectoPuntos | undefined;
+  setAnimacionEfecto: (efecto: EfectoPuntos | undefined) => void;
+  animacionCuando: 'siempre' | 'al-pulsar' | 'encendido';
+  setAnimacionCuando: (cuando: 'siempre' | 'al-pulsar' | 'encendido') => void;
+  efectoPulsar: EfectoPulsar;
+  setEfectoPulsar: (efecto: EfectoPulsar) => void;
 }
 
 export function SeccionApariencia(p: SeccionAparienciaProps) {
@@ -86,6 +94,8 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
     varWidgetPrefix, varWidgetSuffix, widget, currencyWidget, setCurrencyWidget,
     sliderWidget, setSliderWidget, tipoIcono, setTipoIcono, habiaVariosCamposIcono,
     glifoEncima, setGlifoEncima, iconoPuntos, setIconoPuntos, onAbrirCatalogoDot,
+    isToggle = false, animacionEfecto, setAnimacionEfecto, animacionCuando, setAnimacionCuando,
+    efectoPulsar, setEfectoPulsar,
   } = p;
 
   const VD = useTheme();
@@ -149,6 +159,30 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
         setIconoPuntos={setIconoPuntos}
         onAbrirCatalogoDot={onAbrirCatalogoDot}
       />
+
+      {/* Subsección ANIMACIÓN y AL PULSAR (debajo de ICONO) */}
+      <SubseccionAnimacion
+        accent={accent}
+        isToggle={isToggle}
+        animacionEfecto={animacionEfecto}
+        setAnimacionEfecto={setAnimacionEfecto}
+        animacionCuando={animacionCuando}
+        setAnimacionCuando={setAnimacionCuando}
+        efectoPulsar={efectoPulsar}
+        setEfectoPulsar={setEfectoPulsar}
+        iconoActual={{
+          tipoIcono,
+          icon,
+          iconoPuntos,
+          brandIcon,
+          customGlyph57,
+          imageData,
+          actionType: action.type,
+          fgColor,
+        }}
+      />
+
+      <div style={{ height: 1, background: VD.border }} />
 
       {/* Colores */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

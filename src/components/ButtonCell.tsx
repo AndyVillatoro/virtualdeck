@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { Insignias } from './celda/Insignias';
@@ -9,6 +9,7 @@ import { derivarCelda } from './celda/derivados';
 import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
 import { DotRadialSweep } from './dot480/DotRadialSweep';
+import { botonEfectivo } from './dot480/animacionPuntos';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
 import { CuerpoCelda } from './celda/CuerpoCelda';
 import type { ButtonConfig, SoundProfileId } from '../types';
@@ -111,8 +112,16 @@ function ButtonCellInner(props: ButtonCellProps) {
   onAdjustWheelRef.current = onAdjustWheel;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
+  // Tal como se pinta: con el `aspectoEncendido` si el interruptor está
+  // encendido. Los manejadores (editar, ejecutar, arrastrar) siguen usando el
+  // botón original de las props: el aspecto solo cambia lo que se ve.
+  const vis = useMemo(
+    () => botonEfectivo(button, button.isToggle === true && toggled),
+    [button, toggled],
+  );
+
   const { isEmpty, displayLabel, actionGlyph, iconColor, multiCount, titulo } =
-    derivarCelda(button, { accent, toggled, resolvedLabel, VD, t });
+    derivarCelda(vis, { accent, toggled, resolvedLabel, VD, t });
 
   const hasSubButtons = Boolean(button.subButtons && button.subButtons.length === 4);
   const isSlider = button.widget === 'slider';
@@ -128,7 +137,7 @@ function ButtonCellInner(props: ButtonCellProps) {
     showContextMenu,
     abrirMenu: (x, y) => setContextMenu({ x, y }),
   });
-  const { pressed, flash, destellar } = raton;
+  const { pressed, flash, pulsoId, destellar } = raton;
 
   const arrastre = useArrastreCelda({
     ref: cellRef, idBoton: button.id, onDragStart, onDragEnd, onDrop,
@@ -137,7 +146,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   });
   const { dragOver } = arrastre;
 
-  const estado = { toggled, dragOver, pressed, hovered, flash, isEmpty, bgPropio: button.bgColor };
+  const estado = { toggled, dragOver, pressed, hovered, flash, isEmpty, bgPropio: vis.bgColor };
   const bg = colorDeFondo(estado, VD);
   const borderColor = colorDeBorde(estado, VD, accent);
 
@@ -221,7 +230,7 @@ function ButtonCellInner(props: ButtonCellProps) {
         }}
       >
         <Insignias
-          button={button}
+          button={vis}
           accent={accent}
           isEmpty={isEmpty}
           isActive={Boolean(props.isActive)}
@@ -238,10 +247,10 @@ function ButtonCellInner(props: ButtonCellProps) {
         {flash && <DotRadialSweep accent={accent} />}
         {props.isRunning && <span className="vd-running-ring" />}
 
-        <CapasDeFondo button={button} toggled={toggled} />
+        <CapasDeFondo button={vis} toggled={toggled} />
 
         <CuerpoCelda
-          button={button}
+          button={vis}
           accent={accent}
           toggled={toggled}
           subToggled={subToggled}
@@ -262,6 +271,8 @@ function ButtonCellInner(props: ButtonCellProps) {
           lastRotaryDir={lastRotaryDir}
           lastRotaryTime={lastRotaryTime}
           hovered={hovered}
+          encendido={vis.isToggle === true && toggled}
+          pulsoId={pulsoId}
         />
       </div>
 

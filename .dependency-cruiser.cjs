@@ -24,7 +24,7 @@ module.exports = {
       from: { path: '^electron/(main|preload)/' },
       to: {
         path: '^src/',
-        pathNot: '^src/types(/|\\.ts$|$)|^src/components/dot480/(dotGlyphs8x8|resolveDotGlyph|dotGlyphsCatalog|glifosPorTipoAccion|puntos16)\\.ts$',
+        pathNot: '^src/types(/|\\.ts$|$)|^src/components/dot480/(dotGlyphs8x8|resolveDotGlyph|dotGlyphsCatalog|glifosPorTipoAccion|puntos16)\\.ts$|^src/components/dot480/efectosPuntos\\.js(\\?raw)?$',
       },
     },
     {

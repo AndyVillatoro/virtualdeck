@@ -49,6 +49,8 @@ interface Opciones {
 export function usePulsacionRaton(o: Opciones) {
   const [pressed, setPressed] = useState(false);
   const [flash, setFlash] = useState(false);
+  /** Crece en cada destello: el hook de animacion lo usa como «acaban de pulsar». */
+  const [pulsoId, setPulsoId] = useState(0);
   const temporizador = useRef<number | null>(null);
   /** Puesto a true por la larga, para que el clic que viene detrás se ignore. */
   const yaDisparo = useRef(false);
@@ -61,6 +63,7 @@ export function usePulsacionRaton(o: Opciones) {
 
   const destellar = useCallback(() => {
     setFlash(true);
+    setPulsoId((n) => n + 1);
     setTimeout(() => setFlash(false), MS_DESTELLO);
     if (ref.current.soundEnabled) playSound(ref.current.soundProfile);
   }, []);
@@ -124,7 +127,7 @@ export function usePulsacionRaton(o: Opciones) {
   }, [cancelarTemporizador]);
 
   return {
-    pressed, setPressed, flash, destellar, yaDisparo,
+    pressed, setPressed, flash, pulsoId, destellar, yaDisparo,
     alBajar, alSubirOSalir, alClic, alMenuContextual, alEmpezarArrastre,
   };
 }

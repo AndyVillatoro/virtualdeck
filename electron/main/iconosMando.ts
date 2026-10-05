@@ -1,7 +1,7 @@
 import { DOT_GLYPHS_8X8, resolveDotGlyph } from '../../src/components/dot480/dotGlyphsCatalog';
 import { GLIFO_POR_TIPO_ACCION } from '../../src/components/dot480/glifosPorTipoAccion';
 import { matrizDePuntos16 } from '../../src/components/dot480/puntos16';
-import type { SliderWidgetConfig } from '../../src/types';
+import type { EfectoPulsar, SliderWidgetConfig } from '../../src/types';
 
 /**
  * El icono de cada botón, resuelto en el proceso principal para el mando
@@ -66,6 +66,13 @@ export interface BotonMandoMovil {
   widget?: string;
   sliderWidget?: SliderWidgetConfig;
   subButtons?: SubBotonMandoMovil[];
+  /** Botón de dos estados: con `encendido`, se pinta su `aspectoEncendido`. */
+  isToggle?: boolean;
+  encendido?: boolean;
+  /** Animación del icono (roadmap 78): la página la calcula con el motor DOT. */
+  animacion?: { efecto: string; cuando: string };
+  /** Efecto corto al pulsar (roadmap 79). Ausente = `destello`. */
+  efectoPulsar?: EfectoPulsar;
 }
 
 /** Lo mínimo que se lee de un botón de la config para mandarlo al móvil. */
@@ -85,6 +92,15 @@ export interface BotonFuenteMando {
   fijo?: boolean;
   widget?: string;
   sliderWidget?: SliderWidgetConfig;
+  isToggle?: boolean;
+  animacion?: { efecto: string; cuando: string };
+  efectoPulsar?: EfectoPulsar;
+  aspectoEncendido?: {
+    iconoPuntos?: { bits: string; origen: string };
+    icon?: string;
+    bgColor?: string;
+    fgColor?: string;
+  };
   subButtons?: Array<{
     id: string;
     label?: string;
@@ -184,20 +200,42 @@ function mapearImagen(imageData: string | undefined): string | undefined {
   return imageData;
 }
 
+/**
+ * Botón tal como se pinta en el móvil: con el `aspectoEncendido` si el
+ * interruptor está encendido (roadmap 79). La misma regla que la celda y la
+ * tecla física; duplicada aquí porque el proceso principal no puede importar
+ * de `src/` más que tipos y datos puros (ver `lint:arch`).
+ */
+function aplicarAspecto(b: BotonFuenteMando, encendido: boolean): BotonFuenteMando {
+  if (!encendido || !b.isToggle) return b;
+  const aspecto = b.aspectoEncendido;
+  if (!aspecto) return b;
+  const next: BotonFuenteMando = { ...b };
+  if (aspecto.iconoPuntos) next.iconoPuntos = aspecto.iconoPuntos;
+  if (aspecto.icon !== undefined) {
+    next.icon = aspecto.icon;
+    if (!aspecto.iconoPuntos) next.iconoPuntos = undefined;
+  }
+  if (aspecto.bgColor) next.bgColor = aspecto.bgColor;
+  if (aspecto.fgColor) next.fgColor = aspecto.fgColor;
+  return next;
+}
+
 /** Un botón de la config → lo que el móvil necesita para pintarlo y pulsarlo. */
-export function botonAMando(b: BotonFuenteMando): BotonMandoMovil {
+export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoMovil {
+  const fuente = aplicarAspecto(b, encendido);
   const resuelto = resolverIconoMando({
-    iconoPuntos: b.iconoPuntos,
-    icon: b.icon,
-    actionType: b.action?.type,
+    iconoPuntos: fuente.iconoPuntos,
+    icon: fuente.icon,
+    actionType: fuente.action?.type,
   });
   return {
     id: b.id,
     label: b.label ?? '',
     sublabel: b.sublabel,
     page: b.page ?? 0,
-    bgColor: b.bgColor,
-    fgColor: b.fgColor,
+    bgColor: fuente.bgColor,
+    fgColor: fuente.fgColor,
     icon: b.icon,
     puntos: resuelto.puntos,
     ...(resuelto.iconTexto ? { iconTexto: resuelto.iconTexto } : {}),
@@ -207,6 +245,10 @@ export function botonAMando(b: BotonFuenteMando): BotonMandoMovil {
     fijo: b.fijo,
     widget: b.widget,
     sliderWidget: b.sliderWidget,
+    ...(b.isToggle ? { isToggle: true as const } : {}),
+    ...(encendido ? { encendido: true as const } : {}),
+    ...(b.animacion ? { animacion: b.animacion } : {}),
+    ...(b.efectoPulsar ? { efectoPulsar: b.efectoPulsar } : {}),
     subButtons: b.subButtons?.map((s) => {
       const sub = resolverIconoMando({
         icon: s.icon,
@@ -227,3 +269,130 @@ export function botonAMando(b: BotonFuenteMando): BotonMandoMovil {
     }),
   };
 }
+
+/**
+ * La animación de la página del móvil, como texto para incrustar.
+ *
+ * Vive aquí y no en `paginaMando.ts` para no pasar el tope de 600 líneas de
+ * ese archivo: es código de la página (sin tipos, con `var`), no del
+ * servidor, y `paginaMando` lo interpola dentro del script que lleva el
+ * nonce. Por eso no lleva ni comillas invertidas ni interpolaciones: romperían
+ * el literal que lo contiene.
+ */
+export const JS_ANIMACION_MANDO = `
+var animadosMovil = [];
+var rafMovil = 0;
+var ocultoMovilEn = 0;
+
+function matrizDePuntos(puntos) {
+  var lado = puntos && puntos.lado === 16 ? 16 : 8;
+  var filas = (puntos && puntos.filas) || [];
+  var mascara = lado === 16 ? 65535 : 255;
+  var m = [];
+  for (var y = 0; y < lado; y++) {
+    var f = [];
+    var bits = ((typeof filas[y] === 'number' && isFinite(filas[y]) ? Math.trunc(filas[y]) : 0) & mascara);
+    for (var x = 0; x < lado; x++) f.push(((bits >> ((lado - 1) - x)) & 1) === 1);
+    m.push(f);
+  }
+  return m;
+}
+
+function continuaMovil(b) {
+  if (!b.animacion || !b.animacion.efecto) return null;
+  if (b.animacion.cuando === 'siempre') return b.animacion.efecto;
+  if (b.animacion.cuando === 'encendido' && b.encendido) return b.animacion.efecto;
+  return null;
+}
+
+function entradaMovil(celda) {
+  for (var i = 0; i < animadosMovil.length; i++) {
+    if (animadosMovil[i].celda === celda) return animadosMovil[i];
+  }
+  return null;
+}
+
+function arrancarMovil() {
+  if (rafMovil || animadosMovil.length === 0) return;
+  rafMovil = requestAnimationFrame(pasoMovil);
+}
+
+function pasoMovil(ahora) {
+  rafMovil = 0;
+  var vivos = [];
+  for (var i = 0; i < animadosMovil.length; i++) {
+    var a = animadosMovil[i];
+    var intens = null;
+    var sigue = false;
+    if (a.pulso) {
+      var durP = HAY_MOTOR.duracionEfecto(a.pulso.efecto);
+      var dt = ahora - a.pulso.t0;
+      if (dt >= durP) {
+        a.pulso = null;
+      } else {
+        intens = HAY_MOTOR.calcularPuntos(a.matriz, a.pulso.efecto, dt).intensidades;
+        sigue = true;
+      }
+    }
+    if (!sigue && a.continua) {
+      var durC = HAY_MOTOR.duracionEfecto(a.efecto);
+      var t = (HAY_MOTOR.esContinuo(a.efecto) || durC <= 0)
+        ? ahora - a.inicio
+        : (ahora - a.inicio) % durC;
+      intens = HAY_MOTOR.calcularPuntos(a.matriz, a.efecto, t).intensidades;
+      sigue = true;
+    }
+    for (var j = 0; j < a.celdas.length; j++) {
+      var c = a.celdas[j];
+      var v = intens && intens[c.y] ? (intens[c.y][c.x] || 0) : 1;
+      c.el.setAttribute('opacity', String(v < 0 ? 0 : v > 1 ? 1 : v));
+    }
+    if (sigue) vivos.push(a);
+  }
+  animadosMovil = vivos;
+  if (vivos.length > 0 && !document.hidden) rafMovil = requestAnimationFrame(pasoMovil);
+}
+
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) {
+    ocultoMovilEn = performance.now();
+  } else if (animadosMovil.length > 0) {
+    var pausa = performance.now() - ocultoMovilEn;
+    for (var i = 0; i < animadosMovil.length; i++) {
+      animadosMovil[i].inicio += pausa;
+      if (animadosMovil[i].pulso) animadosMovil[i].pulso.t0 += pausa;
+    }
+    arrancarMovil();
+  }
+});
+
+function registrarAnimado(b, celda, celdas) {
+  if (!HAY_MOTOR || REDUCIDO || !b.puntos || !celdas || celdas.length === 0) return;
+  var fx = continuaMovil(b);
+  if (!fx) return;
+  animadosMovil.push({
+    celda: celda, celdas: celdas, matriz: matrizDePuntos(b.puntos),
+    efecto: fx, continua: true, inicio: performance.now(), pulso: null,
+  });
+  arrancarMovil();
+}
+
+function animarPulsoMovil(b, celda, celdas) {
+  if (!HAY_MOTOR || !b.puntos || !celdas || celdas.length === 0) return;
+  var fx = b.efectoPulsar || 'destello';
+  if (fx !== 'destello' && fx !== 'onda') {
+    fx = b.animacion && b.animacion.cuando === 'al-pulsar' ? b.animacion.efecto : null;
+    if (!fx) return;
+  }
+  var a = entradaMovil(celda);
+  if (!a) {
+    a = {
+      celda: celda, celdas: celdas, matriz: matrizDePuntos(b.puntos),
+      efecto: '', continua: false, inicio: 0, pulso: null,
+    };
+    animadosMovil.push(a);
+  }
+  a.pulso = { efecto: fx, t0: performance.now() };
+  arrancarMovil();
+}
+`;

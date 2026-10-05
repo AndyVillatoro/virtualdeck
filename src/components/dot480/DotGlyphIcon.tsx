@@ -9,6 +9,8 @@ export interface DotGlyphIconProps {
   color?: string;
   dimColor?: string;
   showRecessed?: boolean;
+  /** Intensidad 0-1 por punto [y][x] (motor `efectosPuntos`); ausente = todo encendido. */
+  intensidades?: readonly (readonly number[])[] | null;
   style?: React.CSSProperties;
   className?: string;
 }
@@ -23,6 +25,7 @@ export function DotGlyphIcon({
   color = '#e6e8eb',
   dimColor = 'rgba(255, 255, 255, 0.04)',
   showRecessed = false,
+  intensidades,
   style,
   className,
 }: DotGlyphIconProps) {
@@ -58,6 +61,7 @@ export function DotGlyphIcon({
                 cy={y * pitch + 0.5}
                 r={dotRadius}
                 fill={isLit ? color : dimColor}
+                fillOpacity={isLit ? (intensidades?.[y]?.[x] ?? 1) : 1}
               />
             );
           })}

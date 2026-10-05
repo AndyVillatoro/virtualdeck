@@ -9,7 +9,9 @@ import { atender } from './enlacesExternos';
 import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
 import { paginaMando } from './paginaMando';
 import { botonAMando, type BotonFuenteMando, type BotonMandoMovil } from './iconosMando';
+import motorPuntos from '../../src/components/dot480/efectosPuntos.js?raw';
 import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../src/types';
+
 
 /**
  * El servidor local: mandar sobre el deck por HTTP.
@@ -185,8 +187,10 @@ function listaDeBotones(): BotonMandoMovil[] {
       superficie?: unknown;
     }>;
     buttons?: BotonFuenteMando[];
+    toggledIds?: string[];
   };
   const paginas = cfg?.pages ?? [];
+  const encendidos = new Set(cfg?.toggledIds ?? []);
   return (cfg?.buttons ?? [])
     .filter((b) => {
       if (paginas[b.page ?? 0]?.superficie) return false;
@@ -195,7 +199,7 @@ function listaDeBotones(): BotonMandoMovil[] {
       const esSlider = b.widget === 'slider' || !!b.sliderWidget;
       return tieneAccion || es2x2 || esSlider;
     })
-    .map(botonAMando);
+    .map((b) => botonAMando(b, b.isToggle === true && encendidos.has(b.id)));
 }
 
 /**
@@ -345,7 +349,7 @@ function atenderMando(res: ServerResponse): void {
   const accent = cfg?.accent || (theme === 'dot480' ? '#ff3b30' : '#4a8ef0');
   const nonceScript = randomBytes(16).toString('base64');
   const nonceEstilo = randomBytes(16).toString('base64');
-  const html = paginaMando(nonceScript, nonceEstilo, { theme, accent });
+  const html = paginaMando(nonceScript, nonceEstilo, { theme, accent }, cargarMotorPuntos());
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Content-Length': Buffer.byteLength(html),
@@ -371,6 +375,17 @@ function atenderTema(res: ServerResponse): void {
   const theme = cfg?.theme ?? 'dark';
   const accent = cfg?.accent || (theme === 'dot480' ? '#ff3b30' : '#4a8ef0');
   responder(res, 200, { ok: true, theme, accent });
+}
+
+/**
+ * El motor DOT como texto, para incrustarlo en la página del móvil: el
+ * **mismo** archivo que anima la celda y la tecla física
+ * (`src/components/dot480/efectosPuntos.js`), sin una copia que se quede
+ * atrás. Vite lo deja como cadena (`?raw`) en el build; la regla de capas lo
+ * permite porque es JavaScript puro, sin React ni DOM (`.dependency-cruiser.cjs`).
+ */
+function cargarMotorPuntos(): string {
+  return motorPuntos;
 }
 
 /**

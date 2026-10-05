@@ -9,8 +9,16 @@
  * (`iconosMando.ts`): la página solo los dibuja, sin tabla de glifos propia.
  * El cromo fijo (cabecera, sliders) se incrusta abajo desde el mismo
  * catálogo compartido, no copiado a mano.
+ *
+ * La animación (roadmap 78/79) usa el **mismo** motor que la celda
+ * (`src/components/dot480/efectosPuntos.js`), incrustado tal cual dentro del
+ * script con nonce (la CSP no admite otro script). Sin motor, iconos
+ * estáticos. Un solo `requestAnimationFrame` para toda la página, solo
+ * mientras haya algo animándose; con «reducir movimiento» no hay animación
+ * continua, pero el destello de pulsar se queda.
  */
 import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
+import { JS_ANIMACION_MANDO } from './iconosMando';
 
 const TEXTOS = {
   es: {
@@ -38,7 +46,7 @@ export interface DatosTemaMando {
   accent?: string;
 }
 
-export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?: DatosTemaMando): string {
+export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?: DatosTemaMando, motorJs?: string): string {
   const modo = datosTema?.theme ?? 'dark';
   const acento = datosTema?.accent || (modo === 'dot480' ? '#ff3b30' : '#4a8ef0');
   const temaInicial = modo === 'system' ? 'system' : modo === 'light' ? 'light' : 'dark';
@@ -178,6 +186,13 @@ export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?
 <script nonce="${nonceScript}">
 const T = ${JSON.stringify(TEXTOS)};
 const t = T[(navigator.language || 'es').slice(0,2) === 'es' ? 'es' : 'en'];
+
+// El motor DOT, tal cual sale del archivo (sin el no hay animacion, y los
+// iconos se quedan estaticos). Va dentro de este script por la CSP: la
+// pagina no admite otro. No puede traer la secuencia de cierre de script.
+${motorJs || ''}
+var HAY_MOTOR = (typeof globalThis.EfectosPuntos === 'object' && globalThis.EfectosPuntos) || null;
+var REDUCIDO = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 document.getElementById('titulo').textContent = t.titulo;
 const btnFs = document.getElementById('btn-fullscreen');
 const btnOlvidar = document.getElementById('btn-olvidar');
@@ -291,7 +306,8 @@ function nodo(tag, props, ...hijos) {
 // El servidor los resuelve con los datos compartidos; aquí no hay tabla de
 // glifos: solo este pintor genérico. El 16×16 usa el mismo paso que el 8×8,
 // así que el punto mide lo mismo y el icono sale al doble de tamaño.
-function svgPuntos(puntos, color, tam) {
+// «celdas» recoge cada círculo con su (x, y) para la animación.
+function svgPuntos(puntos, color, tam, celdas) {
   const lado = puntos && puntos.lado === 16 ? 16 : 8;
   const filas = puntos && puntos.filas;
   if (!Array.isArray(filas) || filas.length !== lado) return null;
@@ -315,6 +331,7 @@ function svgPuntos(puntos, color, tam) {
         p.setAttribute('r', '1.3');
         p.setAttribute('fill', relleno);
         svg.append(p);
+        if (celdas) celdas.push({ el: p, x: x, y: y });
       }
     }
   }
@@ -350,11 +367,19 @@ function svgGlifo57(filas, color) {
 // 5x7 propio (lo decide quien llama), texto si el icono no era glifo, y si
 // no los puntos que resolvió el servidor (catálogo 16x16, glifo por nombre
 // o tipo de acción).
-function dibujarIconoBoton(b, fgColor, tam) {
+function dibujarIconoBoton(b, fgColor, tam, celdas) {
   if (b.iconTexto) return nodo('span', { className: 'icono-centro', textContent: String(b.iconTexto).slice(0, 4) });
-  if (b.puntos) return svgPuntos(b.puntos, fgColor, tam);
+  if (b.puntos) return svgPuntos(b.puntos, fgColor, tam, celdas);
   return null;
 }
+
+// Animación de puntos con el motor DOT: un solo rAF para toda la página,
+// solo mientras haya algo animándose. Cada entrada guarda sus círculos; la
+// continua sale de la animación del botón («siempre», o «encendido» estando
+// encendido) y el pulso del efecto al pulsar al tocar (ausente = destello).
+// Vive en iconosMando (JS_ANIMACION_MANDO) para no pasar el tope de
+// líneas de este archivo: es código de la página, no del servidor.
+${JS_ANIMACION_MANDO}
 
 function pantallaEmparejar(error) {
   btnOlvidar.style.display = 'none';
@@ -408,6 +433,8 @@ async function pantallaDeck() {
   }
   const botones = datos.buttons || [];
   vaciar();
+  animadosMovil = [];
+  if (rafMovil) { cancelAnimationFrame(rafMovil); rafMovil = 0; }
   const paginas = [...new Set(botones.map((b) => b.page))].sort((a, b) => a - b);
   if (paginas.length > 0 && !paginas.includes(paginaViva)) {
     paginaViva = paginas[0];
@@ -448,12 +475,14 @@ async function pantallaDeck() {
         if (esClaro && subFrente && subFrente.toLowerCase() === '#ffffff') subFrente = '#111418';
         if (sub.bgColor) sc.style.backgroundColor = sub.bgColor;
         if (subFrente) sc.style.color = subFrente;
-        const icoEl = dibujarIconoBoton(sub, subFrente, 12);
+        const subCeldas = [];
+        const icoEl = dibujarIconoBoton(sub, subFrente, 12, subCeldas);
         if (icoEl && (sub.icon || sub.dotGlyph) !== sub.label) sc.append(icoEl);
         if (sub.label) sc.append(nodo('span', { className: 'sub-txt', textContent: sub.label }));
         sc.onclick = async (e) => {
           e.stopPropagation();
           if ('vibrate' in navigator) { try { navigator.vibrate(25); } catch (err) {} }
+          animarPulsoMovil(sub, sc, subCeldas);
           let ok = false;
           try { ok = (await pedir('/api/press/' + encodeURIComponent(sub.id))).ok; } catch (err) { ok = false; }
           sc.classList.add(ok ? 'ok' : 'mal');
@@ -536,8 +565,11 @@ async function pantallaDeck() {
       wrap.append(svgGlifo57(b.customGlyph57, colorFrente));
       celda.append(wrap);
     } else if (b.iconTexto || b.puntos) {
-      const icoEl = dibujarIconoBoton(b, colorFrente, 22);
+      const rejillaCeldas = [];
+      const icoEl = dibujarIconoBoton(b, colorFrente, 22, rejillaCeldas);
       if (icoEl) celda.append(icoEl);
+      registrarAnimado(b, celda, rejillaCeldas);
+      celda._rejillaCeldas = rejillaCeldas;
     }
     // La marca (brandIcon) sigue sin pintarse en el móvil, como antes: su
     // generador vive en src/data y el proceso principal no puede
@@ -554,10 +586,13 @@ async function pantallaDeck() {
       if ('vibrate' in navigator) {
         try { navigator.vibrate(30); } catch (e) {}
       }
+      animarPulsoMovil(b, celda, celda._rejillaCeldas || []);
       let ok = false;
       try { ok = (await pedir('/api/press/' + encodeURIComponent(b.id))).ok; } catch (e) { ok = false; }
       celda.classList.add(ok ? 'ok' : 'mal');
       setTimeout(() => celda.classList.remove('ok', 'mal'), 350);
+      // Un interruptor cambia de aspecto al pulsar: se relee para pintarlo.
+      if (ok && b.isToggle) setTimeout(() => { pantallaDeck(); }, 400);
     };
     rejilla.append(celda);
   }

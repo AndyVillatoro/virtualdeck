@@ -54,7 +54,7 @@ export interface ModoPerilla {
 /** Efectos que se calculan sobre los puntos de un icono (roadmap 78). */
 export type EfectoPuntos = 'encender' | 'barrido' | 'pulso' | 'parpadeo' | 'escaneo';
 /** Efecto corto al pulsar un botón (roadmap 79). */
-export type EfectoPulsar = 'destello' | 'onda' | 'ninguno';
+export type EfectoPulsar = 'destello' | 'onda' | 'none';
 
 export interface ButtonConfig {
   id: string;
@@ -83,7 +83,7 @@ export interface ButtonConfig {
    * vez al pulsar, o mientras el botón de dos estados está encendido.
    */
   animacion?: { efecto: EfectoPuntos; cuando: 'siempre' | 'al-pulsar' | 'encendido' };
-  /** Efecto corto al pulsar (roadmap 79). Sin campo = el predeterminado (`destello`). */
+  /** Efecto corto al pulsar (roadmap 79). Sin campo = el predeterminado (`destello`); `none` = sin efecto. */
   efectoPulsar?: EfectoPulsar;
   /** Botones de dos estados (`isToggle`): aspecto mientras está encendido (roadmap 79). */
   aspectoEncendido?: {

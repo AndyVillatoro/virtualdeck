@@ -9,6 +9,8 @@ export interface IconoPuntosProps {
   /** Puntos apagados en relieve, como `DotGlyphIcon`. */
   showRecessed?: boolean;
   dimColor?: string;
+  /** Intensidad 0-1 por punto [y][x] (motor `efectosPuntos`); ausente = todo encendido. */
+  intensidades?: readonly (readonly number[])[] | null;
   style?: React.CSSProperties;
 }
 
@@ -18,7 +20,7 @@ export interface IconoPuntosProps {
  */
 export const IconoPuntos = memo(function IconoPuntos({
   bits, size = 24, color = '#e6e8eb', showRecessed = false,
-  dimColor = 'rgba(255, 255, 255, 0.04)', style,
+  dimColor = 'rgba(255, 255, 255, 0.04)', intensidades, style,
 }: IconoPuntosProps) {
   const matriz = useMemo(() => matrizDePuntos16(bits), [bits]);
   if (!matriz) return null;
@@ -30,7 +32,7 @@ export const IconoPuntos = memo(function IconoPuntos({
       style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0, ...style }}
     >
       {matriz.flatMap((fila, y) => fila.map((encendido, x) => (encendido || showRecessed ? (
-        <circle key={x + LADO_PUNTOS16 * y} cx={x + 0.5} cy={y + 0.5} r={0.42} fill={encendido ? color : dimColor} />
+        <circle key={x + LADO_PUNTOS16 * y} cx={x + 0.5} cy={y + 0.5} r={0.42} fill={encendido ? color : dimColor} fillOpacity={encendido ? (intensidades?.[y]?.[x] ?? 1) : 1} />
       ) : null)))}
     </svg>
   );

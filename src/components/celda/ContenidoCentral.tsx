@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
 import { Glyph57View } from '../Glyph57Editor';
 import { DotGlyphIcon, resolveDotGlyph } from '../dot480/DotGlyphIcon';
 import { IconoPuntos } from '../dot480/IconoPuntos';
+import { botonEfectivo, matrizDeBoton } from '../dot480/animacionPuntos';
+import { useAnimacionPuntos } from '../dot480/useAnimacionPuntos';
 import type { ButtonConfig } from '../../types';
 import type { DatosWidget } from './useDatosWidget';
 
@@ -26,43 +28,63 @@ interface Props {
   /** Glifo DOT 8×8 del tipo de acción, cuando no hay ninguno más específico. */
   actionGlyph: string;
   widgetData?: DatosWidget;
+  /** El botón es `isToggle` y está encendido: se pinta su `aspectoEncendido`. */
+  encendido?: boolean;
+  /** Crece en cada pulsación (destello de `usePulsacionRaton`). */
+  pulsoId?: number;
 }
 
-export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widgetData }: Props) {
+export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widgetData, encendido, pulsoId }: Props) {
   const VD = useTheme();
+  // Tal como se pinta (con el aspecto de encendido si toca) y su matriz
+  // animable. Los hooks van antes de las salidas: con widget no se anima.
+  const boton = useMemo(() => botonEfectivo(button, encendido === true), [button, encendido]);
+  const matriz = useMemo(
+    () => (widgetData ? null : matrizDeBoton(boton, isEmpty)),
+    [boton, isEmpty, widgetData],
+  );
+  const intensidades = useAnimacionPuntos({
+    matriz,
+    efecto: boton.animacion?.efecto,
+    cuando: boton.animacion?.cuando,
+    encendido,
+    efectoPulsar: boton.efectoPulsar,
+    pulsoId,
+  });
   if (widgetData) return <Widget datos={widgetData} />;
 
   const tamano = isEmpty ? 20 : 24;
-  const ocupadoPorFondo = !!button.imageData || !!button.brandIcon;
+  const ocupadoPorFondo = !!boton.imageData || !!boton.brandIcon;
 
-  if (ocupadoPorFondo) return <CentroSobreFondo button={button} tamano={tamano} />;
+  if (ocupadoPorFondo) return <CentroSobreFondo button={boton} tamano={tamano} />;
 
-  if (button.customGlyph57?.length === 7) {
+  if (boton.customGlyph57?.length === 7) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
+        <Glyph57View rows={boton.customGlyph57} dotSize={4} gap={1} color={iconColor} />
       </div>
     );
   }
 
   // El icono del catálogo (16×16 copiado en el botón): por encima del glifo
   // por nombre y del tipo de acción, por debajo del fondo y del 5×7.
-  if (button.iconoPuntos?.bits) {
+  if (boton.iconoPuntos?.bits) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <IconoPuntos
-          bits={button.iconoPuntos.bits}
+          bits={boton.iconoPuntos.bits}
           size={tamano}
           color={iconColor}
           dimColor={VD.dotIdle}
+          intensidades={intensidades}
           showRecessed
         />
       </div>
     );
   }
 
-  if (button.icon) {
-    const glyphName = resolveDotGlyph(button.icon);
+  if (boton.icon) {
+    const glyphName = resolveDotGlyph(boton.icon);
     if (glyphName) {
       return (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -71,12 +93,13 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
             size={tamano}
             color={iconColor}
             dimColor={VD.dotIdle}
+            intensidades={intensidades}
             showRecessed
           />
         </div>
       );
     }
-    if (button.icon.trim().length <= 3) {
+    if (boton.icon.trim().length <= 3) {
       return (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <span
@@ -88,7 +111,7 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
               letterSpacing: 1,
             }}
           >
-            {button.icon.trim()}
+            {boton.icon.trim()}
           </span>
         </div>
       );
@@ -101,7 +124,7 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
         fontFamily: VD.mono,
         textAlign: 'center',
       }}>
-        {button.icon}
+        {boton.icon}
       </div>
     );
   }
@@ -113,6 +136,7 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
         size={tamano}
         color={iconColor}
         dimColor={VD.dotIdle}
+        intensidades={intensidades}
         showRecessed
       />
     </div>

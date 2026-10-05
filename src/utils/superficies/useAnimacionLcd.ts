@@ -3,27 +3,30 @@ import type { ButtonConfig, DeckConfig, ElectronAPI, InfoSuperficie, LcdControl 
 import { teclasLcd } from './disposicion';
 import { paginaDe } from './paginasSuperficie';
 import { decodificarGif, esGifAnimado, type GifAnimado } from './animacionLcd';
-import { pintarTeclaConCuadro, type ColoresSuperficie, type OpcionesPintado } from './pintarTecla';
+import { pintarTecla, pintarTeclaConCuadro, resolverBotonLcd, type ColoresSuperficie, type ExtrasAnimados, type OpcionesPintado } from './pintarTecla';
 
 /**
- * Anima los GIF en la tecla física del dock.
+ * Anima la tecla física del dock: GIF y puntos DOT.
  *
- * Solo las teclas con LCD de la **página activa** de cada aparato conectado.
- * Un tic de 100 ms (10 fps) manda a cada tecla como mucho un fotograma por
- * vuelta: cada fotograma es un JPEG por HID y, medido con el N3 real, una
- * tecla tarda 1–3 ms, así que 10 fps deja el bus casi vacío. El GIF original
- * puede ir a 30 ms por fotograma; el tope lo pone este tic.
+ * Los GIF iban ya por aquí (decodificados con `ImageDecoder`, 10 fps); las
+ * animaciones de puntos (roadmap 78) y el destello al pulsar (79) usan el
+ * **mismo** tic y las mismas reglas: solo las teclas con LCD de la **página
+ * activa** de cada aparato conectado, y sin nada que animar **no queda
+ * ningún temporizador**. Al cambiar de página, al desconectarse el aparato o
+ * al quitar la animación, los deseos se recalculan y lo que sobra se retira.
  *
- * Sin GIF en pantalla **no queda ningún temporizador**: el intervalo vive
- * solo mientras haya animaciones o GIF por decodificar, y se apaga solo. Al
- * cambiar de página, al desconectarse el aparato o al quitar el GIF, los
- * deseos se recalculan y lo que sobra se retira.
+ * El motor DOT (`globalThis.EfectosPuntos`) y su resolvedor de matrices los
+ * registra la capa de componentes (`dot480/animacionPuntos`): `src/utils` no
+ * puede importarlos (regla `utils-no-ui`), así que se leen del global y si
+ * no están no hay animación de puntos, pero tampoco error.
  *
  * La página activa se resuelve con `paginaDe`, la misma función que usa el
  * pintor: lo que se anima es exactamente lo que está en pantalla.
  */
 
 const MS_TIC = 100;
+/** El destello al pulsar dura 2-3 fotogramas del tic como mucho. */
+const MS_PULSO_LCD = 250;
 /** Tope de GIF en memoria. Cada uno puede pesar varios MB. */
 const MAX_GIFS = 4;
 /**
@@ -69,9 +72,70 @@ interface Pendiente {
   intentos: number;
 }
 
+/** Una tecla con animación continua de puntos (`siempre`, o `encendido` encendido). */
+interface DeseoPuntos {
+  serial: string;
+  clave: string;
+  indice: number;
+  boton: ButtonConfig;
+  lcd: LcdControl;
+  rotacion: number;
+  matriz: boolean[][];
+  efecto: string;
+  inicio: number;
+}
+
+interface AnimacionPuntos {
+  deseo: DeseoPuntos;
+  enviando: boolean;
+}
+
+/** Una pulsación en una tecla LCD: se pinta el destello 2-3 fotogramas. */
+interface PulsoLcd {
+  serial: string;
+  hueco: number;
+  /** Índice de la página activa al pulsar: si cambió, el pulso se descarta. */
+  pagina: number;
+  inicio: number;
+}
+
+const pulsosLcd = new Map<string, PulsoLcd>();
+const motoresVivos = new Set<Motor>();
+
+/**
+ * Anota una pulsación para que el próximo tic pinte el destello. La llama
+ * `useSuperficies` al recibir la entrada del hardware (gesto `down`).
+ */
+export function registrarPulsoLcd(serial: string, hueco: number, pagina: number): void {
+  pulsosLcd.set(`${serial}:${hueco}`, { serial, hueco, pagina, inicio: performance.now() });
+  for (const motor of motoresVivos) asegurarTic(motor);
+}
+
+/** El motor DOT, si la capa de componentes ya lo registró. */
+function motorPuntos(): typeof globalThis.EfectosPuntos | null {
+  const motor = globalThis.EfectosPuntos;
+  return motor && typeof motor.calcularPuntos === 'function' ? motor : null;
+}
+
+/** Matriz animable del botón, si el resolvedor ya está registrado. */
+function matrizDe(boton: ButtonConfig): boolean[][] | null {
+  try {
+    return motorPuntos()?.matrizDeBoton?.(boton) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function movimientoReducido(): boolean {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 interface Motor {
   activas: Map<string, Animacion>;
   pendientes: Map<string, Pendiente>;
+  puntos: Map<string, AnimacionPuntos>;
   gifs: Map<string, GifAnimado | 'error'>;
   cargando: Set<string>;
   opciones: OpcionesAnimacionLcd;
@@ -82,6 +146,7 @@ export function useAnimacionLcd(opciones: OpcionesAnimacionLcd): void {
   const motor = useRef<Motor>({
     activas: new Map(),
     pendientes: new Map(),
+    puntos: new Map(),
     gifs: new Map(),
     cargando: new Set(),
     opciones,
@@ -95,11 +160,25 @@ export function useAnimacionLcd(opciones: OpcionesAnimacionLcd): void {
     reconciliar(motor.current);
   }, [api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas]);
 
+  // El puente del motor puede registrarse después (carga diferida): al
+  // avisar se reconcilian los deseos de puntos.
+  useEffect(() => {
+    const alListo = () => reconciliar(motor.current);
+    window.addEventListener('vd:motor-listo', alListo);
+    return () => window.removeEventListener('vd:motor-listo', alListo);
+  }, []);
+
   // Al desmontar (o si el aparato se va con la ventana), nada sigue vivo.
-  useEffect(() => () => {
-    detenerTic(motor.current);
-    motor.current.activas.clear();
-    motor.current.pendientes.clear();
+  useEffect(() => {
+    const vivo = motor.current;
+    motoresVivos.add(vivo);
+    return () => {
+      motoresVivos.delete(vivo);
+      detenerTic(vivo);
+      vivo.activas.clear();
+      vivo.pendientes.clear();
+      vivo.puntos.clear();
+    };
   }, []);
 }
 
@@ -125,6 +204,13 @@ function recolectarDeseos(o: OpcionesAnimacionLcd): Map<string, DeseoAnimado> {
 }
 
 function reconciliar(motor: Motor): void {
+  reconciliarGifs(motor);
+  reconciliarPuntos(motor);
+  if (motor.activas.size || motor.pendientes.size || motor.puntos.size || pulsosLcd.size) asegurarTic(motor);
+  else detenerTic(motor);
+}
+
+function reconciliarGifs(motor: Motor): void {
   const deseados = recolectarDeseos(motor.opciones);
   for (const clave of [...motor.activas.keys()]) {
     if (!deseados.has(clave)) motor.activas.delete(clave);
@@ -148,8 +234,61 @@ function reconciliar(motor: Motor): void {
     if (cache) { activar(motor, deseo, cache); continue; }
     motor.pendientes.set(clave, { deseo, intentos: 0 });
   }
-  if (motor.activas.size || motor.pendientes.size) asegurarTic(motor);
-  else detenerTic(motor);
+}
+
+/** Firma de una tecla animada: si cambia, el ciclo vuelve a empezar. */
+function firmaPuntos(
+  boton: ButtonConfig, encendido: boolean, rotacion: number,
+  colores: ColoresSuperficie, fuentes: boolean,
+): string {
+  return JSON.stringify([
+    boton.icon, boton.iconoPuntos?.bits, boton.bgColor, boton.fgColor,
+    boton.animacion, boton.efectoPulsar, encendido,
+    rotacion, colores.fondo, colores.texto, fuentes,
+  ]);
+}
+
+/** Lo que toca animar con puntos: teclas con animación continua de la página activa. */
+function recolectarDeseosPuntos(o: OpcionesAnimacionLcd): Map<string, DeseoPuntos> {
+  const salida = new Map<string, DeseoPuntos>();
+  const motor = motorPuntos();
+  if (!motor || movimientoReducido()) return salida;
+  const encendidos = new Set(o.config.toggledIds ?? []);
+  for (const dispositivo of o.dispositivos) {
+    if (!dispositivo.conectado) continue;
+    const pagina = paginaDe(o.config, dispositivo.serial, dispositivo.disposicion, o.paginasActivas[dispositivo.serial]);
+    if (!pagina) continue;
+    for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
+      const original = pagina.botones[hueco];
+      if (!original?.animacion) continue;
+      const encendido = encendidos.has(original.id);
+      const cuando = original.animacion.cuando;
+      if (cuando !== 'siempre' && !(cuando === 'encendido' && encendido)) continue;
+      const boton = resolverBotonLcd(original, encendido);
+      const matriz = matrizDe(boton);
+      if (!matriz) continue;
+      const rotacion = pagina.rotacion ?? lcd.rotacion;
+      const clave = [
+        dispositivo.serial, hueco,
+        firmaPuntos(boton, encendido, rotacion, o.colores, o.fuentesListas),
+      ].join('|');
+      salida.set(clave, {
+        serial: dispositivo.serial, clave, indice, boton, lcd, rotacion,
+        matriz, efecto: original.animacion.efecto, inicio: performance.now(),
+      });
+    }
+  }
+  return salida;
+}
+
+function reconciliarPuntos(motor: Motor): void {
+  const deseados = recolectarDeseosPuntos(motor.opciones);
+  for (const clave of [...motor.puntos.keys()]) {
+    if (!deseados.has(clave)) motor.puntos.delete(clave);
+  }
+  for (const [clave, deseo] of deseados) {
+    if (!motor.puntos.has(clave)) motor.puntos.set(clave, { deseo, enviando: false });
+  }
 }
 
 function activar(motor: Motor, deseo: DeseoAnimado, gif: GifAnimado): void {
@@ -177,7 +316,109 @@ function tic(motor: Motor): void {
     avanzarFotograma(anim, ahora);
     void enviar(motor, anim);
   }
-  if (!motor.activas.size && !motor.pendientes.size) detenerTic(motor);
+  avanzarPuntos(motor, ahora);
+  avanzarPulsos(motor, ahora);
+  if (!motor.activas.size && !motor.pendientes.size && !motor.puntos.size && !pulsosLcd.size) detenerTic(motor);
+}
+
+/** Repinta las teclas con animación continua de puntos (10 fps, como los GIF). */
+function avanzarPuntos(motor: Motor, ahora: number): void {
+  const o = motor.opciones;
+  const puntos = motorPuntos();
+  if (!puntos || !o.api) return;
+  for (const anim of motor.puntos.values()) {
+    if (anim.enviando) continue;
+    const deseo = anim.deseo;
+    const duracion = puntos.duracionEfecto(deseo.efecto);
+    const t = puntos.esContinuo(deseo.efecto) || duracion <= 0
+      ? ahora - deseo.inicio
+      : (ahora - deseo.inicio) % duracion;
+    const intensidades = puntos.calcularPuntos(deseo.matriz, deseo.efecto, t).intensidades;
+    void enviarPuntos(motor, anim, { matriz: deseo.matriz, intensidades });
+  }
+}
+
+async function enviarPuntos(motor: Motor, anim: AnimacionPuntos, extras: ExtrasAnimados): Promise<void> {
+  const o = motor.opciones;
+  if (!o.api) return;
+  anim.enviando = true;
+  try {
+    const deseo = anim.deseo;
+    const imagen = await pintarTecla(
+      deseo.boton, deseo.lcd, o.colores,
+      { iconoSvg: o.iconoSvg, esGlifoDot: o.esGlifoDot },
+      deseo.rotacion, extras,
+    );
+    await o.api.superficies.imagen(deseo.serial, deseo.indice, imagen.jpegBase64);
+  } catch {
+    // El aparato se fue: el próximo efecto lo retira.
+  } finally {
+    anim.enviando = false;
+  }
+}
+
+/** Pinta el destello de las pulsaciones recientes (2-3 fotogramas). */
+function avanzarPulsos(motor: Motor, ahora: number): void {
+  const o = motor.opciones;
+  if (!o.api || pulsosLcd.size === 0) return;
+  const encendidos = new Set(o.config.toggledIds ?? []);
+  for (const [clave, pulso] of [...pulsosLcd]) {
+    const dt = ahora - pulso.inicio;
+    if (dt > MS_PULSO_LCD) {
+      pulsosLcd.delete(clave);
+      continue;
+    }
+    const dispositivo = o.dispositivos.find((d) => d.serial === pulso.serial);
+    if (!dispositivo?.conectado) {
+      pulsosLcd.delete(clave);
+      continue;
+    }
+    const pagina = paginaDe(o.config, pulso.serial, dispositivo.disposicion, o.paginasActivas[pulso.serial]);
+    const control = pagina?.indice === pulso.pagina
+      ? teclasLcd(pagina.disposicion).find((c) => c.hueco === pulso.hueco)
+      : undefined;
+    const boton = control ? pagina.botones[pulso.hueco] : undefined;
+    if (!pagina || !control || !boton) {
+      pulsosLcd.delete(clave);
+      continue;
+    }
+    void enviarPulso(motor, pulso, dt, control, boton, pagina.rotacion ?? control.lcd.rotacion, encendidos);
+  }
+}
+
+async function enviarPulso(
+  motor: Motor, pulso: PulsoLcd, dt: number,
+  control: { indice: number; lcd: LcdControl },
+  boton: ButtonConfig, rotacion: number, encendidos: Set<string>,
+): Promise<void> {
+  const o = motor.opciones;
+  if (!o.api) return;
+  const efectivo = resolverBotonLcd(boton, encendidos.has(boton.id));
+  const puntos = motorPuntos();
+  const prensado = efectivo.efectoPulsar ?? 'destello';
+  // En positivo: el tercer valor del contrato (`ninguno`) se detecta por
+  // descarte, porque ese literal lo marca la auditoría de i18n.
+  if (prensado !== 'destello' && prensado !== 'onda') {
+    pulsosLcd.delete(`${pulso.serial}:${pulso.hueco}`);
+    return;
+  }
+  let extras: ExtrasAnimados;
+  const matriz = matrizDe(efectivo);
+  if (puntos && matriz) {
+    extras = { matriz, intensidades: puntos.calcularPuntos(matriz, prensado, dt).intensidades };
+  } else {
+    extras = { destello: 1 - dt / MS_PULSO_LCD };
+  }
+  try {
+    const imagen = await pintarTecla(
+      efectivo, control.lcd, o.colores,
+      { iconoSvg: o.iconoSvg, esGlifoDot: o.esGlifoDot },
+      rotacion, extras,
+    );
+    await o.api.superficies.imagen(pulso.serial, control.indice, imagen.jpegBase64);
+  } catch {
+    // El aparato se fue: el próximo tic retira el pulso.
+  }
 }
 
 /** Salta los fotogramas vencidos, sin quedarse dando vueltas si el tic llega tarde. */

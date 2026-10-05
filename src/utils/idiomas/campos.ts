@@ -337,5 +337,28 @@ export const FIELDS_EN: Record<string, string> = {
   'Grupo activo:': 'Active group:',
   'Permite agrupar varios botones toggle para que sean mutuamente exclusivos (solo uno activo a la vez).':
     'Allows grouping several toggle buttons to be mutually exclusive (only one active at a time).',
+  // T-UI-12: Animación, efecto al pulsar y aspecto encendido
+  'ANIMACIÓN': 'ANIMATION',
+  'CUÁNDO': 'WHEN',
+  'SIEMPRE': 'ALWAYS',
+  'AL PULSAR': 'ON PRESS',
+  'MIENTRAS ESTÁ ENCENDIDO': 'WHILE ON',
+  'DESTELLO': 'FLASH',
+  'DESTELLO (PREDETERMINADO)': 'FLASH (DEFAULT)',
+  'ONDA': 'RIPPLE',
+  'NINGUNA': 'NONE',
+  'ENCENDER': 'LIGHT UP',
+  'BARRIDO': 'SWEEP',
+  'PULSO': 'PULSE',
+  'PARPADEO': 'BLINK',
+  'ESCANEO': 'SCAN',
+  'Reducción de movimiento activada en el sistema': 'Reduced motion enabled in system',
+  'ASPECTO ENCENDIDO': 'ON-STATE APPEARANCE',
+  'ICONO (ENCENDIDO)': 'ICON (ON-STATE)',
+  'COLOR DE FONDO (ENCENDIDO)': 'BACKGROUND COLOR (ON-STATE)',
+  'COLOR DE TEXTO / ICONO (ENCENDIDO)': 'TEXT / ICON COLOR (ON-STATE)',
+  'VISTA PREVIA:': 'PREVIEW:',
+  'APAGADO': 'OFF',
+  'ENCENDIDO': 'ON',
 };
 

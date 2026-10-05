@@ -58,6 +58,42 @@ export interface ImagenTecla {
   dataUrl: string;
 }
 
+/**
+ * Boton tal como se pinta en el LCD: con el `aspectoEncendido` si el
+ * interruptor esta encendido (roadmap 79). La misma regla que la celda
+ * (`botonEfectivo` en `components/dot480/animacionPuntos`): duplicada aqui
+ * a proposito, porque `src/utils` no puede importar componentes
+ * (regla `utils-no-ui`).
+ */
+export function resolverBotonLcd(boton: ButtonConfig, encendido: boolean): ButtonConfig {
+  if (!encendido || boton.isToggle !== true) return boton;
+  const aspecto = boton.aspectoEncendido;
+  if (!aspecto) return boton;
+  const next: ButtonConfig = { ...boton };
+  if (aspecto.iconoPuntos) next.iconoPuntos = aspecto.iconoPuntos;
+  if (aspecto.icon !== undefined) {
+    next.icon = aspecto.icon;
+    if (!aspecto.iconoPuntos) next.iconoPuntos = undefined;
+  }
+  if (aspecto.bgColor) next.bgColor = aspecto.bgColor;
+  if (aspecto.fgColor) next.fgColor = aspecto.fgColor;
+  return next;
+}
+
+/**
+ * Extras del pintado animado (roadmap 78/79). La matriz y las intensidades
+ * salen del motor DOT (`globalThis.EfectosPuntos`, registrado por la capa de
+ * componentes); aqui solo son numeros, sin importar nada de UI.
+ */
+export interface ExtrasAnimados {
+  /** Matriz de puntos del icono (N×N booleanos), ya resuelta por el llamador. */
+  matriz?: boolean[][];
+  /** Intensidad 0-1 por punto, misma forma que `matriz`. */
+  intensidades?: number[][];
+  /** Velo blanco 0-1 encima de todo (destello en botones sin puntos). */
+  destello?: number;
+}
+
 const LIMITE_JPEG = 10240;
 const CALIDAD_MAXIMA = 0.9;
 const CALIDAD_MINIMA = 0.1;
@@ -293,6 +329,41 @@ function dibujarGlifo57(ctx: CanvasRenderingContext2D, filas: number[], ancho: n
   }
 }
 
+/**
+ * El centro animado: la matriz de puntos del icono con la intensidad de cada
+ * punto (motor DOT). Misma caja que el glifo; un punto con intensidad ~0 se
+ * dibuja en relieve, como los apagados de la celda.
+ */
+function dibujarMatrizAnimada(
+  ctx: CanvasRenderingContext2D, matriz: boolean[][], intensidades: number[][],
+  ancho: number, alto: number, color: string, centroY: number,
+): void {
+  const n = matriz.length;
+  if (n === 0) return;
+  const caja = Math.min(ancho, alto) * CAJA_CENTRO;
+  const paso = caja / n;
+  const x0 = (ancho - caja) / 2;
+  const y0 = centroY - caja / 2;
+  for (let y = 0; y < n; y++) {
+    const fila = matriz[y] ?? [];
+    const intens = intensidades[y] ?? [];
+    for (let x = 0; x < n; x++) {
+      const alfa = fila[x] ? (intens[x] ?? 1) : 0;
+      ctx.beginPath();
+      ctx.arc(x0 + x * paso + paso / 2, y0 + y * paso + paso / 2, paso * 0.4, 0, Math.PI * 2);
+      if (alfa <= 0.02) {
+        ctx.fillStyle = DIM_GLIFO;
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alfa > 1 ? 1 : alfa;
+      }
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
 function dibujarTextoCentrado(
   ctx: CanvasRenderingContext2D, texto: string, ancho: number, alto: number, color: string, centroY: number,
 ): void {
@@ -429,7 +500,7 @@ function dibujarEtiqueta(
 
 async function pintarContenido(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
-  colores: ColoresSuperficie, opciones: OpcionesPintado,
+  colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
 ): Promise<void> {
   const color = colorTexto(boton, colores);
   const sobreFondo = !!(boton.imageData || boton.brandIcon);
@@ -439,12 +510,18 @@ async function pintarContenido(
   if (boton.imageData) fondoPintado = await dibujarImagenConTrama(ctx, boton.imageData, ancho, alto);
   else if (boton.brandIcon) fondoPintado = await dibujarMarca(ctx, boton, ancho, alto, centroY);
 
-  if (fondoPintado) {
+  if (extras?.matriz && extras?.intensidades) {
+    dibujarMatrizAnimada(ctx, extras.matriz, extras.intensidades, ancho, alto, color, centroY);
+  } else if (fondoPintado) {
     if (boton.brandIcon && (boton.iconoPuntos?.bits || boton.icon)) await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
   } else {
     await dibujarCentro(ctx, boton, ancho, alto, color, centroY, opciones);
   }
   dibujarEtiqueta(ctx, boton.label ?? '', ancho, alto, color, sobreFondo);
+  if (extras?.destello) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${extras.destello > 1 ? 1 : extras.destello})`;
+    ctx.fillRect(0, 0, ancho, alto);
+  }
 }
 
 /** Rota el lienzo en sentido horario; a 90/270 se intercambian los lados. */
@@ -497,6 +574,7 @@ function aDataUrlPng(lienzo: HTMLCanvasElement): string {
 /**
  * Pinta un hueco. `rotacion` manda sobre la del `lcd` (la válvula de seguridad
  * de los modelos sin verificar); si no se pasa, se usa la del modelo.
+ * `extras` pinta el centro con el motor DOT (o un velo de destello).
  */
 export async function pintarTecla(
   boton: ButtonConfig | null,
@@ -504,6 +582,7 @@ export async function pintarTecla(
   colores: ColoresSuperficie,
   opciones: OpcionesPintado = {},
   rotacion?: number,
+  extras?: ExtrasAnimados,
 ): Promise<ImagenTecla> {
   await prepararFuentesLcd();
   const { ancho, alto } = lcd;
@@ -513,7 +592,7 @@ export async function pintarTecla(
 
   ctx.fillStyle = colorFondo(boton, colores);
   ctx.fillRect(0, 0, ancho, alto);
-  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones);
+  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones, extras);
 
   const dataUrl = aDataUrlPng(lienzo);
   return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl };
