@@ -33,7 +33,7 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
     if (!button.brandIcon || !button.icon) return null;
     const glyphName = resolveDotGlyph(button.icon);
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', zIndex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 3 /* sobre la trama de la imagen (2) */ }}>
         {glyphName ? (
           <DotGlyphIcon
             glyph={glyphName}
