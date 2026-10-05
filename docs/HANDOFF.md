@@ -597,6 +597,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores, 33 warnings; `npm run build` OK; el motor aparece en `out/main/index.js`.
 * **Falta (dueño):** ver animaciones y efecto al pulsar en deck, kiosko, barra, móvil y N3; aspecto encendido de un botón de dos estados; el selector de iconos.
 
+## Pausa 2026-10-05 — dónde retomar
+
+* **Rama:** `task/p1-hw-streamdock` (sigue encima de `task/p0-sec-01-sandbox-navegacion`, que no está en `main`). **Todo commiteado, sin push.** `npm run check` 0 errores, 33 warnings; `npm run build` OK; `cargo test -p vd-core` en verde. `native/vd-core.node` es el nuevo (`cycleWindow`, `openApps`, volumen por app, signos por `VkKeyScanW`).
+* **Hecho en esta sesión (falta que el dueño lo vea):** roadmap 58, 62–80 y 82, 87–89 (ver cada fila). Lo último: catálogo de iconos en el editor, los mismos iconos en las cinco superficies, iconos animados y efecto al pulsar.
+* **Lista de pruebas pendientes del dueño:** animaciones y efecto al pulsar en deck, kiosko, barra, móvil y N3; aspecto encendido; selector de iconos (marcas y acciones); campo ICONO único; Comportamiento con opciones; fijo en lugar de anclado (2 botones migrados); GIF en dock, barra y móvil; volumen por app; perilla multimodo; ventana anterior/siguiente; mando móvil (tema, sin docks, iconos).
+* **Próximo, por orden propuesto:** (1) 84 optimizar: índice de iconos de 1,5 MB al abrir el selector, JS principal 1,66 MB; (2) 82 matriz de paridad de las cinco superficies y su guardián; (3) 85 valor en la tecla al girar; (4) 86 icono del `.exe` al vincular; (5) 83 plugins de Stream Deck (prototipo, informe en `_referencias/informes/plugins-streamdeck.md`); (6) 0.14.0: probar el N3 desde el MSIX, CHANGELOG, versión, instalador, publicación y fusión a `main` (decisión del dueño).
+* **Trabajadores:** opencode `wE` (Muse Spark 1.3 Free), opencode `wN` (DeepSeek V4.1 Flash por Go, gastado ~$0.85 en total esta sesión) y agy `wK` (Gemini 3.8 Flash); sesiones limpias. Encargos en `_referencias/encargos/` (T-HW-05…20, T-CFG-01, T-UI-01…12).
+* **Lecciones (en memoria del supervisor):** las funciones de botón llegan a las cinco superficies a la vez; los guardianes no se esquivan (dos rodeos corregidos el 2026-10-05); DeepSeek se cuelga si lanza la app con la salida redirigida.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
