@@ -131,6 +131,7 @@ export function EditorB({
                 brandIconCustomPalette: e.brandIconCustomPalette,
                 customGlyph57: e.customGlyph57,
                 glifoEncima: e.glifoEncima,
+                iconoPuntos: e.iconoPuntos,
               }),
               bgColor: e.bgColor,
               fgColor: e.fgColor,
@@ -295,6 +296,9 @@ export function EditorB({
                 habiaVariosCamposIcono={e.habiaVariosCamposIcono}
                 glifoEncima={e.glifoEncima}
                 setGlifoEncima={e.setGlifoEncima}
+                iconoPuntos={e.iconoPuntos}
+                setIconoPuntos={e.setIconoPuntos}
+                onAbrirCatalogoDot={e.abrirCatalogoDot}
               />
             </SeccionAjustes>
 
@@ -396,6 +400,10 @@ export function EditorB({
         brandIconCustomPalette={e.brandIconCustomPalette}
         customGlyph57={e.customGlyph57}
         accent={accent}
+        catalogoDotAbierto={e.catalogoDotAbierto}
+        onCloseCatalogoDot={e.cerrarCatalogoDot}
+        onSelectIconoDot={e.seleccionarIconoCatalogo}
+        currentOrigen={e.iconoPuntos?.origen}
         onCloseBrandPicker={() => e.setShowBrandPicker(false)}
         onCloseBrandEditor={() => e.setShowBrandEditor(false)}
         onCloseGlyphEditor={() => e.setShowGlyphEditor(false)}

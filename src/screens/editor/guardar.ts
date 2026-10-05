@@ -27,6 +27,7 @@ export interface CamposDelEditor {
   brandIconCustomBitmap: string[] | undefined;
   brandIconCustomColor: string | undefined;
   brandIconCustomPalette: Record<string, string> | undefined;
+  iconoPuntos?: { bits: string; origen: string };
   bgColor: string;
   fgColor: string;
   folderButtons: FolderButton[];
@@ -156,6 +157,7 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
       c.brandIconCustomPalette && Object.keys(c.brandIconCustomPalette).length > 0
         ? c.brandIconCustomPalette
         : undefined,
+    iconoPuntos: c.iconoPuntos,
     bgColor: c.bgColor || undefined,
     fgColor: c.fgColor || undefined,
     action: c.action.type === 'folder' ? { ...c.action, folderButtons: c.folderButtons } : c.action,

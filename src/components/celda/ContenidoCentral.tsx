@@ -2,15 +2,21 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { Glyph57View } from '../Glyph57Editor';
 import { DotGlyphIcon, resolveDotGlyph } from '../dot480/DotGlyphIcon';
+import { IconoPuntos } from '../dot480/IconoPuntos';
 import type { ButtonConfig } from '../../types';
 import type { DatosWidget } from './useDatosWidget';
 
 /**
  * Lo que va en el centro de una celda: un widget en vivo, o el icono.
  *
- * Hay cuatro formas de icono y se pisan por prioridad — imagen de fondo, icono
- * de marca, glifo dibujado a mano, glifo dot-matrix o texto, y el icono del tipo de acción como
- * último recurso.
+ * Precedencia del centro, de más a menos específico: widget en vivo →
+ * imagen de fondo o marca (con el icono encima si hay marca) → dibujo
+ * propio 5×7 → icono del catálogo 16×16 (`iconoPuntos`) → glifo por nombre
+ * o texto (`icon`) → glifo del tipo de acción. `iconoPuntos` es un tipo de
+ * icono más y va donde va `icon`: por debajo del fondo y del 5×7, un
+ * peldaño por encima del glifo por nombre. La tecla física (`pintarTecla`),
+ * el SVG inyectado (`iconoSvg`) y el mando móvil (resuelto en el proceso
+ * principal) reproducen este mismo orden.
  */
 
 interface Props {
@@ -29,37 +35,28 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
   const tamano = isEmpty ? 20 : 24;
   const ocupadoPorFondo = !!button.imageData || !!button.brandIcon;
 
-  if (ocupadoPorFondo) {
-    if (!button.brandIcon || !button.icon) return null;
-    const glyphName = resolveDotGlyph(button.icon);
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 3 /* sobre la trama de la imagen (2) */ }}>
-        {glyphName ? (
-          <DotGlyphIcon
-            glyph={glyphName}
-            size={tamano}
-            color="rgba(255,255,255,0.95)"
-            showRecessed={false}
-          />
-        ) : (
-          <div style={{
-            fontSize: tamano * 0.7,
-            lineHeight: 1,
-            color: 'rgba(255,255,255,0.9)',
-            textShadow: '0 1px 4px rgba(0,0,0,0.9)',
-            fontFamily: VD.mono,
-          }}>
-            {button.icon}
-          </div>
-        )}
-      </div>
-    );
-  }
+  if (ocupadoPorFondo) return <CentroSobreFondo button={button} tamano={tamano} />;
 
   if (button.customGlyph57?.length === 7) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Glyph57View rows={button.customGlyph57} dotSize={4} gap={1} color={iconColor} />
+      </div>
+    );
+  }
+
+  // El icono del catálogo (16×16 copiado en el botón): por encima del glifo
+  // por nombre y del tipo de acción, por debajo del fondo y del 5×7.
+  if (button.iconoPuntos?.bits) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <IconoPuntos
+          bits={button.iconoPuntos.bits}
+          size={tamano}
+          color={iconColor}
+          dimColor={VD.dotIdle}
+          showRecessed
+        />
       </div>
     );
   }
@@ -74,7 +71,7 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
             size={tamano}
             color={iconColor}
             dimColor={VD.dotIdle}
-            showRecessed={!ocupadoPorFondo}
+            showRecessed
           />
         </div>
       );
@@ -118,6 +115,51 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
         dimColor={VD.dotIdle}
         showRecessed
       />
+    </div>
+  );
+}
+
+/**
+ * El centro encima de una imagen o marca: solo hay sitio si hay marca, que
+ * es la que deja hueco para el icono (la imagen llena la celda). Gana
+ * `iconoPuntos` y si no hay, el glifo por nombre o el texto de `icon`.
+ */
+function CentroSobreFondo({ button, tamano }: { button: ButtonConfig; tamano: number }) {
+  const VD = useTheme();
+  if (!button.brandIcon || (!button.iconoPuntos?.bits && !button.icon)) return null;
+  if (button.iconoPuntos?.bits) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 3 /* sobre la trama de la imagen (2) */ }}>
+        <IconoPuntos
+          bits={button.iconoPuntos.bits}
+          size={tamano}
+          color="rgba(255,255,255,0.95)"
+          showRecessed={false}
+        />
+      </div>
+    );
+  }
+  const glyphName = resolveDotGlyph(button.icon);
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 3 /* sobre la trama de la imagen (2) */ }}>
+      {glyphName ? (
+        <DotGlyphIcon
+          glyph={glyphName}
+          size={tamano}
+          color="rgba(255,255,255,0.95)"
+          showRecessed={false}
+        />
+      ) : (
+        <div style={{
+          fontSize: tamano * 0.7,
+          lineHeight: 1,
+          color: 'rgba(255,255,255,0.9)',
+          textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+          fontFamily: VD.mono,
+        }}>
+          {button.icon}
+        </div>
+      )}
     </div>
   );
 }

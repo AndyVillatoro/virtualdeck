@@ -1,15 +1,24 @@
 import React, { lazy, Suspense, useMemo } from 'react';
 import { EditorPuntos } from '../../components/dot480/EditorPuntos';
 import { iconoDeCatalogo, useCatalogoMarcas } from '../../utils/catalogoMarcas';
+import type { NombreCatalogo } from '../../data/iconosDot/tipos';
+import { CAT_MARCAS, PREFIJO_MARCAS } from './constantesCatalogo';
 
-const BrandIconPicker = lazy(() => import('../../components/BrandIconPicker').then(m => ({ default: m.BrandIconPicker })));
+const SelectorIconosDot = lazy(() =>
+  import('./SelectorIconosDot').then((m) => ({ default: m.SelectorIconosDot }))
+);
 
 interface ModalesIconosEditorProps {
-  showBrandPicker: boolean;
-  onCloseBrandPicker: () => void;
+  showBrandPicker?: boolean;
+  onCloseBrandPicker?: () => void;
   brandIcon?: string;
   accent: string;
-  onSelectBrandIcon: (key: string) => void;
+  onSelectBrandIcon?: (key: string) => void;
+
+  catalogoDotAbierto?: NombreCatalogo | null;
+  onCloseCatalogoDot?: () => void;
+  onSelectIconoDot?: (icono: { bits: string; origen: string }) => void;
+  currentOrigen?: string;
 
   showGlyphEditor: boolean;
   onCloseGlyphEditor: () => void;
@@ -30,6 +39,10 @@ export function ModalesIconosEditor({
   brandIcon,
   accent,
   onSelectBrandIcon,
+  catalogoDotAbierto,
+  onCloseCatalogoDot,
+  onSelectIconoDot,
+  currentOrigen,
   showGlyphEditor,
   onCloseGlyphEditor,
   customGlyph57,
@@ -61,8 +74,7 @@ export function ModalesIconosEditor({
     [base],
   );
 
-  // Un solo editor de puntos en vez de los dos modales originales. La interfaz
-  // de este componente no cambia: quien lo monta sigue pasando las mismas props.
+  // Un solo editor de puntos en vez de los dos modales originales.
   const verPuntos = showGlyphEditor || showBrandEditor;
 
   function cerrarPuntos() {
@@ -70,15 +82,32 @@ export function ModalesIconosEditor({
     onCloseBrandEditor();
   }
 
+  const verCatalogoDot = Boolean(catalogoDotAbierto || showBrandPicker);
+
   return (
     <>
-      {showBrandPicker && (
+      {verCatalogoDot && (
         <Suspense fallback={null}>
-          <BrandIconPicker
-            current={brandIcon}
+          <SelectorIconosDot
+            catalogoInicial={catalogoDotAbierto ?? CAT_MARCAS}
             accent={accent}
-            onSelect={onSelectBrandIcon}
-            onClose={onCloseBrandPicker}
+            currentOrigen={currentOrigen}
+            onSelect={(icono) => {
+              if (onSelectIconoDot) {
+                onSelectIconoDot(icono);
+              } else if (onSelectBrandIcon) {
+                const clave = icono.origen.startsWith(PREFIJO_MARCAS)
+                  ? icono.origen.slice(PREFIJO_MARCAS.length)
+                  : icono.origen;
+                onSelectBrandIcon(clave);
+              }
+              onCloseCatalogoDot?.();
+              onCloseBrandPicker?.();
+            }}
+            onClose={() => {
+              onCloseCatalogoDot?.();
+              onCloseBrandPicker?.();
+            }}
           />
         </Suspense>
       )}

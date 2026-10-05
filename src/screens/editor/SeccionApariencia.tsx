@@ -6,6 +6,7 @@ import { Field, Btn, estiloEntrada } from './comunes';
 import { BloqueWidgetApariencia } from './BloqueWidgetApariencia';
 import { CampoIconoUnificado } from './CampoIconoUnificado';
 import type { TipoIcono } from './tiposIcono';
+import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig } from '../../types';
 
 export interface SeccionAparienciaProps {
@@ -66,6 +67,9 @@ export interface SeccionAparienciaProps {
   habiaVariosCamposIcono?: boolean;
   glifoEncima: string;
   setGlifoEncima: (g: string) => void;
+  iconoPuntos?: { bits: string; origen: string };
+  setIconoPuntos?: React.Dispatch<React.SetStateAction<{ bits: string; origen: string } | undefined>>;
+  onAbrirCatalogoDot?: (catalogo: NombreCatalogo) => void;
 }
 
 export function SeccionApariencia(p: SeccionAparienciaProps) {
@@ -81,7 +85,7 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
     setVarWidgetPrefix, setVarWidgetSuffix, setWidget, sublabel, varWidgetName,
     varWidgetPrefix, varWidgetSuffix, widget, currencyWidget, setCurrencyWidget,
     sliderWidget, setSliderWidget, tipoIcono, setTipoIcono, habiaVariosCamposIcono,
-    glifoEncima, setGlifoEncima,
+    glifoEncima, setGlifoEncima, iconoPuntos, setIconoPuntos, onAbrirCatalogoDot,
   } = p;
 
   const VD = useTheme();
@@ -141,6 +145,9 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
         setShowBrandEditor={setShowBrandEditor}
         setShowGlyphEditor={setShowGlyphEditor}
         fgColor={fgColor}
+        iconoPuntos={iconoPuntos}
+        setIconoPuntos={setIconoPuntos}
+        onAbrirCatalogoDot={onAbrirCatalogoDot}
       />
 
       {/* Colores */}

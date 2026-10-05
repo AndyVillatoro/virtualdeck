@@ -9,12 +9,13 @@ import type { ButtonConfig, LcdControl } from '../../types';
  * llama (la de la página si existe).
  *
  * Reproduce la precedencia de `celda/ContenidoCentral`: imagen o icono de
- * marca (+ glifo encima si lo hay) → glifo 5×7 propio → glifo DOT 8×8 →
- * texto corto en DotGothic16 → texto largo → icono SVG del tipo de acción.
- * Los glifos DOT y el icono de acción llegan **inyectados**
- * (`opciones.iconoSvg`): viven en `components/` y esta capa no puede
- * importarlos. Los iconos de marca se cargan del catálogo con el mismo
- * `import()` diferido que usa la interfaz.
+ * marca (+ icono encima si lo hay) → glifo 5×7 propio → icono del catálogo
+ * 16×16 (`iconoPuntos`) → glifo DOT 8×8 → texto corto en DotGothic16 →
+ * texto largo → icono SVG del tipo de acción.
+ * Los iconos en puntos (catálogo y DOT) y el icono de acción llegan
+ * **inyectados** (`opciones.iconoSvg`): viven en `components/` y esta capa
+ * no puede importarlos. Los iconos de marca se cargan del catálogo con el
+ * mismo `import()` diferido que usa la interfaz.
  *
  * Un hueco vacío es negro. El JPEG se baja de calidad hasta caber en 10240
  * bytes, el límite del búfer del microcontrolador.
@@ -315,8 +316,10 @@ function dibujarTextoCentrado(
 }
 
 /**
- * El centro cuando no hay fondo: glifo 5×7 → glifo DOT/icono inyectado →
- * texto. La precedencia es la de `ContenidoCentral`.
+ * El centro cuando no hay fondo: glifo 5×7 → icono del catálogo 16×16 o
+ * glifo DOT inyectado → texto. La precedencia es la de `ContenidoCentral`:
+ * `iconoSvg` resuelve el 16×16 antes que el 8×8, así que un solo camino
+ * cubre los dos.
  */
 function esTextoCorto(boton: ButtonConfig, opciones: OpcionesPintado): boolean {
   const texto = (boton.icon ?? '').trim();
@@ -367,7 +370,7 @@ async function dibujarCentro(
   if (svg && await dibujarSvg(ctx, svg, ancho, alto, lado * CAJA_CENTRO, centroY)) return;
 }
 
-/** Glifo encima de una marca: como en la celda, solo si hay marca e icono. */
+/** Icono encima de una marca: como en la celda, solo si hay marca e icono (de catálogo o por nombre). */
 async function dibujarSuperpuesto(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number, centroY: number,
   opciones: OpcionesPintado,
@@ -437,7 +440,7 @@ async function pintarContenido(
   else if (boton.brandIcon) fondoPintado = await dibujarMarca(ctx, boton, ancho, alto, centroY);
 
   if (fondoPintado) {
-    if (boton.brandIcon && boton.icon) await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
+    if (boton.brandIcon && (boton.iconoPuntos?.bits || boton.icon)) await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
   } else {
     await dibujarCentro(ctx, boton, ancho, alto, color, centroY, opciones);
   }
@@ -540,7 +543,7 @@ export async function pintarTeclaConCuadro(
   ctx.fillRect(0, 0, ancho, alto);
   dibujarConTrama(ctx, cuadro, ancho, alto);
   if (boton) {
-    if (boton.brandIcon && boton.icon) {
+    if (boton.brandIcon && (boton.iconoPuntos?.bits || boton.icon)) {
       const centroY = boton.label ? alto * 0.42 : alto * 0.5;
       await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
     }

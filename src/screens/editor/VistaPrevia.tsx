@@ -39,6 +39,7 @@ export function VistaPrevia({
     fijo?: boolean;
     widget?: TipoWidget;
     sliderWidget?: SliderWidgetConfig;
+    iconoPuntos?: { bits: string; origen: string };
   };
 }) {
   const VD = useTheme();
@@ -57,6 +58,7 @@ export function VistaPrevia({
     brandIconCustomColor: campos.brandIconCustomColor,
     brandIconCustomPalette: campos.brandIconCustomPalette,
     customGlyph57: campos.customGlyph57,
+    iconoPuntos: campos.iconoPuntos,
     bgColor: campos.bgColor || undefined,
     fgColor: campos.fgColor || undefined,
     action,

@@ -8,6 +8,7 @@ import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
 import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
 import { paginaMando } from './paginaMando';
+import { botonAMando, type BotonFuenteMando, type BotonMandoMovil } from './iconosMando';
 import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../src/types';
 
 /**
@@ -171,76 +172,19 @@ function responder(res: ServerResponse, codigo: number, cuerpo: unknown): void {
   res.end(texto);
 }
 
-interface SubBotonMandoMovil {
-  id: string;
-  label: string;
-  sublabel?: string;
-  icon?: string;
-  dotGlyph?: string;
-  bgColor?: string;
-  fgColor?: string;
-}
-
-interface SliderMandoMovil {
-  target: 'volume' | 'brightness' | 'variable';
-  orientation?: 'horizontal' | 'vertical';
-  min?: number;
-  max?: number;
-  step?: number;
-  showValue?: boolean;
-  label?: string;
-  varName?: string;
-}
-
-interface BotonMandoMovil {
-  id: string;
-  label: string;
-  sublabel?: string;
-  page: number;
-  bgColor?: string;
-  fgColor?: string;
-  icon?: string;
-  imageData?: string;
-  customGlyph57?: number[];
-  brandIcon?: string;
-  fijo?: boolean;
-  widget?: string;
-  sliderWidget?: SliderMandoMovil;
-  subButtons?: SubBotonMandoMovil[];
-}
-
-/** Los botones que se pueden pulsar, para que el cliente sepa qué pedir. */
+/** Los botones que se pueden pulsar, para que el cliente sepa qué pedir.
+ *
+ * El icono de cada botón viaja ya resuelto a puntos (`iconosMando.ts`): el
+ * catálogo 16×16, el glifo por nombre o el del tipo de acción, en ese orden.
+ * La página del móvil solo los dibuja; `icon` se sigue mandando por
+ * compatibilidad con clientes HTTP externos.
+ */
 function listaDeBotones(): BotonMandoMovil[] {
   const cfg = loadConfig() as {
     pages?: Array<{
       superficie?: unknown;
     }>;
-    buttons?: Array<{
-      id: string;
-      label?: string;
-      sublabel?: string;
-      page?: number;
-      action?: { type: string };
-      bgColor?: string;
-      fgColor?: string;
-      icon?: string;
-      imageData?: string;
-      customGlyph57?: number[];
-      brandIcon?: string;
-      fijo?: boolean;
-      widget?: string;
-      sliderWidget?: SliderMandoMovil;
-      subButtons?: Array<{
-        id: string;
-        label?: string;
-        sublabel?: string;
-        icon?: string;
-        dotGlyph?: string;
-        bgColor?: string;
-        fgColor?: string;
-        action?: { type: string };
-      }>;
-    }>;
+    buttons?: BotonFuenteMando[];
   };
   const paginas = cfg?.pages ?? [];
   return (cfg?.buttons ?? [])
@@ -251,40 +195,7 @@ function listaDeBotones(): BotonMandoMovil[] {
       const esSlider = b.widget === 'slider' || !!b.sliderWidget;
       return tieneAccion || es2x2 || esSlider;
     })
-    .map((b) => {
-      let imageData = b.imageData;
-      if (imageData && imageData.startsWith('vd://images/')) {
-        const file = imageData.slice('vd://images/'.length);
-        imageData = `/media/images/${encodeURIComponent(file)}`;
-      } else if (imageData && imageData.startsWith('vd://')) {
-        const file = imageData.slice('vd://'.length);
-        imageData = `/media/images/${encodeURIComponent(file.replace(/^images[/\\]/, ''))}`;
-      }
-      return {
-        id: b.id,
-        label: b.label ?? '',
-        sublabel: b.sublabel,
-        page: b.page ?? 0,
-        bgColor: b.bgColor,
-        fgColor: b.fgColor,
-        icon: b.icon,
-        imageData,
-        customGlyph57: b.customGlyph57,
-        brandIcon: b.brandIcon,
-        fijo: b.fijo,
-        widget: b.widget,
-        sliderWidget: b.sliderWidget,
-        subButtons: b.subButtons?.map((s) => ({
-          id: s.id,
-          label: s.label ?? '',
-          sublabel: s.sublabel,
-          icon: s.icon,
-          dotGlyph: s.dotGlyph,
-          bgColor: s.bgColor,
-          fgColor: s.fgColor,
-        })),
-      };
-    });
+    .map(botonAMando);
 }
 
 /**

@@ -13,6 +13,8 @@ import { obtenerHuecoDePreset, type GestoHueco } from './useDockPresets';
 import { useCapturaHotkey } from './useCapturaHotkey';
 import { usePegarImagen } from './usePegarImagen';
 import { resolverIconoInicial, limpiarCamposIcono, type TipoIcono } from './tiposIcono';
+import type { NombreCatalogo } from '../../data/iconosDot/tipos';
+import { PREFIJO_MARCAS } from './constantesCatalogo';
 import type { ButtonConfig, SubButtonConfig } from '../../types';
 import type { PresetDock } from '../../data/presetsDock';
 
@@ -58,6 +60,8 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [brandIconCustomBitmap, setBrandIconCustomBitmap] = useState(est.brandIconCustomBitmap);
   const [brandIconCustomColor, setBrandIconCustomColor] = useState(est.brandIconCustomColor);
   const [brandIconCustomPalette, setBrandIconCustomPalette] = useState(est.brandIconCustomPalette);
+  const [iconoPuntos, setIconoPuntos] = useState(est.iconoPuntos);
+  const [catalogoDotAbierto, setCatalogoDotAbierto] = useState<NombreCatalogo | null>(null);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [showBrandEditor, setShowBrandEditor] = useState(false);
   const [bgColor, setBgColor] = useState(est.bgColor);
@@ -157,6 +161,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       brandIconCustomPalette,
       customGlyph57,
       glifoEncima,
+      iconoPuntos,
     });
 
     onSave(construirBoton(button, {
@@ -198,6 +203,31 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       sensorTriggerCooldown,
       fijo,
     }));
+  };
+
+  const abrirCatalogoDot = (cat: NombreCatalogo) => setCatalogoDotAbierto(cat);
+  const cerrarCatalogoDot = () => setCatalogoDotAbierto(null);
+
+  const seleccionarIconoCatalogo = (icono: { bits: string; origen: string }) => {
+    setIconoPuntos(icono);
+    if (icono.origen.startsWith(PREFIJO_MARCAS)) {
+      setTipoIcono('marca');
+      setBrandIcon('');
+      setBrandIconCustomBitmap(undefined);
+      setBrandIconCustomColor(undefined);
+      setBrandIconCustomPalette(undefined);
+      setImageData('');
+      setCustomGlyph57(undefined);
+    } else {
+      setTipoIcono('glifo');
+      setIcon('');
+      setImageData('');
+      setBrandIcon('');
+      setBrandIconCustomBitmap(undefined);
+      setBrandIconCustomColor(undefined);
+      setBrandIconCustomPalette(undefined);
+      setCustomGlyph57(undefined);
+    }
   };
 
   const applyPreset = (preset: ButtonPreset) => {
@@ -395,5 +425,12 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     glifoEncima,
     setGlifoEncima,
     habiaVariosCamposIcono,
+    iconoPuntos,
+    setIconoPuntos,
+    catalogoDotAbierto,
+    setCatalogoDotAbierto,
+    abrirCatalogoDot,
+    cerrarCatalogoDot,
+    seleccionarIconoCatalogo,
   };
 }

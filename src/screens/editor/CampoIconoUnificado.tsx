@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useFieldText } from '../../utils/i18n';
 import { DotGlyphIcon, ALL_DOT_GLYPHS } from '../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import { BrandIconDisplay } from '../../components/BrandIconDisplay';
 import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
 import { GLIFO_POR_TIPO_ACCION } from '../../components/dot480/glifosPorTipoAccion';
 import { Field, Btn, estiloEntrada } from './comunes';
 import { PanelMarcaIcono } from './PanelMarcaIcono';
+import { CAT_ACCIONES, PREFIJO_ACCIONES } from './constantesCatalogo';
 import type { TipoIcono } from './tiposIcono';
 import type { ButtonAction } from '../../types';
+import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 
 const GLIFOS_RAPIDOS = [
   'PLAY', 'PAUSE', 'NEXT', 'PREV', 'MIC', 'SPEAKER', 'AUDIO_WAVE',
@@ -66,6 +69,9 @@ export interface CampoIconoUnificadoProps {
   setShowBrandEditor: React.Dispatch<React.SetStateAction<boolean>>;
   setShowGlyphEditor: React.Dispatch<React.SetStateAction<boolean>>;
   fgColor: string;
+  iconoPuntos?: { bits: string; origen: string };
+  setIconoPuntos?: React.Dispatch<React.SetStateAction<{ bits: string; origen: string } | undefined>>;
+  onAbrirCatalogoDot?: (catalogo: NombreCatalogo) => void;
 }
 
 export function CampoIconoUnificado(props: CampoIconoUnificadoProps) {
@@ -86,7 +92,14 @@ export function CampoIconoUnificado(props: CampoIconoUnificadoProps) {
         <div style={{ paddingTop: 4 }}>
           {tipoIcono === 'auto' && <PanelAuto action={props.action} fgColor={props.fgColor} />}
           {tipoIcono === 'glifo' && (
-            <PanelGlifo icon={props.icon} setIcon={props.setIcon} accent={accent} />
+            <PanelGlifo
+              icon={props.icon}
+              setIcon={props.setIcon}
+              accent={accent}
+              iconoPuntos={props.iconoPuntos}
+              setIconoPuntos={props.setIconoPuntos}
+              onAbrirCatalogoAcciones={() => props.onAbrirCatalogoDot?.(CAT_ACCIONES)}
+            />
           )}
           {tipoIcono === 'dibujo' && (
             <PanelDibujo
@@ -235,10 +248,16 @@ function PanelGlifo({
   icon,
   setIcon,
   accent,
+  iconoPuntos,
+  setIconoPuntos,
+  onAbrirCatalogoAcciones,
 }: {
   icon: string;
   setIcon: React.Dispatch<React.SetStateAction<string>>;
   accent: string;
+  iconoPuntos?: { bits: string; origen: string };
+  setIconoPuntos?: React.Dispatch<React.SetStateAction<{ bits: string; origen: string } | undefined>>;
+  onAbrirCatalogoAcciones?: () => void;
 }) {
   const VD = useTheme();
   const tf = useFieldText();
@@ -250,21 +269,16 @@ function PanelGlifo({
     ? ALL_DOT_GLYPHS.filter((g) => g.includes(q))
     : GLIFOS_RAPIDOS;
 
+  const tieneAccion = Boolean(iconoPuntos?.origen.startsWith(PREFIJO_ACCIONES));
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input
-          value={icon}
-          onChange={(e) => setIcon(e.target.value)}
-          placeholder="PLAY, GEAR, MIC, WEB, CODE..."
-          maxLength={16}
-          style={{ ...inputStyle, flex: 1, fontFamily: VD.mono, fontSize: 11 }}
-        />
-        {icon && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {tieneAccion && iconoPuntos && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div
             style={{
-              width: 28,
-              height: 28,
+              width: 36,
+              height: 36,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -273,49 +287,106 @@ function PanelGlifo({
               borderRadius: VD.radius.sm,
             }}
           >
-            <DotGlyphIcon glyph={icon} size={16} color={accent} showRecessed />
+            <IconoPuntos bits={iconoPuntos.bits} size={24} color={accent} showRecessed />
           </div>
-        )}
-        {icon && (
-          <Btn onClick={() => setIcon('')} style={{ color: VD.danger }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, fontWeight: 'bold' }}>
+              {iconoPuntos.origen.slice(PREFIJO_ACCIONES.length).replace(/-/g, ' ').toUpperCase()}
+            </span>
+            <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim, letterSpacing: 0.5 }}>
+              {iconoPuntos.origen}
+            </span>
+          </div>
+          <Btn onClick={onAbrirCatalogoAcciones}>{tf('Cambiar')}</Btn>
+          <Btn onClick={() => setIconoPuntos?.(undefined)} style={{ color: VD.danger }}>
             {tf('Quitar')}
           </Btn>
-        )}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Btn onClick={onAbrirCatalogoAcciones}>
+          {tf('Catálogo de acciones')}
+        </Btn>
       </div>
 
-      <input
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-        placeholder={tf('Buscar glifo...')}
-        style={{ ...inputStyle, fontFamily: VD.mono, fontSize: 10, padding: '4px 8px' }}
-      />
+      <div style={{ height: 1, background: VD.border, margin: '2px 0' }} />
 
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxHeight: 116, overflowY: 'auto' }}>
-        {glifosMostrados.map((g) => {
-          const isSel = icon.trim().toUpperCase() === g;
-          return (
-            <button
-              key={g}
-              type="button"
-              onClick={() => setIcon(g)}
-              title={g}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim, letterSpacing: 0.8 }}>
+          {tf('GLIFOS RÁPIDOS 8×8')}
+        </span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            value={icon}
+            onChange={(e) => {
+              setIcon(e.target.value);
+              if (e.target.value) setIconoPuntos?.(undefined);
+            }}
+            placeholder="PLAY, GEAR, MIC, WEB, CODE..."
+            maxLength={16}
+            style={{ ...inputStyle, flex: 1, fontFamily: VD.mono, fontSize: 11 }}
+          />
+          {icon && (
+            <div
               style={{
                 width: 28,
                 height: 28,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: isSel ? VD.accentBg : VD.elevated,
-                border: `1px solid ${isSel ? accent : VD.border}`,
+                background: VD.elevated,
+                border: `1px solid ${VD.border}`,
                 borderRadius: VD.radius.sm,
-                cursor: 'pointer',
-                padding: 0,
               }}
             >
-              <DotGlyphIcon glyph={g} size={14} color={isSel ? accent : VD.textDim} />
-            </button>
-          );
-        })}
+              <DotGlyphIcon glyph={icon} size={16} color={accent} showRecessed />
+            </div>
+          )}
+          {icon && (
+            <Btn onClick={() => setIcon('')} style={{ color: VD.danger }}>
+              {tf('Quitar')}
+            </Btn>
+          )}
+        </div>
+
+        <input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder={tf('Buscar glifo...')}
+          style={{ ...inputStyle, fontFamily: VD.mono, fontSize: 10, padding: '4px 8px' }}
+        />
+
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxHeight: 116, overflowY: 'auto' }}>
+          {glifosMostrados.map((g) => {
+            const isSel = icon.trim().toUpperCase() === g;
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => {
+                  setIcon(g);
+                  setIconoPuntos?.(undefined);
+                }}
+                title={g}
+                style={{
+                  width: 28,
+                  height: 28,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: isSel ? VD.accentBg : VD.elevated,
+                  border: `1px solid ${isSel ? accent : VD.border}`,
+                  borderRadius: VD.radius.sm,
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                <DotGlyphIcon glyph={g} size={14} color={isSel ? accent : VD.textDim} />
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

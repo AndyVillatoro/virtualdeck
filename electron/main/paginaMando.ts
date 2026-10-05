@@ -4,7 +4,13 @@
  * Página web ligera sin dependencias ni build. Estética DOT / 480 OLED Micro Interface:
  * mono, mayúsculas, grilla de 4 px, sin emojis. Los colores y acento reflejan
  * el tema del usuario (oscuro, claro o sistema según prefers-color-scheme).
+ *
+ * Los iconos de los botones llegan ya resueltos a puntos desde el servidor
+ * (`iconosMando.ts`): la página solo los dibuja, sin tabla de glifos propia.
+ * El cromo fijo (cabecera, sliders) se incrusta abajo desde el mismo
+ * catálogo compartido, no copiado a mano.
  */
+import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
 
 const TEXTOS = {
   es: {
@@ -38,6 +44,12 @@ export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?
   const temaInicial = modo === 'system' ? 'system' : modo === 'light' ? 'light' : 'dark';
   const colorScheme = modo === 'system' ? 'dark light' : modo === 'light' ? 'light' : 'dark';
   const metaThemeColor = modo === 'light' ? '#d8dbe0' : '#070809';
+  // El cromo fijo de la página sale del catálogo compartido, serializado al
+  // servirla: es el mismo dato que la celda, no una copia que mantener.
+  const cromo: Record<string, number[]> = {};
+  for (const nombre of ['FULLSCREEN', 'MINIMIZE', 'CLOSE', 'SPEAKER', 'WEATHER_SUN', 'CPU']) {
+    cromo[nombre] = DOT_GLYPHS_8X8[nombre];
+  }
 
   return `<!doctype html>
 <html lang="es" data-theme="${temaInicial}">
@@ -170,32 +182,7 @@ document.getElementById('titulo').textContent = t.titulo;
 const btnFs = document.getElementById('btn-fullscreen');
 const btnOlvidar = document.getElementById('btn-olvidar');
 
-const G8 = {
-  SPEAKER: [0x10,0x34,0x72,0xf1,0xf1,0x72,0x34,0x10], MUTE: [0x11,0x32,0x74,0xf8,0xf8,0x74,0x32,0x11],
-  MIC: [0x3c,0x66,0x66,0x7e,0xbd,0x42,0x18,0x3c], WEATHER_SUN: [0x24,0x18,0xbd,0x7e,0x7e,0xbd,0x18,0x24],
-  GEAR: [0x3c,0x66,0xdb,0xa5,0xa5,0xdb,0x66,0x3c], PLAY: [0x20,0x30,0x38,0x3c,0x3c,0x38,0x30,0x20],
-  PAUSE: [0x66,0x66,0x66,0x66,0x66,0x66,0x66,0x66], NEXT: [0x44,0x64,0x74,0x7c,0x7c,0x74,0x64,0x44],
-  PREV: [0x22,0x26,0x2e,0x3e,0x3e,0x2e,0x26,0x22], FULLSCREEN: [0xe7,0xc3,0x81,0,0,0x81,0xc3,0xe7],
-  MINIMIZE: [0,0,0,0,0,0x7e,0x7e,0], CLOSE: [0xc3,0x66,0x3c,0x18,0x18,0x3c,0x66,0xc3],
-  CHECK: [0,1,3,6,0x8c,0xd8,0x70,0x20], LOCK: [0x3c,0x66,0x66,0xff,0xff,0xe7,0xff,0xff],
-  BOLT: [0x0c,0x18,0x30,0x7e,0x0c,0x18,0x30,0x60], WEB: [0x3c,0x7e,0xdb,0x99,0xff,0xdb,0x7e,0x3c],
-  TERMINAL: [0x80,0xc0,0x60,0x30,0x60,0xc0,0x80,0x0f], CLOCK: [0x3c,0x42,0x91,0x9d,0x81,0x81,0x42,0x3c],
-  STORAGE: [0x7e,0xbd,0x81,0x81,0xbd,0xbd,0xbd,0xff], CPU: [0x24,0x7e,0xc3,0xdb,0xdb,0xc3,0x7e,0x24],
-  ARROW_UP: [0x18,0x3c,0x7e,0xdb,0x18,0x18,0x18,0x18], ARROW_DOWN: [0x18,0x18,0x18,0x18,0xdb,0x7e,0x3c,0x18],
-  ARROW_LEFT: [0x10,0x30,0x70,0xff,0xff,0x70,0x30,0x10], ARROW_RIGHT: [0x08,0x0c,0x0e,0xff,0xff,0x0e,0x0c,0x08],
-  ADD: [0x18,0x18,0x18,0xff,0xff,0x18,0x18,0x18], SUBTRACT: [0,0,0,0xff,0xff,0,0,0],
-  EDIT: [6,0x0f,0x1e,0x3c,0x78,0xf0,0xe0,0x80], FOLDER: [0x70,0xfe,0x81,0x81,0x81,0x81,0xff,0],
-  CODE: [4,0x44,0x88,0x89,0x91,0x52,0x20,0x20]
-};
-
-const ALIAS = {
-  VOLUME: 'SPEAKER', VOL: 'SPEAKER', SUN: 'WEATHER_SUN', CONFIG: 'GEAR', SETTINGS: 'GEAR',
-  '\\uD83D\\uDD0A': 'SPEAKER', '\\u2600': 'WEATHER_SUN', '\\u2699': 'GEAR', '\\u25B6': 'PLAY',
-  '\\u23F8': 'PAUSE', '\\u23ED': 'NEXT', '\\u23EE': 'PREV', '\\uD83C\\uDF99': 'MIC', '\\uD83C\\uDF10': 'WEB',
-  '\\uD83D\\uDD12': 'LOCK', '\\u26A1': 'BOLT', '\\uD83D\\uDCBE': 'STORAGE', '\\uD83D\\uDD32': 'CPU',
-  '\\uD83D\\uDCCA': 'CPU', '\\uD83D\\uDCC1': 'FOLDER', '\\u25F7': 'CLOCK', '\\u2713': 'CHECK',
-  '\\u2715': 'CLOSE', '\\u00D7': 'CLOSE', '\\u26F6': 'FULLSCREEN', '\\uD83D\\uDDD7': 'MINIMIZE',
-};
+const CROMO = ${JSON.stringify(cromo)};
 
 let temaConfig = ${JSON.stringify(modo)};
 let acentoConfig = ${JSON.stringify(acento)};
@@ -246,7 +233,8 @@ function actualizarBotonFs() {
   const estaFs = !!(doc.fullscreenElement || doc.webkitFullscreenElement);
   btnFs.title = estaFs ? t.salirPantallaCompleta : t.pantallaCompleta;
   while (btnFs.firstChild) btnFs.removeChild(btnFs.firstChild);
-  btnFs.append(svgGlifo8(estaFs ? G8.MINIMIZE : G8.FULLSCREEN, 'currentColor', 12));
+  const fsEl = svgPuntos({ lado: 8, filas: estaFs ? CROMO.MINIMIZE : CROMO.FULLSCREEN }, 'currentColor', 12);
+  if (fsEl) btnFs.append(fsEl);
 }
 
 btnFs.onclick = alternarFullscreen;
@@ -256,7 +244,8 @@ actualizarBotonFs();
 
 btnOlvidar.title = t.olvidar;
 while (btnOlvidar.firstChild) btnOlvidar.removeChild(btnOlvidar.firstChild);
-btnOlvidar.append(svgGlifo8(G8.CLOSE, 'currentColor', 12));
+const olvidarEl = svgPuntos({ lado: 8, filas: CROMO.CLOSE }, 'currentColor', 12);
+if (olvidarEl) btnOlvidar.append(olvidarEl);
 
 const app = document.getElementById('app');
 let token = null;
@@ -298,20 +287,28 @@ function nodo(tag, props, ...hijos) {
   return e;
 }
 
-function svgGlifo8(filas, color, tam) {
+// Dibuja los puntos que manda el servidor (puntos: lado 8 o 16, filas).
+// El servidor los resuelve con los datos compartidos; aquí no hay tabla de
+// glifos: solo este pintor genérico. El 16×16 usa el mismo paso que el 8×8,
+// así que el punto mide lo mismo y el icono sale al doble de tamaño.
+function svgPuntos(puntos, color, tam) {
+  const lado = puntos && puntos.lado === 16 ? 16 : 8;
+  const filas = puntos && puntos.filas;
+  if (!Array.isArray(filas) || filas.length !== lado) return null;
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   const d = tam || 22;
-  svg.setAttribute('viewBox', '0 0 28 28');
+  svg.setAttribute('viewBox', '0 0 ' + (lado * 3.2 + 2.4) + ' ' + (lado * 3.2 + 2.4));
   svg.setAttribute('width', String(d));
   svg.setAttribute('height', String(d));
   svg.setAttribute('style', 'display:block;margin:auto;z-index:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));flex-shrink:0;');
   const relleno = typeof color === 'string' && color.length <= 40 && color ? color : 'currentColor';
-  for (let y = 0; y < 8; y++) {
+  const mascara = lado === 16 ? 65535 : 255;
+  for (let y = 0; y < lado; y++) {
     const b = filas[y];
-    const fila = (typeof b === 'number' && isFinite(b) ? Math.trunc(b) : 0) & 255;
-    for (let x = 0; x < 8; x++) {
-      if ((fila >> (7 - x)) & 1) {
+    const fila = (typeof b === 'number' && isFinite(b) ? Math.trunc(b) : 0) & mascara;
+    for (let x = 0; x < lado; x++) {
+      if ((fila >> ((lado - 1) - x)) & 1) {
         const p = document.createElementNS(NS, 'circle');
         p.setAttribute('cx', String(x * 3.2 + 2.8));
         p.setAttribute('cy', String(y * 3.2 + 2.8));
@@ -349,12 +346,14 @@ function svgGlifo57(filas, color) {
   return svg;
 }
 
-function resolverIcono(icono, fgColor, tam) {
-  if (!icono) return null;
-  const k = String(icono).trim().toUpperCase();
-  const c = ALIAS[k] || ALIAS[icono] || k;
-  if (G8[c]) return svgGlifo8(G8[c], fgColor, tam);
-  return nodo('span', { className: 'icono-centro', textContent: String(icono).slice(0, 4) });
+// El centro de un botón del móvil, en el mismo orden que la celda: dibujo
+// 5x7 propio (lo decide quien llama), texto si el icono no era glifo, y si
+// no los puntos que resolvió el servidor (catálogo 16x16, glifo por nombre
+// o tipo de acción).
+function dibujarIconoBoton(b, fgColor, tam) {
+  if (b.iconTexto) return nodo('span', { className: 'icono-centro', textContent: String(b.iconTexto).slice(0, 4) });
+  if (b.puntos) return svgPuntos(b.puntos, fgColor, tam);
+  return null;
 }
 
 function pantallaEmparejar(error) {
@@ -449,7 +448,7 @@ async function pantallaDeck() {
         if (esClaro && subFrente && subFrente.toLowerCase() === '#ffffff') subFrente = '#111418';
         if (sub.bgColor) sc.style.backgroundColor = sub.bgColor;
         if (subFrente) sc.style.color = subFrente;
-        const icoEl = resolverIcono(sub.icon || sub.dotGlyph, subFrente, 12);
+        const icoEl = dibujarIconoBoton(sub, subFrente, 12);
         if (icoEl && (sub.icon || sub.dotGlyph) !== sub.label) sc.append(icoEl);
         if (sub.label) sc.append(nodo('span', { className: 'sub-txt', textContent: sub.label }));
         sc.onclick = async (e) => {
@@ -476,10 +475,11 @@ async function pantallaDeck() {
       const step = sw.step ?? (target === 'variable' ? 1 : 5);
       const sc = nodo('div', { className: 'slider-celda' });
       const cab = nodo('div', { className: 'slider-cab' });
-      const gly = target === 'volume' ? G8.SPEAKER : target === 'brightness' ? G8.WEATHER_SUN : G8.CPU;
+      const gly = target === 'volume' ? CROMO.SPEAKER : target === 'brightness' ? CROMO.WEATHER_SUN : CROMO.CPU;
       const eti = sw.label || (target === 'volume' ? t.volumen : target === 'brightness' ? t.brillo : (sw.varName || 'VAR'));
       const cabEti = nodo('span', { className: 'slider-eti' });
-      if (gly) cabEti.append(svgGlifo8(gly, 'currentColor', 10));
+      const glyEl = svgPuntos({ lado: 8, filas: gly }, 'currentColor', 10);
+      if (glyEl) cabEti.append(glyEl);
       cabEti.append(document.createTextNode(' ' + eti));
       cab.append(cabEti);
       const valSpan = nodo('span', { className: 'slider-val', textContent: '50%' });
@@ -535,10 +535,13 @@ async function pantallaDeck() {
       const wrap = nodo('div');
       wrap.append(svgGlifo57(b.customGlyph57, colorFrente));
       celda.append(wrap);
-    } else if (b.icon) {
-      const icoEl = resolverIcono(b.icon, colorFrente, 22);
+    } else if (b.iconTexto || b.puntos) {
+      const icoEl = dibujarIconoBoton(b, colorFrente, 22);
       if (icoEl) celda.append(icoEl);
     }
+    // La marca (brandIcon) sigue sin pintarse en el móvil, como antes: su
+    // generador vive en src/data y el proceso principal no puede
+    // importarlo (ver lint:arch, regla main-no-renderer).
 
     if (b.label || b.sublabel) {
       const rotulo = nodo('div', { className: 'rotulo' });

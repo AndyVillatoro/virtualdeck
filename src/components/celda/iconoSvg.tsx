@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DotGlyphIcon, resolveDotGlyph } from '../dot480/DotGlyphIcon';
+import { IconoPuntos } from '../dot480/IconoPuntos';
 import { GLIFO_POR_TIPO_ACCION } from '../dot480/glifosPorTipoAccion';
 import type { ButtonConfig } from '../../types';
 
@@ -8,9 +9,11 @@ import type { ButtonConfig } from '../../types';
  * Los SVG del centro de una tecla física, como texto, para dibujarlos en un
  * canvas.
  *
- * Usa **los mismos** componentes que la celda: `DotGlyphIcon` (el glifo DOT
- * 8×8 de `button.icon`, con relieve) y el glifo del tipo de acción de
- * `GLIFO_POR_TIPO_ACCION` (último recurso). Vive en `components/` porque `src/utils/` no puede
+ * Usa **los mismos** componentes que la celda: `IconoPuntos` (el icono del
+ * catálogo 16×16 copiado en el botón), `DotGlyphIcon` (el glifo DOT 8×8 de
+ * `button.icon`, con relieve) y el glifo del tipo de acción de
+ * `GLIFO_POR_TIPO_ACCION` (último recurso), en el mismo orden que
+ * `ContenidoCentral`. Vive en `components/` porque `src/utils/` no puede
  * importar componentes; quien pinta lo recibe inyectado
  * (`opciones.iconoSvg` / `opciones.esGlifoDot`).
  *
@@ -19,9 +22,9 @@ import type { ButtonConfig } from '../../types';
  * (son bitmaps del catálogo y se cargan con el `import()` diferido).
  */
 
-/** ¿`button.icon` es un nombre que resuelve a glifo DOT 8×8? */
+/** ¿`button` trae un icono en puntos (catálogo 16×16 o glifo DOT 8×8 por nombre)? */
 export function esGlifoDot(boton: ButtonConfig): boolean {
-  return !!(boton.icon && resolveDotGlyph(boton.icon));
+  return !!(boton.iconoPuntos?.bits || (boton.icon && resolveDotGlyph(boton.icon)));
 }
 
 /**
@@ -35,6 +38,14 @@ export function svgDeBoton(
   dimColor = 'transparent',
   sobreFondo = false,
 ): string | null {
+  // El catálogo 16×16 va primero: en la celda está por encima del glifo por
+  // nombre. Si los bits no decodifican se cae a `icon`, como si no hubiera.
+  if (boton.iconoPuntos?.bits) {
+    const svg = renderToStaticMarkup(
+      <IconoPuntos bits={boton.iconoPuntos.bits} size={64} color={color} dimColor={dimColor} showRecessed={!sobreFondo} />,
+    );
+    if (svg) return normalizar(svg, color);
+  }
   if (boton.icon) {
     const glifo = resolveDotGlyph(boton.icon);
     if (!glifo) return null;

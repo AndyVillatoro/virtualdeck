@@ -91,7 +91,7 @@ function firmaDe(
 ): string {
   if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
   return JSON.stringify([
-    boton.label, boton.icon, boton.imageData, boton.customGlyph57, boton.brandIcon,
+    boton.label, boton.icon, boton.iconoPuntos?.bits, boton.imageData, boton.customGlyph57, boton.brandIcon,
     boton.brandIconCustomBitmap, boton.brandIconCustomColor, boton.brandIconCustomPalette,
     boton.bgColor, boton.fgColor, boton.action?.type,
     ancho, alto, rotacion, colores.fondo, colores.texto, fuentes,
