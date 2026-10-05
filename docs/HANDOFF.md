@@ -573,6 +573,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores, 36 warnings; `npm run build` OK; `cargo test` en verde.
 * **Falta (dueño):** perilla «VOLUMEN DE APP» con la app delante, y las de Spotify/Discord.
 
+## Turno 2026-10-04 — Perillas multimodo, copias fijas, signos en el núcleo, imágenes con token (commit `747be01`)
+
+* **opencode (T-HW-19):** perillas multimodo (`modosPerilla`), editor en el inspector, preset, `resumirRiesgo` recorre los modos (revisado por el supervisor). 24 casos de su función pura.
+* **agy (T-HW-20):** copias de botones fijos sin arrastre, sin soltar encima, menú reducido y fuera de la selección múltiple; también en kiosko. Revisado el comparador del `memo` de `ButtonCell`.
+* **Supervisor:** `/media/images/` detrás del token (el mando las pide con `fetch` y las enseña como `blob:`); errores del volumen por app traducidos en el proceso principal; signos de atajos resueltos en Rust con `VkKeyScanW` y teclado numérico con nombre (12 tests del parser); `media.diagnose` se queda en PowerShell a propósito (ver `CLAUDE.md`). `.node` reinstalado.
+* **Verificación:** `npm run check` 0 errores, 35 warnings; `npm run build` OK; `cargo test -p vd-core` 154 OK. El gancho de uiohook no ve los envíos del núcleo (los manda solo con código virtual), así que el envío de signos por el núcleo no se pudo medir así; el parser sí está cubierto.
+* **Falta (dueño):** todo lo de 63–76 con el dock y la app (lista en el roadmap), y decidir la 0.14.0: probar el N3 desde el MSIX, CHANGELOG, versión, instalador y publicación.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
