@@ -12,6 +12,7 @@ import { botonConfigurado } from './botonConfigurado';
 import { obtenerHuecoDePreset, type GestoHueco } from './useDockPresets';
 import { useCapturaHotkey } from './useCapturaHotkey';
 import { usePegarImagen } from './usePegarImagen';
+import { resolverIconoInicial, limpiarCamposIcono, type TipoIcono } from './tiposIcono';
 import type { ButtonConfig, SubButtonConfig } from '../../types';
 import type { PresetDock } from '../../data/presetsDock';
 
@@ -88,6 +89,10 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [sensorTriggerCooldown, setSensorTriggerCooldown] = useState(dis.sensorTriggerCooldown);
   const [customGlyph57, setCustomGlyph57] = useState(est.customGlyph57);
   const [showGlyphEditor, setShowGlyphEditor] = useState(false);
+  const [infoIconoIni] = useState(() => resolverIconoInicial(button));
+  const [tipoIcono, setTipoIcono] = useState<TipoIcono>(infoIconoIni.tipo);
+  const [glifoEncima, setGlifoEncima] = useState<string>(infoIconoIni.glifoEncima);
+  const [habiaVariosCamposIcono] = useState<boolean>(infoIconoIni.habiaVarios);
   const [presetCategory, setPresetCategory] = useState<string>('APPS');
   const [presetSearch, setPresetSearch] = useState('');
   const [capturing, setCapturing] = useState(false);
@@ -137,9 +142,24 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     }
   }, [folderButtons, action.type]);
 
-  usePegarImagen(setImageData);
+  usePegarImagen((data) => {
+    setImageData(data);
+    setTipoIcono('imagen');
+  });
 
   const handleSave = () => {
+    const camposIcono = limpiarCamposIcono(tipoIcono, {
+      icon: tipoIcono === 'glifo' ? icon : glifoEncima,
+      imageData,
+      brandIcon,
+      brandIconAlwaysAnimate,
+      brandIconCustomBitmap,
+      brandIconCustomColor,
+      brandIconCustomPalette,
+      customGlyph57,
+      glifoEncima,
+    });
+
     onSave(construirBoton(button, {
       is2x2Mode,
       subButtons,
@@ -147,13 +167,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       extraActions,
       label,
       sublabel,
-      icon,
-      imageData,
-      brandIcon,
-      brandIconAlwaysAnimate,
-      brandIconCustomBitmap,
-      brandIconCustomColor,
-      brandIconCustomPalette,
+      ...camposIcono,
       bgColor,
       fgColor,
       folderButtons,
@@ -202,6 +216,12 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       setWidget(preset.widget);
       if (preset.sliderWidget) setSliderWidget(preset.sliderWidget);
     }
+    if (preset.icon) {
+      setTipoIcono('glifo');
+      setGlifoEncima('');
+    } else {
+      setTipoIcono('auto');
+    }
     setSeccionesAbiertas((prev) => ({ ...prev, action: true, appearance: true }));
   };
 
@@ -216,6 +236,12 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     setIsToggle(hueco.isToggle ?? false);
     setActionToggleOff(hueco.actionToggleOff ?? { type: 'none' });
     if (hueco.fijo) setFijo(true);
+    if (hueco.icon) {
+      setTipoIcono('glifo');
+      setGlifoEncima('');
+    } else {
+      setTipoIcono('auto');
+    }
     setSeccionesAbiertas((prev) => ({ ...prev, action: true, appearance: true }));
   };
 
@@ -227,6 +253,10 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     setIcon(fp.icon);
     setBgColor(fp.bgColor);
     setFgColor(fp.fgColor);
+    if (fp.icon) {
+      setTipoIcono('glifo');
+      setGlifoEncima('');
+    }
   };
 
   const pickFile = async () => {
@@ -244,7 +274,10 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const pickImage = async () => {
     if (!api) return;
     const data = await api.dialog.openImage();
-    if (data) setImageData(data);
+    if (data) {
+      setImageData(data);
+      setTipoIcono('imagen');
+    }
   };
 
   return {
@@ -361,5 +394,10 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     pickFile,
     pickShortcut,
     pickImage,
+    tipoIcono,
+    setTipoIcono,
+    glifoEncima,
+    setGlifoEncima,
+    habiaVariosCamposIcono,
   };
 }

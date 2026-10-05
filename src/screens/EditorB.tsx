@@ -11,6 +11,7 @@ import { SeccionApariencia } from './editor/SeccionApariencia';
 import { SeccionComportamiento } from './editor/SeccionComportamiento';
 import { SeccionAvanzado } from './editor/SeccionAvanzado';
 import { useDockPresets } from './editor/useDockPresets';
+import { limpiarCamposIcono } from './editor/tiposIcono';
 import { useCatalogos } from './editor/useCatalogos';
 import { useEstadoEditor } from './editor/useEstadoEditor';
 import { useTheme } from '../utils/theme';
@@ -120,14 +121,17 @@ export function EditorB({
             campos={{
               label: e.label,
               sublabel: e.sublabel,
-              icon: e.icon,
-              imageData: e.imageData,
-              brandIcon: e.brandIcon,
-              brandIconAlwaysAnimate: e.brandIconAlwaysAnimate,
-              brandIconCustomBitmap: e.brandIconCustomBitmap,
-              brandIconCustomColor: e.brandIconCustomColor,
-              brandIconCustomPalette: e.brandIconCustomPalette,
-              customGlyph57: e.customGlyph57,
+              ...limpiarCamposIcono(e.tipoIcono, {
+                icon: e.tipoIcono === 'glifo' ? e.icon : e.glifoEncima,
+                imageData: e.imageData,
+                brandIcon: e.brandIcon,
+                brandIconAlwaysAnimate: e.brandIconAlwaysAnimate,
+                brandIconCustomBitmap: e.brandIconCustomBitmap,
+                brandIconCustomColor: e.brandIconCustomColor,
+                brandIconCustomPalette: e.brandIconCustomPalette,
+                customGlyph57: e.customGlyph57,
+                glifoEncima: e.glifoEncima,
+              }),
               bgColor: e.bgColor,
               fgColor: e.fgColor,
               pinned: e.pinned,
@@ -287,6 +291,11 @@ export function EditorB({
                 setCurrencyWidget={e.setCurrencyWidget}
                 sliderWidget={e.sliderWidget}
                 setSliderWidget={e.setSliderWidget}
+                tipoIcono={e.tipoIcono}
+                setTipoIcono={e.setTipoIcono}
+                habiaVariosCamposIcono={e.habiaVariosCamposIcono}
+                glifoEncima={e.glifoEncima}
+                setGlifoEncima={e.setGlifoEncima}
               />
             </SeccionAjustes>
 
@@ -393,9 +402,11 @@ export function EditorB({
         onCloseGlyphEditor={() => e.setShowGlyphEditor(false)}
         onSelectBrandIcon={(key) => {
           e.setBrandIcon(key);
+          e.setTipoIcono('marca');
           e.setShowBrandPicker(false);
         }}
         onSaveBrandEditor={(bmp, col, pal) => {
+          if (!e.brandIcon) e.setBrandIcon('blender');
           e.setBrandIconCustomBitmap(bmp);
           e.setBrandIconCustomColor(col);
           e.setBrandIconCustomPalette(pal);
@@ -403,6 +414,9 @@ export function EditorB({
         }}
         onSaveGlyph57={(rows) => {
           e.setCustomGlyph57(rows);
+          if (rows && rows.some((r) => r > 0)) {
+            e.setTipoIcono('dibujo');
+          }
           e.setShowGlyphEditor(false);
         }}
       />

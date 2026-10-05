@@ -63,7 +63,7 @@ export function ModalesIconosEditor({
 
   // Un solo editor de puntos en vez de los dos modales originales. La interfaz
   // de este componente no cambia: quien lo monta sigue pasando las mismas props.
-  const verPuntos = showGlyphEditor || (showBrandEditor && !!brandIcon);
+  const verPuntos = showGlyphEditor || showBrandEditor;
 
   function cerrarPuntos() {
     onCloseGlyphEditor();
@@ -86,9 +86,9 @@ export function ModalesIconosEditor({
       {verPuntos && (
         <EditorPuntos
           accent={accent}
-          pestanaInicial={showBrandEditor && brandIcon ? 'marca' : 'glifo'}
-          iconKey={brandIcon ?? ''}
-          etiquetaMarca={base?.label ?? brandIcon ?? ''}
+          pestanaInicial={showBrandEditor ? 'marca' : 'glifo'}
+          iconKey={brandIcon || (showBrandEditor ? 'blender' : '')}
+          etiquetaMarca={base?.label ?? (brandIcon ? brandIcon : '')}
           glifoInicial={customGlyph57}
           marcaCustom={marcaCustom}
           marcaBase={marcaBase}

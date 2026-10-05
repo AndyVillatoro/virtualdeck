@@ -2,188 +2,13 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useFieldText } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
-import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
-import { BrandIconDisplay } from '../../components/BrandIconDisplay';
-import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
-import { useCatalogoMarcas, type CatalogoMarcas } from '../../utils/catalogoMarcas';
 import { Field, Btn, estiloEntrada } from './comunes';
 import { BloqueWidgetApariencia } from './BloqueWidgetApariencia';
+import { CampoIconoUnificado } from './CampoIconoUnificado';
+import type { TipoIcono } from './tiposIcono';
 import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig } from '../../types';
 
-function etiquetaMarca(catalogo: CatalogoMarcas | null, clave: string): string {
-  return catalogo?.BRAND_ICONS_MAP[clave]?.label ?? clave;
-}
-
-const GLIFOS_RAPIDOS = [
-  'PLAY', 'PAUSE', 'NEXT', 'PREV', 'MIC', 'SPEAKER', 'AUDIO_WAVE',
-  'TERMINAL', 'WEB', 'CODE', 'GEAR', 'CHECK', 'CLOSE', 'BELL',
-  'TRASH', 'CLOCK', 'FOLDER', 'SPARKLE', 'DOTS', 'ARROW_UP', 'ARROW_DOWN',
-  'CPU', 'GPU', 'FAN', 'BOLT', 'RAM', 'STORAGE', 'LOCK', 'HEART',
-  'WARN', 'BOOK', 'BUG', 'GRADUATION', 'WEATHER_THERMO', 'WEATHER_SUN',
-  'WEATHER_RAIN', 'BATTERY', 'VOLUME_MUTE',
-];
-
-interface BloqueMarcaProps {
-  brandIcon: string;
-  brandIconAlwaysAnimate: boolean;
-  brandIconCustomBitmap: string[] | undefined;
-  brandIconCustomColor: string | undefined;
-  brandIconCustomPalette: Record<string, string> | undefined;
-  setBrandIconCustomPalette: React.Dispatch<React.SetStateAction<Record<string, string> | undefined>>;
-  setBrandIcon: React.Dispatch<React.SetStateAction<string>>;
-  setBrandIconAlwaysAnimate: React.Dispatch<React.SetStateAction<boolean>>;
-  setBrandIconCustomBitmap: React.Dispatch<React.SetStateAction<string[] | undefined>>;
-  setBrandIconCustomColor: React.Dispatch<React.SetStateAction<string | undefined>>;
-  setShowBrandPicker: React.Dispatch<React.SetStateAction<boolean>>;
-  setShowBrandEditor: React.Dispatch<React.SetStateAction<boolean>>;
-  accent: string;
-}
-
-function BloqueIconoMarca({
-  brandIcon,
-  brandIconAlwaysAnimate,
-  brandIconCustomBitmap,
-  brandIconCustomColor,
-  brandIconCustomPalette,
-  setBrandIcon,
-  setBrandIconAlwaysAnimate,
-  setBrandIconCustomBitmap,
-  setBrandIconCustomColor,
-  setShowBrandPicker,
-  setShowBrandEditor,
-  accent,
-}: BloqueMarcaProps) {
-  const VD = useTheme();
-  const tf = useFieldText();
-  const catalogoMarcas = useCatalogoMarcas();
-
-  return (
-    <Field label={tf("ICONO DE MARCA ANIMADO (DOT-MATRIX)")}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        {brandIcon ? (
-          <>
-            <div
-              style={{
-                position: 'relative',
-                width: 36,
-                height: 36,
-                borderRadius: VD.radius.lg,
-                border: `1px solid ${VD.border}`,
-                overflow: 'hidden',
-                background: VD.elevated,
-              }}
-            >
-              <BrandIconDisplay
-                iconKey={brandIcon}
-                customBitmap={brandIconCustomBitmap}
-                customColor={brandIconCustomColor}
-                customPalette={brandIconCustomPalette}
-                animated={false}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-              />
-            </div>
-            <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text }}>
-              {etiquetaMarca(catalogoMarcas, brandIcon)}
-              {brandIconCustomBitmap && (
-                <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6 }}>
-                  <DotGlyphIcon glyph="EDIT" size={8} color={accent} />
-                </span>
-              )}
-            </span>
-            <Btn onClick={() => setShowBrandPicker(true)}>{tf('Cambiar')}</Btn>
-            <Btn onClick={() => setShowBrandEditor(true)}>{tf('Editar puntos')}</Btn>
-            {brandIconCustomBitmap && (
-              <Btn
-                onClick={() => {
-                  setBrandIconCustomBitmap(undefined);
-                  setBrandIconCustomColor(undefined);
-                }}
-              >
-                {tf('Restaurar')}
-              </Btn>
-            )}
-            <Btn
-              onClick={() => {
-                setBrandIcon('');
-                setBrandIconCustomBitmap(undefined);
-                setBrandIconCustomColor(undefined);
-              }}
-              style={{ color: VD.danger }}
-            >
-              {tf('Quitar')}
-            </Btn>
-          </>
-        ) : (
-          <Btn onClick={() => setShowBrandPicker(true)}>{tf('Elegir icono de marca')}</Btn>
-        )}
-      </div>
-      {brandIcon && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={brandIconAlwaysAnimate}
-            onChange={(e) => setBrandIconAlwaysAnimate(e.target.checked)}
-            style={{ accentColor: accent }}
-          />
-          <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-            {tf('ANIMACIÓN SIEMPRE ACTIVA — si está desactivado, anima solo cuando el botón está encendido (toggle ON)')}
-          </span>
-        </label>
-      )}
-    </Field>
-  );
-}
-
-interface BloqueGlifoProps {
-  customGlyph57: number[] | undefined;
-  fgColor: string;
-  setShowGlyphEditor: React.Dispatch<React.SetStateAction<boolean>>;
-  setCustomGlyph57: React.Dispatch<React.SetStateAction<number[] | undefined>>;
-}
-
-function BloqueGlifo57({
-  customGlyph57,
-  fgColor,
-  setShowGlyphEditor,
-  setCustomGlyph57,
-}: BloqueGlifoProps) {
-  const VD = useTheme();
-  const tf = useFieldText();
-  const tieneGlifo = customGlyph57 && customGlyph57.length === 7 && customGlyph57.some((r) => r > 0);
-
-  return (
-    <Field label={tf("GLIFO PERSONAL 5×7 (DOT-MATRIX)")}>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        {tieneGlifo ? (
-          <>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: VD.radius.md,
-                border: `1px solid ${VD.border}`,
-                background: VD.elevated,
-              }}
-            >
-              <Glyph57Inline rows={customGlyph57!} color={fgColor || VD.text} />
-            </div>
-            <Btn onClick={() => setShowGlyphEditor(true)}>{tf('Editar')}</Btn>
-            <Btn onClick={() => setCustomGlyph57(undefined)} style={{ color: VD.danger }}>
-              {tf('Quitar')}
-            </Btn>
-          </>
-        ) : (
-          <Btn onClick={() => setShowGlyphEditor(true)}>{tf('Dibujar glifo')}</Btn>
-        )}
-      </div>
-    </Field>
-  );
-}
-
-interface SeccionAparienciaProps {
+export interface SeccionAparienciaProps {
   accent: string;
   action: ButtonAction;
   bgColor: string;
@@ -236,6 +61,11 @@ interface SeccionAparienciaProps {
   setCurrencyWidget: React.Dispatch<React.SetStateAction<ButtonConfig['currencyWidget']>>;
   sliderWidget: SliderWidgetConfig | undefined;
   setSliderWidget: React.Dispatch<React.SetStateAction<SliderWidgetConfig | undefined>>;
+  tipoIcono: TipoIcono;
+  setTipoIcono: (t: TipoIcono) => void;
+  habiaVariosCamposIcono?: boolean;
+  glifoEncima: string;
+  setGlifoEncima: (g: string) => void;
 }
 
 export function SeccionApariencia(p: SeccionAparienciaProps) {
@@ -250,7 +80,8 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
     setShowBrandPicker, setShowGlyphEditor, setSublabel, setVarWidgetName,
     setVarWidgetPrefix, setVarWidgetSuffix, setWidget, sublabel, varWidgetName,
     varWidgetPrefix, varWidgetSuffix, widget, currencyWidget, setCurrencyWidget,
-    sliderWidget, setSliderWidget,
+    sliderWidget, setSliderWidget, tipoIcono, setTipoIcono, habiaVariosCamposIcono,
+    glifoEncima, setGlifoEncima,
   } = p;
 
   const VD = useTheme();
@@ -280,137 +111,36 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
         />
       </Field>
 
-      {/* Glifo DOT / Icono */}
-      <Field label={tf("GLIFO DOT / ICONO (VACÍO = ICONO DEL TIPO)")}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-            placeholder="PLAY, GEAR, MIC, WEB, CODE..."
-            maxLength={16}
-            style={{ ...inputStyle, flex: 1, fontFamily: VD.mono, fontSize: 11 }}
-          />
-          {icon && (
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: VD.elevated,
-                border: `1px solid ${VD.border}`,
-                borderRadius: VD.radius.sm,
-              }}
-            >
-              <DotGlyphIcon glyph={icon} size={16} color={accent} showRecessed />
-            </div>
-          )}
-          {icon && (
-            <Btn onClick={() => setIcon('')} style={{ color: VD.danger }}>
-              {tf('Quitar')}
-            </Btn>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
-          {GLIFOS_RAPIDOS.map((g) => {
-            const isSel = icon.trim().toUpperCase() === g;
-            return (
-              <button
-                key={g}
-                type="button"
-                onClick={() => setIcon(g)}
-                title={g}
-                style={{
-                  width: 26,
-                  height: 26,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: isSel ? VD.accentBg : VD.elevated,
-                  border: `1px solid ${isSel ? accent : VD.border}`,
-                  borderRadius: VD.radius.sm,
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                <DotGlyphIcon glyph={g} size={14} color={isSel ? accent : VD.textDim} />
-              </button>
-            );
-          })}
-        </div>
-      </Field>
-
-      {/* Imagen personalizada */}
-      <Field label={tf("IMAGEN PERSONALIZADA (PNG / JPG / GIF)")}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Btn onClick={pickImage}>{tf('Elegir imagen')}</Btn>
-          {imageData && (
-            <>
-              <img
-                src={imageData}
-                alt=""
-                style={{
-                  width: 32,
-                  height: 32,
-                  objectFit: 'cover',
-                  borderRadius: VD.radius.md,
-                  border: `1px solid ${VD.border}`,
-                }}
-              />
-              <div
-                style={{
-                  position: 'relative',
-                  width: 32,
-                  height: 32,
-                  borderRadius: VD.radius.md,
-                  overflow: 'hidden',
-                  border: `1px solid ${VD.border}`,
-                }}
-              >
-                <img
-                  src={imageData}
-                  alt=""
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    imageRendering: 'pixelated',
-                  }}
-                />
-                <DotMatrixImageOverlay pitch={3} />
-              </div>
-              <Btn onClick={() => setImageData('')} style={{ color: VD.danger }}>
-                {tf('Quitar')}
-              </Btn>
-            </>
-          )}
-        </div>
-      </Field>
-
-      {/* Bloque Marca */}
-      <BloqueIconoMarca
+      {/* Un solo campo ICONO con selector de tipo excluyente */}
+      <CampoIconoUnificado
+        accent={accent}
+        action={action}
+        tipoIcono={tipoIcono}
+        setTipoIcono={setTipoIcono}
+        habiaVariosCamposIcono={habiaVariosCamposIcono}
+        glifoEncima={glifoEncima}
+        setGlifoEncima={setGlifoEncima}
+        icon={icon}
+        setIcon={setIcon}
+        imageData={imageData}
+        setImageData={setImageData}
+        pickImage={pickImage}
         brandIcon={brandIcon}
+        setBrandIcon={setBrandIcon}
         brandIconAlwaysAnimate={brandIconAlwaysAnimate}
+        setBrandIconAlwaysAnimate={setBrandIconAlwaysAnimate}
         brandIconCustomBitmap={brandIconCustomBitmap}
+        setBrandIconCustomBitmap={setBrandIconCustomBitmap}
         brandIconCustomColor={brandIconCustomColor}
+        setBrandIconCustomColor={setBrandIconCustomColor}
         brandIconCustomPalette={brandIconCustomPalette}
         setBrandIconCustomPalette={setBrandIconCustomPalette}
-        setBrandIcon={setBrandIcon}
-        setBrandIconAlwaysAnimate={setBrandIconAlwaysAnimate}
-        setBrandIconCustomBitmap={setBrandIconCustomBitmap}
-        setBrandIconCustomColor={setBrandIconCustomColor}
+        customGlyph57={customGlyph57}
+        setCustomGlyph57={setCustomGlyph57}
         setShowBrandPicker={setShowBrandPicker}
         setShowBrandEditor={setShowBrandEditor}
-        accent={accent}
-      />
-
-      {/* Bloque Glifo 5x7 */}
-      <BloqueGlifo57
-        customGlyph57={customGlyph57}
-        fgColor={fgColor}
         setShowGlyphEditor={setShowGlyphEditor}
-        setCustomGlyph57={setCustomGlyph57}
+        fgColor={fgColor}
       />
 
       {/* Colores */}
