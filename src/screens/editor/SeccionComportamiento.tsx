@@ -2,9 +2,14 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
-import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
-import { Field, SensorPicker, ToggleOffActionPicker, estiloEntrada } from './comunes';
-import type { ButtonAction, Sensor } from '../../types';
+import { Field, ToggleOffActionPicker } from './comunes';
+import { CampoGlobalHotkey } from './comportamiento/CampoGlobalHotkey';
+import { CampoVisibleIfApp } from './comportamiento/CampoVisibleIfApp';
+import { CampoSensorCondicion } from './comportamiento/CampoSensorCondicion';
+import { CampoTimerTrigger } from './comportamiento/CampoTimerTrigger';
+import { CampoRadioGroup } from './comportamiento/CampoRadioGroup';
+import { useConfiguracionExistente } from './comportamiento/useConfiguracionExistente';
+import type { ButtonAction, PageConfig, Sensor } from '../../types';
 
 interface SeccionComportamientoProps {
   accent: string;
@@ -19,8 +24,6 @@ interface SeccionComportamientoProps {
   setRadioGroup: (s: string) => void;
   fijo: boolean;
   setFijo: (v: boolean) => void;
-  pinned: boolean;
-  setPinned: (v: boolean) => void;
   globalHotkey: string;
   setGlobalHotkey: (s: string) => void;
   inTrayMenu: boolean;
@@ -44,6 +47,8 @@ interface SeccionComportamientoProps {
   sensorTriggerCooldown: string;
   setSensorTriggerCooldown: (s: string) => void;
   sensorList: Sensor[];
+  currentButtonId?: string;
+  pages?: PageConfig[];
 }
 
 export function SeccionComportamiento({
@@ -59,8 +64,6 @@ export function SeccionComportamiento({
   setRadioGroup,
   fijo,
   setFijo,
-  pinned,
-  setPinned,
   globalHotkey,
   setGlobalHotkey,
   inTrayMenu,
@@ -84,11 +87,13 @@ export function SeccionComportamiento({
   sensorTriggerCooldown,
   setSensorTriggerCooldown,
   sensorList,
+  currentButtonId,
+  pages,
 }: SeccionComportamientoProps) {
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
-  const inputStyle = estiloEntrada(VD);
+  const { gruposRadio, hotkeysOcupadas } = useConfiguracionExistente(currentButtonId);
 
   const esAccionValida = action.type !== 'none' && action.type !== 'folder';
 
@@ -122,15 +127,12 @@ export function SeccionComportamiento({
               {/* Grupo Radio */}
               <div style={{ marginTop: 12 }}>
                 <Field label={tf("GRUPO RADIO (toggles mutuamente exclusivos)")}>
-                  <input
+                  <CampoRadioGroup
                     value={radioGroup}
-                    onChange={(e) => setRadioGroup(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
-                    placeholder={tf("ej: modo_audio, perfil_rgb...")}
-                    style={inputStyle}
+                    onChange={setRadioGroup}
+                    gruposExistentes={gruposRadio}
+                    accent={accent}
                   />
-                  <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
-                    {t('ed.radioHint')}
-                  </div>
                 </Field>
               </div>
             </div>
@@ -149,10 +151,13 @@ export function SeccionComportamiento({
             onChange={setLongPressAction}
             accent={accent}
           />
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+            {tf('Permite definir dos acciones distintas para una pulsación corta o manteniendo presionado el botón.')}
+          </div>
         </div>
       )}
 
-      {/* 3. Persistencia en páginas */}
+      {/* 3. Persistencia en páginas (solo fijo, sin control de pinned) */}
       <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {action.type !== 'none' && (
           <div>
@@ -172,167 +177,92 @@ export function SeccionComportamiento({
             </div>
           </div>
         )}
-
-        <Field label={tf("BOTÓN ANCLADO GLOBAL")}>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              cursor: 'pointer',
-              background: pinned ? `${accent}18` : VD.elevated,
-              padding: '7px 10px',
-              borderRadius: VD.radius.sm,
-              border: `1px solid ${pinned ? accent : VD.border}`,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={pinned}
-              onChange={(e) => setPinned(e.target.checked)}
-              style={{ accentColor: accent, cursor: 'pointer' }}
-            />
-            <DotGlyphIcon glyph="PIN" size={10} color={pinned ? accent : VD.textMuted} />
-            <span
-              style={{
-                fontFamily: VD.mono,
-                fontSize: 9,
-                letterSpacing: 1,
-                color: pinned ? VD.text : VD.textDim,
-                textTransform: 'uppercase',
-                userSelect: 'none',
-              }}
-            >
-              {tf('ANCLAR EN TODAS LAS PÁGINAS')}
-            </span>
-          </label>
-        </Field>
       </div>
 
       {/* 4. Disparadores y condiciones externas */}
       {action.type !== 'none' && (
-        <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ borderTop: `1px solid ${VD.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block' }}>
             {t('ed.triggers')}
           </DotLabel>
 
           {/* Hotkey global */}
           <Field label={tf("HOTKEY GLOBAL DEL SO (ej. Ctrl+Alt+1)")}>
-            <input
+            <CampoGlobalHotkey
               value={globalHotkey}
-              onChange={(e) => setGlobalHotkey(e.target.value)}
-              placeholder={tf("vacío = sin atajo global")}
-              style={inputStyle}
+              onChange={setGlobalHotkey}
+              accent={accent}
+              hotkeysOcupadas={hotkeysOcupadas}
+              pages={pages}
             />
           </Field>
 
           {/* Menú bandeja */}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={inTrayMenu}
-              onChange={(e) => setInTrayMenu(e.target.checked)}
-              style={{ accentColor: accent }}
-            />
-            <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
-              {tf('MOSTRAR EN EL MENÚ DE LA BANDEJA (acción rápida)')}
-            </span>
-          </label>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={inTrayMenu}
+                onChange={(e) => setInTrayMenu(e.target.checked)}
+                style={{ accentColor: accent }}
+              />
+              <span style={{ fontFamily: VD.mono, fontSize: 9, letterSpacing: 1, color: VD.textDim }}>
+                {tf('MOSTRAR EN EL MENÚ DE LA BANDEJA (acción rápida)')}
+              </span>
+            </label>
+            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+              {tf('Añade un acceso directo a esta acción en el menú contextual del icono de la bandeja del sistema.')}
+            </div>
+          </div>
 
           {/* Visibilidad por app */}
           <Field label={tf("VISIBLE SOLO SI ESTA APP ESTÁ ACTIVA (opcional)")}>
-            <input
+            <CampoVisibleIfApp
               value={visibleIfApp}
-              onChange={(e) => setVisibleIfApp(e.target.value)}
-              placeholder={"spotify, chrome, obs64 ..."}
-              style={inputStyle}
+              onChange={setVisibleIfApp}
+              accent={accent}
             />
           </Field>
 
           {/* Disparo programado por hora */}
           <Field label={tf("DISPARAR AUTOMÁTICAMENTE A LA HORA (HH:MM)")}>
-            <input
+            <CampoTimerTrigger
               value={timerTriggerAt}
-              onChange={(e) => setTimerTriggerAt(e.target.value)}
-              placeholder={"08:00"}
-              maxLength={5}
-              style={inputStyle}
+              onChange={setTimerTriggerAt}
+              accent={accent}
             />
           </Field>
 
           {/* Visibilidad por sensor */}
           <Field label={tf("VISIBLE SOLO SI SENSOR (opcional)")}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <SensorPicker
-                sensors={sensorList}
-                value={visibleIfSensorId}
-                onChange={setVisibleIfSensorId}
-                accent={accent}
-                allowEmpty
-              />
-              {visibleIfSensorId && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <select
-                    value={visibleIfSensorOp}
-                    onChange={(e) => setVisibleIfSensorOp(e.target.value as any)}
-                    style={{ ...inputStyle, width: 70 }}
-                  >
-                    <option value=">">{'>'}</option>
-                    <option value="<">{'<'}</option>
-                    <option value=">=">{'≥'}</option>
-                    <option value="<=">{'≤'}</option>
-                    <option value="==">{'='}</option>
-                  </select>
-                  <input
-                    value={visibleIfSensorVal}
-                    onChange={(e) => setVisibleIfSensorVal(e.target.value)}
-                    placeholder={tf("Valor (ej. 80)")}
-                    style={{ ...inputStyle, flex: 1 }}
-                  />
-                </div>
-              )}
-            </div>
+            <CampoSensorCondicion
+              sensors={sensorList}
+              sensorId={visibleIfSensorId}
+              onSensorIdChange={setVisibleIfSensorId}
+              op={visibleIfSensorOp}
+              onOpChange={setVisibleIfSensorOp}
+              val={visibleIfSensorVal}
+              onValChange={setVisibleIfSensorVal}
+              accent={accent}
+              modo="visibilidad"
+            />
           </Field>
 
           {/* Disparo cuando sensor */}
           <Field label={tf("DISPARAR CUANDO SENSOR (opcional)")}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <SensorPicker
-                sensors={sensorList}
-                value={sensorTriggerId}
-                onChange={setSensorTriggerId}
-                accent={accent}
-                allowEmpty
-              />
-              {sensorTriggerId && (
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <select
-                    value={sensorTriggerOp}
-                    onChange={(e) => setSensorTriggerOp(e.target.value as any)}
-                    style={{ ...inputStyle, width: 70 }}
-                  >
-                    <option value=">">{'>'}</option>
-                    <option value="<">{'<'}</option>
-                    <option value=">=">{'≥'}</option>
-                    <option value="<=">{'≤'}</option>
-                    <option value="==">{'='}</option>
-                  </select>
-                  <input
-                    value={sensorTriggerVal}
-                    onChange={(e) => setSensorTriggerVal(e.target.value)}
-                    placeholder={tf("Valor (ej. 85)")}
-                    style={{ ...inputStyle, flex: 1 }}
-                  />
-                  <input
-                    value={sensorTriggerCooldown}
-                    onChange={(e) => setSensorTriggerCooldown(e.target.value)}
-                    placeholder={"Cooldown s"}
-                    style={{ ...inputStyle, width: 90 }}
-                  />
-                </div>
-              )}
-            </div>
+            <CampoSensorCondicion
+              sensors={sensorList}
+              sensorId={sensorTriggerId}
+              onSensorIdChange={setSensorTriggerId}
+              op={sensorTriggerOp}
+              onOpChange={setSensorTriggerOp}
+              val={sensorTriggerVal}
+              onValChange={setSensorTriggerVal}
+              cooldown={sensorTriggerCooldown}
+              onCooldownChange={setSensorTriggerCooldown}
+              accent={accent}
+              modo="disparador"
+            />
           </Field>
         </div>
       )}

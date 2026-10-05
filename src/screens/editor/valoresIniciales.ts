@@ -42,7 +42,6 @@ export function estiloInicial(button: ButtonConfig) {
     bgColor: button.bgColor || '',
     fgColor: button.fgColor || '',
     widget: button.widget,
-    pinned: button.pinned ?? false,
     fijo: button.fijo ?? false,
   };
 }

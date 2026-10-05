@@ -15,14 +15,14 @@ interface Props {
   x: number;
   y: number;
   isEmpty: boolean;
-  isPinned?: boolean;
+  isFijo?: boolean;
   esFija?: boolean;
   onEdit: () => void;
   onDuplicate?: () => void;
   onCopy?: () => void;
   onPaste?: () => void;
   canPaste?: boolean;
-  onTogglePin?: () => void;
+  onToggleFijo?: () => void;
   onClear?: () => void;
   onQuickSlider?: (target: 'volume' | 'brightness') => void;
   onQuitarFijo?: () => void;
@@ -31,8 +31,8 @@ interface Props {
 }
 
 export function MenuContextual({
-  x, y, isEmpty, isPinned, esFija, onEdit, onDuplicate, onCopy, onPaste, canPaste,
-  onTogglePin, onClear, onQuickSlider, onQuitarFijo, onIrAPagina, onCerrar,
+  x, y, isEmpty, isFijo, esFija, onEdit, onDuplicate, onCopy, onPaste, canPaste,
+  onToggleFijo, onClear, onQuickSlider, onQuitarFijo, onIrAPagina, onCerrar,
 }: Props) {
   const VD = useTheme();
   const t = useT();
@@ -86,8 +86,8 @@ export function MenuContextual({
       {!isEmpty && onDuplicate && (
         <Item label={t('cell.duplicate')} glyph="ADD" onClick={() => { onCerrar(); onDuplicate(); }} />
       )}
-      {!isEmpty && onTogglePin && (
-        <Item label={isPinned ? t('btn.unpin') : t('btn.pin')} glyph="PIN" onClick={() => { onCerrar(); onTogglePin(); }} />
+      {!isEmpty && onToggleFijo && (
+        <Item label={isFijo ? t('cell.unfix') : t('cell.fix')} glyph="PIN" onClick={() => { onCerrar(); onToggleFijo(); }} />
       )}
       {!isEmpty && onClear && (
         <Item label={t('cell.clear')} glyph="TRASH" onClick={() => { onCerrar(); onClear(); }} danger />

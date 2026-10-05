@@ -34,7 +34,7 @@ interface CeldaPrincipalProps {
   onPasteButton?: (id: string) => void;
   onClearButton: (id: string) => void;
   onUpdateButton?: (btn: ButtonConfig) => void;
-  onTogglePin: (id: string) => void;
+  onToggleFijo: (id: string) => void;
   onConmutarSeleccion: (id: string) => void;
   onArrastrar: (id: string | null) => void;
   onSwapButtons: (idA: string, idB: string) => void;
@@ -48,7 +48,7 @@ export function CeldaPrincipal(props: CeldaPrincipalProps) {
     runningButtons, soundOnPress, soundProfile, deckState, canPasteButton,
     onEditButton, executeButton, executeLongPressButton, onStateUpdate,
     onDuplicateButton, onCopyButton, onPasteButton, onClearButton, onUpdateButton,
-    onTogglePin, onConmutarSeleccion, onArrastrar, onSwapButtons, showToast,
+    onToggleFijo, onConmutarSeleccion, onArrastrar, onSwapButtons, showToast,
   } = props;
   const t = useT();
 
@@ -119,7 +119,7 @@ export function CeldaPrincipal(props: CeldaPrincipalProps) {
           },
         });
       }}
-      onTogglePin={esFija ? undefined : () => onTogglePin(btn.id)}
+      onToggleFijo={esFija ? undefined : () => onToggleFijo(btn.id)}
       onDragStart={() => {
         if (esFija) {
           handleAvisoFijo();

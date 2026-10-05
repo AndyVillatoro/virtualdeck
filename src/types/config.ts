@@ -108,8 +108,6 @@ export interface ButtonConfig {
   sensorTrigger?: SensorCondition & { cooldownMs?: number };
   /** 4.5 — Subdivisión modular de mosaico 2×2 (4 mini-botones: TL, TR, BL, BR). */
   subButtons?: SubButtonConfig[];
-  /** 7.4 — Botón anclado global: persiste en su celda en todas las páginas. */
-  pinned?: boolean;
   /** T-HW-12 — Botón fijo por grupo: vive en su página y se ve en el mismo
    * hueco (por posición) en las demás páginas de su grupo —el deck (páginas
    * sin `superficie`) o el dock de su mismo `superficie.serial`—. */

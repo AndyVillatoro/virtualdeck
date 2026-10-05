@@ -203,7 +203,7 @@ interface BotonMandoMovil {
   imageData?: string;
   customGlyph57?: number[];
   brandIcon?: string;
-  pinned?: boolean;
+  fijo?: boolean;
   widget?: string;
   sliderWidget?: SliderMandoMovil;
   subButtons?: SubBotonMandoMovil[];
@@ -227,7 +227,7 @@ function listaDeBotones(): BotonMandoMovil[] {
       imageData?: string;
       customGlyph57?: number[];
       brandIcon?: string;
-      pinned?: boolean;
+      fijo?: boolean;
       widget?: string;
       sliderWidget?: SliderMandoMovil;
       subButtons?: Array<{
@@ -271,7 +271,7 @@ function listaDeBotones(): BotonMandoMovil[] {
         imageData,
         customGlyph57: b.customGlyph57,
         brandIcon: b.brandIcon,
-        pinned: b.pinned,
+        fijo: b.fijo,
         widget: b.widget,
         sliderWidget: b.sliderWidget,
         subButtons: b.subButtons?.map((s) => ({

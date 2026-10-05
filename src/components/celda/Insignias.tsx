@@ -55,17 +55,16 @@ function InsigniaEditar({ visible, onEdit }: { visible: boolean; onEdit: () => v
 }
 
 function InsigniaPinFijo({
-  esFija, pinned, hovered, accent, nombrePaginaOriginal, defaultPageName,
+  esFija, hovered, accent, nombrePaginaOriginal, defaultPageName,
 }: {
   esFija?: boolean;
-  pinned?: boolean;
   hovered: boolean;
   accent: string;
   nombrePaginaOriginal?: string;
   defaultPageName: string;
 }) {
   const t = useT();
-  if (!esFija || pinned) return null;
+  if (!esFija) return null;
   return (
     <div
       title={t('btn.fijoHint', { pagina: nombrePaginaOriginal || defaultPageName })}
@@ -169,28 +168,11 @@ export function Insignias({
         </div>
       )}
 
-      {/* 7.4 — Botón anclado global: micro-icono PIN en la esquina superior derecha */}
-      {button.pinned && !hovered && (
-        <div
-          title={t('btn.pinnedHint')}
-          style={{
-            position: 'absolute', top: 4, right: 4,
-            width: 12, height: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 2,
-          }}
-        >
-          <DotGlyphIcon glyph="PIN" size={8} color={accent} />
-        </div>
-      )}
-
-      {/* T-HW-12 / T-HW-20 — Botón fijo visto desde otra página de su grupo: la misma
-          chincheta del anclado, arriba a la derecha. Si además es anclado, la
-          de anclado ya lo dice y no se duplica. Al pasar el cursor se desplaza a la
+      {/* T-HW-12 / T-HW-20 — Botón fijo visto desde otra página de su grupo: la
+          chincheta arriba a la derecha. Al pasar el cursor se desplaza a la
           izquierda del lápiz para que se pueda ver su título con la página de origen. */}
       <InsigniaPinFijo
         esFija={esFija}
-        pinned={button.pinned}
         hovered={hovered}
         accent={accent}
         nombrePaginaOriginal={nombrePaginaOriginal}

@@ -61,11 +61,11 @@ export function MainB({
   const estadoSistema = useEstadoSistema(api);
   const { rgbStatus } = estadoSistema;
 
-  const handleTogglePin = useCallback((buttonId: string) => {
+  const handleToggleFijo = useCallback((buttonId: string) => {
     const btn = config.buttons.find((b) => b.id === buttonId);
     if (!btn) return;
-    const nextPinned = !btn.pinned;
-    const nextButtons = config.buttons.map((b) => (b.id === buttonId ? { ...b, pinned: nextPinned || undefined } : b));
+    const nextFijo = !(btn.fijo === true);
+    const nextButtons = config.buttons.map((b) => (b.id === buttonId ? { ...b, fijo: nextFijo || undefined } : b));
     onConfigChange({ ...config, buttons: nextButtons });
   }, [config, onConfigChange]);
 
@@ -399,7 +399,7 @@ export function MainB({
                 onPasteButton={onPasteButton}
                 onClearButton={onClearButton}
                 onUpdateButton={onUpdateButton}
-                onTogglePin={handleTogglePin}
+                onToggleFijo={handleToggleFijo}
                 onConmutarSeleccion={conmutarSeleccion}
                 onArrastrar={setDragSourceId}
                 onSwapButtons={onSwapButtons}

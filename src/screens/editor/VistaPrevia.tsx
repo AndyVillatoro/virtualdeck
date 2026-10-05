@@ -36,7 +36,6 @@ export function VistaPrevia({
     brandIconCustomPalette?: Record<string, string>;
     customGlyph57?: number[];
     bgColor: string; fgColor: string;
-    pinned?: boolean;
     fijo?: boolean;
     widget?: TipoWidget;
     sliderWidget?: SliderWidgetConfig;
@@ -63,7 +62,6 @@ export function VistaPrevia({
     action,
     actions: extraActions.length > 0 ? [action, ...extraActions] : undefined,
     isToggle,
-    pinned: campos.pinned || undefined,
     fijo: campos.fijo || undefined,
     widget: campos.widget,
     sliderWidget: campos.sliderWidget,

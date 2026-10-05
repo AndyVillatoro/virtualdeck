@@ -56,7 +56,6 @@ export interface CamposDelEditor {
   sensorTriggerOp: '>' | '<' | '>=' | '<=' | '==';
   sensorTriggerVal: string;
   sensorTriggerCooldown: string;
-  pinned?: boolean;
   fijo?: boolean;
 }
 
@@ -179,7 +178,6 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     visibleIf: condicionDeVisibilidad(c),
     timerTriggerAt: c.timerTriggerAt.trim() || undefined,
     sensorTrigger: disparadorDeSensor(c),
-    pinned: c.pinned || undefined,
     fijo: c.fijo || undefined,
     subButtons: c.is2x2Mode && c.subButtons && c.subButtons.length === 4 ? c.subButtons : undefined,
   };

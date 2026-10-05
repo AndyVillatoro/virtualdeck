@@ -5,7 +5,7 @@
 // porque la cadena de migrate(v1 → v2 → ...) se aplica en orden.
 import type { DeckConfig, ButtonAction, ButtonConfig, PageConfig } from '../types';
 
-export const CURRENT_CONFIG_VERSION = 6;
+export const CURRENT_CONFIG_VERSION = 7;
 
 export interface ValidationResult {
   ok: boolean;
@@ -315,6 +315,28 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
       if (!Array.isArray(c.buttons)) return { ...c, configVersion: 6 };
       for (const b of c.buttons) pasaBotonADot(b);
       return { ...c, configVersion: 6 };
+    },
+  },
+  {
+    from: 6, to: 7,
+    apply: (c) => {
+      // v6 → v7: `pinned` (7.4, proyección global en todas las páginas) se
+      // unifica en `fijo` (T-HW-12, por grupo: el deck y cada dock por su
+      // lado, y llega a la tecla física). `pinned: true` → `fijo: true` y se
+      // quita `pinned`.
+      // Idempotente: lo ya migrado no trae `pinned` y no se toca; pasar dos
+      // veces no cambia nada la segunda.
+      // Si en un mismo grupo dos botones quedan fijos en el mismo hueco, gana
+      // el primero en el orden de `config.pages` (es la regla de
+      // `botonesFijos.ts`): la migración no reordena ni desmarca nada, la
+      // resolución ya lo decide al pintar y al disparar.
+      if (!Array.isArray(c.buttons)) return { ...c, configVersion: 7 };
+      for (const b of c.buttons) {
+        if (!isObject(b)) continue;
+        if ((b as { pinned?: unknown }).pinned) (b as { fijo?: boolean }).fijo = true;
+        delete (b as { pinned?: unknown }).pinned;
+      }
+      return { ...c, configVersion: 7 };
     },
   },
 ];

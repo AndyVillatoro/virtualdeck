@@ -425,7 +425,7 @@ async function pantallaDeck() {
     app.append(barra);
   }
   const rejilla = nodo('div', { className: 'rejilla' });
-  const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva || b.pinned);
+  const visibles = botones.filter((b) => paginas.length <= 1 || b.page === paginaViva || b.fijo);
   if (visibles.length === 0) app.append(nodo('p', { textContent: t.sinBotones }));
   const esClaro = document.documentElement.getAttribute('data-theme') === 'light';
 
@@ -436,7 +436,7 @@ async function pantallaDeck() {
     if (b.bgColor) celda.style.backgroundColor = b.bgColor;
     if (colorFrente) celda.style.color = colorFrente;
 
-    if (b.pinned) {
+    if (b.fijo) {
       celda.append(nodo('span', { className: 'pin-insignia', textContent: '•PIN•' }));
     }
 

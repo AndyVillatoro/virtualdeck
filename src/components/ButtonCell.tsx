@@ -49,7 +49,7 @@ interface ButtonCellProps {
   onAdjustWheel?: (signo: 1 | -1) => void;
   /** Se llama tambien si el arrastre se cancela, no solo al soltar. */
   onDragEnd?: () => void;
-  onTogglePin?: () => void;
+  onToggleFijo?: () => void;
   /** Menu de clic derecho. La barra flotante lo apaga: sus opciones son de la grilla. */
   showContextMenu?: boolean;
   onQuickSlider?: (target: 'volume' | 'brightness') => void;
@@ -90,7 +90,7 @@ function useRotaryHandler(
 function ButtonCellInner(props: ButtonCellProps) {
   const {
     button, accent, subToggled, widgetData, deckState, onStateUpdate,
-    resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onCopy, onPaste, canPaste, onClear, onTogglePin, onDragStart, onDrop, onDragEnd,
+    resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onCopy, onPaste, canPaste, onClear, onToggleFijo, onDragStart, onDrop, onDragEnd,
     onAdjustWheel, onQuickSlider, onQuitarFijo, onIrAPagina, onAvisoFijo, nombrePaginaOriginal,
   } = props;
   const toggled = Boolean(props.toggled);
@@ -270,14 +270,14 @@ function ButtonCellInner(props: ButtonCellProps) {
           x={contextMenu.x}
           y={contextMenu.y}
           isEmpty={isEmpty}
-          isPinned={button.pinned}
+          isFijo={button.fijo === true}
           esFija={props.esFija}
           onEdit={onEdit}
           onDuplicate={onDuplicate}
           onCopy={onCopy}
           onPaste={onPaste}
           canPaste={canPaste}
-          onTogglePin={onTogglePin}
+          onToggleFijo={onToggleFijo}
           onClear={onClear}
           onQuickSlider={onQuickSlider}
           onQuitarFijo={onQuitarFijo}

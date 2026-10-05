@@ -271,5 +271,53 @@ export const FIELDS_EN: Record<string, string> = {
   'Anterior y siguiente se paran en los extremos; cambiar página da la vuelta. En un dock mueve entre sus páginas; en el deck, entre las del deck.': 'Previous and next stop at the ends; change page wraps around. On a dock it moves between its pages; on the deck, between the deck pages.',
   'DIRECCIÓN': 'DIRECTION',
   'Recorre las ventanas abiertas en orden estable (por programa), no como Alt+Tab.': 'Steps through open windows in stable order (by program), unlike Alt+Tab.',
+  // Comportamiento mejorado (T-UI-07)
+  'Permite definir dos acciones distintas para una pulsación corta o manteniendo presionado el botón.':
+    'Allows defining two different actions for a short press or holding the button down.',
+  'Añade un acceso directo a esta acción en el menú contextual del icono de la bandeja del sistema.':
+    'Adds a shortcut to this action in the system tray icon context menu.',
+  'GRABAR ATAJO': 'RECORD HOTKEY',
+  'ESPERANDO TECLAS...': 'WAITING FOR KEYS...',
+  'BORRAR ATAJO': 'CLEAR HOTKEY',
+  'Este atajo ya está asignado al botón:': 'This hotkey is already assigned to button:',
+  'Página': 'Page',
+  'COMBINACIONES SUGERIDAS (SEGURAS EN WINDOWS)': 'SUGGESTED COMBINATIONS (SAFE IN WINDOWS)',
+  'Ejecuta esta acción desde cualquier aplicación al pulsar': 'Executes this action from any application when pressing',
+  'Permite ejecutar esta acción desde cualquier aplicación o juego con una combinación global del sistema.':
+    'Allows executing this action from any application or game with a global system shortcut.',
+  'MOSTRAR SIEMPRE (SIN FILTRO DE APP)': 'ALWAYS SHOW (NO APP FILTER)',
+  'El botón solo será visible cuando la aplicación esté en primer plano:':
+    'The button will only be visible when the application is in the foreground:',
+  'El botón se muestra siempre en su página. Seleccione una aplicación para condicionar su visibilidad.':
+    'The button is always shown on its page. Select an application to condition its visibility.',
+  'OPERADOR': 'OPERATOR',
+  'UMBRAL': 'THRESHOLD',
+  'QUITAR CONDICIÓN DE SENSOR': 'REMOVE SENSOR CONDITION',
+  'QUITAR': 'REMOVE',
+  'USAR VALOR ACTUAL': 'USE CURRENT VALUE',
+  'TIEMPO DE ESPERA ENTRE DISPAROS (COOLDOWN)': 'WAIT TIME BETWEEN TRIGGERS (COOLDOWN)',
+  'inmediato': 'immediate',
+  'segundos': 'seconds',
+  'El botón solo es visible cuando el sensor supere o cumpla el umbral configurado.':
+    'The button is only visible when the sensor exceeds or meets the configured threshold.',
+  'Se pulsa automáticamente cuando el sensor supere o cumpla el umbral configurado.':
+    'Presses automatically when the sensor exceeds or meets the configured threshold.',
+  'Muestra u oculta este botón automáticamente según el valor en tiempo real de un sensor del sistema.':
+    'Shows or hides this button automatically according to the real-time value of a system sensor.',
+  'Ejecuta esta acción automáticamente cuando un sensor alcance o supere un umbral.':
+    'Executes this action automatically when a sensor reaches or exceeds a threshold.',
+  'HORA ACTUAL': 'CURRENT TIME',
+  'DESACTIVAR DISPARO POR HORA': 'DISABLE TIME TRIGGER',
+  'Se ejecutará automáticamente todos los días a las': 'Will run automatically every day at',
+  'Ejecuta la acción automáticamente a una hora fija del día.': 'Executes the action automatically at a fixed time of day.',
+  'Nota: el disparador por hora se ejecuta una vez al día a la hora indicada (HH:MM).':
+    'Note: time trigger runs once a day at the specified time (HH:MM).',
+  'SIN GRUPO': 'NO GROUP',
+  'NUEVO GRUPO': 'NEW GROUP',
+  'Nombre del nuevo grupo (ej. modo_audio)': 'New group name (e.g. audio_mode)',
+  'Solo un botón de este grupo puede estar encendido a la vez.': 'Only one button in this group can be on at a time.',
+  'Grupo activo:': 'Active group:',
+  'Permite agrupar varios botones toggle para que sean mutuamente exclusivos (solo uno activo a la vez).':
+    'Allows grouping several toggle buttons to be mutually exclusive (only one active at a time).',
 };
 

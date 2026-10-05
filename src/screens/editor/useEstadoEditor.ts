@@ -62,7 +62,6 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [showBrandEditor, setShowBrandEditor] = useState(false);
   const [bgColor, setBgColor] = useState(est.bgColor);
   const [fgColor, setFgColor] = useState(est.fgColor);
-  const [pinned, setPinned] = useState(est.pinned);
   const [fijo, setFijo] = useState(est.fijo);
   const [globalHotkey, setGlobalHotkey] = useState(dis.globalHotkey);
   const [inTrayMenu, setInTrayMenu] = useState(dis.inTrayMenu);
@@ -197,7 +196,6 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       sensorTriggerOp,
       sensorTriggerVal,
       sensorTriggerCooldown,
-      pinned,
       fijo,
     }));
   };
@@ -322,8 +320,6 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     setBgColor,
     fgColor,
     setFgColor,
-    pinned,
-    setPinned,
     fijo,
     setFijo,
     globalHotkey,

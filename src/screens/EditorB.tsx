@@ -65,7 +65,7 @@ export function EditorB({
     ? `${dockInfo.controlMeta.control.toUpperCase()}${dockInfo.controlMeta.gesto ? ` · ${dockInfo.controlMeta.gesto.toUpperCase()}` : ''}`
     : undefined;
   const appearanceBadge = e.label || (e.icon ? e.icon : undefined);
-  const behaviorBadge = e.isToggle ? 'TOGGLE' : (e.fijo ? 'FIJO' : (e.pinned ? 'ANCLADO' : undefined));
+  const behaviorBadge = e.isToggle ? 'TOGGLE' : (e.fijo ? 'FIJO' : undefined);
   const advancedBadge = e.is2x2Mode ? '2×2' : (e.extraActions.length > 0 ? `+${e.extraActions.length}` : undefined);
 
   return (
@@ -134,7 +134,6 @@ export function EditorB({
               }),
               bgColor: e.bgColor,
               fgColor: e.fgColor,
-              pinned: e.pinned,
               fijo: e.fijo,
               widget: e.widget,
               sliderWidget: e.sliderWidget,
@@ -323,8 +322,6 @@ export function EditorB({
                 setIsToggle={e.setIsToggle}
                 longPressAction={e.longPressAction}
                 setLongPressAction={e.setLongPressAction}
-                pinned={e.pinned}
-                setPinned={e.setPinned}
                 radioGroup={e.radioGroup}
                 setRadioGroup={e.setRadioGroup}
                 sensorList={sensorList}
@@ -346,6 +343,8 @@ export function EditorB({
                 setVisibleIfSensorOp={e.setVisibleIfSensorOp}
                 visibleIfSensorVal={e.visibleIfSensorVal}
                 setVisibleIfSensorVal={e.setVisibleIfSensorVal}
+                currentButtonId={button.id}
+                pages={pages}
               />
             </SeccionAjustes>
 
