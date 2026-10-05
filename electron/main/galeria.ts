@@ -284,6 +284,13 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     for (const a of (Array.isArray(y.actions) ? y.actions : [])) mirar(a);
     mirar(y.actionToggleOff);
     mirar(y.longPressAction);
+    // Perilla multimodo (T-HW-19): un script escondido en un modo es un
+    // script igual — `mirar` entra en hijas (macros, ramas...) como siempre.
+    for (const m of (Array.isArray(y.modosPerilla) ? y.modosPerilla : [])) {
+      if (!m || typeof m !== 'object') continue;
+      mirar((m as Record<string, any>).izq);
+      mirar((m as Record<string, any>).der);
+    }
   };
 
   for (const b of botones) mirarBoton(b);

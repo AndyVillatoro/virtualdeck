@@ -8,7 +8,7 @@ import type { ButtonConfig } from '../types/config';
  * pulsando otra vez (multitarea, portapapeles): `rellenarBotones` rehace el
  * botón entero con el contenido, así que llega tal cual.
  */
-export type PresetHueco = Pick<ButtonConfig, 'label' | 'icon' | 'bgColor' | 'fgColor' | 'action' | 'isToggle' | 'actionToggleOff' | 'fijo'>;
+export type PresetHueco = Pick<ButtonConfig, 'label' | 'icon' | 'bgColor' | 'fgColor' | 'action' | 'isToggle' | 'actionToggleOff' | 'fijo' | 'modosPerilla'>;
 
 /**
  * Preset prearmado para un control de un dock (perilla rotativa, tecla/botón o tira táctil).
@@ -46,6 +46,55 @@ export const PRESETS_PERILLA: PresetDock[] = [
         icon: 'MUTE',
         fgColor: '#38bdf8',
         action: { type: 'mute' },
+      },
+      {
+        label: 'VOL +',
+        icon: 'SPEAKER',
+        fgColor: '#38bdf8',
+        action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 5 },
+      },
+    ],
+  },
+  // Perilla multimodo (T-HW-19, roadmap 63): modo 0 volumen, y modos brillo,
+  // zoom y páginas. Pulsar cambia de modo; girar hace lo del modo activo.
+  // La acción propia del pulsar (MUTE) solo corre si se quitan todos los
+  // modos, que es cuando la perilla vuelve a ser normal.
+  {
+    id: 'multi-knob',
+    nombre: 'preset.dock.knob.multi',
+    icon: 'KNOB',
+    huecos: [
+      {
+        label: 'VOL -',
+        icon: 'SPEAKER',
+        fgColor: '#38bdf8',
+        action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: -5 },
+      },
+      {
+        label: 'MODOS',
+        icon: 'KNOB',
+        fgColor: '#38bdf8',
+        action: { type: 'mute' },
+        modosPerilla: [
+          {
+            label: 'BRILLO',
+            icon: 'BRIGHTNESS',
+            izq: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: -10 },
+            der: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: 10 },
+          },
+          {
+            label: 'ZOOM',
+            icon: 'FULLSCREEN',
+            izq: { type: 'hotkey', hotkey: 'Ctrl+Subtract' },
+            der: { type: 'hotkey', hotkey: 'Ctrl+Add' },
+          },
+          {
+            label: 'PÁGINAS',
+            icon: 'FOLDER',
+            izq: { type: 'page-nav', pageNav: 'prev' },
+            der: { type: 'page-nav', pageNav: 'next' },
+          },
+        ],
       },
       {
         label: 'VOL +',

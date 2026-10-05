@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 /**
  * Toque y arrastre con el dedo.
@@ -52,6 +52,8 @@ interface Opciones {
   /** Se pone a true cuando arrastró, para que el clic siguiente se ignore. */
   yaDisparoRef: { current: boolean };
   alPulsar: () => void;
+  esFija?: boolean;
+  onAvisoFijo?: () => void;
 }
 
 /*
@@ -62,7 +64,13 @@ interface Opciones {
  */
 export function usePulsacionTactil({
   ref, activo, idBoton, setPressed, destellar, yaDisparoRef, alPulsar,
+  esFija, onAvisoFijo,
 }: Opciones) {
+  const esFijaRef = useRef(esFija);
+  esFijaRef.current = esFija;
+  const onAvisoFijoRef = useRef(onAvisoFijo);
+  onAvisoFijoRef.current = onAvisoFijo;
+
   useEffect(() => {
     const el = ref.current;
     if (!el || !activo) return;
@@ -102,6 +110,12 @@ export function usePulsacionTactil({
       yaDisparoRef.current = false;
       temporizador = window.setTimeout(() => {
         temporizador = null;
+        if (esFijaRef.current) {
+          setPressed(false);
+          yaDisparoRef.current = true;
+          onAvisoFijoRef.current?.();
+          return;
+        }
         arrastrando = true;
         yaDisparoRef.current = true;
         setPressed(false);

@@ -323,6 +323,7 @@ vez de a `AGENTS.md` por lo mismo.
   esa combinación (`PasoEstilo`) y `useDatosWidget` la descarta también.
 - `media.ts` re-consulta ventanas activas en cada ciclo cuando SMTC falla, para reflejar cambios de pestaña/video.
 - **SMTC await (NO tocar)**: el `Await-Op` del PREAMBLE de `media.ts` convierte el `IAsyncOperation` de WinRT a un `Task` de .NET vía `System.Runtime.WindowsRuntime` + reflection (`AsTask`), pasando el tipo de resultado explícito. **NO** volver al polling de `$op.Status`: en PowerShell 5.1 stock esa propiedad no se proyecta (queda vacía), el await devuelve siempre `$null`, el manager sale `null` y el widget de música deja de mostrar nada. Verificado en vivo (polling → manager null, AsTask → OK). Los alias de tipo (`$TMgr`, `$TProps`, `$TStream`) usan el loader WinRT completo `,Namespace,ContentType=WindowsRuntime` para resolver sin depender del orden de carga del winmd. El thumbnail (`OpenReadAsync`) devuelve `IAsyncOperationWithProgress`, por eso se le pasa también `$progressType` (`[UInt64]`).
+- **2026-10-04: aunque el núcleo ya compila y su `diagnose` tiene límite de 5 s, se queda en PowerShell a propósito** (roadmap 71): 20 ms contra ~500 ms no compensa que una sesión colgada bloquee el proceso principal 5 s; PowerShell corre aparte.
 - **`media.diagnose` va por PowerShell a propósito (NO tocar sin leer esto).** El diagnóstico
   recorre *todas* las sesiones SMTC, no solo la activa. Basta con que una aplicación haya dejado
   una sesión a medio cerrar —Windows la sigue listando pero ya no contesta— para que su

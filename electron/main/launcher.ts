@@ -691,13 +691,12 @@ function teclaSendKeys(c: string): string {
 }
 
 /**
- * Atajos cuya tecla es un signo (`Ctrl+-`, `Ctrl+=`, `[`): el núcleo nativo
- * solo sabe letras, dígitos y teclas con nombre (`char_key` en
- * `crates/vd-core/src/macros/keys.rs`) y con cualquier otra devuelve `false`
- * en vez de fallar, así que el respaldo no se intentaba nunca y el atajo no
- * hacía nada. Mientras el `.node` no se pueda recompilar, van por PowerShell.
+ * Atajos cuya tecla es un signo (`Ctrl+-`, `[`) o del teclado numérico. El
+ * núcleo nuevo los resuelve con el idioma de teclado actual (`VkKeyScanW` en
+ * `crates/vd-core/src/macros/keys.rs`); uno viejo los rechazaba devolviendo
+ * `false` en vez de fallar. Si eso pasa, se reintenta por PowerShell.
  */
-function teclaFueraDelNucleo(combo: string): boolean {
+function teclaSigno(combo: string): boolean {
   const tecla = combo.split('+').map((s) => s.trim()).filter(Boolean).pop() ?? '';
   return (tecla.length === 1 && !/[a-z0-9]/i.test(tecla)) || tecla.toLowerCase() in TECLAS_UIOHOOK;
 }
@@ -735,10 +734,8 @@ function enviarPorUiohook(combo: string): boolean {
 
 export async function sendHotkey(combo: string): Promise<boolean> {
   if (enviarPorUiohook(combo)) return true;
-  if (!teclaFueraDelNucleo(combo)) {
-    const r = intentarNativo('sendHotkey', (n) => n.sendHotkey(combo));
-    if (r !== undefined) return r;
-  }
+  const r = intentarNativo('sendHotkey', (n) => n.sendHotkey(combo));
+  if (r === true || (r === false && !teclaSigno(combo))) return r;
 
   const keys = buildSendKeys(combo);
   if (!keys) return false;

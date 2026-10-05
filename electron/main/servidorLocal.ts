@@ -368,7 +368,6 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
   if (!origenAceptable(req.headers.origin)) return responder(res, 403, { ok: false, error: 'origen no permitido' });
 
   if (url.pathname === '/' || url.pathname === '/index.html') return void atenderMando(res);
-  if (url.pathname.startsWith('/media/images/')) return atenderMedia(url, res);
   if (url.pathname === '/api/ping') return responder(res, 200, { ok: true, app: 'VirtualDeck' });
   if (url.pathname === '/api/pair' && req.method === 'POST') return atenderPair(req, res);
 
@@ -377,6 +376,10 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
     return responder(res, 401, { ok: false, error: 'token invalido' });
   }
 
+  // Las imágenes de los botones, detrás del token como todo lo demás: antes se
+  // servían a cualquiera que supiera el nombre del archivo. El mando las pide
+  // con `fetch` y la cabecera (ver `ponerImagen` en `paginaMando.ts`).
+  if (url.pathname.startsWith('/media/images/')) return atenderMedia(url, res);
   if (url.pathname === '/api/buttons') return responder(res, 200, { ok: true, buttons: listaDeBotones() });
   if (url.pathname === '/api/tema') return atenderTema(res);
 

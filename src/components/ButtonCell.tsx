@@ -25,6 +25,7 @@ interface ButtonCellProps {
   isSelected?: boolean;
   /** T-HW-12 — el botón es fijo y se ve desde otra página de su grupo (insignia). */
   esFija?: boolean;
+  nombrePaginaOriginal?: string;
   widgetData?: { line1: string; line2?: string; tone?: 'warn' | 'crit' };
   soundEnabled?: boolean;
   soundProfile?: SoundProfileId;
@@ -52,6 +53,9 @@ interface ButtonCellProps {
   /** Menu de clic derecho. La barra flotante lo apaga: sus opciones son de la grilla. */
   showContextMenu?: boolean;
   onQuickSlider?: (target: 'volume' | 'brightness') => void;
+  onQuitarFijo?: () => void;
+  onIrAPagina?: () => void;
+  onAvisoFijo?: () => void;
 }
 
 function useRotaryHandler(
@@ -87,7 +91,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   const {
     button, accent, subToggled, widgetData, deckState, onStateUpdate,
     resolvedLabel, onEdit, onExecute, onSelect, onLongPress, onDuplicate, onCopy, onPaste, canPaste, onClear, onTogglePin, onDragStart, onDrop, onDragEnd,
-    onAdjustWheel, onQuickSlider,
+    onAdjustWheel, onQuickSlider, onQuitarFijo, onIrAPagina, onAvisoFijo, nombrePaginaOriginal,
   } = props;
   const toggled = Boolean(props.toggled);
   const soundProfile = props.soundProfile ?? 'click';
@@ -129,6 +133,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   const arrastre = useArrastreCelda({
     ref: cellRef, idBoton: button.id, onDragStart, onDragEnd, onDrop,
     alEmpezarArrastre: raton.alEmpezarArrastre, setPressed: raton.setPressed,
+    esFija: props.esFija, onAvisoFijo,
   });
   const { dragOver } = arrastre;
 
@@ -157,6 +162,8 @@ function ButtonCellInner(props: ButtonCellProps) {
     destellar,
     yaDisparoRef: raton.yaDisparo,
     alPulsar: useCallback(() => onExecuteRef.current?.(), []),
+    esFija: props.esFija,
+    onAvisoFijo,
   });
 
   if (props.isHidden) {
@@ -184,7 +191,7 @@ function ButtonCellInner(props: ButtonCellProps) {
       <div
         ref={cellRef}
         className="vd-btn"
-        title={titulo}
+        title={props.esFija ? displayLabel : titulo}
         draggable={canDrag}
         onClick={handleCellClick}
         onContextMenu={raton.alMenuContextual}
@@ -224,6 +231,7 @@ function ButtonCellInner(props: ButtonCellProps) {
           toggled={toggled}
           multiCount={multiCount}
           esFija={props.esFija}
+          nombrePaginaOriginal={nombrePaginaOriginal}
           onEdit={onEdit}
         />
 
@@ -263,6 +271,7 @@ function ButtonCellInner(props: ButtonCellProps) {
           y={contextMenu.y}
           isEmpty={isEmpty}
           isPinned={button.pinned}
+          esFija={props.esFija}
           onEdit={onEdit}
           onDuplicate={onDuplicate}
           onCopy={onCopy}
@@ -271,6 +280,8 @@ function ButtonCellInner(props: ButtonCellProps) {
           onTogglePin={onTogglePin}
           onClear={onClear}
           onQuickSlider={onQuickSlider}
+          onQuitarFijo={onQuitarFijo}
+          onIrAPagina={onIrAPagina}
           onCerrar={() => setContextMenu(null)}
         />
       )}
@@ -284,6 +295,7 @@ function ButtonCellInner(props: ButtonCellProps) {
 const REDIBUJAN = [
   'button', 'toggled', 'isActive', 'isHidden', 'isRunning', 'isSelected', 'esFija',
   'accent', 'showContextMenu', 'soundEnabled', 'soundProfile', 'resolvedLabel', 'canPaste',
+  'nombrePaginaOriginal',
 ] as const;
 
 function arrayIgual(a?: boolean[], b?: boolean[]): boolean {

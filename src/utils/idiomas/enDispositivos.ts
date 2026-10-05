@@ -114,4 +114,16 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.desc.silenciarApp': 'MUTE {quien}',
   'disp.desc.appVolumen': 'VOLUME {quien} {delta}',
   'disp.desc.appVolumenFijo': 'VOLUME {quien} {n} %',
+  'disp.desc.cambiarModo': 'PRESS · SWITCH MODE ({n})',
+
+  // Multi-mode knob (T-HW-19, roadmap 63)
+  'disp.modos.titulo': 'Knob modes',
+  'disp.modos.modo': 'MODE {i}',
+  'disp.modos.activo': 'ACTIVE',
+  'disp.modos.vacio': 'No modes: press does its own slot action.',
+  'disp.modos.anadir': 'ADD MODE',
+  'disp.modos.quitar': 'Remove',
+  'disp.modos.subir': 'Move up',
+  'disp.modos.bajar': 'Move down',
+  'disp.modos.aviso': 'KNOB {n} · MODE {i}/{total}: {modo}',
 };

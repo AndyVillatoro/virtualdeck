@@ -1,4 +1,4 @@
-import type { ButtonAction } from '../../types';
+import type { ButtonAction, ButtonConfig } from '../../types';
 import type { ControlSuperficie } from '../../types/superficies';
 import type { PresetDock } from '../../data/presetsDock';
 
@@ -158,6 +158,19 @@ export function describirAccion(
     return `${base} / ${t('disp.desc.otraVez', { desc: describirAccion(apagado, t) })}`;
   }
   return base;
+}
+
+/**
+ * Lo que hace la pulsación de una perilla (T-HW-19).
+ *
+ * Con `modosPerilla` pulsar ya no ejecuta su acción: cambia de modo, y el
+ * inspector lo dice así — «PULSAR · CAMBIAR MODO (3)» — en vez de enseñar la
+ * acción que no va a correr. Sin modos es la descripción de siempre.
+ */
+export function describirPulsar(boton: ButtonConfig | undefined, t: Traductor): string {
+  const n = boton?.modosPerilla?.length ?? 0;
+  if (n > 0) return t('disp.desc.cambiarModo', { n });
+  return describirAccion(boton?.action, t);
 }
 
 export interface FilaGestoPreset {

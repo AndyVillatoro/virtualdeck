@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { ActionType, ButtonConfig } from '../../types';
+import type { ActionType, ButtonConfig, ModoPerilla } from '../../types';
 import type { ContextoDeck } from './contexto';
 
 /**
@@ -205,8 +205,29 @@ export function useDeckBotones({ config, withHistory, t }: ContextoDeck) {
     }));
   }, [withHistory, t]);
 
+  /**
+   * Los modos extra de una perilla multimodo (T-HW-19): añadir, quitar y
+   * reordenar son **un** paso de deshacer, no uno por gesto. Quien llama arma
+   * la lista entera; aquí solo se escribe. Sin modos no queda un `[]` colgado:
+   * el campo se quita y el botón vuelve a ser una perilla normal.
+   */
+  const fijarModosPerilla = useCallback((botonId: string, modos: ModoPerilla[], nombre: string) => {
+    withHistory(t('undo.knobModes', { nombre }), (prev) => ({
+      ...prev,
+      buttons: prev.buttons.map((b) => {
+        if (b.id !== botonId) return b;
+        if (modos.length === 0) {
+          const { modosPerilla: _quitados, ...resto } = b;
+          return resto;
+        }
+        return { ...b, modosPerilla: modos };
+      }),
+    }));
+  }, [withHistory, t]);
+
   return {
     updateButton, duplicateButton, copyButton, pasteButton, buttonClipboard, clearButton,
     moveButtonToPage, swapButtons, clearButtons, moveButtonsToPage, rellenarBotones,
+    fijarModosPerilla,
   };
 }

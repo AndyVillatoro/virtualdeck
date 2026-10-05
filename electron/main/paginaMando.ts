@@ -269,6 +269,21 @@ const pedir = (ruta, opciones) => fetch(ruta, {
   headers: { 'X-VD-Token': token || '', ...(opciones && opciones.headers) },
 });
 
+// Las imágenes de /media/ piden el token como el resto de la API. Un <img src>
+// no puede mandar la cabecera, así que se piden con fetch y se enseñan como
+// blob: (la CSP lo permite); se guardan para no pedirlas en cada repintado.
+const imagenesPedidas = new Map();
+function ponerImagen(img, ruta) {
+  if (!ruta.startsWith('/media/')) { img.src = ruta; return; }
+  if (!imagenesPedidas.has(ruta)) {
+    imagenesPedidas.set(ruta, pedir(ruta)
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((b) => (b ? URL.createObjectURL(b) : null))
+      .catch(() => null));
+  }
+  imagenesPedidas.get(ruta).then((url) => { if (url) img.src = url; });
+}
+
 function vaciar() { while (app.firstChild) app.removeChild(app.firstChild); }
 function nodo(tag, props, ...hijos) {
   const e = Object.assign(document.createElement(tag), props);
@@ -504,7 +519,8 @@ async function pantallaDeck() {
     }
 
     if (b.imageData) {
-      const img = nodo('img', { className: 'fondo-img', src: b.imageData, alt: '' });
+      const img = nodo('img', { className: 'fondo-img', alt: '' });
+      ponerImagen(img, b.imageData);
       celda.append(img);
     }
 

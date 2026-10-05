@@ -3,7 +3,11 @@ import type {
   ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, InfoSuperficie,
 } from '../../types';
 import { botonesResueltos } from '../botonesFijos';
-import { huecoDeEntrada, teclasLcd } from './disposicion';
+import { huecoDeEntrada, huecosDeControl, teclasLcd } from './disposicion';
+import {
+  claveModoPerilla, podarModosHuerfanos, podarModosPorPagina, resolverEntradaPerilla,
+} from './modosPerilla';
+import { playModo, sonidoActivo, perfilSonido } from '../sound';
 import {
   esAppPropia, idPaginaSegunApp, idPaginaPredeterminada, normalizarApp,
 } from './paginaSegunApp';
@@ -25,7 +29,9 @@ import {
  * mantiene las teclas LCD pintadas —solo las que cambiaron, comparando una
  * firma por tecla— con el brillo aplicado. La firma incluye si las fuentes
  * reales (JetBrains Mono, DotGothic16) ya cargaron, para repintar cuando
- * lleguen.
+ * lleguen. En una perilla multimodo (`modosPerilla`, T-HW-19) pulsar cambia
+ * el modo activo en memoria y girar dispara lo del modo activo, no lo del
+ * hueco (ver `decidirPerilla`).
  *
  * Cada dispositivo puede tener **varias páginas** (todas las que lleven su
  * serial) y enseña la **activa**, que se guarda por id de página en `activas`
@@ -53,6 +59,16 @@ export interface OpcionesSuperficies extends OpcionesPintado {
   dispararBoton: (boton: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => void;
   crearPaginaSuperficie: (info: InfoSuperficie) => void;
   colores: ColoresSuperficie;
+  /** Aviso al cambiar de modo en una perilla multimodo (lo pinta quien llama). */
+  alCambiarModo?: (info: {
+    serial: string;
+    /** Perilla en base 1, para enseñar. */
+    perilla: number;
+    /** Modo activo en base 0 (0 = los huecos de la perilla). */
+    modo: number;
+    total: number;
+    label: string;
+  }) => void;
 }
 
 export interface Superficies {
@@ -62,6 +78,8 @@ export interface Superficies {
   imagenes: Record<string, (string | undefined)[]>;
   /** Página activa de cada serial, por id de página (ver `paginaSegunApp`). */
   paginasActivas: Record<string, string>;
+  /** Modo activo de cada perilla multimodo, por `claveModoPerilla`. En memoria. */
+  modosActivos: Record<string, number>;
   /** Pone una página activa en el aparato (la pestaña elegida en DispositivosB). */
   activarPagina: (serial: string, paginaId: string) => void;
 }
@@ -154,8 +172,74 @@ function aplicarBrillo(
   void api.superficies.brillo(serial, brillo);
 }
 
+type DecisionPerilla =
+  | { kind: 'normal' }
+  | { kind: 'nada' }
+  | { kind: 'cambiarModo'; siguiente: number; total: number; label: string }
+  | { kind: 'disparar'; boton: ButtonConfig; giro: boolean };
+
+/**
+ * Los tres botones de una perilla (izq, pulsar, der), por índice de perilla.
+ * `null` si el modelo no trae ese control o los huecos no cuadran.
+ */
+function trioDePerilla(
+  pagina: PaginaDispositivo,
+  indice: number,
+): { izq: ButtonConfig | undefined; pulsar: ButtonConfig | undefined; der: ButtonConfig | undefined } | null {
+  const control = pagina.disposicion.controles
+    .find((c) => c.tipo === 'knob' && c.indice === indice);
+  if (!control) return null;
+  const huecos = huecosDeControl(pagina.disposicion, control);
+  if (huecos[0] === undefined || huecos[1] === undefined || huecos[2] === undefined) return null;
+  return {
+    izq: pagina.botones[huecos[0]],
+    pulsar: pagina.botones[huecos[1]],
+    der: pagina.botones[huecos[2]],
+  };
+}
+
+/**
+ * Entrada de una perilla: multimodo o lo de antes (T-HW-19).
+ *
+ * Si el botón del hueco «pulsar» trae `modosPerilla`, la decisión sale de
+ * `resolverEntradaPerilla` (función pura); si no, `normal` y quien llama sigue
+ * el camino de antes. No toca estado ni suena: solo decide.
+ */
+function decidirPerilla(
+  pagina: PaginaDispositivo,
+  entrada: { indice: number; gesto: 'down' | 'up' | 'izq' | 'der' },
+  modoActual: number,
+): DecisionPerilla {
+  if (entrada.gesto !== 'izq' && entrada.gesto !== 'der' && entrada.gesto !== 'down') {
+    return { kind: 'normal' };
+  }
+  const trio = trioDePerilla(pagina, entrada.indice);
+  const modos = trio?.pulsar?.modosPerilla ?? [];
+  if (!trio || modos.length === 0) return { kind: 'normal' };
+  const gesto = entrada.gesto === 'down' ? 'pulsar' : entrada.gesto;
+  const res = resolverEntradaPerilla({
+    gesto,
+    botonIzq: trio.izq,
+    botonPulsar: trio.pulsar,
+    botonDer: trio.der,
+    modoActual,
+  });
+  if (res.kind === 'cambiarModo') {
+    return {
+      kind: 'cambiarModo',
+      siguiente: res.siguiente,
+      total: res.total,
+      label: res.siguiente === 0
+        ? (trio.pulsar?.label ?? '')
+        : (modos[res.siguiente - 1]?.label ?? ''),
+    };
+  }
+  if (res.kind === 'disparar') return { kind: 'disparar', boton: res.boton, giro: gesto !== 'pulsar' };
+  return { kind: 'nada' };
+}
+
 export function useSuperficies({
-  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot,
+  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo,
 }: OpcionesSuperficies): Superficies {
   const [dispositivos, setDispositivos] = useState<InfoSuperficie[]>([]);
   const [modelos, setModelos] = useState<Record<string, DisposicionSuperficie>>({});
@@ -165,14 +249,18 @@ export function useSuperficies({
   const [activas, setActivas] = useState<Record<string, string>>({});
   /** Base elegida a mano de cada serial, por id de página. En memoria. */
   const [bases, setBases] = useState<Record<string, string>>({});
+  /** Modo activo de cada perilla multimodo, por `claveModoPerilla`. En memoria. */
+  const [modos, setModos] = useState<Record<string, number>>({});
 
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
   const imagenesRef = useRef(imagenes);
   const activasRef = useRef(activas);
   const basesRef = useRef(bases);
+  const modosRef = useRef(modos);
   const dispararRef = useRef(dispararBoton);
   const crearRef = useRef(crearPaginaSuperficie);
+  const alCambiarModoRef = useRef(alCambiarModo);
   const iconoRef = useRef(iconoSvg);
   const esGlifoDotRef = useRef(esGlifoDot);
   configRef.current = config;
@@ -180,8 +268,10 @@ export function useSuperficies({
   imagenesRef.current = imagenes;
   activasRef.current = activas;
   basesRef.current = bases;
+  modosRef.current = modos;
   dispararRef.current = dispararBoton;
   crearRef.current = crearPaginaSuperficie;
+  alCambiarModoRef.current = alCambiarModo;
   iconoRef.current = iconoSvg;
   esGlifoDotRef.current = esGlifoDot;
 
@@ -228,6 +318,35 @@ export function useSuperficies({
         configRef.current, entrada.serial, dispositivo.disposicion, activasRef.current[entrada.serial],
       );
       if (!pagina) return;
+      // Perilla multimodo (T-HW-19): pulsar cambia de modo, girar ejecuta el
+      // modo activo. Sin `modosPerilla` la decisión es `normal` y sigue abajo.
+      if (entrada.control === 'knob') {
+        const clave = claveModoPerilla(entrada.serial, entrada.indice);
+        const decision = decidirPerilla(pagina, entrada, modosRef.current[clave] ?? 0);
+        if (decision.kind === 'cambiarModo') {
+          setModos((prev) => ({ ...prev, [clave]: decision.siguiente }));
+          const cfg = configRef.current;
+          if (sonidoActivo(cfg)) playModo(perfilSonido(cfg));
+          alCambiarModoRef.current?.({
+            serial: entrada.serial,
+            perilla: entrada.indice + 1,
+            modo: decision.siguiente,
+            total: decision.total,
+            label: decision.label,
+          });
+          return;
+        }
+        if (decision.kind === 'disparar') {
+          if (decision.boton.action.type === 'none') return;
+          if (decision.giro) {
+            dispararRef.current(decision.boton, { sonido: 'giro', serial: entrada.serial });
+          } else {
+            dispararRef.current(decision.boton, { serial: entrada.serial });
+          }
+          return;
+        }
+        if (decision.kind === 'nada') return;
+      }
       const hueco = huecoDeEntrada(pagina.disposicion, entrada);
       if (hueco === null) return;
       const boton = pagina.botones[hueco];
@@ -302,7 +421,21 @@ export function useSuperficies({
       }
       return cambio ? next : prev;
     });
+    // Los modos de un serial sin páginas son llaves muertas: se olvidan.
+    setModos((prev) => {
+      const vivos: string[] = [];
+      for (const p of config.pages) if (p.superficie) vivos.push(p.superficie.serial);
+      return podarModosHuerfanos(prev, vivos);
+    });
   }, [config.pages]);
+
+  // El modo activo es por página del dock: al cambiar, vuelve a 0.
+  const activasAnteriores = useRef(activas);
+  useEffect(() => {
+    const antes = activasAnteriores.current;
+    activasAnteriores.current = activas;
+    setModos((prev) => podarModosPorPagina(prev, antes, activas));
+  }, [activas]);
 
   /** Pone una página activa en el aparato. El id tiene que ser de ese serial. */
   const activarPagina = useCallback((serial: string, paginaId: string) => {
@@ -361,5 +494,5 @@ export function useSuperficies({
     })();
   }, [api, config, dispositivos, activas, fondo, texto, fuentesListas]);
 
-  return { dispositivos, modelos, imagenes, paginasActivas: activas, activarPagina };
+  return { dispositivos, modelos, imagenes, paginasActivas: activas, modosActivos: modos, activarPagina };
 }

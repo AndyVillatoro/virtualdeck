@@ -26,6 +26,8 @@ type Clave =
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'rgb.sinConexion' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
   | 'currency.badCode' | 'audio.unnamedDevice' | 'macro.unknownError'
   | 'audio.sinNucleo'
+  | 'audio.sinSonido'
+  | 'audio.sinAppDelante'
   | 'gal.badUrl' | 'gal.tooBig' | 'gal.badManifest' | 'gal.notObject'
   // Fragmentos del resumen de riesgo de la galería (los enseña el renderer).
   | 'gal.risk.click' | 'gal.risk.move' | 'gal.risk.scroll' | 'gal.risk.voice'
@@ -69,6 +71,8 @@ const ES: Record<Clave, string> = {
   'currency.badCode': 'Moneda no válida:',
   'audio.unnamedDevice': 'Dispositivo sin nombre',
   'audio.sinNucleo': 'Hace falta el núcleo nativo con volumen por app (`npm run build:native`).',
+  'audio.sinSonido': '«{app}» no tiene sonido abierto',
+  'audio.sinAppDelante': 'No hay una app en primer plano',
   'macro.unknownError': 'Error desconocido',
   'gal.badUrl': 'Direccion no permitida (debe ser https y publica)',
   'gal.tooBig': 'El archivo es demasiado grande',
@@ -131,6 +135,8 @@ const EN: Record<Clave, string> = {
   'currency.badCode': 'Invalid currency:',
   'audio.unnamedDevice': 'Unnamed device',
   'audio.sinNucleo': 'Needs the native core with per-app volume (`npm run build:native`).',
+  'audio.sinSonido': '"{app}" has no sound open',
+  'audio.sinAppDelante': 'No app in the foreground',
   'macro.unknownError': 'Unknown error',
   'gal.badUrl': 'Address not allowed (must be https and public)',
   'gal.tooBig': 'The file is too large',

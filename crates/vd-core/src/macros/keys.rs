@@ -17,6 +17,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_F12, VK_F13, VK_F14, VK_F15, VK_F16, VK_F17, VK_F18, VK_F19, VK_F2, VK_F20, VK_F21, VK_F22,
     VK_F23, VK_F24, VK_F3, VK_F4, VK_F5, VK_F6, VK_F7, VK_F8, VK_F9, VK_HOME, VK_INSERT, VK_LEFT,
     VK_LWIN, VK_MENU, VK_NEXT, VK_PRIOR, VK_RETURN, VK_RIGHT, VK_SHIFT, VK_SPACE, VK_TAB, VK_UP,
+    VK_ADD, VK_SUBTRACT, VK_MULTIPLY, VK_DIVIDE, VkKeyScanW,
 };
 
 /// Una pulsacion: modificadores + tecla principal.
@@ -77,22 +78,52 @@ fn named_key(raw: &str) -> Option<VIRTUAL_KEY> {
         "F22" => VK_F22,
         "F23" => VK_F23,
         "F24" => VK_F24,
+        // Teclado numerico: no depende del idioma del teclado (por eso el zoom
+        // usa `Ctrl+Add` y no `Ctrl+=`, que en el latinoamericano es `Shift+0`).
+        "ADD" | "NUMPADADD" => VK_ADD,
+        "SUBTRACT" | "NUMPADSUBTRACT" => VK_SUBTRACT,
+        "MULTIPLY" | "NUMPADMULTIPLY" => VK_MULTIPLY,
+        "DIVIDE" | "NUMPADDIVIDE" => VK_DIVIDE,
         _ => return None,
     };
     Some(vk)
 }
 
-/// Codigo virtual de un caracter suelto (`a`, `5`).
+/// La tecla y los modificadores que producen un caracter **con el idioma de
+/// teclado actual**.
 ///
-/// Para letras y digitos el codigo virtual coincide con el ASCII en mayuscula,
-/// que es justamente lo que espera `SendInput`.
-fn char_key(c: char) -> Option<VIRTUAL_KEY> {
+/// Letras y digitos coinciden con su ASCII en mayuscula. Para los signos se le
+/// pregunta a Windows (`VkKeyScanW`): `[` no esta en la misma tecla en el
+/// teclado espanol que en el ingles, y `=` en el latinoamericano es `Shift+0`.
+/// Antes solo se aceptaban letras y digitos y con un signo se devolvia `false`
+/// sin intentar nada; esos atajos iban por PowerShell, un proceso por pulsacion.
+fn char_key(c: char) -> Option<(VIRTUAL_KEY, Vec<VIRTUAL_KEY>)> {
     let up = c.to_ascii_uppercase();
     if up.is_ascii_alphanumeric() {
-        Some(VIRTUAL_KEY(up as u16))
-    } else {
-        None
+        return Some((VIRTUAL_KEY(up as u16), Vec::new()));
     }
+    let mut buf = [0u16; 2];
+    if c.encode_utf16(&mut buf).len() != 1 {
+        return None;
+    }
+    // SAFETY: llamada pura sobre un caracter UTF-16.
+    let r = unsafe { VkKeyScanW(buf[0]) };
+    if r == -1 {
+        return None;
+    }
+    let vk = VIRTUAL_KEY((r as u16) & 0xFF);
+    let estado = ((r as u16) >> 8) & 0xFF;
+    let mut mods = Vec::new();
+    if estado & 2 != 0 {
+        mods.push(VK_CONTROL);
+    }
+    if estado & 4 != 0 {
+        mods.push(VK_MENU);
+    }
+    if estado & 1 != 0 {
+        mods.push(VK_SHIFT);
+    }
+    Some((vk, mods))
 }
 
 /// Convierte un modificador escrito por el usuario a su codigo virtual.
@@ -150,13 +181,23 @@ pub fn parse_keystroke(spec: &str) -> Option<KeyStroke> {
                 // "Ctrl++" -> la tecla es el '+' literal.
                 VIRTUAL_KEY(0xBB) // VK_OEM_PLUS
             } else {
-                named_key(ultima).or_else(|| {
-                    let mut chars = ultima.chars();
-                    match (chars.next(), chars.next()) {
-                        (Some(c), None) => char_key(c),
-                        _ => None,
+                match named_key(ultima) {
+                    Some(k) => k,
+                    None => {
+                        let mut chars = ultima.chars();
+                        let (k, extra) = match (chars.next(), chars.next()) {
+                            (Some(c), None) => char_key(c)?,
+                            _ => return None,
+                        };
+                        // El signo puede pedir Shift o AltGr ademas de lo escrito.
+                        for m in extra {
+                            if !modifiers.contains(&m) {
+                                modifiers.push(m);
+                            }
+                        }
+                        k
                     }
-                })?
+                }
             };
             return Some(KeyStroke { modifiers, key });
         }
@@ -165,10 +206,7 @@ pub fn parse_keystroke(spec: &str) -> Option<KeyStroke> {
     // Caracter suelto.
     let mut chars = spec.chars();
     match (chars.next(), chars.next()) {
-        (Some(c), None) => char_key(c).map(|key| KeyStroke {
-            modifiers: Vec::new(),
-            key,
-        }),
+        (Some(c), None) => char_key(c).map(|(key, modifiers)| KeyStroke { modifiers, key }),
         _ => None,
     }
 }
@@ -236,6 +274,22 @@ pub fn is_modifier(vk: u16) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn teclado_numerico_por_nombre() {
+        let k = parse_keystroke("Ctrl+Add").unwrap();
+        assert_eq!(k.key, VK_ADD);
+        assert_eq!(k.modifiers, vec![VK_CONTROL]);
+        assert_eq!(parse_keystroke("Ctrl+Subtract").unwrap().key, VK_SUBTRACT);
+    }
+
+    #[test]
+    fn signo_se_resuelve_con_el_teclado_actual() {
+        // Que tecla es depende del idioma de esta maquina; lo que importa es
+        // que ya no se rechaza.
+        assert!(parse_keystroke("[").is_some());
+        assert!(parse_keystroke("Ctrl+-").is_some());
+    }
 
     #[test]
     fn caracter_suelto() {

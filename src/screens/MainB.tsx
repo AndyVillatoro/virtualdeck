@@ -368,12 +368,18 @@ export function MainB({
               if (dx < 0 && pos < indices.length - 1) onPageChange(indices[pos + 1]);
               else if (dx > 0 && pos > 0) onPageChange(indices[pos - 1]);
             }}
-            celda={(btn) => (
-              <CeldaPrincipal
-                btn={btn}
-                // Fijo visto desde otra página: se edita el original (mismo id).
-                esFija={btn.fijo === true && btn.page !== activePage}
-                accent={config.accent}
+            celda={(btn) => {
+              const esFija = btn.fijo === true && btn.page !== activePage;
+              const paginaOriginal = config.pages[btn.page];
+              const nombrePaginaOriginal = paginaOriginal?.name || t('page.defaultName', { n: btn.page + 1 });
+              return (
+                <CeldaPrincipal
+                  btn={btn}
+                  esFija={esFija}
+                  nombrePaginaOriginal={nombrePaginaOriginal}
+                  onQuitarFijo={() => onUpdateButton?.({ ...btn, fijo: false })}
+                  onIrAPagina={() => onPageChange(btn.page)}
+                  accent={config.accent}
                 toggledIds={toggledIds}
                 selectedIds={selectedIds}
                 estadoSistema={estadoSistema}
@@ -399,7 +405,8 @@ export function MainB({
                 onSwapButtons={onSwapButtons}
                 showToast={showToast}
               />
-            )}
+            );
+          }}
           />
 
           {/* Bulk-select toolbar */}

@@ -16,6 +16,7 @@ interface Props {
   y: number;
   isEmpty: boolean;
   isPinned?: boolean;
+  esFija?: boolean;
   onEdit: () => void;
   onDuplicate?: () => void;
   onCopy?: () => void;
@@ -24,12 +25,40 @@ interface Props {
   onTogglePin?: () => void;
   onClear?: () => void;
   onQuickSlider?: (target: 'volume' | 'brightness') => void;
+  onQuitarFijo?: () => void;
+  onIrAPagina?: () => void;
   onCerrar: () => void;
 }
 
-export function MenuContextual({ x, y, isEmpty, isPinned, onEdit, onDuplicate, onCopy, onPaste, canPaste, onTogglePin, onClear, onQuickSlider, onCerrar }: Props) {
+export function MenuContextual({
+  x, y, isEmpty, isPinned, esFija, onEdit, onDuplicate, onCopy, onPaste, canPaste,
+  onTogglePin, onClear, onQuickSlider, onQuitarFijo, onIrAPagina, onCerrar,
+}: Props) {
   const VD = useTheme();
   const t = useT();
+
+  if (esFija) {
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed', left: x, top: y, zIndex: 9999,
+          background: VD.surface, border: `1px solid ${VD.borderStrong}`,
+          borderRadius: VD.radius.lg, overflow: 'hidden',
+          boxShadow: VD.shadow.menu, minWidth: 150,
+        }}
+      >
+        <Item label={t('cell.editShort')} glyph="EDIT" onClick={() => { onCerrar(); onEdit(); }} />
+        {onQuitarFijo && (
+          <Item label={t('cell.unfix')} glyph="PIN" onClick={() => { onCerrar(); onQuitarFijo(); }} />
+        )}
+        {onIrAPagina && (
+          <Item label={t('cell.goToPage')} glyph="ARROW_RIGHT" onClick={() => { onCerrar(); onIrAPagina(); }} />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={(e) => e.stopPropagation()}

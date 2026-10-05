@@ -10,7 +10,7 @@ import {
   obtenerTodosDispositivos,
   usePaginaDispositivo,
 } from './logicaDispositivos';
-import type { DeckConfig } from '../../types';
+import type { DeckConfig, ModoPerilla } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
 import type { DisposicionSuperficie, InfoSuperficie } from '../../types/superficies';
 
@@ -19,6 +19,8 @@ interface UseDockHardwareStateProps {
   superficies: InfoSuperficie[];
   modelos: Record<string, DisposicionSuperficie>;
   paginasActivas: Record<string, string>;
+  /** Modo activo de cada perilla multimodo (lo guarda `useSuperficies`, en memoria). */
+  modosActivos: Record<string, number>;
   t: (k: string, p?: Record<string, string | number>) => string;
   onBrilloVivo: (serial: string, valor: number) => void;
   onBrillo: (serial: string, valor: number) => void;
@@ -26,6 +28,8 @@ interface UseDockHardwareStateProps {
   onActivarPagina: (serial: string, paginaId: string) => void;
   onEditarBoton: (id: string) => void;
   onRellenarHuecos: (ids: string[], contenidos: PresetHueco[], nombre: string) => void;
+  /** Escribir los modos de una perilla (con historial). */
+  onFijarModosPerilla: (botonId: string, modos: ModoPerilla[], nombre: string) => void;
 }
 
 export function useDockHardwareState({
@@ -33,6 +37,7 @@ export function useDockHardwareState({
   superficies,
   modelos,
   paginasActivas,
+  modosActivos,
   t,
   onBrilloVivo,
   onBrillo,
@@ -40,6 +45,7 @@ export function useDockHardwareState({
   onActivarPagina,
   onEditarBoton,
   onRellenarHuecos,
+  onFijarModosPerilla,
 }: UseDockHardwareStateProps) {
   const todosDispositivos = useMemo(() => {
     return obtenerTodosDispositivos(superficies, config.pages, modelos);
@@ -153,6 +159,36 @@ export function useDockHardwareState({
     if (ids.length === huecos.length) onRellenarHuecos(ids, huecos, huecos.map((h) => h.label).join(' / '));
   };
 
+  // Los tres botones de la perilla elegida (T-HW-19): los modos viven en el
+  // «pulsar» y el modo 0 se enseña con lo de izq/der.
+  const perilla = useMemo(() => {
+    if (!disposicionActiva || controlSeleccionado?.control !== 'knob') return null;
+    const ctrl = disposicionActiva.controles.find(
+      (c) => c.tipo === 'knob' && c.indice === controlSeleccionado.indice,
+    );
+    if (!ctrl) return null;
+    const huecos = huecosDeControl(disposicionActiva, ctrl);
+    if (huecos[0] === undefined || huecos[1] === undefined || huecos[2] === undefined) return null;
+    return {
+      izq: botonesPagina[huecos[0]],
+      pulsar: botonesPagina[huecos[1]],
+      der: botonesPagina[huecos[2]],
+    };
+  }, [disposicionActiva, controlSeleccionado, botonesPagina]);
+
+  // El modo que el aparato tiene activo, para enseñarlo en el inspector. Sin
+  // modos no hay nada que enseñar.
+  const modoActivo = useMemo(() => {
+    if (!perilla || !dispositivoActivo || controlSeleccionado?.control !== 'knob') return null;
+    if ((perilla.pulsar?.modosPerilla?.length ?? 0) === 0) return null;
+    return modosActivos[`${dispositivoActivo.serial}:${controlSeleccionado.indice}`] ?? 0;
+  }, [perilla, dispositivoActivo, controlSeleccionado, modosActivos]);
+
+  const handleFijarModos = (modos: ModoPerilla[]) => {
+    if (!perilla?.pulsar) return;
+    onFijarModosPerilla(perilla.pulsar.id, modos, perilla.pulsar.label || perilla.pulsar.action.type);
+  };
+
   const resumenControles = disposicionActiva ? generarResumenControles(disposicionActiva, t) : '';
 
   return {
@@ -177,6 +213,9 @@ export function useDockHardwareState({
     hermanosPerilla,
     handleEditarActual,
     handleAplicarPreset,
+    perilla,
+    modoActivo,
+    handleFijarModos,
     resumenControles,
   };
 }

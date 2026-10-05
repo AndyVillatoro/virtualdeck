@@ -3,11 +3,12 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
-import type { ButtonConfig } from '../../types';
+import type { ButtonConfig, ModoPerilla } from '../../types';
 import type { ControlSuperficie } from '../../types/superficies';
 import type { PresetHueco } from '../../data/presetsDock';
 import { SelectorPresetsControl } from './SelectorPresetsControl';
-import { describirAccion } from './describirAccion';
+import { ModosPerilla } from './ModosPerilla';
+import { describirAccion, describirPulsar } from './describirAccion';
 
 export interface HermanoPerilla {
   gesto: 'izq' | 'pulsar' | 'der';
@@ -29,6 +30,11 @@ export interface PanelInspectorControlProps {
   onCerrar?: () => void;
   hermanosPerilla?: HermanoPerilla[];
   onSelectHueco?: (hueco: number) => void;
+  /** Los tres botones de la perilla elegida (T-HW-19), si lo es. */
+  perilla?: { izq?: ButtonConfig; pulsar?: ButtonConfig; der?: ButtonConfig } | null;
+  /** Modo activo en memoria, para enseñarlo en el inspector. */
+  modoActivo?: number | null;
+  onFijarModos?: (modos: ModoPerilla[]) => void;
 }
 
 function obtenerNombreYTipoControl(
@@ -216,6 +222,49 @@ function etiquetaGestoPerilla(gesto: 'izq' | 'pulsar' | 'der', t: (k: string) =>
   return t('disp.gesto.pulsar');
 }
 
+/**
+ * Lo que hace el hueco elegido (T-HW-19).
+ *
+ * Con modos, pulsar cambia de modo en vez de ejecutar su acción: se dice eso
+ * («PULSAR · CAMBIAR MODO (n)») y no la acción que no va a correr.
+ */
+function textoAccionSeleccionada(
+  controlMeta: NonNullable<PanelInspectorControlProps['controlMeta']>,
+  boton: ButtonConfig | undefined,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  const multimodo = controlMeta.control === 'knob'
+    && controlMeta.gesto === 'pulsar'
+    && (boton?.modosPerilla?.length ?? 0) > 0;
+  return multimodo ? describirPulsar(boton, t) : describirAccion(boton?.action, t);
+}
+
+function SeccionModos({
+  controlMeta,
+  perilla,
+  modoActivo,
+  disabled,
+  onFijarModos,
+}: {
+  controlMeta: NonNullable<PanelInspectorControlProps['controlMeta']>;
+  perilla?: { izq?: ButtonConfig; pulsar?: ButtonConfig; der?: ButtonConfig } | null;
+  modoActivo?: number | null;
+  disabled: boolean;
+  onFijarModos?: (modos: ModoPerilla[]) => void;
+}) {
+  if (controlMeta.control !== 'knob' || !perilla?.pulsar || !onFijarModos) return null;
+  return (
+    <ModosPerilla
+      modos={perilla.pulsar.modosPerilla ?? []}
+      modoActivo={modoActivo ?? null}
+      botonIzq={perilla.izq}
+      botonDer={perilla.der}
+      disabled={disabled}
+      onCambiar={onFijarModos}
+    />
+  );
+}
+
 function FilaAccion({
   boton,
   vd,
@@ -306,6 +355,9 @@ export function PanelInspectorControl({
   onCerrar,
   hermanosPerilla,
   onSelectHueco,
+  perilla,
+  modoActivo,
+  onFijarModos,
 }: PanelInspectorControlProps) {
   const VD = useTheme();
   const t = useT();
@@ -317,6 +369,7 @@ export function PanelInspectorControl({
 
   const { nombre, tipo } = obtenerNombreYTipoControl(controlMeta, t);
   const glifo = resolveDotGlyph(boton?.icon);
+  const textoAccion = textoAccionSeleccionada(controlMeta, boton, t);
 
   return (
     <aside
@@ -425,9 +478,18 @@ export function PanelInspectorControl({
           <FilaAccion
             boton={boton}
             vd={VD}
-            textoAccion={describirAccion(boton?.action, t)}
+            textoAccion={textoAccion}
           />
         </div>
+
+        {/* Perilla multimodo (T-HW-19): sus modos y cuál está activo. */}
+        <SeccionModos
+          controlMeta={controlMeta}
+          perilla={perilla}
+          modoActivo={modoActivo}
+          disabled={disabled}
+          onFijarModos={onFijarModos}
+        />
 
         {/* Si el control es una perilla: los otros dos gestos hermanos */}
         {controlMeta.control === 'knob' && hermanosPerilla && hermanosPerilla.length > 0 && (
@@ -437,7 +499,9 @@ export function PanelInspectorControl({
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: VD.space.xs }}>
               {hermanosPerilla.map((h) => {
-                const desc = describirAccion(h.boton?.action, t);
+                const desc = h.gesto === 'pulsar'
+                  ? describirPulsar(h.boton, t)
+                  : describirAccion(h.boton?.action, t);
                 const etiqueta = etiquetaGestoPerilla(h.gesto, t);
                 const tieneAccion = Boolean(h.boton?.action && h.boton.action.type !== 'none');
                 return (

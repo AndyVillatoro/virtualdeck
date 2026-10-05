@@ -29,11 +29,93 @@ interface Props {
   multiCount: number;
   /** T-HW-12 — el botón es fijo y se ve desde otra página de su grupo. */
   esFija?: boolean;
+  nombrePaginaOriginal?: string;
   onEdit: () => void;
 }
 
+function InsigniaEditar({ visible, onEdit }: { visible: boolean; onEdit: () => void }) {
+  const VD = useTheme();
+  const t = useT();
+  if (!visible) return null;
+  return (
+    <div
+      onClick={(e) => { e.stopPropagation(); onEdit(); }}
+      title={t('cell.edit')}
+      style={{
+        position: 'absolute', top: 4, right: 4, width: 20, height: 20,
+        background: 'rgba(0,0,0,0.75)',
+        border: `1px solid ${VD.borderStrong}`, borderRadius: VD.radius.md,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 2, lineHeight: 1,
+      }}
+    >
+      <DotGlyphIcon glyph="EDIT" size={10} color={VD.textDim} />
+    </div>
+  );
+}
+
+function InsigniaPinFijo({
+  esFija, pinned, hovered, accent, nombrePaginaOriginal, defaultPageName,
+}: {
+  esFija?: boolean;
+  pinned?: boolean;
+  hovered: boolean;
+  accent: string;
+  nombrePaginaOriginal?: string;
+  defaultPageName: string;
+}) {
+  const t = useT();
+  if (!esFija || pinned) return null;
+  return (
+    <div
+      title={t('btn.fijoHint', { pagina: nombrePaginaOriginal || defaultPageName })}
+      style={{
+        position: 'absolute', top: 4, right: hovered ? 26 : 4,
+        width: 12, height: 12,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 2,
+      }}
+    >
+      <DotGlyphIcon glyph="PIN" size={8} color={accent} />
+    </div>
+  );
+}
+
+function InsigniaMultiToggle({
+  multiCount, isToggle, toggled, hovered, accent,
+}: {
+  multiCount: number;
+  isToggle?: boolean;
+  toggled: boolean;
+  hovered: boolean;
+  accent: string;
+}) {
+  const VD = useTheme();
+  if (hovered) return null;
+  return (
+    <>
+      {multiCount > 1 && (
+        <div style={{
+          position: 'absolute', top: 4, left: 4,
+          background: 'rgba(0,0,0,0.7)', borderRadius: VD.radius.sm,
+          fontFamily: VD.mono, fontSize: 7, color: accent,
+          padding: '1px 4px', lineHeight: 1.4,
+        }}>x{multiCount}</div>
+      )}
+      {isToggle && (
+        <div style={{
+          position: 'absolute', top: 4,
+          left: multiCount > 1 ? 28 : 4,
+          width: 6, height: 6, borderRadius: 3,
+          background: toggled ? accent : VD.textMuted, opacity: 0.8,
+        }} />
+      )}
+    </>
+  );
+}
+
 export function Insignias({
-  button, accent, isEmpty, isActive, isSelected, hovered, isTouch, toggled, multiCount, esFija, onEdit,
+  button, accent, isEmpty, isActive, isSelected, hovered, isTouch, toggled, multiCount, esFija, nombrePaginaOriginal, onEdit,
 }: Props) {
   const VD = useTheme();
   const t = useT();
@@ -66,40 +148,15 @@ export function Insignias({
       )}
 
       {/* En pantalla táctil no hay cursor, así que el lápiz se queda fijo. */}
-      {!isEmpty && (hovered || isTouch) && (
-        <div
-          onClick={(e) => { e.stopPropagation(); onEdit(); }}
-          title={t('cell.edit')}
-          style={{
-            position: 'absolute', top: 4, right: 4, width: 20, height: 20,
-            background: 'rgba(0,0,0,0.75)',
-            border: `1px solid ${VD.borderStrong}`, borderRadius: VD.radius.md,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 2, lineHeight: 1,
-          }}
-        >
-          <DotGlyphIcon glyph="EDIT" size={10} color={VD.textDim} />
-        </div>
-      )}
+      <InsigniaEditar visible={!isEmpty && (hovered || isTouch)} onEdit={onEdit} />
 
-      {multiCount > 1 && !hovered && (
-        <div style={{
-          position: 'absolute', top: 4, left: 4,
-          background: 'rgba(0,0,0,0.7)', borderRadius: VD.radius.sm,
-          fontFamily: VD.mono, fontSize: 7, color: accent,
-          padding: '1px 4px', lineHeight: 1.4,
-        }}>x{multiCount}</div>
-      )}
-
-      {button.isToggle && !hovered && (
-        <div style={{
-          position: 'absolute', top: 4,
-          // Se corre a la derecha si la insignia de xN ya ocupa esa esquina.
-          left: multiCount > 1 ? 28 : 4,
-          width: 6, height: 6, borderRadius: 3,
-          background: toggled ? accent : VD.textMuted, opacity: 0.8,
-        }} />
-      )}
+      <InsigniaMultiToggle
+        multiCount={multiCount}
+        isToggle={button.isToggle}
+        toggled={toggled}
+        hovered={hovered}
+        accent={accent}
+      />
 
       {carpeta && !hovered && (
         <div style={{
@@ -127,23 +184,18 @@ export function Insignias({
         </div>
       )}
 
-      {/* T-HW-12 — Botón fijo visto desde otra página de su grupo: la misma
+      {/* T-HW-12 / T-HW-20 — Botón fijo visto desde otra página de su grupo: la misma
           chincheta del anclado, arriba a la derecha. Si además es anclado, la
-          de anclado ya lo dice y no se duplica; con el cursor encima se esconde
-          igual, para dejar sitio al lápiz. */}
-      {esFija && !button.pinned && !hovered && (
-        <div
-          title={t('btn.fijoHint')}
-          style={{
-            position: 'absolute', top: 4, right: 4,
-            width: 12, height: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 2,
-          }}
-        >
-          <DotGlyphIcon glyph="PIN" size={8} color={accent} />
-        </div>
-      )}
+          de anclado ya lo dice y no se duplica. Al pasar el cursor se desplaza a la
+          izquierda del lápiz para que se pueda ver su título con la página de origen. */}
+      <InsigniaPinFijo
+        esFija={esFija}
+        pinned={button.pinned}
+        hovered={hovered}
+        accent={accent}
+        nombrePaginaOriginal={nombrePaginaOriginal}
+        defaultPageName={t('page.defaultName', { n: button.page + 1 })}
+      />
 
       {!isEmpty && (
         <div style={{

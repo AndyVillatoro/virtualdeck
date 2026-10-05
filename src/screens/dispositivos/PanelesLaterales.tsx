@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { ListaDispositivosHardware, type DispositivoItem } from './ListaDispositivosHardware';
 import { PanelInspectorControl, type HermanoPerilla } from './PanelInspectorControl';
-import type { ButtonConfig } from '../../types';
+import type { ButtonConfig, ModoPerilla } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
 import type { ControlSuperficie } from '../../types/superficies';
 
@@ -81,6 +81,11 @@ interface LateralInspectorProps {
   onCerrar: () => void;
   hermanosPerilla?: HermanoPerilla[];
   onSelectHueco?: (hueco: number) => void;
+  /** Los tres botones de la perilla elegida (T-HW-19), si lo es. */
+  perilla?: { izq?: ButtonConfig; pulsar?: ButtonConfig; der?: ButtonConfig } | null;
+  /** Modo activo en memoria, para enseñarlo en el inspector. */
+  modoActivo?: number | null;
+  onFijarModos?: (modos: ModoPerilla[]) => void;
 }
 
 export function LateralInspector({
@@ -96,6 +101,9 @@ export function LateralInspector({
   onCerrar,
   hermanosPerilla,
   onSelectHueco,
+  perilla,
+  modoActivo,
+  onFijarModos,
 }: LateralInspectorProps) {
   const VD = useTheme();
   if (!abierta) return null;
@@ -123,6 +131,9 @@ export function LateralInspector({
           onCerrar={onCerrar}
           hermanosPerilla={hermanosPerilla}
           onSelectHueco={onSelectHueco}
+          perilla={perilla}
+          modoActivo={modoActivo}
+          onFijarModos={onFijarModos}
         />
       </div>
     );
@@ -139,6 +150,9 @@ export function LateralInspector({
       onCerrar={onCerrar}
       hermanosPerilla={hermanosPerilla}
       onSelectHueco={onSelectHueco}
+      perilla={perilla}
+      modoActivo={modoActivo}
+      onFijarModos={onFijarModos}
     />
   );
 }

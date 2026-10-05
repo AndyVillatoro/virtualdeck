@@ -240,38 +240,46 @@ export function FullscreenB({
           filas={gridRows}
           modo={config.tileMode === 'fill' ? 'fill' : 'square'}
           relleno={20}
-          celda={(btn) => (
-            <ButtonCell
-              key={btn.id}
-              button={btn}
-              accent={config.accent}
-              esFija={btn.fijo === true && btn.page !== activePage}
-              toggled={toggledIds.has(btn.id)}
-              subToggled={btn.subButtons?.map((s) => toggledIds.has(s.id))}
-              isActive={botonActivo(btn, estadoSistema)}
-              isHidden={!botonVisible(btn, estadoSistema, sensorList)}
-              isRunning={ejecutando.has(btn.id)}
-              widgetData={datosWidget[btn.id]}
-              resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
-              soundEnabled={soundOnPress}
-              soundProfile={soundProfile}
-              deckState={config.state ?? {}}
-              onStateUpdate={(k, v) => onStateUpdate({ [k]: v })}
-              onEdit={() => {}}
-              onExecute={(target) => executeButton(target ?? btn)}
-              onAdjustWheel={(signo) => executeButton({
-                ...btn,
-                action: {
-                  ...btn.action,
-                  adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
-                },
-              })}
-              onLongPress={(target) => {
-                const b = target ?? btn;
-                if (b.longPressAction && b.longPressAction.type !== 'none') executeLongPress(b);
-              }}
-            />
-          )}
+          celda={(btn) => {
+            const esFija = btn.fijo === true && btn.page !== activePage;
+            const paginaOriginal = config.pages[btn.page];
+            const nombrePaginaOriginal = paginaOriginal?.name || t('page.defaultName', { n: btn.page + 1 });
+            return (
+              <ButtonCell
+                key={btn.id}
+                button={btn}
+                accent={config.accent}
+                esFija={esFija}
+                nombrePaginaOriginal={nombrePaginaOriginal}
+                onIrAPagina={() => setActivePage(btn.page)}
+                onAvisoFijo={() => setRuntimeError(t('cell.fijoAviso', { pagina: nombrePaginaOriginal }))}
+                toggled={toggledIds.has(btn.id)}
+                subToggled={btn.subButtons?.map((s) => toggledIds.has(s.id))}
+                isActive={botonActivo(btn, estadoSistema)}
+                isHidden={!botonVisible(btn, estadoSistema, sensorList)}
+                isRunning={ejecutando.has(btn.id)}
+                widgetData={datosWidget[btn.id]}
+                resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}
+                soundEnabled={soundOnPress}
+                soundProfile={soundProfile}
+                deckState={config.state ?? {}}
+                onStateUpdate={(k, v) => onStateUpdate({ [k]: v })}
+                onEdit={() => {}}
+                onExecute={(target) => executeButton(target ?? btn)}
+                onAdjustWheel={(signo) => executeButton({
+                  ...btn,
+                  action: {
+                    ...btn.action,
+                    adjustDelta: Math.abs(btn.action.adjustDelta ?? 10) * signo,
+                  },
+                })}
+                onLongPress={(target) => {
+                  const b = target ?? btn;
+                  if (b.longPressAction && b.longPressAction.type !== 'none') executeLongPress(b);
+                }}
+              />
+            );
+          }}
         />
       </div>
 

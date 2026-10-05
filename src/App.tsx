@@ -169,7 +169,7 @@ export default function App() {
     clearButtons, moveButtonsToPage, rellenarBotones,
     renamePage, addPage, duplicatePage, deletePage, reorderPages, setPageGridSize,
     crearPaginaSuperficie, agregarPaginaSuperficie, crearPaginaDesdePlantilla, fijarTargetAppPagina,
-    fijarBrilloSuperficie, fijarRotacionSuperficie,
+    fijarBrilloSuperficie, fijarRotacionSuperficie, fijarModosPerilla,
     saveProfile, loadProfile, appendProfilePages, appendPagesFromProfile, appendPageFromGallery, deleteProfile,
     setUiScale, setTheme, setLanguage, dismissHint,
     toggleSoundOnPress, setSoundProfile, setKioskPin, updateState, toggleButton,
@@ -473,6 +473,10 @@ export default function App() {
   // El icono lo pinta la capa de componentes: `src/utils` no puede importarlos.
   const superficies = useSuperficies({
     api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD, iconoSvg: svgDeBoton, esGlifoDot,
+    // Perilla multimodo (T-HW-19): que se note el cambio de modo en el deck.
+    alCambiarModo: (m) => showUndoToast(
+      t('disp.modos.aviso', { n: m.perilla, i: m.modo + 1, total: m.total, modo: m.label }),
+    ),
   });
   superficiesRef.current = superficies;
 
@@ -682,6 +686,8 @@ export default function App() {
           modelos={superficies.modelos}
           imagenes={superficies.imagenes}
           paginasActivas={superficies.paginasActivas}
+          modosActivos={superficies.modosActivos}
+          onFijarModosPerilla={fijarModosPerilla}
           onEditarBoton={(id) => setEditingId(id)}
           onBrilloVivo={(serial, valor) => { void api?.superficies.brillo(serial, valor); }}
           onBrillo={fijarBrilloSuperficie}

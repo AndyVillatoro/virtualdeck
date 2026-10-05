@@ -114,4 +114,16 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.desc.silenciarApp': 'SILENCIAR {quien}',
   'disp.desc.appVolumen': 'VOLUMEN {quien} {delta}',
   'disp.desc.appVolumenFijo': 'VOLUMEN {quien} {n} %',
+  'disp.desc.cambiarModo': 'PULSAR · CAMBIAR MODO ({n})',
+
+  // Perilla multimodo (T-HW-19, roadmap 63)
+  'disp.modos.titulo': 'Modos de la perilla',
+  'disp.modos.modo': 'MODO {i}',
+  'disp.modos.activo': 'ACTIVO',
+  'disp.modos.vacio': 'Sin modos: pulsar hace lo de su hueco.',
+  'disp.modos.anadir': 'AÑADIR MODO',
+  'disp.modos.quitar': 'Quitar',
+  'disp.modos.subir': 'Subir',
+  'disp.modos.bajar': 'Bajar',
+  'disp.modos.aviso': 'PERILLA {n} · MODO {i}/{total}: {modo}',
 };

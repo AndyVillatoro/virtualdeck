@@ -25,9 +25,17 @@ function sinNucleo(): string {
   return tm('audio.sinNucleo');
 }
 
+/**
+ * El núcleo (Rust) contesta en español. Sus dos errores conocidos se pasan por
+ * el diccionario del proceso principal para que salgan en el idioma elegido;
+ * cualquier otro va tal cual, que es mejor que esconderlo.
+ */
 function mensaje(e: unknown): string {
-  const texto = e instanceof Error ? e.message : String(e ?? '');
-  return texto.trim() || sinNucleo();
+  const texto = (e instanceof Error ? e.message : String(e ?? '')).trim();
+  const sinSonido = /^"(.+)" no tiene sonido abierto$/.exec(texto);
+  if (sinSonido) return tm('audio.sinSonido', { app: sinSonido[1] });
+  if (texto === 'no hay una app en primer plano') return tm('audio.sinAppDelante');
+  return texto || sinNucleo();
 }
 
 /** Apps con sonido abierto, una por proceso. Vacía sin núcleo: no hay respaldo. */

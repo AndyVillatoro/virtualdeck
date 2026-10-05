@@ -6,7 +6,7 @@ import { ContenidoDispositivos } from './dispositivos/ContenidoDispositivos';
 import { LateralInspector, LateralLista } from './dispositivos/PanelesLaterales';
 import { useResponsivePaneles } from './dispositivos/useResponsivePaneles';
 import { useDockHardwareState } from './dispositivos/useDockHardwareState';
-import type { DeckConfig } from '../types';
+import type { DeckConfig, ModoPerilla } from '../types';
 import type { DestinoPlantilla } from '../utils/useDeck/paginas';
 import type { PresetHueco } from '../data/presetsDock';
 import type { DisposicionSuperficie, InfoSuperficie } from '../types/superficies';
@@ -20,6 +20,10 @@ export interface DispositivosBProps {
   imagenes?: Record<string, (string | undefined)[]>;
   /** Página activa de cada serial, por id (la que enseña el aparato). */
   paginasActivas: Record<string, string>;
+  /** Modo activo de cada perilla multimodo (lo guarda `useSuperficies`, en memoria). */
+  modosActivos: Record<string, number>;
+  /** Escribir los modos de una perilla (con historial). */
+  onFijarModosPerilla: (botonId: string, modos: ModoPerilla[], nombre: string) => void;
   onEditarBoton: (id: string) => void;
   onBrilloVivo: (serial: string, valor: number) => void;
   onBrillo: (serial: string, valor: number) => void;
@@ -46,6 +50,8 @@ export function DispositivosB({
   modelos,
   imagenes,
   paginasActivas,
+  modosActivos,
+  onFijarModosPerilla,
   onEditarBoton,
   onBrilloVivo,
   onBrillo,
@@ -75,6 +81,7 @@ export function DispositivosB({
     superficies,
     modelos,
     paginasActivas,
+    modosActivos,
     t,
     onBrilloVivo,
     onBrillo,
@@ -82,6 +89,7 @@ export function DispositivosB({
     onActivarPagina,
     onEditarBoton,
     onRellenarHuecos,
+    onFijarModosPerilla,
   });
 
   const {
@@ -90,6 +98,7 @@ export function DispositivosB({
     serialActivo, brilloLocal, handleBrilloMoving, handleBrilloCommit,
     lcds, rotacionActual, handleCambiarRotacion, controlSeleccionado,
     botonSeleccionado, hermanosPerilla, handleEditarActual, handleAplicarPreset, resumenControles,
+    perilla, modoActivo, handleFijarModos,
   } = dock;
 
   const {
@@ -223,6 +232,9 @@ export function DispositivosB({
           onCerrar={cerrarInspector}
           hermanosPerilla={hermanosPerilla}
           onSelectHueco={handleSelectHueco}
+          perilla={perilla}
+          modoActivo={modoActivo}
+          onFijarModos={handleFijarModos}
         />
       </div>
     </div>

@@ -19,6 +19,7 @@ import { EVENTO_SOBRE, EVENTO_FUERA, EVENTO_SOLTAR } from './usePulsacionTactil'
  */
 export function useArrastreCelda({
   ref, idBoton, onDragStart, onDragEnd, onDrop, alEmpezarArrastre, setPressed,
+  esFija, onAvisoFijo,
 }: {
   ref: RefObject<HTMLDivElement>;
   idBoton: string;
@@ -28,6 +29,8 @@ export function useArrastreCelda({
   /** Lo que el gesto de ratón necesita saber para no disparar la acción. */
   alEmpezarArrastre: () => void;
   setPressed: (v: boolean) => void;
+  esFija?: boolean;
+  onAvisoFijo?: () => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
 
@@ -36,15 +39,25 @@ export function useArrastreCelda({
   // quedaría con el primero para siempre.
   const onDropRef = useRef(onDrop);
   onDropRef.current = onDrop;
+  const onAvisoFijoRef = useRef(onAvisoFijo);
+  onAvisoFijoRef.current = onAvisoFijo;
+  const esFijaRef = useRef(esFija);
+  esFijaRef.current = esFija;
 
   // El otro extremo del arrastre táctil: esta celda como destino.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const sobre = () => setDragOver(true);
+    const sobre = () => {
+      if (!esFijaRef.current) setDragOver(true);
+    };
     const fuera = () => setDragOver(false);
     const soltar = (e: Event) => {
       setDragOver(false);
+      if (esFijaRef.current) {
+        onAvisoFijoRef.current?.();
+        return;
+      }
       onDropRef.current?.((e as CustomEvent<string>).detail);
     };
     el.addEventListener(EVENTO_SOBRE, sobre);
@@ -60,6 +73,11 @@ export function useArrastreCelda({
 
   const props = {
     onDragStart: (e: DragEvent<HTMLDivElement>) => {
+      if (esFijaRef.current) {
+        e.preventDefault();
+        onAvisoFijoRef.current?.();
+        return;
+      }
       alEmpezarArrastre();
       e.dataTransfer.effectAllowed = 'move';
       // El estándar exige adjuntar datos para que el arrastre arranque. Sin
@@ -75,6 +93,10 @@ export function useArrastreCelda({
     },
     onDragOver: (e: DragEvent<HTMLDivElement>) => {
       e.preventDefault();
+      if (esFijaRef.current) {
+        e.dataTransfer.dropEffect = 'none';
+        return;
+      }
       e.dataTransfer.dropEffect = 'move';
       setDragOver(true);
     },
@@ -82,6 +104,10 @@ export function useArrastreCelda({
     onDrop: (e: DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       setDragOver(false);
+      if (esFijaRef.current) {
+        onAvisoFijoRef.current?.();
+        return;
+      }
       onDrop?.(e.dataTransfer.getData('text/plain'));
     },
   };

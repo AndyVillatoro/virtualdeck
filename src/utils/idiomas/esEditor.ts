@@ -172,6 +172,7 @@ export const ES_EDITOR: Dict = {
   'preset.dock.knob.appVolume': 'Volumen de App',
   'preset.dock.knob.spotifyVolume': 'Volumen de Spotify',
   'preset.dock.knob.discordVolume': 'Volumen de Discord',
+  'preset.dock.knob.multi': 'Perilla multimodo',
   'preset.dock.button.nextPage': 'Página siguiente',
   'preset.dock.button.prevPage': 'Página anterior',
   'preset.dock.button.discordMute': 'Discord Mute',

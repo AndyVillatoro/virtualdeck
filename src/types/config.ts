@@ -43,6 +43,14 @@ export interface SensorCondition {
   value: number;
 }
 
+/** T-HW-19 — Un modo extra de una perilla multimodo («dial stacks»). */
+export interface ModoPerilla {
+  label: string;
+  icon?: string;
+  izq: ButtonAction;
+  der: ButtonAction;
+}
+
 export interface ButtonConfig {
   id: string;
   page: number;
@@ -106,6 +114,12 @@ export interface ButtonConfig {
    * hueco (por posición) en las demás páginas de su grupo —el deck (páginas
    * sin `superficie`) o el dock de su mismo `superficie.serial`—. */
   fijo?: boolean;
+  /** T-HW-19 — Perilla multimodo («dial stacks»): solo en el botón del hueco
+   * «pulsar» de una perilla. Si existe y no está vacío, pulsar cambia de modo
+   * en vez de ejecutar su acción (modo 0 = los huecos izq/der de la perilla,
+   * modos 1..n = estas entradas) y girar ejecuta `izq`/`der` del modo activo.
+   * El modo activo vive en memoria (ver `utils/superficies/modosPerilla.ts`). */
+  modosPerilla?: ModoPerilla[];
   /** 7.8 — Configuración del widget 'slider': barra táctil continua horizontal/vertical. */
   sliderWidget?: SliderWidgetConfig;
 }

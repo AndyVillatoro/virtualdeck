@@ -116,6 +116,30 @@ export function playGiro(profile: SoundProfile = 'click') {
 }
 
 /**
+ * Cambio de modo de una perilla multimodo (T-HW-19): distinto del giro a
+ * propósito — ascendente (900→1350 Hz) en vez de descendente, a ganancia
+ * completa y un poco más largo (0,07 s). Corto igual: es un aviso, no un tema.
+ * Respeta el perfil `off` (quien llama respeta `soundOnPress`).
+ */
+export function playModo(profile: SoundProfile = 'click') {
+  if (profile === 'off') return;
+  try {
+    const ac = ctx();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1350, ac.currentTime + 0.05);
+    gain.gain.setValueAtTime(GANANCIA_PERFIL[profile] ?? 0.12, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.07);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + 0.07);
+  } catch {}
+}
+
+/**
  * Si suena al pulsar, en un solo sitio.
  *
  * Estaba repetido con `?? true` en `App`, `preferencias` y `TitleBar`, y con
