@@ -2,16 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, InfoSuperficie,
 } from '../../types';
-import { botonesResueltos } from '../botonesFijos';
 import { huecoDeEntrada, huecosDeControl, teclasLcd } from './disposicion';
 import {
   claveModoPerilla, podarModosHuerfanos, podarModosPorPagina, resolverEntradaPerilla,
 } from './modosPerilla';
 import { playModo, sonidoActivo, perfilSonido } from '../sound';
 import {
-  esAppPropia, idPaginaSegunApp, idPaginaPredeterminada, normalizarApp,
+  esAppPropia, idPaginaSegunApp, normalizarApp,
 } from './paginaSegunApp';
-import { brilloDeSuperficie, rotacionDeSuperficie } from './ajustesSuperficie';
+import { paginaDe, type PaginaDispositivo } from './paginasSuperficie';
+import { useAnimacionLcd } from './useAnimacionLcd';
 import {
   fuentesLcdListas, pintarTecla, prepararFuentesLcd,
   type ColoresSuperficie, type OpcionesPintado,
@@ -82,42 +82,6 @@ export interface Superficies {
   modosActivos: Record<string, number>;
   /** Pone una página activa en el aparato (la pestaña elegida en DispositivosB). */
   activarPagina: (serial: string, paginaId: string) => void;
-}
-
-interface PaginaDispositivo {
-  indice: number;
-  disposicion: DisposicionSuperficie;
-  rotacion?: number;
-  brillo?: number;
-  botones: ButtonConfig[];
-}
-
-/** La página activa de un serial y sus botones, en orden de hueco (por posición). */
-function paginaDe(
-  config: DeckConfig, serial: string, disposicion: DisposicionSuperficie, paginaId?: string,
-): PaginaDispositivo | null {
-  const delSerial: number[] = [];
-  config.pages.forEach((p, i) => { if (p.superficie?.serial === serial) delSerial.push(i); });
-  if (delSerial.length === 0) return null;
-  // Por id, nunca por índice: borrar o reordenar páginas renumera los
-  // índices. Si el id ya no existe, se vuelve a la predeterminada.
-  let indice = paginaId !== undefined
-    ? delSerial.find((i) => config.pages[i].id === paginaId)
-    : undefined;
-  if (indice === undefined) {
-    const predeterminada = idPaginaPredeterminada(config.pages, serial);
-    indice = delSerial.find((i) => config.pages[i].id === predeterminada) ?? delSerial[0];
-  }
-  if (!config.pages[indice].superficie) return null;
-  return {
-    indice,
-    disposicion,
-    rotacion: rotacionDeSuperficie(config, serial),
-    brillo: brilloDeSuperficie(config, serial),
-    // Resueltos con los fijos del dock: lo que se pinta es lo que se dispara
-    // al pulsar (y viceversa), en el mismo hueco.
-    botones: botonesResueltos(config, indice),
-  };
 }
 
 /** Lo que se dibuja de una tecla. Si no cambia, no se vuelve a pintar. */
@@ -493,6 +457,12 @@ export function useSuperficies({
       if (cambio) setImagenes(nuevasImagenes);
     })();
   }, [api, config, dispositivos, activas, fondo, texto, fuentesListas]);
+
+  // Los GIF animados de la tecla física. Va después del pintado estático (que
+  // deja el primer fotograma) y comparte la resolución de página con él.
+  useAnimacionLcd({
+    api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, fuentesListas,
+  });
 
   return { dispositivos, modelos, imagenes, paginasActivas: activas, modosActivos: modos, activarPagina };
 }

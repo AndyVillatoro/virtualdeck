@@ -111,7 +111,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   onAdjustWheelRef.current = onAdjustWheel;
   const [isTouch] = useState(() => typeof window !== 'undefined' && 'ontouchstart' in window);
 
-  const { isEmpty, displayLabel, ActionIcon, iconColor, multiCount, titulo } =
+  const { isEmpty, displayLabel, actionGlyph, iconColor, multiCount, titulo } =
     derivarCelda(button, { accent, toggled, resolvedLabel, VD, t });
 
   const hasSubButtons = Boolean(button.subButtons && button.subButtons.length === 4);
@@ -255,7 +255,7 @@ function ButtonCellInner(props: ButtonCellProps) {
           onContextMenu={raton.alMenuContextual}
           isEmpty={isEmpty}
           iconColor={iconColor}
-          ActionIcon={ActionIcon}
+          actionGlyph={actionGlyph}
           widgetData={widgetData}
           displayLabel={displayLabel}
           rotaryStep={rotaryStep}

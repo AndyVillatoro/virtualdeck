@@ -581,6 +581,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores, 35 warnings; `npm run build` OK; `cargo test -p vd-core` 154 OK. El gancho de uiohook no ve los envíos del núcleo (los manda solo con código virtual), así que el envío de signos por el núcleo no se pudo medir así; el parser sí está cubierto.
 * **Falta (dueño):** todo lo de 63–76 con el dock y la app (lista en el roadmap), y decidir la 0.14.0: probar el N3 desde el MSIX, CHANGELOG, versión, instalador y publicación.
 
+## Turno 2026-10-04 — Editor plegable, dibujo único, iconos DOT, GIF animado (77, 80, 81)
+
+* **Reparto:** agy T-UI-02 (editor en secciones plegables); opencode `wE` (Muse Spark Free) T-UI-01 (editor de dibujo único) y T-UI-04 (fuera `VDIcon`, migración v5→v6, guardián de iconos); opencode `wN` (**DeepSeek V4.1 Flash por Go**, ~$0.51) T-UI-03 (GIF animado); agente propio de solo lectura: plugins (informe en `_referencias/informes/plugins-streamdeck.md`).
+* **Intervenciones del supervisor:** DeepSeek se colgó dos veces lanzando una copia de prueba de la app con la salida redirigida (la herramienta no vuelve mientras vive el proceso); se cerraron solo las copias con `--user-data-dir=...vd-gif-test`. Después escribió un decodificador de GIF a mano (LZW + PNG) dentro de `protocoloVd.ts` en el proceso principal: **rechazado** y revertido (superficie de ataque, y Chromium ya lo hace con `ImageDecoder`). El bloqueo real era la CSP: `connect-src` admite ahora `vd:` (supervisor).
+* **Medido:** GIF guardado en la tecla física a 10 fps, 2,8 % de un núcleo; sin GIF 1,6 % y sin temporizador vivo.
+* **Verificación:** `npm run check` 0 errores, 33 warnings; `npm run build` OK.
+* **Falta (dueño):** ver el editor nuevo, dibujar con el editor único, comprobar que los 10 botones migrados se ven bien y el GIF en el dock, la barra y el móvil.
+* **Pendiente:** tabla de glifos del mando móvil incompleta (82); tamaño del bundle (84); iconos animados (78) y animación al pulsar (79).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

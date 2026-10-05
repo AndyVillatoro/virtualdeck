@@ -33,12 +33,12 @@ export function CabeceraEditorB({ buttonId, is2x2Mode, onCambiarModo, onClose }:
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '4px 8px', border: 'none', borderRadius: VD.radius.sm,
             background: !is2x2Mode ? accent : 'transparent',
-            color: !is2x2Mode ? '#fff' : VD.textDim,
+            color: !is2x2Mode ? VD.bg : VD.textDim,
             fontFamily: VD.mono, fontSize: 9, letterSpacing: '1px',
             cursor: 'pointer',
           }}
         >
-          <DotGlyphIcon glyph="DOTS" size={8} color={!is2x2Mode ? '#fff' : VD.textDim} />
+          <DotGlyphIcon glyph="DOTS" size={8} color={!is2x2Mode ? VD.bg : VD.textDim} />
           <span>{t('ed.mode.standard')}</span>
         </button>
         <button
@@ -47,12 +47,12 @@ export function CabeceraEditorB({ buttonId, is2x2Mode, onCambiarModo, onClose }:
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '4px 8px', border: 'none', borderRadius: VD.radius.sm,
             background: is2x2Mode ? accent : 'transparent',
-            color: is2x2Mode ? '#fff' : VD.textDim,
+            color: is2x2Mode ? VD.bg : VD.textDim,
             fontFamily: VD.mono, fontSize: 9, letterSpacing: '1px',
             cursor: 'pointer',
           }}
         >
-          <DotGlyphIcon glyph="FULLSCREEN" size={8} color={is2x2Mode ? '#fff' : VD.textDim} />
+          <DotGlyphIcon glyph="FULLSCREEN" size={8} color={is2x2Mode ? VD.bg : VD.textDim} />
           <span>{t('ed.mode.split2x2')}</span>
         </button>
       </div>

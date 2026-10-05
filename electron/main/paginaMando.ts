@@ -279,7 +279,14 @@ function ponerImagen(img, ruta) {
     imagenesPedidas.set(ruta, pedir(ruta)
       .then((r) => (r.ok ? r.blob() : null))
       .then((b) => (b ? URL.createObjectURL(b) : null))
-      .catch(() => null));
+      .catch(() => null)
+      .then((url) => {
+        // Un fallo no se cachea para siempre: al cambiar de página (o al
+        // recargar) se vuelve a intentar en vez de quedarse en la primera
+        // petición, que pudo pillar el servidor aún arrancando.
+        if (!url) imagenesPedidas.delete(ruta);
+        return url;
+      }));
   }
   imagenesPedidas.get(ruta).then((url) => { if (url) img.src = url; });
 }

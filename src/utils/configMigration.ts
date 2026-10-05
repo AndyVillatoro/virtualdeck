@@ -5,7 +5,7 @@
 // porque la cadena de migrate(v1 → v2 → ...) se aplica en orden.
 import type { DeckConfig, ButtonAction, ButtonConfig, PageConfig } from '../types';
 
-export const CURRENT_CONFIG_VERSION = 5;
+export const CURRENT_CONFIG_VERSION = 6;
 
 export interface ValidationResult {
   ok: boolean;
@@ -138,6 +138,122 @@ function migrarSuperficiesPorSerial(
   });
   return { mapa, limpias };
 }
+/**
+ * v5 → v6: emojis y símbolos sueltos a su glifo DOT 8×8.
+ *
+ * `null` = sin equivalente razonable: se quita el `icon` para que el botón
+ * caiga al icono de su tipo, que desde esta versión también es DOT
+ * (`GLIFO_POR_TIPO_ACCION`). Lo que no está en la tabla no se toca: quitar un
+ * icono que no se entiende destruye trabajo del usuario sin darle nada.
+ *
+ * Vive aquí y no reutiliza `resolveDotGlyph` porque `src/utils` no puede
+ * importar de `src/components` (regla `utils-no-ui` de depcruise).
+ */
+const ICONOS_A_DOT: Record<string, string | null> = {
+  // Inventario T-UI-01 sobre la config real del dueño.
+  '🎬': 'PLAY',
+  '💼': null,
+  '🌈': 'SPARKLE',
+  '🌙': null,
+  '🚨': 'WARN',
+  '🔴': null,
+  // Símbolos sueltos que caían a la fuente de puntos.
+  '○': 'DOTS',
+  '◯': 'DOTS',
+  '◈': 'DOTS',
+  '●': 'SPARKLE',
+  '◉': 'SPARKLE',
+  '◐': 'SPARKLE',
+  '◎': 'DOTS',
+  '⊞': 'ADD',
+  '⊟': 'SUBTRACT',
+  '⊕': 'ADD',
+  '∿': 'AUDIO_WAVE',
+  '−': 'SUBTRACT',
+  '↺': 'UNDO',
+  '↻': 'ROTATE_CW',
+  '↗': 'EXPORT',
+  '▶': 'PLAY',
+  '▲': 'ARROW_UP',
+  '◻': 'FULLSCREEN',
+  // Otros emojis habituales con equivalente obvio.
+  '⚙': 'GEAR',
+  '🔊': 'SPEAKER',
+  '🎵': 'AUDIO_WAVE',
+  '🎶': 'AUDIO_WAVE',
+  '🎙': 'MIC',
+  '📁': 'FOLDER',
+  '🔔': 'BELL',
+  '⏰': 'CLOCK',
+  '⭐': 'SPARKLE',
+  '✨': 'SPARKLE',
+  '🔒': 'LOCK',
+  '♥': 'HEART',
+  '⚡': 'BOLT',
+  '❄': 'WEATHER_SNOW',
+  '☀': 'WEATHER_SUN',
+  '🌧': 'WEATHER_RAIN',
+  '🌐': 'WEB',
+  '💻': 'TERMINAL',
+  '💾': 'STORAGE',
+  '✂': 'SCISSORS',
+  '⚠': 'WARN',
+  '✓': 'CHECK',
+  '✅': 'CHECK',
+  '✕': 'CLOSE',
+  '❌': 'CLOSE',
+  '🗑': 'TRASH',
+  '❓': 'HELP',
+  '❔': 'HELP',
+};
+
+/** Pasa `obj.icon` por la tabla. Devuelve true si lo cambió o lo quitó. */
+function pasaIconoADot(obj: any): boolean {
+  if (!isObject(obj) || typeof obj.icon !== 'string') return false;
+  const clave = obj.icon.trim();
+  let equiv: string | null | undefined;
+  if (clave in ICONOS_A_DOT) {
+    equiv = ICONOS_A_DOT[clave];
+  } else {
+    // El mismo emoji con o sin selector de variante (U+FE0E/U+FE0F): '⚙' + VS16.
+    const sinVariante = clave.replace(/[\uFE0E\uFE0F]/g, '');
+    if (sinVariante !== clave && sinVariante in ICONOS_A_DOT) equiv = ICONOS_A_DOT[sinVariante];
+    else return false;
+  }
+  if (equiv === null) delete obj.icon;
+  else obj.icon = equiv;
+  return true;
+}
+
+/** Los `folderButtons` y sub-acciones anidadas también llevan `icon`. */
+function pasaAccionADot(a: any): void {
+  if (!isObject(a)) return;
+  for (const clave of ['branchThen', 'branchElse', 'timerActions', 'actions']) {
+    if (Array.isArray(a[clave])) for (const sub of a[clave]) pasaAccionADot(sub);
+  }
+  if (Array.isArray(a.folderButtons)) for (const fb of a.folderButtons) pasaIconoADot(fb);
+  pasaAccionADot(a.actionToggleOff);
+  pasaAccionADot(a.longPressAction);
+}
+
+function pasaBotonADot(b: any): void {
+  if (!isObject(b)) return;
+  pasaIconoADot(b);
+  if (Array.isArray(b.subButtons)) {
+    for (const s of b.subButtons) {
+      if (!isObject(s)) continue;
+      pasaIconoADot(s);
+      pasaAccionADot(s.action);
+      if (Array.isArray(s.actions)) for (const sub of s.actions) pasaAccionADot(sub);
+      pasaAccionADot(s.actionToggleOff);
+      pasaAccionADot(s.longPressAction);
+    }
+  }
+  pasaAccionADot(b.action);
+  if (Array.isArray(b.actions)) for (const sub of b.actions) pasaAccionADot(sub);
+  pasaAccionADot(b.actionToggleOff);
+  pasaAccionADot(b.longPressAction);
+}
 const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = [
   {
     from: 1, to: 2,
@@ -188,6 +304,17 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
       if (!Array.isArray(c.pages)) return { ...c, configVersion: 5 };
       const { mapa, limpias } = migrarSuperficiesPorSerial(c.pages, c.superficies);
       return { ...c, configVersion: 5, pages: limpias, superficies: mapa };
+    },
+  },
+  {
+    from: 5, to: 6,
+    apply: (c) => {
+      // v5 → v6: emojis y símbolos sueltos a glifos DOT (ver `ICONOS_A_DOT`).
+      // Idempotente: lo ya DOT no está en la tabla y no se toca; lo quitado
+      // sigue ausente. Sin `buttons` no hay nada que migrar.
+      if (!Array.isArray(c.buttons)) return { ...c, configVersion: 6 };
+      for (const b of c.buttons) pasaBotonADot(b);
+      return { ...c, configVersion: 6 };
     },
   },
 ];

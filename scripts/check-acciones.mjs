@@ -152,6 +152,50 @@ for (const id of idsMain) {
   }
 }
 
+// Los iconos sembrados (presets, carpetas, plantillas) tienen que resolverse
+// a un glifo DOT 8×8.
+//
+// La celda dibuja `button.icon` con `DotGlyphIcon` solo si `resolveDotGlyph`
+// lo conoce; si no, cae a texto con la fuente de puntos —y en el mando móvil
+// y la tecla física, a nada o a un recorte—. Un preset con un icono no DOT
+// siembra botones que se ven mal desde que se crean. Desde T-UI-04 todos los
+// `icon` sembrados son nombres que `resolveDotGlyph` conoce, y este bloque lo
+// mantiene: falla si alguno deja de resolver.
+{
+  const fuenteGlifos = readFileSync('src/components/dot480/dotGlyphs8x8.ts', 'utf-8');
+  const glifos = new Set([...fuenteGlifos.matchAll(/^  ([A-Z0-9_]+): \[$/gm)].map((m) => m[1]));
+  const fuenteMapa = readFileSync('src/components/dot480/resolveDotGlyph.ts', 'utf-8');
+  const alias = new Map();
+  for (const m of fuenteMapa.matchAll(/^\s*'((?:[^'\\]|\\.)*)': '([A-Z0-9_]+)',?$/gm)) {
+    alias.set(m[1].replace(/\\(.)/g, '$1'), m[2]);
+  }
+  // Misma resolución que `resolveDotGlyph`: nombre directo o alias.
+  const resuelve = (icono) => {
+    if (typeof icono !== 'string') return null;
+    const recortado = icono.trim();
+    if (glifos.has(recortado.toUpperCase())) return recortado.toUpperCase();
+    return alias.get(recortado.toUpperCase()) ?? alias.get(recortado) ?? null;
+  };
+  const iconos = [];
+  for (const m of fuenteSelector.matchAll(/icon: '([^']+)'/g)) iconos.push(['actionData.ts', m[1]]);
+  const fuenteDock = readFileSync('src/data/presetsDock.ts', 'utf-8');
+  for (const m of fuenteDock.matchAll(/icon: '([^']+)'/g)) iconos.push(['presetsDock.ts', m[1]]);
+  const fuentePlantillas = readFileSync('src/data/plantillasApp.ts', 'utf-8');
+  for (const m of fuentePlantillas.matchAll(/\bh\(\s*'[^']*',\s*'([^']+)'/g)) iconos.push(['plantillasApp.ts', m[1]]);
+  const vistos = new Set();
+  for (const [archivo, icono] of iconos) {
+    if (!resuelve(icono) && !vistos.has(icono)) {
+      vistos.add(icono);
+      problemas.push(`el icono '${icono}' de ${archivo} no lo resuelve resolveDotGlyph — el boton sembrado caeria a texto`);
+    }
+  }
+  // El icono por tipo también tiene que existir en la tabla de glifos.
+  const fuentePorTipo = readFileSync('src/components/dot480/glifosPorTipoAccion.ts', 'utf-8');
+  for (const m of fuentePorTipo.matchAll(/: '([A-Z0-9_]+)'/g)) {
+    if (!glifos.has(m[1])) problemas.push(`GLIFO_POR_TIPO_ACCION usa '${m[1]}', que no existe en DOT_GLYPHS_8X8`);
+  }
+}
+
 if (problemas.length) {
   console.error(`acciones: ${problemas.length} problema(s)\n`);
   for (const p of problemas) console.error('  · ' + p);

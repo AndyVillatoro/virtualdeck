@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, app } from 'electron';
+import { BrowserWindow, screen } from 'electron';
 import { join } from 'path';
 import { asegurarVentana } from './seguridadVentana';
 
@@ -136,6 +136,13 @@ export function abrirBarra(g: GeometriaBarra): void {
       // El tamaño de los tiles de la barra se ajusta en su propia pantalla.
       partition: SESION_BARRA,
       zoomFactor: 1,
+      // Los GIF de sus tiles son animaciones del renderer, y con el
+      // estrangulamiento de fondo (el valor por defecto) Chromium las pausa en
+      // cuanto la ventana no está en primer plano o queda tapada, aunque se
+      // siga viendo por encima. La principal ya lo lleva apagado por los
+      // disparadores; aquí es por las mismas animaciones (medido: un GIF en la
+      // barra no avanza sin esto y sí con esto).
+      backgroundThrottling: false,
     },
   });
 

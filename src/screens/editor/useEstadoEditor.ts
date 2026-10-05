@@ -1,0 +1,365 @@
+import { useEffect, useState } from 'react';
+import { FOLDER_PRESETS, type ButtonPreset } from './actionData';
+import {
+  accionInicial,
+  estiloInicial,
+  widgetInicial,
+  visibilidadInicial,
+  disparadoresInicial,
+} from './valoresIniciales';
+import { construirBoton } from './guardar';
+import { botonConfigurado } from './botonConfigurado';
+import { obtenerHuecoDePreset, type GestoHueco } from './useDockPresets';
+import { useCapturaHotkey } from './useCapturaHotkey';
+import { usePegarImagen } from './usePegarImagen';
+import type { ButtonConfig, SubButtonConfig } from '../../types';
+import type { PresetDock } from '../../data/presetsDock';
+
+export type SeccionId = 'presets' | 'action' | 'appearance' | 'behavior' | 'advanced';
+
+interface UseEstadoEditorOptions {
+  button: ButtonConfig;
+  onSave: (updated: ButtonConfig) => void;
+  dockGesto?: GestoHueco;
+}
+
+export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOptions) {
+  const api = window.electronAPI;
+  const isConfigured = botonConfigurado(button);
+
+  const ini = accionInicial(button);
+  const est = estiloInicial(button);
+  const wid = widgetInicial(button);
+  const vis = visibilidadInicial(button);
+  const dis = disparadoresInicial(button);
+
+  const [is2x2Mode, setIs2x2Mode] = useState<boolean>(() => !!(button.subButtons && button.subButtons.length === 4));
+  const [subButtons, setSubButtons] = useState<SubButtonConfig[]>(() => {
+    if (button.subButtons && button.subButtons.length === 4) return button.subButtons;
+    return Array.from({ length: 4 }, (_, i) => ({
+      id: `${button.id}-q${i}`,
+      label: '',
+      action: { type: 'none' as const },
+    }));
+  });
+
+  const [action, setAction] = useState(ini.action);
+  const [extraActions, setExtraActions] = useState(ini.extraActions);
+  const [showExtraPicker, setShowExtraPicker] = useState(false);
+  const [isToggle, setIsToggle] = useState(ini.isToggle);
+  const [actionToggleOff, setActionToggleOff] = useState(ini.actionToggleOff);
+  const [label, setLabel] = useState(est.label);
+  const [sublabel, setSublabel] = useState(est.sublabel);
+  const [icon, setIcon] = useState(est.icon);
+  const [imageData, setImageData] = useState(est.imageData);
+  const [brandIcon, setBrandIcon] = useState(est.brandIcon);
+  const [brandIconAlwaysAnimate, setBrandIconAlwaysAnimate] = useState(est.brandIconAlwaysAnimate);
+  const [brandIconCustomBitmap, setBrandIconCustomBitmap] = useState(est.brandIconCustomBitmap);
+  const [brandIconCustomColor, setBrandIconCustomColor] = useState(est.brandIconCustomColor);
+  const [brandIconCustomPalette, setBrandIconCustomPalette] = useState(est.brandIconCustomPalette);
+  const [showBrandPicker, setShowBrandPicker] = useState(false);
+  const [showBrandEditor, setShowBrandEditor] = useState(false);
+  const [bgColor, setBgColor] = useState(est.bgColor);
+  const [fgColor, setFgColor] = useState(est.fgColor);
+  const [pinned, setPinned] = useState(est.pinned);
+  const [fijo, setFijo] = useState(est.fijo);
+  const [globalHotkey, setGlobalHotkey] = useState(dis.globalHotkey);
+  const [inTrayMenu, setInTrayMenu] = useState(dis.inTrayMenu);
+  const [longPressAction, setLongPressAction] = useState(ini.longPressAction);
+  const [radioGroup, setRadioGroup] = useState(ini.radioGroup);
+  const [widget, setWidget] = useState(est.widget);
+  const [sensorWidgetId, setSensorWidgetId] = useState(wid.sensorWidgetId);
+  const [sensorWidgetSuffix, setSensorWidgetSuffix] = useState(wid.sensorWidgetSuffix);
+  const [sensorWidgetWarn, setSensorWidgetWarn] = useState(wid.sensorWidgetWarn);
+  const [sensorWidgetCrit, setSensorWidgetCrit] = useState(wid.sensorWidgetCrit);
+  const [varWidgetName, setVarWidgetName] = useState(wid.varWidgetName);
+  const [varWidgetPrefix, setVarWidgetPrefix] = useState(wid.varWidgetPrefix);
+  const [varWidgetSuffix, setVarWidgetSuffix] = useState(wid.varWidgetSuffix);
+  const [currencyWidget, setCurrencyWidget] = useState(wid.currencyWidget);
+  const [sliderWidget, setSliderWidget] = useState(wid.sliderWidget);
+  const [visibleIfApp, setVisibleIfApp] = useState(vis.visibleIfApp);
+  const [visibleIfSensorId, setVisibleIfSensorId] = useState(vis.visibleIfSensorId);
+  const [visibleIfSensorOp, setVisibleIfSensorOp] = useState(vis.visibleIfSensorOp);
+  const [visibleIfSensorVal, setVisibleIfSensorVal] = useState(vis.visibleIfSensorVal);
+  const [timerTriggerAt, setTimerTriggerAt] = useState(dis.timerTriggerAt);
+  const [sensorTriggerId, setSensorTriggerId] = useState(dis.sensorTriggerId);
+  const [sensorTriggerOp, setSensorTriggerOp] = useState(dis.sensorTriggerOp);
+  const [sensorTriggerVal, setSensorTriggerVal] = useState(dis.sensorTriggerVal);
+  const [sensorTriggerCooldown, setSensorTriggerCooldown] = useState(dis.sensorTriggerCooldown);
+  const [customGlyph57, setCustomGlyph57] = useState(est.customGlyph57);
+  const [showGlyphEditor, setShowGlyphEditor] = useState(false);
+  const [presetCategory, setPresetCategory] = useState<string>('APPS');
+  const [presetSearch, setPresetSearch] = useState('');
+  const [capturing, setCapturing] = useState(false);
+  const [folderButtons, setFolderButtons] = useState(ini.folderButtons);
+
+  // Inicialización de secciones acordeón:
+  // Al abrir un botón vacío se abre PRESETS y ACCIÓN; al abrir uno configurado, ACCIÓN y APARIENCIA.
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<SeccionId, boolean>>(() => {
+    if (isConfigured) {
+      return {
+        presets: false,
+        action: true,
+        appearance: true,
+        behavior: false,
+        advanced: is2x2Mode,
+      };
+    }
+    return {
+      presets: true,
+      action: true,
+      appearance: false,
+      behavior: false,
+      advanced: is2x2Mode,
+    };
+  });
+
+  const toggleSeccion = (id: SeccionId) => {
+    setSeccionesAbiertas((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  useEffect(() => {
+    if (action.type === 'audio-device' && widget === 'now-playing') setWidget(undefined);
+  }, [action.type, widget]);
+
+  useCapturaHotkey(
+    capturing,
+    (combo) => setAction((a) => ({ ...a, hotkey: combo })),
+    () => setCapturing(false),
+  );
+
+  useEffect(() => {
+    if (action.type === 'folder') {
+      setAction((a) => ({ ...a, folderButtons }));
+    }
+  }, [folderButtons, action.type]);
+
+  usePegarImagen(setImageData);
+
+  const handleSave = () => {
+    onSave(construirBoton(button, {
+      is2x2Mode,
+      subButtons,
+      action,
+      extraActions,
+      label,
+      sublabel,
+      icon,
+      imageData,
+      brandIcon,
+      brandIconAlwaysAnimate,
+      brandIconCustomBitmap,
+      brandIconCustomColor,
+      brandIconCustomPalette,
+      bgColor,
+      fgColor,
+      folderButtons,
+      isToggle,
+      actionToggleOff,
+      globalHotkey,
+      inTrayMenu,
+      customGlyph57,
+      longPressAction,
+      radioGroup,
+      widget,
+      sensorWidgetId,
+      sensorWidgetSuffix,
+      sensorWidgetWarn,
+      sensorWidgetCrit,
+      varWidgetName,
+      varWidgetPrefix,
+      varWidgetSuffix,
+      currencyWidget,
+      sliderWidget,
+      visibleIfApp,
+      visibleIfSensorId,
+      visibleIfSensorOp,
+      visibleIfSensorVal,
+      timerTriggerAt,
+      sensorTriggerId,
+      sensorTriggerOp,
+      sensorTriggerVal,
+      sensorTriggerCooldown,
+      pinned,
+      fijo,
+    }));
+  };
+
+  const applyPreset = (preset: ButtonPreset) => {
+    setAction(preset.action);
+    setLabel(preset.label);
+    setSublabel(preset.sublabel ?? '');
+    setIcon(preset.icon ?? '');
+    setBgColor(preset.bgColor ?? '');
+    setFgColor(preset.fgColor ?? '');
+    setIsToggle(preset.isToggle ?? false);
+    setActionToggleOff(preset.actionToggleOff ?? { type: 'none' });
+    if (preset.fijo) setFijo(true);
+    if (preset.widget) {
+      setWidget(preset.widget);
+      if (preset.sliderWidget) setSliderWidget(preset.sliderWidget);
+    }
+    setSeccionesAbiertas((prev) => ({ ...prev, action: true, appearance: true }));
+  };
+
+  const applyDockPreset = (preset: PresetDock) => {
+    const hueco = obtenerHuecoDePreset(preset, dockGesto);
+    setAction(hueco.action);
+    setLabel(hueco.label);
+    setSublabel('');
+    setIcon(hueco.icon ?? '');
+    setBgColor(hueco.bgColor ?? '');
+    setFgColor(hueco.fgColor ?? '');
+    setIsToggle(hueco.isToggle ?? false);
+    setActionToggleOff(hueco.actionToggleOff ?? { type: 'none' });
+    if (hueco.fijo) setFijo(true);
+    setSeccionesAbiertas((prev) => ({ ...prev, action: true, appearance: true }));
+  };
+
+  const applyFolderPreset = (key: string) => {
+    const fp = FOLDER_PRESETS[key];
+    if (!fp) return;
+    setFolderButtons(fp.buttons);
+    setLabel(fp.label);
+    setIcon(fp.icon);
+    setBgColor(fp.bgColor);
+    setFgColor(fp.fgColor);
+  };
+
+  const pickFile = async () => {
+    if (!api) return;
+    const path = await api.dialog.openFile({ properties: ['openFile'] });
+    if (path) setAction((a) => ({ ...a, appPath: path }));
+  };
+
+  const pickShortcut = async () => {
+    if (!api) return;
+    const path = await api.dialog.openFile({ properties: ['openFile', 'openDirectory'] });
+    if (path) setAction((a) => ({ ...a, shortcutPath: path }));
+  };
+
+  const pickImage = async () => {
+    if (!api) return;
+    const data = await api.dialog.openImage();
+    if (data) setImageData(data);
+  };
+
+  return {
+    isConfigured,
+    is2x2Mode,
+    setIs2x2Mode,
+    subButtons,
+    setSubButtons,
+    action,
+    setAction,
+    extraActions,
+    setExtraActions,
+    showExtraPicker,
+    setShowExtraPicker,
+    isToggle,
+    setIsToggle,
+    actionToggleOff,
+    setActionToggleOff,
+    label,
+    setLabel,
+    sublabel,
+    setSublabel,
+    icon,
+    setIcon,
+    imageData,
+    setImageData,
+    brandIcon,
+    setBrandIcon,
+    brandIconAlwaysAnimate,
+    setBrandIconAlwaysAnimate,
+    brandIconCustomBitmap,
+    setBrandIconCustomBitmap,
+    brandIconCustomColor,
+    setBrandIconCustomColor,
+    brandIconCustomPalette,
+    setBrandIconCustomPalette,
+    showBrandPicker,
+    setShowBrandPicker,
+    showBrandEditor,
+    setShowBrandEditor,
+    bgColor,
+    setBgColor,
+    fgColor,
+    setFgColor,
+    pinned,
+    setPinned,
+    fijo,
+    setFijo,
+    globalHotkey,
+    setGlobalHotkey,
+    inTrayMenu,
+    setInTrayMenu,
+    longPressAction,
+    setLongPressAction,
+    radioGroup,
+    setRadioGroup,
+    widget,
+    setWidget,
+    sensorWidgetId,
+    setSensorWidgetId,
+    sensorWidgetSuffix,
+    setSensorWidgetSuffix,
+    sensorWidgetWarn,
+    setSensorWidgetWarn,
+    sensorWidgetCrit,
+    setSensorWidgetCrit,
+    varWidgetName,
+    setVarWidgetName,
+    varWidgetPrefix,
+    setVarWidgetPrefix,
+    varWidgetSuffix,
+    setVarWidgetSuffix,
+    currencyWidget,
+    setCurrencyWidget,
+    sliderWidget,
+    setSliderWidget,
+    visibleIfApp,
+    setVisibleIfApp,
+    visibleIfSensorId,
+    setVisibleIfSensorId,
+    visibleIfSensorOp,
+    setVisibleIfSensorOp,
+    visibleIfSensorVal,
+    setVisibleIfSensorVal,
+    timerTriggerAt,
+    setTimerTriggerAt,
+    sensorTriggerId,
+    setSensorTriggerId,
+    sensorTriggerOp,
+    setSensorTriggerOp,
+    sensorTriggerVal,
+    setSensorTriggerVal,
+    sensorTriggerCooldown,
+    setSensorTriggerCooldown,
+    customGlyph57,
+    setCustomGlyph57,
+    showGlyphEditor,
+    setShowGlyphEditor,
+    presetCategory,
+    setPresetCategory,
+    presetSearch,
+    setPresetSearch,
+    capturing,
+    setCapturing,
+    folderButtons,
+    setFolderButtons,
+    seccionesAbiertas,
+    setSeccionesAbiertas,
+    toggleSeccion,
+    handleSave,
+    applyPreset,
+    applyDockPreset,
+    applyFolderPreset,
+    pickFile,
+    pickShortcut,
+    pickImage,
+  };
+}

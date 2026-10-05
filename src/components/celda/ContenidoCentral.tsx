@@ -2,7 +2,6 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { Glyph57View } from '../Glyph57Editor';
 import { DotGlyphIcon, resolveDotGlyph } from '../dot480/DotGlyphIcon';
-import type { VDIconProps } from '../VDIcon';
 import type { ButtonConfig } from '../../types';
 import type { DatosWidget } from './useDatosWidget';
 
@@ -18,12 +17,12 @@ interface Props {
   button: ButtonConfig;
   isEmpty: boolean;
   iconColor: string;
-  /** Icono del tipo de acción, cuando no hay ninguno más específico. */
-  ActionIcon: React.ComponentType<VDIconProps>;
+  /** Glifo DOT 8×8 del tipo de acción, cuando no hay ninguno más específico. */
+  actionGlyph: string;
   widgetData?: DatosWidget;
 }
 
-export function ContenidoCentral({ button, isEmpty, iconColor, ActionIcon, widgetData }: Props) {
+export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widgetData }: Props) {
   const VD = useTheme();
   if (widgetData) return <Widget datos={widgetData} />;
 
@@ -112,7 +111,13 @@ export function ContenidoCentral({ button, isEmpty, iconColor, ActionIcon, widge
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <ActionIcon size={tamano} color={iconColor} />
+      <DotGlyphIcon
+        glyph={actionGlyph}
+        size={tamano}
+        color={iconColor}
+        dimColor={VD.dotIdle}
+        showRecessed
+      />
     </div>
   );
 }

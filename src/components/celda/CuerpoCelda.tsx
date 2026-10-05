@@ -4,7 +4,6 @@ import { DotContinuousSlider } from '../dot480/DotContinuousSlider';
 import { DotRotaryDial } from '../dot480/DotRotaryDial';
 import { ContenidoCentral } from './ContenidoCentral';
 import { RotuloCelda } from './RotuloCelda';
-import type { VDIconProps } from '../VDIcon';
 import type { ButtonConfig, SoundProfileId } from '../../types';
 
 export interface CuerpoCeldaProps {
@@ -22,7 +21,7 @@ export interface CuerpoCeldaProps {
   onContextMenu: (e: React.MouseEvent) => void;
   isEmpty: boolean;
   iconColor: string;
-  ActionIcon: React.ComponentType<VDIconProps>;
+  actionGlyph: string;
   widgetData?: { line1: string; line2?: string; tone?: 'warn' | 'crit' };
   displayLabel?: string;
   rotaryStep: number;
@@ -53,7 +52,7 @@ export function CuerpoCelda({
   onContextMenu,
   isEmpty,
   iconColor,
-  ActionIcon,
+  actionGlyph,
   widgetData,
   displayLabel,
   rotaryStep,
@@ -98,7 +97,7 @@ export function CuerpoCelda({
       button={button}
       isEmpty={isEmpty}
       iconColor={iconColor}
-      ActionIcon={ActionIcon}
+      actionGlyph={actionGlyph}
       widgetData={widgetData}
     />
   );

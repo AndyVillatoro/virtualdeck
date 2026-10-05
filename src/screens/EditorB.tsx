@@ -1,472 +1,409 @@
-import React, { useEffect, useState } from 'react';
-import { PRESETS, FOLDER_PRESETS, type ButtonPreset } from './editor/actionData';
-import {
-  accionInicial, estiloInicial, widgetInicial, visibilidadInicial, disparadoresInicial,
-} from './editor/valoresIniciales';
-import { construirBoton } from './editor/guardar';
-import { botonConfigurado } from './editor/botonConfigurado';
+import React from 'react';
+import { PRESETS, ACTION_TYPES } from './editor/actionData';
 import { CabeceraEditorB } from './editor/CabeceraEditorB';
-import { FranjaPasosEditorB, STEPS } from './editor/FranjaPasosEditorB';
-import { FormularioPasoEditorB } from './editor/FormularioPasoEditorB';
-import { useTheme } from '../utils/theme';
 import { PieEditorB } from './editor/PieEditorB';
+import { VistaPrevia } from './editor/VistaPrevia';
 import { ModalesIconosEditor } from './editor/ModalesIconosEditor';
-import type { ButtonConfig, PageConfig, RGBProfile, SubButtonConfig } from '../types';
+import { SeccionAjustes } from '../components/settings/SeccionAjustes';
+import { SeccionPresets } from './editor/SeccionPresets';
+import { SeccionAccion } from './editor/SeccionAccion';
+import { SeccionApariencia } from './editor/SeccionApariencia';
+import { SeccionComportamiento } from './editor/SeccionComportamiento';
+import { SeccionAvanzado } from './editor/SeccionAvanzado';
+import { useDockPresets } from './editor/useDockPresets';
+import { useCatalogos } from './editor/useCatalogos';
+import { useEstadoEditor } from './editor/useEstadoEditor';
+import { useTheme } from '../utils/theme';
+import { useT } from '../utils/i18n';
+import type { ButtonConfig, PageConfig, RGBProfile } from '../types';
 
 interface EditorBProps {
   button: ButtonConfig;
   rgbProfiles?: RGBProfile[];
-  /** Variables de estado actuales — para autocompletar el nombre en el widget 'variable'. */
   deckState?: Record<string, string>;
-  /** Todas las páginas — para que `page-nav` liste destinos por nombre. */
   pages?: PageConfig[];
   onClose: () => void;
   onSave: (updated: ButtonConfig) => void;
-  /** 7.6: Vaciar botón con confirmación y soporte de deshacer */
   onClear?: (id: string) => void;
 }
 
-// Las claves i18n de los pasos viven en `FranjaPasosEditorB` (exporta STEPS).
-import { VistaPrevia } from './editor/VistaPrevia';
-import { useCatalogos } from './editor/useCatalogos';
-import { useCapturaHotkey } from './editor/useCapturaHotkey';
-import { usePegarImagen } from './editor/usePegarImagen';
-
-
-export function EditorB({ button, rgbProfiles = [], deckState = {}, pages = [], onClose, onSave, onClear }: EditorBProps) {
+export function EditorB({
+  button,
+  rgbProfiles = [],
+  deckState = {},
+  pages = [],
+  onClose,
+  onSave,
+  onClear,
+}: EditorBProps) {
   const VD = useTheme();
-  const api = window.electronAPI;
-  const isConfigured = botonConfigurado(button);
-  // Los valores de partida salen de `valoresIniciales`: alli estan todos los
-  // `?? ''` que antes vivian aqui dentro, uno por campo.
-  //
-  // Se calculan una vez y se pasan como valor inicial. No hace falta `useState`
-  // con funcion perezosa: son tres objetos planos, construirlos es gratis.
-  const ini = accionInicial(button);
-  const est = estiloInicial(button);
-  const wid = widgetInicial(button);
-  const vis = visibilidadInicial(button);
-  const dis = disparadoresInicial(button);
+  const t = useT();
+  const accent = VD.accent;
 
-  const [is2x2Mode, setIs2x2Mode] = useState<boolean>(() => !!(button.subButtons && button.subButtons.length === 4));
-  const [subButtons, setSubButtons] = useState<SubButtonConfig[]>(() => {
-    if (button.subButtons && button.subButtons.length === 4) return button.subButtons;
-    return Array.from({ length: 4 }, (_, i) => ({
-      id: `${button.id}-q${i}`,
-      label: '',
-      action: { type: 'none' as const },
-    }));
-  });
+  // Detección de control físico y presets de dock
+  const dockInfo = useDockPresets(button, pages);
 
-  const [step, setStep] = useState(0);
-  const [action, setAction] = useState(ini.action);
-  const [extraActions, setExtraActions] = useState(ini.extraActions);
-  const [showExtraPicker, setShowExtraPicker] = useState(false);
-  const [isToggle, setIsToggle] = useState(ini.isToggle);
-  const [actionToggleOff, setActionToggleOff] = useState(ini.actionToggleOff);
-  const [label, setLabel] = useState(est.label);
-  const [sublabel, setSublabel] = useState(est.sublabel);
-  const [icon, setIcon] = useState(est.icon);
-  const [imageData, setImageData] = useState(est.imageData);
-  const [brandIcon, setBrandIcon] = useState(est.brandIcon);
-  const [brandIconAlwaysAnimate, setBrandIconAlwaysAnimate] = useState(est.brandIconAlwaysAnimate);
-  const [brandIconCustomBitmap, setBrandIconCustomBitmap] = useState(est.brandIconCustomBitmap);
-  const [brandIconCustomColor, setBrandIconCustomColor] = useState(est.brandIconCustomColor);
-  const [brandIconCustomPalette, setBrandIconCustomPalette] = useState(est.brandIconCustomPalette);
-  const [showBrandPicker, setShowBrandPicker] = useState(false);
-  const [showBrandEditor, setShowBrandEditor] = useState(false);
-  const [bgColor, setBgColor] = useState(est.bgColor);
-  const [fgColor, setFgColor] = useState(est.fgColor);
-  const [pinned, setPinned] = useState(est.pinned);
-  const [fijo, setFijo] = useState(est.fijo);
-  // 1.4 — Disparadores externos
-  const [globalHotkey, setGlobalHotkey] = useState(dis.globalHotkey);
-  const [inTrayMenu, setInTrayMenu] = useState(dis.inTrayMenu);
-  // 3.x — Long press + radio group
-  const [longPressAction, setLongPressAction] = useState(ini.longPressAction);
-  const [radioGroup, setRadioGroup] = useState(ini.radioGroup);
-  // Widget / Visibility / Scheduled trigger
-  const [widget, setWidget] = useState(est.widget);
-  const [sensorWidgetId, setSensorWidgetId] = useState(wid.sensorWidgetId);
-  const [sensorWidgetSuffix, setSensorWidgetSuffix] = useState(wid.sensorWidgetSuffix);
-  const [sensorWidgetWarn, setSensorWidgetWarn] = useState(wid.sensorWidgetWarn);
-  const [sensorWidgetCrit, setSensorWidgetCrit] = useState(wid.sensorWidgetCrit);
-  const [varWidgetName, setVarWidgetName] = useState(wid.varWidgetName);
-  const [varWidgetPrefix, setVarWidgetPrefix] = useState(wid.varWidgetPrefix);
-  const [varWidgetSuffix, setVarWidgetSuffix] = useState(wid.varWidgetSuffix);
-  const [currencyWidget, setCurrencyWidget] = useState(wid.currencyWidget);
-  const [sliderWidget, setSliderWidget] = useState(wid.sliderWidget);
-  const [visibleIfApp, setVisibleIfApp] = useState(vis.visibleIfApp);
-  const [visibleIfSensorId, setVisibleIfSensorId] = useState(vis.visibleIfSensorId);
-  const [visibleIfSensorOp, setVisibleIfSensorOp] = useState(vis.visibleIfSensorOp);
-  const [visibleIfSensorVal, setVisibleIfSensorVal] = useState(vis.visibleIfSensorVal);
-  const [timerTriggerAt, setTimerTriggerAt] = useState(dis.timerTriggerAt);
-  const [sensorTriggerId, setSensorTriggerId] = useState(dis.sensorTriggerId);
-  const [sensorTriggerOp, setSensorTriggerOp] = useState(dis.sensorTriggerOp);
-  const [sensorTriggerVal, setSensorTriggerVal] = useState(dis.sensorTriggerVal);
-  const [sensorTriggerCooldown, setSensorTriggerCooldown] = useState(dis.sensorTriggerCooldown);
-  // Sensor list shared by widget/visibility/trigger pickers.
-  // 2.1 — Glifo 5×7 personalizado (7 enteros bitmask)
-  const [customGlyph57, setCustomGlyph57] = useState(est.customGlyph57);
-  const [showGlyphEditor, setShowGlyphEditor] = useState(false);
-  const [presetCategory, setPresetCategory] = useState<ButtonPreset['category']>('APPS');
-  const [presetSearch, setPresetSearch] = useState('');
-  const [capturing, setCapturing] = useState(false);
-  const [folderButtons, setFolderButtons] = useState(ini.folderButtons);
+  const e = useEstadoEditor({ button, onSave, dockGesto: dockInfo.gesto });
 
   const {
     audioDevices, loadingDevices, audioError, loadAudioDevices, rgbDevices, rgbConnected, sensorList,
-  } = useCatalogos(action.type, step, `${widget}|${visibleIfSensorId}|${sensorTriggerId}`);
-
-  // Lo unico que quedaba en aquel efecto y no era cargar una lista: un boton
-  // de audio no puede llevar el widget de reproduccion, y al cambiar el tipo
-  // sobre un boton ya guardado se quedaba puesto.
-  useEffect(() => {
-    if (action.type === 'audio-device' && widget === 'now-playing') setWidget(undefined);
-  }, [action.type, widget]);
-
-  useCapturaHotkey(
-    capturing,
-    (combo) => setAction((a) => ({ ...a, hotkey: combo })),
-    () => setCapturing(false),
-  );
-
-  // Sync folderButtons into action when they change
-  //
-  // Tambien cuando cambia el tipo: si se elige "carpeta" despues de haber
-  // preparado los botones, el efecto no corria y la accion se quedaba sin
-  // ellos. No hay bucle — dentro solo se entra si el tipo ya es 'folder'.
-  useEffect(() => {
-    if (action.type === 'folder') {
-      setAction(a => ({ ...a, folderButtons }));
-    }
-  }, [folderButtons, action.type]);
-
-  const handleSave = () => {
-    onSave(construirBoton(button, {
-      is2x2Mode,
-      subButtons,
-      action,
-      extraActions,
-      label,
-      sublabel,
-      icon,
-      imageData,
-      brandIcon,
-      brandIconAlwaysAnimate,
-      brandIconCustomBitmap,
-      brandIconCustomColor,
-      brandIconCustomPalette,
-      bgColor,
-      fgColor,
-      folderButtons,
-      isToggle,
-      actionToggleOff,
-      globalHotkey,
-      inTrayMenu,
-      customGlyph57,
-      longPressAction,
-      radioGroup,
-      widget,
-      sensorWidgetId,
-      sensorWidgetSuffix,
-      sensorWidgetWarn,
-      sensorWidgetCrit,
-      varWidgetName,
-      varWidgetPrefix,
-      varWidgetSuffix,
-      currencyWidget,
-      sliderWidget,
-      visibleIfApp,
-      visibleIfSensorId,
-      visibleIfSensorOp,
-      visibleIfSensorVal,
-      timerTriggerAt,
-      sensorTriggerId,
-      sensorTriggerOp,
-      sensorTriggerVal,
-      sensorTriggerCooldown,
-      pinned,
-      fijo,
-    }));
-  };
-
-  const applyPreset = (preset: ButtonPreset) => {
-    setAction(preset.action);
-    setLabel(preset.label);
-    setSublabel(preset.sublabel ?? '');
-    setIcon(preset.icon ?? '');
-    setBgColor(preset.bgColor ?? '');
-    setFgColor(preset.fgColor ?? '');
-    setIsToggle(preset.isToggle ?? false);
-    setActionToggleOff(preset.actionToggleOff ?? { type: 'none' });
-    if (preset.fijo) setFijo(true);
-    if (preset.widget) {
-      setWidget(preset.widget);
-      if (preset.sliderWidget) setSliderWidget(preset.sliderWidget);
-    }
-    setStep(2);
-  };
-
-  const applyFolderPreset = (key: string) => {
-    const fp = FOLDER_PRESETS[key];
-    if (!fp) return;
-    setFolderButtons(fp.buttons);
-    setLabel(fp.label);
-    setIcon(fp.icon);
-    setBgColor(fp.bgColor);
-    setFgColor(fp.fgColor);
-  };
-
-  const pickFile = async () => {
-    if (!api) return;
-    const path = await api.dialog.openFile({ properties: ['openFile'] });
-    if (path) setAction((a) => ({ ...a, appPath: path }));
-  };
-
-  const pickShortcut = async () => {
-    if (!api) return;
-    const path = await api.dialog.openFile({ properties: ['openFile', 'openDirectory'] });
-    if (path) setAction((a) => ({ ...a, shortcutPath: path }));
-  };
-
-  const pickImage = async () => {
-    if (!api) return;
-    const data = await api.dialog.openImage();
-    if (data) setImageData(data);
-  };
-
-  usePegarImagen(setImageData);
-
-  const accent = VD.accent;
+  } = useCatalogos(e.action.type, undefined, `${e.widget}|${e.visibleIfSensorId}|${e.sensorTriggerId}`);
 
   const filteredPresets = PRESETS.filter((p) => {
-    if (presetSearch.trim()) {
-      const q = presetSearch.toLowerCase();
+    if (e.presetSearch.trim()) {
+      const q = e.presetSearch.toLowerCase();
       return p.label.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     }
-    return p.category === presetCategory;
+    return p.category === e.presetCategory;
   });
 
+  // Insignias informativas para las cabeceras acordeón
+  const actionTypeObj = ACTION_TYPES.find((at) => at.type === e.action.type);
+  const actionBadge = e.action.type !== 'none' && actionTypeObj ? t(actionTypeObj.label) : undefined;
+  const dockBadge = dockInfo.esDock && dockInfo.controlMeta
+    ? `${dockInfo.controlMeta.control.toUpperCase()}${dockInfo.controlMeta.gesto ? ` · ${dockInfo.controlMeta.gesto.toUpperCase()}` : ''}`
+    : undefined;
+  const appearanceBadge = e.label || (e.icon ? e.icon : undefined);
+  const behaviorBadge = e.isToggle ? 'TOGGLE' : (e.fijo ? 'FIJO' : (e.pinned ? 'ANCLADO' : undefined));
+  const advancedBadge = e.is2x2Mode ? '2×2' : (e.extraActions.length > 0 ? `+${e.extraActions.length}` : undefined);
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 50,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(0,0,0,0.75)',
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0,0,0,0.75)',
+      }}
+    >
       <div onClick={onClose} style={{ position: 'absolute', inset: 0 }} />
 
-      <div onClick={(e) => e.stopPropagation()} style={{
-        position: 'relative',
-        width: 'min(960px, 96vw)', height: 'min(640px, 92vh)',
-        background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-        display: 'flex', flexDirection: 'column',
-        boxShadow: VD.shadow.modal,
-        borderRadius: VD.radius.sm,
-      }}>
-        {/* Header */}
+      <div
+        onClick={(ev) => ev.stopPropagation()}
+        style={{
+          position: 'relative',
+          width: 'min(960px, 96vw)',
+          height: 'min(660px, 94vh)',
+          background: VD.surface,
+          border: `1px solid ${VD.borderStrong}`,
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: VD.shadow.modal,
+          borderRadius: VD.radius.sm,
+        }}
+      >
+        {/* Cabecera */}
         <CabeceraEditorB
           buttonId={button.id}
-          is2x2Mode={is2x2Mode}
-          onCambiarModo={setIs2x2Mode}
+          is2x2Mode={e.is2x2Mode}
+          onCambiarModo={(m) => {
+            e.setIs2x2Mode(m);
+            if (m) e.setSeccionesAbiertas((prev) => ({ ...prev, advanced: true }));
+          }}
           onClose={onClose}
         />
 
-        {/* Steps */}
-        <FranjaPasosEditorB is2x2Mode={is2x2Mode} step={step} onPaso={setStep} />
-
-        {/* Body */}
+        {/* Cuerpo: Vista previa sticky a la izquierda + Acordeón de 5 secciones a la derecha */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
           <VistaPrevia
             id={button.id}
             page={button.page}
             accent={accent}
-            action={action}
-            extraActions={extraActions}
-            isToggle={isToggle}
-            subButtons={subButtons}
-            is2x2Mode={is2x2Mode}
+            action={e.action}
+            extraActions={e.extraActions}
+            isToggle={e.isToggle}
+            subButtons={e.subButtons}
+            is2x2Mode={e.is2x2Mode}
             campos={{
-              label, sublabel, icon, imageData, brandIcon,
-              brandIconAlwaysAnimate, brandIconCustomBitmap,
-              brandIconCustomColor, brandIconCustomPalette,
-              customGlyph57, bgColor, fgColor, pinned, fijo,
-              widget, sliderWidget,
+              label: e.label,
+              sublabel: e.sublabel,
+              icon: e.icon,
+              imageData: e.imageData,
+              brandIcon: e.brandIcon,
+              brandIconAlwaysAnimate: e.brandIconAlwaysAnimate,
+              brandIconCustomBitmap: e.brandIconCustomBitmap,
+              brandIconCustomColor: e.brandIconCustomColor,
+              brandIconCustomPalette: e.brandIconCustomPalette,
+              customGlyph57: e.customGlyph57,
+              bgColor: e.bgColor,
+              fgColor: e.fgColor,
+              pinned: e.pinned,
+              fijo: e.fijo,
+              widget: e.widget,
+              sliderWidget: e.sliderWidget,
             }}
           />
 
-          {/* Form */}
-          {/* `key={step}` fuerza a React a crear un contenedor nuevo en cada
-              paso, y uno nuevo nace arriba del todo. Sin esto se reutilizaba
-              el mismo elemento y **conservaba el desplazamiento del paso
-              anterior**: al pasar a Configurar aparecia ya bajado, tapando los
-              campos de arriba, que son los que dicen que hace el boton. */}
-          <div key={is2x2Mode ? 'subdivision-2x2' : step} className="vd-scroll" style={{ flex: 1, padding: 20, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            <FormularioPasoEditorB
-              parentId={button.id}
-              is2x2Mode={is2x2Mode}
-              step={step}
-              subButtons={subButtons}
-              onSubButtonsChange={setSubButtons}
+          <div
+            className="vd-scroll"
+            style={{
+              flex: 1,
+              padding: 12,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            {/* 1. PRESETS */}
+            <SeccionAjustes
+              titulo={t('ed.sec.presets')}
+              glyph="SPARKLE"
               accent={accent}
-              action={action}
-              setAction={setAction}
-              applyPreset={applyPreset}
-              extraActions={extraActions}
-              setExtraActions={setExtraActions}
-              filteredPresets={filteredPresets}
-              presetCategory={presetCategory}
-              setPresetCategory={setPresetCategory}
-              presetSearch={presetSearch}
-              setPresetSearch={setPresetSearch}
-              showExtraPicker={showExtraPicker}
-              setShowExtraPicker={setShowExtraPicker}
-              actionToggleOff={actionToggleOff}
-              setActionToggleOff={setActionToggleOff}
-              applyFolderPreset={applyFolderPreset}
-              audioDevices={audioDevices}
-              audioError={audioError}
-              capturing={capturing}
-              setCapturing={setCapturing}
-              folderButtons={folderButtons}
-              setFolderButtons={setFolderButtons}
-              globalHotkey={globalHotkey}
-              setGlobalHotkey={setGlobalHotkey}
-              inTrayMenu={inTrayMenu}
-              setInTrayMenu={setInTrayMenu}
-              isToggle={isToggle}
-              setIsToggle={setIsToggle}
-              label={label}
-              setLabel={setLabel}
-              loadAudioDevices={loadAudioDevices}
-              loadingDevices={loadingDevices}
-              longPressAction={longPressAction}
-              setLongPressAction={setLongPressAction}
-              pickFile={pickFile}
-              pickShortcut={pickShortcut}
-              radioGroup={radioGroup}
-              setRadioGroup={setRadioGroup}
-              rgbConnected={rgbConnected}
-              rgbDevices={rgbDevices}
-              rgbProfiles={rgbProfiles}
-              deckState={deckState}
-              pages={pages}
-              indicePaginaBoton={button.page}
-              widget={widget}
-              setWidget={setWidget}
-              sliderWidget={sliderWidget}
-              setSliderWidget={setSliderWidget}
-              setStep={setStep}
-              bgColor={bgColor}
-              brandIcon={brandIcon}
-              brandIconAlwaysAnimate={brandIconAlwaysAnimate}
-              brandIconCustomBitmap={brandIconCustomBitmap}
-              brandIconCustomColor={brandIconCustomColor}
-              brandIconCustomPalette={brandIconCustomPalette}
-              setBrandIconCustomPalette={setBrandIconCustomPalette}
-              customGlyph57={customGlyph57}
-              fgColor={fgColor}
-              icon={icon}
-              imageData={imageData}
-              pickImage={pickImage}
-              sensorList={sensorList}
-              sensorTriggerCooldown={sensorTriggerCooldown}
-              sensorTriggerId={sensorTriggerId}
-              sensorTriggerOp={sensorTriggerOp}
-              setSensorTriggerOp={setSensorTriggerOp}
-              sensorTriggerVal={sensorTriggerVal}
-              sensorWidgetCrit={sensorWidgetCrit}
-              sensorWidgetId={sensorWidgetId}
-              sensorWidgetSuffix={sensorWidgetSuffix}
-              sensorWidgetWarn={sensorWidgetWarn}
-              setBgColor={setBgColor}
-              setBrandIcon={setBrandIcon}
-              setBrandIconAlwaysAnimate={setBrandIconAlwaysAnimate}
-              setBrandIconCustomBitmap={setBrandIconCustomBitmap}
-              setBrandIconCustomColor={setBrandIconCustomColor}
-              setCustomGlyph57={setCustomGlyph57}
-              setFgColor={setFgColor}
-              setIcon={setIcon}
-              setImageData={setImageData}
-              setSensorTriggerCooldown={setSensorTriggerCooldown}
-              setSensorTriggerId={setSensorTriggerId}
-              setSensorTriggerVal={setSensorTriggerVal}
-              setSensorWidgetCrit={setSensorWidgetCrit}
-              setSensorWidgetId={setSensorWidgetId}
-              setSensorWidgetSuffix={setSensorWidgetSuffix}
-              setSensorWidgetWarn={setSensorWidgetWarn}
-              setShowBrandEditor={setShowBrandEditor}
-              setShowBrandPicker={setShowBrandPicker}
-              setShowGlyphEditor={setShowGlyphEditor}
-              setSublabel={setSublabel}
-              setTimerTriggerAt={setTimerTriggerAt}
-              setVarWidgetName={setVarWidgetName}
-              setVarWidgetPrefix={setVarWidgetPrefix}
-              setVarWidgetSuffix={setVarWidgetSuffix}
-              setVisibleIfApp={setVisibleIfApp}
-              setVisibleIfSensorId={setVisibleIfSensorId}
-              setVisibleIfSensorVal={setVisibleIfSensorVal}
-              sublabel={sublabel}
-              timerTriggerAt={timerTriggerAt}
-              varWidgetName={varWidgetName}
-              varWidgetPrefix={varWidgetPrefix}
-              varWidgetSuffix={varWidgetSuffix}
-              visibleIfApp={visibleIfApp}
-              visibleIfSensorId={visibleIfSensorId}
-              visibleIfSensorOp={visibleIfSensorOp}
-              setVisibleIfSensorOp={setVisibleIfSensorOp}
-              visibleIfSensorVal={visibleIfSensorVal}
-              currencyWidget={currencyWidget}
-              setCurrencyWidget={setCurrencyWidget}
-              pinned={pinned}
-              setPinned={setPinned}
-              fijo={fijo}
-              setFijo={setFijo}
-            />
+              abierto={e.seccionesAbiertas.presets}
+              onToggle={() => e.toggleSeccion('presets')}
+              badge={dockBadge}
+            >
+              <SeccionPresets
+                accent={accent}
+                filteredPresets={filteredPresets}
+                dockPresets={dockInfo.presets}
+                esDock={dockInfo.esDock}
+                dockGesto={dockInfo.gesto}
+                presetCategory={e.presetCategory}
+                setPresetCategory={e.setPresetCategory}
+                presetSearch={e.presetSearch}
+                setPresetSearch={e.setPresetSearch}
+                onApplyPreset={e.applyPreset}
+                onApplyDockPreset={e.applyDockPreset}
+              />
+            </SeccionAjustes>
+
+            {/* 2. ACCIÓN */}
+            <SeccionAjustes
+              titulo={t('ed.sec.action')}
+              glyph="BOLT"
+              accent={accent}
+              abierto={e.seccionesAbiertas.action}
+              onToggle={() => e.toggleSeccion('action')}
+              badge={actionBadge}
+            >
+              <SeccionAccion
+                accent={accent}
+                action={e.action}
+                setAction={e.setAction}
+                actionToggleOff={e.actionToggleOff}
+                setActionToggleOff={e.setActionToggleOff}
+                applyFolderPreset={e.applyFolderPreset}
+                audioDevices={audioDevices}
+                audioError={audioError}
+                capturing={e.capturing}
+                setCapturing={e.setCapturing}
+                folderButtons={e.folderButtons}
+                setFolderButtons={e.setFolderButtons}
+                globalHotkey={e.globalHotkey}
+                setGlobalHotkey={e.setGlobalHotkey}
+                inTrayMenu={e.inTrayMenu}
+                setInTrayMenu={e.setInTrayMenu}
+                isToggle={e.isToggle}
+                setIsToggle={e.setIsToggle}
+                label={e.label}
+                setLabel={e.setLabel}
+                loadAudioDevices={loadAudioDevices}
+                loadingDevices={loadingDevices}
+                longPressAction={e.longPressAction}
+                setLongPressAction={e.setLongPressAction}
+                pickFile={e.pickFile}
+                pickShortcut={e.pickShortcut}
+                radioGroup={e.radioGroup}
+                setRadioGroup={e.setRadioGroup}
+                rgbConnected={rgbConnected}
+                rgbDevices={rgbDevices}
+                rgbProfiles={rgbProfiles}
+                deckState={deckState}
+                pages={pages}
+                indicePaginaBoton={button.page}
+                fijo={e.fijo}
+                setFijo={e.setFijo}
+                widget={e.widget}
+                setWidget={e.setWidget}
+                sliderWidget={e.sliderWidget}
+                setSliderWidget={e.setSliderWidget}
+              />
+            </SeccionAjustes>
+
+            {/* 3. APARIENCIA */}
+            <SeccionAjustes
+              titulo={t('ed.sec.appearance')}
+              glyph="SLIDERS"
+              accent={accent}
+              abierto={e.seccionesAbiertas.appearance}
+              onToggle={() => e.toggleSeccion('appearance')}
+              badge={appearanceBadge}
+            >
+              <SeccionApariencia
+                accent={accent}
+                action={e.action}
+                bgColor={e.bgColor}
+                brandIcon={e.brandIcon}
+                brandIconAlwaysAnimate={e.brandIconAlwaysAnimate}
+                brandIconCustomBitmap={e.brandIconCustomBitmap}
+                brandIconCustomColor={e.brandIconCustomColor}
+                brandIconCustomPalette={e.brandIconCustomPalette}
+                setBrandIconCustomPalette={e.setBrandIconCustomPalette}
+                customGlyph57={e.customGlyph57}
+                deckState={deckState}
+                fgColor={e.fgColor}
+                icon={e.icon}
+                imageData={e.imageData}
+                label={e.label}
+                pickImage={e.pickImage}
+                sensorList={sensorList}
+                sensorWidgetCrit={e.sensorWidgetCrit}
+                sensorWidgetId={e.sensorWidgetId}
+                sensorWidgetSuffix={e.sensorWidgetSuffix}
+                sensorWidgetWarn={e.sensorWidgetWarn}
+                setBgColor={e.setBgColor}
+                setBrandIcon={e.setBrandIcon}
+                setBrandIconAlwaysAnimate={e.setBrandIconAlwaysAnimate}
+                setBrandIconCustomBitmap={e.setBrandIconCustomBitmap}
+                setBrandIconCustomColor={e.setBrandIconCustomColor}
+                setCustomGlyph57={e.setCustomGlyph57}
+                setFgColor={e.setFgColor}
+                setIcon={e.setIcon}
+                setImageData={e.setImageData}
+                setLabel={e.setLabel}
+                setSensorWidgetCrit={e.setSensorWidgetCrit}
+                setSensorWidgetId={e.setSensorWidgetId}
+                setSensorWidgetSuffix={e.setSensorWidgetSuffix}
+                setSensorWidgetWarn={e.setSensorWidgetWarn}
+                setShowBrandEditor={e.setShowBrandEditor}
+                setShowBrandPicker={e.setShowBrandPicker}
+                setShowGlyphEditor={e.setShowGlyphEditor}
+                setSublabel={e.setSublabel}
+                setVarWidgetName={e.setVarWidgetName}
+                setVarWidgetPrefix={e.setVarWidgetPrefix}
+                setVarWidgetSuffix={e.setVarWidgetSuffix}
+                setWidget={e.setWidget}
+                sublabel={e.sublabel}
+                varWidgetName={e.varWidgetName}
+                varWidgetPrefix={e.varWidgetPrefix}
+                varWidgetSuffix={e.varWidgetSuffix}
+                widget={e.widget}
+                currencyWidget={e.currencyWidget}
+                setCurrencyWidget={e.setCurrencyWidget}
+                sliderWidget={e.sliderWidget}
+                setSliderWidget={e.setSliderWidget}
+              />
+            </SeccionAjustes>
+
+            {/* 4. COMPORTAMIENTO */}
+            <SeccionAjustes
+              titulo={t('ed.sec.behavior')}
+              glyph="GEAR"
+              accent={accent}
+              abierto={e.seccionesAbiertas.behavior}
+              onToggle={() => e.toggleSeccion('behavior')}
+              badge={behaviorBadge}
+            >
+              <SeccionComportamiento
+                accent={accent}
+                action={e.action}
+                actionToggleOff={e.actionToggleOff}
+                setActionToggleOff={e.setActionToggleOff}
+                fijo={e.fijo}
+                setFijo={e.setFijo}
+                globalHotkey={e.globalHotkey}
+                setGlobalHotkey={e.setGlobalHotkey}
+                inTrayMenu={e.inTrayMenu}
+                setInTrayMenu={e.setInTrayMenu}
+                isToggle={e.isToggle}
+                setIsToggle={e.setIsToggle}
+                longPressAction={e.longPressAction}
+                setLongPressAction={e.setLongPressAction}
+                pinned={e.pinned}
+                setPinned={e.setPinned}
+                radioGroup={e.radioGroup}
+                setRadioGroup={e.setRadioGroup}
+                sensorList={sensorList}
+                sensorTriggerCooldown={e.sensorTriggerCooldown}
+                setSensorTriggerCooldown={e.setSensorTriggerCooldown}
+                sensorTriggerId={e.sensorTriggerId}
+                setSensorTriggerId={e.setSensorTriggerId}
+                sensorTriggerOp={e.sensorTriggerOp}
+                setSensorTriggerOp={e.setSensorTriggerOp}
+                sensorTriggerVal={e.sensorTriggerVal}
+                setSensorTriggerVal={e.setSensorTriggerVal}
+                timerTriggerAt={e.timerTriggerAt}
+                setTimerTriggerAt={e.setTimerTriggerAt}
+                visibleIfApp={e.visibleIfApp}
+                setVisibleIfApp={e.setVisibleIfApp}
+                visibleIfSensorId={e.visibleIfSensorId}
+                setVisibleIfSensorId={e.setVisibleIfSensorId}
+                visibleIfSensorOp={e.visibleIfSensorOp}
+                setVisibleIfSensorOp={e.setVisibleIfSensorOp}
+                visibleIfSensorVal={e.visibleIfSensorVal}
+                setVisibleIfSensorVal={e.setVisibleIfSensorVal}
+              />
+            </SeccionAjustes>
+
+            {/* 5. AVANZADO */}
+            <SeccionAjustes
+              titulo={t('ed.sec.advanced')}
+              glyph="TERMINAL"
+              accent={accent}
+              abierto={e.seccionesAbiertas.advanced}
+              onToggle={() => e.toggleSeccion('advanced')}
+              badge={advancedBadge}
+            >
+              <SeccionAvanzado
+                parentId={button.id}
+                is2x2Mode={e.is2x2Mode}
+                setIs2x2Mode={e.setIs2x2Mode}
+                subButtons={e.subButtons}
+                setSubButtons={e.setSubButtons}
+                action={e.action}
+                extraActions={e.extraActions}
+                setExtraActions={e.setExtraActions}
+                showExtraPicker={e.showExtraPicker}
+                setShowExtraPicker={e.setShowExtraPicker}
+                accent={accent}
+              />
+            </SeccionAjustes>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Pie con acciones directas */}
         <PieEditorB
-          step={step}
-          totalSteps={STEPS.length}
-          is2x2Mode={is2x2Mode}
-          accent={accent}
-          isConfigured={isConfigured}
           buttonId={button.id}
-          onBack={() => setStep(Math.max(0, step - 1))}
-          onNext={() => setStep(step + 1)}
-          onSave={handleSave}
-          onClose={onClose}
+          isConfigured={e.isConfigured}
+          accent={accent}
+          onSave={e.handleSave}
           onClear={onClear}
+          onClose={onClose}
         />
       </div>
-      {/* Icon Pickers & Editors Modals */}
+
+      {/* Modales de iconos y marcas */}
       <ModalesIconosEditor
-        showBrandPicker={showBrandPicker}
-        onCloseBrandPicker={() => setShowBrandPicker(false)}
-        brandIcon={brandIcon}
+        showBrandPicker={e.showBrandPicker}
+        showBrandEditor={e.showBrandEditor}
+        showGlyphEditor={e.showGlyphEditor}
+        brandIcon={e.brandIcon}
+        brandIconCustomBitmap={e.brandIconCustomBitmap}
+        brandIconCustomColor={e.brandIconCustomColor}
+        brandIconCustomPalette={e.brandIconCustomPalette}
+        customGlyph57={e.customGlyph57}
         accent={accent}
+        onCloseBrandPicker={() => e.setShowBrandPicker(false)}
+        onCloseBrandEditor={() => e.setShowBrandEditor(false)}
+        onCloseGlyphEditor={() => e.setShowGlyphEditor(false)}
         onSelectBrandIcon={(key) => {
-          setBrandIcon(key);
-          setBrandIconCustomBitmap(undefined);
-          setBrandIconCustomColor(undefined);
-          setBrandIconCustomPalette(undefined);
+          e.setBrandIcon(key);
+          e.setShowBrandPicker(false);
         }}
-        showGlyphEditor={showGlyphEditor}
-        onCloseGlyphEditor={() => setShowGlyphEditor(false)}
-        customGlyph57={customGlyph57}
-        onSaveGlyph57={setCustomGlyph57}
-        showBrandEditor={showBrandEditor}
-        onCloseBrandEditor={() => setShowBrandEditor(false)}
-        brandIconCustomBitmap={brandIconCustomBitmap}
-        brandIconCustomColor={brandIconCustomColor}
-        brandIconCustomPalette={brandIconCustomPalette}
         onSaveBrandEditor={(bmp, col, pal) => {
-          setBrandIconCustomBitmap(bmp);
-          setBrandIconCustomColor(col);
-          setBrandIconCustomPalette(pal);
+          e.setBrandIconCustomBitmap(bmp);
+          e.setBrandIconCustomColor(col);
+          e.setBrandIconCustomPalette(pal);
+          e.setShowBrandEditor(false);
+        }}
+        onSaveGlyph57={(rows) => {
+          e.setCustomGlyph57(rows);
+          e.setShowGlyphEditor(false);
         }}
       />
     </div>

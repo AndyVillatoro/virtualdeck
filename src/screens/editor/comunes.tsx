@@ -3,7 +3,6 @@ import type { VDTokens } from '../../design';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
-import { IconNone } from '../../components/VDIcon';
 import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
 import { ACTION_TYPES } from './actionData';
 import type { ActionType, ButtonAction, FolderButton, Sensor } from '../../types';
@@ -376,7 +375,7 @@ export function ExtraActionRow({
   const tr = useT();
   const tf = useFieldText();
   const meta = ACTION_TYPES.find(a => a.type === action.type);
-  const Icon = meta?.Icon ?? IconNone;
+  const glyph = meta?.glyph ?? 'DOTS';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: VD.elevated, border: `1px solid ${VD.border}`, borderRadius: VD.radius.md, padding: '6px 10px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -389,7 +388,7 @@ export function ExtraActionRow({
             {String(stepIndex + 2).padStart(2, '0')}
           </span>
         )}
-        <Icon size={14} color={VD.textDim} strokeWidth={1.5} />
+        <DotGlyphIcon glyph={glyph} size={14} color={VD.textDim} showRecessed />
         <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, minWidth: 64 }}>{meta ? tr(meta.label) : ''}</span>
         {action.type === 'app' && (
           <input value={action.appPath || ''} onChange={e => onChange({ ...action, appPath: e.target.value })} placeholder={tf("ruta o comando")} style={miniInputStyle} />

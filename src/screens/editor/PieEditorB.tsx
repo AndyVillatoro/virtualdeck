@@ -4,28 +4,23 @@ import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 
 interface PieEditorBProps {
-  step: number;
-  totalSteps: number;
-  is2x2Mode: boolean;
   accent: string;
   isConfigured: boolean;
   buttonId: string;
-  onBack: () => void;
-  onNext: () => void;
   onSave: () => void;
   onClose: () => void;
   onClear?: (id: string) => void;
+  step?: number;
+  totalSteps?: number;
+  is2x2Mode?: boolean;
+  onBack?: () => void;
+  onNext?: () => void;
 }
 
 export function PieEditorB({
-  step,
-  totalSteps,
-  is2x2Mode,
   accent,
   isConfigured,
   buttonId,
-  onBack,
-  onNext,
   onSave,
   onClose,
   onClear,
@@ -51,7 +46,7 @@ export function PieEditorB({
   return (
     <div
       style={{
-        height: 54,
+        height: 52,
         borderTop: `1px solid ${VD.border}`,
         display: 'flex',
         alignItems: 'center',
@@ -60,27 +55,7 @@ export function PieEditorB({
         flexShrink: 0,
       }}
     >
-      <button
-        onClick={onBack}
-        disabled={is2x2Mode || step === 0}
-        style={{
-          padding: '8px 14px',
-          border: `1px solid ${VD.border}`,
-          background: 'transparent',
-          fontFamily: VD.mono,
-          fontSize: 10,
-          letterSpacing: 2,
-          color: is2x2Mode || step === 0 ? VD.textMuted : VD.textDim,
-          cursor: is2x2Mode || step === 0 ? 'default' : 'pointer',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={is2x2Mode || step === 0 ? VD.textMuted : VD.textDim} />
-        <span>{t('ed.back')}</span>
-      </button>
-
+      {/* Botón vaciar / confirmar vaciar */}
       {onClear && isConfigured && (
         confirmClear ? (
           <div
@@ -88,7 +63,6 @@ export function PieEditorB({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              marginLeft: 6,
               padding: '3px 8px',
               background: `${VD.danger}14`,
               border: `1px solid ${VD.danger}66`,
@@ -99,6 +73,7 @@ export function PieEditorB({
               {t('ed.clearConfirm')}
             </span>
             <button
+              type="button"
               onClick={() => {
                 onClear(buttonId);
                 onClose();
@@ -111,7 +86,7 @@ export function PieEditorB({
                 fontFamily: VD.mono,
                 fontSize: 9,
                 letterSpacing: 1,
-                color: '#fff',
+                color: VD.bg,
                 cursor: 'pointer',
                 borderRadius: VD.radius.sm,
                 display: 'inline-flex',
@@ -119,10 +94,11 @@ export function PieEditorB({
                 gap: 5,
               }}
             >
-              <DotGlyphIcon glyph="CHECK" size={8} color="#fff" />
+              <DotGlyphIcon glyph="CHECK" size={8} color={VD.bg} />
               <span>{t('ed.confirmClear')}</span>
             </button>
             <button
+              type="button"
               onClick={() => setConfirmClear(false)}
               title={t('ed.cancel')}
               style={{
@@ -143,6 +119,7 @@ export function PieEditorB({
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setConfirmClear(true)}
             title={t('ed.clear')}
             style={{
@@ -155,7 +132,6 @@ export function PieEditorB({
               color: VD.danger,
               cursor: 'pointer',
               borderRadius: VD.radius.sm,
-              marginLeft: 6,
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
@@ -177,12 +153,10 @@ export function PieEditorB({
       )}
 
       <div style={{ flex: 1 }} />
-      {!is2x2Mode && (
-        <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, letterSpacing: 1 }}>
-          {t('ed.stepN', { n: step + 1, total: totalSteps })}
-        </span>
-      )}
+
+      {/* Botón Cancelar */}
       <button
+        type="button"
         onClick={onClose}
         style={{
           padding: '8px 14px',
@@ -193,6 +167,7 @@ export function PieEditorB({
           letterSpacing: 2,
           color: VD.textDim,
           cursor: 'pointer',
+          borderRadius: VD.radius.sm,
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
@@ -201,11 +176,11 @@ export function PieEditorB({
         <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textDim} />
         <span>{t('ed.cancel')}</span>
       </button>
+
+      {/* Botón Guardar */}
       <button
-        onClick={() => {
-          if (!is2x2Mode && step < totalSteps - 1) onNext();
-          else onSave();
-        }}
+        type="button"
+        onClick={onSave}
         style={{
           padding: '8px 20px',
           background: accent,
@@ -213,16 +188,17 @@ export function PieEditorB({
           fontFamily: VD.mono,
           fontSize: 10,
           letterSpacing: 2,
-          color: '#fff',
+          color: VD.bg,
           cursor: 'pointer',
           borderRadius: VD.radius.sm,
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
+          fontWeight: 600,
         }}
       >
-        <span>{is2x2Mode || step >= totalSteps - 1 ? t('ed.save') : t('ed.next')}</span>
-        <DotGlyphIcon glyph={!is2x2Mode && step < totalSteps - 1 ? 'ARROW_RIGHT' : 'CHECK'} size={8} color="#fff" />
+        <span>{t('ed.save')}</span>
+        <DotGlyphIcon glyph="CHECK" size={8} color={VD.bg} />
       </button>
     </div>
   );

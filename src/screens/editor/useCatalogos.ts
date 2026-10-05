@@ -25,9 +25,9 @@ export interface Catalogos {
 
 export function useCatalogos(
   actionType: string,
-  step: number,
+  step?: number,
   /** Lo que se este mirando de sensores: al tocarlo se refresca el catalogo. */
-  claveSensores: string,
+  claveSensores: string = '',
 ): Catalogos {
   const tf = useFieldText();
   const api = window.electronAPI;

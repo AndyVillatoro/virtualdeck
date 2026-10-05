@@ -1,5 +1,4 @@
-import type React from 'react';
-import { VD_ACTION_ICONS, IconNone, type VDIconProps } from '../VDIcon';
+import { GLIFO_POR_TIPO_ACCION } from '../dot480/glifosPorTipoAccion';
 import type { VDTokens } from '../../design';
 import type { ButtonConfig } from '../../types';
 
@@ -15,7 +14,8 @@ export interface DerivadosCelda {
   isEmpty: boolean;
   /** Lo que se enseña: el nombre puesto, o el tipo de acción a falta de él. */
   displayLabel: string;
-  ActionIcon: React.ComponentType<VDIconProps>;
+  /** Glifo DOT 8×8 del tipo de acción, cuando no hay ninguno más específico. */
+  actionGlyph: string;
   iconColor: string;
   /** Cuántas acciones encadena, si son más de una. 0 = no se enseña. */
   multiCount: number;
@@ -23,7 +23,7 @@ export interface DerivadosCelda {
   titulo: string;
 }
 
-const ICONOS: Record<string, React.ComponentType<VDIconProps>> = VD_ACTION_ICONS;
+const ICONOS: Record<string, string> = GLIFO_POR_TIPO_ACCION;
 
 export function derivarCelda(
   button: ButtonConfig,
@@ -47,7 +47,7 @@ export function derivarCelda(
     isEmpty,
     displayLabel,
     titulo: isEmpty ? t('cell.tipEmpty') : t('cell.tipFilled', { etiqueta: displayLabel }),
-    ActionIcon: ICONOS[button.action.type] ?? IconNone,
+    actionGlyph: ICONOS[button.action.type] ?? 'DOTS',
     iconColor: isEmpty ? VD.textMuted : (button.fgColor || (toggled ? accent : VD.text)),
     multiCount: button.actions && button.actions.length > 1 ? button.actions.length : 0,
   };

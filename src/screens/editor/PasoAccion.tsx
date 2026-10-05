@@ -71,7 +71,9 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {filteredPresets.map((preset, i) => {
-              const PresetIcon = ACTION_TYPES.find(at => at.type === preset.action.type)?.Icon;
+              const dotGlyph = (preset.icon && resolveDotGlyph(preset.icon))
+                || ACTION_TYPES.find((at) => at.type === preset.action.type)?.glyph
+                || 'DOTS';
               return (
                 <div
                   key={i}
@@ -88,30 +90,12 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
                 >
-                  {(() => {
-                    const dotGlyph = preset.icon ? resolveDotGlyph(preset.icon) : null;
-                    if (dotGlyph) {
-                      return (
-                        <DotGlyphIcon
-                          glyph={dotGlyph}
-                          size={16}
-                          color={preset.fgColor || VD.text}
-                          showRecessed
-                        />
-                      );
-                    }
-                    if (preset.icon) {
-                      return (
-                        <div style={{ fontSize: 16, color: preset.fgColor || VD.text, lineHeight: 1, fontFamily: VD.dots }}>
-                          {preset.icon}
-                        </div>
-                      );
-                    }
-                    if (PresetIcon) {
-                      return <PresetIcon size={18} color={preset.fgColor || VD.text} />;
-                    }
-                    return <DotGlyphIcon glyph="DOTS" size={14} color={preset.fgColor || VD.text} showRecessed />;
-                  })()}
+                  <DotGlyphIcon
+                    glyph={dotGlyph}
+                    size={16}
+                    color={preset.fgColor || VD.text}
+                    showRecessed
+                  />
                   <div style={{ fontFamily: VD.mono, fontSize: 8, color: preset.fgColor || VD.textDim, textAlign: 'center', maxWidth: 62, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {preset.label}
                   </div>
@@ -133,7 +117,6 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
           </DotLabel>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
             {ACTION_TYPES.map((at) => {
-              const Icon = at.Icon;
               const active = action.type === at.type;
               return (
                 <div
@@ -146,7 +129,7 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
                   }}
                 >
-                  <Icon size={16} color={active ? accent : VD.textMuted} strokeWidth={1.5} />
+                  <DotGlyphIcon glyph={at.glyph} size={16} color={active ? accent : VD.textMuted} showRecessed />
                   <div>
                     <div style={{ fontFamily: VD.mono, fontSize: 9, color: active ? VD.text : VD.textDim, letterSpacing: 0.5 }}>{t(at.label)}</div>
                     <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 1 }}>{t(at.desc)}</div>
@@ -216,7 +199,6 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
             {showExtraPicker && (
               <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
                 {ACTION_TYPES.filter(at => at.type !== 'none' && at.type !== 'folder').map(at => {
-                  const Icon = at.Icon;
                   return (
                     <div key={at.type} onClick={() => {
                       setExtraActions(prev => [...prev, { type: at.type }]);
@@ -229,7 +211,7 @@ export function PasoAccion({ accent, action, setAction, applyPreset, extraAction
                       onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
                       onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
                     >
-                      <Icon size={12} color={VD.textMuted} strokeWidth={1.5} />
+                      <DotGlyphIcon glyph={at.glyph} size={12} color={VD.textMuted} showRecessed />
                       <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim }}>{t(at.label)}</span>
                     </div>
                   );

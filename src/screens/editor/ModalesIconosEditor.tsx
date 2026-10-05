@@ -1,8 +1,8 @@
-import React, { lazy, Suspense } from 'react';
-import { Glyph57Editor } from '../../components/Glyph57Editor';
+import React, { lazy, Suspense, useMemo } from 'react';
+import { EditorPuntos } from '../../components/dot480/EditorPuntos';
+import { iconoDeCatalogo, useCatalogoMarcas } from '../../utils/catalogoMarcas';
 
 const BrandIconPicker = lazy(() => import('../../components/BrandIconPicker').then(m => ({ default: m.BrandIconPicker })));
-const BrandIconEditor = lazy(() => import('../../components/BrandIconEditor').then(m => ({ default: m.BrandIconEditor })));
 
 interface ModalesIconosEditorProps {
   showBrandPicker: boolean;
@@ -41,6 +41,35 @@ export function ModalesIconosEditor({
   brandIconCustomPalette,
   onSaveBrandEditor,
 }: ModalesIconosEditorProps) {
+  // La base del icono (catálogo diferido) para la pestaña 17×17.
+  const catalogo = useCatalogoMarcas();
+  const base = brandIcon ? iconoDeCatalogo(catalogo, brandIcon) : undefined;
+
+  const marcaCustom = useMemo(
+    () => ({
+      bitmap: brandIconCustomBitmap,
+      color: brandIconCustomColor,
+      palette: brandIconCustomPalette,
+    }),
+    [brandIconCustomBitmap, brandIconCustomColor, brandIconCustomPalette],
+  );
+  const marcaBase = useMemo(
+    () =>
+      base
+        ? { bitmap: base.bitmap, color: base.color, palette: base.palette }
+        : undefined,
+    [base],
+  );
+
+  // Un solo editor de puntos en vez de los dos modales originales. La interfaz
+  // de este componente no cambia: quien lo monta sigue pasando las mismas props.
+  const verPuntos = showGlyphEditor || (showBrandEditor && !!brandIcon);
+
+  function cerrarPuntos() {
+    onCloseGlyphEditor();
+    onCloseBrandEditor();
+  }
+
   return (
     <>
       {showBrandPicker && (
@@ -54,32 +83,23 @@ export function ModalesIconosEditor({
         </Suspense>
       )}
 
-      {showGlyphEditor && (
-        <Glyph57Editor
-          initial={customGlyph57}
+      {verPuntos && (
+        <EditorPuntos
           accent={accent}
-          onSave={(rows) => {
-            if (rows.every((r) => r === 0)) onSaveGlyph57(undefined);
+          pestanaInicial={showBrandEditor && brandIcon ? 'marca' : 'glifo'}
+          iconKey={brandIcon ?? ''}
+          etiquetaMarca={base?.label ?? brandIcon ?? ''}
+          glifoInicial={customGlyph57}
+          marcaCustom={marcaCustom}
+          marcaBase={marcaBase}
+          alGuardarGlifo={(rows) => {
+            if (!rows || rows.every((r) => r === 0)) onSaveGlyph57(undefined);
             else onSaveGlyph57(rows);
           }}
-          onClose={onCloseGlyphEditor}
+          alGuardarMarca={(bmp, col, pal) => onSaveBrandEditor(bmp, col, pal)}
+          onClose={cerrarPuntos}
         />
-      )}
-
-      {showBrandEditor && brandIcon && (
-        <Suspense fallback={null}>
-          <BrandIconEditor
-            iconKey={brandIcon}
-            customBitmap={brandIconCustomBitmap}
-            customColor={brandIconCustomColor}
-            customPalette={brandIconCustomPalette}
-            accent={accent}
-            onSave={onSaveBrandEditor}
-            onClose={onCloseBrandEditor}
-          />
-        </Suspense>
       )}
     </>
   );
 }
-

@@ -167,7 +167,7 @@ function colorTexto(boton: ButtonConfig | null, colores: ColoresSuperficie): str
 }
 
 /** Carga una imagen sin manchar el canvas (si no admite CORS, se descarta). */
-function cargarImagen(src: string): Promise<HTMLImageElement | null> {
+export function cargarImagen(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const imagen = new Image();
     imagen.crossOrigin = 'anonymous';
@@ -177,11 +177,17 @@ function cargarImagen(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
-function cubrir(imagen: HTMLImageElement, ancho: number, alto: number): [number, number, number, number] {
-  const escala = Math.max(ancho / imagen.width, alto / imagen.height);
-  const w = imagen.width * escala;
-  const h = imagen.height * escala;
-  return [(ancho - w) / 2, (alto - h) / 2, w, h];
+/**
+ * Un trozo de imagen ya decodificado que se pinta como fondo con la trama.
+ * Para la imagen estática es el `<img>` entero; para un GIF animado, la celda
+ * de la hoja de fotogramas (`vd://frames/…`, ver `protocoloVd.ts`) que toca.
+ */
+export interface CuadroLcd {
+  fuente: CanvasImageSource;
+  sx: number;
+  sy: number;
+  ancho: number;
+  alto: number;
 }
 
 /** Dibuja un SVG (texto) encajado en una caja cuadrada centrada. */
@@ -202,15 +208,20 @@ async function dibujarSvg(
  * ve por micro-aperturas circulares y el resto queda en negro OLED. El paso se
  * escala al LCD (16 aperturas por lado, como la celda a 96 px).
  */
-async function dibujarImagenConTrama(
-  ctx: CanvasRenderingContext2D, src: string, ancho: number, alto: number,
-): Promise<boolean> {
-  const imagen = await cargarImagen(src);
-  if (!imagen) return false;
+function dibujarConTrama(
+  ctx: CanvasRenderingContext2D, cuadro: CuadroLcd, ancho: number, alto: number,
+): void {
   const capa = crearLienzo(ancho, alto);
   const ctxCapa = contexto(capa);
-  if (!ctxCapa) return false;
-  ctxCapa.drawImage(imagen, ...cubrir(imagen, ancho, alto));
+  if (!ctxCapa) return;
+  // «Cover» con recorte centrado: la misma regla que la celda.
+  const escala = Math.max(ancho / cuadro.ancho, alto / cuadro.alto);
+  const w = cuadro.ancho * escala;
+  const h = cuadro.alto * escala;
+  ctxCapa.drawImage(
+    cuadro.fuente, cuadro.sx, cuadro.sy, cuadro.ancho, cuadro.alto,
+    (ancho - w) / 2, (alto - h) / 2, w, h,
+  );
 
   const paso = Math.max(3, ancho / TRAMA_DIVISIONES);
   const radio = paso * TRAMA_RADIO;
@@ -231,6 +242,15 @@ async function dibujarImagenConTrama(
   ctxCapa.fillRect(0, 0, ancho, alto);
 
   ctx.drawImage(capa, 0, 0);
+}
+
+/** Igual que `dibujarConTrama`, cargando antes la imagen estática del botón. */
+async function dibujarImagenConTrama(
+  ctx: CanvasRenderingContext2D, src: string, ancho: number, alto: number,
+): Promise<boolean> {
+  const imagen = await cargarImagen(src);
+  if (!imagen) return false;
+  dibujarConTrama(ctx, { fuente: imagen, sx: 0, sy: 0, ancho: imagen.width, alto: imagen.height }, ancho, alto);
   return true;
 }
 
@@ -494,4 +514,38 @@ export async function pintarTecla(
 
   const dataUrl = aDataUrlPng(lienzo);
   return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl };
+}
+
+/**
+ * Pinta un hueco con un fotograma ya decodificado en lugar de la imagen
+ * estática: fondo, trama de puntos, rótulo y giro, exactamente como
+ * `pintarTecla` con `imageData`. Lo usa el animador de GIF (la hoja de
+ * fotogramas llega como `CuadroLcd`) sin volver a leer la imagen de disco.
+ */
+export async function pintarTeclaConCuadro(
+  boton: ButtonConfig | null,
+  lcd: LcdControl,
+  colores: ColoresSuperficie,
+  cuadro: CuadroLcd,
+  opciones: OpcionesPintado = {},
+  rotacion?: number,
+): Promise<ImagenTecla> {
+  await prepararFuentesLcd();
+  const { ancho, alto } = lcd;
+  const lienzo = crearLienzo(ancho, alto);
+  const ctx = contexto(lienzo);
+  if (!ctx) return { jpegBase64: codificarNegro(ancho, alto), dataUrl: '' };
+
+  ctx.fillStyle = colorFondo(boton, colores);
+  ctx.fillRect(0, 0, ancho, alto);
+  dibujarConTrama(ctx, cuadro, ancho, alto);
+  if (boton) {
+    if (boton.brandIcon && boton.icon) {
+      const centroY = boton.label ? alto * 0.42 : alto * 0.5;
+      await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
+    }
+    // Un GIF es siempre fondo: el rótulo va sobre él, con el mismo degradado.
+    dibujarEtiqueta(ctx, boton.label ?? '', ancho, alto, colorTexto(boton, colores), true);
+  }
+  return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl: '' };
 }

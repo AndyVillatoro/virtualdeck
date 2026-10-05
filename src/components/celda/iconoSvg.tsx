@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { IconNone, VD_ACTION_ICONS } from '../VDIcon';
 import { DotGlyphIcon, resolveDotGlyph } from '../dot480/DotGlyphIcon';
+import { GLIFO_POR_TIPO_ACCION } from '../dot480/glifosPorTipoAccion';
 import type { ButtonConfig } from '../../types';
 
 /**
@@ -9,8 +9,8 @@ import type { ButtonConfig } from '../../types';
  * canvas.
  *
  * Usa **los mismos** componentes que la celda: `DotGlyphIcon` (el glifo DOT
- * 8×8 de `button.icon`, con relieve) y `VD_ACTION_ICONS` (el icono del tipo de
- * acción, último recurso). Vive en `components/` porque `src/utils/` no puede
+ * 8×8 de `button.icon`, con relieve) y el glifo del tipo de acción de
+ * `GLIFO_POR_TIPO_ACCION` (último recurso). Vive en `components/` porque `src/utils/` no puede
  * importar componentes; quien pinta lo recibe inyectado
  * (`opciones.iconoSvg` / `opciones.esGlifoDot`).
  *
@@ -43,8 +43,13 @@ export function svgDeBoton(
     );
     return normalizar(svg, color);
   }
-  const Icono = VD_ACTION_ICONS[boton.action.type] ?? IconNone;
-  return normalizar(renderToStaticMarkup(<Icono size={64} color={color} />), color);
+  const glifo = GLIFO_POR_TIPO_ACCION[boton.action.type] ?? 'DOTS';
+  return normalizar(
+    renderToStaticMarkup(
+      <DotGlyphIcon glyph={glifo} size={64} color={color} dimColor={dimColor} showRecessed={!sobreFondo} />,
+    ),
+    color,
+  );
 }
 
 /**

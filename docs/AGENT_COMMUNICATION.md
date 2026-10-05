@@ -66,6 +66,9 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-HW-15** | P1 | Ventana anterior / siguiente: Rust `cycle_window` (supervisor) + acción `window-cycle` (opencode) (74) | Claude Opus 5.5 + opencode | `crates/**`, `electron/main/launcher.ts`, `native.ts`, IPC, editor, presets | `VERIFYING` (falta instalar el `.node` nuevo y probar) | 2026-10-04 |
 | **T-HW-16** | P1 | Plantillas de página por app y su operación (75) | opencode | `src/data/plantillasApp.ts`, `src/utils/useDeck/**` | `VERIFYING` (check y build en verde; falta la prueba) | 2026-10-04 |
 | **T-HW-17** | P1 | Selector de app (abiertas / buscar .exe / plantilla) (75) | agy | `src/components/SelectorApp.tsx`, `ModalVincularApp.tsx`, `PestanasSuperficie.tsx` | `VERIFYING` (check y build en verde; falta la prueba) | 2026-10-04 |
+| **T-UI-01** | P1 | Un solo editor de dibujo DOT + inventario de iconos de primera generación (81) | opencode (wE) | `src/components/dot480/EditorPuntos.tsx` (nuevo), `ModalesIconosEditor.tsx` | `VERIFYING` (check y build en verde; falta verlo) | 2026-10-04 |
+| **T-UI-02** | P1 | Editor de botones en secciones plegables, presets ordenados (80) | agy | `src/screens/EditorB.tsx`, `src/screens/editor/**` salvo `ModalesIconosEditor.tsx` | `VERIFYING` (check y build en verde; falta verlo) | 2026-10-04 |
+| **T-UI-03** | P1 | GIF animado en tecla física, mando móvil y barra flotante (77) | opencode (wN, DeepSeek V4.1 Flash, Go) | `src/utils/superficies/**`, `FloatingBarB.tsx`, `paginaMando.ts`, `servidorLocal.ts`, `protocoloVd.ts` | `VERIFYING` (check y build en verde; falta verlo) | 2026-10-04 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
