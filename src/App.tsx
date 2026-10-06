@@ -1,13 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MainB } from './screens/MainB';
 import { FullscreenB } from './screens/FullscreenB';
-import { EditorB } from './screens/EditorB';
-import { WallpaperB } from './screens/WallpaperB';
-import { RGBManagerB } from './screens/RGBManagerB';
-import { BarConfigB } from './screens/BarConfigB';
-import { DispositivosB } from './screens/DispositivosB';
+import { EsperaVista } from './screens/EsperaVista';
 import { SearchOverlay } from './components/SearchOverlay';
-import { Onboarding } from './components/Onboarding';
+// Lo que no se ve al arrancar va en carga diferida: cada pantalla es un trozo
+// aparte y el JS principal baja. El tutorial (Onboarding) también, que solo
+// sale en la primera ejecución. La principal, kiosko y la búsqueda se quedan.
+const EditorB = React.lazy(() => import('./screens/EditorB').then((m) => ({ default: m.EditorB })));
+const WallpaperB = React.lazy(() => import('./screens/WallpaperB').then((m) => ({ default: m.WallpaperB })));
+const RGBManagerB = React.lazy(() => import('./screens/RGBManagerB').then((m) => ({ default: m.RGBManagerB })));
+const BarConfigB = React.lazy(() => import('./screens/BarConfigB').then((m) => ({ default: m.BarConfigB })));
+const DispositivosB = React.lazy(() => import('./screens/DispositivosB').then((m) => ({ default: m.DispositivosB })));
+const Onboarding = React.lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
 import { DotGlyphIcon } from './components/dot480/DotGlyphIcon';
 import { NowPlayingProvider } from './utils/nowPlaying';
 import { LanguageProvider, useT } from './utils/i18n';
@@ -588,6 +592,7 @@ export default function App() {
     <ThemeProvider theme={config.theme ?? 'dark'} accent={config.accent}>
     <NowPlayingProvider>
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      <Suspense fallback={<EsperaVista />}>
       {view === 'main' && (
         <MainB
           onCrearDesdePlantilla={(p, a) => { const i = config.pages.length; if (crearPaginaDesdePlantilla(p, a, null)) setActivePage(i); }}
@@ -736,6 +741,7 @@ export default function App() {
           onClose={finishOnboarding}
         />
       )}
+      </Suspense>
 
       {searchOpen && view === 'main' && (
         <SearchOverlay

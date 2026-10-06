@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { ThemeProvider } from '../utils/theme';
 import { LanguageProvider } from '../utils/i18n';
 import type { DeckConfig } from '../types';
-import { ContenidoTienda } from './tienda/ContenidoTienda';
+import { EsperaVista } from './EsperaVista';
 import { instaladosDeConfig } from './tienda/tiendaUtils';
+// El contenido solo se necesita en la ventana de la tienda: fuera del JS
+// inicial, que comparten las tres ventanas. (`main.tsx` no se toca.)
+const ContenidoTienda = React.lazy(() => import('./tienda/ContenidoTienda').then((m) => ({ default: m.ContenidoTienda })));
 
 /**
  * La tienda en ventana propia (`index.html#tienda`).
@@ -29,7 +32,9 @@ export function TiendaB() {
   return (
     <LanguageProvider pref={config.language}>
       <ThemeProvider theme={config.theme ?? 'dark'} accent={config.accent}>
-        <ContenidoTienda instalados={instaladosDeConfig(config)} accent={config.accent} />
+        <Suspense fallback={<EsperaVista />}>
+          <ContenidoTienda instalados={instaladosDeConfig(config)} accent={config.accent} />
+        </Suspense>
       </ThemeProvider>
     </LanguageProvider>
   );

@@ -1,5 +1,6 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import type { Plugin } from 'vite';
 import { resolve } from 'path';
 
@@ -52,10 +53,22 @@ export default defineConfig({
   renderer: {
     root: resolve(__dirname),
     build: {
+      // electron-vite pone `minify: false` por defecto y el JS salía sin
+      // comprimir (1,7 MB el principal, 1,5 MB el índice de iconos). Con
+      // esbuild no cambia el comportamiento, solo los bytes servidos.
+      minify: true,
       rollupOptions: {
         input: { index: resolve(__dirname, 'index.html') },
       },
     },
-    plugins: [react(), cspDeDesarrollo()],
+    // `npm run analizar` (ANALIZAR=1) añade el mapa de treemap del bundle del
+    // renderer a `stats-renderer.html`, sin tocar el build normal.
+    plugins: [
+      react(),
+      cspDeDesarrollo(),
+      ...(process.env['ANALIZAR'] === '1'
+        ? [visualizer({ filename: 'stats-renderer.html', gzipSize: true, open: false })]
+        : []),
+    ],
   },
 });

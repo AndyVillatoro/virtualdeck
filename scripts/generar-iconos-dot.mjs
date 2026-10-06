@@ -123,6 +123,50 @@ function sinDuplicados(lista) {
   return [...new Set(lista)];
 }
 
+/**
+ * Poda de etiquetas del índice de búsqueda (T-OPT-01).
+ *
+ * La búsqueda (`coincideBusqueda` en `useSelectorIconosDot`) hace `includes`
+ * del término sobre id, nombre y cada etiqueta, así que sobra todo lo que ya
+ * se encuentra por otro camino:
+ *   · subcadena del id o del nombre (`arrow` en `arrow-right`, `football` en
+ *     `ball-football`, alias que repiten el título de la marca);
+ *   · duplicadas insensible a mayúsculas;
+ *   · de menos de 3 letras, **solo si son redundantes**: las cortas que
+ *     aportan (`3d`, `ai`, `ui`, `tv`, `js`…) son a veces la única vía para
+ *     encontrar el icono y se quedan;
+ *   · subcadena de otra etiqueta conservada del mismo icono (`sport` en
+ *     `sports`): el término se encuentra por la larga.
+ */
+function podarEtiquetas(id, nombre, etiquetas) {
+  const idM = String(id).toLowerCase();
+  const nombreM = String(nombre).toLowerCase();
+  const vistas = new Set();
+  const utiles = [];
+  for (const t of etiquetas) {
+    const tl = String(t).toLowerCase();
+    if (vistas.has(tl)) continue;
+    vistas.add(tl);
+    if (idM.includes(tl) || nombreM.includes(tl)) continue;
+    // Las de menos de 3 letras que llegan aquí NO son redundantes: no están
+    // en el id ni en el nombre (`3d`, `ai`, `ui`, `tv`, `js`…) y a veces son
+    // la única vía para encontrar el icono, así que se quedan. Las cortas
+    // redundantes ya cayeron en la regla anterior.
+    utiles.push(t);
+  }
+  // De las que quedan, fuera las subcadenas de una hermana más larga. Se
+  // ordena de larga a corta para que la larga gane siempre.
+  const ordenadas = [...new Set(utiles.map((t) => String(t).toLowerCase()))]
+    .sort((a, b) => b.length - a.length);
+  const conservadas = [];
+  for (const tl of ordenadas) {
+    if (conservadas.some((u) => u.includes(tl))) continue;
+    conservadas.push(tl);
+  }
+  const juego = new Set(conservadas);
+  return utiles.filter((t) => juego.has(String(t).toLowerCase()));
+}
+
 function encendido(bits, x, y) {
   if (x < 0 || x > 15 || y < 0 || y > 15) return false;
   const i = x + 16 * y;
@@ -421,7 +465,9 @@ async function main() {
     umbral,
     iconos: acciones.validos.map((i) => [i.id, i.bits.toString('base64')]),
   });
-  const ternas = (lista) => lista.map((i) => [i.id, i.nombre, i.etiquetas]);
+  // El índice guarda las etiquetas ya podadas: la búsqueda no cambia porque
+  // todo lo quitado se encontraba por id, por nombre o por otra etiqueta.
+  const ternas = (lista) => lista.map((i) => [i.id, i.nombre, podarEtiquetas(i.id, i.nombre, i.etiquetas)]);
   tam.indice = escribirIndice(join(DIR_SALIDA, 'indice.json'), {
     marcas: ternas(marcas.validos),
     acciones: ternas(acciones.validos),
