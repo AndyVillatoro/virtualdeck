@@ -169,6 +169,7 @@ const api = {
     snapWindow: (position: string, processName?: string): Promise<boolean> => ipcRenderer.invoke('launch:snapWindow', position, processName),
     cycleWindow: (adelante: boolean): Promise<boolean> => ipcRenderer.invoke('launch:cycleWindow', adelante),
     openApps: (): Promise<string[]> => ipcRenderer.invoke('launch:openApps'),
+    iconoApp: (proceso: string): Promise<string | null> => ipcRenderer.invoke('launch:iconoApp', proceso),
   },
   dialog: {
     openFile: (opts?: object): Promise<string | null> => ipcRenderer.invoke('dialog:openFile', opts),

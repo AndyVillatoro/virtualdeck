@@ -5,7 +5,7 @@ import { urlAbrible } from '../abrirExterno';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
   sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume,
-  getRunningProcesses, snapWindow, cycleWindow, openApps, isProcessRunning, focusWindow, closeWindow,
+  getRunningProcesses, snapWindow, cycleWindow, openApps, iconoApp, isProcessRunning, focusWindow, closeWindow,
 } from '../launcher';
 
 export function registerLauncherIpc(win: BrowserWindow) {
@@ -57,6 +57,7 @@ export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:snapWindow', (_e: any, position: string, processName?: string) => snapWindow(position, processName));
   ipcMain.handle('launch:cycleWindow', (_e: any, adelante: boolean) => cycleWindow(adelante));
   ipcMain.handle('launch:openApps', () => openApps());
+  ipcMain.handle('launch:iconoApp', (_e: any, proceso: string) => iconoApp(String(proceso ?? '')));
   ipcMain.handle('state:activeApps', () => getRunningProcesses());
   // La foto actual, para que una ventana recien abierta no espere al primer
   // tic. Los cambios llegan luego por el evento `estado:changed`.

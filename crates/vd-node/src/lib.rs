@@ -365,6 +365,13 @@ pub fn cycle_window(adelante: bool) -> bool {
     informar("cycleWindow", vd_core::launcher::cycle_window(adelante).map(|_| ()))
 }
 
+/// El icono de una app abierta, en puntos 16×16 (base64, formato del catálogo
+/// de iconos); `null` si no está abierta o Windows no da su icono.
+#[napi]
+pub fn icono_app(proceso: String) -> Option<String> {
+    vd_core::launcher::icono_app(&proceso)
+}
+
 /// Procesos con una ventana de aplicación abierta (sin `.exe`, en minúsculas,
 /// sin repetir): para elegir la app de una página sin teclear su nombre.
 #[napi]

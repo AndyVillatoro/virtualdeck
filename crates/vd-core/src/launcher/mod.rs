@@ -12,6 +12,9 @@
 mod brillo;
 mod procesos;
 mod ventanas;
+mod icono_app;
+
+pub use icono_app::icono_app;
 
 pub use brillo::{brightness, set_brightness};
 pub use procesos::{

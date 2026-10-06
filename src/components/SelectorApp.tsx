@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotGlyphIcon } from './dot480/DotGlyphIcon';
+import { IconoPuntos } from './dot480/IconoPuntos';
 import { esAppPropia, normalizarApp } from '../utils/apps';
 import { plantillaParaApp } from '../data/plantillasApp';
 
@@ -25,7 +26,32 @@ interface FichaAppProps {
   vd: ReturnType<typeof useTheme>;
 }
 
+/**
+ * Iconos de las apps ya pedidos al núcleo (roadmap 86): se piden una vez por
+ * proceso y sesión. `null` = sin icono (sin núcleo, o Windows no lo da).
+ */
+const iconosPedidos = new Map<string, Promise<string | null>>();
+function pedirIcono(proc: string): Promise<string | null> {
+  if (!window.electronAPI?.launch?.iconoApp) return Promise.resolve(null);
+  if (!iconosPedidos.has(proc)) {
+    iconosPedidos.set(proc, window.electronAPI.launch.iconoApp(proc).catch(() => null));
+  }
+  return iconosPedidos.get(proc) as Promise<string | null>;
+}
+
+/** El icono de la app en puntos, si el núcleo lo da. */
+function useIconoApp(proc: string): string | null {
+  const [bits, setBits] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    void pedirIcono(proc).then((b) => { if (vivo) setBits(b); });
+    return () => { vivo = false; };
+  }, [proc]);
+  return bits;
+}
+
 function FichaApp({ proc, seleccionada, onElegir, vd }: FichaAppProps) {
+  const icono = useIconoApp(proc);
   return (
     <button
       type="button"
@@ -51,6 +77,7 @@ function FichaApp({ proc, seleccionada, onElegir, vd }: FichaAppProps) {
       }}
     >
       {seleccionada && <DotGlyphIcon glyph="CHECK" size={8} color={vd.accent} />}
+      {icono && <IconoPuntos bits={icono} size={16} color={seleccionada ? vd.accent : vd.text} />}
       <span>{proc}</span>
     </button>
   );

@@ -614,6 +614,17 @@ export async function openApps(): Promise<string[]> {
   return r ?? [];
 }
 
+/**
+ * El icono de una app abierta en puntos 16×16 (base64, el formato de
+ * `iconoPuntos`), para enseñarla en el selector de apps y como icono de su
+ * página. Sin núcleo —o con uno viejo sin la función— `null`: se enseña el
+ * nombre solo, no hay respaldo en PowerShell.
+ */
+export async function iconoApp(proceso: string): Promise<string | null> {
+  const r = intentarNativo('iconoApp', (n) => (typeof n.iconoApp === 'function' ? n.iconoApp(proceso) : null));
+  return r ?? null;
+}
+
 export async function focusWindow(processName: string): Promise<boolean> {
   const r = intentarNativo('focusWindow', (n) => n.focusWindow(processName));
   if (r !== undefined) return r;

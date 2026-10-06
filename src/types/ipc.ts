@@ -148,6 +148,8 @@ export interface ElectronAPI {
     cycleWindow: (adelante: boolean) => Promise<boolean>;
     /** Apps con ventana abierta (proceso sin `.exe`); vacía sin núcleo nativo. */
     openApps: () => Promise<string[]>;
+    /** Icono de una app abierta en puntos 16×16 (base64, formato de `iconoPuntos`); `null` sin núcleo. */
+    iconoApp: (proceso: string) => Promise<string | null>;
   };
   dialog: {
     openFile: (opts?: object) => Promise<string | null>;

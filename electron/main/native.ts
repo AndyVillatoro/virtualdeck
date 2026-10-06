@@ -68,6 +68,7 @@ export interface NucleoNativo {
   /** Siguiente (`true`) o anterior (`false`) en orden estable por proceso. */
   cycleWindow: (adelante: boolean) => boolean;
   openApps: () => string[];
+  iconoApp: (proceso: string) => string | null;
   getActiveWindow: () => { processName: string | null; windowTitle: string | null } | null;
   focusWindow: (processName: string) => boolean;
   minimizeWindow: (processName?: string) => boolean;
