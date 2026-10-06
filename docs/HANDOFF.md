@@ -615,6 +615,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Pendiente:** compartir la interpolación de variables entre `mandoVivo.ts` y el renderer (está duplicada: hace falta una excepción de capas para un módulo puro); el clima se consulta también desde la barra flotante; guardián de paridad; 83 plugins (prototipo); 0.14.0.
 * **Trabajadores:** opencode `wP` (Muse Spark 1.3 Free), opencode `wN` (DeepSeek por Go, ~$0.64 + esta ronda), agy `wK`. El pane `wE` desapareció. Plugin nuevo del dueño: `rust-analyzer-lsp` (componente instalado con rustup; se activa al reiniciar Claude Code).
 
+## Turno 2026-10-05 (noche) — lógica compartida con el móvil y guardián de paridad
+
+* **T-COM-01 (opencode `wN`, DeepSeek V4.1 Flash por Go, ~$0.06):** `src/comun/` (`interpolar.ts`, `visibilidad.ts`, `widgets.ts`), módulos puros que usan el deck y `mandoVivo.ts`; el renderer reexporta para no tocar a los llamadores. Regla `comun-es-puro` en depcruise (probado que salta con un import de `utils/i18n`). `mandoVivo.ts` 370 → 183 líneas. Única diferencia de comportamiento: la divisa del móvil pone USD por defecto e importes con el idioma elegido, como el deck. 39 aserciones de la lógica pura en verde. **Supervisor:** `esTipoWidget` deriva de `CONSTRUCTORES` en vez de una lista escrita aparte.
+* **T-PAR-04 (opencode `wP`, Muse Spark Free; se cortó sin informe):** `scripts/check-paridad.mjs` + `scripts/paridad.json`, en `npm run check`. **Supervisor:** el trabajador marcó como `no-aplica` («falso negativo conocido») seis campos que sí funcionan; se añadió `via` (archivos extra verificados) y quedan como `si`. Prueba de fallo hecha (campo sin entrada, `si` sin evidencia, `via` inexistente). `PARIDAD.md` sección 5 reescrita.
+* **Clima en la barra flotante:** no es un problema. `electron/main/weather.ts` cachea 15 min y comparte la petición en vuelo, así que la barra solo añade una llamada IPC cada 15 min. Cerrado sin código.
+* **Verificación:** `npm run check` 0 errores, 33 warnings, 7 guardianes (`paridad: 37 campos, 21 en las tres, 16 no aplica, 11 huecos`); `npm run build` OK.
+* **Próximo:** los huecos que enseña el guardián, por impacto: widgets en vivo en la tecla física; pulsación larga en dock y móvil; marcas en el móvil. Después 83 (prototipo de plugins) y 0.14.0 (decisión del dueño).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

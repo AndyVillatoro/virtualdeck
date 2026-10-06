@@ -1,0 +1,231 @@
+{
+  "id": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "page": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "label": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "sublabel": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "icon": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "imageData": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "brandIcon": {
+    "pantallas": "si",
+    "movil": "hueco",
+    "dock": "si",
+    "nota": "movil: viaja al cliente (botonAMando en iconosMando.ts) pero la pagina no lo pinta; el generador vive en src/data y el proceso principal no puede importarlo (paginaMando.ts:596-598; PARIDAD.md 4 P1-1)"
+  },
+  "brandIconAlwaysAnimate": {
+    "pantallas": "si",
+    "movil": "hueco",
+    "dock": "no-aplica",
+    "nota": "movil: hueco heredado de brandIcon (sin pintura no hay nada que animar). dock: no aplica, la tecla pinta la marca estatica (dibujarMarca en pintarTecla.ts:303-321) y no hay animacion de marcas en el LCD"
+  },
+  "brandIconCustomBitmap": {
+    "pantallas": "si",
+    "movil": "hueco",
+    "dock": "si",
+    "nota": "movil: hueco heredado de brandIcon (botonAMando ni siquiera lo mapea)"
+  },
+  "brandIconCustomColor": {
+    "pantallas": "si",
+    "movil": "hueco",
+    "dock": "si",
+    "nota": "movil: hueco heredado de brandIcon (botonAMando ni siquiera lo mapea)"
+  },
+  "brandIconCustomPalette": {
+    "pantallas": "si",
+    "movil": "hueco",
+    "dock": "si",
+    "nota": "movil: hueco heredado de brandIcon (botonAMando ni siquiera lo mapea)"
+  },
+  "customGlyph57": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "iconoPuntos": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "animacion": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "efectoPulsar": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "aspectoEncendido": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si",
+    "via": {
+      "pantallas": [
+        "src/components/dot480/animacionPuntos.ts"
+      ]
+    }
+  },
+  "bgColor": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "fgColor": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "action": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "actions": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si",
+    "via": {
+      "movil": [
+        "src/utils/pulsarBoton.ts"
+      ]
+    },
+    "nota": "movil: el telefono solo manda el id a /api/press y App lo dispara con pulsarBoton, igual que las otras superficies"
+  },
+  "isToggle": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "actionToggleOff": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si",
+    "via": {
+      "movil": [
+        "src/utils/pulsarBoton.ts"
+      ]
+    },
+    "nota": "movil: el telefono solo manda el id a /api/press y App lo dispara con pulsarBoton, igual que las otras superficies"
+  },
+  "globalHotkey": {
+    "pantallas": "no-aplica",
+    "movil": "no-aplica",
+    "dock": "no-aplica",
+    "nota": "disparo a nivel de app, no de superficie: se registra en electron/main (trayManager.ts:122-134) y emite button:trigger; ninguna superficie lo implementa por separado"
+  },
+  "inTrayMenu": {
+    "pantallas": "no-aplica",
+    "movil": "no-aplica",
+    "dock": "no-aplica",
+    "nota": "menu de la bandeja a nivel de app (trayManager.ts:145); ninguna superficie lo implementa por separado"
+  },
+  "longPressAction": {
+    "pantallas": "si",
+    "movil": "hueco",
+    "dock": "hueco",
+    "nota": "movil: paginaMando.ts solo maneja onclick; el telefono puede medir la duracion del toque (PARIDAD.md 4 P3-11). dock: pulsarBoton.ts tiene la logica pero el dock dispara en el flanco down (useSuperficies.ts:415-426) sin temporizador, asi que nunca se aplica (PARIDAD.md 4 P3-12)"
+  },
+  "radioGroup": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si",
+    "via": {
+      "movil": [
+        "src/utils/pulsarBoton.ts"
+      ]
+    },
+    "nota": "movil: el telefono solo manda el id a /api/press y App lo dispara con pulsarBoton, igual que las otras superficies"
+  },
+  "widget": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "hueco",
+    "nota": "dock: la tecla LCD dibuja icono y etiqueta pero no pinta datos en vivo (PARIDAD.md 4 item 4)"
+  },
+  "currencyWidget": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "hueco",
+    "nota": "dock: ver widget (PARIDAD.md 4 item 4)"
+  },
+  "varWidget": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "hueco",
+    "nota": "dock: ver widget (PARIDAD.md 4 item 4)"
+  },
+  "sensorWidget": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "hueco",
+    "nota": "dock: ver widget (PARIDAD.md 4 item 4)"
+  },
+  "visibleIf": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "timerTriggerAt": {
+    "pantallas": "no-aplica",
+    "movil": "no-aplica",
+    "dock": "no-aplica",
+    "nota": "disparo de fondo a nivel de app (src/utils/useDisparadores.ts:89-90, montado en App); ninguna superficie lo implementa por separado"
+  },
+  "sensorTrigger": {
+    "pantallas": "no-aplica",
+    "movil": "no-aplica",
+    "dock": "no-aplica",
+    "nota": "disparo de fondo a nivel de app (src/utils/useDisparadores.ts:105, montado en App); ninguna superficie lo implementa por separado"
+  },
+  "subButtons": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si"
+  },
+  "fijo": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "si",
+    "via": {
+      "dock": [
+        "src/utils/botonesFijos.ts"
+      ]
+    }
+  },
+  "modosPerilla": {
+    "pantallas": "no-aplica",
+    "movil": "no-aplica",
+    "dock": "si",
+    "nota": "pantallas y movil: solo perillas fisicas del dock (decidirPerilla en useSuperficies.ts:202-256)"
+  },
+  "sliderWidget": {
+    "pantallas": "si",
+    "movil": "si",
+    "dock": "no-aplica",
+    "nota": "dock: la tecla LCD no tiene entrada tactil continua; el ajuste en hardware va por perillas (modosPerilla) y botones adjust"
+  }
+}

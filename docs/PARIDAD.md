@@ -397,26 +397,26 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
 2. **Barra flotante — Widgets en tiempo real (`clock`, `weather`, `now-playing`, `sensor`, `variable`, `currency`)**:
    - *Estado:* SÍ (`FloatingBarB.tsx:71-103,257,349`).
    - *Efecto:* Resuelto (roadmap 82). La barra flotante consume `useDatosWidget`, con sondeo reactivo de clima (`useClimaWidget`), multimedia (`useNowPlaying`), sensores (`useSensors`) y divisas (`useDivisas`), pasando los datos vivos a `ButtonCell`.
-3. **Mando móvil — Ausencia de widgets en vivo excepto slider**:
-   - *Estado:* NO (`paginaMando.ts:498`).
-   - *Efecto:* Ningún sensor, reloj, clima, variable o música se renderiza como widget en el mando web.
+3. **Mando móvil — Widgets en vivo**:
+   - *Estado:* SÍ (`mandoVivo.ts` `widgetsVivosParaMando` con `datosDeWidget` de `src/comun/widgets.ts`, `servidorLocal.ts:279-280` `/api/widgets`, `paginaMando.ts:590-595,622` hueco `widget-vivo` + `vivoMandoPagina.ts` tic cada 3 s).
+   - *Efecto:* Resuelto (T-PAR-02). Los seis widgets no-slider (reloj, clima, multimedia, sensor, variable, divisa) se sirven vivos y se pintan sobre el icono, como en el deck. La matriz 3.4 decía NO y quedó desactualizada.
 4. **Tecla física — Ausencia de renderizado de widgets en vivo**:
    - *Estado:* NO (`pintarTecla.ts`).
    - *Efecto:* La tecla física LCD de 64×64 / 72×72 px dibuja iconos y etiquetas estándar pero no pinta el estado de sensores ni datos de widgets.
 5. **Tecla física — Omisión total de la subetiqueta (`sublabel`)**:
    - *Estado:* SÍ (`pintarTecla.ts:479,520-524,574`).
    - *Efecto:* Resuelto (T-PAR-03). La tecla dibuja la segunda línea más pequeña y atenuada, como `RotuloCelda`.
-6. **Mando móvil — Sin interpolación de variables en etiquetas** (la Tecla física ya la tiene):
-   - *Estado:* NO en el móvil (`servidorLocal.ts:234`); SÍ en la tecla física (`paginasSuperficie.ts:47-57,86`, `useSuperficies.ts:114-115`).
-   - *Efecto:* En la tecla LCD las etiquetas `{VOL}%` o `{CPU_TEMP}°C` salen resueltas y se repintan al cambiar el valor; en el móvil siguen apareciendo con las llaves.
+6. **Mando móvil — Interpolación de variables en etiquetas**:
+   - *Estado:* SÍ en el móvil (`botonesVivosParaMando` en `mandoVivo.ts`, servido por `/api/buttons` en `servidorLocal.ts:274-278`) y SÍ en la tecla física (`paginasSuperficie.ts:47-57,86`, `useSuperficies.ts:114-115`).
+   - *Efecto:* Resuelto (T-PAR-02). En el móvil la etiqueta principal sale interpolada (`{VOL}%`); la subetiqueta viaja tal cual. La matriz 3.1 decía NO en el móvil y quedó desactualizada.
 7. **Tecla física — Ausencia de soporte para mosaico 2×2 (`subButtons`)**:
    - *Estado:* SÍ (`subdivisionLcd.ts:48,119`, `pintarTecla.ts:591-596,784-786`).
    - *Efecto:* Resuelto (T-PAR-03). La tecla dibuja los cuatro cuadrantes; pulsarla no dispara ninguna de las cuatro acciones (no se puede elegir cuadrante) y enseña el aviso `DECK 2x2` (`useSuperficies.ts:421-424`, `avisoPerilla.ts:52-54`). Decisión documentada: ejecutar el primer cuadrante a ciegas podía lanzar la acción equivocada.
 
 #### Prioridad 2: Incoherencias de estado y visibilidad condicional
-8. **Mando móvil — Omisión de visibilidad condicional (`visibleIf`)** (la Tecla física ya la tiene):
-   - *Estado:* NO en el móvil (`servidorLocal.ts:195-201`); SÍ en la tecla física (`paginasSuperficie.ts:47-57`, `useSuperficies.ts:289-293`).
-   - *Efecto:* En el dock un botón configurado para ocultarse cuando cierta app no está activa o un sensor baja de un umbral queda en tecla vacía y no se dispara; en el móvil sigue apareciendo y pulsándose.
+8. **Mando móvil — Visibilidad condicional (`visibleIf`)**:
+   - *Estado:* SÍ en el móvil (`botonVisibleSegun` de `src/comun/visibilidad.ts`, filtro en `baseViva` de `mandoVivo.ts`: el servidor filtra antes de mandar) y SÍ en la tecla física (`paginasSuperficie.ts:47-57`, `useSuperficies.ts:289-293`).
+   - *Efecto:* Resuelto (T-PAR-02). Un botón oculto por app o sensor no llega al móvil ni al dock. La matriz 3.8 decía NO en el móvil y quedó desactualizada.
 9. **Barra flotante — Visibilidad condicional por hardware/sensores**:
    - *Estado:* SÍ (`FloatingBarB.tsx:49,255`).
    - *Efecto:* Resuelto (roadmap 82). La barra evalúa las condiciones de hardware de `visibleIf` usando la lista real de sensores provista por `useSensors()`.
@@ -437,58 +437,6 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
 
 ---
 
-## 5. Propuesta de guardián automático (`scripts/check-paridad.mjs`)
+## 5. Guardián automático (`scripts/check-paridad.mjs`)
 
-Para prevenir que futuras funcionalidades de botones se queden atrás en alguna superficie, se propone incorporar un script de auditoría estática integrado en `npm run check`.
-
-### 5.1 Principio de diseño (Cero falsos positivos)
-Un guardián basado en expresiones regulares sobre archivos visuales tiende a fallar con falsos positivos cuando los componentes se refactorizan. La estrategia recomendada combina:
-1. **Inspección de AST con TypeScript Compiler API:** Leer la interfaz `ButtonConfig` en `src/types/config.ts` y extraer automáticamente el conjunto de nombres de propiedades.
-2. **Matriz de contratos declarativa (`paridad.config.json`):** Un archivo estricto que define para cada propiedad de `ButtonConfig` qué superficies la requieren obligatoriamente y cuáles tienen justificación de `NO_APLICA`.
-3. **Comprobación de flujo por superficie:**
-
-```
-                  ┌───────────────────────────────┐
-                  │    ButtonConfig properties    │
-                  └──────────────┬────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         ▼                       ▼                       ▼
-┌──────────────────┐   ┌───────────────────┐   ┌──────────────────┐
-│   ButtonCell     │   │   Mando Móvil     │   │   Tecla Física   │
-│   Props en AST   │   │   iconosMando.ts  │   │   pintarTecla.ts │
-│                  │   │   botonAMando()   │   │   firmaDe()      │
-└──────────────────┘   └───────────────────┘   └──────────────────┘
-```
-
-### 5.2 Reglas concretas que auditaría el script
-
-1. **Superficies basadas en `ButtonCell` (`MainB.tsx`, `FullscreenB.tsx`, `FloatingBarB.tsx`):**
-   - El script analiza el JSX de invocación a `<ButtonCell>` en cada pantalla.
-   - Si una propiedad está en la lista de datos compartidos (`widgetData`, `resolvedLabel`, `subToggled`, `isHidden`, `toggled`), debe estar explícitamente vinculada como prop.
-   - *Fallo detectado:* `FloatingBarB.tsx` no pasa `widgetData` a `ButtonCell`.
-
-2. **Mando móvil (`electron/main/iconosMando.ts` y `servidorLocal.ts`):**
-   - El script compara las claves del tipo `ButtonConfig` contra las propiedades asignadas en el objeto literal de retorno de `botonAMando()` en `iconosMando.ts`.
-   - Si se añade un campo visual o funcional nuevo a `ButtonConfig` y no se mapea en `botonAMando()`, el build falla indicando el campo huérfano en el móvil.
-   - Inspecciona que las cadenas de `widget` contempladas en `TipoWidget` tengan ramas en el renderizador DOM de `paginaMando.ts`.
-
-3. **Tecla física (`src/utils/superficies/useSuperficies.ts` y `pintarTecla.ts`):**
-   - El script analiza la función `firmaDe()` en `useSuperficies.ts`. Si un campo visual de `ButtonConfig` no forma parte de la tupla devuelta por `firmaDe()`, el hardware físico nunca se enteraría de cuándo repintarlo ante cambios.
-   - Comprueba que los campos visuales (`sublabel`, `imageData`, `brandIcon`, etc.) sean desestructurados o leídos en `pintarContenido()` en `pintarTecla.ts`.
-   - *Fallo que detectó y quedó resuelto en T-PAR-03:* `sublabel` no figuraba en `firmaDe()` ni se dibujaba en `pintarTecla.ts`; hoy sí (`useSuperficies.ts:114`, `pintarTecla.ts:479,574`).
-
-4. **Tratamiento de excepciones justificadas:**
-   - Para evitar falsos positivos en campos no aplicables (como `modosPerilla` en pantalla o `showContextMenu` en tecla física), el archivo de configuración declarará excepciones explícitas:
-     ```json
-     {
-       "modosPerilla": {
-         "principal": "NO_APLICA",
-         "kiosko": "NO_APLICA",
-         "barraFlotante": "NO_APLICA",
-         "movil": "NO_APLICA",
-         "dock": "REQUERIDO"
-       }
-     }
-     ```
-   - Si una superficie no implementa un campo marcado como `REQUERIDO`, el script emite un error con código de salida 1. Si está marcado como `HUECO_CONOCIDO`, emite una advertencia hasta que sea resuelto en el roadmap.
+Hecho (T-PAR-04): el guardián lee las 37 propiedades de primer nivel de `ButtonConfig` (`src/types/config.ts`) con la API del compilador de TypeScript y las cruza con `scripts/paridad.json`, que es la fuente de la paridad: una entrada por campo con un valor `si`/`no-aplica`/`hueco` por grupo (`pantallas`, `movil`, `dock`) y `nota` obligatoria en todo lo que no es `si`. Falla si un campo no tiene entrada, si sobra una, si un valor no es válido o le falta nota, y si un `si` no aparece como acceso de propiedad en ningún archivo de su grupo; cada `hueco` solo avisa. Cuando una superficie consume el campo a través de un ayudante fuera de su lista de archivos (`fijo` vía `botonesFijos.ts` en el dock, `aspectoEncendido` vía `animacionPuntos.ts` en las pantallas, `actions`/`actionToggleOff`/`radioGroup` vía `pulsarBoton.ts` en el móvil, que dispara por App tras `/api/press`), la entrada lo declara con `via: { grupo: [rutas] }`: sigue siendo `si` y sigue verificado. `no-aplica` queda para lo que no tiene sentido en esa superficie (perillas en pantalla, disparos de fondo a nivel de app). Desde T-COM-01 la interpolación, la visibilidad y los widgets viven en `src/comun/` y los comparten deck y móvil. El guardián busca olvidos con cero falsos positivos, no prueba que funcione; su última línea dice `paridad: ok — N campos, X en las tres, Y no aplica, Z huecos`.

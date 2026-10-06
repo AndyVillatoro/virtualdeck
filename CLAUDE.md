@@ -23,7 +23,7 @@ Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
    - Grilla estricta de 4px.
    - **0 emojis**: todo icono es un glifo dot-matrix SVG o mapa de puntos 8×8/5×7 de `src/components/dot480/`.
    - Colores obligatorios vía `const VD = useTheme();`. Prohibido importar `VD`/`VD_LIGHT` directo de `design.ts` en componentes de UI (ESLint lo bloquea).
-2. `npm run check` **obligatorio antes de dar una tarea por terminada y antes de hacer commit**, con los 6 guardianes en verde (`check-i18n`, `check-acciones`, `check-ipc`, `check-wiki`, `check-campos`, `check-perfiles`).
+2. `npm run check` **obligatorio antes de dar una tarea por terminada y antes de hacer commit**, con los 7 guardianes en verde (`check-i18n`, `check-acciones`, `check-ipc`, `check-wiki`, `check-campos`, `check-paridad`, `check-perfiles`). `check-paridad` cruza cada campo de `ButtonConfig` con `scripts/paridad.json` (`si`/`no-aplica`/`hueco` por pantallas, móvil y dock): **añadir un campo de botón obliga a decidir su paridad**, y un `si` sin el campo en los archivos de esa superficie falla. Si se consume por un ayudante de fuera, se declara con `via`, no con un `no-aplica` falso.
 3. Complejidad ciclomática máxima por función: **18**. Líneas máximas por archivo: **600**.
 
 ## Protocolo de coordinación multi-agente
@@ -260,6 +260,11 @@ vez de a `AGENTS.md` por lo mismo.
   **Botones fijos** (`ButtonConfig.fijo`, `utils/botonesFijos.ts`): se ven y se disparan en el mismo
   hueco de todas las páginas de su grupo; todo lo que **pinta o dispara** usa `botonesResueltos`, lo
   que **edita o guarda** trabaja con `config.buttons` tal cual.
+- `src/comun/` — **lógica pura que comparten el deck y el proceso principal** (interpolar `{var}`,
+  visibilidad condicional, los datos de cada widget). El mando móvil (`electron/main/mandoVivo.ts`) los
+  tenía copiados a mano y ya se habían separado (la divisa). `main-no-renderer` deja importar de aquí, y
+  la regla `comun-es-puro` impide que `src/comun` importe nada que no sea `src/types` o ella misma: sin
+  React, DOM, electron ni Node. Lo nuevo que tengan que calcular igual los dos procesos va aquí.
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
