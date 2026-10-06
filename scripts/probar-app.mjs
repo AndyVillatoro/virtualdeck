@@ -21,6 +21,12 @@
  *   node scripts/probar-app.mjs estado
  *   node scripts/probar-app.mjs cerrar
  *   node scripts/probar-app.mjs medir-arranque <quien> [veces=3]
+ *   node scripts/probar-app.mjs limpiar
+ *
+ * `limpiar` (y `abrir`, que lo hace antes) cierra **cualquier** copia de la app
+ * con la carpeta de datos en `%TEMP%` que no sea la registrada en el candado:
+ * las que un agente abrió a mano sin pasar por aquí. Las del dueño (sin
+ * `--user-data-dir` en `%TEMP%`) nunca se tocan.
  *
  * Al abrir imprime el PID, el registro y el puerto de depuración remota (9333)
  * para conectarse por CDP.
@@ -78,6 +84,7 @@ function abrir(quien, banderas) {
   if (!existsSync(join(RAIZ, 'out', 'main', 'index.js'))) {
     console.error('No hay build: corre antes `npm run build`.'); process.exit(2);
   }
+  limpiar({ silencioso: true });
   if (!hayHueco()) process.exit(1);
   const datos = join(tmpdir(), `vd-prueba-${quien.replace(/[^a-z0-9_-]/gi, '')}`);
   rmSync(datos, { recursive: true, force: true });
@@ -109,6 +116,36 @@ function estado() {
   } catch { /* sin registro todavía */ }
 }
 
+/** Procesos principales de Electron con la carpeta de datos dentro de %TEMP%. */
+function copiasEnTemp() {
+  const ps = "Get-CimInstance Win32_Process -Filter \"Name='electron.exe'\" | "
+    + "Where-Object { $_.CommandLine -notmatch '--type=' } | "
+    + "Select-Object ProcessId, CommandLine | ConvertTo-Json -Compress";
+  let salida = '';
+  try { salida = execFileSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf-8' }).trim(); } catch { return []; }
+  if (!salida) return [];
+  const lista = [].concat(JSON.parse(salida));
+  const normal = (ruta) => ruta.toLowerCase().replaceAll('\\', '/');
+  const temp = normal(tmpdir());
+  return lista.filter((p) => {
+    const m = /--user-data-dir[= ]"?([^" ]+)/.exec(p.CommandLine ?? '');
+    return m && normal(m[1]).startsWith(temp);
+  });
+}
+
+/** Cierra las copias de prueba que no son la del candado. Devuelve cuántas. */
+function limpiar({ silencioso = false } = {}) {
+  const c = leerCandado();
+  const sueltas = copiasEnTemp().filter((p) => !(c && vivo(c.pid) && p.ProcessId === c.pid));
+  for (const p of sueltas) matarArbol(p.ProcessId);
+  if (!silencioso || sueltas.length > 0) {
+    console.log(sueltas.length > 0
+      ? `Cerradas ${sueltas.length} copia(s) de prueba abiertas sin el script: ${sueltas.map((p) => p.ProcessId).join(', ')}`
+      : 'No hay copias de prueba sueltas.');
+  }
+  return sueltas.length;
+}
+
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Abre, espera la línea `[arranque] ventana visible a los N ms`, cierra; N veces. */
@@ -134,5 +171,6 @@ const [orden, ...resto] = process.argv.slice(2);
 if (orden === 'abrir') abrir(resto[0], resto.slice(1));
 else if (orden === 'cerrar') cerrar();
 else if (orden === 'estado') estado();
+else if (orden === 'limpiar') limpiar();
 else if (orden === 'medir-arranque') await medirArranque(resto[0], Number(resto[1] ?? 3));
-else { console.error('Uso: node scripts/probar-app.mjs abrir <quien> [--diag] [--sin-nucleo] | estado | cerrar | medir-arranque <quien> [veces]'); process.exit(2); }
+else { console.error('Uso: node scripts/probar-app.mjs abrir <quien> [--diag] [--sin-nucleo] | estado | cerrar | limpiar | medir-arranque <quien> [veces]'); process.exit(2); }
