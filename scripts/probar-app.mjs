@@ -31,8 +31,8 @@
  * Al abrir imprime el PID, el registro y el puerto de depuración remota (9333)
  * para conectarse por CDP.
  */
-import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -90,20 +90,31 @@ function abrir(quien, banderas) {
   rmSync(datos, { recursive: true, force: true });
   mkdirSync(datos, { recursive: true });
   const registro = join(datos, 'app.log');
-  const fd = openSync(registro, 'a');
-  const env = { ...process.env };
-  if (banderas.includes('--diag')) env.VD_DIAG = '1';
-  if (banderas.includes('--sin-nucleo')) env.VD_SIN_NUCLEO = '1';
-  const hijo = spawn(ELECTRON, ['.', `--user-data-dir=${datos}`, `--remote-debugging-port=${PUERTO_CDP}`], {
-    cwd: RAIZ, env, detached: true, stdio: ['ignore', fd, fd], windowsHide: false,
-  });
-  hijo.unref();
-  writeFileSync(CANDADO, JSON.stringify({ pid: hijo.pid, quien, inicio: Date.now(), datos, registro }));
-  console.log(`Abierta para «${quien}»: PID ${hijo.pid}`);
+  const variables = [
+    banderas.includes('--diag') ? 'set VD_DIAG=1&& ' : '',
+    banderas.includes('--sin-nucleo') ? 'set VD_SIN_NUCLEO=1&& ' : '',
+  ].join('');
+  // Se crea por WMI (Win32_Process.Create), no con `spawn`: así la copia nace
+  // sin parentesco con quien la pide y **no hereda su canal de salida**. Con
+  // `spawn` (aun `detached`) heredaba el de la terminal del agente, y el bash
+  // de opencode esperaba a que se cerrara: el agente se quedaba colgado
+  // mientras la copia viviera. `cmd` lleva la salida al registro.
+  const linea = `cmd.exe /d /s /c "${variables}"${ELECTRON}" . --user-data-dir="${datos}" `
+    + `--remote-debugging-port=${PUERTO_CDP} > "${registro}" 2>&1"`;
+  const ps = `$r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = '${linea.replaceAll("'", "''")}'; CurrentDirectory = '${RAIZ.replaceAll("'", "''")}' }; `
+    + 'if ($r.ReturnValue -ne 0) { exit 1 }; $r.ProcessId';
+  let pid;
+  try {
+    pid = Number(execFileSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf-8' }).trim());
+  } catch {
+    console.error('Windows no dejó crear la copia de prueba (Win32_Process.Create).'); process.exit(1);
+  }
+  writeFileSync(CANDADO, JSON.stringify({ pid, quien, inicio: Date.now(), datos, registro }));
+  console.log(`Abierta para «${quien}»: PID ${pid}`);
   console.log(`  registro: ${registro}`);
   console.log(`  CDP:      http://127.0.0.1:${PUERTO_CDP}/json`);
   console.log('  ciérrala al terminar: node scripts/probar-app.mjs cerrar');
-  return { pid: hijo.pid, registro };
+  return { pid, registro };
 }
 
 function estado() {
@@ -120,7 +131,7 @@ function estado() {
 function copiasEnTemp() {
   const ps = "Get-CimInstance Win32_Process -Filter \"Name='electron.exe'\" | "
     + "Where-Object { $_.CommandLine -notmatch '--type=' } | "
-    + "Select-Object ProcessId, CommandLine | ConvertTo-Json -Compress";
+    + "Select-Object ProcessId, ParentProcessId, CommandLine | ConvertTo-Json -Compress";
   let salida = '';
   try { salida = execFileSync('powershell', ['-NoProfile', '-Command', ps], { encoding: 'utf-8' }).trim(); } catch { return []; }
   if (!salida) return [];
@@ -136,7 +147,9 @@ function copiasEnTemp() {
 /** Cierra las copias de prueba que no son la del candado. Devuelve cuántas. */
 function limpiar({ silencioso = false } = {}) {
   const c = leerCandado();
-  const sueltas = copiasEnTemp().filter((p) => !(c && vivo(c.pid) && p.ProcessId === c.pid));
+  // La del candado es el `cmd` que la lanza; Electron es su hijo.
+  const legitima = (p) => c && vivo(c.pid) && (p.ProcessId === c.pid || p.ParentProcessId === c.pid);
+  const sueltas = copiasEnTemp().filter((p) => !legitima(p));
   for (const p of sueltas) matarArbol(p.ProcessId);
   if (!silencioso || sueltas.length > 0) {
     console.log(sueltas.length > 0
