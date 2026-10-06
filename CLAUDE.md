@@ -53,7 +53,7 @@ archivo de instrucciones aparte — ver la corrección más abajo sobre por qué
 
 - **Copias de prueba de la app: solo con `node scripts/probar-app.mjs`** (abrir `<quien>`, `estado`,
   `cerrar`, `medir-arranque <quien> [veces]`). Una sola a la vez para todos los agentes (candado en
-  `%TEMP%d-prueba.lock`), siempre con su propia carpeta de datos (nunca la config del dueño), la
+  `%TEMP%\vd-prueba.lock`), siempre con su propia carpeta de datos (nunca la config del dueño), la
   salida a un registro y no a la terminal, y se cierra con todos sus procesos hijos. Antes cada agente
   abría la suya con `electron.exe` a mano y no la cerraba: el 2026-10-05 había **seis** abiertas (24
   procesos), y lanzarla con la salida redirigida dejaba colgada la herramienta del agente.
