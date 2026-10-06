@@ -20,12 +20,19 @@ module.exports = {
     {
       name: 'main-no-renderer',
       severity: 'error',
-      comment: 'El proceso main/preload no debe importar el renderer (src/), salvo tipos compartidos (src/types) y los datos puros de los glifos DOT (sin React ni DOM), que el mando móvil necesita para pintar lo mismo que el deck.',
+      comment: 'El proceso main/preload no debe importar el renderer (src/), salvo tipos compartidos (src/types), la lógica pura compartida (src/comun) y los datos puros de los glifos DOT (sin React ni DOM), que el mando móvil necesita para pintar lo mismo que el deck.',
       from: { path: '^electron/(main|preload)/' },
       to: {
         path: '^src/',
-        pathNot: '^src/types(/|\\.ts$|$)|^src/components/dot480/(dotGlyphs8x8|resolveDotGlyph|dotGlyphsCatalog|glifosPorTipoAccion|puntos16)\\.ts$|^src/components/dot480/efectosPuntos\\.js(\\?raw)?$',
+        pathNot: '^src/types(/|\\.ts$|$)|^src/comun/|^src/components/dot480/(dotGlyphs8x8|resolveDotGlyph|dotGlyphsCatalog|glifosPorTipoAccion|puntos16)\\.ts$|^src/components/dot480/efectosPuntos\\.js(\\?raw)?$',
       },
+    },
+    {
+      name: 'comun-es-puro',
+      severity: 'error',
+      comment: 'SRP: src/comun es la lógica pura compartida por el deck y el proceso principal; solo puede depender de src/types y de sí misma (sin React, DOM, electron, Node ni utils del renderer).',
+      from: { path: '^src/comun/' },
+      to: { pathNot: '^src/(comun|types)(/|\\.ts$|$)' },
     },
     {
       name: 'renderer-no-main',

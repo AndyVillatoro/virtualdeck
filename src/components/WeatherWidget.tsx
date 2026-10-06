@@ -2,34 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotGlyphIcon } from './dot480/DotGlyphIcon';
+// La tabla de códigos y el glifo viven en `src/comun/widgets` porque el mando
+// móvil pinta el mismo icono; aquí solo se añade la clave de diccionario.
+import { codigoConocido, wxDotGlyph } from '../comun/widgets';
 
 interface WeatherData {
   temp: number;
   code: number;
   city: string;
   country: string;
-}
-
-const WX_GLYPH: Record<number, string> = {
-  0: 'WEATHER_SUN', 1: 'WEATHER_SUN_CLOUD', 2: 'WEATHER_SUN_CLOUD', 3: 'WEATHER_CLOUD',
-  45: 'WEATHER_FOG', 48: 'WEATHER_FOG',
-  51: 'WEATHER_RAIN', 53: 'WEATHER_RAIN', 55: 'WEATHER_RAIN',
-  61: 'WEATHER_RAIN', 63: 'WEATHER_RAIN', 65: 'WEATHER_RAIN',
-  71: 'WEATHER_SNOW', 73: 'WEATHER_SNOW', 75: 'WEATHER_SNOW', 77: 'WEATHER_SNOW',
-  80: 'WEATHER_RAIN', 81: 'WEATHER_RAIN', 82: 'WEATHER_RAIN', 85: 'WEATHER_SNOW',
-  95: 'WEATHER_THUNDER', 96: 'WEATHER_THUNDER', 99: 'WEATHER_THUNDER',
-};
-
-/** El codigo exacto, o el de su decena; si tampoco, ninguno. */
-function codigoConocido(code: number): number | null {
-  if (WX_GLYPH[code] !== undefined) return code;
-  const decena = Math.floor(code / 10) * 10;
-  return WX_GLYPH[decena] !== undefined ? decena : null;
-}
-
-export function wxDotGlyph(code: number): string {
-  const c = codigoConocido(code);
-  return c === null ? 'WEATHER_THERMO' : (WX_GLYPH[c] ?? 'WEATHER_SUN');
 }
 
 /** Clave de diccionario con el nombre de la condicion. */

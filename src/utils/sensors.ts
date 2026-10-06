@@ -4,7 +4,7 @@
 // MainB's polled state.
 
 import { useEffect, useState } from 'react';
-import type { Sensor, SensorsStatus, SensorCondition } from '../types';
+import type { Sensor, SensorsStatus } from '../types';
 
 let sensorsCache: Sensor[] = [];
 let statusCache: SensorsStatus | null = null;
@@ -72,13 +72,8 @@ export function findSensor(id: string | undefined, sensors: Sensor[]): Sensor | 
 }
 
 /** Force an immediate refresh (used by probe/config screens). */
-/** Evaluate a SensorCondition against a current value. */
-export function evalCondition(cond: SensorCondition, current: number): boolean {
-  switch (cond.op) {
-    case '>':  return current > cond.value;
-    case '<':  return current < cond.value;
-    case '>=': return current >= cond.value;
-    case '<=': return current <= cond.value;
-    case '==': return current === cond.value;
-  }
-}
+/**
+ * Evalúa una condición de sensor contra el valor actual.
+ * Reexportada de `src/comun/visibilidad`: la comparte el mando móvil.
+ */
+export { evalCondition } from '../comun/visibilidad';

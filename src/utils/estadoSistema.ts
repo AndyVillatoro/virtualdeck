@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { findSensor, evalCondition } from './sensors';
 import { normalizarApp } from './apps';
+import { botonVisibleSegun } from '../comun/visibilidad';
 import type { ButtonConfig, RGBStatus, Sensor } from '../types';
 
 /**
@@ -106,20 +106,10 @@ export function botonActivo(b: ButtonConfig, e: EstadoSistema): boolean {
  * sensores», no «el sensor no tiene valor». Es el caso de la barra flotante,
  * que no sondea sensores: allí la condición por sensor se ignora y el botón se
  * ve. Tratarlo como «no se cumple» lo habría escondido siempre, que es peor.
+ *
+ * La regla vive en `src/comun/visibilidad` porque el mando móvil aplica la
+ * misma; aquí solo se le pasa el conjunto de procesos que ya sondea el deck.
  */
 export function botonVisible(b: ButtonConfig, e: EstadoSistema, sensores: Sensor[] | null): boolean {
-  const v = b.visibleIf;
-  if (!v) return true;
-  if (v.app) {
-    const nombre = normalizarApp(v.app);
-    if (!e.runningProcesses.has(nombre)) return false;
-  }
-  if (v.sensor && sensores !== null) {
-    const s = findSensor(v.sensor.id, sensores);
-    // Sin dato todavía → se mantiene oculto, que es lo mismo que «la condición
-    // no se cumple». Mejor eso que enseñarlo un instante en cada recarga.
-    if (!s) return false;
-    if (!evalCondition(v.sensor, s.value)) return false;
-  }
-  return true;
+  return botonVisibleSegun(b, e.runningProcesses, sensores);
 }

@@ -40,12 +40,10 @@ export const fail = (error: string): ActionResult => ({ ok: false, error });
 
 // 1.2 — Sustituye {nombre} por el valor en state. Útil en appArgs, url, script,
 // clipboardText, typeText, webhookUrl, ttsText, etc. Si la variable no existe,
-// se reemplaza por '' (no se rompe la cadena).
-export function interpolate(template: string | undefined, state: Record<string, string> | undefined): string {
-  if (!template) return '';
-  if (!state) return template;
-  return template.replace(/\{(\w+)\}/g, (_, key) => state[key] ?? '');
-}
+// se reemplaza por '' (no se rompe la cadena). Vive en `src/comun/interpolar`
+// porque el mando móvil también la usa (ver `main-no-renderer`); se reexporta
+// aquí para no tocar a los manejadores.
+export { interpolate } from '../../comun/interpolar';
 
 /** Todo lo que un manejador necesita para ejecutar una acción. */
 interface Contexto {
