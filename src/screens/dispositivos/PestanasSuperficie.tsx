@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { SelectorApp } from '../../components/SelectorApp';
+import { normalizarApp } from '../../utils/apps';
 import type { PageConfig } from '../../types';
 import type { DisposicionSuperficie } from '../../types/superficies';
 
@@ -26,7 +28,7 @@ export interface PestanasSuperficieProps {
   onRenombrarPagina: (id: string, nombre: string) => void;
   onBorrarPagina: (id: string) => void;
   /** `''` desvincula la app. La limpieza va en la operación. */
-  onFijarApp: (id: string, app: string) => void;
+  onFijarApp: (id: string, app: string, iconoApp?: string) => void;
   /** Crear página preconfigurada desde plantilla (roadmap 75). */
   onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
 }
@@ -74,7 +76,7 @@ function BarraPaginaSuperficie({
   esUltima: boolean;
   onRenombrarPagina: (id: string, nombre: string) => void;
   onBorrarPagina: (id: string) => void;
-  onFijarApp: (id: string, app: string) => void;
+  onFijarApp: (id: string, app: string, iconoApp?: string) => void;
   onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
 }) {
   const VD = useTheme();
@@ -84,6 +86,25 @@ function BarraPaginaSuperficie({
   const [renombrando, setRenombrando] = useState(false);
   const [nombre, setNombre] = useState(pagina.name);
   const [app, setApp] = useState(pagina.targetApp ?? '');
+
+  const guardarApp = async (nuevaApp: string) => {
+    const limpia = normalizarApp(nuevaApp);
+    if (!limpia) {
+      setApp('');
+      onFijarApp(pagina.id, '', undefined);
+      return;
+    }
+    let icono: string | null = null;
+    if (window.electronAPI?.launch?.iconoApp) {
+      try {
+        icono = await window.electronAPI.launch.iconoApp(limpia);
+      } catch {
+        icono = null;
+      }
+    }
+    const iconoFinal = icono ?? (limpia === pagina.targetApp ? pagina.iconoApp : undefined);
+    onFijarApp(pagina.id, limpia, iconoFinal);
+  };
 
   const confirmarNombre = () => {
     setRenombrando(false);
@@ -131,6 +152,9 @@ function BarraPaginaSuperficie({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: VD.space.sm, minWidth: 0 }}>
+          {pagina.iconoApp && (
+            <IconoPuntos bits={pagina.iconoApp} size={16} color={VD.accent} />
+          )}
           {renombrando ? (
             <input
               autoFocus
@@ -187,7 +211,7 @@ function BarraPaginaSuperficie({
           <button
             type="button"
             title={t('page.bindApp')}
-            onClick={() => onFijarApp(pagina.id, app)}
+            onClick={() => void guardarApp(app)}
             style={estiloBoton(false, false)}
           >
             {t('ui.saveShort')}
@@ -196,7 +220,7 @@ function BarraPaginaSuperficie({
             <button
               type="button"
               title={t('page.unbindApp')}
-              onClick={() => { setApp(''); onFijarApp(pagina.id, ''); }}
+              onClick={() => void guardarApp('')}
               style={estiloBoton(false, false)}
             >
               {t('page.unbindApp')}
@@ -218,7 +242,7 @@ function BarraPaginaSuperficie({
         valor={app}
         onElegir={(elegida) => setApp(elegida)}
         onCrearDesdePlantilla={onCrearDesdePlantilla}
-        onEnter={() => onFijarApp(pagina.id, app)}
+        onEnter={() => void guardarApp(app)}
       />
     </div>
   );
@@ -303,6 +327,13 @@ export function PestanasSuperficie({
                   whiteSpace: 'nowrap',
                 }}
               >
+                {p.iconoApp && (
+                  <IconoPuntos
+                    bits={p.iconoApp}
+                    size={14}
+                    color={editando ? VD.text : VD.textDim}
+                  />
+                )}
                 <span style={{ fontWeight: editando ? 600 : 400 }}>{p.name}</span>
                 {p.id === paginaPredeterminadaId && (
                   <span style={{ fontSize: 7, color: VD.textDim, letterSpacing: 0.5, textTransform: 'uppercase' }}>

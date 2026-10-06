@@ -3,13 +3,13 @@ import type { ButtonConfig, DeckConfig, ElectronAPI, InfoSuperficie } from '../.
 import type { TFunc } from '../i18n';
 import type { DetalleAccion } from '../acciones/base';
 import { destinoDock } from '../acciones/pageNav';
-import { paginaDe } from './paginasSuperficie';
+import { paginaDe, type VivoPagina } from './paginasSuperficie';
 import { teclaSobrePerilla, teclasLcd } from './disposicion';
 import {
   pintarAvisoTecla, pintarTecla, resolverBotonLcd,
   type ColoresSuperficie, type OpcionesPintado,
 } from './pintarTecla';
-import { avisoDeGiro, avisoDeModo, avisoDePagina, type AvisoPerilla } from './avisoPerilla';
+import { avisoDeCuadrantes, avisoDeGiro, avisoDeModo, avisoDePagina, type AvisoPerilla } from './avisoPerilla';
 
 /**
  * El aviso de la tecla al girar una perilla (T-HW-21, roadmap 85).
@@ -44,6 +44,8 @@ export interface OpcionesAvisoPerilla {
   colores: ColoresSuperficie;
   iconoSvg?: OpcionesPintado['iconoSvg'];
   esGlifoDot?: OpcionesPintado['esGlifoDot'];
+  /** Estado vivo: la página se resuelve como la pinta el resto (visibleIf). */
+  vivo: VivoPagina;
   t: TFunc;
   /** Refresca la imagen que enseña la pantalla de Dispositivos. */
   alPintar: (serial: string, hueco: number, dataUrl: string | undefined) => void;
@@ -54,12 +56,14 @@ export interface AvisoPerillaApi {
   avisarDeGiro: (serial: string, perilla: number, boton: ButtonConfig, detalle?: DetalleAccion) => void;
   /** Enseña «MODO n/total» al pulsar una perilla multimodo. */
   avisarDeModo: (serial: string, perilla: number, siguiente: number, total: number) => void;
+  /** Enseña que un mosaico 2×2 no se puede pulsar desde la tecla física. */
+  avisarDeCuadrantes: (serial: string, hueco: number) => void;
   /** ¿Esa tecla está enseñando un aviso? (el pintor y el animador la dejan quieta). */
   conAviso: (serial: string, hueco: number) => boolean;
 }
 
 export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi {
-  const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, t, alPintar } = opciones;
+  const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, vivo, t, alPintar } = opciones;
   const avisos = useRef(new Map<string, AvisoActivo>());
 
   // Al desmontar, ningún temporizador sigue vivo.
@@ -74,8 +78,8 @@ export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi
   const paginaDeSerial = useCallback((serial: string) => {
     const dispositivo = dispositivos.find((d) => d.serial === serial);
     if (!dispositivo) return null;
-    return paginaDe(config, serial, dispositivo.disposicion, paginasActivas[serial]);
-  }, [config, dispositivos, paginasActivas]);
+    return paginaDe(config, serial, dispositivo.disposicion, paginasActivas[serial], vivo);
+  }, [config, dispositivos, paginasActivas, vivo]);
 
   /** Repinta la tecla normal cuando vence el aviso, si nadie lo renovó. */
   const restaurar = useCallback(async (serial: string, hueco: number, generacion: number) => {
@@ -144,9 +148,13 @@ export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi
     mostrar(serial, hueco, avisoDeModo(siguiente, total, t));
   }, [paginaDeSerial, mostrar, t]);
 
+  const avisarDeCuadrantes = useCallback((serial: string, hueco: number) => {
+    mostrar(serial, hueco, avisoDeCuadrantes(t));
+  }, [mostrar, t]);
+
   const conAviso = useCallback((serial: string, hueco: number) => {
     return avisos.current.get(serial)?.hueco === hueco;
   }, []);
 
-  return { avisarDeGiro, avisarDeModo, conAviso };
+  return { avisarDeGiro, avisarDeModo, avisarDeCuadrantes, conAviso };
 }

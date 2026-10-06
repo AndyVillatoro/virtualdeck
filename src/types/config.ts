@@ -157,6 +157,11 @@ export interface PageConfig {
   gridRows?: number;
   /** 7.4 — Proceso de aplicación vinculado para cambio automático de página (ej. "obs64", "photoshop"). */
   targetApp?: string;
+  /**
+   * Roadmap 86 — Icono de la app vinculada (`targetApp`) en puntos 16×16 (base64).
+   * Copiado al vincular para que no dependa de que la app siga abierta.
+   */
+  iconoApp?: string;
   /** Tienda (T-P4): de qué entrada de qué manifiesto vino esta página, para avisar updates. */
   origen?: OrigenInstalacion;
   /** Si existe, esta página es el perfil de un controlador físico (ver `types/superficies.ts`). */

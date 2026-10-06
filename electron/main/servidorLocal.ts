@@ -8,7 +8,7 @@ import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
 import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
 import { paginaMando } from './paginaMando';
-import { botonAMando, type BotonFuenteMando, type BotonMandoMovil } from './iconosMando';
+import { botonesVivosParaMando, widgetsVivosParaMando } from './mandoVivo';
 import motorPuntos from '../../src/components/dot480/efectosPuntos.js?raw';
 import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../src/types';
 
@@ -174,34 +174,6 @@ function responder(res: ServerResponse, codigo: number, cuerpo: unknown): void {
   res.end(texto);
 }
 
-/** Los botones que se pueden pulsar, para que el cliente sepa qué pedir.
- *
- * El icono de cada botón viaja ya resuelto a puntos (`iconosMando.ts`): el
- * catálogo 16×16, el glifo por nombre o el del tipo de acción, en ese orden.
- * La página del móvil solo los dibuja; `icon` se sigue mandando por
- * compatibilidad con clientes HTTP externos.
- */
-function listaDeBotones(): BotonMandoMovil[] {
-  const cfg = loadConfig() as {
-    pages?: Array<{
-      superficie?: unknown;
-    }>;
-    buttons?: BotonFuenteMando[];
-    toggledIds?: string[];
-  };
-  const paginas = cfg?.pages ?? [];
-  const encendidos = new Set(cfg?.toggledIds ?? []);
-  return (cfg?.buttons ?? [])
-    .filter((b) => {
-      if (paginas[b.page ?? 0]?.superficie) return false;
-      const tieneAccion = b.action && b.action.type !== 'none';
-      const es2x2 = b.subButtons && b.subButtons.length === 4;
-      const esSlider = b.widget === 'slider' || !!b.sliderWidget;
-      return tieneAccion || es2x2 || esSlider;
-    })
-    .map((b) => botonAMando(b, b.isToggle === true && encendidos.has(b.id)));
-}
-
 /**
  * El cuerpo de un POST, con tope.
  *
@@ -295,7 +267,20 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
   // servían a cualquiera que supiera el nombre del archivo. El mando las pide
   // con `fetch` y la cabecera (ver `ponerImagen` en `paginaMando.ts`).
   if (url.pathname.startsWith('/media/images/')) return atenderMedia(url, res);
-  if (url.pathname === '/api/buttons') return responder(res, 200, { ok: true, buttons: listaDeBotones() });
+  // Los botones vivos (etiqueta interpolada, visibilidad del deck) y sus
+  // widgets van en dos rutas para no romper a los clientes HTTP externos: son
+  // async porque miran sensores, reproducción, clima y divisas. Detrás del
+  // token como todo lo demás.
+  if (url.pathname === '/api/buttons') {
+    return void botonesVivosParaMando()
+      .then((buttons) => responder(res, 200, { ok: true, buttons }))
+      .catch(() => responder(res, 500, { ok: false, error: 'error interno' }));
+  }
+  if (url.pathname === '/api/widgets') {
+    return void widgetsVivosParaMando()
+      .then((widgets) => responder(res, 200, { ok: true, widgets }))
+      .catch(() => responder(res, 500, { ok: false, error: 'error interno' }));
+  }
   if (url.pathname === '/api/tema') return atenderTema(res);
 
   if (url.pathname.startsWith('/api/value/')) {

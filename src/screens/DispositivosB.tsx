@@ -33,7 +33,7 @@ export interface DispositivosBProps {
   /** El `+` de las pestañas: otra página del mismo dispositivo. */
   onAgregarPagina: (origenId: string, disposicion: DisposicionSuperficie) => void;
   /** Vincular una app a la página (`''` la desvincula). */
-  onFijarTargetApp: (id: string, app: string) => void;
+  onFijarTargetApp: (id: string, app: string, iconoApp?: string) => void;
   onRenombrarPagina: (id: string, nombre: string) => void;
   onBorrarPagina: (id: string) => void;
   /** Crear página preconfigurada desde plantilla (roadmap 75). */

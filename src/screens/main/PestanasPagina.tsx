@@ -2,8 +2,9 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { indicesPaginasDeck } from '../../utils/paginasDeck';
-import type { DeckConfig } from '../../types';
+import type { DeckConfig, PageConfig } from '../../types';
 
 /**
  * La fila de pestañas de pagina.
@@ -42,6 +43,72 @@ interface Props {
   /** Confirmar el renombrado en curso. Vive en MainB porque es quien guarda. */
   confirmRename: (id: string) => void;
   compact?: boolean;
+}
+
+interface ContenidoPestanaProps {
+  page: PageConfig;
+  isActive: boolean;
+  compact: boolean;
+  accent: string;
+  onPageChange: () => void;
+  onStartRename: () => void;
+  vd: ReturnType<typeof useTheme>;
+  t: (k: string, p?: Record<string, string | number>) => string;
+}
+
+function ContenidoPestana({
+  page,
+  isActive,
+  compact,
+  accent,
+  onPageChange,
+  onStartRename,
+  vd,
+  t,
+}: ContenidoPestanaProps) {
+  const gs = page.gridSize ?? 4;
+  const rows = page.gridRows ?? gs;
+  return (
+    <span
+      onClick={onPageChange}
+      onDoubleClick={onStartRename}
+      title={page.targetApp ? `${t('page.tip')} · ${t('page.boundApp')}: ${page.targetApp}` : t('page.tip')}
+      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+    >
+      {page.iconoApp && (
+        <IconoPuntos
+          bits={page.iconoApp}
+          size={compact ? 12 : 14}
+          color={isActive ? vd.text : vd.textDim}
+        />
+      )}
+      <span>{page.name}</span>
+      {page.targetApp && (
+        <span
+          title={`${t('page.boundApp')}: ${page.targetApp}`}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 3,
+            padding: '1px 4px',
+            borderRadius: vd.radius.sm,
+            background: `${accent}1c`,
+            border: `1px solid ${accent}55`,
+            color: accent,
+            fontSize: 7,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
+          }}
+        >
+          <DotGlyphIcon glyph="APP_WINDOW" size={6} color={accent} />
+          <span>{page.targetApp}</span>
+        </span>
+      )}
+      {gs !== 4 && (
+        <span style={{ fontSize: 7, marginLeft: 2, opacity: 0.5 }}>{gs}×{rows}</span>
+      )}
+    </span>
+  );
 }
 
 export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, onPageExport, onPageImport, onPageReorder, onMoveButtonToPage, renamingPageId, setRenamingPageId, renameValue, setRenameValue, setPageContextMenu, dragPageIdx, setDragPageIdx, dragOverPageIdx, setDragOverPageIdx, dragSourceId, setDragSourceId, showSidebar, setShowSidebar, showToast, confirmRename, compact = false }: Props) {
@@ -121,38 +188,16 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
                 }}
               />
             ) : (
-              <span
-                onClick={() => onPageChange(i)}
-                onDoubleClick={() => { setRenamingPageId(p.id); setRenameValue(p.name); }}
-                title={p.targetApp ? `${t('page.tip')} · ${t('page.boundApp')}: ${p.targetApp}` : t('page.tip')}
-                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-              >
-                <span>{p.name}</span>
-                {p.targetApp && (
-                  <span
-                    title={`${t('page.boundApp')}: ${p.targetApp}`}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 3,
-                      padding: '1px 4px',
-                      borderRadius: VD.radius.sm,
-                      background: `${config.accent}1c`,
-                      border: `1px solid ${config.accent}55`,
-                      color: config.accent,
-                      fontSize: 7,
-                      letterSpacing: 0.5,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    <DotGlyphIcon glyph="APP_WINDOW" size={6} color={config.accent} />
-                    <span>{p.targetApp}</span>
-                  </span>
-                )}
-                {(p.gridSize ?? 4) !== 4 && (
-                  <span style={{ fontSize: 7, marginLeft: 2, opacity: 0.5 }}>{p.gridSize ?? 4}×{p.gridRows ?? p.gridSize ?? 4}</span>
-                )}
-              </span>
+              <ContenidoPestana
+                page={p}
+                isActive={i === activePage}
+                compact={compact}
+                accent={config.accent}
+                onPageChange={() => onPageChange(i)}
+                onStartRename={() => { setRenamingPageId(p.id); setRenameValue(p.name); }}
+                vd={VD}
+                t={t}
+              />
             )}
           </div>
           );

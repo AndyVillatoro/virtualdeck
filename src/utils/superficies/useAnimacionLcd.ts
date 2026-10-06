@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ButtonConfig, DeckConfig, ElectronAPI, InfoSuperficie, LcdControl } from '../../types';
 import { teclasLcd } from './disposicion';
-import { paginaDe } from './paginasSuperficie';
+import { paginaDe, type VivoPagina } from './paginasSuperficie';
 import { decodificarGif, esGifAnimado, type GifAnimado } from './animacionLcd';
 import { pintarTecla, pintarTeclaConCuadro, resolverBotonLcd, type ColoresSuperficie, type ExtrasAnimados, type OpcionesPintado } from './pintarTecla';
 
@@ -45,6 +45,8 @@ export interface OpcionesAnimacionLcd {
   iconoSvg?: OpcionesPintado['iconoSvg'];
   esGlifoDot?: OpcionesPintado['esGlifoDot'];
   fuentesListas: boolean;
+  /** Estado vivo: la página se resuelve como la pinta el resto (visibleIf). */
+  vivo: VivoPagina;
   /**
    * ¿Esa tecla está enseñando el aviso de un giro (T-HW-21)? Mientras dura, el
    * animador no la pinta: si no, el siguiente fotograma lo borraría en 100 ms.
@@ -161,11 +163,11 @@ export function useAnimacionLcd(opciones: OpcionesAnimacionLcd): void {
   });
   motor.current.opciones = opciones;
 
-  const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas } = opciones;
+  const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo } = opciones;
   useEffect(() => {
     if (!api) return;
     reconciliar(motor.current);
-  }, [api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas]);
+  }, [api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo]);
 
   // El puente del motor puede registrarse después (carga diferida): al
   // avisar se reconcilian los deseos de puntos.
@@ -194,11 +196,14 @@ function recolectarDeseos(o: OpcionesAnimacionLcd): Map<string, DeseoAnimado> {
   const salida = new Map<string, DeseoAnimado>();
   for (const dispositivo of o.dispositivos) {
     if (!dispositivo.conectado) continue;
-    const pagina = paginaDe(o.config, dispositivo.serial, dispositivo.disposicion, o.paginasActivas[dispositivo.serial]);
+    const pagina = paginaDe(o.config, dispositivo.serial, dispositivo.disposicion, o.paginasActivas[dispositivo.serial], o.vivo);
     if (!pagina) continue;
     for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
       const boton = pagina.botones[hueco];
       if (!boton?.imageData || !esGifAnimado(boton.imageData)) continue;
+      // Un mosaico 2×2 manda sobre la imagen: el pintor estático dibuja la
+      // rejilla y el GIF no debe repintarse encima.
+      if (boton.subButtons?.length === 4) continue;
       const rotacion = pagina.rotacion ?? lcd.rotacion;
       const clave = [
         dispositivo.serial, hueco, indice, boton.imageData,
@@ -248,8 +253,10 @@ function firmaPuntos(
   boton: ButtonConfig, encendido: boolean, rotacion: number,
   colores: ColoresSuperficie, fuentes: boolean,
 ): string {
+  // `label`/`sublabel` van ya interpolados desde `paginaDe`: un cambio de
+  // variable reinicia el deseo y el siguiente fotograma sale con el texto nuevo.
   return JSON.stringify([
-    boton.icon, boton.iconoPuntos?.bits, boton.bgColor, boton.fgColor,
+    boton.label, boton.sublabel, boton.icon, boton.iconoPuntos?.bits, boton.bgColor, boton.fgColor,
     boton.animacion, boton.efectoPulsar, encendido,
     rotacion, colores.fondo, colores.texto, fuentes,
   ]);
@@ -263,11 +270,13 @@ function recolectarDeseosPuntos(o: OpcionesAnimacionLcd): Map<string, DeseoPunto
   const encendidos = new Set(o.config.toggledIds ?? []);
   for (const dispositivo of o.dispositivos) {
     if (!dispositivo.conectado) continue;
-    const pagina = paginaDe(o.config, dispositivo.serial, dispositivo.disposicion, o.paginasActivas[dispositivo.serial]);
+    const pagina = paginaDe(o.config, dispositivo.serial, dispositivo.disposicion, o.paginasActivas[dispositivo.serial], o.vivo);
     if (!pagina) continue;
     for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
       const original = pagina.botones[hueco];
       if (!original?.animacion) continue;
+      // El mosaico 2×2 no anima el centro del botón padre (como en la celda).
+      if (original.subButtons?.length === 4) continue;
       const encendido = encendidos.has(original.id);
       const cuando = original.animacion.cuando;
       if (cuando !== 'siempre' && !(cuando === 'encendido' && encendido)) continue;
@@ -384,7 +393,7 @@ function avanzarPulsos(motor: Motor, ahora: number): void {
       pulsosLcd.delete(clave);
       continue;
     }
-    const pagina = paginaDe(o.config, pulso.serial, dispositivo.disposicion, o.paginasActivas[pulso.serial]);
+    const pagina = paginaDe(o.config, pulso.serial, dispositivo.disposicion, o.paginasActivas[pulso.serial], o.vivo);
     const control = pagina?.indice === pulso.pagina
       ? teclasLcd(pagina.disposicion).find((c) => c.hueco === pulso.hueco)
       : undefined;

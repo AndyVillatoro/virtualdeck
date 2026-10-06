@@ -1,5 +1,6 @@
 import type { ButtonConfig, LcdControl } from '../../types';
 import { textoDeAviso, type AvisoPerilla } from './avisoPerilla';
+import { dibujarSubdivisionLcd, type UtilesSubdivision } from './subdivisionLcd';
 
 /**
  * Convierte el botón de un hueco en el JPEG que espera la tecla LCD.
@@ -122,8 +123,14 @@ const TRAMA_RADIO = 0.35;
 const TRAMA_FONDO = '#070809';
 /** Franja de la etiqueta, como `RotuloCelda`: alto relativo y velos. */
 const ETIQUETA_ALTO = 0.2;
+/** Con sub-etiqueta la franja lleva dos líneas. */
+const ETIQUETA_ALTO_DOBLE = 0.34;
 const ETIQUETA_VELO = 0.35;
 const ETIQUETA_DEGRADADO = 0.75;
+/** Sub-etiqueta atenuada sobre imagen, como `RotuloCelda` (`SUBLABEL_SOBRE_IMAGEN`). */
+const SUBLABEL_SOBRE_IMAGEN = '#9da2a8';
+/** Opacidad de la sub-etiqueta sobre fondo liso: más apagada que la etiqueta. */
+const SUBLABEL_ALFA = 0.6;
 
 let intentoFuentes: Promise<void> | null = null;
 
@@ -454,17 +461,29 @@ async function dibujarSuperpuesto(
   if (texto) dibujarTextoCentrado(ctx, texto, ancho, alto, '#fff', centroY);
 }
 
+/** Recorta con puntos suspensivos hasta caber, con la fuente ya puesta en el ctx. */
+function recortarTexto(ctx: CanvasRenderingContext2D, texto: string, maximo: number): string {
+  let visible = texto;
+  while (visible.length > 1 && ctx.measureText(`${visible}…`).width > maximo) {
+    visible = visible.slice(0, -1);
+  }
+  return visible === texto ? texto : `${visible}…`;
+}
+
 /**
  * La franja con el nombre, como `RotuloCelda`: JetBrains Mono 600, mayúsculas
- * y velo oscuro abajo (degradado si hay imagen o marca).
+ * y velo oscuro abajo (degradado si hay imagen o marca). Con `sublabel`, la
+ * franja lleva dos líneas: la sub-etiqueta va debajo, más pequeña y atenuada,
+ * la misma jerarquía que en la celda.
  */
 function dibujarEtiqueta(
-  ctx: CanvasRenderingContext2D, texto: string, ancho: number, alto: number,
+  ctx: CanvasRenderingContext2D, texto: string, subtexto: string, ancho: number, alto: number,
   color: string, sobreFondo: boolean,
 ): void {
   const limpio = texto.trim().toUpperCase();
-  if (!limpio) return;
-  const altoFranja = Math.max(12, Math.round(alto * ETIQUETA_ALTO));
+  const sub = subtexto.trim().toUpperCase();
+  if (!limpio && !sub) return;
+  const altoFranja = Math.max(sub ? 16 : 12, Math.round(alto * (sub ? ETIQUETA_ALTO_DOBLE : ETIQUETA_ALTO)));
   const yFranja = alto - altoFranja;
 
   if (sobreFondo) {
@@ -478,34 +497,68 @@ function dibujarEtiqueta(
   }
   ctx.fillRect(0, yFranja, ancho, altoFranja);
 
-  const tamano = Math.max(7, Math.round(alto * 0.14));
-  ctx.font = `600 ${tamano}px ${fuenteMono()}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = sobreFondo ? '#fff' : color;
+  const maximo = ancho - 4;
   if (sobreFondo) {
     ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
     ctx.shadowBlur = 2;
     ctx.shadowOffsetY = 1;
   }
-  let visible = limpio;
-  while (visible.length > 1 && ctx.measureText(`${visible}…`).width > ancho - 4) {
-    visible = visible.slice(0, -1);
+  if (limpio) {
+    const tamano = Math.max(7, Math.round(alto * (sub ? 0.13 : 0.14)));
+    ctx.font = `600 ${tamano}px ${fuenteMono()}`;
+    ctx.fillStyle = sobreFondo ? '#fff' : color;
+    const y = sub
+      ? yFranja + Math.round(altoFranja * 0.42)
+      : alto - Math.max(3, Math.round(alto * 0.05));
+    ctx.fillText(recortarTexto(ctx, limpio, maximo), ancho / 2, y);
   }
-  if (visible !== limpio) visible = `${visible}…`;
-  ctx.fillText(visible, ancho / 2, alto - Math.max(3, Math.round(alto * 0.05)));
+  if (sub) {
+    const tamano = Math.max(6, Math.round(alto * 0.1));
+    ctx.font = `600 ${tamano}px ${fuenteMono()}`;
+    ctx.fillStyle = sobreFondo ? SUBLABEL_SOBRE_IMAGEN : color;
+    ctx.globalAlpha = sobreFondo ? 1 : SUBLABEL_ALFA;
+    ctx.fillText(recortarTexto(ctx, sub, maximo), ancho / 2, alto - Math.max(2, Math.round(alto * 0.04)));
+    ctx.globalAlpha = 1;
+  }
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 }
 
-async function pintarContenido(
+/** El destello blanco al pulsar, encima de todo (roadmap 79). */
+function dibujarDestello(
+  ctx: CanvasRenderingContext2D, ancho: number, alto: number, extras?: ExtrasAnimados,
+): void {
+  if (!extras?.destello) return;
+  ctx.fillStyle = `rgba(255, 255, 255, ${extras.destello > 1 ? 1 : extras.destello})`;
+  ctx.fillRect(0, 0, ancho, alto);
+}
+
+/** ¿El botón enseña fondo (imagen o marca) en vez del centro? */
+function tieneFondo(boton: ButtonConfig): boolean {
+  return !!(boton.imageData || boton.brandIcon);
+}
+
+/** ¿Hay rótulo que ocupe franja? Etiqueta, sub-etiqueta o las dos. */
+function tieneRotulo(boton: ButtonConfig): boolean {
+  return !!(boton.label || boton.sublabel);
+}
+
+/** Icono superpuesto a una marca: solo si hay marca y algo que poner encima. */
+function marcaConIcono(boton: ButtonConfig): boolean {
+  return !!boton.brandIcon && !!(boton.iconoPuntos?.bits || boton.icon);
+}
+
+/** El cuerpo normal de la tecla: fondo, centro y rótulo (sin mosaico). */
+async function pintarCuerpoCelda(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
   colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
 ): Promise<void> {
   const color = colorTexto(boton, colores);
-  const sobreFondo = !!(boton.imageData || boton.brandIcon);
-  const centroY = boton.label ? alto * 0.42 : alto * 0.5;
+  const sobreFondo = tieneFondo(boton);
+  const centroY = tieneRotulo(boton) ? alto * 0.42 : alto * 0.5;
 
   let fondoPintado = false;
   if (boton.imageData) fondoPintado = await dibujarImagenConTrama(ctx, boton.imageData, ancho, alto);
@@ -514,15 +567,33 @@ async function pintarContenido(
   if (extras?.matriz && extras?.intensidades) {
     dibujarMatrizAnimada(ctx, extras.matriz, extras.intensidades, ancho, alto, color, centroY);
   } else if (fondoPintado) {
-    if (boton.brandIcon && (boton.iconoPuntos?.bits || boton.icon)) await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
+    if (marcaConIcono(boton)) await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
   } else {
     await dibujarCentro(ctx, boton, ancho, alto, color, centroY, opciones);
   }
-  dibujarEtiqueta(ctx, boton.label ?? '', ancho, alto, color, sobreFondo);
-  if (extras?.destello) {
-    ctx.fillStyle = `rgba(255, 255, 255, ${extras.destello > 1 ? 1 : extras.destello})`;
-    ctx.fillRect(0, 0, ancho, alto);
+  dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, sobreFondo);
+  dibujarDestello(ctx, ancho, alto, extras);
+}
+
+/** Lo que `subdivisionLcd` necesita del pintor: fuentes, imagen y puntos apagados. */
+function utilesSubdivision(opciones: OpcionesPintado): UtilesSubdivision {
+  return { cargarImagen, fuenteMono, fuenteDots, dim: DIM_GLIFO, iconoSvg: opciones.iconoSvg };
+}
+
+/**
+ * El contenido de una tecla con botón: el mosaico 2×2 si lo hay (manda sobre
+ * imagen y rótulo, como `Subdivision2x2` en la celda) y si no el cuerpo normal.
+ */
+async function pintarContenido(
+  ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
+  colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
+): Promise<void> {
+  if (boton.subButtons?.length === 4) {
+    await dibujarSubdivisionLcd(ctx, boton, ancho, alto, colorTexto(boton, colores), utilesSubdivision(opciones));
+    dibujarDestello(ctx, ancho, alto, extras);
+    return;
   }
+  await pintarCuerpoCelda(ctx, boton, ancho, alto, colores, opciones, extras);
 }
 
 /** Rota el lienzo en sentido horario; a 90/270 se intercambian los lados. */
@@ -710,14 +781,19 @@ export async function pintarTeclaConCuadro(
 
   ctx.fillStyle = colorFondo(boton, colores);
   ctx.fillRect(0, 0, ancho, alto);
+  if (boton?.subButtons?.length === 4) {
+    // Un mosaico no lleva la imagen de fondo: manda la rejilla, como en la celda.
+    await dibujarSubdivisionLcd(ctx, boton, ancho, alto, colorTexto(boton, colores), utilesSubdivision(opciones));
+    return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl: '' };
+  }
   dibujarConTrama(ctx, cuadro, ancho, alto);
   if (boton) {
     if (boton.brandIcon && (boton.iconoPuntos?.bits || boton.icon)) {
-      const centroY = boton.label ? alto * 0.42 : alto * 0.5;
+      const centroY = (boton.label || boton.sublabel) ? alto * 0.42 : alto * 0.5;
       await dibujarSuperpuesto(ctx, boton, ancho, alto, centroY, opciones);
     }
     // Un GIF es siempre fondo: el rótulo va sobre él, con el mismo degradado.
-    dibujarEtiqueta(ctx, boton.label ?? '', ancho, alto, colorTexto(boton, colores), true);
+    dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, colorTexto(boton, colores), true);
   }
   return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl: '' };
 }

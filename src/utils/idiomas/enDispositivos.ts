@@ -132,4 +132,6 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.aviso.brillo': 'BRIGHT',
   'disp.aviso.pagina': 'PAGE {n}/{total}',
   'disp.aviso.modo': 'MODE {n}/{total}',
+  // A 2×2 mosaic cannot be pressed from the physical key (roadmap 82)
+  'disp.aviso.cuadrantes': 'DECK 2x2',
 };

@@ -10,7 +10,7 @@ interface ModalVincularAppProps {
   page: PageConfig;
   accent: string;
   runningProcesses?: Set<string>;
-  onSave: (targetApp: string) => void;
+  onSave: (targetApp: string, iconoApp?: string) => void;
   onClose: () => void;
   onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
 }
@@ -27,8 +27,22 @@ export function ModalVincularApp({
   const t = useT();
   const [customBindingApp, setCustomBindingApp] = useState(page.targetApp ?? '');
 
-  const saveBinding = (app: string) => {
-    onSave(normalizarApp(app));
+  const saveBinding = async (app: string) => {
+    const cleaned = normalizarApp(app);
+    if (!cleaned) {
+      onSave('', undefined);
+      return;
+    }
+    let icono: string | null = null;
+    if (window.electronAPI?.launch?.iconoApp) {
+      try {
+        icono = await window.electronAPI.launch.iconoApp(cleaned);
+      } catch {
+        icono = null;
+      }
+    }
+    const iconoFinal = icono ?? (cleaned === page.targetApp ? page.iconoApp : undefined);
+    onSave(cleaned, iconoFinal);
   };
 
   const handleCrearDesdePlantilla = onCrearDesdePlantilla
@@ -82,7 +96,7 @@ export function ModalVincularApp({
           valor={customBindingApp}
           onElegir={setCustomBindingApp}
           onCrearDesdePlantilla={handleCrearDesdePlantilla}
-          onEnter={() => saveBinding(customBindingApp)}
+          onEnter={() => void saveBinding(customBindingApp)}
           autoFocus
         />
 
@@ -92,7 +106,7 @@ export function ModalVincularApp({
             {page.targetApp && (
               <button
                 type="button"
-                onClick={() => saveBinding('')}
+                onClick={() => void saveBinding('')}
                 style={{
                   padding: '7px 12px',
                   background: 'transparent',
@@ -131,7 +145,7 @@ export function ModalVincularApp({
             </button>
             <button
               type="button"
-              onClick={() => saveBinding(customBindingApp)}
+              onClick={() => void saveBinding(customBindingApp)}
               style={{
                 padding: '7px 18px',
                 background: VD.accentBg,

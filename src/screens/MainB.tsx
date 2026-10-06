@@ -495,13 +495,15 @@ export function MainB({
             page={targetPage}
             accent={config.accent}
             runningProcesses={estadoSistema.runningProcesses}
-            onSave={(cleaned) => {
+            onSave={(cleaned, iconoApp) => {
               // Con deshacer, como en Dispositivos: antes era un
               // `onConfigChange` directo sin historial.
-              if (onFijarTargetApp) onFijarTargetApp(bindingAppPageId, cleaned);
+              if (onFijarTargetApp) onFijarTargetApp(bindingAppPageId, cleaned, iconoApp);
               else {
                 const updatedPages = config.pages.map((p) =>
-                  p.id === bindingAppPageId ? { ...p, targetApp: cleaned || undefined } : p,
+                  p.id === bindingAppPageId
+                    ? { ...p, targetApp: cleaned || undefined, iconoApp: cleaned ? iconoApp : undefined }
+                    : p,
                 );
                 onConfigChange({ ...config, pages: updatedPages });
               }

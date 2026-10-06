@@ -10,12 +10,14 @@ import { playModo, sonidoActivo, perfilSonido } from '../sound';
 import {
   esAppPropia, idPaginaSegunApp, normalizarApp,
 } from './paginaSegunApp';
-import { paginaDe, type PaginaDispositivo } from './paginasSuperficie';
+import { paginaDe, type PaginaDispositivo, type VivoPagina } from './paginasSuperficie';
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
-import { useAvisoPerilla } from './useAvisoPerilla';
+import { useAvisoPerilla, type AvisoPerillaApi } from './useAvisoPerilla';
 import type { ResultadoPulsacion } from '../pulsarBoton';
 import { makeT, resolveLang, type TFunc } from '../i18n';
 import type { DetalleAccion } from '../acciones/base';
+import { useEstadoSistema } from '../estadoSistema';
+import { useSensors } from '../sensors';
 import {
   fuentesLcdListas, pintarTecla, prepararFuentesLcd, resolverBotonLcd,
   type ColoresSuperficie, type OpcionesPintado,
@@ -106,8 +108,11 @@ function firmaDe(
   colores: ColoresSuperficie, fuentes: boolean,
 ): string {
   if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
+  // `label`/`sublabel` llegan ya interpolados desde `paginaDe`: la firma lleva
+  // el texto final (`{VOL}` resuelto), así que un cambio de variable repinta.
   return JSON.stringify([
-    boton.label, boton.icon, boton.iconoPuntos?.bits, boton.imageData, boton.customGlyph57, boton.brandIcon,
+    boton.label, boton.sublabel, boton.icon, boton.iconoPuntos?.bits, boton.imageData,
+    boton.customGlyph57, boton.brandIcon, boton.subButtons,
     boton.brandIconCustomBitmap, boton.brandIconCustomColor, boton.brandIconCustomPalette,
     boton.bgColor, boton.fgColor, boton.action?.type,
     boton.isToggle, boton.animacion, boton.efectoPulsar, boton.aspectoEncendido, encendido,
@@ -250,6 +255,16 @@ function decidirPerilla(
   return { kind: 'nada' };
 }
 
+/**
+ * Un mosaico 2×2 no cabe en una pulsación única: la tecla física no puede
+ * elegir cuadrante, así que no dispara nada y lo enseña en el aviso de la
+ * tecla (decisión del roadmap 82, ver `docs/PARIDAD.md`). Solo al bajar: un
+ * `up` no hace nada.
+ */
+function avisarMosaico(avisos: AvisoPerillaApi, entrada: EntradaSuperficie, hueco: number): void {
+  if (entrada.gesto === 'down') avisos.avisarDeCuadrantes(entrada.serial, hueco);
+}
+
 export function useSuperficies({
   api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo, t: tProp,
 }: OpcionesSuperficies): Superficies {
@@ -268,12 +283,23 @@ export function useSuperficies({
   // config. `App` no lo pasa (T-HW-21), así que sin él se sigue el idioma.
   const t = useMemo(() => tProp ?? makeT(resolveLang(config.language)), [tProp, config.language]);
 
+  // El estado del sistema y las lecturas de sensores, para `visibleIf`: es lo
+  // mismo que evalúa el deck (`botonVisible`). Al cambiar, `paginaDe` deja de
+  // devolver el botón oculto y la firma cambia, así que la tecla se repinta.
+  const estadoSistema = useEstadoSistema(api);
+  const { sensors: sensorList } = useSensors();
+  const vivo = useMemo<VivoPagina>(
+    () => ({ estado: estadoSistema, sensores: sensorList }),
+    [estadoSistema, sensorList],
+  );
+
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
   const imagenesRef = useRef(imagenes);
   const activasRef = useRef(activas);
   const basesRef = useRef(bases);
   const modosRef = useRef(modos);
+  const vivoRef = useRef(vivo);
   const dispararRef = useRef(dispararBoton);
   const crearRef = useRef(crearPaginaSuperficie);
   const alCambiarModoRef = useRef(alCambiarModo);
@@ -285,6 +311,7 @@ export function useSuperficies({
   activasRef.current = activas;
   basesRef.current = bases;
   modosRef.current = modos;
+  vivoRef.current = vivo;
   dispararRef.current = dispararBoton;
   crearRef.current = crearPaginaSuperficie;
   alCambiarModoRef.current = alCambiarModo;
@@ -302,7 +329,7 @@ export function useSuperficies({
 
   // Aviso de la tecla al girar una perilla (T-HW-21, roadmap 85).
   const avisos = useAvisoPerilla({
-    api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, t, alPintar,
+    api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, t, alPintar, vivo,
   });
   const avisosRef = useRef(avisos);
   avisosRef.current = avisos;
@@ -348,6 +375,7 @@ export function useSuperficies({
       if (!dispositivo) return;
       const pagina = paginaDe(
         configRef.current, entrada.serial, dispositivo.disposicion, activasRef.current[entrada.serial],
+        vivoRef.current,
       );
       if (!pagina) return;
       // Dispara el giro y, al volver, enseña el valor en la tecla de encima
@@ -389,7 +417,12 @@ export function useSuperficies({
       // El destello al pulsar (2-3 fotogramas) lo pinta el animador del LCD.
       if (entrada.gesto === 'down') registrarPulsoLcd(entrada.serial, hueco, pagina.indice);
       const boton = pagina.botones[hueco];
-      if (!boton || boton.action.type === 'none') return;
+      if (!boton) return;
+      if (boton.subButtons?.length === 4) {
+        avisarMosaico(avisosRef.current, entrada, hueco);
+        return;
+      }
+      if (boton.action.type === 'none') return;
       // Girar una perilla o deslizar una tira (izq/der) suena con el tic de
       // giro; pulsar (down) suena como siempre. El serial viaja en `opts` para
       // que un botón `page-nav` navegue entre las páginas de **este** dock.
@@ -505,7 +538,7 @@ export function useSuperficies({
       const encendidos = new Set(config.toggledIds ?? []);
       for (const dispositivo of conectados) {
         const pagina = paginaDe(
-          config, dispositivo.serial, dispositivo.disposicion, activas[dispositivo.serial],
+          config, dispositivo.serial, dispositivo.disposicion, activas[dispositivo.serial], vivo,
         );
         if (!pagina) {
           if (!creadas.current.has(dispositivo.serial)) {
@@ -529,13 +562,13 @@ export function useSuperficies({
       }
       if (cambio) setImagenes(nuevasImagenes);
     })();
-  }, [api, config, dispositivos, activas, fondo, texto, fuentesListas]);
+  }, [api, config, dispositivos, activas, fondo, texto, fuentesListas, vivo]);
 
   // Los GIF animados de la tecla física. Va después del pintado estático (que
   // deja el primer fotograma) y comparte la resolución de página con él. Las
   // teclas que están enseñando un aviso se dejan quietas (T-HW-21).
   useAnimacionLcd({
-    api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, fuentesListas,
+    api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo,
     conAviso: avisos.conAviso,
   });
 

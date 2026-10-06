@@ -19,6 +19,7 @@
  */
 import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
 import { JS_ANIMACION_MANDO } from './iconosMando';
+import { JS_VIVO_MANDO } from './vivoMandoPagina';
 
 const TEXTOS = {
   es: {
@@ -154,6 +155,9 @@ export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?
   }
   .label-txt { font-size: 8px; font-weight: 700; letter-spacing: 0.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .sublabel-txt { font-size: 8px; color: var(--ten); letter-spacing: 0.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .widget-vivo { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; z-index: 1; pointer-events: none; max-width: 100%; padding: 2px; }
+  .wl1 { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wl2 { font-size: 8px; color: var(--ten); letter-spacing: 0.5px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   input { width: 100%; background: var(--sup); border: 1px solid var(--bor); border-radius: 4px; color: var(--txt); font-size: 24px; letter-spacing: 8px; text-align: center; padding: 12px; outline: none; margin-top: 12px; }
   input:focus { border-color: var(--ac); box-shadow: 0 0 8px var(--ac); }
   button.principal {
@@ -381,6 +385,10 @@ function dibujarIconoBoton(b, fgColor, tam, celdas) {
 // líneas de este archivo: es código de la página, no del servidor.
 ${JS_ANIMACION_MANDO}
 
+// El refresco vivo (botones + widgets cada 3 s) vive en vivoMandoPagina por
+// lo mismo: este archivo ya va cargado.
+${JS_VIVO_MANDO}
+
 function pantallaEmparejar(error) {
   btnOlvidar.style.display = 'none';
   vaciar();
@@ -434,6 +442,8 @@ async function pantallaDeck() {
   const botones = datos.buttons || [];
   vaciar();
   animadosMovil = [];
+  // Lo que hay ahora: el tic vivo redibuja solo si esto cambia.
+  ultimoBotonesVivo = JSON.stringify(botones);
   if (rafMovil) { cancelAnimationFrame(rafMovil); rafMovil = 0; }
   const paginas = [...new Set(botones.map((b) => b.page))].sort((a, b) => a - b);
   if (paginas.length > 0 && !paginas.includes(paginaViva)) {
@@ -457,6 +467,8 @@ async function pantallaDeck() {
 
   for (const b of visibles) {
     const celda = nodo('div', { className: 'celda' });
+    // Para pintar los widgets en su sitio sin redibujar la rejilla.
+    celda.setAttribute('data-boton', b.id);
     let colorFrente = b.fgColor;
     if (esClaro && colorFrente && colorFrente.toLowerCase() === '#ffffff') colorFrente = '#111418';
     if (b.bgColor) celda.style.backgroundColor = b.bgColor;
@@ -561,16 +573,26 @@ async function pantallaDeck() {
     }
 
     if (b.customGlyph57 && b.customGlyph57.length === 7) {
-      const wrap = nodo('div');
+      const wrap = nodo('div', { className: 'glifo57' });
       wrap.append(svgGlifo57(b.customGlyph57, colorFrente));
       celda.append(wrap);
+      celda._nodoIcono = wrap;
     } else if (b.iconTexto || b.puntos) {
       const rejillaCeldas = [];
       const icoEl = dibujarIconoBoton(b, colorFrente, 22, rejillaCeldas);
       if (icoEl) celda.append(icoEl);
+      celda._nodoIcono = icoEl || null;
       registrarAnimado(b, celda, rejillaCeldas);
       celda._rejillaCeldas = rejillaCeldas;
+    } else {
+      celda._nodoIcono = null;
     }
+    // Hueco del widget en vivo: se rellena al llegar /api/widgets (y cada
+    // 3 s), escondiendo el icono como hace la celda del deck.
+    const slotW = nodo('div', { className: 'widget-vivo' });
+    slotW.style.display = 'none';
+    celda.append(slotW);
+    celda._slotWidget = slotW;
     // La marca (brandIcon) sigue sin pintarse en el móvil, como antes: su
     // generador vive en src/data y el proceso principal no puede
     // importarlo (ver lint:arch, regla main-no-renderer).
@@ -597,6 +619,8 @@ async function pantallaDeck() {
     rejilla.append(celda);
   }
   app.append(rejilla);
+  refrescarWidgetsVivos();
+  arrancarVivo();
 }
 
 function olvidar() {

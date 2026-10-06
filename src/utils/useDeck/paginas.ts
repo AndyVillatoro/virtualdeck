@@ -274,18 +274,44 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
    * historial se calcula del estado anterior, que es donde sigue estando el
    * nombre de la página.
    */
-  const fijarTargetAppPagina = useCallback((id: string, app: string) => {
+  const fijarTargetAppPagina = useCallback(async (id: string, app: string, iconoDirecto?: string) => {
     const cleaned = normalizarApp(app);
+    if (!cleaned) {
+      withHistory('', (prev) => ({
+        ...prev,
+        pages: prev.pages.map((p) => p.id === id ? { ...p, targetApp: undefined, iconoApp: undefined } : p),
+      }), (prev) => {
+        const pagina = prev.pages.find((p) => p.id === id);
+        return t('undo.unbindSurfaceApp', { nombre: pagina?.name ?? '' });
+      });
+      return;
+    }
+
+    let icono = iconoDirecto;
+    if (icono === undefined) {
+      const pedir = api?.launch?.iconoApp ?? window.electronAPI?.launch?.iconoApp;
+      if (pedir) {
+        try {
+          icono = (await pedir(cleaned)) ?? undefined;
+        } catch {
+          icono = undefined;
+        }
+      }
+    }
+
     withHistory('', (prev) => ({
       ...prev,
-      pages: prev.pages.map((p) => p.id === id ? { ...p, targetApp: cleaned || undefined } : p),
-    }), (prev) => {
-      const pagina = prev.pages.find((p) => p.id === id);
-      return cleaned
-        ? t('undo.bindSurfaceApp', { nombre: cleaned })
-        : t('undo.unbindSurfaceApp', { nombre: pagina?.name ?? '' });
-    });
-  }, [withHistory, t]);
+      pages: prev.pages.map((p) => {
+        if (p.id !== id) return p;
+        const iconoFinal = icono ?? (cleaned === p.targetApp ? p.iconoApp : undefined);
+        return {
+          ...p,
+          targetApp: cleaned,
+          iconoApp: iconoFinal,
+        };
+      }),
+    }), () => t('undo.bindSurfaceApp', { nombre: cleaned }));
+  }, [api, withHistory, t]);
 
   /**
    * El brillo de las teclas de un dispositivo, en su mapa por serial.

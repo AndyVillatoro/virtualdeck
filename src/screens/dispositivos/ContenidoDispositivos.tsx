@@ -37,7 +37,7 @@ interface ContenidoDispositivosProps {
   onAgregarPagina: (origenId: string, disposicion: DisposicionSuperficie) => void;
   onRenombrarPagina: (id: string, nombre: string) => void;
   onBorrarPagina: (id: string) => void;
-  onFijarTargetApp: (id: string, app: string) => void;
+  onFijarTargetApp: (id: string, app: string, iconoApp?: string) => void;
   /** Crear página preconfigurada desde plantilla (roadmap 75). */
   onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
   onSelectHueco: (hueco: number) => void;

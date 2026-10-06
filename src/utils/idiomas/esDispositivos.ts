@@ -132,4 +132,6 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.aviso.brillo': 'BRILLO',
   'disp.aviso.pagina': 'PÁG {n}/{total}',
   'disp.aviso.modo': 'MODO {n}/{total}',
+  // Un mosaico 2×2 no se puede pulsar desde la tecla física (roadmap 82)
+  'disp.aviso.cuadrantes': 'DECK 2x2',
 };

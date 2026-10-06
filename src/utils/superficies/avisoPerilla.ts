@@ -44,3 +44,11 @@ export function avisoDePagina(indice: number, total: number, t: TFunc): AvisoPer
 export function avisoDeModo(siguiente: number, total: number, t: TFunc): AvisoPerilla {
   return { texto: t('disp.aviso.modo', { n: siguiente + 1, total }) };
 }
+
+/**
+ * El aviso de un mosaico 2×2: la tecla física es una pulsación única y no
+ * puede elegir cuadrante, así que no dispara nada y lo dice (roadmap 82).
+ */
+export function avisoDeCuadrantes(t: TFunc): AvisoPerilla {
+  return { texto: t('disp.aviso.cuadrantes') };
+}

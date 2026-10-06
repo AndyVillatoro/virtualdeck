@@ -111,6 +111,12 @@ export interface BotonFuenteMando {
     fgColor?: string;
     action?: { type: string };
   }>;
+  /** Visibilidad condicional: el servidor la evalúa antes de mandar el botón. */
+  visibleIf?: { app?: string; sensor?: { id: string; op: '>' | '<' | '>=' | '<=' | '=='; value: number } };
+  /** Configuración de los widgets en vivo que sirve `/api/widgets`. */
+  sensorWidget?: { sensorId: string; suffix?: string; warnAt?: number; critAt?: number };
+  varWidget?: { varName: string; prefix?: string; suffix?: string };
+  currencyWidget?: { from: string; to: string; amount?: number };
 }
 
 /**

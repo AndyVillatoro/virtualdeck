@@ -34,8 +34,8 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 | **`id`** (Identificador único) | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **`page`** (Pertenencia a página) | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **`label`** (Etiqueta principal) | SÍ | SÍ | SÍ | SÍ | SÍ |
-| **`sublabel`** (Sub-etiqueta secundaria) | SÍ | SÍ | SÍ | SÍ | NO |
-| **Interpolación `{var}` en etiqueta** | SÍ | SÍ | SÍ | NO | NO |
+| **`sublabel`** (Sub-etiqueta secundaria) | SÍ | SÍ | SÍ | SÍ | SÍ |
+| **Interpolación `{var}` en etiqueta** | SÍ | SÍ | SÍ | NO | SÍ |
 
 #### Evidencia (3.1)
 - **`id`**:
@@ -43,7 +43,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`FullscreenB.tsx:249,250`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:195,204`)
   - Mando móvil: SÍ (`iconosMando.ts:233`, `paginaMando.ts:591`)
-  - Tecla física: SÍ (`paginasSuperficie.ts:46`, `useSuperficies.ts:323`)
+  - Tecla física: SÍ (`paginasSuperficie.ts:61-87`, `useSuperficies.ts:419`)
 - **`page`**:
   - Principal: SÍ (`MainB.tsx:182`, `CeldaPrincipal.tsx:56`)
   - Kiosko: SÍ (`FullscreenB.tsx:182,244`)
@@ -55,19 +55,19 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`FullscreenB.tsx:262`, `ButtonCell.tsx:124`, `RotuloCelda.tsx:41`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:213`, `ButtonCell.tsx:124`, `RotuloCelda.tsx:41`)
   - Mando móvil: SÍ (`iconosMando.ts:234`, `paginaMando.ts:580`)
-  - Tecla física: SÍ (`pintarTecla.ts:460-499,520`)
+  - Tecla física: SÍ (`pintarTecla.ts:479-529,574`)
 - **`sublabel`**:
   - Principal: SÍ (`RotuloCelda.tsx:31,74-94`, `Subdivision2x2.tsx:313,328`)
   - Kiosko: SÍ (`RotuloCelda.tsx:31,74-94`, `Subdivision2x2.tsx:313,328`)
   - Barra flotante: SÍ (`RotuloCelda.tsx:31,74-94`, `Subdivision2x2.tsx:313,328`)
   - Mando móvil: SÍ (`iconosMando.ts:235`, `paginaMando.ts:581` `.sublabel-txt`)
-  - Tecla física: NO (`pintarTecla.ts:460-499,520` solo lee y renderiza `boton.label`, omitiendo `sublabel`)
+  - Tecla física: SÍ (`pintarTecla.ts:479,520-524,574,796` `dibujarEtiqueta` dibuja la segunda línea más pequeña y atenuada, con el gris de `RotuloCelda` sobre imagen; `paginasSuperficie.ts:55` la interpola)
 - **Interpolación `{var}` en etiqueta**:
   - Principal: SÍ (`CeldaPrincipal.tsx:80`: `resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, deckState) : undefined}`)
-  - Kiosko: SÍ (`FullscreenB.tsx:262`: `resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}`)
+  - Kiosko: SÍ (`FullscreenB.tsx:262`: `resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, deckState) : undefined}`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:213-214`: `resolvedLabel={btn.label.includes('{') ? interpolate(btn.label, config.state ?? {}) : undefined}`)
   - Mando móvil: NO (`servidorLocal.ts:234` pasa `b.label` crudo sin llamar a `interpolate`)
-  - Tecla física: NO (`pintarTecla.ts:520` pasa `boton.label ?? ''` crudo sin llamar a `interpolate`)
+  - Tecla física: SÍ (`paginasSuperficie.ts:47-57,86` `resolverBotonPagina` interpola `label` y `sublabel` con `config.state`; `useSuperficies.ts:114-115` `firmaDe` serializa el texto final, no la plantilla, así que el cambio de variable repinta la tecla)
 
 ---
 
@@ -84,13 +84,13 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`ButtonCell.tsx:149,213`)
   - Barra flotante: SÍ (`ButtonCell.tsx:149,213`)
   - Mando móvil: SÍ (`iconosMando.ts:237`, `paginaMando.ts:462`: `celda.style.backgroundColor = b.bgColor`)
-  - Tecla física: SÍ (`pintarTecla.ts:184`: `return boton.bgColor \|\| colores.fondo`, `useSuperficies.ts:97`)
+  - Tecla física: SÍ (`pintarTecla.ts:190-192` `colorFondo`, `useSuperficies.ts:519`)
 - **`fgColor`**:
   - Principal: SÍ (`ButtonCell.tsx:124`, `src/components/celda/derivados.ts:60`)
   - Kiosko: SÍ (`ButtonCell.tsx:124`)
   - Barra flotante: SÍ (`ButtonCell.tsx:124`)
   - Mando móvil: SÍ (`iconosMando.ts:238`, `paginaMando.ts:463`: `celda.style.color = colorFrente`)
-  - Tecla física: SÍ (`pintarTecla.ts:203`: `return boton.fgColor \|\| colores.texto`, `useSuperficies.ts:97`)
+  - Tecla física: SÍ (`pintarTecla.ts:208-210` `colorTexto`, `useSuperficies.ts:520`)
 
 ---
 
@@ -112,43 +112,43 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`ButtonCell.tsx` → `ContenidoCentral.tsx:102`)
   - Barra flotante: SÍ (`ButtonCell.tsx` → `ContenidoCentral.tsx:102`)
   - Mando móvil: SÍ (`iconosMando.ts:164-167,185` `filasDeAccion`)
-  - Tecla física: SÍ (`pintarTecla.ts:440` → `iconoSvg.tsx:57-60`)
+  - Tecla física: SÍ (`pintarTecla.ts:417-443` → `iconoSvg.tsx:57-60`)
 - **Glifo DOT 8×8 (`icon`)**:
   - Principal: SÍ (`ContenidoCentral.tsx:85`, `DotGlyphIcon.tsx`)
   - Kiosko: SÍ (`ContenidoCentral.tsx:85`)
   - Barra flotante: SÍ (`ContenidoCentral.tsx:85`)
   - Mando móvil: SÍ (`iconosMando.ts:149-161`, `paginaMando.ts:372`)
-  - Tecla física: SÍ (`pintarTecla.ts:420`, `iconoSvg.tsx:49-56`)
+  - Tecla física: SÍ (`pintarTecla.ts:417-443`, `iconoSvg.tsx:49-56`)
 - **`iconoPuntos` 16×16 de catálogo**:
   - Principal: SÍ (`ContenidoCentral.tsx:75`, `IconoPuntos.tsx`)
   - Kiosko: SÍ (`ContenidoCentral.tsx:75`)
   - Barra flotante: SÍ (`ContenidoCentral.tsx:75`)
   - Mando móvil: SÍ (`iconosMando.ts:139-146`, `paginaMando.ts:310-339`)
-  - Tecla física: SÍ (`pintarTecla.ts:420`, `iconoSvg.tsx:43-48`)
+  - Tecla física: SÍ (`pintarTecla.ts:417-443`, `iconoSvg.tsx:43-48`)
 - **Glifo personalizado 5×7 (`customGlyph57`)**:
   - Principal: SÍ (`ContenidoCentral.tsx:45` `CustomGlyphRenderer`)
   - Kiosko: SÍ (`ContenidoCentral.tsx:45`)
   - Barra flotante: SÍ (`ContenidoCentral.tsx:45`)
   - Mando móvil: SÍ (`iconosMando.ts:243`, `paginaMando.ts:341-364,563-566` `svgGlifo57`)
-  - Tecla física: SÍ (`pintarTecla.ts:316-348,413-416` `dibujarGlifo57`)
+  - Tecla física: SÍ (`pintarTecla.ts:324-337,423-425` `dibujarGlifo57`)
 - **Icono de marca (`brandIcon`, bitmap, paleta)**:
   - Principal: SÍ (`CapasDeFondo.tsx:42`, `BrandIconRenderer.tsx`)
   - Kiosko: SÍ (`CapasDeFondo.tsx:42`)
   - Barra flotante: SÍ (`CapasDeFondo.tsx:42`)
   - Mando móvil: NO (`paginaMando.ts:574-576`: regla de arquitectura `main-no-renderer` impide importar el catálogo de marcas en el proceso principal)
-  - Tecla física: SÍ (`pintarTecla.ts:295-313,511` `dibujarMarca`, importa dinámicamente `data/brandIcons`)
+  - Tecla física: SÍ (`pintarTecla.ts:303-321,565` `dibujarMarca`, importa dinámicamente `data/brandIcons`)
 - **Imagen estática (`imageData`)**:
   - Principal: SÍ (`CapasDeFondo.tsx:28-40` `DotMatrixImageOverlay`)
   - Kiosko: SÍ (`CapasDeFondo.tsx:28-40`)
   - Barra flotante: SÍ (`CapasDeFondo.tsx:28-40`)
   - Mando móvil: SÍ (`iconosMando.ts:190-201,242`, `servidorLocal.ts:233-256`, `paginaMando.ts:280-296,557-561` `ponerImagen`)
-  - Tecla física: SÍ (`pintarTecla.ts:285-292,510` `dibujarImagenConTrama`)
+  - Tecla física: SÍ (`pintarTecla.ts:293-300,564` `dibujarImagenConTrama`)
 - **GIF animado (`imageData` .gif)**:
   - Principal: SÍ (`CapasDeFondo.tsx:32` render nativo en motor Chromium)
   - Kiosko: SÍ (`CapasDeFondo.tsx:32`)
   - Barra flotante: SÍ (`CapasDeFondo.tsx:32`)
   - Mando móvil: SÍ (`paginaMando.ts:558` render nativo mediante blob url)
-  - Tecla física: SÍ (`useAnimacionLcd.ts:10-25,120-170`, decodificación con `ImageDecoder` y envío a 10 fps)
+  - Tecla física: SÍ (`useAnimacionLcd.ts:327-341,460-478`, decodificación con `ImageDecoder` y envío a 10 fps)
 
 ---
 
@@ -225,7 +225,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`FullscreenB.tsx:88,256`, `ButtonCell.tsx:119-121`, `pulsarBoton.ts:166-170`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:42,208`, `ButtonCell.tsx:119-121`, `pulsarBoton.ts:166-170`)
   - Mando móvil: SÍ (`servidorLocal.ts:193,202`, `iconosMando.ts:248-249`, `paginaMando.ts:595`)
-  - Tecla física: SÍ (`useSuperficies.ts:119,441`, `pintarTecla.ts:68-81`, `pulsarBoton.ts:166-170`)
+  - Tecla física: SÍ (`useSuperficies.ts:140,538`, `pintarTecla.ts:69-82`, `pulsarBoton.ts:166-170`)
 - **Acción de apagado (`actionToggleOff`)**:
   - Principal: SÍ (`pulsarBoton.ts:178,203-216` `ejecutarApagado`)
   - Kiosko: SÍ (`pulsarBoton.ts:178,203-216`)
@@ -237,7 +237,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`ButtonCell.tsx:118-121`)
   - Barra flotante: SÍ (`ButtonCell.tsx:118-121`)
   - Mando móvil: SÍ (`iconosMando.ts:209-222` `aplicarAspecto`, `paginaMando.ts:595` relee el deck tras pulsar toggle)
-  - Tecla física: SÍ (`pintarTecla.ts:68-81` `resolverBotonLcd`)
+  - Tecla física: SÍ (`pintarTecla.ts:69-82` `resolverBotonLcd`)
 - **Grupo radio (`radioGroup`)**:
   - Principal: SÍ (`pulsarBoton.ts:171-177`)
   - Kiosko: SÍ (`pulsarBoton.ts:171-177`)
@@ -261,13 +261,13 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`ButtonCell.tsx:119`, `CuerpoCelda.tsx:274`)
   - Barra flotante: SÍ (`ButtonCell.tsx:119`, `CuerpoCelda.tsx:274`)
   - Mando móvil: SÍ (`iconosMando.ts:250`, `JS_ANIMACION_MANDO:282-382`, `paginaMando.ts:193-195`)
-  - Tecla física: SÍ (`useAnimacionLcd.ts:11-20,230-290`, `pintarTecla.ts:350-365,513-514` `dibujarMatrizAnimada`)
+  - Tecla física: SÍ (`useAnimacionLcd.ts:343-379`, `pintarTecla.ts:345-373,568` `dibujarMatrizAnimada`)
 - **Efecto al pulsar (`efectoPulsar`)**:
   - Principal: SÍ (`ButtonCell.tsx:140,247` `DotRadialSweep`, `usePulsacionRaton.ts:32` `destellar`)
   - Kiosko: SÍ (`ButtonCell.tsx:140,247`, `usePulsacionRaton.ts:32`)
   - Barra flotante: SÍ (`ButtonCell.tsx:140,247`)
   - Mando móvil: SÍ (`iconosMando.ts:251`, `JS_ANIMACION_MANDO:376-382`, `paginaMando.ts:485,589` `animarPulsoMovil`)
-  - Tecla física: SÍ (`useSuperficies.ts:322` `registrarPulsoLcd`, `useAnimacionLcd.ts:28,320-350` destello LCD)
+  - Tecla física: SÍ (`useSuperficies.ts:418` `registrarPulsoLcd`, `useAnimacionLcd.ts:29,381-412` destello LCD)
 - **Sonido de pulsación / giro**:
   - Principal: SÍ (`CeldaPrincipal.tsx:76-77`, `ButtonCell.tsx:135`, `usePulsacionRaton.ts:122`)
   - Kiosko: SÍ (`FullscreenB.tsx:263-264`, `ButtonCell.tsx:135`)
@@ -282,7 +282,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 | Campo / Comportamiento | Principal | Kiosko | Barra flotante | Mando móvil | Tecla física (dock) |
 |---|---|---|---|---|---|
 | **Botón fijo entre páginas (`fijo`)** | SÍ | SÍ | NO APLICA | SÍ | SÍ |
-| **Mosaico 2×2 (`subButtons`)** | SÍ | SÍ | SÍ | SÍ | NO |
+| **Mosaico 2×2 (`subButtons`)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **Carpeta (`action.type: 'folder'`)** | SÍ | SÍ | NO | NO | NO |
 
 #### Evidencia (3.7)
@@ -291,13 +291,13 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`FullscreenB.tsx:244-246,252` `esFija`)
   - Barra flotante: NO APLICA (`FloatingBarB.tsx:35,191-200`: la barra carece de paginación tradicional; usa una lista fija de slots `floatingBar.slots`)
   - Mando móvil: SÍ (`iconosMando.ts:245`, `servidorLocal.ts:195`, `paginaMando.ts:454,465-467` muestra botón e insignia `•PIN•` en todas las páginas)
-  - Tecla física: SÍ (`paginasSuperficie.ts:46` resuelve botones fijos por dispositivo con `botonesResueltos(config, indice)`)
+  - Tecla física: SÍ (`paginasSuperficie.ts:85` resuelve botones fijos por dispositivo con `botonesResueltos(config, indice)`)
 - **Mosaico 2×2 (`subButtons`)**:
   - Principal: SÍ (`CeldaPrincipal.tsx:65`, `ButtonCell.tsx:126`, `Subdivision2x2.tsx:25`)
   - Kiosko: SÍ (`FullscreenB.tsx:257`, `ButtonCell.tsx:126`, `Subdivision2x2.tsx:25`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:209`, `ButtonCell.tsx:126`, `Subdivision2x2.tsx:25`)
   - Mando móvil: SÍ (`iconosMando.ts:252-269`, `paginaMando.ts:469-496` rejilla interactiva de 4 cuadrantes)
-  - Tecla física: NO (`pintarTecla.ts` no procesa `subButtons`; pinta la tecla como botón individual completo)
+  - Tecla física: SÍ (`pintarTecla.ts:591-596,784-786` → `subdivisionLcd.ts:48,119` pinta los cuatro cuadrantes con color, glifo y etiqueta propios; el GIF no los pisa, `useAnimacionLcd.ts:206,279`). **Al pulsar la tecla, que es una sola, no dispara nada y lo dice**: `useSuperficies.ts:264-265,421-424` deja el disparo en `avisarMosaico` y la tecla enseña el aviso `DECK 2x2` (`avisoPerilla.ts:52-54`), porque elegir un cuadrante por el usuario es una decisión que el hardware no puede tomar y podría ejecutar la acción equivocada
 - **Carpeta (`action.type: 'folder'`)**:
   - Principal: SÍ (`MainB.tsx:55`, `CeldaPrincipal.tsx`, `OverlayCarpeta.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:164` `carpetaAbierta`, `OverlayCarpeta.tsx`)
@@ -311,7 +311,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 
 | Campo / Comportamiento | Principal | Kiosko | Barra flotante | Mando móvil | Tecla física (dock) |
 |---|---|---|---|---|---|
-| **Visibilidad condicional (`visibleIf`)** | SÍ | SÍ | SÍ | NO | NO |
+| **Visibilidad condicional (`visibleIf`)** | SÍ | SÍ | SÍ | NO | SÍ |
 | **Mantener pulsado (`longPressAction`)** | SÍ | SÍ | SÍ | NO | NO |
 | **Acciones en cadena (`actions`)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **Rueda / paso de ajuste (`adjust`)** | SÍ | SÍ | SÍ | NO | SÍ |
@@ -326,13 +326,13 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`FullscreenB.tsx:259`: `isHidden={!botonVisible(btn, estadoSistema, sensorList)}`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:49,255`: evalúa app activa y hardware mediante `sensorList` real de `useSensors()`)
   - Mando móvil: NO (`servidorLocal.ts:195-201` no evalúa `visibleIf`, `paginaMando.ts` dibuja los botones siempre)
-  - Tecla física: NO (`paginasSuperficie.ts:46`, `useSuperficies.ts:323` no filtran por `visibleIf`; el botón permanece visible y activo en el LCD)
+  - Tecla física: SÍ (`paginasSuperficie.ts:47-57`: `resolverBotonPagina` usa el mismo `botonVisible` del deck y deja el hueco en `undefined`; `useSuperficies.ts:289-293` le pasa el estado del sistema y los sensores vivos, y al cambiar la condición la firma pasa de `empty:` a botón y repinta. El disparo lee esos mismos huecos, así que un botón oculto tampoco se dispara)
 - **Mantener pulsado (`longPressAction`)**:
   - Principal: SÍ (`CeldaPrincipal.tsx:86-89`, `ButtonCell.tsx:129`, `pulsarBoton.ts:250-264` `pulsacionLarga`)
   - Kiosko: SÍ (`FullscreenB.tsx:276-279`, `ButtonCell.tsx:129`, `pulsarBoton.ts:250-264`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:223-226`, `ButtonCell.tsx:129`, `pulsarBoton.ts:250-264`)
   - Mando móvil: NO (`paginaMando.ts:585-596` solo maneja evento `onclick`; no mide duración de toque)
-  - Tecla física: NO (`useSuperficies.ts:322-332` dispara en el evento `down`; no tiene temporizador de pulsación sostenida)
+  - Tecla física: NO (`useSuperficies.ts:415-426` dispara en el evento `down`; no tiene temporizador de pulsación sostenida)
 - **Acciones en cadena (`actions`)**:
   - Principal: SÍ (`pulsarBoton.ts:183`)
   - Kiosko: SÍ (`pulsarBoton.ts:183`)
@@ -344,7 +344,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: SÍ (`FullscreenB.tsx:269-275`, `ButtonCell.tsx:76-88`)
   - Barra flotante: SÍ (`FloatingBarB.tsx:220-222`, `ButtonCell.tsx:76-88`)
   - Mando móvil: NO (el mando móvil carece de control o interfaz de rueda)
-  - Tecla física: SÍ (`useSuperficies.ts:328-330` giros `izq` y `der` ejecutan ajuste con delta)
+  - Tecla física: SÍ (`useSuperficies.ts:167-174,428` giros `izq` y `der` ejecutan ajuste con delta)
 - **Atajo global de SO (`globalHotkey`)**:
   - Principal / Kiosko / Barra / Móvil / Dock: SÍ (registrado a nivel de Electron en `electron/main/hotkeys.ts:30-60`, emite `button:trigger` a `App.tsx:431` ejecutando la acción independientemente de la superficie visible)
 - **Menú en bandeja (`inTrayMenu`)**:
@@ -368,7 +368,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Kiosko: NO APLICA (pantalla completa sin perillas físicas)
   - Barra flotante: NO APLICA (interfaz flotante sin perillas físicas)
   - Mando móvil: NO APLICA (web móvil sin controles de perilla física)
-  - Tecla física: SÍ (`useSuperficies.ts:171-208,290-318` `decidirPerilla`: conmuta modos en memoria al pulsar y ejecuta `izq`/`der` del modo activo)
+  - Tecla física: SÍ (`useSuperficies.ts:202-256,379-398` `decidirPerilla`: conmuta modos en memoria al pulsar y ejecuta `izq`/`der` del modo activo)
 
 ---
 
@@ -378,11 +378,11 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 - **Total de campos y comportamientos auditados:** 37
 - **Evaluaciones individuales realizadas (37 campos × 5 superficies):** 185
 - **Desglose de estados globales:**
-  - SÍ: 135
-  - NO: 29
+  - SÍ: 139
+  - NO: 25
   - PARCIAL: 4
   - NO APLICA: 17
-- **Total de huecos encontrados (casos NO o PARCIAL que deberían funcionar):** 33 huecos (distribuidos en Mando móvil y Tecla física).
+- **Total de huecos encontrados (casos NO o PARCIAL que deberían funcionar):** 29 huecos (distribuidos en Mando móvil y Tecla física; los cuatro de la Tecla física de la T-PAR-03 quedaron cerrados).
 
 ---
 
@@ -404,19 +404,19 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
    - *Estado:* NO (`pintarTecla.ts`).
    - *Efecto:* La tecla física LCD de 64×64 / 72×72 px dibuja iconos y etiquetas estándar pero no pinta el estado de sensores ni datos de widgets.
 5. **Tecla física — Omisión total de la subetiqueta (`sublabel`)**:
-   - *Estado:* NO (`pintarTecla.ts:460-499,520`).
-   - *Efecto:* Cualquier botón configurado con información contextual en `sublabel` pierde esa línea en la tecla física.
-6. **Mando móvil y Tecla física — Sin interpolación de variables en etiquetas**:
-   - *Estado:* NO (`servidorLocal.ts:234`, `pintarTecla.ts:520`).
-   - *Efecto:* Etiquetas dinámicas configuradas como `{VOL}%` o `{CPU_TEMP}°C` aparecen literalmente con las llaves en el móvil y en el LCD.
+   - *Estado:* SÍ (`pintarTecla.ts:479,520-524,574`).
+   - *Efecto:* Resuelto (T-PAR-03). La tecla dibuja la segunda línea más pequeña y atenuada, como `RotuloCelda`.
+6. **Mando móvil — Sin interpolación de variables en etiquetas** (la Tecla física ya la tiene):
+   - *Estado:* NO en el móvil (`servidorLocal.ts:234`); SÍ en la tecla física (`paginasSuperficie.ts:47-57,86`, `useSuperficies.ts:114-115`).
+   - *Efecto:* En la tecla LCD las etiquetas `{VOL}%` o `{CPU_TEMP}°C` salen resueltas y se repintan al cambiar el valor; en el móvil siguen apareciendo con las llaves.
 7. **Tecla física — Ausencia de soporte para mosaico 2×2 (`subButtons`)**:
-   - *Estado:* NO (`pintarTecla.ts`).
-   - *Efecto:* Si una página de dock contiene un botón subdividido en 4 mini-botones, la tecla LCD no dibuja los cuadrantes y solo ve el botón padre.
+   - *Estado:* SÍ (`subdivisionLcd.ts:48,119`, `pintarTecla.ts:591-596,784-786`).
+   - *Efecto:* Resuelto (T-PAR-03). La tecla dibuja los cuatro cuadrantes; pulsarla no dispara ninguna de las cuatro acciones (no se puede elegir cuadrante) y enseña el aviso `DECK 2x2` (`useSuperficies.ts:421-424`, `avisoPerilla.ts:52-54`). Decisión documentada: ejecutar el primer cuadrante a ciegas podía lanzar la acción equivocada.
 
 #### Prioridad 2: Incoherencias de estado y visibilidad condicional
-8. **Mando móvil y Tecla física — Omisión de visibilidad condicional (`visibleIf`)**:
-   - *Estado:* NO (`servidorLocal.ts:195-201`, `paginasSuperficie.ts:46`).
-   - *Efecto:* Botones configurados para ocultarse cuando cierta app no está activa o un sensor baja de un umbral siguen apareciendo y pulsándose en el móvil y en el dock.
+8. **Mando móvil — Omisión de visibilidad condicional (`visibleIf`)** (la Tecla física ya la tiene):
+   - *Estado:* NO en el móvil (`servidorLocal.ts:195-201`); SÍ en la tecla física (`paginasSuperficie.ts:47-57`, `useSuperficies.ts:289-293`).
+   - *Efecto:* En el dock un botón configurado para ocultarse cuando cierta app no está activa o un sensor baja de un umbral queda en tecla vacía y no se dispara; en el móvil sigue apareciendo y pulsándose.
 9. **Barra flotante — Visibilidad condicional por hardware/sensores**:
    - *Estado:* SÍ (`FloatingBarB.tsx:49,255`).
    - *Efecto:* Resuelto (roadmap 82). La barra evalúa las condiciones de hardware de `visibleIf` usando la lista real de sensores provista por `useSensors()`.
@@ -429,7 +429,7 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
     - *Estado:* NO (`paginaMando.ts:585-596`).
     - *Efecto:* La acción alternativa tras ~500 ms no existe en el teléfono; solo se dispara la acción corta.
 12. **Tecla física — Sin soporte para mantener pulsado (`longPressAction`)**:
-    - *Estado:* NO (`useSuperficies.ts:322-332`).
+     - *Estado:* NO (`useSuperficies.ts:415-426`).
     - *Efecto:* En hardware físico, la pulsación dispara en el flanco de bajada (`down`) de inmediato, imposibilitando acciones secundarias por pulsación larga.
 13. **Mando móvil y Tecla física — Carpetas huérfanas sin interfaz**:
     - *Estado:* NO (`App.tsx:402`, `servidorLocal.ts:197`).
@@ -476,7 +476,7 @@ Un guardián basado en expresiones regulares sobre archivos visuales tiende a fa
 3. **Tecla física (`src/utils/superficies/useSuperficies.ts` y `pintarTecla.ts`):**
    - El script analiza la función `firmaDe()` en `useSuperficies.ts`. Si un campo visual de `ButtonConfig` no forma parte de la tupla devuelta por `firmaDe()`, el hardware físico nunca se enteraría de cuándo repintarlo ante cambios.
    - Comprueba que los campos visuales (`sublabel`, `imageData`, `brandIcon`, etc.) sean desestructurados o leídos en `pintarContenido()` en `pintarTecla.ts`.
-   - *Fallo detectado:* `sublabel` no figura en `firmaDe()` ni en `pintarTecla.ts`.
+   - *Fallo que detectó y quedó resuelto en T-PAR-03:* `sublabel` no figuraba en `firmaDe()` ni se dibujaba en `pintarTecla.ts`; hoy sí (`useSuperficies.ts:114`, `pintarTecla.ts:479,574`).
 
 4. **Tratamiento de excepciones justificadas:**
    - Para evitar falsos positivos en campos no aplicables (como `modosPerilla` en pantalla o `showContextMenu` en tecla física), el archivo de configuración declarará excepciones explícitas:
