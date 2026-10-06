@@ -18,6 +18,7 @@ import { asegurarWebContents } from './seguridadVentana';
 import { rutaImagenDesdeUrl } from './protocoloVd';
 import * as remoto from './servidorLocal';
 import { detener as detenerSuperficies } from './superficies/gestor';
+import { iniciarPrototipoPlugins, detenerPrototipoPlugins } from './plugins/prototipo';
 // Los valores por defecto de la barra y los sensores viven en `src/types`
 // (único `src/` que el proceso principal puede importar, ver `lint:arch`):
 // repetirlos aquí los desincroniza en silencio.
@@ -246,6 +247,9 @@ app.whenReady().then(() => {
   session.fromPartition(SESION_BARRA).protocol.handle('vd', handleVd);
 
   const win = setupWindow();
+  // Prototipo de anfitrión de plugins (roadmap 83, fase 0): sin
+  // `VD_PLUGIN_PROTO` no monta nada (ni servidor, ni ventana, ni proceso).
+  iniciarPrototipoPlugins();
   setTimeout(() => autoCheckOnStartup(win), 8000);
 
   // 1.4 — enlaces `virtualdeck://`. La segunda copia no llega hasta aquí: se
@@ -287,6 +291,7 @@ app.on('before-quit', () => {
   try { rgb.killServer(); } catch {}
   try { sensors.killLHM(); } catch {}
   try { detenerSuperficies(); } catch {}
+  try { detenerPrototipoPlugins(); } catch {}
 });
 
 app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch {} });

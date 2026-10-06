@@ -458,6 +458,17 @@ podía compilar. Reparado; `cargo test -p vd-core`: 165 en verde. El `native/vd-
 compiló del árbol bueno, antes de ese commit, y expone las mismas 39 funciones que el nuevo: la app
 nunca corrió el código roto. Para compilar: `npm run build:native`.
 
+## 🔌 `VD_PLUGIN_PROTO` — prototipo de plugins de Stream Deck (roadmap 83, fase 0)
+
+`electron/main/plugins/` es un anfitrión **de prueba**: sin la variable no se crea nada. Con ella
+(`node scripts/probar-app.mjs abrir <quien> --plugin=<carpeta .sdPlugin> [--modo=utility|node] [--pulsar] [--pi]`)
+lanza el plugin, le manda `willAppear` y pulsaciones, y abre su PI; todo queda en el registro con `[plugins]`.
+Lo medido y lo que falta para el MVP está en `_referencias/informes/plugins-streamdeck.md` §9. Tres cosas
+que no se deducen: el `UUID` puede faltar en el manifiesto (sale de la carpeta); para el CORS del PI hay que
+**quitar** las cabeceras `access-control-allow-*` que traiga la respuesta antes de poner las propias (si no,
+Chromium ve dos valores); y `asegurarWebContents` se aplica también a estas ventanas, que llevan su propia
+política encima (`aplicarPoliticaVentanaPlugin`).
+
 ## 🧪 `VD_SIN_NUCLEO=1` — probar los caminos de respaldo
 
 Con el `.node` cargado, **el código de respaldo no se ejecuta nunca**, y por eso

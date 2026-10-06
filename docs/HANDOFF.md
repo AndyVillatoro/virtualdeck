@@ -640,6 +640,13 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Falta (dueño):** ver las marcas en el teléfono (una encendida o con «animar siempre» debería moverse), además de lo del turno anterior (N3 y pulsación larga).
 * **Próximo:** 83 plugins de Stream Deck (prototipo); 0.14.0 (dueño).
 
+## Turno 2026-10-06 — prototipo de plugins de Stream Deck (83, fase 0)
+
+* **T-PLG-00 (opencode `wN`, DeepSeek por Go, ~$0.32):** anfitrión de prueba en `electron/main/plugins/` (`manifiesto`, `archivos`, `anfitrion`, `procesos`, `ventanaPI`, `prototipo`), encendido solo con `VD_PLUGIN_PROTO`; `probar-app.mjs` gana `--plugin= --modo= --pulsar --pi`. Dependencia nueva `ws` 8 (MIT), la añadió el supervisor. WebSocket y HTTP en `127.0.0.1` con puerto aleatorio, conexiones con `Origin` ajeno rechazadas (403), plugins HTML y PI en ventanas con sandbox, sin preload y con sesión propia. 37 aserciones y un plugin falso Node/HTML.
+* **Supervisor:** midió con cinco plugins reales (ver `_referencias/informes/plugins-streamdeck.md` §9) y corrigió lo que salió: `UUID` ausente → nombre de la carpeta; CORS duplicado en el PI; `platformVersion` en `-info`.
+* **Verificación:** `npm run check` 0 errores, 33 warnings; `npm run build` OK; sin `VD_PLUGIN_PROTO` no aparece ninguna línea `[plugins]`; tras cerrar no queda ningún proceso de plugin.
+* **Pendiente:** el MVP (fase 1, semanas; decisión del dueño) y revisar si el proceso principal tarda en salir con `app.quit()` (lo vio opencode, sin verificar).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

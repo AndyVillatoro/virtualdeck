@@ -18,6 +18,7 @@
  *
  * Uso (desde la raíz del repo, después de `npm run build`):
  *   node scripts/probar-app.mjs abrir <quien> [--diag] [--sin-nucleo]
+ *     [--plugin=<carpeta .sdPlugin>] [--modo=utility|node] [--pulsar] [--pi]
  *   node scripts/probar-app.mjs estado
  *   node scripts/probar-app.mjs cerrar
  *   node scripts/probar-app.mjs medir-arranque <quien> [veces=3]
@@ -90,9 +91,31 @@ function abrir(quien, banderas) {
   rmSync(datos, { recursive: true, force: true });
   mkdirSync(datos, { recursive: true });
   const registro = join(datos, 'app.log');
+  // `--clave=valor`; las de prototipo de plugins se pasan por entorno.
+  const valor = (nombre) => {
+    const prefijo = `--${nombre}=`;
+    const encontrada = banderas.find((b) => b.startsWith(prefijo));
+    return encontrada ? encontrada.slice(prefijo.length) : null;
+  };
+  const rutaPlugin = valor('plugin');
+  if (rutaPlugin && /["%&^|<>]/.test(rutaPlugin)) {
+    // `set VAR=valor` va dentro de una línea de cmd: estos caracteres la parten
+    // o la expanden. Se dice en vez de fallar en silencio con una ruta a medias.
+    console.error('La ruta de --plugin no puede llevar " % & ^ | < >: rompen la línea de cmd.');
+    process.exit(2);
+  }
+  const modoPlugin = valor('modo');
+  if (modoPlugin && modoPlugin !== 'utility' && modoPlugin !== 'node') {
+    console.error('--modo debe ser utility o node.');
+    process.exit(2);
+  }
   const variables = [
     banderas.includes('--diag') ? 'set VD_DIAG=1&& ' : '',
     banderas.includes('--sin-nucleo') ? 'set VD_SIN_NUCLEO=1&& ' : '',
+    rutaPlugin ? `set VD_PLUGIN_PROTO=${rutaPlugin}&& ` : '',
+    modoPlugin ? `set VD_PLUGIN_PROTO_MODO=${modoPlugin}&& ` : '',
+    banderas.includes('--pulsar') ? 'set VD_PLUGIN_PROTO_PULSAR=1&& ' : '',
+    banderas.includes('--pi') ? 'set VD_PLUGIN_PROTO_PI=1&& ' : '',
   ].join('');
   // Se crea por WMI (Win32_Process.Create), no con `spawn`: así la copia nace
   // sin parentesco con quien la pide y **no hereda su canal de salida**. Con
@@ -186,4 +209,4 @@ else if (orden === 'cerrar') cerrar();
 else if (orden === 'estado') estado();
 else if (orden === 'limpiar') limpiar();
 else if (orden === 'medir-arranque') await medirArranque(resto[0], Number(resto[1] ?? 3));
-else { console.error('Uso: node scripts/probar-app.mjs abrir <quien> [--diag] [--sin-nucleo] | estado | cerrar | limpiar | medir-arranque <quien> [veces]'); process.exit(2); }
+else { console.error('Uso: node scripts/probar-app.mjs abrir <quien> [--diag] [--sin-nucleo] [--plugin=<ruta>] [--modo=utility|node] [--pulsar] [--pi] | estado | cerrar | limpiar | medir-arranque <quien> [veces]'); process.exit(2); }

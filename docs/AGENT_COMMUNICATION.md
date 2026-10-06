@@ -76,6 +76,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-PAR-06** | P1 | Mantener pulsado en el mando móvil (82) | agy (wK) | `paginaMando.ts`, `iconosMando.ts`, `servidorLocal.ts`, `enlacesExternos.ts`, `idioma.ts`, preload, `src/types/ipc.ts`, `App.tsx` (disparo), `docs/wiki/**` | `DONE` (probado por enlace en una copia; falta con el teléfono) | 2026-10-05 |
 | **T-PAR-07** | P1 | Mantener pulsado en teclas y botones del dock (82) | Claude Opus 5.5 | `src/utils/superficies/despachoTecla.ts` (nuevo), `useSuperficies.ts`, `App.tsx` | `DONE` (16 aserciones; falta con el N3) | 2026-10-05 |
 | **T-PAR-08** | P1 | Iconos de marca en el mando móvil (82) | opencode (DeepSeek V4.1 Flash, Go) | `src/comun/brandIcons.ts`, `marcaSvg.ts`, `iconosMando.ts`, `paginaMando.ts`, `pintarTecla.ts`, `scripts/paridad.json` | `DONE` (0 huecos; falta verlo en el teléfono) | 2026-10-05 |
+| **T-PLG-00** | P2 | Prototipo de anfitrión de plugins de Stream Deck, fase 0 (83) | opencode (DeepSeek V4.1 Flash, Go) + supervisor | `electron/main/plugins/**` (nuevo), `index.ts`, `scripts/probar-app.mjs`, `package.json` (ws) | `DONE` (fase 0 medida con 5 plugins reales) | 2026-10-06 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
