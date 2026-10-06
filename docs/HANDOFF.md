@@ -632,6 +632,14 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Falta (dueño):** con el N3, un reloj y un sensor en una tecla, y un botón con acción larga (si el N3 no mandara `up`, saldría siempre la larga); con el teléfono, mantener pulsado.
 * **Próximo:** marcas en el móvil (el generador vive en `src/data` y el proceso principal no lo puede importar: candidato a `src/comun/` si es puro); 83 plugins; 0.14.0 (dueño).
 
+## Turno 2026-10-05 (noche, 3) — marcas en el móvil, paridad sin huecos
+
+* **T-PAR-08 (opencode `wN`, DeepSeek por Go, ~$0.16):** catálogo de marcas a `src/comun/brandIcons.ts` (`git mv`; `src/data/` reexporta), `src/comun/marcaSvg.ts` con la única resolución (la usan la tecla física y el móvil). El móvil recibe `marca` (data URI de un SVG con su `<style>` dentro: halo y animación, porque la CSP de la página no admite `style` en el DOM) y `iconoSobreMarca`; la imagen propia gana a la marca, como en la celda. CSS de la página a `electron/main/estiloMandoPagina.ts` (`paginaMando.ts` 630 → 534). Bundle: renderer principal sin cambios (649,9 kB), catálogo sigue diferido; el proceso principal crece ~43 kB por llevar el catálogo. **Supervisor:** cachés del SVG con tope (crecían con cada retoque de una marca propia); prueba propia (colores y paletas con inyección filtrados, URI, bitmap propio, 600 entradas).
+* **`/media/images/` sin token (pendiente del handoff):** ya estaba resuelto, detrás del token. Se cambió su `Cache-Control` a `private`.
+* **Verificación:** `npm run check` 0 errores, 33 warnings; `paridad: 37 campos, 30 en las tres, 16 no aplica, 0 huecos`; `npm run build` OK.
+* **Falta (dueño):** ver las marcas en el teléfono (una encendida o con «animar siempre» debería moverse), además de lo del turno anterior (N3 y pulsación larga).
+* **Próximo:** 83 plugins de Stream Deck (prototipo); 0.14.0 (dueño).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

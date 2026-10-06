@@ -102,7 +102,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 | **Glifo DOT 8×8 (`icon`)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **`iconoPuntos` 16×16 de catálogo** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **Glifo personalizado 5×7 (`customGlyph57`)** | SÍ | SÍ | SÍ | SÍ | SÍ |
-| **Icono de marca (`brandIcon`, bitmap, paleta)** | SÍ | SÍ | SÍ | NO | SÍ |
+| **Icono de marca (`brandIcon`, bitmap, paleta)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **Imagen estática (`imageData`)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **GIF animado (`imageData` .gif)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 
@@ -135,8 +135,8 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Principal: SÍ (`CapasDeFondo.tsx:42`, `BrandIconRenderer.tsx`)
   - Kiosko: SÍ (`CapasDeFondo.tsx:42`)
   - Barra flotante: SÍ (`CapasDeFondo.tsx:42`)
-  - Mando móvil: NO (`paginaMando.ts:574-576`: regla de arquitectura `main-no-renderer` impide importar el catálogo de marcas en el proceso principal)
-  - Tecla física: SÍ (`pintarTecla.ts:303-321,565` `dibujarMarca`, importa dinámicamente `data/brandIcons`)
+  - Mando móvil: SÍ (T-PAR-08: `botonAMando` resuelve la marca con `src/comun/marcaSvg.ts` y la manda como SVG autónomo en data URI; `paginaMando.ts` la pinta en `img.marca-img`)
+  - Tecla física: SÍ (`pintarTecla.ts` `dibujarMarca`, importa dinámicamente `comun/marcaSvg`)
 - **Imagen estática (`imageData`)**:
   - Principal: SÍ (`CapasDeFondo.tsx:28-40` `DotMatrixImageOverlay`)
   - Kiosko: SÍ (`CapasDeFondo.tsx:28-40`)
@@ -392,8 +392,8 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
 
 #### Prioridad 1: Impacto visual crítico (inmediatamente perceptible)
 1. **Mando móvil — Ausencia de iconos de marca (`brandIcon`)**:
-   - *Estado:* NO (`paginaMando.ts:574-576`).
-   - *Efecto:* Botones populares como Discord, Spotify, OBS, Steam o Chrome se muestran sin su icono característico en el teléfono.
+   - *Estado:* SÍ (T-PAR-08, `src/comun/marcaSvg.ts`).
+   - *Efecto:* Resuelto (roadmap 82). La marca llega al teléfono como SVG autónomo (halo y animación dentro, porque la CSP del móvil no admite `style` en el DOM), con los colores de la configuración validados.
 2. **Barra flotante — Widgets en tiempo real (`clock`, `weather`, `now-playing`, `sensor`, `variable`, `currency`)**:
    - *Estado:* SÍ (`FloatingBarB.tsx:71-103,257,349`).
    - *Efecto:* Resuelto (roadmap 82). La barra flotante consume `useDatosWidget`, con sondeo reactivo de clima (`useClimaWidget`), multimedia (`useNowPlaying`), sensores (`useSensors`) y divisas (`useDivisas`), pasando los datos vivos a `ButtonCell`.

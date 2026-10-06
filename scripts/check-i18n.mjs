@@ -198,7 +198,7 @@ const DATOS_SEMBRADOS = new Set([
   'src/screens/editor/actionData.ts',
   'src/data/presetsDock.ts',
   'src/data/plantillasApp.ts',
-  'src/data/brandIcons.ts',
+  'src/comun/brandIcons.ts',
 ]);
 
 // Archivos que **llevan su propio diccionario ES/EN dentro**, porque no pueden

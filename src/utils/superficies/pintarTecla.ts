@@ -310,22 +310,16 @@ async function dibujarImagenConTrama(
   return true;
 }
 
-/** Icono de marca desde el catálogo (diferido, el mismo chunk que la interfaz). */
+/** Icono de marca resuelto en `src/comun/marcaSvg` (diferido, mismo chunk que la interfaz). */
 async function dibujarMarca(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number, centroY: number,
 ): Promise<boolean> {
   if (!boton.brandIcon) return false;
   try {
-    const { BRAND_ICONS_MAP, generateSvgFromBitmap, mergePalette } = await import('../../data/brandIcons');
-    const icono = BRAND_ICONS_MAP[boton.brandIcon];
-    const bitmap = boton.brandIconCustomBitmap?.length ? boton.brandIconCustomBitmap : icono?.bitmap;
-    if (!bitmap?.length) return false;
-    const color = boton.brandIconCustomColor || icono?.color || '#e6e8eb';
-    const palette = boton.brandIconCustomPalette
-      ? mergePalette(boton.brandIcon, boton.brandIconCustomPalette)
-      : (icono?.palette ?? {});
-    const svg = generateSvgFromBitmap(bitmap, color, palette);
-    return await dibujarSvg(ctx, svg, ancho, alto, Math.min(ancho, alto) * CAJA_CENTRO, centroY);
+    const { resolverMarca, svgDeMarca } = await import('../../comun/marcaSvg');
+    const marca = resolverMarca(boton);
+    if (!marca) return false;
+    return await dibujarSvg(ctx, svgDeMarca(marca), ancho, alto, Math.min(ancho, alto) * CAJA_CENTRO, centroY);
   } catch {
     return false;
   }

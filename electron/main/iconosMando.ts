@@ -1,6 +1,7 @@
 import { DOT_GLYPHS_8X8, resolveDotGlyph } from '../../src/components/dot480/dotGlyphsCatalog';
 import { GLIFO_POR_TIPO_ACCION } from '../../src/components/dot480/glifosPorTipoAccion';
 import { matrizDePuntos16 } from '../../src/components/dot480/puntos16';
+import { dataUriDeMarca, resolverMarca } from '../../src/comun/marcaSvg';
 import type { EfectoPulsar, SliderWidgetConfig } from '../../src/types';
 
 /**
@@ -61,7 +62,16 @@ export interface BotonMandoMovil {
   iconTexto?: string;
   imageData?: string;
   customGlyph57?: number[];
-  brandIcon?: string;
+  /**
+   * La marca ya resuelta, como `data:image/svg+xml,…` (autónoma: halo y
+   * animación dentro del propio SVG, porque la CSP del móvil no admite
+   * `style` en el DOM). Animada si el botón está encendido o
+   * `brandIconAlwaysAnimate`. Sustituye a `brandIcon` suelto: el catálogo
+   * vive en `src/comun` y se resuelve aquí, en el proceso principal.
+   */
+  marca?: string;
+  /** Hay icono explícito (catálogo o `icon`): la celda lo pinta encima de la marca. */
+  iconoSobreMarca?: boolean;
   fijo?: boolean;
   widget?: string;
   sliderWidget?: SliderWidgetConfig;
@@ -92,6 +102,10 @@ export interface BotonFuenteMando {
   imageData?: string;
   customGlyph57?: number[];
   brandIcon?: string;
+  brandIconAlwaysAnimate?: boolean;
+  brandIconCustomBitmap?: string[];
+  brandIconCustomColor?: string;
+  brandIconCustomPalette?: Record<string, string>;
   fijo?: boolean;
   widget?: string;
   sliderWidget?: SliderWidgetConfig;
@@ -230,6 +244,25 @@ function aplicarAspecto(b: BotonFuenteMando, encendido: boolean): BotonFuenteMan
   return next;
 }
 
+/**
+ * La marca del botón, resuelta aquí (bitmap/color/paleta) y como SVG autónomo:
+ * la página solo la mete en un `<img>`. Animada con el interruptor encendido o
+ * con `brandIconAlwaysAnimate`, la misma regla que la celda (`CapasDeFondo`).
+ * `iconoSobreMarca` dice si hay icono explícito que la celda pinta encima.
+ */
+function marcaDeMando(
+  b: BotonFuenteMando, fuente: BotonFuenteMando, encendido: boolean,
+): Partial<BotonMandoMovil> {
+  const marca = resolverMarca(fuente);
+  if (!marca) return {};
+  const animado = encendido || b.brandIconAlwaysAnimate === true;
+  const sobre = Boolean(fuente.iconoPuntos?.bits || fuente.icon);
+  return {
+    marca: dataUriDeMarca(marca, animado),
+    ...(sobre ? { iconoSobreMarca: true as const } : {}),
+  };
+}
+
 /** Un botón de la config → lo que el móvil necesita para pintarlo y pulsarlo. */
 export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoMovil {
   const fuente = aplicarAspecto(b, encendido);
@@ -251,7 +284,7 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
     ...(resuelto.iconTexto ? { iconTexto: resuelto.iconTexto } : {}),
     imageData: mapearImagen(b.imageData),
     customGlyph57: b.customGlyph57,
-    brandIcon: b.brandIcon,
+    ...marcaDeMando(b, fuente, encendido),
     fijo: b.fijo,
     widget: b.widget,
     sliderWidget: b.sliderWidget,

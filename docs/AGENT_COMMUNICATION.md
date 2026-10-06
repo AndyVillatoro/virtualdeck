@@ -75,6 +75,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-PAR-05** | P1 | Widgets en vivo en la tecla física del dock (82) | opencode (wN, Go) | `src/utils/superficies/**`, `src/utils/fuentesWidget.ts`, `nowPlaying.tsx`, `celda/useDatosWidget.ts`, activación en `MainB`/`FullscreenB`/`FloatingBarB`, `src/main.tsx`, `scripts/paridad.json` | `DONE` (check y build en verde; falta verlo con el N3) | 2026-10-05 |
 | **T-PAR-06** | P1 | Mantener pulsado en el mando móvil (82) | agy (wK) | `paginaMando.ts`, `iconosMando.ts`, `servidorLocal.ts`, `enlacesExternos.ts`, `idioma.ts`, preload, `src/types/ipc.ts`, `App.tsx` (disparo), `docs/wiki/**` | `DONE` (probado por enlace en una copia; falta con el teléfono) | 2026-10-05 |
 | **T-PAR-07** | P1 | Mantener pulsado en teclas y botones del dock (82) | Claude Opus 5.5 | `src/utils/superficies/despachoTecla.ts` (nuevo), `useSuperficies.ts`, `App.tsx` | `DONE` (16 aserciones; falta con el N3) | 2026-10-05 |
+| **T-PAR-08** | P1 | Iconos de marca en el mando móvil (82) | opencode (DeepSeek V4.1 Flash, Go) | `src/comun/brandIcons.ts`, `marcaSvg.ts`, `iconosMando.ts`, `paginaMando.ts`, `pintarTecla.ts`, `scripts/paridad.json` | `DONE` (0 huecos; falta verlo en el teléfono) | 2026-10-05 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

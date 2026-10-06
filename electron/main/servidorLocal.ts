@@ -220,7 +220,8 @@ function atenderMedia(url: URL, res: ServerResponse): void {
   const contentType = mimes[ext] ?? 'application/octet-stream';
   res.writeHead(200, {
     'Content-Type': contentType,
-    'Cache-Control': 'public, max-age=86400',
+    // `private`: va detrás del token, así que ninguna caché intermedia la guarda.
+    'Cache-Control': 'private, max-age=86400',
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     'X-Content-Type-Options': 'nosniff',
   });

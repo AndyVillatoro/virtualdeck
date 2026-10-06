@@ -62,8 +62,10 @@ export default tseslint.config(
   {
     // Archivos que son datos, no logica: el limite de lineas no dice nada de
     // ellos. `brandIcons.ts` son 1500 lineas de bitmaps de iconos; partirlo en
-    // cinco archivos de 300 no lo hace mas facil de leer ni de cambiar.
-    files: ['src/data/**'],
+    // cinco archivos de 300 no lo hace mas facil de leer ni de cambiar. Vive
+    // en `src/comun/` desde que el mando movil resuelve la marca en el proceso
+    // principal, asi que se nombra solo ese archivo, no todo `src/comun/**`.
+    files: ['src/data/**', 'src/comun/brandIcons.ts'],
     rules: { 'max-lines': 'off' },
   },
 );

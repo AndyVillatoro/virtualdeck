@@ -269,6 +269,12 @@ vez de a `AGENTS.md` por lo mismo.
   tenía copiados a mano y ya se habían separado (la divisa). `main-no-renderer` deja importar de aquí, y
   la regla `comun-es-puro` impide que `src/comun` importe nada que no sea `src/types` o ella misma: sin
   React, DOM, electron ni Node. Lo nuevo que tengan que calcular igual los dos procesos va aquí.
+  También vive aquí el **catálogo de marcas** (`brandIcons.ts`; `src/data/brandIcons.ts` solo reexporta)
+  y `marcaSvg.ts`, la única resolución de una marca (bitmap/color/paleta propios). **Los colores de una
+  marca se validan** (`#rgb`/`#rrggbb`/`#rrggbbaa`): vienen de perfiles de la galería y acaban dentro de un
+  SVG. Al móvil va como SVG autónomo en un `<img>`: su CSP solo admite `style` con nonce, así que el halo
+  y la animación viajan dentro del propio SVG. Ni el renderer ni la tecla importan el catálogo en estático:
+  sigue en su chunk diferido.
 - `electron/main/launcher.ts` — ejecutar apps/scripts
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)

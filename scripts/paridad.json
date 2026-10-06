@@ -31,33 +31,30 @@
   },
   "brandIcon": {
     "pantallas": "si",
-    "movil": "hueco",
+    "movil": "si",
     "dock": "si",
-    "nota": "movil: viaja al cliente (botonAMando en iconosMando.ts) pero la pagina no lo pinta; el generador vive en src/data y el proceso principal no puede importarlo (paginaMando.ts:596-598; PARIDAD.md 4 P1-1)"
+    "nota": "movil: botonAMando resuelve bitmap/color/paleta con src/comun/marcaSvg.ts y manda el SVG autonomo como data URI; paginaMando.ts lo pinta de fondo (img.marca-img)"
   },
   "brandIconAlwaysAnimate": {
     "pantallas": "si",
-    "movil": "hueco",
+    "movil": "si",
     "dock": "no-aplica",
-    "nota": "movil: hueco heredado de brandIcon (sin pintura no hay nada que animar). dock: no aplica, la tecla pinta la marca estatica (dibujarMarca en pintarTecla.ts:303-321) y no hay animacion de marcas en el LCD"
+    "nota": "movil: la marca viaja animada con el interruptor encendido o brandIconAlwaysAnimate, como CapasDeFondo. dock: no aplica, la tecla pinta la marca estatica (dibujarMarca en pintarTecla.ts) y no hay animacion de marcas en el LCD"
   },
   "brandIconCustomBitmap": {
     "pantallas": "si",
-    "movil": "hueco",
-    "dock": "si",
-    "nota": "movil: hueco heredado de brandIcon (botonAMando ni siquiera lo mapea)"
+    "movil": "si",
+    "dock": "si"
   },
   "brandIconCustomColor": {
     "pantallas": "si",
-    "movil": "hueco",
-    "dock": "si",
-    "nota": "movil: hueco heredado de brandIcon (botonAMando ni siquiera lo mapea)"
+    "movil": "si",
+    "dock": "si"
   },
   "brandIconCustomPalette": {
     "pantallas": "si",
-    "movil": "hueco",
-    "dock": "si",
-    "nota": "movil: hueco heredado de brandIcon (botonAMando ni siquiera lo mapea)"
+    "movil": "si",
+    "dock": "si"
   },
   "customGlyph57": {
     "pantallas": "si",
