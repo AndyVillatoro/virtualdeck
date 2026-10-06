@@ -606,6 +606,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Trabajadores:** opencode `wE` (Muse Spark 1.3 Free), opencode `wN` (DeepSeek V4.1 Flash por Go, gastado ~$0.85 en total esta sesión) y agy `wK` (Gemini 3.8 Flash); sesiones limpias. Encargos en `_referencias/encargos/` (T-HW-05…20, T-CFG-01, T-UI-01…12).
 * **Lecciones (en memoria del supervisor):** las funciones de botón llegan a las cinco superficies a la vez; los guardianes no se esquivan (dos rodeos corregidos el 2026-10-05); DeepSeek se cuelga si lanza la app con la salida redirigida.
 
+## Turno 2026-10-05 (tarde) — optimizar, valor al girar, icono del .exe, paridad, copias de prueba ordenadas
+
+* **Commits:** `835af19` (icono del `.exe` en Rust + `PARIDAD.md`), `6015ff4`/`1eb7e9d`/`22ae6e5` (`scripts/probar-app.mjs`), `c183388` (JS principal −63 %), `e4c5d66` (valor al girar, widgets en la barra, sub-etiqueta), `5a96bb8` (paridad del móvil y de la tecla física, icono en pestañas).
+* **Copias de prueba:** llegó a haber 9 abiertas sin cerrar (opencode del 84). Ahora solo con `node scripts/probar-app.mjs` (candado, carpeta propia, creada por WMI para no colgar al agente, `limpiar` cierra las sueltas). Regla en `CLAUDE.md`.
+* **Arreglos del supervisor sobre lo entregado:** buzón global de `pulsarBoton` sustituido por el resultado que devuelve `dispararBoton`; script de pruebas reescrito dos veces (herencia de la salida).
+* **`.node` instalado** con `iconoApp` (46 funciones).
+* **Pendiente:** compartir la interpolación de variables entre `mandoVivo.ts` y el renderer (está duplicada: hace falta una excepción de capas para un módulo puro); el clima se consulta también desde la barra flotante; guardián de paridad; 83 plugins (prototipo); 0.14.0.
+* **Trabajadores:** opencode `wP` (Muse Spark 1.3 Free), opencode `wN` (DeepSeek por Go, ~$0.64 + esta ronda), agy `wK`. El pane `wE` desapareció. Plugin nuevo del dueño: `rust-analyzer-lsp` (componente instalado con rustup; se activa al reiniciar Claude Code).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
