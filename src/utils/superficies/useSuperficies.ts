@@ -14,6 +14,7 @@ import { paginaDe, type PaginaDispositivo, type VivoPagina } from './paginasSupe
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
 import { useAvisoPerilla, type AvisoPerillaApi } from './useAvisoPerilla';
 import { useWidgetsSuperficie } from './useWidgetsSuperficie';
+import { conSubida, crearDetectorLargo, despacharBoton } from './despachoTecla';
 import { firmaWidget } from './widgetLcd';
 import type { DatosWidget } from '../../comun/widgets';
 import type { ResultadoPulsacion } from '../pulsarBoton';
@@ -75,6 +76,8 @@ export interface OpcionesSuperficies extends OpcionesPintado {
     boton: ButtonConfig,
     opts?: { sonido?: 'giro'; serial?: string },
   ) => void | Promise<ResultadoPulsacion | void>;
+  /** Mantener pulsado (`longPressAction`) desde una tecla o botón del dock. */
+  dispararLargo?: (boton: ButtonConfig, opts?: { serial?: string }) => unknown;
   crearPaginaSuperficie: (info: InfoSuperficie) => void;
   colores: ColoresSuperficie;
   /** Traductor para los avisos de la tecla; sin él se resuelve por `config.language`. */
@@ -167,25 +170,6 @@ function detalleDe(resultado: unknown): DetalleAccion | undefined {
   return (resultado as ResultadoPulsacion | undefined)?.detalle;
 }
 
-/**
- * Dispara la entrada ya resuelta a un hueco: un giro de perilla pasa por el
- * aviso de la tecla (T-HW-21), el resto va directo. Fuera del manejador de
- * `onEntrada` para no sumarle ramas.
- */
-function dispararEntrada(
-  entrada: EntradaSuperficie,
-  boton: ButtonConfig,
-  disparar: OpcionesSuperficies['dispararBoton'],
-  avisarGiro: (boton: ButtonConfig) => void,
-): void {
-  if (entrada.gesto === 'izq' || entrada.gesto === 'der') {
-    if (entrada.control === 'knob') avisarGiro(boton);
-    else disparar(boton, { sonido: 'giro', serial: entrada.serial });
-    return;
-  }
-  disparar(boton, { serial: entrada.serial });
-}
-
 function aplicarBrillo(
   api: ElectronAPI,
   serial: string,
@@ -274,7 +258,7 @@ function avisarMosaico(avisos: AvisoPerillaApi, entrada: EntradaSuperficie, huec
 }
 
 export function useSuperficies({
-  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo, t: tProp,
+  api, config, dispararBoton, dispararLargo, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo, t: tProp,
 }: OpcionesSuperficies): Superficies {
   const [dispositivos, setDispositivos] = useState<InfoSuperficie[]>([]);
   const [modelos, setModelos] = useState<Record<string, DisposicionSuperficie>>({});
@@ -313,6 +297,8 @@ export function useSuperficies({
   const modosRef = useRef(modos);
   const vivoRef = useRef(vivo);
   const dispararRef = useRef(dispararBoton);
+  const dispararLargoRef = useRef(dispararLargo);
+  const detectorLargo = useRef(crearDetectorLargo());
   const crearRef = useRef(crearPaginaSuperficie);
   const alCambiarModoRef = useRef(alCambiarModo);
   const iconoRef = useRef(iconoSvg);
@@ -325,6 +311,7 @@ export function useSuperficies({
   modosRef.current = modos;
   vivoRef.current = vivo;
   dispararRef.current = dispararBoton;
+  dispararLargoRef.current = dispararLargo;
   crearRef.current = crearPaginaSuperficie;
   alCambiarModoRef.current = alCambiarModo;
   iconoRef.current = iconoSvg;
@@ -382,7 +369,7 @@ export function useSuperficies({
 
   useEffect(() => {
     if (!api) return;
-    return api.superficies.onEntrada((entrada) => {
+    return api.superficies.onEntrada(conSubida(detectorLargo.current, (entrada) => {
       const dispositivo = dispositivosRef.current.find((d) => d.serial === entrada.serial);
       if (!dispositivo) return;
       const pagina = paginaDe(
@@ -438,8 +425,11 @@ export function useSuperficies({
       // Girar una perilla o deslizar una tira (izq/der) suena con el tic de
       // giro; pulsar (down) suena como siempre. El serial viaja en `opts` para
       // que un botón `page-nav` navegue entre las páginas de **este** dock.
-      dispararEntrada(entrada, boton, dispararRef.current, (b) => { void avisarGiro(b); });
-    });
+      despacharBoton(entrada, boton, {
+        disparar: dispararRef.current, avisarGiro: (b) => { void avisarGiro(b); },
+        largo: dispararLargoRef.current, detector: detectorLargo.current,
+      });
+    }));
   }, [api]);
 
   // Cada dispositivo cambia su página con la aplicación en primer plano,

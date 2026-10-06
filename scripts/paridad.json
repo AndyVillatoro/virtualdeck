@@ -146,8 +146,7 @@
   "longPressAction": {
     "pantallas": "si",
     "movil": "si",
-    "dock": "hueco",
-    "nota": "dock: pulsarBoton.ts tiene pulsacionLarga pero el dock dispara en el flanco down (useSuperficies.ts) sin temporizador, asi que nunca se aplica"
+    "dock": "si"
   },
   "radioGroup": {
     "pantallas": "si",

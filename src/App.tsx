@@ -435,12 +435,13 @@ export default function App() {
     if (env) return await pulsarBoton(btn, env);
   }, [api, entorno]);
 
-  // Mantener pulsado desde el mando móvil o `virtualdeck://press/<id>?largo=1`.
-  const dispararBotonLargo = useCallback(async (btn: ButtonConfig) => {
+  // Mantener pulsado desde el mando móvil, `virtualdeck://press/<id>?largo=1`
+  // o una tecla del dock (con su serial, para `page-nav`).
+  const dispararBotonLargo = useCallback(async (btn: ButtonConfig, opts?: { serial?: string }) => {
     if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
     const cfg = configRef.current;
     if (sonidoActivo(cfg)) playSound(perfilSonido(cfg));
-    const env = entorno();
+    const env = entorno(opts);
     if (env) return await pulsacionLarga(btn, env);
   }, [api, entorno]);
 
@@ -472,7 +473,8 @@ export default function App() {
   // en kiosko y con la ventana oculta en la bandeja.
   // El icono lo pinta la capa de componentes: `src/utils` no puede importarlos.
   const superficies = useSuperficies({
-    api, config, dispararBoton, crearPaginaSuperficie, colores: COLORES_LCD, iconoSvg: svgDeBoton, esGlifoDot,
+    api, config, dispararBoton, dispararLargo: dispararBotonLargo, crearPaginaSuperficie,
+    colores: COLORES_LCD, iconoSvg: svgDeBoton, esGlifoDot,
     // Perilla multimodo (T-HW-19): que se note el cambio de modo en el deck.
     alCambiarModo: (m) => showUndoToast(
       t('disp.modos.aviso', { n: m.perilla, i: m.modo + 1, total: m.total, modo: m.label }),
