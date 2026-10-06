@@ -1,4 +1,5 @@
 import type { ButtonConfig, LcdControl } from '../../types';
+import { textoDeAviso, type AvisoPerilla } from './avisoPerilla';
 
 /**
  * Convierte el botón de un hueco en el JPEG que espera la tecla LCD.
@@ -593,6 +594,95 @@ export async function pintarTecla(
   ctx.fillStyle = colorFondo(boton, colores);
   ctx.fillRect(0, 0, ancho, alto);
   if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones, extras);
+
+  const dataUrl = aDataUrlPng(lienzo);
+  return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl };
+}
+
+/**
+ * T-HW-21 (roadmap 85) — el aviso que enseña la tecla de encima al girar una
+ * perilla: el valor en grande ~1,2 s. Fondo OLED, fuente de puntos y, si es un
+ * porcentaje, una barra de 16 puntos abajo. Devuelve también el PNG sin rotar
+ * para que la pantalla de Dispositivos enseñe lo mismo que el aparato.
+ */
+
+/** Puntos de la barra del aviso (16, la densidad de la celda). */
+const BARRA_PUNTOS = 16;
+
+/** Etiqueta del aviso ("VOL", "SPOTIFY"), en la franja de arriba. */
+function dibujarEtiquetaAviso(
+  ctx: CanvasRenderingContext2D, etiqueta: string, ancho: number, alto: number, color: string,
+): void {
+  const limpio = etiqueta.trim().toUpperCase();
+  if (!limpio) return;
+  const tamano = Math.max(7, Math.round(alto * 0.15));
+  ctx.font = `600 ${tamano}px ${fuenteMono()}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(limpio, ancho / 2, alto * 0.08);
+}
+
+/** Texto grande en la fuente de puntos, encogido hasta caber. */
+function dibujarTextoPuntos(
+  ctx: CanvasRenderingContext2D, texto: string, ancho: number, alto: number,
+  color: string, centroY: number, tamanoMax: number,
+): void {
+  const limpio = texto.trim().toUpperCase();
+  if (!limpio) return;
+  const MINIMO = 8;
+  const disponible = ancho - 8;
+  let tamano = Math.max(MINIMO, Math.round(tamanoMax));
+  ctx.font = `${tamano}px ${fuenteDots()}`;
+  while (tamano > MINIMO && ctx.measureText(limpio).width > disponible) {
+    tamano -= 1;
+    ctx.font = `${tamano}px ${fuenteDots()}`;
+  }
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(limpio, ancho / 2, centroY);
+}
+
+/** Barra de puntos del porcentaje: llenos en color, vacíos en relieve. */
+function dibujarBarraPuntos(
+  ctx: CanvasRenderingContext2D, valor: number, ancho: number, alto: number, color: string,
+): void {
+  const margen = Math.max(3, ancho * 0.08);
+  const paso = (ancho - margen * 2) / BARRA_PUNTOS;
+  const radio = Math.min(paso * 0.42, alto * 0.05);
+  const y = alto - Math.max(6, alto * 0.12);
+  const llenos = Math.round((Math.min(100, Math.max(0, valor)) / 100) * BARRA_PUNTOS);
+  for (let i = 0; i < BARRA_PUNTOS; i++) {
+    ctx.beginPath();
+    ctx.arc(margen + paso * i + paso / 2, y, radio, 0, Math.PI * 2);
+    ctx.fillStyle = i < llenos ? color : DIM_GLIFO;
+    ctx.fill();
+  }
+}
+
+export async function pintarAvisoTecla(
+  aviso: AvisoPerilla,
+  lcd: LcdControl,
+  colores: ColoresSuperficie,
+  rotacion?: number,
+): Promise<ImagenTecla> {
+  await prepararFuentesLcd();
+  const { ancho, alto } = lcd;
+  const lienzo = crearLienzo(ancho, alto);
+  const ctx = contexto(lienzo);
+  if (!ctx) return { jpegBase64: codificarNegro(ancho, alto), dataUrl: '' };
+
+  ctx.fillStyle = colores.fondo;
+  ctx.fillRect(0, 0, ancho, alto);
+  if (aviso.valor !== undefined) {
+    const n = Math.min(100, Math.max(0, Math.round(aviso.valor)));
+    dibujarEtiquetaAviso(ctx, aviso.etiqueta ?? '', ancho, alto, colores.texto);
+    dibujarTextoPuntos(ctx, `${n}%`, ancho, alto, colores.texto, alto * 0.5, alto * 0.42);
+    dibujarBarraPuntos(ctx, n, ancho, alto, colores.texto);
+  } else {
+    dibujarTextoPuntos(ctx, textoDeAviso(aviso), ancho, alto, colores.texto, alto * 0.5, alto * 0.62);
+  }
 
   const dataUrl = aDataUrlPng(lienzo);
   return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl };

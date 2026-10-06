@@ -45,11 +45,17 @@ export interface OpcionesAnimacionLcd {
   iconoSvg?: OpcionesPintado['iconoSvg'];
   esGlifoDot?: OpcionesPintado['esGlifoDot'];
   fuentesListas: boolean;
+  /**
+   * ¿Esa tecla está enseñando el aviso de un giro (T-HW-21)? Mientras dura, el
+   * animador no la pinta: si no, el siguiente fotograma lo borraría en 100 ms.
+   */
+  conAviso?: (serial: string, hueco: number) => boolean;
 }
 
 interface DeseoAnimado {
   serial: string;
   clave: string;
+  hueco: number;
   indice: number;
   boton: ButtonConfig;
   lcd: LcdControl;
@@ -76,6 +82,7 @@ interface Pendiente {
 interface DeseoPuntos {
   serial: string;
   clave: string;
+  hueco: number;
   indice: number;
   boton: ButtonConfig;
   lcd: LcdControl;
@@ -197,7 +204,7 @@ function recolectarDeseos(o: OpcionesAnimacionLcd): Map<string, DeseoAnimado> {
         dispositivo.serial, hueco, indice, boton.imageData,
         lcd.ancho, lcd.alto, rotacion, o.colores.fondo, o.colores.texto, o.fuentesListas,
       ].join('|');
-      salida.set(clave, { serial: dispositivo.serial, clave, indice, boton, lcd, rotacion, src: boton.imageData });
+      salida.set(clave, { serial: dispositivo.serial, clave, hueco, indice, boton, lcd, rotacion, src: boton.imageData });
     }
   }
   return salida;
@@ -273,7 +280,7 @@ function recolectarDeseosPuntos(o: OpcionesAnimacionLcd): Map<string, DeseoPunto
         firmaPuntos(boton, encendido, rotacion, o.colores, o.fuentesListas),
       ].join('|');
       salida.set(clave, {
-        serial: dispositivo.serial, clave, indice, boton, lcd, rotacion,
+        serial: dispositivo.serial, clave, hueco, indice, boton, lcd, rotacion,
         matriz, efecto: original.animacion.efecto, inicio: performance.now(),
       });
     }
@@ -313,6 +320,8 @@ function tic(motor: Motor): void {
   const ahora = performance.now();
   for (const anim of motor.activas.values()) {
     if (anim.enviando || ahora < anim.vence) continue;
+    // Con el aviso de un giro encima, el fotograma no se pisa (T-HW-21).
+    if (motor.opciones.conAviso?.(anim.deseo.serial, anim.deseo.hueco)) continue;
     avanzarFotograma(anim, ahora);
     void enviar(motor, anim);
   }
@@ -329,6 +338,8 @@ function avanzarPuntos(motor: Motor, ahora: number): void {
   for (const anim of motor.puntos.values()) {
     if (anim.enviando) continue;
     const deseo = anim.deseo;
+    // El aviso del giro manda mientras dura (T-HW-21).
+    if (o.conAviso?.(deseo.serial, deseo.hueco)) continue;
     const duracion = puntos.duracionEfecto(deseo.efecto);
     const t = puntos.esContinuo(deseo.efecto) || duracion <= 0
       ? ahora - deseo.inicio
@@ -379,6 +390,11 @@ function avanzarPulsos(motor: Motor, ahora: number): void {
       : undefined;
     const boton = control ? pagina.botones[pulso.hueco] : undefined;
     if (!pagina || !control || !boton) {
+      pulsosLcd.delete(clave);
+      continue;
+    }
+    // Un destello sobre un aviso lo borraría: se descarta (T-HW-21).
+    if (o.conAviso?.(pulso.serial, pulso.hueco)) {
       pulsosLcd.delete(clave);
       continue;
     }

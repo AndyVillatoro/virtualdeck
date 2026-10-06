@@ -10,7 +10,7 @@ import { makeT, type TFunc } from './i18n';
 const T_POR_DEFECTO = makeT('es');
 
 import { MANEJADORES, RESUELTAS_POR_EL_LLAMADOR } from './acciones';
-import { OK, fail, interpolate, actionLabel, type ActionResult } from './acciones/base';
+import { OK, fail, interpolate, actionLabel, type ActionResult, type DetalleAccion } from './acciones/base';
 
 // Se reexportan porque media aplicacion los importa desde aqui.
 export { interpolate };
@@ -60,6 +60,8 @@ export interface RunSequenceResult {
   ok: boolean;
   error?: string;
   stateUpdate: Record<string, string>;
+  /** T-HW-21 — El último valor que dejó un paso, para el aviso de la tecla. */
+  detalle?: DetalleAccion;
 }
 
 /** Lo que necesitan los tipos que solo existen dentro de una secuencia. */
@@ -138,6 +140,7 @@ export async function runActionSequence(
   const entorno: EntornoSecuencia = { api, merged, scriptHooks, rgbProfiles, t };
   let lastOk = true;
   let firstError: string | undefined;
+  let ultimoDetalle: DetalleAccion | undefined;
 
   for (const [i, a] of actions.entries()) {
     if (a.onlyIfPrevOk && !lastOk) continue;
@@ -156,6 +159,7 @@ export async function runActionSequence(
 
       stepOk = res.ok;
       if (res.stateUpdate) Object.assign(merged, res.stateUpdate);
+      if (res.detalle) ultimoDetalle = res.detalle;
       if (!res.ok) {
         if (!firstError) firstError = res.error;
         break;
@@ -176,5 +180,5 @@ export async function runActionSequence(
       }
     }
   }
-  return { ok: !firstError, error: firstError, stateUpdate: merged };
+  return { ok: !firstError, error: firstError, stateUpdate: merged, detalle: ultimoDetalle };
 }

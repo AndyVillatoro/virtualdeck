@@ -126,4 +126,10 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.modos.subir': 'Subir',
   'disp.modos.bajar': 'Bajar',
   'disp.modos.aviso': 'PERILLA {n} · MODO {i}/{total}: {modo}',
+
+  // Aviso en la tecla al girar una perilla (T-HW-21, roadmap 85)
+  'disp.aviso.vol': 'VOL',
+  'disp.aviso.brillo': 'BRILLO',
+  'disp.aviso.pagina': 'PÁG {n}/{total}',
+  'disp.aviso.modo': 'MODO {n}/{total}',
 };

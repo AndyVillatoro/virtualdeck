@@ -417,7 +417,7 @@ export default function App() {
     }
     // `page-nav`: desde un dock entre sus páginas, desde lo demás entre las
     // del deck (así `useAutoProfile` lo toma como elección manual).
-    await pulsarBoton(btn, {
+    return await pulsarBoton(btn, {
       api, config: configRef.current, toggledIds: () => toggledRef.current,
       onToggle: handleToggle, onStateUpdate: updateState,
       // Un fallo de una accion disparada sola no se veia en ninguna parte.

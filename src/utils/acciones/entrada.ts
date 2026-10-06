@@ -31,7 +31,9 @@ export const ENTRADA: Record<string, Manejador> = {
   'brightness': async ({ action, api, t }) => {
     if (action.brightnessLevel === undefined) return fail(t('act.err.noBrightness'));
     const ok = await api.launch.brightness(action.brightnessLevel);
-    return ok ? OK : fail(t('act.err.brightness'));
+    return ok
+      ? { ok: true, detalle: { etiqueta: t('disp.aviso.brillo'), valor: action.brightnessLevel } }
+      : fail(t('act.err.brightness'));
   },
 
   'notify': async ({ action, api, state, t }) => {

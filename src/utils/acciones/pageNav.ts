@@ -115,6 +115,30 @@ export function navegarDeck(
 }
 
 /**
+ * El destino de un `page-nav` en un dock: id, índice (base 0) y total, o
+ * `null` si no va a ninguna parte.
+ *
+ * Lo comparten `navegarDock` (aplicarlo) y el aviso de la tecla (T-HW-21,
+ * «PÁG 2/3»): calcular el destino dos veces con reglas distintas enseñaría un
+ * número que no es el que se acaba de aplicar.
+ */
+export function destinoDock(
+  accion: ButtonAction,
+  paginas: PageConfig[],
+  serial: string,
+  actualId: string | undefined,
+): { paginaId: string; indice: number; total: number } | null {
+  const ids = paginasNavegables(paginas, serial).map((p) => p.id);
+  // Un dock que nunca cambió de página no tiene activa registrada: enseña la
+  // predeterminada. Sin esto, «siguiente» calculaba desde ninguna, iba a la
+  // primera —la que ya se veía— y la primera pulsación no hacía nada.
+  const desde = actualId ?? idPaginaPredeterminada(paginas, serial) ?? undefined;
+  const destino = destinoPageNav(ids, desde, accion.pageNav, accion.pageNavTarget);
+  if (!destino) return null;
+  return { paginaId: destino, indice: ids.indexOf(destino), total: ids.length };
+}
+
+/**
  * Callback `navegar` para un dock físico: navega entre sus páginas con
  * `activarPagina`, que además la marca como base.
  */
@@ -125,11 +149,10 @@ export function navegarDock(
   actualId: string | undefined,
   activar: (paginaId: string) => void,
 ): boolean {
-  // Un dock que nunca cambió de página no tiene activa registrada: enseña la
-  // predeterminada. Sin esto, «siguiente» calculaba desde ninguna, iba a la
-  // primera —la que ya se veía— y la primera pulsación no hacía nada.
-  const desde = actualId ?? idPaginaPredeterminada(paginas, serial) ?? undefined;
-  return resolverPageNav(accion, paginas, desde, serial, activar);
+  const destino = destinoDock(accion, paginas, serial, actualId);
+  if (!destino) return false;
+  activar(destino.paginaId);
+  return true;
 }
 
 /**

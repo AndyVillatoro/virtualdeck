@@ -1,4 +1,5 @@
 import { executeAction, runActionSequence } from './actions';
+import type { DetalleAccion } from './acciones/base';
 import type { ButtonAction, ButtonConfig, DeckConfig, ElectronAPI } from '../types';
 
 /**
@@ -140,7 +141,10 @@ export interface ResultadoPulsacion {
   error?: string;
   /** El tipo que se registra en el log de ejecución. */
   tipo: string;
+  /** T-HW-21 — Valor que dejó la acción, para el aviso de la tecla física. */
+  detalle?: DetalleAccion;
 }
+
 
 /**
  * Aparta los pasos `page-nav` de una secuencia y los resuelve con el llamador.
@@ -191,7 +195,7 @@ export async function pulsarBoton(
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
   persistirYCrujir(r, base, e);
-  return { ok: r.ok, error: r.error, tipo: btn.action.type };
+  return { ok: r.ok, error: r.error, tipo: btn.action.type, detalle: r.detalle };
 }
 
 /**
@@ -212,7 +216,7 @@ async function ejecutarApagado(btn: ButtonConfig, e: EntornoPulsacion): Promise<
     { ok: false, error: e.t('act.err.timeout') },
   );
   persistirYCrujir(r, e.config.state ?? {}, e);
-  return { ok: r.ok, error: r.error, tipo: off.type };
+  return { ok: r.ok, error: r.error, tipo: off.type, detalle: r.detalle };
 }
 
 /**

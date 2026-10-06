@@ -113,3 +113,37 @@ export function teclasLcd(d: DisposicionSuperficie): Array<{ hueco: number; indi
   });
   return salida;
 }
+
+/**
+ * La tecla LCD que está encima de una perilla, por posición física.
+ *
+ * Es la tecla de la **columna más cercana en la fila de encima** (T-HW-21,
+ * roadmap 85): al girar una perilla el aviso sale en la tecla que el dueño
+ * tiene justo arriba. Si la perilla no tiene teclas encima (fila 0, como la
+ * perilla grande del N3), se usa la fila de teclas más cercana. Pura y con
+ * casos en el script de pruebas.
+ *
+ * Devuelve el hueco de esa tecla, o `null` si el modelo no tiene la perilla,
+ * no tiene teclas con LCD, o no hay ninguna.
+ */
+export function teclaSobrePerilla(d: DisposicionSuperficie, indicePerilla: number): number | null {
+  const perilla = d.controles.find((c) => c.tipo === 'knob' && c.indice === indicePerilla);
+  if (!perilla) return null;
+  const teclas = d.controles.filter((c) => c.tipo === 'key' && c.lcd);
+  if (teclas.length === 0) return null;
+
+  const arriba = teclas.filter((t) => t.fila < perilla.fila);
+  const fila = arriba.length > 0
+    ? Math.max(...arriba.map((t) => t.fila))
+    : Math.min(...teclas.map((t) => t.fila));
+  const enFila = teclas.filter((t) => t.fila === fila);
+
+  let mejor = enFila[0];
+  for (const t of enFila) {
+    const distancia = Math.abs(t.columna - perilla.columna);
+    const distanciaMejor = Math.abs(mejor.columna - perilla.columna);
+    if (distancia < distanciaMejor || (distancia === distanciaMejor && t.columna < mejor.columna)) mejor = t;
+  }
+  const huecos = huecosDeControl(d, mejor);
+  return huecos[0] ?? null;
+}

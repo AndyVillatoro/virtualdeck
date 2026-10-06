@@ -34,7 +34,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 | **`id`** (Identificador único) | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **`page`** (Pertenencia a página) | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **`label`** (Etiqueta principal) | SÍ | SÍ | SÍ | SÍ | SÍ |
-| **`sublabel`** (Sub-etiqueta secundaria) | PARCIAL | PARCIAL | PARCIAL | SÍ | NO |
+| **`sublabel`** (Sub-etiqueta secundaria) | SÍ | SÍ | SÍ | SÍ | NO |
 | **Interpolación `{var}` en etiqueta** | SÍ | SÍ | SÍ | NO | NO |
 
 #### Evidencia (3.1)
@@ -57,9 +57,9 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
   - Mando móvil: SÍ (`iconosMando.ts:234`, `paginaMando.ts:580`)
   - Tecla física: SÍ (`pintarTecla.ts:460-499,520`)
 - **`sublabel`**:
-  - Principal: PARCIAL (`ButtonCell.tsx` ignora `sublabel` en botones estándar en `RotuloCelda.tsx:29-58`; solo se dibuja dentro de cuadrantes 2×2 en `Subdivision2x2.tsx:313,328`)
-  - Kiosko: PARCIAL (mismo comportamiento de `ButtonCell.tsx` y `Subdivision2x2.tsx:313`)
-  - Barra flotante: PARCIAL (mismo comportamiento de `ButtonCell.tsx` y `Subdivision2x2.tsx:313`)
+  - Principal: SÍ (`RotuloCelda.tsx:31,74-94`, `Subdivision2x2.tsx:313,328`)
+  - Kiosko: SÍ (`RotuloCelda.tsx:31,74-94`, `Subdivision2x2.tsx:313,328`)
+  - Barra flotante: SÍ (`RotuloCelda.tsx:31,74-94`, `Subdivision2x2.tsx:313,328`)
   - Mando móvil: SÍ (`iconosMando.ts:235`, `paginaMando.ts:581` `.sublabel-txt`)
   - Tecla física: NO (`pintarTecla.ts:460-499,520` solo lee y renderiza `boton.label`, omitiendo `sublabel`)
 - **Interpolación `{var}` en etiqueta**:
@@ -156,49 +156,49 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 
 | Campo / Comportamiento | Principal | Kiosko | Barra flotante | Mando móvil | Tecla física (dock) |
 |---|---|---|---|---|---|
-| **Widget Reloj (`widget: 'clock'`)** | SÍ | SÍ | NO | NO | NO |
-| **Widget Clima (`widget: 'weather'`)** | SÍ | SÍ | NO | NO | NO |
-| **Widget Multimedia (`widget: 'now-playing'`)** | SÍ | SÍ | NO | NO | NO |
-| **Widget Sensor (`widget: 'sensor'`, `sensorWidget`)** | SÍ | SÍ | NO | NO | NO |
-| **Widget Variable (`widget: 'variable'`, `varWidget`)** | SÍ | SÍ | NO | NO | NO |
-| **Widget Divisa (`widget: 'currency'`, `currencyWidget`)** | SÍ | SÍ | NO | NO | NO |
+| **Widget Reloj (`widget: 'clock'`)** | SÍ | SÍ | SÍ | NO | NO |
+| **Widget Clima (`widget: 'weather'`)** | SÍ | SÍ | SÍ | NO | NO |
+| **Widget Multimedia (`widget: 'now-playing'`)** | SÍ | SÍ | SÍ | NO | NO |
+| **Widget Sensor (`widget: 'sensor'`, `sensorWidget`)** | SÍ | SÍ | SÍ | NO | NO |
+| **Widget Variable (`widget: 'variable'`, `varWidget`)** | SÍ | SÍ | SÍ | NO | NO |
+| **Widget Divisa (`widget: 'currency'`, `currencyWidget`)** | SÍ | SÍ | SÍ | NO | NO |
 | **Widget Slider (`widget: 'slider'`, `sliderWidget`)** | SÍ | SÍ | SÍ | SÍ | NO |
 
 #### Evidencia (3.4)
 - **Widget Reloj**:
   - Principal: SÍ (`CeldaPrincipal.tsx:75`, `useDatosWidget.ts:80-92`, `RelojWidget.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:195,261`)
-  - Barra flotante: NO (`FloatingBarB.tsx:203-228` no consume `useDatosWidget` ni pasa `widgetData`)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:71-75,95-103,257` consume `useDatosWidget` y pasa `widgetData`)
   - Mando móvil: NO (`paginaMando.ts:498` solo contempla `slider`)
   - Tecla física: NO (`pintarTecla.ts` no contiene lógica de renderizado de widgets)
 - **Widget Clima**:
   - Principal: SÍ (`MainB.tsx:19`, `useClimaWidget`, `CeldaPrincipal.tsx:75`, `ClimaWidget.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:189-200`)
-  - Barra flotante: NO (`FloatingBarB.tsx:203-228` no pasa `widgetData`)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:77-81,95-103,257` consume `useClimaWidget` y pasa `widgetData`)
   - Mando móvil: NO (`paginaMando.ts:498`)
   - Tecla física: NO (`pintarTecla.ts`)
 - **Widget Multimedia**:
   - Principal: SÍ (`MainB.tsx:41`, `CeldaPrincipal.tsx:75`, `NowPlayingWidget.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:68,197,261`)
-  - Barra flotante: NO (`FloatingBarB.tsx:203-228`)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:83-91,95-103,257,349` consume `useNowPlaying` y pasa `widgetData`)
   - Mando móvil: NO (`paginaMando.ts:498`)
   - Tecla física: NO (`pintarTecla.ts`)
 - **Widget Sensor**:
   - Principal: SÍ (`MainB.tsx:43`, `CeldaPrincipal.tsx:75`, `useDatosWidget.ts:133-146`, `SensorMiniWidget.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:76,198,261`)
-  - Barra flotante: NO (`FloatingBarB.tsx:203-228`)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:49,95-103,257` consume `useSensors` y pasa `widgetData`)
   - Mando móvil: NO (`paginaMando.ts:498`)
   - Tecla física: NO (`pintarTecla.ts`)
 - **Widget Variable**:
   - Principal: SÍ (`CeldaPrincipal.tsx:75`, `useDatosWidget.ts:148-160`, `VariableMiniWidget.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:194,261`)
-  - Barra flotante: NO (`FloatingBarB.tsx:203-228`)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:95-103,257` consume `useDatosWidget` con `config.state` y pasa `widgetData`)
   - Mando móvil: NO (`paginaMando.ts:498`)
   - Tecla física: NO (`pintarTecla.ts`)
 - **Widget Divisa**:
   - Principal: SÍ (`MainB.tsx:19`, `useDivisas`, `CeldaPrincipal.tsx:75`, `DivisasMiniWidget.tsx`)
   - Kiosko: SÍ (`FullscreenB.tsx:191,261`)
-  - Barra flotante: NO (`FloatingBarB.tsx:203-228`)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:93-103,257` consume `useDivisas` y pasa `widgetData`)
   - Mando móvil: NO (`paginaMando.ts:498`)
   - Tecla física: NO (`pintarTecla.ts`)
 - **Widget Slider**:
@@ -311,7 +311,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 
 | Campo / Comportamiento | Principal | Kiosko | Barra flotante | Mando móvil | Tecla física (dock) |
 |---|---|---|---|---|---|
-| **Visibilidad condicional (`visibleIf`)** | SÍ | SÍ | PARCIAL | NO | NO |
+| **Visibilidad condicional (`visibleIf`)** | SÍ | SÍ | SÍ | NO | NO |
 | **Mantener pulsado (`longPressAction`)** | SÍ | SÍ | SÍ | NO | NO |
 | **Acciones en cadena (`actions`)** | SÍ | SÍ | SÍ | SÍ | SÍ |
 | **Rueda / paso de ajuste (`adjust`)** | SÍ | SÍ | SÍ | NO | SÍ |
@@ -324,7 +324,7 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 - **Visibilidad condicional (`visibleIf`)**:
   - Principal: SÍ (`CeldaPrincipal.tsx:73`: `isHidden={!botonVisible(btn, estadoSistema, sensorList)}`)
   - Kiosko: SÍ (`FullscreenB.tsx:259`: `isHidden={!botonVisible(btn, estadoSistema, sensorList)}`)
-  - Barra flotante: PARCIAL (`FloatingBarB.tsx:48-50,211`: evalúa app activa pero pasa `sensores` como `null`, ignorando condiciones de hardware)
+  - Barra flotante: SÍ (`FloatingBarB.tsx:49,255`: evalúa app activa y hardware mediante `sensorList` real de `useSensors()`)
   - Mando móvil: NO (`servidorLocal.ts:195-201` no evalúa `visibleIf`, `paginaMando.ts` dibuja los botones siempre)
   - Tecla física: NO (`paginasSuperficie.ts:46`, `useSuperficies.ts:323` no filtran por `visibleIf`; el botón permanece visible y activo en el LCD)
 - **Mantener pulsado (`longPressAction`)**:
@@ -378,11 +378,11 @@ Documento de auditoría técnica (roadmap 82). Analiza la coherencia funcional y
 - **Total de campos y comportamientos auditados:** 37
 - **Evaluaciones individuales realizadas (37 campos × 5 superficies):** 185
 - **Desglose de estados globales:**
-  - SÍ: 125
-  - NO: 35
-  - PARCIAL: 8
+  - SÍ: 135
+  - NO: 29
+  - PARCIAL: 4
   - NO APLICA: 17
-- **Total de huecos encontrados (casos NO o PARCIAL que deberían funcionar):** 43 huecos (distribuidos en Barra flotante, Mando móvil y Tecla física).
+- **Total de huecos encontrados (casos NO o PARCIAL que deberían funcionar):** 33 huecos (distribuidos en Mando móvil y Tecla física).
 
 ---
 
@@ -394,9 +394,9 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
 1. **Mando móvil — Ausencia de iconos de marca (`brandIcon`)**:
    - *Estado:* NO (`paginaMando.ts:574-576`).
    - *Efecto:* Botones populares como Discord, Spotify, OBS, Steam o Chrome se muestran sin su icono característico en el teléfono.
-2. **Barra flotante — Pérdida total de datos en vivo de widgets (`clock`, `weather`, `now-playing`, `sensor`, `variable`, `currency`)**:
-   - *Estado:* NO (`FloatingBarB.tsx:203-228`).
-   - *Efecto:* Al colocar cualquier widget en la barra flotante, no recibe `widgetData` y se muestra estático o vacío, perdiendo su función de monitor.
+2. **Barra flotante — Widgets en tiempo real (`clock`, `weather`, `now-playing`, `sensor`, `variable`, `currency`)**:
+   - *Estado:* SÍ (`FloatingBarB.tsx:71-103,257,349`).
+   - *Efecto:* Resuelto (roadmap 82). La barra flotante consume `useDatosWidget`, con sondeo reactivo de clima (`useClimaWidget`), multimedia (`useNowPlaying`), sensores (`useSensors`) y divisas (`useDivisas`), pasando los datos vivos a `ButtonCell`.
 3. **Mando móvil — Ausencia de widgets en vivo excepto slider**:
    - *Estado:* NO (`paginaMando.ts:498`).
    - *Efecto:* Ningún sensor, reloj, clima, variable o música se renderiza como widget en el mando web.
@@ -417,12 +417,12 @@ A continuación se listan las ausencias e incoherencias donde una superficie que
 8. **Mando móvil y Tecla física — Omisión de visibilidad condicional (`visibleIf`)**:
    - *Estado:* NO (`servidorLocal.ts:195-201`, `paginasSuperficie.ts:46`).
    - *Efecto:* Botones configurados para ocultarse cuando cierta app no está activa o un sensor baja de un umbral siguen apareciendo y pulsándose en el móvil y en el dock.
-9. **Barra flotante — Visibilidad condicional incompleta (sin sensores)**:
-   - *Estado:* PARCIAL (`FloatingBarB.tsx:48-50,211`).
-   - *Efecto:* La barra evalúa la app activa pero pasa sensores a `null`, ignorando condiciones de sensor.
-10. **Pantallas principales (`ButtonCell`) — `sublabel` no se dibuja en botones estándar**:
-    - *Estado:* PARCIAL (`RotuloCelda.tsx:29-58` vs `Subdivision2x2.tsx:313`).
-    - *Efecto:* A diferencia del móvil, en el escritorio `sublabel` solo se ve si el botón está en modo 2×2; en botones estándar de celda completa se ignora.
+9. **Barra flotante — Visibilidad condicional por hardware/sensores**:
+   - *Estado:* SÍ (`FloatingBarB.tsx:49,255`).
+   - *Efecto:* Resuelto (roadmap 82). La barra evalúa las condiciones de hardware de `visibleIf` usando la lista real de sensores provista por `useSensors()`.
+10. **Pantallas principales (`ButtonCell`) — Soporte completo para `sublabel` en botones estándar**:
+    - *Estado:* SÍ (`RotuloCelda.tsx:31,74-94`).
+    - *Efecto:* Resuelto (roadmap 82). `RotuloCelda` ahora dibuja la subetiqueta debajo de la etiqueta principal, más pequeña y atenuada, con truncado elíptico tanto sobre fondos lisos como sobre imágenes oscurecidas, unificando el comportamiento en Principal, Kiosko y Barra.
 
 #### Prioridad 3: Funcionalidades de interacción y disparo ausentes
 11. **Mando móvil — Sin soporte para mantener pulsado (`longPressAction`)**:

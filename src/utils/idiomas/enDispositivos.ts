@@ -126,4 +126,10 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.modos.subir': 'Move up',
   'disp.modos.bajar': 'Move down',
   'disp.modos.aviso': 'KNOB {n} · MODE {i}/{total}: {modo}',
+
+  // Knob-turn notice on the key (T-HW-21, roadmap 85)
+  'disp.aviso.vol': 'VOL',
+  'disp.aviso.brillo': 'BRIGHT',
+  'disp.aviso.pagina': 'PAGE {n}/{total}',
+  'disp.aviso.modo': 'MODE {n}/{total}',
 };

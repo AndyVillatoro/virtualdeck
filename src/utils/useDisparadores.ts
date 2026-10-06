@@ -23,7 +23,7 @@ import type { ButtonConfig, Sensor } from '../types';
 interface Opciones {
   botones: ButtonConfig[];
   sensores: Sensor[];
-  disparar: (b: ButtonConfig) => void | Promise<void>;
+  disparar: (b: ButtonConfig) => unknown;
 }
 
 /** Cada cuánto se mira el reloj. */

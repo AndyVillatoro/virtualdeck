@@ -14,6 +14,25 @@ export interface ActionResult {
   error?: string;
   /** 1.2 — Mutación al estado global propuesta por la acción (set-var / incr-var). */
   stateUpdate?: Partial<Record<string, string>>;
+  /**
+   * T-HW-21 — Lo que la acción acaba de producir, para enseñarlo en la tecla
+   * física que está encima de la perilla (roadmap 85). Opcional: solo lo
+   * devuelven las acciones que saben un valor (volumen, brillo, página...).
+   */
+  detalle?: DetalleAccion;
+}
+
+/**
+ * Valor de una acción para el aviso de la tecla LCD.
+ *
+ * `valor` es un porcentaje 0-100 (se pinta grande con una barra de puntos y
+ * `etiqueta` lo encabeza: «VOL 65 %»); `texto` es para lo que no es un
+ * porcentaje («PÁG 2/3», «MODO 2/4»).
+ */
+export interface DetalleAccion {
+  etiqueta?: string;
+  valor?: number;
+  texto?: string;
 }
 
 export const OK: ActionResult = { ok: true };

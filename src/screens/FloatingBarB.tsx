@@ -10,6 +10,9 @@ import { interpolate } from '../utils/acciones/base';
 import { useEstadoSistema, botonActivo, botonVisible } from '../utils/estadoSistema';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
 import { sonidoActivo, perfilSonido } from '../utils/sound';
+import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
+import { useSensors } from '../utils/sensors';
+import { NowPlayingProvider, useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import type { ButtonConfig, DeckConfig } from '../types';
 import { BARRA_POR_DEFECTO } from '../types';
 
@@ -42,12 +45,9 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const encendidos = useMemo(() => new Set(config.toggledIds ?? []), [config.toggledIds]);
   /** Un aviso corto: un error de accion o la salida de un script. */
   const [aviso, setAviso] = useState<string | null>(null);
-  // El mismo estado que el deck, publicado por el proceso principal. Sin esto
-  // la barra ignoraba la visibilidad condicional -un boton con «solo si corre
-  // tal aplicacion» se veia siempre- y no marcaba el dispositivo de audio en
-  // uso. Los sensores van a null: la barra no los sondea, y esa condicion se
-  // ignora en vez de esconder el boton por falta de datos.
+  // El mismo estado que el deck, publicado por el proceso principal.
   const estadoSistema = useEstadoSistema(api);
+  const { sensors: sensorList } = useSensors();
 
   // Por referencia y no por cierre, por lo mismo que en el deck: la celda
   // conserva el manejador de su primer render (ver `pulsarBoton`).
@@ -56,7 +56,51 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const encendidosRef = useRef(encendidos);
   encendidosRef.current = encendidos;
 
-  const porId = new Map(config.buttons.map((b) => [b.id, b]));
+  const porId = useMemo(() => new Map(config.buttons.map((b) => [b.id, b])), [config.buttons]);
+
+  const botonesBarra = useMemo(
+    () => barra.slots.map((id) => (id ? porId.get(id) : undefined)).filter(Boolean) as ButtonConfig[],
+    [barra.slots, porId],
+  );
+
+  const tieneReloj = useMemo(
+    () => botonesBarra.some((b) => b.widget === 'clock'),
+    [botonesBarra],
+  );
+  const [reloj, setReloj] = useState(() => new Date());
+  useEffect(() => {
+    if (!tieneReloj) return;
+    const t = setInterval(() => setReloj(new Date()), 1000);
+    return () => clearInterval(t);
+  }, [tieneReloj]);
+
+  const tieneClima = useMemo(
+    () => botonesBarra.some((b) => b.widget === 'weather'),
+    [botonesBarra],
+  );
+  const clima = useClimaWidget(tieneClima, api);
+
+  const nowPlaying = useNowPlaying();
+  const setNowPlayingActive = useNowPlayingActivation();
+  const tieneNowPlaying = useMemo(
+    () => botonesBarra.some((b) => b.widget === 'now-playing'),
+    [botonesBarra],
+  );
+  useEffect(() => {
+    setNowPlayingActive(tieneNowPlaying);
+  }, [tieneNowPlaying, setNowPlayingActive]);
+
+  const divisas = useDivisas(botonesBarra, api);
+
+  const widgetDataMap = useDatosWidget({
+    botones: botonesBarra,
+    estado: config.state,
+    reloj,
+    clima,
+    sonando: nowPlaying,
+    sensores: sensorList,
+    divisas,
+  });
 
   // Medirse y pedir ese tamaño exacto.
   //
@@ -208,8 +252,9 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
                 toggled={encendidos.has(btn.id)}
                 subToggled={btn.subButtons?.map((s) => encendidos.has(s.id))}
                 isActive={botonActivo(btn, estadoSistema)}
-                isHidden={!botonVisible(btn, estadoSistema, null)}
+                isHidden={!botonVisible(btn, estadoSistema, sensorList)}
                 isRunning={ejecutando.has(btn.id)}
+                widgetData={widgetDataMap[btn.id]}
                 resolvedLabel={btn.label.includes('{')
                   ? interpolate(btn.label, config.state ?? {}) : undefined}
                 soundEnabled={sonidoActivo(config)}
@@ -301,7 +346,9 @@ export function FloatingBarB() {
   return (
     <LanguageProvider pref={config.language}>
       <ThemeProvider theme={config.theme ?? 'dark'} accent={config.accent}>
-        <Contenido config={config} onGuardar={guardar} />
+        <NowPlayingProvider>
+          <Contenido config={config} onGuardar={guardar} />
+        </NowPlayingProvider>
       </ThemeProvider>
     </LanguageProvider>
   );

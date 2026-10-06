@@ -22,7 +22,9 @@ export const AUDIO: Record<string, Manejador> = {
   'volume-set': async ({ action, api, t }) => {
     if (action.volumePercent === undefined) return fail(t('act.err.noVolume'));
     const ok = await api.launch.setVolume(action.volumePercent);
-    return ok ? OK : fail(t('act.err.volume'));
+    return ok
+      ? { ok: true, detalle: { etiqueta: t('disp.aviso.vol'), valor: action.volumePercent } }
+      : fail(t('act.err.volume'));
   },
 
   /**
@@ -35,6 +37,7 @@ export const AUDIO: Record<string, Manejador> = {
   'app-volume': async ({ action, api, t }) => {
     const proceso = (action.appVolumeTarget ?? '').trim();
     const modo = action.appVolumeMode ?? 'adjust';
+    const quien = proceso.toUpperCase();
     if (modo === 'mute') {
       const r = await api.audio.toggleAppMute(proceso);
       return r.ok ? OK : fail(r.error || t('act.err.appVolume'));
@@ -42,11 +45,18 @@ export const AUDIO: Record<string, Manejador> = {
     if (modo === 'set') {
       if (action.appVolumeLevel === undefined) return fail(t('act.err.noVolume'));
       const r = await api.audio.setAppVolume(proceso, action.appVolumeLevel);
-      return r.ok ? OK : fail(r.error || t('act.err.appVolume'));
+      return r.ok
+        ? { ok: true, detalle: { etiqueta: quien, valor: action.appVolumeLevel } }
+        : fail(r.error || t('act.err.appVolume'));
     }
     const delta = action.appVolumeDelta ?? 0;
     if (!delta) return fail(t('act.err.noDelta'));
     const r = await api.audio.adjustAppVolume(proceso, delta);
+    // El nivel que devuelve el proceso principal es el que se enseña: es el
+    // único sitio que lo sabe después del ajuste.
+    if (r.ok && r.nivel !== undefined) {
+      return { ok: true, detalle: { etiqueta: quien, valor: r.nivel } };
+    }
     return r.ok ? OK : fail(r.error || t('act.err.appVolume'));
   },
 
@@ -75,7 +85,9 @@ export const AUDIO: Record<string, Manejador> = {
     }
     const nuevo = Math.min(100, Math.max(0, Math.round(base + delta)));
     const ok = brillo ? await api.launch.brightness(nuevo) : await api.launch.setVolume(nuevo);
-    return ok ? OK : fail(t(brillo ? 'act.err.brightness' : 'act.err.volume'));
+    return ok
+      ? { ok: true, detalle: { etiqueta: t(brillo ? 'disp.aviso.brillo' : 'disp.aviso.vol'), valor: nuevo } }
+      : fail(t(brillo ? 'act.err.brightness' : 'act.err.volume'));
   },
 };
 

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, InfoSuperficie,
+  ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, EntradaSuperficie, InfoSuperficie,
 } from '../../types';
 import { huecoDeEntrada, huecosDeControl, teclasLcd } from './disposicion';
 import {
@@ -12,6 +12,10 @@ import {
 } from './paginaSegunApp';
 import { paginaDe, type PaginaDispositivo } from './paginasSuperficie';
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
+import { useAvisoPerilla } from './useAvisoPerilla';
+import type { ResultadoPulsacion } from '../pulsarBoton';
+import { makeT, resolveLang, type TFunc } from '../i18n';
+import type { DetalleAccion } from '../acciones/base';
 import {
   fuentesLcdListas, pintarTecla, prepararFuentesLcd, resolverBotonLcd,
   type ColoresSuperficie, type OpcionesPintado,
@@ -56,9 +60,20 @@ import {
 export interface OpcionesSuperficies extends OpcionesPintado {
   api: ElectronAPI | undefined;
   config: DeckConfig;
-  dispararBoton: (boton: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => void;
+  /**
+   * Dispara la acción del botón (el envoltorio de `App`).
+   *
+   * Devuelve el `ResultadoPulsacion`, con el `detalle` que enseña la tecla
+   * física al girar una perilla (T-HW-21).
+   */
+  dispararBoton: (
+    boton: ButtonConfig,
+    opts?: { sonido?: 'giro'; serial?: string },
+  ) => void | Promise<ResultadoPulsacion | void>;
   crearPaginaSuperficie: (info: InfoSuperficie) => void;
   colores: ColoresSuperficie;
+  /** Traductor para los avisos de la tecla; sin él se resuelve por `config.language`. */
+  t?: TFunc;
   /** Aviso al cambiar de modo en una perilla multimodo (lo pinta quien llama). */
   alCambiarModo?: (info: {
     serial: string;
@@ -110,6 +125,7 @@ async function pintarCambiadas(
   firmas: Map<string, string[]>,
   fuentes: boolean,
   encendidos: Set<string>,
+  conAviso?: (serial: string, hueco: number) => boolean,
 ): Promise<Record<number, string>> {
   const previas = firmas.get(serial) ?? [];
   const nuevas: string[] = [];
@@ -122,12 +138,39 @@ async function pintarCambiadas(
     const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes);
     nuevas[hueco] = firma;
     if (previas[hueco] === firma) continue;
+    // Una tecla que está enseñando un aviso no se pisa: la firma queda al día
+    // y el aviso repinta lo normal al vencer (T-HW-21).
+    if (conAviso?.(serial, hueco)) continue;
     const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion);
     await api.superficies.imagen(serial, indice, imagen.jpegBase64);
     if (imagen.dataUrl) pintadas[hueco] = imagen.dataUrl;
   }
   firmas.set(serial, nuevas);
   return pintadas;
+}
+
+/** El detalle de un giro (T-HW-21): el que devuelve la pulsación (el `dispararBoton` de `App`). */
+function detalleDe(resultado: unknown): DetalleAccion | undefined {
+  return (resultado as ResultadoPulsacion | undefined)?.detalle;
+}
+
+/**
+ * Dispara la entrada ya resuelta a un hueco: un giro de perilla pasa por el
+ * aviso de la tecla (T-HW-21), el resto va directo. Fuera del manejador de
+ * `onEntrada` para no sumarle ramas.
+ */
+function dispararEntrada(
+  entrada: EntradaSuperficie,
+  boton: ButtonConfig,
+  disparar: OpcionesSuperficies['dispararBoton'],
+  avisarGiro: (boton: ButtonConfig) => void,
+): void {
+  if (entrada.gesto === 'izq' || entrada.gesto === 'der') {
+    if (entrada.control === 'knob') avisarGiro(boton);
+    else disparar(boton, { sonido: 'giro', serial: entrada.serial });
+    return;
+  }
+  disparar(boton, { serial: entrada.serial });
 }
 
 function aplicarBrillo(
@@ -208,7 +251,7 @@ function decidirPerilla(
 }
 
 export function useSuperficies({
-  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo,
+  api, config, dispararBoton, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo, t: tProp,
 }: OpcionesSuperficies): Superficies {
   const [dispositivos, setDispositivos] = useState<InfoSuperficie[]>([]);
   const [modelos, setModelos] = useState<Record<string, DisposicionSuperficie>>({});
@@ -220,6 +263,10 @@ export function useSuperficies({
   const [bases, setBases] = useState<Record<string, string>>({});
   /** Modo activo de cada perilla multimodo, por `claveModoPerilla`. En memoria. */
   const [modos, setModos] = useState<Record<string, number>>({});
+
+  // El traductor de los avisos: el que pase el llamador o el del idioma de la
+  // config. `App` no lo pasa (T-HW-21), así que sin él se sigue el idioma.
+  const t = useMemo(() => tProp ?? makeT(resolveLang(config.language)), [tProp, config.language]);
 
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
@@ -243,6 +290,22 @@ export function useSuperficies({
   alCambiarModoRef.current = alCambiarModo;
   iconoRef.current = iconoSvg;
   esGlifoDotRef.current = esGlifoDot;
+
+  /** Refresca la imagen que enseña la vista de Dispositivos (aviso o normal). */
+  const alPintar = useCallback((serial: string, hueco: number, dataUrl: string | undefined) => {
+    const previas = imagenesRef.current[serial] ? [...imagenesRef.current[serial]] : [];
+    previas[hueco] = dataUrl;
+    const next = { ...imagenesRef.current, [serial]: previas };
+    imagenesRef.current = next;
+    setImagenes(next);
+  }, []);
+
+  // Aviso de la tecla al girar una perilla (T-HW-21, roadmap 85).
+  const avisos = useAvisoPerilla({
+    api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, t, alPintar,
+  });
+  const avisosRef = useRef(avisos);
+  avisosRef.current = avisos;
 
   const creadas = useRef(new Set<string>());
   const firmas = useRef(new Map<string, string[]>());
@@ -287,6 +350,12 @@ export function useSuperficies({
         configRef.current, entrada.serial, dispositivo.disposicion, activasRef.current[entrada.serial],
       );
       if (!pagina) return;
+      // Dispara el giro y, al volver, enseña el valor en la tecla de encima
+      // (T-HW-21): el detalle sale del resultado de la acción.
+      const avisarGiro = async (boton: ButtonConfig) => {
+        const resultado = await dispararRef.current(boton, { sonido: 'giro', serial: entrada.serial });
+        avisosRef.current.avisarDeGiro(entrada.serial, entrada.indice, boton, detalleDe(resultado));
+      };
       // Perilla multimodo (T-HW-19): pulsar cambia de modo, girar ejecuta el
       // modo activo. Sin `modosPerilla` la decisión es `normal` y sigue abajo.
       if (entrada.control === 'knob') {
@@ -303,15 +372,14 @@ export function useSuperficies({
             total: decision.total,
             label: decision.label,
           });
+          // El mismo cambio, en la tecla de encima de la perilla (T-HW-21).
+          avisosRef.current.avisarDeModo(entrada.serial, entrada.indice, decision.siguiente, decision.total);
           return;
         }
         if (decision.kind === 'disparar') {
           if (decision.boton.action.type === 'none') return;
-          if (decision.giro) {
-            dispararRef.current(decision.boton, { sonido: 'giro', serial: entrada.serial });
-          } else {
-            dispararRef.current(decision.boton, { serial: entrada.serial });
-          }
+          if (decision.giro) void avisarGiro(decision.boton);
+          else dispararRef.current(decision.boton, { serial: entrada.serial });
           return;
         }
         if (decision.kind === 'nada') return;
@@ -325,11 +393,7 @@ export function useSuperficies({
       // Girar una perilla o deslizar una tira (izq/der) suena con el tic de
       // giro; pulsar (down) suena como siempre. El serial viaja en `opts` para
       // que un botón `page-nav` navegue entre las páginas de **este** dock.
-      if (entrada.gesto === 'izq' || entrada.gesto === 'der') {
-        dispararRef.current(boton, { sonido: 'giro', serial: entrada.serial });
-      } else {
-        dispararRef.current(boton, { serial: entrada.serial });
-      }
+      dispararEntrada(entrada, boton, dispararRef.current, (b) => { void avisarGiro(b); });
     });
   }, [api]);
 
@@ -454,7 +518,7 @@ export function useSuperficies({
         const pintadas = await pintarCambiadas(
           api, dispositivo.serial, pagina, { fondo, texto },
           { iconoSvg: iconoRef.current, esGlifoDot: esGlifoDotRef.current }, firmas.current, fuentesListas,
-          encendidos,
+          encendidos, avisosRef.current.conAviso,
         );
         const huecos = Object.keys(pintadas);
         if (huecos.length === 0) continue;
@@ -468,9 +532,11 @@ export function useSuperficies({
   }, [api, config, dispositivos, activas, fondo, texto, fuentesListas]);
 
   // Los GIF animados de la tecla física. Va después del pintado estático (que
-  // deja el primer fotograma) y comparte la resolución de página con él.
+  // deja el primer fotograma) y comparte la resolución de página con él. Las
+  // teclas que están enseñando un aviso se dejan quietas (T-HW-21).
   useAnimacionLcd({
     api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, fuentesListas,
+    conAviso: avisos.conAviso,
   });
 
   return { dispositivos, modelos, imagenes, paginasActivas: activas, modosActivos: modos, activarPagina };
