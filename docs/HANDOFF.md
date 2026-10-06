@@ -623,6 +623,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores, 33 warnings, 7 guardianes (`paridad: 37 campos, 21 en las tres, 16 no aplica, 11 huecos`); `npm run build` OK.
 * **Próximo:** los huecos que enseña el guardián, por impacto: widgets en vivo en la tecla física; pulsación larga en dock y móvil; marcas en el móvil. Después 83 (prototipo de plugins) y 0.14.0 (decisión del dueño).
 
+## Turno 2026-10-05 (noche, 2) — huecos de paridad: widgets en el dock y mantener pulsado
+
+* **T-PAR-05 (opencode `wN`, DeepSeek por Go, ~$0.14):** widgets en vivo en la tecla LCD (`useWidgetsSuperficie.ts`, `widgetLcd.ts`) con `datosDeWidget` de `src/comun/`; el reloj repinta al cambio de minuto; sin widgets en los docks no se sondea nada. `useClimaWidget`/`useDivisas` pasan a `src/utils/fuentesWidget.ts`. **La activación del sondeo de música es por consumidor** (`useNowPlayingActivation(clave)`): era un booleano y el último en hablar apagaba a los demás; el dock lee el valor por un almacén de módulo porque el cuerpo de `App` está fuera del proveedor. Revisado: capturas de 64 px correctas (reloj; sensor en crítico en rojo), colores de aviso iguales a `design.ts`.
+* **T-PAR-06 (agy `wK`):** mantener pulsado en el mando móvil (500 ms, vibración, sin menú contextual) y `?largo=1` en `/api/press` y `virtualdeck://press`; `App` llama a `pulsacionLarga`. agy lo probó con una copia (`probar-app.mjs`): `state.A` pasó a 2 con `largo` y a 1 sin él. **Supervisor:** devolvió los comentarios que agy borró de `dispararBoton`, unificó el toque normal del móvil con el largo (estaba escrito dos veces), una pulsación solo cuenta si el dedo bajó en esa celda, y `botonPorId.ts` para devolver `App.tsx` a <600 líneas. Script de la página comprobado sintácticamente (va dentro de una plantilla y `tsc` no lo ve).
+* **T-PAR-07 (supervisor):** mantener pulsado en teclas y botones del dock (`despachoTecla.ts`: detector con reloj inyectable, 16 aserciones). Solo teclas y botones: no está medido que la perilla mande `up` al pulsarla.
+* **Verificación:** `npm run check` 0 errores, 33 warnings; `paridad: 37 campos, 26 en las tres, 16 no aplica, 5 huecos` (los 5 son marcas en el móvil); `npm run build` OK.
+* **Falta (dueño):** con el N3, un reloj y un sensor en una tecla, y un botón con acción larga (si el N3 no mandara `up`, saldría siempre la larga); con el teléfono, mantener pulsado.
+* **Próximo:** marcas en el móvil (el generador vive en `src/data` y el proceso principal no lo puede importar: candidato a `src/comun/` si es puro); 83 plugins; 0.14.0 (dueño).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

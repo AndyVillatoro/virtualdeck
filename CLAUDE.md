@@ -257,6 +257,10 @@ vez de a `AGENTS.md` por lo mismo.
   mientras está delante y al irse se vuelve a la base, no a la primera. Sin esto, una acción que cambia
   el primer plano (`Win+Tab`) devolvía el dock a su primera página al pulsar un botón de la segunda.
   `page-nav` (`utils/acciones/pageNav.ts`) navega las páginas del dock que lo pulsó o las del deck.
+  **Widgets y mantener pulsado en la tecla:** el dato vivo sale de `useWidgetsSuperficie` (mismo
+  `datosDeWidget` de `src/comun/`) y manda sobre imagen y GIF; el sondeo de música se activa **por
+  consumidor** (`useNowPlayingActivation(clave)`), no con un booleano que el último apagaba. Un botón con
+  `longPressAction` espera a la subida o a 500 ms (`despachoTecla.ts`); los demás disparan en la bajada.
   **Botones fijos** (`ButtonConfig.fijo`, `utils/botonesFijos.ts`): se ven y se disparan en el mismo
   hueco de todas las páginas de su grupo; todo lo que **pinta o dispara** usa `botonesResueltos`, lo
   que **edita o guarda** trabaja con `config.buttons` tal cual.
