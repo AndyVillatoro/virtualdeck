@@ -20,6 +20,7 @@
 import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
 import { JS_ANIMACION_MANDO } from './iconosMando';
 import { JS_VIVO_MANDO } from './vivoMandoPagina';
+import { JS_TACTIL_MANDO } from './tactilMandoPagina';
 
 const TEXTOS = {
   es: {
@@ -121,7 +122,7 @@ export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?
   .celda {
     aspect-ratio: 1; background: var(--alt); border: 1px solid var(--bor); border-radius: 4px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    position: relative; overflow: hidden; user-select: none; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.35);
+    position: relative; overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.35);
     transition: transform 0.08s ease, border-color 0.12s, box-shadow 0.12s;
   }
   .celda:active { transform: scale(0.94); border-color: var(--ac); box-shadow: 0 0 12px var(--ac); }
@@ -388,6 +389,7 @@ ${JS_ANIMACION_MANDO}
 // El refresco vivo (botones + widgets cada 3 s) vive en vivoMandoPagina por
 // lo mismo: este archivo ya va cargado.
 ${JS_VIVO_MANDO}
+${JS_TACTIL_MANDO}
 
 function pantallaEmparejar(error) {
   btnOlvidar.style.display = 'none';
@@ -604,18 +606,10 @@ async function pantallaDeck() {
       celda.append(rotulo);
     }
 
-    celda.onclick = async () => {
-      if ('vibrate' in navigator) {
-        try { navigator.vibrate(30); } catch (e) {}
-      }
-      animarPulsoMovil(b, celda, celda._rejillaCeldas || []);
-      let ok = false;
-      try { ok = (await pedir('/api/press/' + encodeURIComponent(b.id))).ok; } catch (e) { ok = false; }
-      celda.classList.add(ok ? 'ok' : 'mal');
-      setTimeout(() => celda.classList.remove('ok', 'mal'), 350);
-      // Un interruptor cambia de aspecto al pulsar: se relee para pintarlo.
-      if (ok && b.isToggle) setTimeout(() => { pantallaDeck(); }, 400);
-    };
+    // El toque normal y el largo comparten dispararPulsacionMando
+    // (tactilMandoPagina.ts); solo las celdas con largo miden el tiempo.
+    if (b.largo) engancharTactilLargo(celda, b);
+    else celda.onclick = () => dispararPulsacionMando(b, celda, false);
     rejilla.append(celda);
   }
   app.append(rejilla);

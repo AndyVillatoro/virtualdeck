@@ -25,8 +25,9 @@ import { playGiro, playSound, sonidoActivo, perfilSonido } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
 import { botonesResueltos } from './utils/botonesFijos';
+import { botonPorId } from './utils/botonPorId';
 import { useDeck } from './utils/useDeck';
-import { pulsarBoton } from './utils/pulsarBoton';
+import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from './utils/pulsarBoton';
 import { navegarDesdeApp, indiceRealPorNumero } from './utils/acciones/pageNav';
 import { useAutoProfile } from './utils/useAutoProfile';
 import { useConfigExterna } from './utils/useConfigExterna';
@@ -401,6 +402,21 @@ export default function App() {
    * kiosko** — justo el modo de dejar el deck solo, que es donde una accion
    * programada tiene mas sentido.
    */
+  // El entorno de una pulsación disparada desde fuera de las pantallas, el
+  // mismo para la corta y la larga (mando móvil, enlaces, dock, atajos).
+  const entorno = useCallback((opts?: { serial?: string }): EntornoPulsacion | null => {
+    if (!api) return null;
+    return {
+      api, config: configRef.current, toggledIds: () => toggledRef.current,
+      onToggle: handleToggle, onStateUpdate: updateState,
+      // Un fallo de una accion disparada sola no se veia en ninguna parte.
+      avisar: setImportError, t,
+      // `page-nav`: desde un dock entre sus páginas, desde lo demás entre las
+      // del deck (así `useAutoProfile` lo toma como elección manual).
+      navegar: (a) => navegarDesdeApp(a, configRef.current.pages, activePageRef.current, opts?.serial, setActivePage, superficiesRef.current),
+    };
+  }, [api, handleToggle, updateState, t]);
+
   const dispararBoton = useCallback(async (btn: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => {
     if (!api) return;
     if (btn.action.type === 'folder') return; // Una carpeta necesita interfaz.
@@ -415,50 +431,30 @@ export default function App() {
       if (opts?.sonido === 'giro') playGiro(perfilSonido(cfg));
       else playSound(perfilSonido(cfg));
     }
-    // `page-nav`: desde un dock entre sus páginas, desde lo demás entre las
-    // del deck (así `useAutoProfile` lo toma como elección manual).
-    return await pulsarBoton(btn, {
-      api, config: configRef.current, toggledIds: () => toggledRef.current,
-      onToggle: handleToggle, onStateUpdate: updateState,
-      // Un fallo de una accion disparada sola no se veia en ninguna parte.
-      avisar: setImportError, t,
-      // `page-nav`: desde un dock entre sus páginas, desde lo demás entre las
-      // del deck (así `useAutoProfile` lo toma como elección manual).
-      navegar: (a) => navegarDesdeApp(a, configRef.current.pages, activePageRef.current, opts?.serial, setActivePage, superficiesRef.current),
-    });
-  }, [api, handleToggle, updateState, t]);
+    const env = entorno(opts);
+    if (env) return await pulsarBoton(btn, env);
+  }, [api, entorno]);
+
+  // Mantener pulsado desde el mando móvil o `virtualdeck://press/<id>?largo=1`.
+  const dispararBotonLargo = useCallback(async (btn: ButtonConfig) => {
+    if (!api || !btn.longPressAction || btn.longPressAction.type === 'none') return;
+    const cfg = configRef.current;
+    if (sonidoActivo(cfg)) playSound(perfilSonido(cfg));
+    const env = entorno();
+    if (env) return await pulsacionLarga(btn, env);
+  }, [api, entorno]);
 
   // Atajo global del sistema y menu de la bandeja: el proceso principal emite
   // button:trigger y aqui se ejecuta la cadena del boton.
   useEffect(() => {
     if (!api?.events) return;
-    return api.events.onButtonTrigger((id) => {
-      let btn = config.buttons.find((b) => b.id === id);
-      if (!btn) {
-        for (const parent of config.buttons) {
-          const sub = parent.subButtons?.find((s) => s.id === id);
-          if (sub) {
-            btn = {
-              id: sub.id,
-              page: parent.page,
-              label: sub.label || '',
-              sublabel: sub.sublabel,
-              icon: sub.icon,
-              bgColor: sub.bgColor,
-              fgColor: sub.fgColor,
-              action: sub.action,
-              actions: sub.actions,
-              isToggle: sub.isToggle,
-              actionToggleOff: sub.actionToggleOff,
-              longPressAction: sub.longPressAction,
-            };
-            break;
-          }
-        }
-      }
-      if (btn) void dispararBoton(btn);
+    return api.events.onButtonTrigger((id, opciones) => {
+      const btn = botonPorId(config.buttons, id);
+      if (!btn) return;
+      if (opciones?.largo) void dispararBotonLargo(btn);
+      else void dispararBoton(btn);
     });
-  }, [api, config.buttons, dispararBoton]);
+  }, [api, config.buttons, dispararBoton, dispararBotonLargo]);
 
   // `virtualdeck://page/<n>`. El indice llega ya en base 0 y se acota aqui:
   // el enlace lo escribe una persona y puede pedir una pagina que no existe.

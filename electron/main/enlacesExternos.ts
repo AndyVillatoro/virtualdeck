@@ -24,7 +24,7 @@ const ESQUEMA = 'virtualdeck';
 
 /** Lo que se puede pedir por enlace. */
 type Orden =
-  | { tipo: 'press'; id?: string; label?: string }
+  | { tipo: 'press'; id?: string; label?: string; largo?: boolean }
   | { tipo: 'page'; n: number }
   | { tipo: 'show' };
 
@@ -40,8 +40,9 @@ function interpretar(url: string): Orden | null {
   switch (u.host) {
     case 'press': {
       const label = u.searchParams.get('label')?.trim();
-      if (resto) return { tipo: 'press', id: resto };
-      if (label) return { tipo: 'press', label };
+      const largo = u.searchParams.get('largo') === '1';
+      if (resto) return { tipo: 'press', id: resto, ...(largo ? { largo: true } : {}) };
+      if (label) return { tipo: 'press', label, ...(largo ? { largo: true } : {}) };
       return null;
     }
     case 'page': {
@@ -130,7 +131,11 @@ export function atender(url: string, win: BrowserWindow | null): { ok: boolean; 
   }
   const id = resolverId(orden);
   if (!id) return { ok: false, error: tm('enlace.sinBoton', { que: orden.id ?? orden.label ?? '' }) };
-  win.webContents.send('button:trigger', id);
+  if (orden.largo) {
+    win.webContents.send('button:trigger', id, { largo: true });
+  } else {
+    win.webContents.send('button:trigger', id);
+  }
   return { ok: true };
 }
 

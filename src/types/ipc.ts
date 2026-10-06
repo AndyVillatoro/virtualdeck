@@ -224,7 +224,7 @@ export interface ElectronAPI {
     isRecording: () => Promise<boolean>;
   };
   events: {
-    onButtonTrigger: (handler: (buttonId: string) => void) => () => void;
+    onButtonTrigger: (handler: (id: string, opciones?: { largo?: boolean }) => void) => () => void;
     onNavPage: (handler: (indice: number) => void) => () => void;
     onRGBDevicesChanged: (handler: () => void) => () => void;
     onEstadoSistema: (handler: (data: unknown) => void) => () => void;

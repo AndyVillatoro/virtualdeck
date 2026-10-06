@@ -237,10 +237,12 @@ function atenderPair(req: IncomingMessage, res: ServerResponse): void {
 }
 
 function atenderEnlace(url: URL, res: ServerResponse): boolean {
+  const largo = url.searchParams.get('largo') === '1' ? '?largo=1' : '';
   const press = url.pathname.match(/^\/api\/press\/(.+)$/);
-  if (press) { conEnlace(res, `virtualdeck://press/${press[1]}`); return true; }
+  if (press) { conEnlace(res, `virtualdeck://press/${press[1]}${largo}`); return true; }
   if (url.pathname === '/api/press' && url.searchParams.get('label')) {
-    conEnlace(res, `virtualdeck://press?label=${encodeURIComponent(url.searchParams.get('label')!)}`);
+    const sufijo = largo ? '&largo=1' : '';
+    conEnlace(res, `virtualdeck://press?label=${encodeURIComponent(url.searchParams.get('label')!)}${sufijo}`);
     return true;
   }
   const page = url.pathname.match(/^\/api\/page\/(\d+)$/);

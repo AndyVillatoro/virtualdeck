@@ -145,9 +145,9 @@
   },
   "longPressAction": {
     "pantallas": "si",
-    "movil": "hueco",
+    "movil": "si",
     "dock": "hueco",
-    "nota": "movil: paginaMando.ts solo maneja onclick; el telefono puede medir la duracion del toque (PARIDAD.md 4 P3-11). dock: pulsarBoton.ts tiene la logica pero el dock dispara en el flanco down (useSuperficies.ts:415-426) sin temporizador, asi que nunca se aplica (PARIDAD.md 4 P3-12)"
+    "nota": "dock: pulsarBoton.ts tiene pulsacionLarga pero el dock dispara en el flanco down (useSuperficies.ts) sin temporizador, asi que nunca se aplica"
   },
   "radioGroup": {
     "pantallas": "si",
@@ -163,26 +163,22 @@
   "widget": {
     "pantallas": "si",
     "movil": "si",
-    "dock": "hueco",
-    "nota": "dock: la tecla LCD dibuja icono y etiqueta pero no pinta datos en vivo (PARIDAD.md 4 item 4)"
+    "dock": "si"
   },
   "currencyWidget": {
     "pantallas": "si",
     "movil": "si",
-    "dock": "hueco",
-    "nota": "dock: ver widget (PARIDAD.md 4 item 4)"
+    "dock": "si"
   },
   "varWidget": {
     "pantallas": "si",
     "movil": "si",
-    "dock": "hueco",
-    "nota": "dock: ver widget (PARIDAD.md 4 item 4)"
+    "dock": "si"
   },
   "sensorWidget": {
     "pantallas": "si",
     "movil": "si",
-    "dock": "hueco",
-    "nota": "dock: ver widget (PARIDAD.md 4 item 4)"
+    "dock": "si"
   },
   "visibleIf": {
     "pantallas": "si",

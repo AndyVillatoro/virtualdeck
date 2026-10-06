@@ -69,6 +69,8 @@ export interface BotonMandoMovil {
   /** Botón de dos estados: con `encendido`, se pinta su `aspectoEncendido`. */
   isToggle?: boolean;
   encendido?: boolean;
+  /** Tiene acción alternativa al mantener pulsado 500 ms (roadmap 82). */
+  largo?: boolean;
   /** Animación del icono (roadmap 78): la página la calcula con el motor DOT. */
   animacion?: { efecto: string; cuando: string };
   /** Efecto corto al pulsar (roadmap 79). Ausente = `destello`. */
@@ -82,6 +84,7 @@ export interface BotonFuenteMando {
   sublabel?: string;
   page?: number;
   action?: { type: string };
+  longPressAction?: { type: string };
   bgColor?: string;
   fgColor?: string;
   icon?: string;
@@ -235,6 +238,7 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
     icon: fuente.icon,
     actionType: fuente.action?.type,
   });
+  const tieneLargo = Boolean(b.longPressAction && b.longPressAction.type !== 'none');
   return {
     id: b.id,
     label: b.label ?? '',
@@ -253,6 +257,7 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
     sliderWidget: b.sliderWidget,
     ...(b.isToggle ? { isToggle: true as const } : {}),
     ...(encendido ? { encendido: true as const } : {}),
+    ...(tieneLargo ? { largo: true as const } : {}),
     ...(b.animacion ? { animacion: b.animacion } : {}),
     ...(b.efectoPulsar ? { efectoPulsar: b.efectoPulsar } : {}),
     subButtons: b.subButtons?.map((s) => {

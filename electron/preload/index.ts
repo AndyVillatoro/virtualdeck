@@ -275,8 +275,8 @@ const api = {
   },
   events: {
     // 1.4 — disparadores externos: globalShortcut + tray click. Devuelve unsub.
-    onButtonTrigger: (handler: (buttonId: string) => void): (() => void) => {
-      const listener = (_e: unknown, id: string) => handler(id);
+    onButtonTrigger: (handler: (id: string, opciones?: { largo?: boolean }) => void): (() => void) => {
+      const listener = (_e: unknown, id: string, opciones?: { largo?: boolean }) => handler(id, opciones);
       ipcRenderer.on('button:trigger', listener);
       return () => ipcRenderer.removeListener('button:trigger', listener);
     },

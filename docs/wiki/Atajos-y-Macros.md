@@ -53,6 +53,7 @@ incluso otra aplicación.
 | Enlace | Qué hace |
 |---|---|
 | `virtualdeck://press/<id>` | Pulsa el botón con ese identificador |
+| `virtualdeck://press/<id>?largo=1` | Ejecuta la pulsación larga del botón (mantener pulsado) |
 | `virtualdeck://press?label=Spotify` | Pulsa el primer botón con esa etiqueta |
 | `virtualdeck://page/2` | Cambia a la página 2 (la primera es la 1) |
 | `virtualdeck://show` | Trae la ventana al frente |
@@ -108,7 +109,8 @@ El servidor sirve también una página pensada para el teléfono. Con
    código de seis cifras y la dirección que hay que escribir.
 2. En el teléfono, abra esa dirección (`http://<ip>:8787`) y escriba el código.
 3. La rejilla de botones aparece. Al tocar uno, el borde se enciende si el deck
-   lo ejecutó y se pone rojo si algo falló.
+   lo ejecutó y se pone rojo si algo falló. Mantener pulsado un botón con acción
+   larga (500 ms) ejecuta su acción alternativa directamente.
 
 El emparejamiento **no manda el token en ningún enlace**: el teléfono escribe
 una dirección corta y el código cruza una vez. Un enlace con el token dentro

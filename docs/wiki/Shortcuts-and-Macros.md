@@ -51,6 +51,7 @@ Windows scheduled task, a `.bat` file, or another application.
 | Link | What it does |
 |---|---|
 | `virtualdeck://press/<id>` | Presses the button with that id |
+| `virtualdeck://press/<id>?largo=1` | Runs the button's long-press action (hold) |
 | `virtualdeck://press?label=Spotify` | Presses the first button with that label |
 | `virtualdeck://page/2` | Switches to page 2 (the first one is 1) |
 | `virtualdeck://show` | Brings the window to the front |
@@ -106,7 +107,8 @@ turned on:
    the address to type appear.
 2. On the phone, open that address (`http://<ip>:8787`) and type the code.
 3. The button grid shows up. Tapping one lights its border if the deck ran it,
-   or turns it red if something failed.
+   or turns it red if something failed. Holding a button with a long-press
+   action (500 ms) runs its alternate action directly.
 
 Pairing **never puts the token in a link**: the phone types a short address and
 the code crosses once. A link carrying the token would have stayed in the
