@@ -81,7 +81,7 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
   const clima = useClimaWidget(tieneClima, api);
 
   const nowPlaying = useNowPlaying();
-  const setNowPlayingActive = useNowPlayingActivation();
+  const setNowPlayingActive = useNowPlayingActivation('barra');
   const tieneNowPlaying = useMemo(
     () => botonesBarra.some((b) => b.widget === 'now-playing'),
     [botonesBarra],

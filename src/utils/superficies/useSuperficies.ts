@@ -13,6 +13,9 @@ import {
 import { paginaDe, type PaginaDispositivo, type VivoPagina } from './paginasSuperficie';
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
 import { useAvisoPerilla, type AvisoPerillaApi } from './useAvisoPerilla';
+import { useWidgetsSuperficie } from './useWidgetsSuperficie';
+import { firmaWidget } from './widgetLcd';
+import type { DatosWidget } from '../../comun/widgets';
 import type { ResultadoPulsacion } from '../pulsarBoton';
 import { makeT, resolveLang, type TFunc } from '../i18n';
 import type { DetalleAccion } from '../acciones/base';
@@ -105,18 +108,21 @@ export interface Superficies {
 function firmaDe(
   boton: ButtonConfig | undefined, encendido: boolean,
   ancho: number, alto: number, rotacion: number,
-  colores: ColoresSuperficie, fuentes: boolean,
+  colores: ColoresSuperficie, fuentes: boolean, datos?: DatosWidget | null,
 ): string {
   if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
   // `label`/`sublabel` llegan ya interpolados desde `paginaDe`: la firma lleva
   // el texto final (`{VOL}` resuelto), así que un cambio de variable repinta.
+  // `firmaWidget` es la parte del dato vivo: solo repinta la tecla cuyo
+  // `line1`/`line2`/`tone`/`glyph` cambió.
   return JSON.stringify([
     boton.label, boton.sublabel, boton.icon, boton.iconoPuntos?.bits, boton.imageData,
     boton.customGlyph57, boton.brandIcon, boton.subButtons,
     boton.brandIconCustomBitmap, boton.brandIconCustomColor, boton.brandIconCustomPalette,
     boton.bgColor, boton.fgColor, boton.action?.type,
     boton.isToggle, boton.animacion, boton.efectoPulsar, boton.aspectoEncendido, encendido,
-    ancho, alto, rotacion, colores.fondo, colores.texto, fuentes,
+    ancho, alto, rotacion, colores.fondo, colores.texto, colores.aviso, colores.critico,
+    fuentes, firmaWidget(datos),
   ]);
 }
 
@@ -130,6 +136,7 @@ async function pintarCambiadas(
   firmas: Map<string, string[]>,
   fuentes: boolean,
   encendidos: Set<string>,
+  widgets: Record<string, DatosWidget>,
   conAviso?: (serial: string, hueco: number) => boolean,
 ): Promise<Record<number, string>> {
   const previas = firmas.get(serial) ?? [];
@@ -139,14 +146,15 @@ async function pintarCambiadas(
     const boton = pagina.botones[hueco];
     const encendido = !!boton && encendidos.has(boton.id);
     const efectivo = boton ? resolverBotonLcd(boton, encendido) : boton;
+    const datos = boton ? widgets[boton.id] : undefined;
     const rotacion = pagina.rotacion ?? lcd.rotacion;
-    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes);
+    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes, datos);
     nuevas[hueco] = firma;
     if (previas[hueco] === firma) continue;
     // Una tecla que está enseñando un aviso no se pisa: la firma queda al día
     // y el aviso repinta lo normal al vencer (T-HW-21).
     if (conAviso?.(serial, hueco)) continue;
-    const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion);
+    const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion, undefined, datos);
     await api.superficies.imagen(serial, indice, imagen.jpegBase64);
     if (imagen.dataUrl) pintadas[hueco] = imagen.dataUrl;
   }
@@ -292,6 +300,10 @@ export function useSuperficies({
     () => ({ estado: estadoSistema, sensores: sensorList }),
     [estadoSistema, sensorList],
   );
+
+  // Los datos vivos de los widgets en las páginas de dock (roadmap 82). Sin
+  // botones con widget en las páginas de superficie no se sondea nada.
+  const widgets = useWidgetsSuperficie({ config, api, sensores: sensorList });
 
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
@@ -518,6 +530,8 @@ export function useSuperficies({
 
   const fondo = colores.fondo;
   const texto = colores.texto;
+  const aviso = colores.aviso;
+  const critico = colores.critico;
   useEffect(() => {
     if (!api) return;
     const conectados = dispositivos.filter((d) => d.conectado);
@@ -549,9 +563,9 @@ export function useSuperficies({
         }
         aplicarBrillo(api, dispositivo.serial, pagina.brillo, brillos.current);
         const pintadas = await pintarCambiadas(
-          api, dispositivo.serial, pagina, { fondo, texto },
+          api, dispositivo.serial, pagina, { fondo, texto, aviso, critico },
           { iconoSvg: iconoRef.current, esGlifoDot: esGlifoDotRef.current }, firmas.current, fuentesListas,
-          encendidos, avisosRef.current.conAviso,
+          encendidos, widgets, avisosRef.current.conAviso,
         );
         const huecos = Object.keys(pintadas);
         if (huecos.length === 0) continue;
@@ -562,14 +576,14 @@ export function useSuperficies({
       }
       if (cambio) setImagenes(nuevasImagenes);
     })();
-  }, [api, config, dispositivos, activas, fondo, texto, fuentesListas, vivo]);
+  }, [api, config, dispositivos, activas, fondo, texto, aviso, critico, fuentesListas, vivo, widgets]);
 
   // Los GIF animados de la tecla física. Va después del pintado estático (que
   // deja el primer fotograma) y comparte la resolución de página con él. Las
   // teclas que están enseñando un aviso se dejan quietas (T-HW-21).
   useAnimacionLcd({
     api, config, dispositivos, paginasActivas: activas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo,
-    conAviso: avisos.conAviso,
+    widgets, conAviso: avisos.conAviso,
   });
 
   return { dispositivos, modelos, imagenes, paginasActivas: activas, modosActivos: modos, activarPagina };

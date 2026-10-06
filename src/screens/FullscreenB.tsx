@@ -66,7 +66,7 @@ export function FullscreenB({
   const lang = useLang();
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
-  const setNowPlayingActive = useNowPlayingActivation();
+  const setNowPlayingActive = useNowPlayingActivation('fullscreen');
 
   useEffect(() => {
     setNowPlayingActive(true);

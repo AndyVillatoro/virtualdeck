@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ButtonConfig, DeckConfig, ElectronAPI, InfoSuperficie, LcdControl } from '../../types';
+import type { DatosWidget } from '../../comun/widgets';
 import { teclasLcd } from './disposicion';
 import { paginaDe, type VivoPagina } from './paginasSuperficie';
 import { decodificarGif, esGifAnimado, type GifAnimado } from './animacionLcd';
@@ -47,6 +48,12 @@ export interface OpcionesAnimacionLcd {
   fuentesListas: boolean;
   /** Estado vivo: la página se resuelve como la pinta el resto (visibleIf). */
   vivo: VivoPagina;
+  /**
+   * Datos vivos de los widgets (roadmap 82). Una tecla con widget no se anima:
+   * el dato manda sobre GIF y puntos, como en la celda; al pulsarla, el
+   * destello se pinta encima del dato (`pintarTecla` con `datos`).
+   */
+  widgets: Record<string, DatosWidget>;
   /**
    * ¿Esa tecla está enseñando el aviso de un giro (T-HW-21)? Mientras dura, el
    * animador no la pinta: si no, el siguiente fotograma lo borraría en 100 ms.
@@ -163,11 +170,11 @@ export function useAnimacionLcd(opciones: OpcionesAnimacionLcd): void {
   });
   motor.current.opciones = opciones;
 
-  const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo } = opciones;
+  const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo, widgets } = opciones;
   useEffect(() => {
     if (!api) return;
     reconciliar(motor.current);
-  }, [api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo]);
+  }, [api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, fuentesListas, vivo, widgets]);
 
   // El puente del motor puede registrarse después (carga diferida): al
   // avisar se reconcilian los deseos de puntos.
@@ -204,6 +211,9 @@ function recolectarDeseos(o: OpcionesAnimacionLcd): Map<string, DeseoAnimado> {
       // Un mosaico 2×2 manda sobre la imagen: el pintor estático dibuja la
       // rejilla y el GIF no debe repintarse encima.
       if (boton.subButtons?.length === 4) continue;
+      // Un widget manda sobre la imagen, como en la celda: sin esto el
+      // siguiente fotograma del GIF borraría el dato cada 100 ms.
+      if (o.widgets[boton.id]) continue;
       const rotacion = pagina.rotacion ?? lcd.rotacion;
       const clave = [
         dispositivo.serial, hueco, indice, boton.imageData,
@@ -277,6 +287,8 @@ function recolectarDeseosPuntos(o: OpcionesAnimacionLcd): Map<string, DeseoPunto
       if (!original?.animacion) continue;
       // El mosaico 2×2 no anima el centro del botón padre (como en la celda).
       if (original.subButtons?.length === 4) continue;
+      // Con widget, el centro es el dato: la animación de puntos no lo pisa.
+      if (o.widgets[original.id]) continue;
       const encendido = encendidos.has(original.id);
       const cuando = original.animacion.cuando;
       if (cuando !== 'siempre' && !(cuando === 'encendido' && encendido)) continue;
@@ -407,7 +419,10 @@ function avanzarPulsos(motor: Motor, ahora: number): void {
       pulsosLcd.delete(clave);
       continue;
     }
-    void enviarPulso(motor, pulso, dt, control, boton, pagina.rotacion ?? control.lcd.rotacion, encendidos);
+    void enviarPulso(
+      motor, pulso, dt, control, boton, pagina.rotacion ?? control.lcd.rotacion, encendidos,
+      o.widgets[boton.id],
+    );
   }
 }
 
@@ -415,6 +430,7 @@ async function enviarPulso(
   motor: Motor, pulso: PulsoLcd, dt: number,
   control: { indice: number; lcd: LcdControl },
   boton: ButtonConfig, rotacion: number, encendidos: Set<string>,
+  datos?: DatosWidget,
 ): Promise<void> {
   const o = motor.opciones;
   if (!o.api) return;
@@ -438,7 +454,7 @@ async function enviarPulso(
     const imagen = await pintarTecla(
       efectivo, control.lcd, o.colores,
       { iconoSvg: o.iconoSvg, esGlifoDot: o.esGlifoDot },
-      rotacion, extras,
+      rotacion, extras, datos,
     );
     await o.api.superficies.imagen(pulso.serial, control.indice, imagen.jpegBase64);
   } catch {

@@ -1,6 +1,8 @@
 import type { ButtonConfig, LcdControl } from '../../types';
+import type { DatosWidget } from '../../comun/widgets';
 import { textoDeAviso, type AvisoPerilla } from './avisoPerilla';
 import { dibujarSubdivisionLcd, type UtilesSubdivision } from './subdivisionLcd';
+import { pintarWidgetLcd } from './widgetLcd';
 
 /**
  * Convierte el botón de un hueco en el JPEG que espera la tecla LCD.
@@ -28,15 +30,24 @@ export interface ColoresSuperficie {
   fondo: string;
   /** Color de texto/icono si el botón no trae `fgColor`. */
   texto: string;
+  /** Amarillo de aviso de un widget (`tone: 'warn'`), como la celda del deck. */
+  aviso: string;
+  /** Rojo crítico de un widget (`tone: 'crit'`), como la celda del deck. */
+  critico: string;
 }
 
 /**
  * Paleta OLED fija de las teclas LCD: no depende del tema de la aplicación
  * (una tecla física no tiene modo claro). La usa `App` al llamar al hook.
+ *
+ * `aviso`/`critico` son los semánticos de la paleta oscura de `design.ts`
+ * (`VD.warning`/`VD.danger`), que es la que ve la celda del deck por defecto.
  */
 export const COLORES_LCD: ColoresSuperficie = {
   fondo: '#070809',
   texto: '#e6e8eb',
+  aviso: '#d4a234',
+  critico: '#d95f5f',
 };
 
 export interface OpcionesPintado {
@@ -470,6 +481,11 @@ function recortarTexto(ctx: CanvasRenderingContext2D, texto: string, maximo: num
   return visible === texto ? texto : `${visible}…`;
 }
 
+/** Alto de la franja del rótulo. La comparten el rótulo y el widget. */
+function altoFranjaRotulo(conSub: boolean, alto: number): number {
+  return Math.max(conSub ? 16 : 12, Math.round(alto * (conSub ? ETIQUETA_ALTO_DOBLE : ETIQUETA_ALTO)));
+}
+
 /**
  * La franja con el nombre, como `RotuloCelda`: JetBrains Mono 600, mayúsculas
  * y velo oscuro abajo (degradado si hay imagen o marca). Con `sublabel`, la
@@ -483,7 +499,7 @@ function dibujarEtiqueta(
   const limpio = texto.trim().toUpperCase();
   const sub = subtexto.trim().toUpperCase();
   if (!limpio && !sub) return;
-  const altoFranja = Math.max(sub ? 16 : 12, Math.round(alto * (sub ? ETIQUETA_ALTO_DOBLE : ETIQUETA_ALTO)));
+  const altoFranja = altoFranjaRotulo(!!sub, alto);
   const yFranja = alto - altoFranja;
 
   if (sobreFondo) {
@@ -555,10 +571,23 @@ function marcaConIcono(boton: ButtonConfig): boolean {
 async function pintarCuerpoCelda(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
   colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
+  datos?: DatosWidget | null,
 ): Promise<void> {
   const color = colorTexto(boton, colores);
   const sobreFondo = tieneFondo(boton);
   const centroY = tieneRotulo(boton) ? alto * 0.42 : alto * 0.5;
+
+  // Con widget, el dato manda sobre imagen, marca y glifo, como en la celda
+  // (`ContenidoCentral`); la franja del rótulo se descuenta para el dato.
+  if (datos) {
+    const zona = alto - (tieneRotulo(boton) ? altoFranjaRotulo(!!boton.sublabel, alto) : 0);
+    await pintarWidgetLcd(ctx, boton, datos, ancho, zona,
+      { texto: color, aviso: colores.aviso, critico: colores.critico, tenue: colores.texto },
+      { fuenteMono, dim: DIM_GLIFO, iconoSvg: opciones.iconoSvg, dibujarSvg });
+    dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, false);
+    dibujarDestello(ctx, ancho, alto, extras);
+    return;
+  }
 
   let fondoPintado = false;
   if (boton.imageData) fondoPintado = await dibujarImagenConTrama(ctx, boton.imageData, ancho, alto);
@@ -587,13 +616,14 @@ function utilesSubdivision(opciones: OpcionesPintado): UtilesSubdivision {
 async function pintarContenido(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
   colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
+  datos?: DatosWidget | null,
 ): Promise<void> {
   if (boton.subButtons?.length === 4) {
     await dibujarSubdivisionLcd(ctx, boton, ancho, alto, colorTexto(boton, colores), utilesSubdivision(opciones));
     dibujarDestello(ctx, ancho, alto, extras);
     return;
   }
-  await pintarCuerpoCelda(ctx, boton, ancho, alto, colores, opciones, extras);
+  await pintarCuerpoCelda(ctx, boton, ancho, alto, colores, opciones, extras, datos);
 }
 
 /** Rota el lienzo en sentido horario; a 90/270 se intercambian los lados. */
@@ -647,6 +677,8 @@ function aDataUrlPng(lienzo: HTMLCanvasElement): string {
  * Pinta un hueco. `rotacion` manda sobre la del `lcd` (la válvula de seguridad
  * de los modelos sin verificar); si no se pasa, se usa la del modelo.
  * `extras` pinta el centro con el motor DOT (o un velo de destello).
+ * Con `datos`, la tecla enseña el widget en vivo (roadmap 82) en vez del
+ * icono: el dato manda sobre imagen, marca y glifo, como en la celda.
  */
 export async function pintarTecla(
   boton: ButtonConfig | null,
@@ -655,6 +687,7 @@ export async function pintarTecla(
   opciones: OpcionesPintado = {},
   rotacion?: number,
   extras?: ExtrasAnimados,
+  datos?: DatosWidget | null,
 ): Promise<ImagenTecla> {
   await prepararFuentesLcd();
   const { ancho, alto } = lcd;
@@ -664,7 +697,7 @@ export async function pintarTecla(
 
   ctx.fillStyle = colorFondo(boton, colores);
   ctx.fillRect(0, 0, ancho, alto);
-  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones, extras);
+  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones, extras, datos);
 
   const dataUrl = aDataUrlPng(lienzo);
   return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl };

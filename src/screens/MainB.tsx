@@ -39,7 +39,7 @@ export function MainB({
   const t = useT();
   const api = window.electronAPI;
   const nowPlaying = useNowPlaying();
-  const setNowPlayingActive = useNowPlayingActivation();
+  const setNowPlayingActive = useNowPlayingActivation('main');
   const { sensors: sensorList, status: sensorStatus } = useSensors();
   const [showSidebar, setShowSidebar] = useState(true);
   // El panel de musica. Viene apagado: quien no lo quiera no pierde 300 px de
