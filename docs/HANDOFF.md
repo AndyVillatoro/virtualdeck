@@ -748,6 +748,21 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
   `CHANGELOG [Unreleased]` no resume aún los ítems 56–89.
 * **Próximo:** fusionar la rama tras la prueba del dueño; luego 0.14.0.
 
+## Turno 2026-10-07 — observaciones del dueño tras la revisión (91–104, 106), seis trabajadores
+
+* **Reparto (herdr):** agy `wK` (99/97/96, 95); opencode `wN` DeepSeek V4.1 Flash Go (91/92, 93/94, 100);
+  `wR` Muse Spark free (102, 98 datos, 104, CHANGELOG, tutorial); `wS` Qwen3.8 Max Go (101);
+  `wV` Kimi K2.7 Code Go (98 al aplicar); `wT` Fledge Alpha free (wiki, página y ficha). Supervisor: 103 y revisión.
+* **Orquestación:** una espera por panel (`--until done`, no `idle`), cada encargo con sus archivos y los de los
+  demás, una sola copia de prueba para todos (si está ocupada, seguir sin ella y decirlo).
+* **Ajustes del supervisor:** `check-wiki` comprueba 12 parejas (antes 7); el símbolo de la rueda en la wiki
+  pasa a texto; errata en la página.
+* **Verificación:** `npm run check` 0 errores (21 avisos), 7 guardianes en verde; `npm run build` OK. En la app:
+  tutorial de 9 pasos, Comportamiento vacío, atajos sugeridos, presets con marca aplicada (Spotify).
+* **Falta (dueño):** N3 (editor de dock, pulsación en la tecla), ventana en el monitor secundario con la app
+  instalada, CPU en reposo A/B (2,8 % de un núcleo con música, no comparable con el 78), capturas nuevas.
+* **Próximo (orden acordado):** fusionar `task/p1-revision-ui` y publicar 0.14.0; luego tienda (105) y vídeo (107).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
