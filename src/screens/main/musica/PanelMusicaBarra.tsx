@@ -16,7 +16,7 @@ import type { NowPlaying, ElectronAPI } from '../../../types';
  * El panel de música en formato barra (alto <= 600, como 1280×480).
  *
  * Columna de 300 px a todo el alto, anclada arriba: la carátula cuadrada con
- * el 40 % del alto como mucho, y debajo el título, el transporte, la barra de
+ * el 52 % del alto como mucho, y debajo el título, el transporte, la barra de
  * progreso y aleatorio/repetir, todo pegado arriba. Sin centrado vertical, así
  * no quedan bandas vacías por encima y por debajo.
  *
@@ -109,9 +109,9 @@ export function PanelMusicaBarra({
         </button>
       </div>
 
-      {/* Carátula anclada arriba: cuadrada, con el 40 % del alto como mucho. */}
+      {/* Carátula anclada arriba: cuadrada, con el 52 % del alto como mucho. */}
       <div style={{
-        height: '40%', aspectRatio: '1', alignSelf: 'center', borderRadius: VD.radius.lg,
+        height: '52%', maxWidth: '100%', aspectRatio: '1', alignSelf: 'center', borderRadius: VD.radius.lg,
         background: VD.overlay, border: `1px solid ${VD.border}`,
         overflow: 'hidden', position: 'relative', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
