@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { ACCENT_PRESETS } from '../../design';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import { Chip, Segmentado } from '../ui/Chip';
 
 /**
  * Las piezas con las que se puede *hacer* algo dentro del tutorial.
@@ -17,30 +18,6 @@ import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
  * puntos, navegacion— y meter aqui tres rejillas de botones la volvia otra cosa.
  */
 
-/** Un boton de eleccion: se enciende con el acento cuando esta puesto. */
-function Opcion({ activa, accent, onClick, children, ancho }: {
-  activa: boolean; accent: string; onClick: () => void;
-  children: React.ReactNode; ancho?: number;
-}) {
-  const VD = useTheme();
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: ancho ? undefined : 1, width: ancho,
-        padding: '9px 10px',
-        background: activa ? VD.accentBg : VD.elevated,
-        border: `1px solid ${activa ? accent : VD.border}`,
-        color: activa ? accent : VD.textMuted,
-        fontFamily: VD.mono, fontSize: 10, letterSpacing: 1,
-        cursor: 'pointer', borderRadius: VD.radius.sm,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
 export type Idioma = 'system' | 'es' | 'en';
 export type Tema = 'dark' | 'light' | 'system';
 
@@ -48,15 +25,19 @@ export function PasoIdioma({ valor, accent, onChange }: {
   valor: Idioma; accent: string; onChange: (v: Idioma) => void;
 }) {
   const t = useT();
-  const opciones: Idioma[] = ['es', 'en', 'system'];
+  const opciones = [
+    { valor: 'es' as const, etiqueta: t('settings.language.es') },
+    { valor: 'en' as const, etiqueta: t('settings.language.en') },
+    { valor: 'system' as const, etiqueta: t('settings.language.system') },
+  ];
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
-      {opciones.map((id) => (
-        <Opcion key={id} activa={valor === id} accent={accent} onClick={() => onChange(id)}>
-          {t(`settings.language.${id}`)}
-        </Opcion>
-      ))}
-    </div>
+    <Segmentado
+      repartir
+      accent={accent}
+      valor={valor}
+      onChange={onChange}
+      opciones={opciones}
+    />
   );
 }
 
@@ -65,20 +46,19 @@ export function PasoApariencia({ tema, accent, onTema, onAccent }: {
 }) {
   const VD = useTheme();
   const t = useT();
-  const temas: [Tema, string][] = [
-    ['dark', t('settings.theme.dark')],
-    ['light', t('settings.theme.light')],
-    ['system', t('settings.theme.system')],
-  ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 8 }}>
-        {temas.map(([id, texto]) => (
-          <Opcion key={id} activa={tema === id} accent={accent} onClick={() => onTema(id)}>
-            {texto}
-          </Opcion>
-        ))}
-      </div>
+      <Segmentado
+        repartir
+        accent={accent}
+        valor={tema}
+        onChange={onTema}
+        opciones={[
+          { valor: 'dark' as const, etiqueta: t('settings.theme.dark') },
+          { valor: 'light' as const, etiqueta: t('settings.theme.light') },
+          { valor: 'system' as const, etiqueta: t('settings.theme.system') },
+        ]}
+      />
       <div>
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1, marginBottom: 7 }}>
           {t('set.accent')}
@@ -127,18 +107,24 @@ export function PasoRespaldo({ accent, onExport, onImport }: {
   const VD = useTheme();
   return (
     <div style={{ display: 'flex', gap: 8 }}>
-      <Opcion activa={hecho === 'exp'} accent={accent} onClick={() => lanzar('exp', onExport)}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <DotGlyphIcon glyph="EXPORT" size={9} color={hecho === 'exp' ? accent : VD.textMuted} />
-          <span>{t('onb.backup.export')}</span>
-        </span>
-      </Opcion>
-      <Opcion activa={hecho === 'imp'} accent={accent} onClick={() => lanzar('imp', onImport)}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <DotGlyphIcon glyph="IMPORT" size={9} color={hecho === 'imp' ? accent : VD.textMuted} />
-          <span>{t('onb.backup.import')}</span>
-        </span>
-      </Opcion>
+      <Chip
+        ancho
+        activo={hecho === 'exp'}
+        accent={accent}
+        onClick={() => lanzar('exp', onExport)}
+      >
+        <DotGlyphIcon glyph="EXPORT" size={9} color={hecho === 'exp' ? accent : VD.textMuted} />
+        <span>{t('onb.backup.export')}</span>
+      </Chip>
+      <Chip
+        ancho
+        activo={hecho === 'imp'}
+        accent={accent}
+        onClick={() => lanzar('imp', onImport)}
+      >
+        <DotGlyphIcon glyph="IMPORT" size={9} color={hecho === 'imp' ? accent : VD.textMuted} />
+        <span>{t('onb.backup.import')}</span>
+      </Chip>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useFieldText } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { Chip } from '../../components/ui/Chip';
 import { Btn, estiloEntrada } from './comunes';
 
 const GLIFOS_RAPIDOS = [
@@ -81,26 +82,16 @@ export function SubseccionGlifoEncima({ glifoEncima, setGlifoEncima, accent }: S
         {GLIFOS_RAPIDOS.map((g) => {
           const isSel = glifoEncima.trim().toUpperCase() === g;
           return (
-            <button
+            <Chip
               key={g}
-              type="button"
+              activo={isSel}
               onClick={() => setGlifoEncima(g)}
               title={g}
-              style={{
-                width: 22,
-                height: 22,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isSel ? VD.accentBg : VD.elevated,
-                border: `1px solid ${isSel ? accent : VD.border}`,
-                borderRadius: VD.radius.sm,
-                cursor: 'pointer',
-                padding: 0,
-              }}
+              accent={accent}
+              style={{ width: 22, height: 22, minHeight: 22, padding: 0 }}
             >
               <DotGlyphIcon glyph={g} size={11} color={isSel ? accent : VD.textDim} />
-            </button>
+            </Chip>
           );
         })}
       </div>

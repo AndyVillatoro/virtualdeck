@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { Field, SensorPicker, estiloEntrada } from './comunes';
+import { Chip } from '../../components/ui/Chip';
 import { CamposDivisa } from './CamposDivisa';
 import { CamposSlider } from './CamposSlider';
 import type { ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig } from '../../types';
@@ -71,28 +72,18 @@ export function BloqueWidgetApariencia({
           const conflicts = w === 'now-playing' && actionType === 'audio-device';
           const isSel = widget === w;
           return (
-            <button
+            <Chip
               key={w ?? 'none'}
-              type="button"
+              activo={isSel}
               onClick={() => { if (!conflicts) setWidget(w); }}
               disabled={conflicts}
               title={conflicts ? tf('Incompatible con acción de Audio: el widget oculta el nombre del dispositivo.') : undefined}
-              style={{
-                flex: '1 1 60px',
-                padding: '5px 0',
-                cursor: conflicts ? 'not-allowed' : 'pointer',
-                borderRadius: VD.radius.sm,
-                background: isSel ? VD.accentBg : VD.elevated,
-                border: `1px solid ${isSel ? accent : VD.border}`,
-                fontFamily: VD.mono,
-                fontSize: 8,
-                letterSpacing: 0.5,
-                color: isSel ? accent : VD.textDim,
-                opacity: conflicts ? 0.4 : 1,
-              }}
+              accent={accent}
+              ancho
+              style={{ flex: '1 1 60px' }}
             >
               {w === undefined ? tf('NINGUNO') : w === 'clock' ? tf('RELOJ') : w === 'weather' ? tf('CLIMA') : w === 'now-playing' ? tf('MÚSICA') : w === 'sensor' ? 'SENSOR' : w === 'currency' ? tf('DIVISA') : w === 'slider' ? tf('SLIDER') : 'VARIABLE'}
-            </button>
+            </Chip>
           );
         })}
       </div>

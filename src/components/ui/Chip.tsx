@@ -59,7 +59,7 @@ export function Chip({ activo, onClick, children, title, accent, disabled, ancho
   );
 }
 
-export interface OpcionSegmentado<T extends string> {
+export interface OpcionSegmentado<T extends string | number> {
   valor: T;
   etiqueta: React.ReactNode;
   title?: string;
@@ -70,13 +70,14 @@ export interface OpcionSegmentado<T extends string> {
  * Fila de fichas excluyentes (tema, modo, tamaño...). Envuelve si no cabe:
  * nunca empuja el contenedor hacia fuera.
  */
-export function Segmentado<T extends string>({
+export function Segmentado<T extends string | number>({
   opciones,
   valor,
   onChange,
   accent,
   etiquetaGrupo,
   repartir = false,
+  style,
 }: {
   opciones: readonly OpcionSegmentado<T>[];
   valor: T;
@@ -86,12 +87,13 @@ export function Segmentado<T extends string>({
   etiquetaGrupo?: string;
   /** Las fichas se reparten el ancho a partes iguales. */
   repartir?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
-    <div role="group" aria-label={etiquetaGrupo} style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0 }}>
+    <div role="group" aria-label={etiquetaGrupo} style={{ display: 'flex', flexWrap: 'wrap', gap: 4, minWidth: 0, ...style }}>
       {opciones.map((o) => (
         <Chip
-          key={o.valor}
+          key={String(o.valor)}
           activo={valor === o.valor}
           onClick={() => onChange(o.valor)}
           title={o.title}

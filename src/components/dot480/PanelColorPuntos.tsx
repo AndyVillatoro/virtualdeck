@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from './DotGlyphIcon';
+import { Chip } from '../ui/Chip';
 import { SelectorColor } from './SelectorColor';
 import { mismoHex as hexEq } from './matricesPuntos';
 
@@ -119,24 +120,14 @@ export function PanelColorPuntos({
               flex: 1,
             }}
           />
-          <button
-            type="button"
+          <Chip
+            activo={esPrimario}
             onClick={alFijarPrimario}
             title={t('puntos.primarioAyuda')}
-            style={{
-              padding: '5px 8px',
-              border: `1px solid ${esPrimario ? primario : VD.border}`,
-              background: esPrimario ? VD.accentBg : 'transparent',
-              color: esPrimario ? primario : VD.textDim,
-              fontFamily: VD.mono,
-              fontSize: 9,
-              letterSpacing: 1,
-              cursor: 'pointer',
-              borderRadius: VD.radius.sm,
-            }}
+            accent={primario}
           >
             {t('puntos.primario')}
-          </button>
+          </Chip>
         </div>
         <SelectorColor value={activo} onChange={alCambiarActivo} />
       </div>
@@ -184,27 +175,14 @@ export function PanelColorPuntos({
       )}
 
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-        <button
-          type="button"
+        <Chip
+          activo={borrando}
           onClick={() => alCambiarBorrando(!borrando)}
-          style={{
-            padding: '5px 10px',
-            border: `1px solid ${borrando ? activo : VD.border}`,
-            background: borrando ? VD.accentBg : 'transparent',
-            color: borrando ? activo : VD.textDim,
-            fontFamily: VD.mono,
-            fontSize: 9,
-            letterSpacing: 1,
-            cursor: 'pointer',
-            borderRadius: VD.radius.sm,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
+          accent={activo}
         >
           <DotGlyphIcon glyph={borrando ? 'CHECK' : 'DOTS'} size={7} color={borrando ? activo : VD.textDim} />
           <span>{t('puntos.borrador')}</span>
-        </button>
+        </Chip>
         <button
           type="button"
           onClick={alLimpiar}

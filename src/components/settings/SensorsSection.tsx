@@ -6,6 +6,7 @@ import { SENSORES_POR_DEFECTO } from '../../types';
 import { SettingLabel, ToggleRow, estiloEntradaAjustes, estiloBotonMiniAjustes } from './settingHelpers';
 import { LINKS } from '../../data/links';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import { Chip } from '../ui/Chip';
 
 // Cuatro de las seis son siglas iguales en los dos idiomas; la sexta no, y
 // estaba escrita en espanol: con la aplicacion en ingles salia «OTROS» entre
@@ -269,22 +270,15 @@ export function SensorsSection({
             {SENSOR_CATEGORIES.map((c) => {
               const on = enabledCats.has(c.id);
               return (
-                <button
+                <Chip
                   key={c.id}
+                  activo={on}
                   onClick={() => toggleCategory(c.id)}
-                  style={{
-                    padding: '3px 8px',
-                    background: on ? VD.accentBg : VD.elevated,
-                    border: `1px solid ${on ? accent : VD.border}`,
-                    color: on ? accent : VD.textMuted,
-                    fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                    cursor: 'pointer', borderRadius: VD.radius.sm,
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                  }}
+                  accent={accent}
                 >
                   <DotGlyphIcon glyph={CAT_GLYPH[c.id]} size={9} color={on ? accent : VD.textMuted} showRecessed />
                   {c.label ?? t(c.clave!)}
-                </button>
+                </Chip>
               );
             })}
           </div>

@@ -6,6 +6,7 @@ import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { BotonIcono } from '../../components/ui/BotonIcono';
+import { Chip } from '../../components/ui/Chip';
 import { ColorPicker } from '../../components/ColorPicker';
 import type { RGBDeviceInfo, RGBSettings, RGBStatus } from '../../types';
 
@@ -159,12 +160,13 @@ export function DeviceDetail({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block' }}>{t('rgb.paintLeds')}</DotLabel>
-              <button
+              <Chip
+                activo={showLedPainter}
                 onClick={() => setShowLedPainter((v) => !v)}
-                style={{ background: 'none', border: `1px solid ${VD.border}`, borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 8, color: showLedPainter ? accent : VD.textDim, cursor: 'pointer', padding: '2px 8px', letterSpacing: 0.5 }}
+                accent={accent}
               >
                 {showLedPainter ? t('rgb.hide') : t('rgb.show')}
-              </button>
+              </Chip>
             </div>
             {showLedPainter && (
               <LedPainter
@@ -481,20 +483,13 @@ export function PresetsRapidos({ accent, activo, onAplicar }: {
       </DotLabel>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
         {presets.map((p) => (
-          <button
+          <Chip
             key={p.id}
+            activo={ultimo === p.id}
             disabled={!activo}
             onClick={() => { setUltimo(p.id); onAplicar(p.id); }}
             title={t(`rgb.preset.${p.id}`)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '3px 7px', cursor: activo ? 'pointer' : 'default',
-              background: ultimo === p.id ? VD.accentBg : VD.elevated,
-              border: `1px solid ${ultimo === p.id ? accent : VD.border}`,
-              borderRadius: VD.radius.sm, opacity: activo ? 1 : 0.45,
-              fontFamily: VD.mono, fontSize: 7, letterSpacing: 0.5,
-              color: ultimo === p.id ? accent : VD.textDim,
-            }}
+            accent={accent}
           >
             {/* La muestra de color va con borde propio: un preset oscuro sobre
                 fondo oscuro no se distinguiria del hueco. */}
@@ -503,7 +498,7 @@ export function PresetsRapidos({ accent, activo, onAplicar }: {
               background: p.color, border: `1px solid ${VD.border}`,
             }} />
             {t(`rgb.preset.${p.id}`)}
-          </button>
+          </Chip>
         ))}
       </div>
     </div>

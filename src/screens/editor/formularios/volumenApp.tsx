@@ -3,6 +3,7 @@ import { useTheme } from '../../../utils/theme';
 import { useT, useFieldText, type TFunc } from '../../../utils/i18n';
 import { Field } from '../comunes';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
+import { Chip, Segmentado } from '../../../components/ui/Chip';
 import { SelectorApp } from '../../../components/SelectorApp';
 import { normalizarApp } from '../../../utils/apps';
 import type { SesionAudioApp } from '../../../types';
@@ -30,29 +31,23 @@ function proponerDestino(target: string | undefined, sesiones: SesionAudioApp[])
 interface PropsModo {
   modo: ModoAppVolume;
   onElegir: (m: ModoAppVolume) => void;
-  VD: ReturnType<typeof useTheme>;
   accent: string;
   t: TextoCampo;
 }
 
-function BotonesModo({ modo, onElegir, VD, accent, t }: PropsModo) {
+function BotonesModo({ modo, onElegir, accent, t }: PropsModo) {
   return (
-    <div style={{ display: 'flex', gap: 6 }}>
-      {(['adjust', 'set', 'mute'] as const).map((m) => (
-        <button
-          key={m}
-          type="button"
-          onClick={() => onElegir(m)}
-          style={{
-            flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-            background: modo === m ? VD.accentBg : VD.elevated,
-            border: `1px solid ${modo === m ? accent : VD.border}`,
-            color: modo === m ? accent : VD.textDim,
-            fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-          }}
-        >{t(`ed.appVolume.${m}`)}</button>
-      ))}
-    </div>
+    <Segmentado
+      repartir
+      accent={accent}
+      valor={modo}
+      onChange={onElegir}
+      opciones={[
+        { valor: 'adjust', etiqueta: t('ed.appVolume.adjust') },
+        { valor: 'set', etiqueta: t('ed.appVolume.set') },
+        { valor: 'mute', etiqueta: t('ed.appVolume.mute') },
+      ]}
+    />
   );
 }
 
@@ -60,33 +55,22 @@ interface PropsFicha {
   sesion: SesionAudioApp;
   elegida: boolean;
   onElegir: (proc: string) => void;
-  VD: ReturnType<typeof useTheme>;
   accent: string;
 }
 
-function FichaSesion({ sesion, elegida, onElegir, VD, accent }: PropsFicha) {
+function FichaSesion({ sesion, elegida, onElegir, accent }: PropsFicha) {
   const proc = normalizarApp(sesion.proceso);
   return (
-    <button
-      key={sesion.proceso}
-      type="button"
+    <Chip
+      activo={elegida}
       onClick={() => onElegir(proc)}
       title={`${sesion.volumen}%${sesion.silenciada ? ' · mute' : ''}`}
-      style={{
-        minHeight: 32, padding: '4px 10px',
-        background: elegida ? `${accent}24` : VD.surface,
-        border: `1px solid ${elegida ? accent : VD.border}`,
-        borderRadius: VD.radius.sm,
-        color: elegida ? accent : VD.text,
-        fontFamily: VD.mono, fontSize: 9, cursor: 'pointer',
-        letterSpacing: 0.5, display: 'inline-flex', alignItems: 'center', gap: 6,
-        boxSizing: 'border-box',
-      }}
+      accent={accent}
     >
       {elegida && <DotGlyphIcon glyph="CHECK" size={8} color={accent} />}
       <span>{proc}</span>
       <span style={{ opacity: 0.7 }}>{sesion.silenciada ? 'mute' : `${sesion.volumen}%`}</span>
-    </button>
+    </Chip>
   );
 }
 
@@ -140,7 +124,6 @@ function ListaSonando({ sesiones, objetivo, cargando, onElegir, onRecargar, VD, 
               sesion={s}
               elegida={objetivo.toLowerCase() === normalizarApp(s.proceso)}
               onElegir={onElegir}
-              VD={VD}
               accent={accent}
             />
           ))
@@ -192,7 +175,7 @@ export function FormAppVolume(p: PropsFormulario) {
   return (
     <>
       <Field label={t('ed.appVolume.mode')}>
-        <BotonesModo modo={modo} onElegir={elegirModo} VD={VD} accent={accent} t={t} />
+        <BotonesModo modo={modo} onElegir={elegirModo} accent={accent} t={t} />
       </Field>
 
       {modo === 'adjust' && (
@@ -233,32 +216,24 @@ export function FormAppVolume(p: PropsFormulario) {
       )}
 
       <Field label={t('ed.appVolume.app')}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: especifica ? 8 : 0 }}>
-          <button
-            type="button"
-            onClick={() => setAction((a) => ({ ...a, appVolumeTarget: undefined }))}
-            style={{
-              flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-              background: !especifica ? VD.accentBg : VD.elevated,
-              border: `1px solid ${!especifica ? accent : VD.border}`,
-              color: !especifica ? accent : VD.textDim,
-              fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
+        <div style={{ marginBottom: especifica ? 8 : 0 }}>
+          <Segmentado<'activa' | 'especifica'>
+            repartir
+            accent={accent}
+            valor={especifica ? 'especifica' : 'activa'}
+            onChange={(val) => {
+              if (val === 'activa') {
+                setAction((a) => ({ ...a, appVolumeTarget: undefined }));
+              } else {
+                const propuesto = proponerDestino(action.appVolumeTarget, sesiones);
+                setAction((a) => ({ ...a, appVolumeTarget: propuesto }));
+              }
             }}
-          >{t('ed.appVolume.active')}</button>
-          <button
-            type="button"
-            onClick={() => {
-              const propuesto = proponerDestino(action.appVolumeTarget, sesiones);
-              setAction((a) => ({ ...a, appVolumeTarget: propuesto }));
-            }}
-            style={{
-              flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-              background: especifica ? VD.accentBg : VD.elevated,
-              border: `1px solid ${especifica ? accent : VD.border}`,
-              color: especifica ? accent : VD.textDim,
-              fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-            }}
-          >{t('ed.appVolume.specific')}</button>
+            opciones={[
+              { valor: 'activa', etiqueta: t('ed.appVolume.active') },
+              { valor: 'especifica', etiqueta: t('ed.appVolume.specific') },
+            ]}
+          />
         </div>
         {especifica && (
           <>

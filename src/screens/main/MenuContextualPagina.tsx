@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { PageCtxItem } from './OverlayCarpeta';
+import { Segmentado } from '../../components/ui/Chip';
 import type { PageConfig } from '../../types';
 
 interface MenuContextualPaginaProps {
@@ -72,37 +73,23 @@ export function MenuContextualPagina({
           {t('page.grid')} · {ctxGs}×{ctxRows}
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.columns')}</div>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-          {([3, 4, 5, 6] as const).map((cols) => (
-            <button
-              key={cols}
-              onClick={() => { onSetGrid(contextMenu.id, cols, ctxRows); }}
-              style={{
-                flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                background: ctxGs === cols ? VD.accentBg : VD.elevated,
-                border: `1px solid ${ctxGs === cols ? accent : VD.border}`,
-                fontFamily: VD.mono, fontSize: 9,
-                color: ctxGs === cols ? accent : VD.textDim,
-              }}
-            >{cols}</button>
-          ))}
+        <div style={{ marginBottom: 8 }}>
+          <Segmentado
+            repartir
+            accent={accent}
+            valor={ctxGs}
+            onChange={(cols) => { onSetGrid(contextMenu.id, cols as 3 | 4 | 5 | 6, ctxRows); }}
+            opciones={([3, 4, 5, 6] as const).map((cols) => ({ valor: cols, etiqueta: cols }))}
+          />
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginBottom: 4, letterSpacing: 1 }}>{t('ui.rows')}</div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {([2, 3, 4, 5, 6] as const).map((rows) => (
-            <button
-              key={rows}
-              onClick={() => { onSetGrid(contextMenu.id, ctxGs as 3 | 4 | 5 | 6, rows); }}
-              style={{
-                flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                background: ctxRows === rows ? VD.accentBg : VD.elevated,
-                border: `1px solid ${ctxRows === rows ? accent : VD.border}`,
-                fontFamily: VD.mono, fontSize: 9,
-                color: ctxRows === rows ? accent : VD.textDim,
-              }}
-            >{rows}</button>
-          ))}
-        </div>
+        <Segmentado
+          repartir
+          accent={accent}
+          valor={ctxRows}
+          onChange={(rows) => { onSetGrid(contextMenu.id, ctxGs as 3 | 4 | 5 | 6, rows); }}
+          opciones={([2, 3, 4, 5, 6] as const).map((rows) => ({ valor: rows, etiqueta: rows }))}
+        />
       </div>
 
       {pages.length < 8 && onDuplicatePage && (

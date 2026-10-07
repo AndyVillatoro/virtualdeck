@@ -4,6 +4,7 @@ import { textoSobre } from '../../../design';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { Field, Btn, estiloEntrada } from '../comunes';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
+import { Chip, Segmentado } from '../../../components/ui/Chip';
 import type { PropsFormulario } from './base';
 
 /** Lo que le habla al sistema: audio, teclas, portapapeles, procesos, pantalla. */
@@ -274,22 +275,16 @@ export function FormAdjust(p: PropsFormulario) {
   return (
     <>
       <Field label={tf("QUÉ SE AJUSTA")}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {(['brightness', 'volume'] as const).map((o) => (
-            <button
-              key={o}
-              type="button"
-              onClick={() => setAction((a) => ({ ...a, adjustTarget: o }))}
-              style={{
-                flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                background: objetivo === o ? VD.accentBg : VD.elevated,
-                border: `1px solid ${objetivo === o ? accent : VD.border}`,
-                color: objetivo === o ? accent : VD.textDim,
-                fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-              }}
-            >{tf(o === 'brightness' ? 'BRILLO' : 'VOLUMEN')}</button>
-          ))}
-        </div>
+        <Segmentado
+          repartir
+          accent={accent}
+          valor={objetivo}
+          onChange={(o) => setAction((a) => ({ ...a, adjustTarget: o }))}
+          opciones={[
+            { valor: 'brightness', etiqueta: tf('BRILLO') },
+            { valor: 'volume', etiqueta: tf('VOLUMEN') },
+          ]}
+        />
       </Field>
 
       {/* Opción rápida: Convertir en Slider Táctil Continuo */}
@@ -532,20 +527,16 @@ export function FormWindowSnap(p: PropsFormulario) {
                   ['maximize', 'FULLSCREEN', tf('Maximizar')],
                   ['restore', 'MINIMIZE', tf('Restaurar')],
                 ] as [string, string, string][]).map(([val, glyph, lbl]) => (
-                  <div
+                  <Chip
                     key={val}
+                    activo={action.snapPosition === val}
                     onClick={() => setAction((a) => ({ ...a, snapPosition: val as any }))}
-                    style={{
-                      padding: '6px 8px', borderRadius: VD.radius.sm, cursor: 'pointer',
-                      background: action.snapPosition === val ? VD.accentBg : VD.elevated,
-                      border: `1px solid ${action.snapPosition === val ? accent : VD.border}`,
-                      fontFamily: VD.mono, fontSize: 8, color: action.snapPosition === val ? accent : VD.textDim,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                    }}
+                    accent={accent}
+                    style={{ width: '100%', fontSize: 8, padding: '6px 4px' }}
                   >
                     <DotGlyphIcon glyph={glyph} size={8} color={action.snapPosition === val ? accent : VD.textDim} />
                     <span>{lbl}</span>
-                  </div>
+                  </Chip>
                 ))}
               </div>
             </Field>
@@ -573,22 +564,16 @@ export function FormWindowCycle(p: PropsFormulario) {
   return (
     <>
           <Field label={tf("DIRECCIÓN")}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {(['prev', 'next'] as const).map((o) => (
-                <button
-                  key={o}
-                  type="button"
-                  onClick={() => setAction((a) => ({ ...a, windowCycle: o }))}
-                  style={{
-                    flex: 1, padding: '6px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                    background: dir === o ? VD.accentBg : VD.elevated,
-                    border: `1px solid ${dir === o ? accent : VD.border}`,
-                    color: dir === o ? accent : VD.textDim,
-                    fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-                  }}
-                >{o === 'prev' ? tf('ANTERIOR') : tf('SIGUIENTE')}</button>
-              ))}
-            </div>
+            <Segmentado
+              repartir
+              accent={accent}
+              valor={dir}
+              onChange={(o) => setAction((a) => ({ ...a, windowCycle: o }))}
+              opciones={[
+                { valor: 'prev', etiqueta: tf('ANTERIOR') },
+                { valor: 'next', etiqueta: tf('SIGUIENTE') },
+              ]}
+            />
             <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
               {tf('Recorre las ventanas abiertas en orden estable (por programa), no como Alt+Tab.')}
             </div>

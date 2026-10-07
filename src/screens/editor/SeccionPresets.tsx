@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
+import { Segmentado } from '../../components/ui/Chip';
 import { ACTION_TYPES, PRESET_CATEGORIES, type ButtonPreset } from './actionData';
 import type { PresetDock } from '../../data/presetsDock';
 import { obtenerHuecoDePreset } from './useDockPresets';
@@ -70,31 +71,15 @@ export function SeccionPresets({
         />
 
         {!presetSearch && (
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {categories.map((cat) => {
-              const isSel = presetCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setPresetCategory(cat)}
-                  style={{
-                    padding: '3px 8px',
-                    border: `1px solid ${isSel ? accent : VD.border}`,
-                    background: isSel ? VD.accentBg : 'transparent',
-                    fontFamily: VD.mono,
-                    fontSize: 8,
-                    letterSpacing: 1,
-                    color: isSel ? accent : VD.textMuted,
-                    cursor: 'pointer',
-                    borderRadius: VD.radius.sm,
-                  }}
-                >
-                  {cat === 'DOCK' ? t('cat.DOCK') : t(`cat.${cat}`)}
-                </button>
-              );
-            })}
-          </div>
+          <Segmentado
+            accent={accent}
+            valor={presetCategory}
+            onChange={setPresetCategory}
+            opciones={categories.map((cat) => ({
+              valor: cat,
+              etiqueta: cat === 'DOCK' ? t('cat.DOCK') : t(`cat.${cat}`),
+            }))}
+          />
         )}
       </div>
 

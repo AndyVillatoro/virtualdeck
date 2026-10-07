@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ACCENT_PRESETS } from '../../design';
 import { useTheme } from '../../utils/theme';
-import { Segmentado } from '../ui/Chip';
+import { Chip, Segmentado } from '../ui/Chip';
 import { BotonIcono } from '../ui/BotonIcono';
 import { useT } from '../../utils/i18n';
 import { SOUND_PROFILES, playSound } from '../../utils/sound';
@@ -243,20 +243,16 @@ export function PanelAjustes({
               {SOUND_PROFILES.map((p) => {
                 const isActive = p.id === soundProfile;
                 return (
-                  <button
+                  <Chip
                     key={p.id}
+                    activo={isActive}
                     onClick={() => { onSoundProfileChange?.(p.id); playSound(p.id); }}
-                    style={{
-                      flex: '1 1 calc(50% - 2px)', padding: '5px 6px',
-                      fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
-                      background: isActive ? VD.accentBg : VD.elevated,
-                      border: `1px solid ${isActive ? effectiveAccent : VD.border}`,
-                      color: isActive ? effectiveAccent : VD.textDim,
-                      cursor: 'pointer', borderRadius: VD.radius.sm,
-                    }}
+                    accent={effectiveAccent}
+                    ancho
+                    style={{ flex: '1 1 calc(50% - 2px)' }}
                   >
                     {t(p.label).toUpperCase()}
-                  </button>
+                  </Chip>
                 );
               })}
             </div>

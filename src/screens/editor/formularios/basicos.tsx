@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useFieldText, useT } from '../../../utils/i18n';
 import { Field, Btn, estiloEntrada } from '../comunes';
+import { Segmentado } from '../../../components/ui/Chip';
 import type { PropsFormulario } from './base';
 
 /** Lo que abre algo: nada, programa, enlace, acceso directo, script. */
@@ -64,27 +65,13 @@ export function FormWeb(p: PropsFormulario) {
       <Field label={tf("URL")}>
         <input value={action.url || ''} onChange={(e) => setAction((a) => ({ ...a, url: e.target.value }))} placeholder={tf("https://ejemplo.com")} style={inputStyle} />
       </Field>
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-        {WEB_SHORTCUTS.map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={() => setAction((a) => ({ ...a, url: s.url }))}
-            style={{
-              padding: '3px 6px',
-              fontFamily: VD.mono,
-              fontSize: 8,
-              letterSpacing: 0.5,
-              background: action.url === s.url ? VD.accentBg : VD.elevated,
-              border: `1px solid ${action.url === s.url ? VD.accent : VD.border}`,
-              color: action.url === s.url ? VD.accent : VD.textMuted,
-              borderRadius: VD.radius.sm,
-              cursor: 'pointer',
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
+      <div style={{ marginTop: 4 }}>
+        <Segmentado
+          accent={p.accent}
+          valor={action.url || ''}
+          onChange={(url) => setAction((a) => ({ ...a, url }))}
+          opciones={WEB_SHORTCUTS.map((s) => ({ valor: s.url, etiqueta: s.label }))}
+        />
       </div>
     </>
   );
