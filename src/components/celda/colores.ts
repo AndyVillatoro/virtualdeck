@@ -21,12 +21,30 @@ export interface EstadoCelda {
   bgPropio?: string;
 }
 
-export function colorDeFondo(e: EstadoCelda, VD: VDTokens): string {
-  if (e.toggled || e.dragOver) return VD.accentBg;
+/** El fondo sin la confirmación de pulsación: color propio > pressed > hover. */
+function fondoBase(e: EstadoCelda, VD: VDTokens): string {
   if (e.bgPropio) return e.bgPropio;
   if (e.pressed) return VD.overlay;
   if (e.hovered && !e.isEmpty) return VD.elevatedHover;
   return VD.elevated;
+}
+
+/**
+ * Mezcla hacia el acento conservando el fondo: el tinte de confirmación de la
+ * pulsación. Va con `color-mix` para que valga igual sobre un fondo del tema
+ * que sobre el color propio del botón (que antes no reaccionaba al pulsar).
+ */
+function tintarConAcento(color: string, accent: string, peso: number): string {
+  return `color-mix(in srgb, ${color} ${100 - peso}%, ${accent})`;
+}
+
+export function colorDeFondo(e: EstadoCelda, VD: VDTokens): string {
+  if (e.toggled || e.dragOver) return VD.accentBg;
+  const base = fondoBase(e, VD);
+  // El flash delata la pulsación aunque el botón tenga color propio.
+  if (e.flash) return tintarConAcento(base, VD.accent, 22);
+  if (e.bgPropio && e.pressed) return tintarConAcento(base, VD.accent, 16);
+  return base;
 }
 
 export function colorDeBorde(e: EstadoCelda, VD: VDTokens, accent: string): string {

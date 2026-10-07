@@ -64,6 +64,29 @@ export function estiloPaginaMando(acento: string): string {
   .celda:active { transform: scale(0.94); border-color: var(--ac); box-shadow: 0 0 12px var(--ac); }
   .celda.ok { border-color: #22c55e !important; box-shadow: 0 0 12px rgba(34, 197, 94, 0.5) !important; }
   .celda.mal { border-color: #ef4444 !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.5) !important; }
+  /* 100 — Confirmación de pulsación, la misma en las cinco superficies: el
+     destello sube el brillo por encima del color; la onda lanza un anillo. */
+  .celda.pulso-destello { animation: vd-mando-destello 440ms cubic-bezier(0.15, 0.75, 0.25, 1); }
+  @keyframes vd-mando-destello {
+    0% { filter: brightness(1); }
+    22% { filter: brightness(1.5) saturate(1.15); }
+    100% { filter: brightness(1); }
+  }
+  .celda.pulso-onda::after {
+    content: ''; position: absolute; inset: 0; border-radius: 4px; border: 2px solid var(--ac);
+    pointer-events: none; animation: vd-mando-onda 680ms cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+  }
+  @keyframes vd-mando-onda {
+    0% { transform: scale(0.3); opacity: 0; }
+    15% { opacity: 0.9; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  /* Con «reducir movimiento» se quita lo decorativo (el anillo); el destello
+     corto se queda como confirmación. */
+  @media (prefers-reduced-motion: reduce) {
+    .celda.pulso-onda::after { display: none; }
+    .celda.pulso-destello { animation-duration: 220ms; }
+  }
   .pin-insignia { position: absolute; top: 4px; right: 4px; font-size: 8px; z-index: 3; opacity: 0.85; pointer-events: none; letter-spacing: 1px; color: var(--ac); font-weight: 700; }
   .mosaico-2x2 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; width: 100%; height: 100%; padding: 4px; }
   .sub-celda {

@@ -32,22 +32,28 @@
   var PERIODO_PARPADEO_MS = 1000;
   /** `escaneo`: una linea horizontal recorre el icono. */
   var DUR_ESCANEO_MS = 1400;
-  /** `destello` (al pulsar): todo al maximo y se apaga en este tiempo. */
-  var DUR_DESTELLO_MS = 180;
+  /** `destello` (al pulsar): el icono sube del apagado al color base en este tiempo. */
+  var DUR_DESTELLO_MS = 400;
   /** `onda` (al pulsar): un anillo sale del centro en este tiempo. */
-  var DUR_ONDA_MS = 520;
+  var DUR_ONDA_MS = 620;
   /** Ancho de la banda de luz del `barrido`, en fraccion de diagonal. */
   var ANCHO_BARRIDO = 0.30;
   /** Ancho de la linea del `escaneo`, en fraccion de lado. */
   var ANCHO_ESCANEO = 0.16;
   /** Ancho del anillo de la `onda`, en fraccion de radio maximo. */
-  var ANCHO_ONDA = 0.25;
+  var ANCHO_ONDA = 0.36;
   /** Suelo del `pulso`: nunca se apaga del todo, respira entre esto y 1. */
   var SUELO_PULSO = 0.35;
   /** Suelo fuera de la banda (`barrido`) y de la linea (`escaneo`). */
   var SUELO_BANDA = 0.25;
   /** Lo que se ve de un punto de la `onda` fuera del anillo. */
-  var SUELO_ONDA = 0.12;
+  var SUELO_ONDA = 0.10;
+  /** Apagado del que arranca el `destello` en la pulsacion. */
+  var ARRANQUE_DESTELLO = 0.45;
+  /** Fraccion del `destello` en la que termina de subir: el resto se queda a 1. */
+  var SUBIDA_DESTELLO = 0.25;
+  /** Ultimo tramo de la `onda` en el que todo vuelve al color base. */
+  var COLA_ONDA = 0.30;
 
   /** Recorta a [0, 1]. */
   function sujetar(v) {
@@ -145,15 +151,25 @@
   }
 
   /**
-   * Intensidad para `destello`: todo al maximo y caida lineal hasta 0.
+   * Intensidad para `destello`: sube del apagado al color base con ease-out
+   * y termina a 1. Es a proposito: este efecto ya no «apaga» el icono, asi
+   * que el ultimo fotograma deja el icono encendido en las superficies que
+   * pintan solo mientras dura (movil y tecla fisica). El brillo por encima
+   * del color lo pone la capa de la celda (velo) y el CSS del movil.
    * @param {number} t ms
    */
   function intensidadDestello(t) {
-    return sujetar(1 - t / DUR_DESTELLO_MS);
+    var x = sujetar(t / DUR_DESTELLO_MS);
+    if (x >= SUBIDA_DESTELLO) return 1;
+    var y = x / SUBIDA_DESTELLO;
+    return ARRANQUE_DESTELLO + (1 - ARRANQUE_DESTELLO) * (1 - (1 - y) * (1 - y));
   }
 
   /**
-   * Intensidad para `onda`: anillo que sale del centro.
+   * Intensidad para `onda`: anillo que sale del centro. El ultimo tramo
+   * vuelve al color base: sin esa cola, el suelo del anillo dejaria el icono
+   * casi apagado en cuanto pasara (el movil y la tecla solo pintan mientras
+   * dura el efecto).
    * @param {number} x columna
    * @param {number} y fila
    * @param {number} n lado
@@ -163,8 +179,11 @@
     var centro = (n - 1) / 2;
     var maximo = Math.sqrt(2 * centro * centro) || 1;
     var distancia = Math.sqrt((x - centro) * (x - centro) + (y - centro) * (y - centro)) / maximo;
-    var frente = t / DUR_ONDA_MS;
-    return SUELO_ONDA + (1 - SUELO_ONDA) * campana(distancia - frente, ANCHO_ONDA);
+    var avance = t / DUR_ONDA_MS;
+    var anillo = SUELO_ONDA + (1 - SUELO_ONDA) * campana(distancia - avance, ANCHO_ONDA);
+    if (avance <= 1 - COLA_ONDA) return anillo;
+    var cola = (avance - (1 - COLA_ONDA)) / COLA_ONDA;
+    return anillo + (1 - anillo) * cola;
   }
 
   /**

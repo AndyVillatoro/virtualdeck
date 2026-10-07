@@ -26,8 +26,14 @@ import { pintarTecla, pintarTeclaConCuadro, resolverBotonLcd, type ColoresSuperf
  */
 
 const MS_TIC = 100;
-/** El destello al pulsar dura 2-3 fotogramas del tic como mucho. */
-const MS_PULSO_LCD = 250;
+/**
+ * Duración del aviso de pulsación si el motor DOT no está registrado. Con el
+ * motor, manda la del efecto (`destello` 400 ms, `onda` 620 ms): la misma que
+ * la celda, escalada al tic de 100 ms del LCD.
+ */
+const MS_PULSO_FALLBACK = 420;
+/** Con «reducir movimiento» el destello se acorta, pero no se quita. */
+const MS_PULSO_REDUCIDO = 220;
 /** Tope de GIF en memoria. Cada uno puede pesar varios MB. */
 const MAX_GIFS = 4;
 /**
@@ -106,7 +112,7 @@ interface AnimacionPuntos {
   enviando: boolean;
 }
 
-/** Una pulsación en una tecla LCD: se pinta el destello 2-3 fotogramas. */
+/** Una pulsación en una tecla LCD: se pinta su destello/onda hasta terminar. */
 interface PulsoLcd {
   serial: string;
   hueco: number;
@@ -389,66 +395,103 @@ async function enviarPuntos(motor: Motor, anim: AnimacionPuntos, extras: ExtrasA
   }
 }
 
-/** Pinta el destello de las pulsaciones recientes (2-3 fotogramas). */
+/** Cuánto dura el aviso de pulsación: la del motor DOT, o el respaldo corto. */
+function duracionPulso(prensado: string): number {
+  const motor = motorPuntos();
+  const delMotor = motor?.duracionEfecto(prensado) ?? 0;
+  const base = delMotor > 0 ? delMotor : MS_PULSO_FALLBACK;
+  // Con «reducir movimiento» se acorta el aviso, no se quita.
+  return movimientoReducido() ? Math.min(base, MS_PULSO_REDUCIDO) : base;
+}
+
+/** Velo blanco del destello: sube al máximo y vuelve a cero con ease-out. */
+function veloDestello(dt: number): number {
+  const x = Math.max(0, Math.min(1, dt / duracionPulso('destello')));
+  if (x < 0.2) return 0.6 + 2 * x;
+  return Math.pow(1 - (x - 0.2) / 0.8, 0.7);
+}
+
+/** Lo que un pulso aún vigente necesita para pintarse. */
+interface PulsoResuelto {
+  control: { indice: number; lcd: LcdControl };
+  efectivo: ButtonConfig;
+  rotacion: number;
+  datos?: DatosWidget;
+  prensado: string;
+}
+
+/**
+ * Resuelve la tecla de un pulso: si el aparato, la página o el botón ya no
+ * son los mismos, o el efecto es `ninguno`, devuelve `null` y el pulso se
+ * retira. Un destello sobre un aviso del giro también se descarta (T-HW-21).
+ */
+function resolverPulso(motor: Motor, pulso: PulsoLcd, encendidos: Set<string>): PulsoResuelto | null {
+  const o = motor.opciones;
+  const dispositivo = o.dispositivos.find((d) => d.serial === pulso.serial);
+  if (!dispositivo?.conectado) return null;
+  const pagina = paginaDe(o.config, pulso.serial, dispositivo.disposicion, o.paginasActivas[pulso.serial], o.vivo);
+  const control = pagina?.indice === pulso.pagina
+    ? teclasLcd(pagina.disposicion).find((c) => c.hueco === pulso.hueco)
+    : undefined;
+  const boton = control ? pagina?.botones[pulso.hueco] : undefined;
+  if (!pagina || !control || !boton) return null;
+  if (o.conAviso?.(pulso.serial, pulso.hueco)) return null;
+  const efectivo = resolverBotonLcd(boton, encendidos.has(boton.id));
+  const prensado = efectivo.efectoPulsar ?? 'destello';
+  // En positivo: el tercer valor del contrato (`ninguno`) se detecta por
+  // descarte, porque ese literal lo marca la auditoría de i18n.
+  if (prensado !== 'destello' && prensado !== 'onda') return null;
+  return {
+    control,
+    efectivo,
+    rotacion: pagina.rotacion ?? control.lcd.rotacion,
+    datos: o.widgets[boton.id],
+    prensado,
+  };
+}
+
+/** Pinta el destello o la onda de las pulsaciones recientes, hasta que acaban. */
 function avanzarPulsos(motor: Motor, ahora: number): void {
   const o = motor.opciones;
   if (!o.api || pulsosLcd.size === 0) return;
   const encendidos = new Set(o.config.toggledIds ?? []);
   for (const [clave, pulso] of [...pulsosLcd]) {
+    const resuelto = resolverPulso(motor, pulso, encendidos);
+    if (!resuelto) {
+      pulsosLcd.delete(clave);
+      continue;
+    }
+    const duracion = duracionPulso(resuelto.prensado);
     const dt = ahora - pulso.inicio;
-    if (dt > MS_PULSO_LCD) {
-      pulsosLcd.delete(clave);
-      continue;
-    }
-    const dispositivo = o.dispositivos.find((d) => d.serial === pulso.serial);
-    if (!dispositivo?.conectado) {
-      pulsosLcd.delete(clave);
-      continue;
-    }
-    const pagina = paginaDe(o.config, pulso.serial, dispositivo.disposicion, o.paginasActivas[pulso.serial], o.vivo);
-    const control = pagina?.indice === pulso.pagina
-      ? teclasLcd(pagina.disposicion).find((c) => c.hueco === pulso.hueco)
-      : undefined;
-    const boton = control ? pagina.botones[pulso.hueco] : undefined;
-    if (!pagina || !control || !boton) {
-      pulsosLcd.delete(clave);
-      continue;
-    }
-    // Un destello sobre un aviso lo borraría: se descarta (T-HW-21).
-    if (o.conAviso?.(pulso.serial, pulso.hueco)) {
-      pulsosLcd.delete(clave);
-      continue;
-    }
+    // El último fotograma se pinta ya con el tiempo final (el motor vuelve al
+    // color base): la tecla queda limpia y el pulso se retira en el mismo tic.
     void enviarPulso(
-      motor, pulso, dt, control, boton, pagina.rotacion ?? control.lcd.rotacion, encendidos,
-      o.widgets[boton.id],
+      motor, pulso, dt > duracion ? duracion : dt, resuelto.control, resuelto.efectivo,
+      resuelto.rotacion, resuelto.datos,
     );
+    if (dt > duracion) pulsosLcd.delete(clave);
   }
 }
 
 async function enviarPulso(
   motor: Motor, pulso: PulsoLcd, dt: number,
   control: { indice: number; lcd: LcdControl },
-  boton: ButtonConfig, rotacion: number, encendidos: Set<string>,
+  efectivo: ButtonConfig, rotacion: number,
   datos?: DatosWidget,
 ): Promise<void> {
   const o = motor.opciones;
   if (!o.api) return;
-  const efectivo = resolverBotonLcd(boton, encendidos.has(boton.id));
   const puntos = motorPuntos();
   const prensado = efectivo.efectoPulsar ?? 'destello';
-  // En positivo: el tercer valor del contrato (`ninguno`) se detecta por
-  // descarte, porque ese literal lo marca la auditoría de i18n.
-  if (prensado !== 'destello' && prensado !== 'onda') {
-    pulsosLcd.delete(`${pulso.serial}:${pulso.hueco}`);
-    return;
-  }
   let extras: ExtrasAnimados;
-  const matriz = matrizDe(efectivo);
+  // La onda se dibuja en los puntos (anillo que sale del centro); el destello
+  // es el velo blanco por encima de todo, que también cubre imagen y marca y
+  // vuelve a cero al acabar.
+  const matriz = prensado === 'onda' ? matrizDe(efectivo) : null;
   if (puntos && matriz) {
-    extras = { matriz, intensidades: puntos.calcularPuntos(matriz, prensado, dt).intensidades };
+    extras = { matriz, intensidades: puntos.calcularPuntos(matriz, 'onda', dt).intensidades };
   } else {
-    extras = { destello: 1 - dt / MS_PULSO_LCD };
+    extras = { destello: veloDestello(dt) };
   }
   try {
     const imagen = await pintarTecla(

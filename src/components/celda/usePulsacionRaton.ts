@@ -26,8 +26,8 @@ import type { SoundProfileId } from '../../types';
 
 /** Lo que tarda una pulsación en contar como larga. Igual que en el táctil. */
 const MS_LARGA = 500;
-/** Lo que dura el destello de confirmación. Debe cubrir el barrido radial completo. */
-const MS_DESTELLO = 520;
+/** Lo que dura el destello de confirmación. Debe cubrir el barrido radial completo (620 ms la onda). */
+const MS_DESTELLO = 640;
 
 interface Opciones {
   /** Sin acción, sin etiqueta y sin icono: el clic abre el editor. */

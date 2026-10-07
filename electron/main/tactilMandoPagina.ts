@@ -9,12 +9,29 @@
  * Solo en celdas con `largo`: si pasan 500 ms con el dedo puesto, se dispara
  * la acción larga en ese momento y al soltar no se manda el toque normal;
  * si se suelta antes de 500 ms, se manda el toque normal.
+ *
+ * Aquí vive también `animarPulsoCss` (roadmap 100): pone en la celda la clase
+ * del efecto elegido (`pulso-destello` / `pulso-onda`) y el CSS de
+ * `estiloMandoPagina.ts` hace el resto — brillo por encima del color para el
+ * destello, anillo que se expande para la onda. El efecto de puntos lo sigue
+ * pintando `animarPulsoMovil`. Con `efectoPulsar` `none` no se pone nada.
  */
 export const JS_TACTIL_MANDO = `
+function animarPulsoCss(b, celda) {
+  var fx = b.efectoPulsar || 'destello';
+  if (fx !== 'destello' && fx !== 'onda') return;
+  var clase = fx === 'onda' ? 'pulso-onda' : 'pulso-destello';
+  celda.classList.remove('pulso-destello', 'pulso-onda');
+  void celda.offsetWidth;
+  celda.classList.add(clase);
+  setTimeout(function () { celda.classList.remove(clase); }, fx === 'onda' ? 700 : 480);
+}
+
 function dispararPulsacionMando(b, celda, esLargo) {
   if ('vibrate' in navigator) {
     try { navigator.vibrate(30); } catch (e) {}
   }
+  animarPulsoCss(b, celda);
   animarPulsoMovil(b, celda, celda._rejillaCeldas || []);
   var ruta = '/api/press/' + encodeURIComponent(b.id) + (esLargo ? '?largo=1' : '');
   pedir(ruta).then(function (r) {

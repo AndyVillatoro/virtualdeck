@@ -156,7 +156,10 @@ function ButtonCellInner(props: ButtonCellProps) {
   });
   const { dragOver } = arrastre;
 
-  const estado = { toggled, dragOver, pressed, hovered, flash, isEmpty, bgPropio: vis.bgColor };
+  // `none` quita el barrido y el tinte, no solo la animación de los puntos.
+  const efectoPulsar = vis.efectoPulsar ?? 'destello';
+  const hayPulso = flash && efectoPulsar !== 'none';
+  const estado = { toggled, dragOver, pressed, hovered, flash: hayPulso, isEmpty, bgPropio: vis.bgColor };
   const bg = colorDeFondo(estado, VD);
   const borderColor = colorDeBorde(estado, VD, accent);
 
@@ -282,7 +285,9 @@ function ButtonCellInner(props: ButtonCellProps) {
           onEdit={onEdit}
         />
 
-        {flash && <DotRadialSweep accent={accent} />}
+        {hayPulso && (
+          <DotRadialSweep accent={accent} kind={efectoPulsar === 'onda' ? 'onda' : 'destello'} />
+        )}
         {props.isRunning && <span className="vd-running-ring" />}
       </div>
 
