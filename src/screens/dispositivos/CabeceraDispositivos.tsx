@@ -10,6 +10,7 @@ interface CabeceraDispositivosProps {
   onVolver: () => void;
   onToggleLista: () => void;
   onToggleInspector: () => void;
+  esBarra?: boolean;
 }
 
 export function CabeceraDispositivos({
@@ -19,6 +20,7 @@ export function CabeceraDispositivos({
   onVolver,
   onToggleLista,
   onToggleInspector,
+  esBarra = false,
 }: CabeceraDispositivosProps) {
   const VD = useTheme();
   const t = useT();
@@ -98,15 +100,17 @@ export function CabeceraDispositivos({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: VD.space.xs, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <button
-          type="button"
-          onClick={onToggleLista}
-          title={t('disp.panel.dispositivos')}
-          style={estiloBotonToggle(listaAbierta)}
-        >
-          <DotGlyphIcon glyph="USB_PLUG" size={10} color={listaAbierta ? VD.accent : VD.textDim} />
-          {anchoVentana > 520 && <span>{t('disp.panel.dispositivos')}</span>}
-        </button>
+        {!esBarra && (
+          <button
+            type="button"
+            onClick={onToggleLista}
+            title={t('disp.panel.dispositivos')}
+            style={estiloBotonToggle(listaAbierta)}
+          >
+            <DotGlyphIcon glyph="USB_PLUG" size={10} color={listaAbierta ? VD.accent : VD.textDim} />
+            {anchoVentana > 520 && <span>{t('disp.panel.dispositivos')}</span>}
+          </button>
+        )}
 
         <button
           type="button"

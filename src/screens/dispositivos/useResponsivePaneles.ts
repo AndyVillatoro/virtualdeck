@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import {
   PUNTO_CORTE_INSPECTOR,
   PUNTO_CORTE_LISTA,
@@ -7,18 +8,11 @@ import {
 } from './constantes';
 
 export function useResponsivePaneles() {
-  const [anchoVentana, setAnchoVentana] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth : 1024,
-  );
+  const { formato, ancho: anchoVentana, alto: altoVentana } = useFormatoPantalla();
+  const esBarra = formato === 'barra';
 
-  useEffect(() => {
-    const onResize = () => setAnchoVentana(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  const esPequenoLista = anchoVentana < PUNTO_CORTE_LISTA;
-  const esPequenoInspector = anchoVentana < PUNTO_CORTE_INSPECTOR;
+  const esPequenoLista = esBarra || anchoVentana < PUNTO_CORTE_LISTA;
+  const esPequenoInspector = esBarra || anchoVentana < PUNTO_CORTE_INSPECTOR;
 
   const [listaManual, setListaManual] = useState<boolean | null>(null);
   const [inspectorManual, setInspectorManual] = useState<boolean | null>(null);
@@ -44,7 +38,10 @@ export function useResponsivePaneles() {
   };
 
   return {
+    formato,
+    esBarra,
     anchoVentana,
+    altoVentana,
     esPequenoLista,
     esPequenoInspector,
     listaAbierta,

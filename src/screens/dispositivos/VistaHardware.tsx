@@ -7,6 +7,7 @@ import { BotonFisicoHardware } from './BotonFisicoHardware';
 import { PerillaRotativaHardware } from './PerillaRotativaHardware';
 import { TiraTactilHardware } from './TiraTactilHardware';
 import { huecosDeControl } from '../../utils/superficies/disposicion';
+import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import type { ButtonConfig } from '../../types';
 import type { ControlFisico, DisposicionSuperficie } from '../../types/superficies';
 
@@ -20,6 +21,7 @@ export interface VistaHardwareProps {
   imagenes?: (string | undefined)[];
   onSelectHueco: (hueco: number) => void;
   onEditarBoton: (id: string) => void;
+  esBarra?: boolean;
 }
 
 interface ControlElementoProps {
@@ -183,9 +185,12 @@ export function VistaHardware({
   imagenes,
   onSelectHueco,
   onEditarBoton,
+  esBarra: esBarraProp,
 }: VistaHardwareProps) {
   const VD = useTheme();
   const t = useT();
+  const { formato: formatoPantalla } = useFormatoPantalla();
+  const esBarra = esBarraProp ?? (formatoPantalla === 'barra');
 
   const contenedorRef = useRef<HTMLDivElement>(null);
   const chasisRef = useRef<HTMLDivElement>(null);
@@ -227,12 +232,19 @@ export function VistaHardware({
 
   let escala = 1;
   if (contenedorDims.ancho > 0 && contenedorDims.alto > 0) {
-    const pad = 12;
+    const pad = esBarra ? 8 : 12;
     const anchoDisp = Math.max(20, contenedorDims.ancho - pad);
     const altoDisp = Math.max(20, contenedorDims.alto - pad);
-    const escalaX = anchoDisp / anchoChasis;
-    const escalaY = altoDisp / altoBase;
-    escala = Math.min(1, Math.min(escalaX, escalaY));
+    if (esBarra) {
+      // En barra el dibujo del dock ocupa todo el alto útil a la izquierda, escalado por alto
+      const escalaY = altoDisp / altoBase;
+      const escalaX = anchoDisp / anchoChasis;
+      escala = Math.min(1, Math.min(escalaY, escalaX));
+    } else {
+      const escalaX = anchoDisp / anchoChasis;
+      const escalaY = altoDisp / altoBase;
+      escala = Math.min(1, Math.min(escalaX, escalaY));
+    }
   }
 
   const anchoEscalado = Math.round(anchoChasis * escala);
@@ -244,8 +256,8 @@ export function VistaHardware({
       style={{
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: VD.space.xs,
+        justifyContent: esBarra ? 'flex-start' : 'center',
+        padding: esBarra ? '2px 4px' : VD.space.xs,
         flex: 1,
         minHeight: 0,
         minWidth: 0,

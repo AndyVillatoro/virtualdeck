@@ -5,6 +5,7 @@ import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { SelectorApp } from '../../components/SelectorApp';
 import { normalizarApp } from '../../utils/apps';
+import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import type { PageConfig } from '../../types';
 import type { DisposicionSuperficie } from '../../types/superficies';
 
@@ -31,6 +32,7 @@ export interface PestanasSuperficieProps {
   onFijarApp: (id: string, app: string, iconoApp?: string) => void;
   /** Crear página preconfigurada desde plantilla (roadmap 75). */
   onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
+  esBarra?: boolean;
 }
 
 function InsigniaApp({ app }: { app: string }) {
@@ -248,6 +250,173 @@ function BarraPaginaSuperficie({
   );
 }
 
+function FichaPestana({
+  pagina,
+  activa,
+  editando,
+  esPredeterminada,
+  esBarra,
+  onElegir,
+  vd,
+  t,
+}: {
+  pagina: PageConfig;
+  activa: boolean;
+  editando: boolean;
+  esPredeterminada: boolean;
+  esBarra: boolean;
+  onElegir: (id: string) => void;
+  vd: ReturnType<typeof useTheme>;
+  t: (k: string, p?: Record<string, string | number>) => string;
+}) {
+  return (
+    <div
+      onClick={() => onElegir(pagina.id)}
+      title={activa ? `${pagina.name} · ${t('disp.paginaEnAparato')}` : pagina.name}
+      style={{
+        padding: esBarra ? '3px 8px' : '6px 12px',
+        fontFamily: vd.mono,
+        fontSize: esBarra ? 9 : 9.5,
+        letterSpacing: 1,
+        color: editando ? vd.text : vd.textDim,
+        borderBottom: editando ? `2px solid ${vd.accent}` : '2px solid transparent',
+        cursor: 'pointer',
+        userSelect: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: esBarra ? 4 : 6,
+        flexShrink: 0,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {pagina.iconoApp && (
+        <IconoPuntos bits={pagina.iconoApp} size={esBarra ? 12 : 14} color={editando ? vd.text : vd.textDim} />
+      )}
+      <span style={{ fontWeight: editando ? 600 : 400 }}>{pagina.name}</span>
+      {esPredeterminada && (
+        <span style={{ fontSize: 7, color: vd.textDim, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+          {t('disp.paginaPredeterminada')}
+        </span>
+      )}
+      {activa && <span style={{ width: 5, height: 5, borderRadius: '50%', background: vd.success, flexShrink: 0 }} />}
+      {pagina.targetApp && <InsigniaApp app={pagina.targetApp} />}
+    </div>
+  );
+}
+
+function BotonDesplegablePagina({
+  abierto,
+  onClick,
+  targetApp,
+  t,
+  vd,
+}: {
+  abierto: boolean;
+  onClick: () => void;
+  targetApp?: string;
+  t: (k: string) => string;
+  vd: ReturnType<typeof useTheme>;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={t('disp.desplegablePagina')}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        background: abierto ? `${vd.accent}22` : vd.elevated,
+        border: `1px solid ${abierto ? vd.accent : vd.border}`,
+        color: abierto ? vd.accent : vd.text,
+        padding: '2px 6px',
+        borderRadius: vd.radius.sm,
+        fontFamily: vd.mono,
+        fontSize: 8,
+        letterSpacing: 1,
+        cursor: 'pointer',
+        flexShrink: 0,
+        userSelect: 'none',
+        marginLeft: 4,
+        transition: 'all 0.15s ease',
+      }}
+    >
+      <DotGlyphIcon
+        glyph={abierto ? 'ARROW_UP' : 'ARROW_DOWN'}
+        size={8}
+        color={abierto ? vd.accent : vd.textDim}
+      />
+      <span>{t('disp.desplegablePagina')}</span>
+      {targetApp && <InsigniaApp app={targetApp} />}
+    </button>
+  );
+}
+
+function OverlayDesplegablePagina({
+  abierto,
+  onCerrar,
+  pagina,
+  esUltima,
+  onRenombrarPagina,
+  onBorrarPagina,
+  onFijarApp,
+  onCrearDesdePlantilla,
+  vd,
+}: {
+  abierto: boolean;
+  onCerrar: () => void;
+  pagina: PageConfig;
+  esUltima: boolean;
+  onRenombrarPagina: (id: string, nombre: string) => void;
+  onBorrarPagina: (id: string) => void;
+  onFijarApp: (id: string, app: string, iconoApp?: string) => void;
+  onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
+  vd: ReturnType<typeof useTheme>;
+}) {
+  if (!abierto) return null;
+  return (
+    <>
+      <div
+        onClick={onCerrar}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 24,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          marginTop: 4,
+          zIndex: 25,
+          boxShadow: vd.shadow.modal,
+          background: vd.surface,
+          border: `1px solid ${vd.borderStrong}`,
+          borderRadius: vd.radius.md,
+          padding: vd.space.xs,
+          maxWidth: 680,
+        }}
+      >
+        <BarraPaginaSuperficie
+          key={pagina.id}
+          pagina={pagina}
+          esUltima={esUltima}
+          onRenombrarPagina={onRenombrarPagina}
+          onBorrarPagina={onBorrarPagina}
+          onFijarApp={onFijarApp}
+          onCrearDesdePlantilla={onCrearDesdePlantilla}
+        />
+      </div>
+    </>
+  );
+}
+
 export function PestanasSuperficie({
   paginas,
   paginaActivaId,
@@ -261,12 +430,14 @@ export function PestanasSuperficie({
   onBorrarPagina,
   onFijarApp,
   onCrearDesdePlantilla,
+  esBarra: esBarraProp,
 }: PestanasSuperficieProps) {
   const VD = useTheme();
   const t = useT();
+  const { formato } = useFormatoPantalla();
+  const esBarra = esBarraProp ?? (formato === 'barra');
+  const [desplegableAbierto, setDesplegableAbierto] = useState(false);
 
-  // Sin páginas no hay pestañas: el aviso lo pone el padre. Sin distribución
-  // tampoco se puede añadir (no se sabrían los huecos).
   if (paginas.length === 0 || !disposicion) return null;
 
   const editada = paginas.find((p) => p.id === paginaEditadaId) ?? null;
@@ -276,11 +447,20 @@ export function PestanasSuperficie({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: VD.space.sm, minWidth: 0, width: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: VD.space.sm, minWidth: 0, width: '100%' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: esBarra ? 2 : VD.space.sm,
+        minWidth: 0,
+        width: '100%',
+        position: 'relative',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: esBarra ? 4 : VD.space.sm, minWidth: 0, width: '100%' }}>
         <span
           style={{
-            fontSize: 9,
+            fontSize: esBarra ? 8 : 9,
             color: VD.textMuted,
             letterSpacing: 1.5,
             fontFamily: VD.mono,
@@ -303,54 +483,25 @@ export function PestanasSuperficie({
             scrollbarWidth: 'none',
           }}
         >
-          {paginas.map((p) => {
-            const activa = p.id === paginaActivaId;
-            const editando = p.id === paginaEditadaId;
-            return (
-              <div
-                key={p.id}
-                onClick={() => onElegirPagina(p.id)}
-                title={activa ? `${p.name} · ${t('disp.paginaEnAparato')}` : p.name}
-                style={{
-                  padding: '6px 12px',
-                  fontFamily: VD.mono,
-                  fontSize: 9.5,
-                  letterSpacing: 1,
-                  color: editando ? VD.text : VD.textDim,
-                  borderBottom: editando ? `2px solid ${VD.accent}` : '2px solid transparent',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {p.iconoApp && (
-                  <IconoPuntos
-                    bits={p.iconoApp}
-                    size={14}
-                    color={editando ? VD.text : VD.textDim}
-                  />
-                )}
-                <span style={{ fontWeight: editando ? 600 : 400 }}>{p.name}</span>
-                {p.id === paginaPredeterminadaId && (
-                  <span style={{ fontSize: 7, color: VD.textDim, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-                    {t('disp.paginaPredeterminada')}
-                  </span>
-                )}
-                {activa && <span style={{ width: 6, height: 6, borderRadius: '50%', background: VD.success, flexShrink: 0 }} />}
-                {p.targetApp && <InsigniaApp app={p.targetApp} />}
-              </div>
-            );
-          })}
+          {paginas.map((p) => (
+            <FichaPestana
+              key={p.id}
+              pagina={p}
+              activa={p.id === paginaActivaId}
+              editando={p.id === paginaEditadaId}
+              esPredeterminada={p.id === paginaPredeterminadaId}
+              esBarra={esBarra}
+              onElegir={onElegirPagina}
+              vd={VD}
+              t={t}
+            />
+          ))}
           {puedeAgregar && (
             <div
               onClick={handleAgregar}
               title={t('disp.paginaNueva')}
               style={{
-                padding: '6px 8px',
+                padding: esBarra ? '3px 6px' : '6px 8px',
                 cursor: 'pointer',
                 userSelect: 'none',
                 display: 'flex',
@@ -358,22 +509,47 @@ export function PestanasSuperficie({
                 flexShrink: 0,
               }}
             >
-              <DotGlyphIcon glyph="ADD" size={10} color={VD.textMuted} />
+              <DotGlyphIcon glyph="ADD" size={esBarra ? 8 : 10} color={VD.textMuted} />
             </div>
+          )}
+          {esBarra && editada && (
+            <BotonDesplegablePagina
+              abierto={desplegableAbierto}
+              onClick={() => setDesplegableAbierto((abierto) => !abierto)}
+              targetApp={editada.targetApp}
+              t={t}
+              vd={VD}
+            />
           )}
         </div>
       </div>
 
-      {editada && (
-        <BarraPaginaSuperficie
-          key={editada.id}
-          pagina={editada}
-          esUltima={paginas.length <= 1}
-          onRenombrarPagina={onRenombrarPagina}
-          onBorrarPagina={onBorrarPagina}
-          onFijarApp={onFijarApp}
-          onCrearDesdePlantilla={onCrearDesdePlantilla}
-        />
+      {esBarra ? (
+        editada && (
+          <OverlayDesplegablePagina
+            abierto={desplegableAbierto}
+            onCerrar={() => setDesplegableAbierto(false)}
+            pagina={editada}
+            esUltima={paginas.length <= 1}
+            onRenombrarPagina={onRenombrarPagina}
+            onBorrarPagina={onBorrarPagina}
+            onFijarApp={onFijarApp}
+            onCrearDesdePlantilla={onCrearDesdePlantilla}
+            vd={VD}
+          />
+        )
+      ) : (
+        editada && (
+          <BarraPaginaSuperficie
+            key={editada.id}
+            pagina={editada}
+            esUltima={paginas.length <= 1}
+            onRenombrarPagina={onRenombrarPagina}
+            onBorrarPagina={onBorrarPagina}
+            onFijarApp={onFijarApp}
+            onCrearDesdePlantilla={onCrearDesdePlantilla}
+          />
+        )
       )}
     </div>
   );

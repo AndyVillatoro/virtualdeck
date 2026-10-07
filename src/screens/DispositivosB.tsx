@@ -73,7 +73,7 @@ export function DispositivosB({
     anchoVentana, esPequenoLista, esPequenoInspector,
     listaAbierta, inspectorAbierto, anchoLista, anchoInspector,
     toggleLista, toggleInspector, cerrarLista, cerrarInspector,
-    abrirInspectorSiPequeno,
+    abrirInspectorSiPequeno, esBarra,
   } = paneles;
 
   const dock = useDockHardwareState({
@@ -115,9 +115,14 @@ export function DispositivosB({
     setSelectedSerial(serial);
     setSelectedHueco(null);
     if (esPequenoLista) cerrarLista();
+    if (esBarra) cerrarInspector();
   };
 
-  const mostrarFondoOscuro = (esPequenoLista && listaAbierta) || (esPequenoInspector && inspectorAbierto);
+  const inspectorVisible = esBarra
+    ? (inspectorAbierto && selectedHueco !== null)
+    : inspectorAbierto;
+
+  const mostrarFondoOscuro = (!esBarra && esPequenoLista && listaAbierta) || (esPequenoInspector && inspectorVisible);
 
   return (
     <div
@@ -135,23 +140,26 @@ export function DispositivosB({
       <CabeceraDispositivos
         anchoVentana={anchoVentana}
         listaAbierta={listaAbierta}
-        inspectorAbierto={inspectorAbierto}
+        inspectorAbierto={inspectorVisible}
         onVolver={onVolver}
         onToggleLista={toggleLista}
         onToggleInspector={toggleInspector}
+        esBarra={esBarra}
       />
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative', minWidth: 0, minHeight: 0 }}>
-        <LateralLista
-          abierta={listaAbierta}
-          esPequeno={esPequenoLista}
-          dispositivos={todosDispositivos}
-          selectedSerial={dispositivoActivo?.serial ?? null}
-          ancho={anchoLista}
-          anchoVentana={anchoVentana}
-          onSelectSerial={handleSelectSerial}
-          onCerrar={cerrarLista}
-        />
+        {!esBarra && (
+          <LateralLista
+            abierta={listaAbierta}
+            esPequeno={esPequenoLista}
+            dispositivos={todosDispositivos}
+            selectedSerial={dispositivoActivo?.serial ?? null}
+            ancho={anchoLista}
+            anchoVentana={anchoVentana}
+            onSelectSerial={handleSelectSerial}
+            onCerrar={cerrarLista}
+          />
+        )}
 
         {mostrarFondoOscuro && (
           <div
@@ -176,17 +184,21 @@ export function DispositivosB({
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            overflowY: 'auto',
+            overflowY: esBarra ? 'hidden' : 'auto',
             overflowX: 'hidden',
-            padding: `${VD.space.sm}px ${VD.space.md}px`,
-            gap: VD.space.sm,
+            padding: esBarra ? '4px 8px' : `${VD.space.sm}px ${VD.space.md}px`,
+            gap: esBarra ? 4 : VD.space.sm,
             minWidth: 0,
             minHeight: 0,
+            position: 'relative',
           }}
         >
           <ContenidoDispositivos
             dispositivoActivo={dispositivoActivo}
             disposicionActiva={disposicionActiva}
+            todosDispositivos={todosDispositivos}
+            onSelectSerial={handleSelectSerial}
+            esBarra={esBarra}
             resumenControles={resumenControles}
             tieneLcds={lcds.length > 0}
             rotacionActual={rotacionActual}
@@ -220,7 +232,7 @@ export function DispositivosB({
         </main>
 
         <LateralInspector
-          abierta={inspectorAbierto}
+          abierta={inspectorVisible}
           esPequeno={esPequenoInspector}
           controlMeta={controlSeleccionado}
           boton={botonSeleccionado}

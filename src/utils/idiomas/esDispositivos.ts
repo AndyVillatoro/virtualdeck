@@ -61,6 +61,7 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.vincularApp': 'Vincular aplicación',
   'disp.panel.dispositivos': 'Dispositivos',
   'disp.panel.inspector': 'Inspector',
+  'disp.desplegablePagina': 'PÁGINA',
   'disp.cerrar': 'Cerrar',
 
   // Gestos de controles de dock (roadmap 66)
