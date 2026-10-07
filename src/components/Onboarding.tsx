@@ -31,7 +31,7 @@ interface OnboardingProps {
  * El respaldo cierra porque importar una configuración existente solo tiene
  * sentido antes de empezar a montar botones encima.
  */
-const STEP_COUNT = 7;
+const STEP_COUNT = 9;
 
 export function Onboarding({
   accent, language, theme,
@@ -58,7 +58,7 @@ export function Onboarding({
   const CONTROLES: Record<number, React.ReactNode> = {
     1: <PasoIdioma valor={language} accent={accent} onChange={onLanguageChange} />,
     2: <PasoApariencia tema={theme} accent={accent} onTema={onThemeChange} onAccent={onAccentChange} />,
-    7: <PasoRespaldo accent={accent} onExport={onExport} onImport={onImport} />,
+    9: <PasoRespaldo accent={accent} onExport={onExport} onImport={onImport} />,
   };
 
   const next = () => (isLast ? onClose() : setStep((i) => i + 1));
