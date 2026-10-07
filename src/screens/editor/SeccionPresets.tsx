@@ -1,11 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../components/dot480/IconoPuntos';
+import { resolverIconoCatalogo } from '../../data/iconosDot';
 import { Segmentado } from '../../components/ui/Chip';
 import { ACTION_TYPES, PRESET_CATEGORIES, type ButtonPreset } from './actionData';
 import type { PresetDock } from '../../data/presetsDock';
 import { obtenerHuecoDePreset } from './useDockPresets';
+
+/**
+ * Pinta el icono del catálogo si hay `origen`, con el glifo de respaldo
+ * mientras carga (o si el origen no existe). El catálogo se carga bajo
+ * demanda una sola vez (`resolverIconoCatalogo` lo comparte).
+ */
+function IconoPreset({ origen, respaldo, tamano, color }: { origen?: string; respaldo: string; tamano: number; color: string }) {
+  const [bits, setBits] = useState<string | null>(null);
+  useEffect(() => {
+    if (!origen) { setBits(null); return; }
+    let vivo = true;
+    resolverIconoCatalogo(origen).then((r) => { if (vivo) setBits(r ? r.bits : null); }).catch(() => undefined);
+    return () => { vivo = false; };
+  }, [origen]);
+  if (origen && bits) return <IconoPuntos bits={bits} size={tamano} color={color} showRecessed />;
+  return <DotGlyphIcon glyph={respaldo} size={tamano} color={color} showRecessed />;
+}
 
 interface SeccionPresetsProps {
   accent: string;
@@ -89,6 +108,7 @@ export function SeccionPresets({
         {matchingDockPresets.map((dp) => {
           const hueco = obtenerHuecoDePreset(dp, dockGesto);
           const glifo = resolveDotGlyph(dp.icon) || 'DOTS';
+          const origenCatalogo = hueco.iconoCatalogo ?? dp.iconoCatalogo;
           const fg = hueco.fgColor || VD.text;
           const bg = hueco.bgColor || VD.elevated;
           return (
@@ -114,7 +134,7 @@ export function SeccionPresets({
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
             >
-              <DotGlyphIcon glyph={glifo} size={16} color={fg} showRecessed />
+              <IconoPreset origen={origenCatalogo} respaldo={glifo} tamano={16} color={fg} />
               <div
                 style={{
                   fontFamily: VD.mono,
@@ -183,7 +203,7 @@ export function SeccionPresets({
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
             >
-              <DotGlyphIcon glyph={dotGlyph} size={16} color={fg} showRecessed />
+              <IconoPreset origen={preset.iconoCatalogo} respaldo={dotGlyph} tamano={16} color={fg} />
               <div
                 style={{
                   fontFamily: VD.mono,

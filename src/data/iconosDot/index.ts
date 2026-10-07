@@ -62,3 +62,32 @@ const CARGADORES: Record<NombreCatalogo, () => Promise<CatalogoDot>> = {
 export function cargarCatalogo(nombre: NombreCatalogo): Promise<CatalogoDot> {
   return CARGADORES[nombre]();
 }
+
+const promesasCatalogo = new Map<NombreCatalogo, Promise<CatalogoDot>>();
+
+/** El catálogo pedido una sola vez y compartido (las fichas de presets lo piden a la vez). */
+function catalogoCompartido(nombre: NombreCatalogo): Promise<CatalogoDot> {
+  let pendiente = promesasCatalogo.get(nombre);
+  if (!pendiente) {
+    pendiente = cargarCatalogo(nombre);
+    promesasCatalogo.set(nombre, pendiente);
+  }
+  return pendiente;
+}
+
+/**
+ * Resuelve un `iconoCatalogo` (`'marcas:<id>'` o `'acciones:<id>'`, el mismo
+ * formato que `iconoPuntos.origen`) a sus bits, cargando el catálogo bajo
+ * demanda. `null` si el origen no existe. Sin `import` estático de los JSON.
+ */
+export function resolverIconoCatalogo(origen: string): Promise<{ bits: string; origen: string } | null> {
+  const corte = origen.indexOf(':');
+  if (corte < 0) return Promise.resolve(null);
+  const catalogo = origen.slice(0, corte);
+  const id = origen.slice(corte + 1);
+  if ((catalogo !== 'marcas' && catalogo !== 'acciones') || !id) return Promise.resolve(null);
+  return catalogoCompartido(catalogo as NombreCatalogo).then((datos) => {
+    const hallado = datos.iconos.find(([iconId]) => iconId === id);
+    return hallado ? { bits: hallado[1], origen } : null;
+  });
+}
