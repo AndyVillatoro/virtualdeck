@@ -159,4 +159,16 @@ export const ES_ACCIONES: Dict = {
   'act.err.spotifyNoUri': 'Debes indicar una URI o enlace de Spotify a reproducir.',
   'act.err.spotifyNoDevice': 'Debes indicar el ID del dispositivo de Spotify.',
   'act.err.spotify': 'No se pudo reproducir en Spotify.',
+  // — Familias de acciones y selector —
+  'fam.todas': 'TODAS',
+  'fam.apps': 'APPS',
+  'fam.audio': 'AUDIO',
+  'fam.musica': 'MÚSICA',
+  'fam.teclado': 'TECLADO',
+  'fam.logica': 'LÓGICA',
+  'fam.sistema': 'SISTEMA',
+  'fam.rgb': 'RGB',
+  'fam.integraciones': 'INTEGRACIONES',
+  'act.search.placeholder': 'Buscar acción...',
+  'act.search.empty': 'SIN RESULTADOS',
 };

@@ -159,4 +159,16 @@ export const EN_ACCIONES: Dict = {
   'act.err.spotifyNoUri': 'You must provide a Spotify URI or link to play.',
   'act.err.spotifyNoDevice': 'You must specify a Spotify device ID.',
   'act.err.spotify': 'Could not play on Spotify.',
+  // — Action families and picker —
+  'fam.todas': 'ALL',
+  'fam.apps': 'APPS',
+  'fam.audio': 'AUDIO',
+  'fam.musica': 'MUSIC',
+  'fam.teclado': 'KEYBOARD',
+  'fam.logica': 'LOGIC',
+  'fam.sistema': 'SYSTEM',
+  'fam.rgb': 'RGB',
+  'fam.integraciones': 'INTEGRATIONS',
+  'act.search.placeholder': 'Search action...',
+  'act.search.empty': 'NO RESULTS',
 };

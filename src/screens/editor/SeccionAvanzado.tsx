@@ -5,8 +5,10 @@ import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { EditorSubdivision2x2 } from './EditorSubdivision2x2';
 import { ExtraActionRow } from './comunes';
-import { ACTION_TYPES } from './actionData';
-import type { ButtonAction, SubButtonConfig } from '../../types';
+import { SelectorTipoAccion } from './SelectorTipoAccion';
+import type { ActionType, ButtonAction, SubButtonConfig } from '../../types';
+
+const EXCLUIR_EXTRA: ActionType[] = ['none', 'folder'];
 
 interface SeccionAvanzadoProps {
   parentId: string;
@@ -141,48 +143,35 @@ export function SeccionAvanzado({
         )}
 
         {showExtraPicker && (
-          <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
-            {ACTION_TYPES.filter((at) => at.type !== 'none' && at.type !== 'folder').map((at) => {
-              return (
-                <div
-                  key={at.type}
-                  onClick={() => {
-                    setExtraActions((prev) => [...prev, { type: at.type }]);
-                    setShowExtraPicker(false);
-                  }}
-                  style={{
-                    background: VD.elevated,
-                    border: `1px solid ${VD.border}`,
-                    borderRadius: VD.radius.md,
-                    padding: '5px 8px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
-                >
-                  <DotGlyphIcon glyph={at.glyph} size={12} color={VD.textMuted} showRecessed />
-                  <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim }}>{t(at.label)}</span>
-                </div>
-              );
-            })}
-            <div
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <SelectorTipoAccion
+              excluir={EXCLUIR_EXTRA}
+              compacto
+              accent={accent}
+              onElegir={(type) => {
+                setExtraActions((prev) => [...prev, { type }]);
+                setShowExtraPicker(false);
+              }}
+            />
+            <button
+              type="button"
               onClick={() => setShowExtraPicker(false)}
               style={{
+                alignSelf: 'flex-start',
                 background: VD.elevated,
                 border: `1px solid ${VD.border}`,
-                borderRadius: VD.radius.md,
-                padding: '5px 8px',
+                borderRadius: VD.radius.sm,
+                padding: '4px 8px',
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                fontFamily: VD.mono,
+                fontSize: 9,
+                color: VD.danger,
+                boxSizing: 'border-box',
+                outline: 'none',
               }}
             >
-              <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.danger }}>{t('ed.cancelCapture')}</span>
-            </div>
+              {t('ed.cancelCapture')}
+            </button>
           </div>
         )}
       </div>

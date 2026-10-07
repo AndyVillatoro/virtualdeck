@@ -106,6 +106,17 @@ for (const tipo of declarados) {
   }
 }
 
+// Y en una **familia**: el selector agrupa los tipos en fichas (Apps, Audio,
+// Música...). Un tipo sin familia solo se encuentra en «TODAS» o buscando, y
+// con 43 tipos eso es perderlo. `none` es la excepción: sale en todas.
+const inicioTipos = fuenteSelector.indexOf('export const ACTION_TYPES');
+const bloqueTipos = fuenteSelector.slice(inicioTipos, fuenteSelector.indexOf('\n];', inicioTipos));
+for (const m of bloqueTipos.matchAll(/\{ type: '([a-z-]+)',[^\n]*\}/g)) {
+  if (m[1] !== 'none' && !/familia: '[a-z]+'/.test(m[0])) {
+    problemas.push(`'${m[1]}' no tiene familia en ACTION_TYPES — en el selector solo saldría en «TODAS»`);
+  }
+}
+
 // Los presets RGB que ofrece el editor tienen que existir en el proceso
 // principal. `applySmartPreset` devuelve false para un id desconocido: el
 // boton no hace **nada** y no hay error en ninguna parte.

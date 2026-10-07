@@ -19,54 +19,75 @@ export interface ButtonPreset {
   actionToggleOff?: ButtonAction;
 }
 
+export const FAMILIAS_ACCION = [
+  'apps',
+  'audio',
+  'musica',
+  'teclado',
+  'logica',
+  'sistema',
+  'rgb',
+  'integraciones',
+] as const;
+
+export type FamiliaAccion = (typeof FAMILIAS_ACCION)[number];
+
+export interface ActionTypeInfo {
+  type: ActionType;
+  label: string;
+  glyph: string;
+  desc: string;
+  familia?: FamiliaAccion;
+}
+
 // label/desc son CLAVES i18n (ver `act.*` en src/utils/i18n.tsx). Se resuelven
 // con t() en el render. El dict es la fuente única ES/EN; acá no hay texto.
 // `glyph` es el nombre DOT 8×8 que se enseña en el selector y como icono del
 // tipo cuando el botón no trae icono propio (misma fuente que la celda).
-export const ACTION_TYPES: { type: ActionType; label: string; glyph: string; desc: string }[] = [
+export const ACTION_TYPES: ActionTypeInfo[] = [
   { type: 'none',             label: 'act.none.label',             glyph: GLIFO_POR_TIPO_ACCION.none,             desc: 'act.none.desc' },
-  { type: 'app',              label: 'act.app.label',              glyph: GLIFO_POR_TIPO_ACCION.app,              desc: 'act.app.desc' },
-  { type: 'web',              label: 'act.web.label',              glyph: GLIFO_POR_TIPO_ACCION.web,              desc: 'act.web.desc' },
-  { type: 'shortcut',         label: 'act.shortcut.label',         glyph: GLIFO_POR_TIPO_ACCION.shortcut,         desc: 'act.shortcut.desc' },
-  { type: 'script',           label: 'act.script.label',           glyph: GLIFO_POR_TIPO_ACCION.script,           desc: 'act.script.desc' },
-  { type: 'audio-device',     label: 'act.audio-device.label',     glyph: GLIFO_POR_TIPO_ACCION['audio-device'],  desc: 'act.audio-device.desc' },
-  { type: 'hotkey',           label: 'act.hotkey.label',           glyph: GLIFO_POR_TIPO_ACCION.hotkey,           desc: 'act.hotkey.desc' },
-  { type: 'clipboard',        label: 'act.clipboard.label',        glyph: GLIFO_POR_TIPO_ACCION.clipboard,        desc: 'act.clipboard.desc' },
-  { type: 'type-text',        label: 'act.type-text.label',        glyph: GLIFO_POR_TIPO_ACCION['type-text'],     desc: 'act.type-text.desc' },
-  { type: 'kill-process',     label: 'act.kill-process.label',     glyph: GLIFO_POR_TIPO_ACCION['kill-process'],  desc: 'act.kill-process.desc' },
-  { type: 'volume-set',       label: 'act.volume-set.label',       glyph: GLIFO_POR_TIPO_ACCION['volume-set'],    desc: 'act.volume-set.desc' },
-  { type: 'app-volume',       label: 'act.app-volume.label',       glyph: GLIFO_POR_TIPO_ACCION['app-volume'],    desc: 'act.app-volume.desc' },
-  { type: 'folder',           label: 'act.folder.label',           glyph: GLIFO_POR_TIPO_ACCION.folder,           desc: 'act.folder.desc' },
-  { type: 'page-nav',         label: 'act.page-nav.label',         glyph: GLIFO_POR_TIPO_ACCION['page-nav'],      desc: 'act.page-nav.desc' },
-  { type: 'media-play-pause', label: 'act.media-play-pause.label', glyph: GLIFO_POR_TIPO_ACCION['media-play-pause'], desc: 'act.media-play-pause.desc' },
-  { type: 'media-next',       label: 'act.media-next.label',       glyph: GLIFO_POR_TIPO_ACCION['media-next'],    desc: 'act.media-next.desc' },
-  { type: 'media-prev',       label: 'act.media-prev.label',       glyph: GLIFO_POR_TIPO_ACCION['media-prev'],    desc: 'act.media-prev.desc' },
-  { type: 'volume-up',        label: 'act.volume-up.label',        glyph: GLIFO_POR_TIPO_ACCION['volume-up'],     desc: 'act.volume-up.desc' },
-  { type: 'volume-down',      label: 'act.volume-down.label',      glyph: GLIFO_POR_TIPO_ACCION['volume-down'],   desc: 'act.volume-down.desc' },
-  { type: 'mute',             label: 'act.mute.label',             glyph: GLIFO_POR_TIPO_ACCION.mute,             desc: 'act.mute.desc' },
-  { type: 'brightness',       label: 'act.brightness.label',       glyph: GLIFO_POR_TIPO_ACCION.brightness,       desc: 'act.brightness.desc' },
-  { type: 'adjust',           label: 'act.adjust.label',           glyph: GLIFO_POR_TIPO_ACCION.adjust,           desc: 'act.adjust.desc' },
-  { type: 'notify',           label: 'act.notify.label',           glyph: GLIFO_POR_TIPO_ACCION.notify,           desc: 'act.notify.desc' },
-  { type: 'set-var',          label: 'act.set-var.label',          glyph: GLIFO_POR_TIPO_ACCION['set-var'],       desc: 'act.set-var.desc' },
-  { type: 'incr-var',         label: 'act.incr-var.label',         glyph: GLIFO_POR_TIPO_ACCION['incr-var'],      desc: 'act.incr-var.desc' },
-  { type: 'webhook',          label: 'act.webhook.label',          glyph: GLIFO_POR_TIPO_ACCION.webhook,          desc: 'act.webhook.desc' },
-  { type: 'tts',              label: 'act.tts.label',              glyph: GLIFO_POR_TIPO_ACCION.tts,              desc: 'act.tts.desc' },
-  { type: 'region-capture',   label: 'act.region-capture.label',   glyph: GLIFO_POR_TIPO_ACCION['region-capture'], desc: 'act.region-capture.desc' },
-  { type: 'rgb-color',        label: 'act.rgb-color.label',        glyph: GLIFO_POR_TIPO_ACCION['rgb-color'],     desc: 'act.rgb-color.desc' },
-  { type: 'rgb-mode',         label: 'act.rgb-mode.label',         glyph: GLIFO_POR_TIPO_ACCION['rgb-mode'],      desc: 'act.rgb-mode.desc' },
-  { type: 'rgb-profile',      label: 'act.rgb-profile.label',      glyph: GLIFO_POR_TIPO_ACCION['rgb-profile'],   desc: 'act.rgb-profile.desc' },
-  { type: 'rgb-preset',       label: 'act.rgb-preset.label',       glyph: GLIFO_POR_TIPO_ACCION['rgb-preset'],    desc: 'act.rgb-preset.desc' },
-  { type: 'remote',           label: 'act.remote.label',           glyph: GLIFO_POR_TIPO_ACCION.remote,           desc: 'act.remote.desc' },
-  { type: 'window-snap',      label: 'act.window-snap.label',      glyph: GLIFO_POR_TIPO_ACCION['window-snap'],   desc: 'act.window-snap.desc' },
-  { type: 'window-cycle',     label: 'act.window-cycle.label',     glyph: GLIFO_POR_TIPO_ACCION['window-cycle'],  desc: 'act.window-cycle.desc' },
-  { type: 'branch',           label: 'act.branch.label',           glyph: GLIFO_POR_TIPO_ACCION.branch,           desc: 'act.branch.desc' },
-  { type: 'countdown',        label: 'act.countdown.label',        glyph: GLIFO_POR_TIPO_ACCION.countdown,        desc: 'act.countdown.desc' },
-  { type: 'media-shuffle',    label: 'act.media-shuffle.label',    glyph: GLIFO_POR_TIPO_ACCION['media-shuffle'], desc: 'act.media-shuffle.desc' },
-  { type: 'media-repeat',     label: 'act.media-repeat.label',     glyph: GLIFO_POR_TIPO_ACCION['media-repeat'],  desc: 'act.media-repeat.desc' },
-  { type: 'macro',            label: 'act.macro.label',            glyph: GLIFO_POR_TIPO_ACCION.macro,            desc: 'act.macro.desc' },
-  { type: 'mobile-remote',     label: 'act.mobile-remote.label',    glyph: GLIFO_POR_TIPO_ACCION['mobile-remote'], desc: 'act.mobile-remote.desc' },
-  { type: 'discord',           label: 'act.discord.label',          glyph: GLIFO_POR_TIPO_ACCION.discord,          desc: 'act.discord.desc' },
-  { type: 'spotify',           label: 'act.spotify.label',          glyph: GLIFO_POR_TIPO_ACCION.spotify,          desc: 'act.spotify.desc' },
+  { type: 'app',              label: 'act.app.label',              glyph: GLIFO_POR_TIPO_ACCION.app,              desc: 'act.app.desc',             familia: 'apps' },
+  { type: 'web',              label: 'act.web.label',              glyph: GLIFO_POR_TIPO_ACCION.web,              desc: 'act.web.desc',             familia: 'apps' },
+  { type: 'shortcut',         label: 'act.shortcut.label',         glyph: GLIFO_POR_TIPO_ACCION.shortcut,         desc: 'act.shortcut.desc',         familia: 'apps' },
+  { type: 'script',           label: 'act.script.label',           glyph: GLIFO_POR_TIPO_ACCION.script,           desc: 'act.script.desc',           familia: 'sistema' },
+  { type: 'audio-device',     label: 'act.audio-device.label',     glyph: GLIFO_POR_TIPO_ACCION['audio-device'],  desc: 'act.audio-device.desc',     familia: 'audio' },
+  { type: 'hotkey',           label: 'act.hotkey.label',           glyph: GLIFO_POR_TIPO_ACCION.hotkey,           desc: 'act.hotkey.desc',           familia: 'teclado' },
+  { type: 'clipboard',        label: 'act.clipboard.label',        glyph: GLIFO_POR_TIPO_ACCION.clipboard,        desc: 'act.clipboard.desc',        familia: 'teclado' },
+  { type: 'type-text',        label: 'act.type-text.label',        glyph: GLIFO_POR_TIPO_ACCION['type-text'],     desc: 'act.type-text.desc',        familia: 'teclado' },
+  { type: 'kill-process',     label: 'act.kill-process.label',     glyph: GLIFO_POR_TIPO_ACCION['kill-process'],  desc: 'act.kill-process.desc',     familia: 'apps' },
+  { type: 'volume-set',       label: 'act.volume-set.label',       glyph: GLIFO_POR_TIPO_ACCION['volume-set'],    desc: 'act.volume-set.desc',       familia: 'audio' },
+  { type: 'app-volume',       label: 'act.app-volume.label',       glyph: GLIFO_POR_TIPO_ACCION['app-volume'],    desc: 'act.app-volume.desc',       familia: 'audio' },
+  { type: 'folder',           label: 'act.folder.label',           glyph: GLIFO_POR_TIPO_ACCION.folder,           desc: 'act.folder.desc',           familia: 'logica' },
+  { type: 'page-nav',         label: 'act.page-nav.label',         glyph: GLIFO_POR_TIPO_ACCION['page-nav'],      desc: 'act.page-nav.desc',         familia: 'logica' },
+  { type: 'media-play-pause', label: 'act.media-play-pause.label', glyph: GLIFO_POR_TIPO_ACCION['media-play-pause'], desc: 'act.media-play-pause.desc', familia: 'musica' },
+  { type: 'media-next',       label: 'act.media-next.label',       glyph: GLIFO_POR_TIPO_ACCION['media-next'],    desc: 'act.media-next.desc',       familia: 'musica' },
+  { type: 'media-prev',       label: 'act.media-prev.label',       glyph: GLIFO_POR_TIPO_ACCION['media-prev'],    desc: 'act.media-prev.desc',       familia: 'musica' },
+  { type: 'volume-up',        label: 'act.volume-up.label',        glyph: GLIFO_POR_TIPO_ACCION['volume-up'],     desc: 'act.volume-up.desc',        familia: 'audio' },
+  { type: 'volume-down',      label: 'act.volume-down.label',      glyph: GLIFO_POR_TIPO_ACCION['volume-down'],   desc: 'act.volume-down.desc',      familia: 'audio' },
+  { type: 'mute',             label: 'act.mute.label',             glyph: GLIFO_POR_TIPO_ACCION.mute,             desc: 'act.mute.desc',             familia: 'audio' },
+  { type: 'brightness',       label: 'act.brightness.label',       glyph: GLIFO_POR_TIPO_ACCION.brightness,       desc: 'act.brightness.desc',       familia: 'audio' },
+  { type: 'adjust',           label: 'act.adjust.label',           glyph: GLIFO_POR_TIPO_ACCION.adjust,           desc: 'act.adjust.desc',           familia: 'audio' },
+  { type: 'notify',           label: 'act.notify.label',           glyph: GLIFO_POR_TIPO_ACCION.notify,           desc: 'act.notify.desc',           familia: 'sistema' },
+  { type: 'set-var',          label: 'act.set-var.label',          glyph: GLIFO_POR_TIPO_ACCION['set-var'],       desc: 'act.set-var.desc',          familia: 'logica' },
+  { type: 'incr-var',         label: 'act.incr-var.label',         glyph: GLIFO_POR_TIPO_ACCION['incr-var'],      desc: 'act.incr-var.desc',         familia: 'logica' },
+  { type: 'webhook',          label: 'act.webhook.label',          glyph: GLIFO_POR_TIPO_ACCION.webhook,          desc: 'act.webhook.desc',          familia: 'sistema' },
+  { type: 'tts',              label: 'act.tts.label',              glyph: GLIFO_POR_TIPO_ACCION.tts,              desc: 'act.tts.desc',              familia: 'sistema' },
+  { type: 'region-capture',   label: 'act.region-capture.label',   glyph: GLIFO_POR_TIPO_ACCION['region-capture'], desc: 'act.region-capture.desc',  familia: 'apps' },
+  { type: 'rgb-color',        label: 'act.rgb-color.label',        glyph: GLIFO_POR_TIPO_ACCION['rgb-color'],     desc: 'act.rgb-color.desc',        familia: 'rgb' },
+  { type: 'rgb-mode',         label: 'act.rgb-mode.label',         glyph: GLIFO_POR_TIPO_ACCION['rgb-mode'],      desc: 'act.rgb-mode.desc',         familia: 'rgb' },
+  { type: 'rgb-profile',      label: 'act.rgb-profile.label',      glyph: GLIFO_POR_TIPO_ACCION['rgb-profile'],   desc: 'act.rgb-profile.desc',      familia: 'rgb' },
+  { type: 'rgb-preset',       label: 'act.rgb-preset.label',       glyph: GLIFO_POR_TIPO_ACCION['rgb-preset'],    desc: 'act.rgb-preset.desc',       familia: 'rgb' },
+  { type: 'remote',           label: 'act.remote.label',           glyph: GLIFO_POR_TIPO_ACCION.remote,           desc: 'act.remote.desc',           familia: 'sistema' },
+  { type: 'window-snap',      label: 'act.window-snap.label',      glyph: GLIFO_POR_TIPO_ACCION['window-snap'],   desc: 'act.window-snap.desc',      familia: 'apps' },
+  { type: 'window-cycle',     label: 'act.window-cycle.label',     glyph: GLIFO_POR_TIPO_ACCION['window-cycle'],  desc: 'act.window-cycle.desc',     familia: 'apps' },
+  { type: 'branch',           label: 'act.branch.label',           glyph: GLIFO_POR_TIPO_ACCION.branch,           desc: 'act.branch.desc',           familia: 'logica' },
+  { type: 'countdown',        label: 'act.countdown.label',        glyph: GLIFO_POR_TIPO_ACCION.countdown,        desc: 'act.countdown.desc',        familia: 'logica' },
+  { type: 'media-shuffle',    label: 'act.media-shuffle.label',    glyph: GLIFO_POR_TIPO_ACCION['media-shuffle'], desc: 'act.media-shuffle.desc',    familia: 'musica' },
+  { type: 'media-repeat',     label: 'act.media-repeat.label',     glyph: GLIFO_POR_TIPO_ACCION['media-repeat'],  desc: 'act.media-repeat.desc',     familia: 'musica' },
+  { type: 'macro',            label: 'act.macro.label',            glyph: GLIFO_POR_TIPO_ACCION.macro,            desc: 'act.macro.desc',            familia: 'teclado' },
+  { type: 'mobile-remote',     label: 'act.mobile-remote.label',    glyph: GLIFO_POR_TIPO_ACCION['mobile-remote'], desc: 'act.mobile-remote.desc',   familia: 'sistema' },
+  { type: 'discord',           label: 'act.discord.label',          glyph: GLIFO_POR_TIPO_ACCION.discord,          desc: 'act.discord.desc',          familia: 'integraciones' },
+  { type: 'spotify',           label: 'act.spotify.label',          glyph: GLIFO_POR_TIPO_ACCION.spotify,          desc: 'act.spotify.desc',          familia: 'integraciones' },
 ];
 
 
