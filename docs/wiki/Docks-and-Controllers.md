@@ -40,6 +40,22 @@ In the **Devices** inspector there are ready-made presets per control
 (multimedia, volume, zoom, tabs, virtual desktops…), each with a plain-words
 explanation like "TURN LEFT · UNDO · CTRL + Z".
 
+## Full profiles
+
+In the **Devices** inspector, when no control is selected, there are three
+profiles that fill **all** of the page's controls at once:
+
+- **Multimedia**: volume, playback and brightness on the knobs; mute, play,
+  next, previous and active-app mute on the keys.
+- **Streaming**: Discord mute and deafen, Discord and active-app volume,
+  system mute, snip and multitask.
+- **Productivity**: tabs, undo/redo and virtual desktops on the knobs;
+  clipboard, windows, multitask and desktop on the keys.
+
+They are applied with a confirmation and **replace that page's buttons**;
+the N3's 18 slots are set in a single undo. They only fit a model with
+6 keys, 3 buttons and 3 knobs.
+
 ## Brightness
 
 Key brightness changes live without saving; it lands in the device settings

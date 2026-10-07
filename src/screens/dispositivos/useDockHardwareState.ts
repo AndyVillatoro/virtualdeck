@@ -12,6 +12,7 @@ import {
 } from './logicaDispositivos';
 import type { DeckConfig, ModoPerilla } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
+import { huecosDePerfil, type PerfilDock } from '../../data/perfilesDock';
 import type { DisposicionSuperficie, InfoSuperficie } from '../../types/superficies';
 
 interface UseDockHardwareStateProps {
@@ -154,9 +155,25 @@ export function useDockHardwareState({
     }
   };
 
-  const handleAplicarPreset = (huecos: PresetHueco[]) => {
+  // Un perfil (roadmap 62) rellena la página entera: sus botones propios, en
+  // el orden de hueco (el de `config.buttons` de esa página). Un solo paso.
+  const aplicarPerfilPagina = (perfil: PerfilDock) => {
+    if (!disposicionActiva || indicePagina < 0) return;
+    const huecos = huecosDePerfil(perfil, disposicionActiva);
+    if (!huecos) return;
+    const ids = config.buttons.filter((b) => b.page === indicePagina).map((b) => b.id);
+    if (ids.length !== huecos.length) return;
+    onRellenarHuecos(ids, huecos, t(perfil.nombre));
+  };
+
+  // Sin control elegido, el inspector ofrece perfiles (vista de la página).
+  const handleAplicarPreset = (entrada: PresetHueco[] | PerfilDock) => {
+    if (!Array.isArray(entrada)) {
+      aplicarPerfilPagina(entrada);
+      return;
+    }
     const ids = idsDelControl(disposicionActiva, controlSeleccionado, botonesPagina);
-    if (ids.length === huecos.length) onRellenarHuecos(ids, huecos, huecos.map((h) => h.label).join(' / '));
+    if (ids.length === entrada.length) onRellenarHuecos(ids, entrada, entrada.map((h) => h.label).join(' / '));
   };
 
   // Los tres botones de la perilla elegida (T-HW-19): los modos viven en el

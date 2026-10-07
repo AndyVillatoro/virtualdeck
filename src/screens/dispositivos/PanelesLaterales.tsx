@@ -4,6 +4,7 @@ import { ListaDispositivosHardware, type DispositivoItem } from './ListaDisposit
 import { PanelInspectorControl, type HermanoPerilla } from './PanelInspectorControl';
 import type { ButtonConfig, ModoPerilla } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
+import type { PerfilDock } from '../../data/perfilesDock';
 import type { ControlSuperficie } from '../../types/superficies';
 
 interface LateralListaProps {
@@ -77,7 +78,8 @@ interface LateralInspectorProps {
   ancho: number;
   anchoVentana: number;
   onEditar: () => void;
-  onAplicarPreset?: (huecos: PresetHueco[]) => void;
+  /** Un control elegido: sus huecos. Sin control: un perfil de página (roadmap 62). */
+  onAplicarPreset?: (entrada: PresetHueco[] | PerfilDock) => void;
   onCerrar: () => void;
   hermanosPerilla?: HermanoPerilla[];
   onSelectHueco?: (hueco: number) => void;

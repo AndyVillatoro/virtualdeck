@@ -7,7 +7,9 @@ import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
 import type { ButtonConfig, ModoPerilla } from '../../types';
 import type { ControlSuperficie } from '../../types/superficies';
 import type { PresetHueco } from '../../data/presetsDock';
+import type { PerfilDock } from '../../data/perfilesDock';
 import { SelectorPresetsControl } from './SelectorPresetsControl';
+import { PanelPerfilesPagina } from './PanelPerfilesPagina';
 import { ModosPerilla } from './ModosPerilla';
 import { describirAccion, describirPulsar } from './describirAccion';
 
@@ -26,7 +28,8 @@ export interface PanelInspectorControlProps {
   boton?: ButtonConfig;
   disabled?: boolean;
   onEditar: () => void;
-  onAplicarPreset?: (huecos: PresetHueco[]) => void;
+  /** Con un control elegido, sus huecos (preset de control). Sin control, un perfil de página (roadmap 62). */
+  onAplicarPreset?: (entrada: PresetHueco[] | PerfilDock) => void;
   ancho?: number;
   onCerrar?: () => void;
   hermanosPerilla?: HermanoPerilla[];
@@ -391,6 +394,9 @@ export function PanelInspectorControl({
   const w = ancho ?? 290;
 
   if (!controlMeta) {
+    if (onAplicarPreset) {
+      return <PanelPerfilesPagina ancho={w} disabled={disabled} onAplicar={onAplicarPreset} onCerrar={onCerrar} />;
+    }
     return <PanelVacio vd={VD} texto={t('disp.inspector.ayuda')} ancho={w} onCerrar={onCerrar} t={t} />;
   }
 

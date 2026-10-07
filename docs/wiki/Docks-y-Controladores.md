@@ -41,6 +41,22 @@ En el inspector de **Dispositivos** hay presets listos por control
 (multimedia, volumen, zoom, pestañas, escritorios virtuales…), cada uno con su
 explicación en palabras del tipo «GIRO IZQ · DESHACER · CTRL + Z».
 
+## Perfiles completos
+
+En el inspector de **Dispositivos**, cuando no hay ningún control elegido, hay
+tres perfiles que rellenan **todos** los controles de la página de una vez:
+
+- **Multimedia**: volumen, reproducción y brillo en las perillas; mute, play,
+  siguiente, anterior y mute de la app activa en las teclas.
+- **Streaming**: mute y sordo de Discord, volumen de Discord y de la app
+  activa, mute del sistema, recorte y multitarea.
+- **Productividad**: pestañas, deshacer/rehacer y escritorios virtuales en las
+  perillas; portapapeles, ventanas, multitarea y escritorio en las teclas.
+
+Se ofrecen con confirmación y al aceptar **sustituyen los botones de esa
+página**; los 18 huecos de la página del N3 quedan configurados en un solo
+deshacer. Solo cuadran con un modelo de 6 teclas, 3 botones y 3 perillas.
+
 ## Brillo
 
 El brillo de las teclas se cambia en vivo sin guardar; al soltar el deslizador
