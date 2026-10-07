@@ -43,6 +43,9 @@ function ItemPreset({
   const glifo = resolveDotGlyph(preset.icon) || 'DOTS';
   const colorGlifo = preset.huecos[0]?.fgColor || VD.accent;
   const lineas = describirPreset(preset, control, t);
+  const tituloCompleto = `${t(preset.nombre)}\n${lineas
+    .map((l) => `${l.gesto ? `${l.gesto} · ` : ''}${l.desc}${l.otraVez ? `\n  ${l.otraVez}` : ''}`)
+    .join('\n')}`;
 
   return (
     <button
@@ -51,6 +54,7 @@ function ItemPreset({
       onClick={() => onAplicar(preset.huecos)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      title={tituloCompleto}
       style={{
         width: '100%',
         background: hovered && !disabled ? VD.elevatedHover : VD.elevated,
@@ -73,6 +77,7 @@ function ItemPreset({
           alignItems: 'center',
           gap: VD.space.xs,
           overflow: 'hidden',
+          minWidth: 0,
         }}
       >
         <DotGlyphIcon glyph={glifo} size={14} color={colorGlifo} />
@@ -86,7 +91,14 @@ function ItemPreset({
             letterSpacing: 0.5,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+            lineHeight: 1.25,
+            minWidth: 0,
+            flex: 1,
           }}
         >
           {t(preset.nombre)}
@@ -97,41 +109,73 @@ function ItemPreset({
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
+          gap: 3,
           paddingLeft: 18,
           overflow: 'hidden',
+          minWidth: 0,
         }}
       >
         {lineas.map((linea, idx) => (
-          <div
-            key={idx}
-            style={{
-              fontSize: 8,
-              fontFamily: VD.mono,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              display: 'flex',
-              gap: 4,
-            }}
-          >
-            {linea.gesto && (
-              <span style={{ color: VD.textMuted, flexShrink: 0 }}>
-                {linea.gesto} ·
-              </span>
-            )}
-            <span
+          <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+            <div
               style={{
-                color: VD.text,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                fontSize: 8,
+                fontFamily: VD.mono,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                display: 'flex',
+                gap: 4,
+                minWidth: 0,
+                alignItems: 'baseline',
               }}
             >
-              {linea.desc}
-            </span>
+              {linea.gesto && (
+                <span style={{ color: VD.textMuted, flexShrink: 0 }}>
+                  {linea.gesto} ·
+                </span>
+              )}
+              <span
+                style={{
+                  color: VD.text,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.25,
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                {linea.desc}
+              </span>
+            </div>
+            {linea.otraVez && (
+              <div
+                style={{
+                  fontSize: 7.5,
+                  color: VD.textMuted,
+                  fontFamily: VD.mono,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.2,
+                  paddingLeft: linea.gesto ? 10 : 0,
+                  opacity: 0.85,
+                  minWidth: 0,
+                }}
+              >
+                {linea.otraVez}
+              </div>
+            )}
           </div>
         ))}
       </div>

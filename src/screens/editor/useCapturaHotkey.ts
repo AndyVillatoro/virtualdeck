@@ -11,6 +11,7 @@ export function useCapturaHotkey(
   activa: boolean,
   onCapturada: (combo: string) => void,
   onFin: () => void,
+  onAviso?: (comboRechazado: string) => void,
 ): void {
   useEffect(() => {
     if (!activa) return;
@@ -23,7 +24,17 @@ export function useCapturaHotkey(
       if (e.ctrlKey) parts.push('Ctrl');
       if (e.altKey) parts.push('Alt');
       if (e.shiftKey) parts.push('Shift');
-      parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
+      if (e.metaKey) parts.push('Super');
+      const tecla = e.key.length === 1 ? e.key.toUpperCase() : e.key;
+
+      // Combinaciones reservadas por el kernel de Windows que no se pueden registrar
+      if (e.metaKey && (tecla === 'L' || tecla === 'D')) {
+        onAviso?.(`Win+${tecla}`);
+        onFin();
+        return;
+      }
+
+      parts.push(tecla);
       onCapturada(parts.join('+'));
       onFin();
     };

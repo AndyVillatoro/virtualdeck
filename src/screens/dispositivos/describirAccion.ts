@@ -176,26 +176,51 @@ export function describirPulsar(boton: ButtonConfig | undefined, t: Traductor): 
 export interface FilaGestoPreset {
   gesto?: string;
   desc: string;
+  otraVez?: string;
 }
 
 /**
  * En un preset, un atajo o un script solo dicen **qué tecla** pulsan
  * («ATAJO CTRL + Z»), no para qué; la etiqueta del preset sí («DESHACER»).
  * Juntos se lee las dos cosas: «DESHACER · CTRL + Z». Y si el hueco alterna
- * (pulsar otra vez deshace), se enseñan las dos mitades, corto para el
- * inspector: «TAREAS · ATAJO WIN + TAB / OTRA VEZ: ATAJO ESC».
+ * (pulsar otra vez deshace), la segunda acción va en su propia línea más tenue
+ * («OTRA VEZ: ESC») para evitar textos larguísimos que se desborden.
  */
-function describirHueco(hueco: PresetDock['huecos'][number] | undefined, t: Traductor): string {
+function resolverDescHueco(
+  hueco: PresetDock['huecos'][number] | undefined,
+  t: Traductor,
+): string {
   const accion = hueco?.action;
   const tipo = accion?.type;
-  const apagado = hueco?.isToggle ? hueco?.actionToggleOff : undefined;
-  if (!hueco?.label || (tipo !== 'hotkey' && tipo !== 'script')) return describirAccion(accion, t, apagado);
-  const detalle = tipo === 'hotkey' ? formatearHotkey(accion?.hotkey ?? '', t) : describirAccion(accion, t);
-  const base = `${hueco.label} · ${detalle}`;
-  if (apagado && apagado.type && apagado.type !== 'none') {
-    return `${base} / ${t('disp.desc.otraVez', { desc: describirAccion(apagado, t) })}`;
+  if (!hueco?.label || (tipo !== 'hotkey' && tipo !== 'script')) {
+    return describirAccion(accion, t);
   }
-  return base;
+  const detalle = tipo === 'hotkey' ? formatearHotkey(accion?.hotkey ?? '', t) : describirAccion(accion, t);
+  return hueco.label.toUpperCase() === detalle.toUpperCase() ? detalle : `${hueco.label} · ${detalle}`;
+}
+
+function resolverOtraVez(
+  hueco: PresetDock['huecos'][number] | undefined,
+  t: Traductor,
+): string | undefined {
+  const apagado = hueco?.isToggle ? hueco?.actionToggleOff : undefined;
+  if (!apagado || !apagado.type || apagado.type === 'none') {
+    return undefined;
+  }
+  const descApagado = apagado.type === 'hotkey'
+    ? formatearHotkey(apagado.hotkey ?? '', t)
+    : describirAccion(apagado, t);
+  return t('disp.desc.otraVez', { desc: descApagado });
+}
+
+function describirHueco(
+  hueco: PresetDock['huecos'][number] | undefined,
+  t: Traductor,
+): { desc: string; otraVez?: string } {
+  return {
+    desc: resolverDescHueco(hueco, t),
+    otraVez: resolverOtraVez(hueco, t),
+  };
 }
 
 export function describirPreset(
@@ -204,25 +229,33 @@ export function describirPreset(
   t: Traductor,
 ): FilaGestoPreset[] {
   if (control === 'knob') {
+    const h0 = describirHueco(preset.huecos[0], t);
+    const h1 = describirHueco(preset.huecos[1], t);
+    const h2 = describirHueco(preset.huecos[2], t);
     return [
-      { gesto: t('disp.gesto.giroIzq'), desc: describirHueco(preset.huecos[0], t) },
-      { gesto: t('disp.gesto.pulsar'), desc: describirHueco(preset.huecos[1], t) },
-      { gesto: t('disp.gesto.giroDer'), desc: describirHueco(preset.huecos[2], t) },
+      { gesto: t('disp.gesto.giroIzq'), desc: h0.desc, otraVez: h0.otraVez },
+      { gesto: t('disp.gesto.pulsar'), desc: h1.desc, otraVez: h1.otraVez },
+      { gesto: t('disp.gesto.giroDer'), desc: h2.desc, otraVez: h2.otraVez },
     ];
   }
   if (control === 'swipe') {
-    const descIzq = describirHueco(preset.huecos[0], t);
-    const descDer = describirHueco(preset.huecos[1], t);
+    const h0 = describirHueco(preset.huecos[0], t);
+    const h1 = describirHueco(preset.huecos[1], t);
+    const descCombinada = [h0.desc, h1.desc].filter(Boolean).join(' / ');
+    const otraVezCombinada = [h0.otraVez, h1.otraVez].filter(Boolean).join(' / ') || undefined;
     return [
       {
         gesto: t('disp.gesto.deslizar'),
-        desc: `${descIzq} / ${descDer}`,
+        desc: descCombinada,
+        otraVez: otraVezCombinada,
       },
     ];
   }
+  const h0 = describirHueco(preset.huecos[0], t);
   return [
     {
-      desc: describirHueco(preset.huecos[0], t),
+      desc: h0.desc,
+      otraVez: h0.otraVez,
     },
   ];
 }

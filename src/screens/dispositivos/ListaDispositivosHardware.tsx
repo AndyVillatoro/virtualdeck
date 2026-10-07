@@ -149,6 +149,7 @@ export function ListaDispositivosHardware({
                   }}
                 >
                   <span
+                    title={d.nombre}
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
@@ -192,13 +193,20 @@ export function ListaDispositivosHardware({
                     flexDirection: 'column',
                     gap: 1,
                     overflow: 'hidden',
+                    minWidth: 0,
                   }}
                 >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span
+                    title={`${t('disp.serial')}: ${d.serial}`}
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
                     {`${t('disp.serial')}: ${d.serial}`}
                   </span>
                   {d.paginaNombre && (
-                    <span style={{ color: VD.accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span
+                      title={`${t('disp.pagina')}: ${d.paginaNombre}`}
+                      style={{ color: VD.accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
                       {`${t('disp.pagina')}: ${d.paginaNombre}`}
                     </span>
                   )}

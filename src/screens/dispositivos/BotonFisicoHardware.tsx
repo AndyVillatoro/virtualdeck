@@ -30,6 +30,7 @@ export function BotonFisicoHardware({
       type="button"
       onClick={disabled ? undefined : onSelect}
       onDoubleClick={disabled ? undefined : onEditar}
+      title={boton?.label ? `B${indice + 1} · ${etiqueta}` : `B${indice + 1}`}
       style={{
         height: 34,
         background: seleccionado ? VD.accentBg : VD.elevated,
@@ -50,9 +51,10 @@ export function BotonFisicoHardware({
         transition: 'all 0.15s ease',
         padding: `0 ${VD.space.sm}px`,
         overflow: 'hidden',
+        minWidth: 0,
       }}
     >
-      <span style={{ fontSize: 8, color: VD.textMuted }}>
+      <span style={{ fontSize: 8, color: VD.textMuted, flexShrink: 0 }}>
         {`B${indice + 1}`}
       </span>
       <span
@@ -61,6 +63,7 @@ export function BotonFisicoHardware({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           maxWidth: 90,
+          minWidth: 0,
           color: boton?.label ? VD.text : VD.textMuted,
         }}
       >

@@ -182,7 +182,7 @@ function BarraPaginaSuperficie({
           ) : (
             <button
               type="button"
-              title={t('disp.renombrarPagina')}
+              title={`${pagina.name} · ${t('disp.renombrarPagina')}`}
               onDoubleClick={() => { setNombre(pagina.name); setRenombrando(true); }}
               onClick={() => { setNombre(pagina.name); setRenombrando(true); }}
               style={{
@@ -310,7 +310,7 @@ export function PestanasSuperficie({
               <div
                 key={p.id}
                 onClick={() => onElegirPagina(p.id)}
-                title={activa ? t('disp.paginaEnAparato') : p.name}
+                title={activa ? `${p.name} · ${t('disp.paginaEnAparato')}` : p.name}
                 style={{
                   padding: '6px 12px',
                   fontFamily: VD.mono,

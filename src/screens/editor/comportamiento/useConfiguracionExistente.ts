@@ -25,14 +25,16 @@ export function normalizarHotkey(combo: string): string {
   for (const p of partes) {
     const pl = p.toLowerCase();
     if (pl in MOD_ORDER) {
-      const canonical = pl === 'ctrl' || pl === 'control' ? 'Ctrl' : (pl === 'alt' ? 'Alt' : (pl === 'shift' ? 'Shift' : 'Win'));
+      const canonical = pl === 'ctrl' || pl === 'control'
+        ? 'Ctrl'
+        : (pl === 'alt' ? 'Alt' : (pl === 'shift' ? 'Shift' : 'Super'));
       if (!mods.includes(canonical)) mods.push(canonical);
     } else {
       tecla = p.toUpperCase();
     }
   }
 
-  const orden = ['Ctrl', 'Alt', 'Shift', 'Win'];
+  const orden = ['Ctrl', 'Alt', 'Shift', 'Super'];
   mods.sort((a, b) => orden.indexOf(a) - orden.indexOf(b));
   return [...mods, tecla].filter(Boolean).join('+');
 }

@@ -46,7 +46,7 @@ export const DotMatrixImageOverlay = memo(function DotMatrixImageOverlay({
         position: 'absolute',
         inset: 0,
         pointerEvents: 'none',
-        zIndex: 2,
+        zIndex: 1,
         // Máscara de micro-aperturas circulares:
         // Centro transparente para revelar el color exacto de la imagen,
         // borde degradado a negro OLED puro (#070809) entre puntos.

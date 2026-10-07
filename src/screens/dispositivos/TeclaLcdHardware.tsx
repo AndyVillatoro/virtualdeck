@@ -195,6 +195,7 @@ export function TeclaLcdHardware({
             />
 
             <span
+              title={datos.labelTexto}
               style={{
                 fontSize: 8,
                 textAlign: 'center',

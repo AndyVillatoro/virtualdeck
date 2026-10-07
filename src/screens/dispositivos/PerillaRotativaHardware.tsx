@@ -54,6 +54,7 @@ function BotonSubAccion({
       title={label}
       style={{
         flex: 1,
+        minWidth: 0,
         background: seleccionado ? accentBg : surface,
         border: `1px solid ${seleccionado ? accent : border}`,
         color: seleccionado ? accent : textDim,
@@ -77,7 +78,7 @@ function BotonSubAccion({
         size={8}
         color={seleccionado ? accent : textDim}
       />
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
         {label}
       </span>
     </button>

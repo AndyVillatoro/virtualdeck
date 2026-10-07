@@ -67,8 +67,9 @@ function FilaModo({
         gap: 2,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: vd.space.xs }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: vd.space.xs, minWidth: 0 }}>
         <span
+          title={titulo}
           style={{
             fontSize: 9,
             color: activo ? vd.accent : vd.text,
@@ -78,6 +79,7 @@ function FilaModo({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            minWidth: 0,
           }}
         >
           {titulo}
@@ -117,6 +119,7 @@ function FilaModo({
         ))}
       </div>
       <span
+        title={detalle}
         style={{
           fontSize: 8,
           color: vd.textMuted,
@@ -124,6 +127,7 @@ function FilaModo({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          minWidth: 0,
         }}
       >
         {detalle}

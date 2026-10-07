@@ -1,28 +1,34 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../../utils/theme';
-import { useFieldText } from '../../../utils/i18n';
+import { useT, useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { useCapturaHotkey } from '../useCapturaHotkey';
 import { normalizarHotkey } from './useConfiguracionExistente';
 import type { PageConfig } from '../../../types';
 
-const COMBOS_SUGERIDOS = [
-  'Ctrl+Alt+F1',
-  'Ctrl+Alt+F2',
-  'Ctrl+Alt+F3',
-  'Ctrl+Alt+F4',
-  'Ctrl+Alt+F5',
-  'Ctrl+Alt+F6',
-  'Ctrl+Alt+F7',
-  'Ctrl+Alt+F8',
-  'Ctrl+Alt+F9',
-  'Ctrl+Alt+F10',
-  'Ctrl+Alt+F11',
-  'Ctrl+Alt+F12',
-  'Ctrl+Shift+Alt+A',
-  'Ctrl+Shift+Alt+S',
-  'Ctrl+Shift+Alt+D',
-  'Ctrl+Shift+Alt+X',
+export interface ComboSugerido {
+  atajo: string;
+  nombreKey: string;
+  paraQueKey: string;
+}
+
+const COMBOS_SUGERIDOS: ComboSugerido[] = [
+  { atajo: 'Ctrl+Alt+F1', nombreKey: 'hotkey.sug.muteMicro', paraQueKey: 'hotkey.sug.muteMicroDesc' },
+  { atajo: 'Ctrl+Alt+F2', nombreKey: 'hotkey.sug.deafen', paraQueKey: 'hotkey.sug.deafenDesc' },
+  { atajo: 'Ctrl+Alt+F3', nombreKey: 'hotkey.sug.escenaSig', paraQueKey: 'hotkey.sug.escenaSigDesc' },
+  { atajo: 'Ctrl+Alt+F4', nombreKey: 'hotkey.sug.modoConcentracion', paraQueKey: 'hotkey.sug.modoConcentracionDesc' },
+  { atajo: 'Ctrl+Alt+F5', nombreKey: 'hotkey.sug.grabarClip', paraQueKey: 'hotkey.sug.grabarClipDesc' },
+  { atajo: 'Ctrl+Alt+F6', nombreKey: 'hotkey.sug.playPause', paraQueKey: 'hotkey.sug.playPauseDesc' },
+  { atajo: 'Ctrl+Alt+F7', nombreKey: 'hotkey.sug.pistaSig', paraQueKey: 'hotkey.sug.pistaSigDesc' },
+  { atajo: 'Ctrl+Alt+F8', nombreKey: 'hotkey.sug.overlayJuego', paraQueKey: 'hotkey.sug.overlayJuegoDesc' },
+  { atajo: 'Ctrl+Alt+F9', nombreKey: 'hotkey.sug.perfilDeck', paraQueKey: 'hotkey.sug.perfilDeckDesc' },
+  { atajo: 'Ctrl+Alt+F10', nombreKey: 'hotkey.sug.capturaPantalla', paraQueKey: 'hotkey.sug.capturaPantallaDesc' },
+  { atajo: 'Ctrl+Alt+F11', nombreKey: 'hotkey.sug.modoStream', paraQueKey: 'hotkey.sug.modoStreamDesc' },
+  { atajo: 'Ctrl+Alt+F12', nombreKey: 'hotkey.sug.emergencia', paraQueKey: 'hotkey.sug.emergenciaDesc' },
+  { atajo: 'Ctrl+Shift+Alt+A', nombreKey: 'hotkey.sug.accionA', paraQueKey: 'hotkey.sug.accionADesc' },
+  { atajo: 'Ctrl+Shift+Alt+S', nombreKey: 'hotkey.sug.accionS', paraQueKey: 'hotkey.sug.accionSDesc' },
+  { atajo: 'Ctrl+Shift+Alt+D', nombreKey: 'hotkey.sug.accionD', paraQueKey: 'hotkey.sug.accionDDesc' },
+  { atajo: 'Ctrl+Shift+Alt+X', nombreKey: 'hotkey.sug.accionX', paraQueKey: 'hotkey.sug.accionXDesc' },
 ];
 
 interface InfoConflicto {
@@ -88,56 +94,133 @@ function AvisoConflicto({
   );
 }
 
-function FichaSugerida({
-  combo,
+function FilaComboSugerido({
+  item,
   activo,
   ocupado,
+  conflictoLabel,
   onClick,
   accent,
   vd,
+  t,
 }: {
-  combo: string;
+  item: ComboSugerido;
   activo: boolean;
   ocupado: boolean;
+  conflictoLabel?: string;
   onClick: () => void;
   accent: string;
   vd: ReturnType<typeof useTheme>;
+  t: (k: string, vars?: Record<string, string | number>) => string;
 }) {
   let borde = vd.border;
-  let colorTexto = vd.text;
+  let bg = vd.elevated;
+  let colorAtajo = vd.text;
 
   if (activo) {
     borde = accent;
-    colorTexto = accent;
+    bg = `${accent}1c`;
+    colorAtajo = accent;
   } else if (ocupado) {
     borde = vd.borderStrong;
-    colorTexto = vd.textMuted;
+    bg = `${vd.surface}80`;
+    colorAtajo = vd.textMuted;
   }
+
+  const tooltip = ocupado && conflictoLabel
+    ? `${t(item.nombreKey)} · ${t('hotkey.sug.ocupadoPor', { boton: conflictoLabel })}`
+    : `${t(item.nombreKey)} — ${t(item.paraQueKey)}`;
 
   return (
     <button
       type="button"
       onClick={onClick}
+      title={tooltip}
       style={{
-        minHeight: 32,
-        padding: '4px 8px',
-        background: activo ? `${accent}24` : vd.elevated,
+        width: '100%',
+        minHeight: 36,
+        padding: '5px 8px',
+        background: bg,
         border: `1px solid ${borde}`,
         borderRadius: vd.radius.sm,
-        color: colorTexto,
-        fontFamily: vd.mono,
-        fontSize: 8.5,
         cursor: 'pointer',
-        letterSpacing: 0.5,
-        boxSizing: 'border-box',
-        display: 'inline-flex',
+        display: 'flex',
         alignItems: 'center',
-        gap: 4,
+        justifyContent: 'space-between',
+        gap: 8,
+        textAlign: 'left',
+        boxSizing: 'border-box',
+        transition: 'background 0.12s, border-color 0.12s',
+        minWidth: 0,
       }}
     >
-      {activo && <DotGlyphIcon glyph="CHECK" size={8} color={accent} />}
-      {ocupado && !activo && <DotGlyphIcon glyph="DOTS" size={6} color={vd.textMuted} />}
-      <span>{combo}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          {activo && <DotGlyphIcon glyph="CHECK" size={8} color={accent} />}
+          {ocupado && !activo && <DotGlyphIcon glyph="DOTS" size={6} color={vd.textMuted} />}
+          <span
+            style={{
+              fontSize: 8.5,
+              fontWeight: 600,
+              fontFamily: vd.mono,
+              color: activo ? accent : (ocupado ? vd.textMuted : vd.text),
+              letterSpacing: 0.5,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              minWidth: 0,
+            }}
+          >
+            {t(item.nombreKey)}
+          </span>
+          {ocupado && conflictoLabel && (
+            <span
+              style={{
+                fontSize: 7.5,
+                fontFamily: vd.mono,
+                color: vd.textDim,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              ({t('hotkey.sug.ocupadoPor', { boton: conflictoLabel })})
+            </span>
+          )}
+        </div>
+        <div
+          style={{
+            fontSize: 7.5,
+            fontFamily: vd.mono,
+            color: vd.textDim,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            minWidth: 0,
+          }}
+        >
+          {t(item.paraQueKey)}
+        </div>
+      </div>
+
+      <span
+        style={{
+          fontSize: 8.5,
+          fontFamily: vd.mono,
+          fontWeight: 600,
+          color: colorAtajo,
+          letterSpacing: 0.5,
+          padding: '2px 6px',
+          background: activo ? `${accent}28` : vd.surface,
+          borderRadius: vd.radius.sm,
+          border: `1px solid ${activo ? accent : vd.border}`,
+          flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {item.atajo}
+      </span>
     </button>
   );
 }
@@ -150,16 +233,22 @@ export function CampoGlobalHotkey({
   pages,
 }: CampoGlobalHotkeyProps) {
   const VD = useTheme();
+  const t = useT();
   const tf = useFieldText();
   const [grabando, setGrabando] = useState(false);
+  const [avisoCaptura, setAvisoCaptura] = useState<string | null>(null);
 
   useCapturaHotkey(
     grabando,
     (combo) => {
+      setAvisoCaptura(null);
       onChange(combo);
       setGrabando(false);
     },
     () => setGrabando(false),
+    () => {
+      setAvisoCaptura(t('hotkey.aviso.reservadaWin'));
+    },
   );
 
   const normActual = normalizarHotkey(value);
@@ -171,7 +260,10 @@ export function CampoGlobalHotkey({
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <button
           type="button"
-          onClick={() => setGrabando((prev) => !prev)}
+          onClick={() => {
+            setAvisoCaptura(null);
+            setGrabando((prev) => !prev);
+          }}
           style={{
             minHeight: 32,
             padding: '6px 12px',
@@ -198,7 +290,10 @@ export function CampoGlobalHotkey({
 
         <input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            setAvisoCaptura(null);
+            onChange(e.target.value);
+          }}
           placeholder={tf("vacío = sin atajo global")}
           readOnly={grabando}
           style={{
@@ -219,7 +314,10 @@ export function CampoGlobalHotkey({
         {value && (
           <button
             type="button"
-            onClick={() => onChange('')}
+            onClick={() => {
+              setAvisoCaptura(null);
+              onChange('');
+            }}
             title={tf('BORRAR ATAJO')}
             style={{
               minHeight: 32,
@@ -245,6 +343,28 @@ export function CampoGlobalHotkey({
         )}
       </div>
 
+      {/* Aviso si se intentó capturar una tecla Windows reservada */}
+      {avisoCaptura && (
+        <div
+          style={{
+            padding: '8px 10px',
+            background: `${VD.warning}18`,
+            border: `1px solid ${VD.warning}`,
+            borderRadius: VD.radius.sm,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontFamily: VD.mono,
+            fontSize: 8.5,
+            color: VD.warning,
+            letterSpacing: 0.5,
+          }}
+        >
+          <DotGlyphIcon glyph="WARN" size={10} color={VD.warning} />
+          <span>{avisoCaptura}</span>
+        </div>
+      )}
+
       {/* Aviso de conflicto si la tecla ya está asignada */}
       {conflicto && (
         <AvisoConflicto
@@ -255,23 +375,50 @@ export function CampoGlobalHotkey({
         />
       )}
 
-      {/* Sugerencias de combinaciones seguras en Windows */}
+      {/* Explicación de la diferencia con el atajo de la propia acción */}
+      <div
+        style={{
+          fontFamily: VD.mono,
+          fontSize: 8,
+          color: VD.textDim,
+          padding: '6px 8px',
+          background: VD.surface,
+          borderRadius: VD.radius.sm,
+          border: `1px solid ${VD.border}`,
+          lineHeight: 1.4,
+        }}
+      >
+        {t('hotkey.global.diferencia')}
+      </div>
+
+      {/* Lista de combinaciones sugeridas con nombre y para qué */}
       <div>
-        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          {tf('COMBINACIONES SUGERIDAS (SEGURAS EN WINDOWS)')}
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {t('hotkey.sug.titulo')}
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {COMBOS_SUGERIDOS.map((combo) => (
-            <FichaSugerida
-              key={combo}
-              combo={combo}
-              activo={normActual === combo}
-              ocupado={hotkeysOcupadas.has(combo)}
-              onClick={() => onChange(combo)}
-              accent={accent}
-              vd={VD}
-            />
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 240, overflowY: 'auto' }}>
+          {COMBOS_SUGERIDOS.map((item) => {
+            const normCombo = normalizarHotkey(item.atajo);
+            const activo = normActual === normCombo;
+            const conflictoBtn = hotkeysOcupadas.get(normCombo);
+            const ocupado = hotkeysOcupadas.has(normCombo);
+            return (
+              <FilaComboSugerido
+                key={item.atajo}
+                item={item}
+                activo={activo}
+                ocupado={ocupado}
+                conflictoLabel={conflictoBtn?.label}
+                onClick={() => {
+                  setAvisoCaptura(null);
+                  onChange(item.atajo);
+                }}
+                accent={accent}
+                vd={VD}
+                t={t}
+              />
+            );
+          })}
         </div>
       </div>
 

@@ -53,6 +53,7 @@ function SectorTactil({
       title={label}
       style={{
         flex: 1,
+        minWidth: 0,
         background: seleccionado ? accentBg : surface,
         border: `1px solid ${seleccionado ? accent : border}`,
         borderRadius: radiusSm,
@@ -83,6 +84,7 @@ function SectorTactil({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           maxWidth: 90,
+          minWidth: 0,
         }}
       >
         {label}

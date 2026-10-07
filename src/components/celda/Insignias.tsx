@@ -44,13 +44,18 @@ function InsigniaEditar({ visible, onEdit }: { visible: boolean; onEdit: () => v
       title={t('cell.edit')}
       style={{
         position: 'absolute', top: 4, right: 4, width: 20, height: 20,
-        background: 'rgba(0,0,0,0.75)',
-        border: `1px solid ${VD.borderStrong}`, borderRadius: VD.radius.md,
+        // Colores fijos OLED (#111315 fondo, #e6e8eb glifo):
+        // van sobre imagen o color arbitrario, así que no dependen del tema.
+        background: '#111315',
+        border: '1px solid #26292e',
+        borderRadius: VD.radius.md,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 2, lineHeight: 1,
+        lineHeight: 1,
+        pointerEvents: 'auto',
+        cursor: 'pointer',
       }}
     >
-      <DotGlyphIcon glyph="EDIT" size={10} color={VD.textDim} />
+      <DotGlyphIcon glyph="EDIT" size={10} color="#e6e8eb" />
     </div>
   );
 }
@@ -73,7 +78,7 @@ function InsigniaPinFijo({
         position: 'absolute', top: 4, right: hovered ? 26 : 4,
         width: 12, height: 12,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 2,
+        pointerEvents: 'auto',
       }}
     >
       <DotGlyphIcon glyph="PIN" size={8} color={accent} />
@@ -122,8 +127,15 @@ export function Insignias({
   const carpeta = button.action.type === 'folder';
 
   return (
-    <>
-      {/* Barra verde arriba: algo de fuera coincide con este botón — el proceso
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        zIndex: 4,
+      }}
+    >
+      {/* Barra de acento arriba: algo de fuera coincide con este botón — el proceso
           está abierto, el dispositivo es el predeterminado. */}
       {isActive && (
         <div style={{
@@ -139,7 +151,7 @@ export function Insignias({
       {isSelected && (
         <div style={{
           position: 'absolute', top: 4, left: 4, width: 16, height: 16,
-          borderRadius: '50%', background: accent, zIndex: 3,
+          borderRadius: '50%', background: accent,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           lineHeight: 1,
         }}>
@@ -187,6 +199,6 @@ export function Insignias({
           opacity: hovered ? 0 : 0.7, transition: 'opacity 0.15s',
         }} />
       )}
-    </>
+    </div>
   );
 }

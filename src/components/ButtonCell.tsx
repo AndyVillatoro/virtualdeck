@@ -239,24 +239,6 @@ function ButtonCellInner(props: ButtonCellProps) {
           height: '100%',
         }}
       >
-        <Insignias
-          button={vis}
-          accent={accent}
-          isEmpty={isEmpty}
-          isActive={Boolean(props.isActive)}
-          isSelected={Boolean(props.isSelected)}
-          hovered={hovered}
-          isTouch={isTouch}
-          toggled={toggled}
-          multiCount={multiCount}
-          esFija={props.esFija}
-          nombrePaginaOriginal={nombrePaginaOriginal}
-          onEdit={onEdit}
-        />
-
-        {flash && <DotRadialSweep accent={accent} />}
-        {props.isRunning && <span className="vd-running-ring" />}
-
         <CapasDeFondo button={vis} toggled={toggled} />
 
         <CuerpoCelda
@@ -284,6 +266,24 @@ function ButtonCellInner(props: ButtonCellProps) {
           encendido={vis.isToggle === true && toggled}
           pulsoId={pulsoId}
         />
+
+        <Insignias
+          button={vis}
+          accent={accent}
+          isEmpty={isEmpty}
+          isActive={Boolean(props.isActive)}
+          isSelected={Boolean(props.isSelected)}
+          hovered={hovered}
+          isTouch={isTouch}
+          toggled={toggled}
+          multiCount={multiCount}
+          esFija={props.esFija}
+          nombrePaginaOriginal={nombrePaginaOriginal}
+          onEdit={onEdit}
+        />
+
+        {flash && <DotRadialSweep accent={accent} />}
+        {props.isRunning && <span className="vd-running-ring" />}
       </div>
 
       {contextMenu && (
