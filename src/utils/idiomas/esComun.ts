@@ -10,7 +10,6 @@ export const ES_COMUN: Dict = {
   'settings.theme': 'TEMA',
   'settings.theme.dark': 'OSCURO',
   'settings.theme.light': 'CLARO',
-  'settings.theme.dot480': 'DOT/480',
   'settings.theme.system': 'SISTEMA',
   'settings.language': 'IDIOMA',
   'settings.language.system': 'SISTEMA',
@@ -95,6 +94,8 @@ export const ES_COMUN: Dict = {
   'tip.fullscreen': 'Modo pantalla completa',
   'tip.minimize': 'Minimizar',
   'tip.close': 'Cerrar (minimiza a bandeja)',
+  'comun.cerrar': 'Cerrar',
+  'folder.titulo': 'CARPETA',
   // — Pantalla de fondos (WallpaperB) —
   'wp.back': 'VOLVER',
   'wp.preview': 'VISTA PREVIA',

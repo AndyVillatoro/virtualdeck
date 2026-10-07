@@ -197,7 +197,8 @@ export interface AjustesSuperficie {
 
 export type SoundProfileId = 'click' | 'tick' | 'thud' | 'off';
 
-export type ThemeMode = 'dark' | 'light' | 'dot480' | 'system';
+/** El antiguo `'dot480'` se fundió en `'dark'` (migración v7→v8). */
+export type ThemeMode = 'dark' | 'light' | 'system';
 
 export interface DeckConfig {
   pages: PageConfig[];

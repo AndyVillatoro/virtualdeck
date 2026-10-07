@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ACCENT_PRESETS } from '../../design';
 import { useTheme } from '../../utils/theme';
+import { Segmentado } from '../ui/Chip';
 import { useT } from '../../utils/i18n';
 import { SOUND_PROFILES, playSound } from '../../utils/sound';
 import { SeccionAjustes } from './SeccionAjustes';
@@ -180,22 +181,15 @@ export function PanelAjustes({
         {onThemeChange && (
           <div>
             <SettingLabel>{t('settings.theme')}</SettingLabel>
-            <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
-              {(['dark', 'light', 'dot480', 'system'] as const).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => onThemeChange(opt)}
-                  style={{
-                    flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                    background: theme === opt ? VD.accentBg : VD.elevated,
-                    border: `1px solid ${theme === opt ? effectiveAccent : VD.border}`,
-                    fontFamily: VD.mono, fontSize: 7, letterSpacing: 0.5,
-                    color: theme === opt ? effectiveAccent : VD.textDim,
-                  }}
-                >
-                  {t(`settings.theme.${opt}`)}
-                </button>
-              ))}
+            <div style={{ marginTop: 8 }}>
+              <Segmentado
+                repartir
+                accent={effectiveAccent}
+                etiquetaGrupo={t('settings.theme')}
+                valor={theme}
+                onChange={onThemeChange}
+                opciones={(['dark', 'light', 'system'] as const).map((opt) => ({ valor: opt, etiqueta: t(`settings.theme.${opt}`) }))}
+              />
             </div>
           </div>
         )}
@@ -203,22 +197,15 @@ export function PanelAjustes({
         {onLanguageChange && (
           <div>
             <SettingLabel>{t('settings.language')}</SettingLabel>
-            <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-              {(['system', 'es', 'en'] as const).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => onLanguageChange(opt)}
-                  style={{
-                    flex: 1, padding: '4px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                    background: language === opt ? VD.accentBg : VD.elevated,
-                    border: `1px solid ${language === opt ? effectiveAccent : VD.border}`,
-                    fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                    color: language === opt ? effectiveAccent : VD.textDim,
-                  }}
-                >
-                  {t(`settings.language.${opt}`)}
-                </button>
-              ))}
+            <div style={{ marginTop: 8 }}>
+              <Segmentado
+                repartir
+                accent={effectiveAccent}
+                etiquetaGrupo={t('settings.language')}
+                valor={language}
+                onChange={onLanguageChange}
+                opciones={(['system', 'es', 'en'] as const).map((opt) => ({ valor: opt, etiqueta: t(`settings.language.${opt}`) }))}
+              />
             </div>
           </div>
         )}

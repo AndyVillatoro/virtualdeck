@@ -42,7 +42,7 @@ function Opcion({ activa, accent, onClick, children, ancho }: {
 }
 
 export type Idioma = 'system' | 'es' | 'en';
-export type Tema = 'dark' | 'light' | 'dot480' | 'system';
+export type Tema = 'dark' | 'light' | 'system';
 
 export function PasoIdioma({ valor, accent, onChange }: {
   valor: Idioma; accent: string; onChange: (v: Idioma) => void;
@@ -68,7 +68,6 @@ export function PasoApariencia({ tema, accent, onTema, onAccent }: {
   const temas: [Tema, string][] = [
     ['dark', t('settings.theme.dark')],
     ['light', t('settings.theme.light')],
-    ['dot480', t('settings.theme.dot480')],
     ['system', t('settings.theme.system')],
   ];
   return (

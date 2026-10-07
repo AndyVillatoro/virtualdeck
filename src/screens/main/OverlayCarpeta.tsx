@@ -4,6 +4,8 @@ import { useT } from '../../utils/i18n';
 import { playSound } from '../../utils/sound';
 import { ejecutarUna, type EntornoPulsacion } from '../../utils/pulsarBoton';
 import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
+import { Modal } from '../../components/ui/Modal';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import type { ButtonConfig, FolderButton, SoundProfileId } from '../../types';
 
 /**
@@ -49,85 +51,61 @@ export function FolderOverlay({ btn, accent, soundEnabled, soundProfile, entorno
   const buttons: FolderButton[] = btn.action.folderButtons ?? [];
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 60,
-        background: 'rgba(0,0,0,0.82)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-        borderRadius: VD.radius.lg, padding: 20, boxShadow: VD.shadow.modal,
-        minWidth: 340,
-      }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          {btn.icon ? (
-            <DotGlyphIcon glyph={resolveDotGlyph(btn.icon) ?? 'FOLDER'} size={16} color={btn.fgColor || VD.text} showRecessed />
-          ) : (
-            <DotGlyphIcon glyph="FOLDER" size={16} color={btn.fgColor || VD.text} showRecessed />
-          )}
-          <span style={{ fontFamily: VD.mono, fontSize: 11, letterSpacing: 2, color: VD.text }}>
-            {btn.label || 'CARPETA'}
-          </span>
-          <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
-          </button>
-        </div>
-
-        {/* Sub-button grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-          {buttons.map((fb, i) => (
-            <div
-              key={i}
-              onClick={() => runFolderAction(fb, i)}
-              style={{
-                height: 72, borderRadius: VD.radius.lg, cursor: 'pointer',
-                background: flash === i ? (fb.bgColor ? fb.bgColor : VD.accentBg) : (fb.bgColor || VD.elevated),
-                border: `1px solid ${flash === i ? accent : VD.border}`,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 5,
-                transition: 'background 0.1s, border-color 0.1s',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = accent; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = flash === i ? accent : VD.border; }}
-            >
-              {fb.icon && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {(() => {
-                    const g = resolveDotGlyph(fb.icon);
-                    if (g) return <DotGlyphIcon glyph={g} size={16} color={fb.fgColor || VD.text} showRecessed />;
-                    return (
-                      <span style={{ fontSize: 16, color: fb.fgColor || VD.text, lineHeight: 1, fontFamily: VD.dots }}>
-                        {fb.icon}
-                      </span>
-                    );
-                  })()}
-                </div>
-              )}
-              <div style={{ fontFamily: VD.mono, fontSize: 8, letterSpacing: 1, color: fb.fgColor || VD.textDim, textAlign: 'center', maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
-                {fb.label}
-              </div>
-              {fb.action.hotkey && (
-                <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, opacity: 0.7 }}>{fb.action.hotkey}</div>
-              )}
-            </div>
-          ))}
-          {buttons.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', padding: 20, textAlign: 'center', fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>
-              {t('folder.empty')}
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginTop: 12, fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, textAlign: 'center' }}>
-          {t('folder.esc')}
-        </div>
+    <Modal onClose={onClose} etiqueta={btn.label || t('folder.titulo')} zIndex={60} ancho="min(440px, 94vw)" style={{ padding: 20 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexShrink: 0, minWidth: 0 }}>
+        <DotGlyphIcon glyph={(btn.icon && resolveDotGlyph(btn.icon)) || 'FOLDER'} size={16} color={btn.fgColor || VD.text} showRecessed />
+        <span style={{ fontFamily: VD.mono, fontSize: VD.tipo.md, letterSpacing: 2, color: VD.text, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {btn.label || t('folder.titulo')}
+        </span>
+        <div style={{ flex: 1 }} />
+        <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onClose} tamano={32} tamanoGlifo={12} />
       </div>
-    </div>
+
+      {/* Sub-button grid: con tope de alto y su propio scroll, para carpetas grandes */}
+      <div
+        className="vd-scroll"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: 8, overflowY: 'auto', minHeight: 0 }}
+      >
+        {buttons.map((fb, i) => (
+          <button
+            type="button"
+            key={i}
+            onClick={() => runFolderAction(fb, i)}
+            title={fb.label || undefined}
+            style={{
+              height: 72, minWidth: 0, borderRadius: VD.radius.lg, cursor: 'pointer', padding: 4,
+              background: flash === i ? (fb.bgColor ? fb.bgColor : VD.accentBg) : (fb.bgColor || VD.elevated),
+              border: `1px solid ${flash === i ? accent : VD.border}`,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 4,
+              transition: 'background 0.1s, border-color 0.1s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = flash === i ? accent : VD.border; }}
+          >
+            {fb.icon && (
+              <DotGlyphIcon glyph={resolveDotGlyph(fb.icon) ?? 'DOTS'} size={16} color={fb.fgColor || VD.text} showRecessed />
+            )}
+            <div style={{ fontFamily: VD.mono, fontSize: VD.tipo.xs, letterSpacing: 1, color: fb.fgColor || VD.textDim, textAlign: 'center', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
+              {fb.label}
+            </div>
+            {fb.action.hotkey && (
+              <div style={{ fontFamily: VD.mono, fontSize: VD.tipo.xs, color: VD.textMuted, opacity: 0.7 }}>{fb.action.hotkey}</div>
+            )}
+          </button>
+        ))}
+        {buttons.length === 0 && (
+          <div style={{ gridColumn: '1 / -1', padding: 20, textAlign: 'center', fontFamily: VD.mono, fontSize: VD.tipo.sm, color: VD.textMuted }}>
+            {t('folder.empty')}
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 12, fontFamily: VD.mono, fontSize: VD.tipo.xs, color: VD.textMuted, textAlign: 'center', flexShrink: 0 }}>
+        {t('folder.esc')}
+      </div>
+    </Modal>
   );
 }
 

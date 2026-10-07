@@ -86,7 +86,7 @@ export function EditorB({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(0,0,0,0.75)',
+        background: VD.backdrop,
       }}
     >
       <div onClick={onClose} style={{ position: 'absolute', inset: 0 }} />

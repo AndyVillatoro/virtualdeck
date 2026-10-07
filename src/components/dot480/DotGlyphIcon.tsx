@@ -1,5 +1,6 @@
 import React from 'react';
 import { DOT_GLYPHS_8X8, resolveDotGlyph } from './dotGlyphsCatalog';
+import { useTheme } from '../../utils/theme';
 
 export { DOT_GLYPHS_8X8, ALL_DOT_GLYPHS, resolveDotGlyph } from './dotGlyphsCatalog';
 
@@ -22,13 +23,18 @@ export interface DotGlyphIconProps {
 export function DotGlyphIcon({
   glyph,
   size = 16,
-  color = '#e6e8eb',
-  dimColor = 'rgba(255, 255, 255, 0.04)',
+  color,
+  dimColor,
   showRecessed = false,
   intensidades,
   style,
   className,
 }: DotGlyphIconProps) {
+  // Sin color explícito, los del tema: los fijos de antes (#e6e8eb y blanco al
+  // 4 %) solo se veían en oscuro y en claro el icono casi desaparecía.
+  const VD = useTheme();
+  color = color ?? VD.text;
+  dimColor = dimColor ?? VD.dotIdle;
   const resolved = resolveDotGlyph(glyph) ?? 'DOTS';
   const rows = DOT_GLYPHS_8X8[resolved] ?? DOT_GLYPHS_8X8.DOTS;
 

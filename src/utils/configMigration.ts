@@ -5,7 +5,7 @@
 // porque la cadena de migrate(v1 → v2 → ...) se aplica en orden.
 import type { DeckConfig, ButtonAction, ButtonConfig, PageConfig } from '../types';
 
-export const CURRENT_CONFIG_VERSION = 7;
+export const CURRENT_CONFIG_VERSION = 8;
 
 export interface ValidationResult {
   ok: boolean;
@@ -337,6 +337,19 @@ const MIGRATIONS: Array<{ from: number; to: number; apply: (c: any) => any }> = 
         delete (b as { pinned?: unknown }).pinned;
       }
       return { ...c, configVersion: 7 };
+    },
+  },
+  {
+    from: 7, to: 8,
+    apply: (c) => {
+      // v7 → v8: el tema «DOT/480» (OLED, acento rojo) se fundió en «oscuro»,
+      // que ahora es esa misma paleta OLED. Quien lo tenía conserva el aspecto:
+      // pasa a `dark` y, si no había elegido acento propio (vacío o el azul de
+      // fábrica), se le fija el rojo que ese tema traía de serie.
+      // Idempotente: sin `theme: 'dot480'` no se toca nada.
+      if (c.theme !== 'dot480') return { ...c, configVersion: 8 };
+      const sinAcentoPropio = !c.accent || String(c.accent).toLowerCase() === '#4a8ef0';
+      return { ...c, configVersion: 8, theme: 'dark', ...(sinAcentoPropio ? { accent: '#ff3b30' } : {}) };
     },
   },
 ];

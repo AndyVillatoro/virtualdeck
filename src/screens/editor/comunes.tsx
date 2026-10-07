@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { VDTokens } from '../../design';
 import { useTheme } from '../../utils/theme';
+import { estiloCampo, estiloDesplegable } from '../../components/ui/estilos';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
@@ -473,29 +474,15 @@ export function ExtraActionRow({
 }
 
 export function estiloEntrada(VD: VDTokens): React.CSSProperties {
-  return {
-    width: '100%', boxSizing: 'border-box',
-    background: VD.bg, border: `1px solid ${VD.border}`,
-    padding: '9px 12px', color: VD.text,
-    fontFamily: VD.mono, fontSize: 11, outline: 'none', borderRadius: VD.radius.sm,
-  };
+  return estiloCampo(VD);
 }
 
 function estiloEntradaMini(VD: VDTokens): React.CSSProperties {
-  return {
-    flex: 1, background: VD.bg, border: `1px solid ${VD.border}`,
-    padding: '4px 8px', color: VD.text, fontFamily: VD.mono, fontSize: 10,
-    outline: 'none', borderRadius: VD.radius.sm,
-  };
+  return { ...estiloCampo(VD, 'compacto'), width: undefined, flex: 1 };
 }
 
 function estiloSelector(VD: VDTokens): React.CSSProperties {
-  return {
-    width: '100%', boxSizing: 'border-box',
-    background: VD.bg, border: `1px solid ${VD.border}`,
-    padding: '8px 12px', color: VD.text,
-    fontFamily: VD.mono, fontSize: 11, outline: 'none', borderRadius: VD.radius.sm, cursor: 'pointer',
-  };
+  return estiloDesplegable(VD);
 }
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {

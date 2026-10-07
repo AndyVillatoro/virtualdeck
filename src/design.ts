@@ -1,17 +1,23 @@
-// Paleta plana oscura — grises sólidos, sin efectos glass excesivos
+// Paleta oscura DOT / 480 — negro OLED puro, superficies de hardware y bordes
+// táctiles. Es la de las reglas del proyecto (fondo #070809, superficie #111315,
+// borde #26292e). Hasta 2026-10-06 el «oscuro» por defecto era otra paleta gris
+// (#0f0f0f) y la OLED vivía aparte como tema «DOT/480»: se fundieron en esta
+// (migración v7→v8 en `configMigration`).
 export const VD = {
-  bg: '#0f0f0f',
-  surface: '#191919',
-  elevated: '#222222',
-  elevatedHover: '#272727', // step entre elevated y overlay para hover
-  overlay: '#2b2b2b',
-  border: '#2e2e2e',
-  borderStrong: '#3c3c3c',
-  text: '#dcdcdc',
-  textDim: '#888888',
-  textMuted: '#555555',
+  bg: '#070809',
+  surface: '#111315',
+  elevated: '#181b1e',
+  elevatedHover: '#20242a', // step entre elevated y overlay para hover
+  overlay: '#252a32',
+  border: '#26292e',
+  borderStrong: '#343a44',
+  text: '#e6e8eb',
+  textDim: '#8e929b',
+  textMuted: '#5d626c',
   accent: '#4a8ef0',
-  accentBg: 'rgba(74,142,240,0.12)',
+  accentBg: 'rgba(74,142,240,0.14)',
+  /** Texto sobre un fondo de acento. Lo recalcula `ThemeProvider` según el acento elegido. */
+  onAccent: '#070809',
   success: '#4caf7d',
   warning: '#d4a234',
   danger: '#d95f5f',
@@ -23,14 +29,22 @@ export const VD = {
   radius: { sm: 2, md: 3, lg: 4 } as const,
   // Escala única de sombras — flat depth, sin glow ni glass
   shadow: {
-    menu: '0 8px 24px rgba(0,0,0,0.7)',
-    modal: '0 16px 48px rgba(0,0,0,0.85)',
+    menu: '0 8px 24px rgba(0,0,0,0.8)',
+    modal: '0 16px 48px rgba(0,0,0,0.9)',
   } as const,
+  /** Velo detrás de un modal. Uno solo: antes había nueve opacidades distintas. */
+  backdrop: 'rgba(7,8,9,0.82)',
   // 4.7 — escala de spacing en múltiplos de 4. Cualquier valor nuevo debe encajar en esta escala.
   // Uso: VD.space.xs (4) micro / sm (8) componente / md (12) sección / lg (16) bloque / xl (20) región / 2xl (24) mayor.
   space: { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, '2xl': 24, '3xl': 32 } as const,
+  /**
+   * Escala tipográfica (px). Enteros: los 6,5 / 7,5 / 8,5 / 9,5 sueltos se
+   * renderizaban borrosos en la mono. xs = rótulos en puntos y notas,
+   * sm = cuerpo de la interfaz, md = campos, lg = títulos de sección, xl = títulos de pantalla.
+   */
+  tipo: { xs: 8, sm: 9, md: 11, lg: 13, xl: 16 } as const,
   // Color del píxel apagado en la matriz de puntos — atado al token de texto
-  dotIdle: 'rgba(220,220,220,0.04)',
+  dotIdle: 'rgba(255,255,255,0.04)',
   // Trama clara sobre fondo oscuro.
   trama: '255,255,255',
 } as const;
@@ -39,12 +53,14 @@ export type VDTokens = {
   bg: string; surface: string; elevated: string; elevatedHover: string;
   overlay: string; border: string; borderStrong: string;
   text: string; textDim: string; textMuted: string;
-  accent: string; accentBg: string;
+  accent: string; accentBg: string; onAccent: string;
   success: string; warning: string; danger: string; violet: string;
   font: string; mono: string; dots: string;
   radius: { readonly sm: number; readonly md: number; readonly lg: number };
   shadow: { menu: string; modal: string };
+  backdrop: string;
   space: { readonly xs: number; readonly sm: number; readonly md: number; readonly lg: number; readonly xl: number; readonly '2xl': number; readonly '3xl': number };
+  tipo: { readonly xs: number; readonly sm: number; readonly md: number; readonly lg: number; readonly xl: number };
   dotIdle: string;
   /** Color de la trama de los fondos, como "r,g,b" para poder darle alfa. */
   trama: string;
@@ -68,35 +84,29 @@ export const VD_LIGHT: VDTokens = {
     menu: '0 8px 24px rgba(0,0,0,0.16)',
     modal: '0 16px 48px rgba(0,0,0,0.25)',
   },
+  backdrop: 'rgba(17,20,24,0.45)',
   dotIdle: 'rgba(0,0,0,0.08)',
   // Trama oscura sobre fondo gris claro: técnica y nítida.
   trama: '0,0,0',
 };
 
-// Paleta física DOT / 480 — negro OLED puro (#070809), bordes táctiles de hardware, radios nítidos.
-export const VD_DOT480: VDTokens = {
-  ...VD,
-  bg: '#070809',
-  surface: '#111315',
-  elevated: '#181b1e',
-  elevatedHover: '#20242a',
-  overlay: '#252a32',
-  border: '#1f2229',
-  borderStrong: '#2e3440',
-  text: '#e6e8eb',
-  textDim: '#8e929b',
-  textMuted: '#555a64',
-  accent: '#ff3b30',
-  accentBg: 'rgba(255,59,48,0.16)',
-  danger: '#ff3b30',
-  radius: { sm: 1, md: 2, lg: 3 } as const,
-  shadow: {
-    menu: '0 8px 24px rgba(0,0,0,0.9)',
-    modal: '0 16px 48px rgba(0,0,0,0.95)',
-  },
-  dotIdle: 'rgba(255,255,255,0.04)',
-  trama: '255,255,255',
-};
+/** Acento de la firma DOT / 480 (el rojo de los presets). */
+export const ACENTO_DOT480 = '#ff3b30';
+
+/**
+ * Qué color de texto se lee sobre un fondo de `color`: casi negro sobre
+ * acentos claros (lima, ámbar), casi blanco sobre oscuros. Nunca `#ffffff`.
+ * Acepta `#rgb` y `#rrggbb`; con cualquier otra cosa devuelve el oscuro.
+ */
+export function textoSobre(color: string): string {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) return VD.onAccent;
+  const h = m[1].length === 3 ? m[1].split('').map((c) => c + c).join('') : m[1];
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return lum > 0.22 ? '#070809' : '#e6e8eb';
+}
 
 // Presets del color de acento — 10 colores que cubren el espectro sin chocar con
 // los tokens semánticos (success/warning/danger). El usuario puede usar el
@@ -106,7 +116,7 @@ export const ACCENT_PRESETS: readonly string[] = [
   VD.success,  // verde
   VD.warning,  // amarillo/ámbar
   VD.violet,   // violeta
-  VD.danger,   // rojo
+  ACENTO_DOT480, // rojo DOT / 480
   '#2dd4bf',   // teal/cian
   '#f472b6',   // rosa
   '#fb923c',   // naranja
