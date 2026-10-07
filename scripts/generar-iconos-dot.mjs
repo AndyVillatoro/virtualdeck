@@ -25,7 +25,18 @@
  * Escribe siempre:
  *   src/data/iconosDot/marcas.json     — [id, bits] por icono
  *   src/data/iconosDot/acciones.json   — [id, bits] por icono
- *   src/data/iconosDot/indice.json     — [id, nombre, etiquetas] para buscar
+ *   src/data/iconosDot/indice.json     — índice de búsqueda compacto:
+ *     · `etiquetas`: tabla compartida de etiquetas (los iconos la referencian
+ *       por índice; antes cada etiqueta se repetía entera en su entrada);
+ *     · `categorias`: [titulo, recuento] de Tabler, que antes solo vivía
+ *       mezclado en minúsculas dentro de las etiquetas;
+ *     · `destacadas`: subgrupos de marcas con los ids de Simple Icons que
+ *       casan con los 6 grupos viejos de `BRAND_ICONS` (las que no casan se
+ *       listan por consola, no se inventan);
+ *     · `acciones`: [id, [etq], cat] — el nombre de una acción es su id con
+ *       guiones, así que no se guarda;
+ *     · `marcas`: [id, nombre, [etq]?] — sin el tercer elemento si no hay
+ *       etiquetas.
  * y las muestras en <dir>: 100 al azar por catálogo + los rellenos a contorno.
  */
 
@@ -252,6 +263,104 @@ async function enLotes(items, tamano, tarea) {
 
 const LICENCIAS_LIBRES = new Set(['CC0-1.0', 'Unlicense']);
 
+// Nombres canónicos en Simple Icons para marcas viejas que no casan por slug
+// ni por título. Son renombres documentados (`Chrome` es `googlechrome`), no
+// ids inventados: si el slug no existe en la versión instalada, la pareja
+// queda sin casar y se reporta igual que las demás.
+const ALIAS_MARCAS_SI = new Map([
+  ['chrome', 'googlechrome'],
+  ['vscode', 'visualstudiocode'],
+  ['illustrator', 'adobeillustrator'],
+  ['aftereffects', 'adobeaftereffects'],
+  ['photoshop', 'adobephotoshop'],
+  ['premiere', 'adobepremierepro'],
+  ['excel', 'microsoftexcel'],
+  ['word', 'microsoftword'],
+  ['powerpoint', 'microsoftpowerpoint'],
+  ['outlook', 'microsoftoutlook'],
+  ['onenote', 'microsoftonenote'],
+  ['teams', 'microsoftteams'],
+  ['edge', 'microsoftedge'],
+  ['nintendo', 'nintendoswitch'],
+  ['notepadpp', 'notepadplusplus'],
+]);
+
+/** Clave de cotejo: sin mayúsculas, sin tildes, solo letras y dígitos. */
+function normalizarMarca(texto) {
+  return String(texto)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/** Los 6 grupos de `BRAND_ICONS` (clave vieja → etiqueta), leídos del fuente. */
+function leerGruposMarcasViejas() {
+  const fuente = readFileSync(join(RAIZ, 'src', 'comun', 'brandIcons.ts'), 'utf-8');
+  const bloque = fuente.slice(
+    fuente.indexOf('BRAND_ICON_GROUPS'),
+    fuente.indexOf('// ── Build flat lookup map'),
+  );
+  const grupos = [];
+  let actual = null;
+  for (const linea of bloque.split(/\r?\n/)) {
+    const titulo = linea.match(/title:\s*'((?:[^'\\]|\\.)*)'/);
+    if (titulo) {
+      actual = { titulo: titulo[1], claves: [] };
+      grupos.push(actual);
+      continue;
+    }
+    const clave = linea.match(/^\s*\['([^']+)',\s*'((?:[^'\\]|\\.)*)'/);
+    if (clave && actual) actual.claves.push({ key: clave[1], label: clave[2] });
+  }
+  return grupos;
+}
+
+/**
+ * Empareja cada marca vieja con un id de Simple Icons por slug, título, alias
+ * o el renombre de `ALIAS_MARCAS_SI`. Devuelve los subgrupos con los ids que
+ * de verdad existen en el catálogo (los filtros de calidad pueden descartar
+ * una pareja) y la lista de las que no casan, para no inventar ninguna.
+ */
+function emparejarDestacadas(grupos, meta, idsValidos) {
+  const porNombre = new Map();
+  const apuntar = (nombre, slug) => {
+    const clave = normalizarMarca(nombre);
+    if (clave && !porNombre.has(clave)) porNombre.set(clave, slug);
+  };
+  for (const [slug, datos] of meta) {
+    apuntar(slug, slug);
+    apuntar(datos.title ?? '', slug);
+    for (const alias of datos.aliases?.aka ?? []) apuntar(alias, slug);
+  }
+  const destacadas = [];
+  const sinPareja = [];
+  const descartadas = [];
+  for (const grupo of grupos) {
+    const ids = [];
+    for (const { key, label } of grupo.claves) {
+      // El alias solo vale si el slug existe en la versión instalada; si no,
+      // es una marca sin pareja, no una pareja descartada por los filtros.
+      const alias = ALIAS_MARCAS_SI.get(key);
+      const slug =
+        (alias && meta.has(alias) ? alias : undefined) ??
+        porNombre.get(normalizarMarca(key)) ??
+        porNombre.get(normalizarMarca(label));
+      if (!slug) {
+        sinPareja.push(key);
+        continue;
+      }
+      if (!idsValidos.has(slug)) {
+        descartadas.push(`${key}→${slug}`);
+        continue;
+      }
+      if (!ids.includes(slug)) ids.push(slug);
+    }
+    if (ids.length) destacadas.push([grupo.titulo, ids]);
+  }
+  return { destacadas, sinPareja, descartadas };
+}
+
 function cargarMarcasCrudas() {
   const raiz = join(RAIZ, 'node_modules', 'simple-icons');
   const meta = new Map(
@@ -280,7 +389,7 @@ function cargarMarcasCrudas() {
     ]);
     iconos.push({ id, nombre, etiquetas, svg: join(raiz, 'icons', archivo) });
   }
-  return { iconos, excluidosPorLicencia };
+  return { iconos, excluidosPorLicencia, meta };
 }
 
 function cargarAccionesCrudas() {
@@ -291,12 +400,19 @@ function cargarAccionesCrudas() {
     if (!archivo.endsWith('.svg')) continue;
     const id = basename(archivo, '.svg');
     const datos = meta[id] ?? {};
+    // La categoría ya no se mezcla en las etiquetas: sale como campo aparte
+    // (`categoria`) para poder agrupar la barra lateral.
     const etiquetas = sinDuplicados([
       ...(Array.isArray(datos.tags) ? datos.tags.filter((t) => typeof t === 'string' && t.length >= 2) : []),
-      ...(datos.category ? [String(datos.category).toLowerCase()] : []),
       ...palabras(id),
     ]);
-    iconos.push({ id, nombre: id.replace(/-/g, ' '), etiquetas, svg: join(raiz, 'icons', 'outline', archivo) });
+    iconos.push({
+      id,
+      nombre: id.replace(/-/g, ' '),
+      etiquetas,
+      categoria: datos.category ? String(datos.category) : '',
+      svg: join(raiz, 'icons', 'outline', archivo),
+    });
   }
   return { iconos, excluidosPorLicencia: 0 };
 }
@@ -330,6 +446,7 @@ async function generarCatalogo(nombre, crudo, umbral, opciones) {
         id: r.id,
         nombre: r.nombre,
         etiquetas: r.etiquetas,
+        categoria: r.categoria,
         bits: contorno ? aContorno(r.bits) : r.bits,
         encendidos: r.encendidos,
         contorno,
@@ -363,17 +480,39 @@ function escribirJson(ruta, catalogo) {
   return statSync(ruta).size;
 }
 
-// Índice ligero: sin bitmaps, una terna por icono. Repetir las claves en
-// 8.300 entradas engordaba el archivo un 40 % sin aportar nada.
-function escribirIndice(ruta, porCatalogo) {
-  const lineas = ['{', `"formato": ${JSON.stringify('[id, nombre, [etiquetas...]] por catalogo')},`];
-  for (const [nombre, entradas] of Object.entries(porCatalogo)) {
-    lineas.push(`"${nombre}": [`);
-    for (const e of entradas) lineas.push(`${JSON.stringify(e)},`);
-    lineas.push(lineas.pop().replace(/,$/, ''), '],');
-  }
-  lineas.push(lineas.pop().replace(/,$/, ''), '}', '');
-  const texto = lineas.join('\n').replace(/,\n\]\n\}\n$/, '\n]\n}\n');
+// Índice compacto: sin bitmaps, etiquetas en tabla compartida y el nombre de
+// una acción derivado de su id. Repetir cada etiqueta entera en su entrada
+// engordaba el archivo sin aportar nada (roadmap 84).
+function escribirIndice(ruta, { marcas, acciones, categorias, destacadas }) {
+  const tabla = new Map();
+  const referencia = (t) => {
+    if (!tabla.has(t)) tabla.set(t, tabla.size);
+    return tabla.get(t);
+  };
+  const refs = (lista) => lista.map(referencia);
+  const bloque = (nombre, entradas) => [`"${nombre}": [`, ...entradas.map((e) => JSON.stringify(e) + ','), '],'];
+  const entradasAcciones = acciones.map((i) => [
+    i.id,
+    refs(podarEtiquetas(i.id, i.nombre, i.etiquetas)),
+    categorias.indice.get(i.categoria) ?? -1,
+  ]);
+  const entradasMarcas = marcas.map((i) => {
+    const etiquetas = refs(podarEtiquetas(i.id, i.nombre, i.etiquetas));
+    // Sin etiquetas no se escribe el tercer elemento: son miles de `[]`.
+    return etiquetas.length ? [i.id, i.nombre, etiquetas] : [i.id, i.nombre];
+  });
+  const lineas = [
+    '{',
+    `"formato": ${JSON.stringify('[id, [etq], cat] acciones; [id, nombre, [etq]?] marcas — etq = indice en "etiquetas", cat = indice en "categorias" (-1 = sin categoria), el nombre de una accion es su id con guiones')},`,
+    ...bloque('etiquetas', [...tabla.keys()]),
+    `"categorias": ${JSON.stringify(categorias.lista)},`,
+    `"destacadas": ${JSON.stringify(destacadas)},`,
+    ...bloque('marcas', entradasMarcas),
+    ...bloque('acciones', entradasAcciones),
+    '}',
+    '',
+  ];
+  const texto = lineas.join('\n').replace(/,\n(?=\s*[\]}])/g, '\n');
   writeFileSync(ruta, texto, 'utf-8');
   return statSync(ruta).size;
 }
@@ -465,12 +604,33 @@ async function main() {
     umbral,
     iconos: acciones.validos.map((i) => [i.id, i.bits.toString('base64')]),
   });
+  // Las categorías de Tabler, con recuento de los iconos que sobrevivieron al
+  // filtro, para la barra lateral de grupos del catálogo.
+  const conteoCategorias = new Map();
+  for (const icono of acciones.validos) {
+    if (!icono.categoria) continue;
+    conteoCategorias.set(icono.categoria, (conteoCategorias.get(icono.categoria) ?? 0) + 1);
+  }
+  const listaCategorias = [...conteoCategorias.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const categorias = {
+    lista: listaCategorias,
+    indice: new Map(listaCategorias.map(([titulo], n) => [titulo, n])),
+  };
+  // Subgrupos de marcas destacadas: los 6 grupos viejos de `BRAND_ICONS`
+  // emparejados con su id de Simple Icons. Las que no casan se reportan.
+  const gruposViejos = leerGruposMarcasViejas();
+  const destacadas = emparejarDestacadas(
+    gruposViejos,
+    marcasCrudo.meta,
+    new Set(marcas.validos.map((i) => i.id)),
+  );
   // El índice guarda las etiquetas ya podadas: la búsqueda no cambia porque
   // todo lo quitado se encontraba por id, por nombre o por otra etiqueta.
-  const ternas = (lista) => lista.map((i) => [i.id, i.nombre, podarEtiquetas(i.id, i.nombre, i.etiquetas)]);
   tam.indice = escribirIndice(join(DIR_SALIDA, 'indice.json'), {
-    marcas: ternas(marcas.validos),
-    acciones: ternas(acciones.validos),
+    marcas: marcas.validos,
+    acciones: acciones.validos,
+    categorias,
+    destacadas: destacadas.destacadas,
   });
 
   // Semilla propia por catálogo: la muestra de acciones ya estaba aprobada y no
@@ -500,6 +660,16 @@ async function main() {
 
   console.log(linea('marcas  ', marcas, marcasCrudo.excluidosPorLicencia));
   console.log(linea('acciones', acciones));
+  console.log(
+    `categorias: ${listaCategorias.length} · destacadas: ` +
+    destacadas.destacadas.map(([t, ids]) => `${t} (${ids.length})`).join(' · '),
+  );
+  if (destacadas.sinPareja.length) {
+    console.log(`marcas viejas sin pareja en Simple Icons (${destacadas.sinPareja.length}): ${destacadas.sinPareja.join(', ')}`);
+  }
+  if (destacadas.descartadas.length) {
+    console.log(`marcas viejas con pareja descartada por los filtros (${destacadas.descartadas.length}): ${destacadas.descartadas.join(', ')}`);
+  }
   console.log(`archivos: marcas.json ${tam.marcas} B · acciones.json ${tam.acciones} B · indice.json ${tam.indice} B`);
   console.log(`muestras: ${rutaMarcas} · ${rutaAcciones} · contorno (${aContornoMuestra.length} de ${convertidos.length}): ${rutaContorno}`);
 }

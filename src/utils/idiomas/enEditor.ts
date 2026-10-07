@@ -207,4 +207,15 @@ export const EN_EDITOR: Dict = {
   'plantilla.app.premiere': 'Premiere Pro',
   'plantilla.app.explorer': 'File Explorer',
   'undo.applyPreset': 'apply preset "{nombre}"',
+  // — Icon catalog with group sidebar —
+  'cat.abrir': 'OPEN CATALOG',
+  'cat.todas': 'ALL',
+  'cat.recientes': 'RECENT',
+  'cat.glifos': '8×8 GLYPHS',
+  'cat.acciones': 'ACTIONS',
+  'cat.tablerTodas': 'ALL ACTIONS',
+  'cat.marcasDestacadas': 'FEATURED BRANDS',
+  'cat.marcasAz': 'BRANDS A-Z',
+  'cat.grupos': 'GROUPS',
+  'cat.sinIcono': 'NO ICON',
 };

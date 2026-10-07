@@ -208,4 +208,15 @@ export const ES_EDITOR: Dict = {
   'plantilla.app.premiere': 'Premiere Pro',
   'plantilla.app.explorer': 'Explorador de archivos',
   'undo.applyPreset': 'aplicar preset "{nombre}"',
+  // — Catálogo de iconos con barra de grupos —
+  'cat.abrir': 'ABRIR CATÁLOGO',
+  'cat.todas': 'TODAS',
+  'cat.recientes': 'RECIENTES',
+  'cat.glifos': 'GLIFOS 8×8',
+  'cat.acciones': 'ACCIONES',
+  'cat.tablerTodas': 'TODAS LAS ACCIONES',
+  'cat.marcasDestacadas': 'MARCAS DESTACADAS',
+  'cat.marcasAz': 'MARCAS A-Z',
+  'cat.grupos': 'GRUPOS',
+  'cat.sinIcono': 'SIN ICONO',
 };

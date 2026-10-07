@@ -1,8 +1,8 @@
 import React, { lazy, Suspense, useMemo } from 'react';
 import { EditorPuntos } from '../../components/dot480/EditorPuntos';
 import { iconoDeCatalogo, useCatalogoMarcas } from '../../utils/catalogoMarcas';
-import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 import { CAT_MARCAS, PREFIJO_MARCAS } from './constantesCatalogo';
+import type { IconoElegido, SeccionCatalogo } from './constantesCatalogo';
 
 const SelectorIconosDot = lazy(() =>
   import('./SelectorIconosDot').then((m) => ({ default: m.SelectorIconosDot }))
@@ -15,9 +15,9 @@ interface ModalesIconosEditorProps {
   accent: string;
   onSelectBrandIcon?: (key: string) => void;
 
-  catalogoDotAbierto?: NombreCatalogo | null;
+  catalogoDotAbierto?: SeccionCatalogo | null;
   onCloseCatalogoDot?: () => void;
-  onSelectIconoDot?: (icono: { bits: string; origen: string }) => void;
+  onSelectIconoDot?: (icono: IconoElegido) => void;
   currentOrigen?: string;
 
   showGlyphEditor: boolean;
@@ -83,6 +83,10 @@ export function ModalesIconosEditor({
   }
 
   const verCatalogoDot = Boolean(catalogoDotAbierto || showBrandPicker);
+  // Un icono de marca viejo (sin mapa de puntos) también cuenta como origen
+  // actual: el catálogo abre en el subgrupo destacado que lo contiene.
+  const origenActual =
+    currentOrigen ?? (brandIcon ? `${PREFIJO_MARCAS}${brandIcon}` : undefined);
 
   return (
     <>
@@ -91,11 +95,11 @@ export function ModalesIconosEditor({
           <SelectorIconosDot
             catalogoInicial={catalogoDotAbierto ?? CAT_MARCAS}
             accent={accent}
-            currentOrigen={currentOrigen}
+            currentOrigen={origenActual}
             onSelect={(icono) => {
               if (onSelectIconoDot) {
                 onSelectIconoDot(icono);
-              } else if (onSelectBrandIcon) {
+              } else if (icono.tipo === 'puntos' && onSelectBrandIcon) {
                 const clave = icono.origen.startsWith(PREFIJO_MARCAS)
                   ? icono.origen.slice(PREFIJO_MARCAS.length)
                   : icono.origen;

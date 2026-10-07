@@ -7,25 +7,30 @@ import { BrandIconDisplay } from '../../components/BrandIconDisplay';
 import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
 import { GLIFO_POR_TIPO_ACCION } from '../../components/dot480/glifosPorTipoAccion';
 import { Field, Btn } from './comunes';
-import { PanelMarcaIcono } from './PanelMarcaIcono';
-import { SelectorIconoGlifoCatalogo } from './SelectorIconoGlifoCatalogo';
-import { CAT_ACCIONES } from './constantesCatalogo';
+import { PanelCatalogoIcono } from './catalogo/PanelCatalogoIcono';
+import { CAT_ACCIONES, CAT_MARCAS } from './constantesCatalogo';
 import type { TipoIcono } from './tiposIcono';
 import type { ButtonAction } from '../../types';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 
-const TIPOS_ICONO: TipoIcono[] = ['auto', 'glifo', 'dibujo', 'marca', 'imagen'];
+// La pestaña CATÁLOGO cubre los dos tipos internos (glifo y marca) sin cambiar
+// el formato guardado: `fichaDeTipo` los une y `elegirFicha` los conserva.
+type FichaIcono = 'auto' | 'catalogo' | 'dibujo' | 'imagen';
 
-function etiquetaDeTipo(tipo: TipoIcono, tf: (s: string) => string): string {
-  switch (tipo) {
+const TIPOS_ICONO: FichaIcono[] = ['auto', 'catalogo', 'dibujo', 'imagen'];
+
+function fichaDeTipo(tipo: TipoIcono): FichaIcono {
+  return tipo === 'glifo' || tipo === 'marca' ? 'catalogo' : tipo;
+}
+
+function etiquetaDeTipo(ficha: FichaIcono, tf: (s: string) => string): string {
+  switch (ficha) {
     case 'auto':
       return tf('AUTOMÁTICO');
-    case 'glifo':
-      return tf('GLIFO');
+    case 'catalogo':
+      return tf('CATÁLOGO');
     case 'dibujo':
       return tf('DIBUJO PROPIO');
-    case 'marca':
-      return tf('MARCA');
     case 'imagen':
       return tf('IMAGEN / GIF');
   }
@@ -68,6 +73,16 @@ export interface CampoIconoUnificadoProps {
 export function CampoIconoUnificado(props: CampoIconoUnificadoProps) {
   const tf = useFieldText();
   const { tipoIcono, setTipoIcono, habiaVariosCamposIcono, accent } = props;
+  const fichaActiva = fichaDeTipo(tipoIcono);
+
+  const elegirFicha = (ficha: FichaIcono) => {
+    if (ficha === 'catalogo') {
+      // Sin un icono de catálogo elegido, la pestaña abre el modal directamente.
+      if (fichaActiva !== 'catalogo') props.onAbrirCatalogoDot?.(CAT_ACCIONES);
+      return;
+    }
+    setTipoIcono(ficha);
+  };
 
   return (
     <Field label={tf('ICONO')}>
@@ -78,18 +93,32 @@ export function CampoIconoUnificado(props: CampoIconoUnificadoProps) {
           />
         )}
 
-        <FichasSelector tipoIcono={tipoIcono} setTipoIcono={setTipoIcono} accent={accent} />
+        <FichasSelector fichaActiva={fichaActiva} onElegirFicha={elegirFicha} accent={accent} />
 
         <div style={{ paddingTop: 4 }}>
           {tipoIcono === 'auto' && <PanelAuto action={props.action} fgColor={props.fgColor} />}
-          {tipoIcono === 'glifo' && (
-            <SelectorIconoGlifoCatalogo
+          {fichaActiva === 'catalogo' && (
+            <PanelCatalogoIcono
+              tipoIcono={tipoIcono}
+              accent={accent}
               icon={props.icon}
               setIcon={props.setIcon}
-              accent={accent}
               iconoPuntos={props.iconoPuntos}
               setIconoPuntos={props.setIconoPuntos}
-              onAbrirCatalogoAcciones={() => props.onAbrirCatalogoDot?.(CAT_ACCIONES)}
+              brandIcon={props.brandIcon}
+              setBrandIcon={props.setBrandIcon}
+              brandIconAlwaysAnimate={props.brandIconAlwaysAnimate}
+              setBrandIconAlwaysAnimate={props.setBrandIconAlwaysAnimate}
+              brandIconCustomBitmap={props.brandIconCustomBitmap}
+              brandIconCustomColor={props.brandIconCustomColor}
+              brandIconCustomPalette={props.brandIconCustomPalette}
+              setBrandIconCustomBitmap={props.setBrandIconCustomBitmap}
+              setBrandIconCustomColor={props.setBrandIconCustomColor}
+              glifoEncima={props.glifoEncima}
+              setGlifoEncima={props.setGlifoEncima}
+              onAbrirCatalogo={() =>
+                props.onAbrirCatalogoDot?.(tipoIcono === 'marca' ? CAT_MARCAS : CAT_ACCIONES)
+              }
             />
           )}
           {tipoIcono === 'dibujo' && (
@@ -106,7 +135,6 @@ export function CampoIconoUnificado(props: CampoIconoUnificadoProps) {
               fgColor={props.fgColor}
             />
           )}
-          {tipoIcono === 'marca' && <PanelMarcaIcono {...props} />}
           {tipoIcono === 'imagen' && <PanelImagen {...props} />}
         </div>
       </div>
@@ -139,12 +167,12 @@ function AvisoVariosCampos({ mensaje }: { mensaje: string }) {
 }
 
 function FichasSelector({
-  tipoIcono,
-  setTipoIcono,
+  fichaActiva,
+  onElegirFicha,
   accent,
 }: {
-  tipoIcono: TipoIcono;
-  setTipoIcono: (t: TipoIcono) => void;
+  fichaActiva: FichaIcono;
+  onElegirFicha: (ficha: FichaIcono) => void;
   accent: string;
 }) {
   const VD = useTheme();
@@ -159,12 +187,12 @@ function FichasSelector({
       }}
     >
       {TIPOS_ICONO.map((id) => {
-        const activa = tipoIcono === id;
+        const activa = fichaActiva === id;
         return (
           <button
             key={id}
             type="button"
-            onClick={() => setTipoIcono(id)}
+            onClick={() => onElegirFicha(id)}
             style={{
               minHeight: 38,
               padding: '8px 8px',

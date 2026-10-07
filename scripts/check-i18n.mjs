@@ -219,6 +219,12 @@ const PERMITIDOS = new Set([
   // `color` es igual en los dos idiomas. En minuscula ademas casi siempre es
   // CSS (`transition: 'color 0.15s'`, `<input type="color">`), no un texto.
   'COLOR', 'Color', 'color', 'color 0.15s',
+  // Clave de dato del catálogo de iconos (`src/data/iconosDot`): nombra el
+  // catálogo de Tabler y es el prefijo que se **guarda** en cada botón
+  // (`iconoPuntos.origen = 'acciones:<id>'`), así que no se puede renombrar sin
+  // migrar configuraciones. No es texto: nunca se enseña. Antes de esta
+  // entrada se escribía `'acc' + 'iones'` para que este script no la viera.
+  'acciones', 'acciones:',
 ]);
 
 function pareceEspanol(s) {

@@ -360,5 +360,6 @@ export const FIELDS_EN: Record<string, string> = {
   'VISTA PREVIA:': 'PREVIEW:',
   'APAGADO': 'OFF',
   'ENCENDIDO': 'ON',
+  'CATÁLOGO': 'CATALOG',
 };
 

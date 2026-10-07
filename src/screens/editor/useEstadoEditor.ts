@@ -14,7 +14,8 @@ import { useCapturaHotkey } from './useCapturaHotkey';
 import { usePegarImagen } from './usePegarImagen';
 import { resolverIconoInicial, limpiarCamposIcono, type TipoIcono } from './tiposIcono';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
-import { PREFIJO_MARCAS } from './constantesCatalogo';
+import { CAT_ACCIONES, PREFIJO_MARCAS } from './constantesCatalogo';
+import type { IconoElegido, SeccionCatalogo } from './constantesCatalogo';
 import type { ButtonConfig, SubButtonConfig, EfectoPuntos, EfectoPulsar } from '../../types';
 import type { PresetDock } from '../../data/presetsDock';
 
@@ -109,7 +110,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [encendidoFgColor, setEncendidoFgColor] = useState<string>(est.aspectoEncendido?.fgColor ?? '');
   const [previewToggled, setPreviewToggled] = useState(false);
   const [destinoCatalogo, setDestinoCatalogo] = useState<'principal' | 'encendido'>('principal');
-  const [catalogoDotAbierto, setCatalogoDotAbierto] = useState<NombreCatalogo | null>(null);
+  const [catalogoDotAbierto, setCatalogoDotAbierto] = useState<SeccionCatalogo | null>(null);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [showBrandEditor, setShowBrandEditor] = useState(false);
   const [bgColor, setBgColor] = useState(est.bgColor);
@@ -267,14 +268,35 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
 
   const abrirCatalogoDot = (cat: NombreCatalogo, destino: 'principal' | 'encendido' = 'principal') => {
     setDestinoCatalogo(destino);
-    setCatalogoDotAbierto(cat);
+    // Con un glifo 8×8 elegido, el catálogo abre en su grupo, no en Tabler.
+    const glifoElegido = destino === 'principal' && tipoIcono === 'glifo';
+    setCatalogoDotAbierto(glifoElegido && cat === CAT_ACCIONES ? 'glifos' : cat);
   };
   const cerrarCatalogoDot = () => setCatalogoDotAbierto(null);
 
-  const seleccionarIconoCatalogo = (icono: { bits: string; origen: string }) => {
+  const seleccionarIconoCatalogo = (icono: IconoElegido) => {
     if (destinoCatalogo === 'encendido') {
-      setEncendidoIconoPuntos(icono);
-      setEncendidoIcon('');
+      if (icono.tipo === 'puntos') {
+        setEncendidoIconoPuntos(icono);
+        setEncendidoIcon('');
+      } else {
+        setEncendidoIcon(icono.icon);
+        setEncendidoIconoPuntos(undefined);
+      }
+      setCatalogoDotAbierto(null);
+      return;
+    }
+    if (icono.tipo === 'glifo') {
+      // El glifo 8×8 del catálogo es el mismo que el de la fila rápida.
+      setIcon(icono.icon);
+      setIconoPuntos(undefined);
+      setTipoIcono('glifo');
+      setImageData('');
+      setBrandIcon('');
+      setBrandIconCustomBitmap(undefined);
+      setBrandIconCustomColor(undefined);
+      setBrandIconCustomPalette(undefined);
+      setCustomGlyph57(undefined);
       setCatalogoDotAbierto(null);
       return;
     }

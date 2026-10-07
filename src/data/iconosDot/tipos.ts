@@ -13,14 +13,53 @@ export interface CatalogoDot {
   iconos: IconoDot[];
 }
 
-/** [id, nombre, etiquetas] — el índice ligero de búsqueda, sin bitmaps. */
-export type EntradaIndice = [string, string, string[]];
+/** Los catálogos disponibles (los bitmaps), derivados de las claves del índice. */
+export type NombreCatalogo = keyof Omit<IndiceDot, 'formato' | 'categorias' | 'destacadas'>;
 
+/** De dónde sale una entrada del índice. */
+export interface OrigenEntrada {
+  catalogo: NombreCatalogo;
+  /** Categoría de Tabler; solo en las acciones. */
+  categoria?: string;
+}
+
+/**
+ * [id, nombre, etiquetas, origen] — entrada resuelta de búsqueda, sin bitmaps.
+ * La búsqueda mira id, nombre, etiquetas y categoría, igual que antes de mover
+ * la categoría fuera de las etiquetas.
+ */
+export type EntradaIndice = [string, string, string[], OrigenEntrada];
+
+/** Categoría de Tabler o subgrupo de marcas destacadas, con su recuento. */
+export interface GrupoIndice {
+  titulo: string;
+  recuento: number;
+  /** Solo en los subgrupos de marcas destacadas: los ids que agrupa. */
+  ids?: string[];
+}
+
+/** Índice resuelto: lo que consume el selector (ver `resolverIndice`). */
 export interface IndiceDot {
   formato: string;
+  categorias: GrupoIndice[];
+  destacadas: GrupoIndice[];
   marcas: EntradaIndice[];
   acciones: EntradaIndice[];
 }
 
-/** Los catálogos disponibles: las claves de `IndiceDot` menos su metadata. */
-export type NombreCatalogo = keyof Omit<IndiceDot, 'formato'>;
+/** Formato compacto de `indice.json`: etiquetas por índice y acciones sin nombre. */
+export type CrudoMarca = [string, string] | [string, string, number[]];
+/** [id, etiquetas(indices), categoria(indice; -1 = sin categoria)] */
+export type CrudoAccion = [string, number[], number];
+
+export interface IndiceCrudo {
+  formato: string;
+  /** Tabla compartida de etiquetas: cada icono la referencia por posición. */
+  etiquetas: string[];
+  /** [titulo, recuento] de las categorías de Tabler, en orden alfabético. */
+  categorias: [string, number][];
+  /** [titulo, [ids de Simple Icons]] de los subgrupos de marcas destacadas. */
+  destacadas: [string, string[]][];
+  marcas: CrudoMarca[];
+  acciones: CrudoAccion[];
+}

@@ -5,14 +5,18 @@ import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { Btn, estiloEntrada } from './comunes';
 import { useSelectorIconosDot } from './useSelectorIconosDot';
-import { CAT_ACCIONES, CAT_MARCAS } from './constantesCatalogo';
-import type { NombreCatalogo, EntradaIndice } from '../../data/iconosDot/tipos';
+import { BarraGrupos } from './catalogo/BarraGrupos';
+import { RejillaIconos } from './catalogo/RejillaIconos';
+import { useVentanaEstrecha } from './catalogo/useVentanaEstrecha';
+import { CAT_ACCIONES } from './constantesCatalogo';
+import type { ItemCatalogo } from './catalogo/grupos';
+import type { IconoElegido, SeccionCatalogo } from './constantesCatalogo';
 
 export interface SelectorIconosDotProps {
-  catalogoInicial?: NombreCatalogo;
+  catalogoInicial?: SeccionCatalogo;
   currentOrigen?: string;
   accent: string;
-  onSelect: (icono: { bits: string; origen: string }) => void;
+  onSelect: (icono: IconoElegido) => void;
   onClose: () => void;
 }
 
@@ -24,24 +28,18 @@ export function SelectorIconosDot({
   onClose,
 }: SelectorIconosDotProps) {
   const VD = useTheme();
-  const tf = useFieldText();
-  const estado = useSelectorIconosDot(catalogoInicial);
+  const estado = useSelectorIconosDot(catalogoInicial, currentOrigen);
+  const estrecha = useVentanaEstrecha();
 
-  const {
-    catalogoActivo,
-    cambiarCatalogo,
-    cargando,
-    busqueda,
-    setBusqueda,
-    pagina,
-    setPagina,
-    totalPaginas,
-    totalResultados,
-    itemsPagina,
-    mapaBits,
-    hovered,
-    setHovered,
-  } = estado;
+  const elegir = (item: ItemCatalogo) => {
+    estado.registrarSeleccion(item);
+    if (item.clase === 'glifo8') {
+      onSelect({ tipo: 'glifo', icon: item.id });
+      return;
+    }
+    const bits = item.origen ? estado.mapaBits.get(item.origen) : undefined;
+    if (item.origen && bits) onSelect({ tipo: 'puntos', bits, origen: item.origen });
+  };
 
   return (
     <div
@@ -70,59 +68,66 @@ export function SelectorIconosDot({
           overflow: 'hidden',
         }}
       >
-        <BarraPestanas
-          catalogoActivo={catalogoActivo}
-          onCambiarCatalogo={cambiarCatalogo}
-          onClose={onClose}
-          accent={accent}
-        />
+        <Cabecera accent={accent} onClose={onClose} />
 
         <BarraBusqueda
-          busqueda={busqueda}
-          setBusqueda={setBusqueda}
-          hovered={hovered}
+          busqueda={estado.busqueda}
+          setBusqueda={estado.setBusqueda}
+          hovered={estado.hovered}
           currentOrigen={currentOrigen}
-          catalogoActivo={catalogoActivo}
-          totalResultados={totalResultados}
-          mapaBits={mapaBits}
+          totalResultados={estado.totalResultados}
+          mapaBits={estado.mapaBits}
           accent={accent}
         />
 
-        <RejillaIconos
-          cargando={cargando}
-          itemsPagina={itemsPagina}
-          mapaBits={mapaBits}
-          catalogoActivo={catalogoActivo}
-          currentOrigen={currentOrigen}
-          accent={accent}
-          onHover={setHovered}
-          onSelect={(id, bits) => onSelect({ bits, origen: `${catalogoActivo}:${id}` })}
-        />
+        {estrecha && (
+          <BarraGrupos
+            indice={estado.indice}
+            recuentos={estado.recuentos}
+            buscando={estado.buscando}
+            grupoActivo={estado.grupoActivo}
+            onElegir={estado.elegirGrupo}
+            plegada
+            accent={accent}
+          />
+        )}
+
+        <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+          {!estrecha && (
+            <BarraGrupos
+              indice={estado.indice}
+              recuentos={estado.recuentos}
+              buscando={estado.buscando}
+              grupoActivo={estado.grupoActivo}
+              onElegir={estado.elegirGrupo}
+              plegada={false}
+              accent={accent}
+            />
+          )}
+          <RejillaIconos
+            cargando={estado.cargando}
+            items={estado.itemsPagina}
+            mapaBits={estado.mapaBits}
+            currentOrigen={currentOrigen}
+            accent={accent}
+            onHover={estado.setHovered}
+            onElegir={elegir}
+          />
+        </div>
 
         <BarraPaginacion
-          pagina={pagina}
-          totalPaginas={totalPaginas}
-          onCambiarPagina={setPagina}
-          accent={accent}
+          pagina={estado.pagina}
+          totalPaginas={estado.totalPaginas}
+          onCambiarPagina={estado.setPagina}
         />
 
-        <PieLicencia onClose={onClose} tf={tf} />
+        <PieLicencia onClose={onClose} />
       </div>
     </div>
   );
 }
 
-function BarraPestanas({
-  catalogoActivo,
-  onCambiarCatalogo,
-  onClose,
-  accent,
-}: {
-  catalogoActivo: NombreCatalogo;
-  onCambiarCatalogo: (cat: NombreCatalogo) => void;
-  onClose: () => void;
-  accent: string;
-}) {
+function Cabecera({ accent, onClose }: { accent: string; onClose: () => void }) {
   const VD = useTheme();
   const tf = useFieldText();
 
@@ -151,22 +156,6 @@ function BarraPestanas({
       >
         {tf('CATÁLOGO DE ICONOS')}
       </span>
-
-      <div style={{ display: 'flex', gap: 6, marginLeft: 16 }}>
-        <BotonPestana
-          activa={catalogoActivo === CAT_ACCIONES}
-          onClick={() => onCambiarCatalogo(CAT_ACCIONES)}
-          accent={accent}
-          texto={tf('ACCIONES (TABLER)')}
-        />
-        <BotonPestana
-          activa={catalogoActivo === CAT_MARCAS}
-          onClick={() => onCambiarCatalogo(CAT_MARCAS)}
-          accent={accent}
-          texto={tf('MARCAS (SIMPLE ICONS)')}
-        />
-      </div>
-
       <div style={{ flex: 1 }} />
       <button
         type="button"
@@ -188,56 +177,19 @@ function BarraPestanas({
   );
 }
 
-function BotonPestana({
-  activa,
-  onClick,
-  accent,
-  texto,
-}: {
-  activa: boolean;
-  onClick: () => void;
-  accent: string;
-  texto: string;
-}) {
-  const VD = useTheme();
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: '6px 12px',
-        fontFamily: VD.mono,
-        fontSize: 10,
-        fontWeight: activa ? 'bold' : 'normal',
-        letterSpacing: 0.6,
-        borderRadius: VD.radius.sm,
-        cursor: 'pointer',
-        background: activa ? VD.accentBg : 'transparent',
-        border: `1px solid ${activa ? accent : VD.border}`,
-        color: activa ? accent : VD.textDim,
-        transition: 'background 0.15s, border-color 0.15s',
-      }}
-    >
-      {texto}
-    </button>
-  );
-}
-
 function BarraBusqueda({
   busqueda,
   setBusqueda,
   hovered,
   currentOrigen,
-  catalogoActivo,
   totalResultados,
   mapaBits,
   accent,
 }: {
   busqueda: string;
   setBusqueda: (s: string) => void;
-  hovered: [string, string] | null;
+  hovered: ItemCatalogo | null;
   currentOrigen?: string;
-  catalogoActivo: NombreCatalogo;
   totalResultados: number;
   mapaBits: Map<string, string>;
   accent: string;
@@ -245,9 +197,7 @@ function BarraBusqueda({
   const VD = useTheme();
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
-
-  const hoverBits = hovered ? mapaBits.get(hovered[0]) : undefined;
-  const esActual = currentOrigen && currentOrigen.startsWith(`${catalogoActivo}:`);
+  const bitsHovered = hovered?.origen ? mapaBits.get(hovered.origen) : undefined;
 
   return (
     <div
@@ -298,15 +248,19 @@ function BarraBusqueda({
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
         {hovered ? (
           <>
-            {hoverBits && <IconoPuntos bits={hoverBits} size={20} color={accent} showRecessed />}
+            {hovered.clase === 'glifo8' ? (
+              <DotGlyphIcon glyph={hovered.id} size={20} color={accent} showRecessed />
+            ) : bitsHovered ? (
+              <IconoPuntos bits={bitsHovered} size={20} color={accent} showRecessed />
+            ) : null}
             <span style={{ fontFamily: VD.mono, fontSize: 11, color: VD.text, fontWeight: 'bold' }}>
-              {hovered[1].toUpperCase()}
+              {hovered.nombre.toUpperCase()}
             </span>
             <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim }}>
-              ({hovered[0]})
+              ({hovered.id})
             </span>
           </>
-        ) : esActual ? (
+        ) : currentOrigen ? (
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: accent }}>
             {currentOrigen}
           </span>
@@ -332,126 +286,14 @@ function BarraBusqueda({
   );
 }
 
-function RejillaIconos({
-  cargando,
-  itemsPagina,
-  mapaBits,
-  catalogoActivo,
-  currentOrigen,
-  accent,
-  onHover,
-  onSelect,
-}: {
-  cargando: boolean;
-  itemsPagina: EntradaIndice[];
-  mapaBits: Map<string, string>;
-  catalogoActivo: NombreCatalogo;
-  currentOrigen?: string;
-  accent: string;
-  onHover: (item: [string, string] | null) => void;
-  onSelect: (id: string, bits: string) => void;
-}) {
-  const VD = useTheme();
-  const tf = useFieldText();
-
-  if (cargando) {
-    return (
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: VD.mono,
-          fontSize: 12,
-          color: VD.textDim,
-        }}
-      >
-        {tf('Cargando catálogo...')}
-      </div>
-    );
-  }
-
-  if (itemsPagina.length === 0) {
-    return (
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: VD.mono,
-          fontSize: 12,
-          color: VD.textDim,
-        }}
-      >
-        {tf('Sin resultados')}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="vd-scroll"
-      style={{
-        flex: 1,
-        minHeight: 0,
-        overflowY: 'auto',
-        padding: 12,
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))',
-        gap: 4,
-        alignContent: 'start',
-      }}
-    >
-      {itemsPagina.map(([id, nombre]) => {
-        const bits = mapaBits.get(id);
-        const origen = `${catalogoActivo}:${id}`;
-        const esSeleccionado = currentOrigen === origen;
-
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => bits && onSelect(id, bits)}
-            onMouseEnter={() => onHover([id, nombre])}
-            onMouseLeave={() => onHover(null)}
-            title={`${nombre} (${id})`}
-            style={{
-              minWidth: 40,
-              minHeight: 40,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: esSeleccionado ? VD.accentBg : VD.surface,
-              border: `1px solid ${esSeleccionado ? accent : VD.border}`,
-              borderRadius: VD.radius.sm,
-              cursor: 'pointer',
-              padding: 0,
-              transition: 'background 0.1s, border-color 0.1s',
-            }}
-          >
-            {bits ? (
-              <IconoPuntos bits={bits} size={24} color={esSeleccionado ? accent : VD.text} />
-            ) : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function BarraPaginacion({
   pagina,
   totalPaginas,
   onCambiarPagina,
-  accent: _accent,
 }: {
   pagina: number;
   totalPaginas: number;
   onCambiarPagina: (p: number) => void;
-  accent: string;
 }) {
   const VD = useTheme();
   const tf = useFieldText();
@@ -536,14 +378,9 @@ function BotonPaginacion({
   );
 }
 
-function PieLicencia({
-  onClose,
-  tf,
-}: {
-  onClose: () => void;
-  tf: (s: string) => string;
-}) {
+function PieLicencia({ onClose }: { onClose: () => void }) {
   const VD = useTheme();
+  const tf = useFieldText();
 
   return (
     <div
