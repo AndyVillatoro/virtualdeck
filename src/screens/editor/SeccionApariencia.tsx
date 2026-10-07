@@ -7,12 +7,15 @@ import { BloqueWidgetApariencia } from './BloqueWidgetApariencia';
 import { CampoIconoUnificado } from './CampoIconoUnificado';
 import { SubseccionAnimacion } from './SubseccionAnimacion';
 import type { TipoIcono } from './tiposIcono';
+import type { ContextoDock } from './useDockPresets';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig, EfectoPuntos, EfectoPulsar } from '../../types';
 
 export interface SeccionAparienciaProps {
   accent: string;
   action: ButtonAction;
+  /** El control físico editado; `null` sin dock o sin modelo cargado. */
+  contextoDock?: ContextoDock | null;
   bgColor: string;
   brandIcon: string;
   brandIconAlwaysAnimate: boolean;
@@ -82,7 +85,7 @@ export interface SeccionAparienciaProps {
 
 export function SeccionApariencia(p: SeccionAparienciaProps) {
   const {
-    accent, action, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap,
+    accent, action, contextoDock = null, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap,
     brandIconCustomColor, brandIconCustomPalette, setBrandIconCustomPalette, customGlyph57,
     deckState, fgColor, icon, imageData, label, pickImage, sensorList, sensorWidgetCrit,
     sensorWidgetId, sensorWidgetSuffix, sensorWidgetWarn, setBgColor, setBrandIcon,
@@ -101,6 +104,27 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
   const VD = useTheme();
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
+
+  // Un botón o una perilla del dock no tienen LCD: el aparato no pinta nada,
+  // así que solo se ofrece la etiqueta, que es lo que usa la vista del deck.
+  if (contextoDock && !contextoDock.conPantalla) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Field label={tf("ETIQUETA DEL BOTÓN")}>
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder={tf("Mi Botón")}
+            maxLength={20}
+            style={inputStyle}
+          />
+        </Field>
+        <div style={{ fontFamily: VD.mono, fontSize: 8.5, color: VD.textMuted, lineHeight: 1.6, borderLeft: `2px solid ${VD.border}`, paddingLeft: 8 }}>
+          {tf('Este control no tiene pantalla: solo la etiqueta se ve en la vista del deck.')}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

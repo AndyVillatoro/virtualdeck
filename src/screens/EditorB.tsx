@@ -16,7 +16,7 @@ import { useCatalogos } from './editor/useCatalogos';
 import { useEstadoEditor } from './editor/useEstadoEditor';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
-import type { ButtonConfig, PageConfig, RGBProfile } from '../types';
+import type { ActionType, ButtonConfig, PageConfig, RGBProfile } from '../types';
 
 interface EditorBProps {
   button: ButtonConfig;
@@ -28,12 +28,16 @@ interface EditorBProps {
   onClear?: (id: string) => void;
 }
 
-function filtrarPresets(presetSearch: string, presetCategory: string) {
-  if (presetSearch.trim()) {
-    const q = presetSearch.toLowerCase();
-    return PRESETS.filter((p) => p.label.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
-  }
-  return PRESETS.filter((p) => p.category === presetCategory);
+/** La acción `folder` abre su overlay: un control de dock no tiene pantalla. */
+const EXCLUIR_EN_DOCK: ActionType[] = ['folder'];
+
+function filtrarPresets(presetSearch: string, presetCategory: string, esDock: boolean) {
+  const base = presetSearch.trim()
+    ? PRESETS.filter((p) => p.label.toLowerCase().includes(presetSearch.toLowerCase()) || p.category.toLowerCase().includes(presetSearch.toLowerCase()))
+    : PRESETS.filter((p) => p.category === presetCategory);
+  if (!esDock) return base;
+  // El LCD de una tecla no pinta deslizadores, y la carpeta necesita pantalla.
+  return base.filter((p) => p.widget !== 'slider' && p.action.type !== 'folder');
 }
 
 function calcularInsignias(
@@ -68,13 +72,13 @@ export function EditorB({
   // Detección de control físico y presets de dock
   const dockInfo = useDockPresets(button, pages);
 
-  const e = useEstadoEditor({ button, onSave, dockGesto: dockInfo.gesto });
+  const e = useEstadoEditor({ button, onSave, dockGesto: dockInfo.gesto, esDock: dockInfo.esDock });
 
   const {
     audioDevices, loadingDevices, audioError, loadAudioDevices, rgbDevices, rgbConnected, sensorList,
   } = useCatalogos(e.action.type, undefined, `${e.widget}|${e.visibleIfSensorId}|${e.sensorTriggerId}`);
 
-  const filteredPresets = filtrarPresets(e.presetSearch, e.presetCategory);
+  const filteredPresets = filtrarPresets(e.presetSearch, e.presetCategory, dockInfo.esDock);
   const { actionBadge, dockBadge, appearanceBadge, behaviorBadge, advancedBadge } = calcularInsignias(e, dockInfo, t);
 
   return (
@@ -109,6 +113,7 @@ export function EditorB({
         <CabeceraEditorB
           buttonId={button.id}
           is2x2Mode={e.is2x2Mode}
+          esDock={dockInfo.esDock}
           onCambiarModo={(m) => {
             e.setIs2x2Mode(m);
             if (m) e.setSeccionesAbiertas((prev) => ({ ...prev, advanced: true }));
@@ -201,6 +206,7 @@ export function EditorB({
             >
               <SeccionAccion
                 accent={accent}
+                excluir={dockInfo.esDock ? EXCLUIR_EN_DOCK : undefined}
                 action={e.action}
                 setAction={e.setAction}
                 actionToggleOff={e.actionToggleOff}
@@ -254,6 +260,7 @@ export function EditorB({
             >
               <SeccionApariencia
                 accent={accent}
+                contextoDock={dockInfo.contexto}
                 action={e.action}
                 bgColor={e.bgColor}
                 brandIcon={e.brandIcon}
@@ -334,6 +341,10 @@ export function EditorB({
             >
               <SeccionComportamiento
                 accent={accent}
+                contextoDock={dockInfo.contexto}
+                is2x2Mode={e.is2x2Mode}
+                modosPerillaCount={button.modosPerilla?.length ?? 0}
+                onAbrirSeccion={e.abrirSeccion}
                 action={e.action}
                 actionToggleOff={e.actionToggleOff}
                 setActionToggleOff={e.setActionToggleOff}
@@ -397,6 +408,7 @@ export function EditorB({
             >
               <SeccionAvanzado
                 parentId={button.id}
+                esDock={dockInfo.esDock}
                 is2x2Mode={e.is2x2Mode}
                 setIs2x2Mode={e.setIs2x2Mode}
                 subButtons={e.subButtons}

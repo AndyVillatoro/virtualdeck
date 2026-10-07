@@ -2,6 +2,7 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
 import type { ButtonConfig, ModoPerilla } from '../../types';
 import type { ControlSuperficie } from '../../types/superficies';
@@ -192,6 +193,8 @@ function MiniPreview({
       >
         {glifo ? (
           <DotGlyphIcon glyph={glifo} size={18} color={fg} />
+        ) : boton?.iconoPuntos ? (
+          <IconoPuntos bits={boton.iconoPuntos.bits} size={18} color={fg} />
         ) : (
           <DotGlyphIcon glyph={iconoFallback(controlTipo)} size={18} color={vd.accent} />
         )}
@@ -222,11 +225,31 @@ function etiquetaGestoPerilla(gesto: 'izq' | 'pulsar' | 'der', t: (k: string) =>
   return t('disp.gesto.pulsar');
 }
 
+/** Lo guardado que el aparato no va a ejecutar, dicho en avisos cortos. */
+function avisosDelBoton(
+  controlMeta: NonNullable<PanelInspectorControlProps['controlMeta']>,
+  boton: ButtonConfig | undefined,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string[] {
+  const avisos: string[] = [];
+  if (boton?.subButtons?.length === 4) avisos.push(t('ed.inspector.cuadrantes'));
+  const pasos = boton?.actions?.length ?? 0;
+  if (pasos > 1) avisos.push(t('ed.inspector.secuencia', { n: pasos }));
+  // Mantener pulsado solo corre en teclas y botones (despachoTecla).
+  const esperaLarga = controlMeta.control === 'key' || controlMeta.control === 'button';
+  if (esperaLarga && boton?.longPressAction && boton.longPressAction.type !== 'none') {
+    avisos.push(t('ed.inspector.mantener', { desc: describirAccion(boton.longPressAction, t) }));
+  }
+  return avisos;
+}
+
 /**
  * Lo que hace el hueco elegido (T-HW-19).
  *
  * Con modos, pulsar cambia de modo en vez de ejecutar su acción: se dice eso
- * («PULSAR · CAMBIAR MODO (n)») y no la acción que no va a correr.
+ * («PULSAR · CAMBIAR MODO (n)») y no la acción que no va a correr. Además se
+ * avisa de lo que el aparato no ejecuta aunque esté guardado: cuadrantes 2×2,
+ * una secuencia, mantener pulsado o la mitad de apagado de un interruptor.
  */
 function textoAccionSeleccionada(
   controlMeta: NonNullable<PanelInspectorControlProps['controlMeta']>,
@@ -236,7 +259,11 @@ function textoAccionSeleccionada(
   const multimodo = controlMeta.control === 'knob'
     && controlMeta.gesto === 'pulsar'
     && (boton?.modosPerilla?.length ?? 0) > 0;
-  return multimodo ? describirPulsar(boton, t) : describirAccion(boton?.action, t);
+  const base = multimodo
+    ? describirPulsar(boton, t)
+    : describirAccion(boton?.action, t, boton?.isToggle ? boton.actionToggleOff : undefined);
+  const avisos = avisosDelBoton(controlMeta, boton, t);
+  return avisos.length > 0 ? `${base} · ${avisos.join(' · ')}` : base;
 }
 
 function SeccionModos({

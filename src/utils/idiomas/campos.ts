@@ -363,5 +363,14 @@ export const FIELDS_EN: Record<string, string> = {
   'APAGADO': 'OFF',
   'ENCENDIDO': 'ON',
   'CATÁLOGO': 'CATALOG',
+  // T-REV-12: estado vacío de COMPORTAMIENTO y reglas de dock (roadmap 91/92)
+  'Estas opciones dependen de la acción: elija una en PRESETS o en ACCIÓN': 'These options depend on the action: pick one under PRESETS or ACTION',
+  'ELEGIR EN PRESETS': 'PICK IN PRESETS',
+  'IR A ACCIÓN': 'GO TO ACTION',
+  'En modo 2×2 la pulsación la resuelve cada cuadrante: el interruptor y mantener pulsado del botón no se usan.': 'In 2×2 mode each quadrant handles the press: the button toggle and long-press are not used.',
+  'Esta perilla tiene modos: pulsar cambia de modo, y la acción ni el interruptor de este hueco se ejecutan.': 'This knob has modes: pressing switches mode, so neither the action nor the toggle of this slot run.',
+  'El aparato no ejecuta cuadrantes 2×2: este control no los admite.': 'The device does not run 2×2 quadrants: this control does not support them.',
+  'QUITAR CUADRANTES': 'REMOVE QUADRANTS',
+  'Este control no tiene pantalla: solo la etiqueta se ve en la vista del deck.': 'This control has no screen: only the label shows in the deck view.',
 };
 

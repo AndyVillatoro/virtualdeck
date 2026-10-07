@@ -294,9 +294,9 @@ export const PRESETS_PERILLA: PresetDock[] = [
         label: 'TAREAS',
         icon: 'MONITOR',
         fgColor: '#c084fc',
+        // Sin toggle: en el pulsar de una perilla, con modos, no correría
+        // (pulsar cambia de modo). El editor avisa de esa combinación.
         action: { type: 'hotkey', hotkey: 'Win+Tab' },
-        isToggle: true,
-        actionToggleOff: { type: 'hotkey', hotkey: 'Esc' },
       },
       {
         label: 'ESCRIT. >',
@@ -383,9 +383,9 @@ export const PRESETS_PERILLA: PresetDock[] = [
         label: 'MULTITAREA',
         icon: 'MONITOR',
         fgColor: '#7dd3fc',
+        // Sin toggle: en el pulsar de una perilla, con modos, no correría
+        // (pulsar cambia de modo). El editor avisa de esa combinación.
         action: { type: 'hotkey', hotkey: 'Win+Tab' },
-        isToggle: true,
-        actionToggleOff: { type: 'hotkey', hotkey: 'Esc' },
       },
       {
         label: 'VENTANA SIG.',

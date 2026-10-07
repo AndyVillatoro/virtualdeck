@@ -77,6 +77,10 @@ export const EN_EDITOR: Dict = {
   'ed.snapHint': 'With no process name, it snaps whichever window has focus when it runs.',
   'ed.radioHint': 'Every toggle in the same group turns off when this one turns on.',
   'ed.triggers': 'EXTERNAL TRIGGERS',
+  // — Dock context in the editor and inspector (roadmap 92) —
+  'ed.inspector.cuadrantes': 'QUADRANTS · THE DEVICE DOES NOT RUN THEM',
+  'ed.inspector.secuencia': 'SEQUENCE · {n} ACTIONS',
+  'ed.inspector.mantener': 'HOLD · {desc}',
   // — Days of the hour trigger (roadmap 88) —
   'ed.dia.lun': 'M',
   'ed.dia.mar': 'T',

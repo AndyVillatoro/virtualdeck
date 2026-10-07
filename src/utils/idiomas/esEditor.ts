@@ -78,6 +78,10 @@ export const ES_EDITOR: Dict = {
   'ed.snapHint': 'Sin nombre de proceso, ajusta la ventana que esté en primer plano al ejecutarse.',
   'ed.radioHint': 'Todos los toggles con el mismo grupo se desactivan cuando se activa este.',
   'ed.triggers': 'DISPARADORES EXTERNOS',
+  // — Contexto de dock en el editor y el inspector (roadmap 92) —
+  'ed.inspector.cuadrantes': 'CUADRANTES · EL APARATO NO LOS EJECUTA',
+  'ed.inspector.secuencia': 'SECUENCIA · {n} ACCIONES',
+  'ed.inspector.mantener': 'MANTENER · {desc}',
   // — Días del disparo por hora (roadmap 88) —
   'ed.dia.lun': 'L',
   'ed.dia.mar': 'M',

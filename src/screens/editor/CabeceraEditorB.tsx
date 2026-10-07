@@ -8,12 +8,14 @@ import { BotonIcono } from '../../components/ui/BotonIcono';
 interface CabeceraEditorBProps {
   buttonId: string;
   is2x2Mode: boolean;
+  /** Página de un dock físico: el 2×2 no se ofrece (el aparato no lo ejecuta). */
+  esDock?: boolean;
   onCambiarModo: (modo2x2: boolean) => void;
   onClose: () => void;
 }
 
 /** Cabecera del editor: título, selector de modo 1×1 / 2×2 y cierre. */
-export function CabeceraEditorB({ buttonId, is2x2Mode, onCambiarModo, onClose }: CabeceraEditorBProps) {
+export function CabeceraEditorB({ buttonId, is2x2Mode, esDock = false, onCambiarModo, onClose }: CabeceraEditorBProps) {
   const VD = useTheme();
   const t = useT();
   const accent = VD.accent;
@@ -26,7 +28,9 @@ export function CabeceraEditorB({ buttonId, is2x2Mode, onCambiarModo, onClose }:
       <DotLabel size={11} color={VD.text} spacing={2}>{t('ed.title')}</DotLabel>
       <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted }}>· {buttonId.toUpperCase()}</span>
 
-      {/* Selector de modo: 1x1 Estándar vs 2x2 Cuadrantes */}
+      {/* Selector de modo: 1x1 Estándar vs 2x2 Cuadrantes. En un dock no se
+          ofrece: el aparato no ejecuta cuadrantes (useSuperficies los frena). */}
+      {!esDock && (
       <div style={{ display: 'flex', gap: 2, background: VD.elevated, padding: 2, borderRadius: VD.radius.sm, border: `1px solid ${VD.border}`, marginLeft: 16 }}>
         <button
           onClick={() => onCambiarModo(false)}
@@ -57,6 +61,7 @@ export function CabeceraEditorB({ buttonId, is2x2Mode, onCambiarModo, onClose }:
           <span>{t('ed.mode.split2x2')}</span>
         </button>
       </div>
+      )}
 
       <div style={{ flex: 1 }} />
       <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onClose} tamano={28} tamanoGlifo={12} />

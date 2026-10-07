@@ -25,6 +25,8 @@ interface UseEstadoEditorOptions {
   button: ButtonConfig;
   onSave: (updated: ButtonConfig) => void;
   dockGesto?: GestoHueco;
+  /** La página editada es de un dock físico: la pestaña DOCK abre por defecto. */
+  esDock?: boolean;
 }
 
 function subButtonsIniciales(button: ButtonConfig): SubButtonConfig[] {
@@ -65,7 +67,7 @@ function calcularAspectoEncendido(
   };
 }
 
-export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOptions) {
+export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstadoEditorOptions) {
   const api = window.electronAPI;
   const isConfigured = botonConfigurado(button);
 
@@ -146,7 +148,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [tipoIcono, setTipoIcono] = useState<TipoIcono>(infoIconoIni.tipo);
   const [glifoEncima, setGlifoEncima] = useState<string>(infoIconoIni.glifoEncima);
   const [habiaVariosCamposIcono] = useState<boolean>(infoIconoIni.habiaVarios);
-  const [presetCategory, setPresetCategory] = useState<string>('APPS');
+  const [presetCategory, setPresetCategory] = useState<string>(esDock ? 'DOCK' : 'APPS');
   const [presetSearch, setPresetSearch] = useState('');
   const [capturing, setCapturing] = useState(false);
   const [folderButtons, setFolderButtons] = useState(ini.folderButtons);
@@ -177,6 +179,11 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       ...prev,
       [id]: !prev[id],
     }));
+  };
+
+  /** Abre una sección sin cerrarla si ya lo estaba (atajos del estado vacío). */
+  const abrirSeccion = (id: SeccionId) => {
+    setSeccionesAbiertas((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
   };
 
   useEffect(() => {
@@ -509,6 +516,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     seccionesAbiertas,
     setSeccionesAbiertas,
     toggleSeccion,
+    abrirSeccion,
     handleSave,
     applyPreset,
     applyDockPreset,

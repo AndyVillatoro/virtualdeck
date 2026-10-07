@@ -5,13 +5,16 @@ import { DotLabel } from '../../components/DotLabel';
 import { SelectorTipoAccion } from './SelectorTipoAccion';
 import { FORMULARIOS, type PropsFormulario } from './formularios';
 import { FormMediaPlayPause } from './formularios/sistema';
+import type { ActionType } from '../../types';
 
 interface SeccionAccionProps extends PropsFormulario {
   accent: string;
+  /** Tipos que no se ofrecen (p. ej. `folder` en un control sin pantalla). */
+  excluir?: ActionType[];
 }
 
 export function SeccionAccion(props: SeccionAccionProps) {
-  const { action, setAction, accent } = props;
+  const { action, setAction, accent, excluir } = props;
   const VD = useTheme();
   const tf = useFieldText();
 
@@ -28,6 +31,7 @@ export function SeccionAccion(props: SeccionAccionProps) {
           seleccionado={action.type}
           onElegir={(type) => setAction({ type })}
           accent={accent}
+          excluir={excluir}
         />
       </div>
 
