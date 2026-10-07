@@ -21,6 +21,8 @@ import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pul
 import { navegarDeck, indicesPaginasDeck, posicionEnDeck } from '../utils/acciones/pageNav';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
+import { useFormatoPantalla } from '../utils/useFormatoPantalla';
+import { textoSobre } from '../design';
 import { groupSensorsByHardware } from '../components/SensorPanel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { BotonIcono } from '../components/ui/BotonIcono';
@@ -68,6 +70,10 @@ export function FullscreenB({
   const [now, setNow] = useState(new Date());
   const nowPlaying = useNowPlaying();
   const setNowPlayingActive = useNowPlayingActivation('fullscreen');
+  // En `barra` (monitor 1280×480 del dueño) el alto es lo escaso: barra
+  // superior y panel laterales se pliegan, la rejilla llena el ancho y la
+  // franja inferior —música y fichas de página en una sola— queda baja.
+  const enBarra = useFormatoPantalla().formato === 'barra';
 
   useEffect(() => {
     setNowPlayingActive(true);
@@ -178,6 +184,7 @@ export function FullscreenB({
 
   const currentPage = config.pages[activePage];
   const posDeck = posicionEnDeck(config.pages, activePage);
+  const { modo: modoRejilla, relleno: rellenoRejilla } = medidasRejilla(enBarra, config.tileMode);
   const gridSize = currentPage?.gridSize ?? 4;
   const gridRows = currentPage?.gridRows ?? gridSize;
   const pageButtons = resolverBotonesPagina(config.buttons, activePage, gridSize, gridRows, config.pages);
@@ -239,8 +246,8 @@ export function FullscreenB({
           botones={pageButtons}
           columnas={gridSize}
           filas={gridRows}
-          modo={config.tileMode === 'fill' ? 'fill' : 'square'}
-          relleno={20}
+          modo={modoRejilla}
+          relleno={rellenoRejilla}
           celda={(btn) => {
             const esFija = btn.fijo === true && btn.page !== activePage;
             const paginaOriginal = config.pages[btn.page];
@@ -315,34 +322,20 @@ export function FullscreenB({
         </div>
       )}
 
-      <div style={{
-        borderTop: `1px solid ${VD.border}`,
-        padding: '6px 10px', display: 'flex', gap: 6,
-        background: VD.surface, flexShrink: 0, position: 'relative', zIndex: 1,
-      }}>
-        <SonandoAhora
-          nowPlaying={nowPlaying}
-          isPlaying={isPlaying}
-          sourceName={sourceName}
-          config={config}
-          soundOnPress={soundOnPress}
-          soundProfile={soundProfile}
-        />
-
-        <div className="vd-fs-page" style={{
-          width: 86, border: `1px solid ${VD.border}`, padding: '5px 8px',
-          background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column',
-          justifyContent: 'center', gap: 2,
-        }}>
-          <DotLabel size={7} color={VD.textMuted} spacing={2}>{t('full.page')}</DotLabel>
-          <div style={{ fontFamily: VD.mono, fontSize: 15, color: VD.text, lineHeight: 1 }}>
-            {posDeck === null ? '--' : String(posDeck + 1).padStart(2, '0')}/{indicesDeck.length}
-          </div>
-          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {currentPage?.name}
-          </div>
-        </div>
-      </div>
+      <FranjaInferior
+        enBarra={enBarra}
+        nowPlaying={nowPlaying}
+        isPlaying={isPlaying}
+        sourceName={sourceName}
+        config={config}
+        soundOnPress={soundOnPress}
+        soundProfile={soundProfile}
+        indicesDeck={indicesDeck}
+        activePage={activePage}
+        setActivePage={setActivePage}
+        posDeck={posDeck}
+        nombrePagina={currentPage?.name}
+      />
 
       {carpetaAbierta && (
         <FolderOverlay
@@ -353,6 +346,103 @@ export function FullscreenB({
           entorno={entorno}
           onClose={() => setCarpetaAbierta(null)}
         />
+      )}
+    </div>
+  );
+}
+
+/** En `barra` la rejilla llena el ancho (casillas rectangulares) y deja menos margen. */
+function medidasRejilla(enBarra: boolean, tileMode?: 'square' | 'fill'): { modo: 'square' | 'fill'; relleno: number } {
+  return {
+    modo: enBarra || tileMode === 'fill' ? 'fill' : 'square',
+    relleno: enBarra ? 8 : 20,
+  };
+}
+
+type NowPlayingProp = React.ComponentProps<typeof SonandoAhora>['nowPlaying'];
+
+interface FranjaInferiorProps {
+  enBarra: boolean;
+  nowPlaying: NowPlayingProp;
+  isPlaying: boolean;
+  sourceName: string;
+  config: DeckConfig;
+  soundOnPress: boolean;
+  soundProfile: SoundProfileId;
+  indicesDeck: number[];
+  activePage: number;
+  setActivePage: (i: number) => void;
+  posDeck: number | null;
+  nombrePagina?: string;
+}
+
+/**
+ * La franja de abajo del kiosko. En `barra` es una sola pieza —el reproductor
+ * y las fichas de página juntos— para no comerse el alto de la rejilla; en el
+ * resto se mantiene la tarjeta de página grande.
+ */
+function FranjaInferior({
+  enBarra, nowPlaying, isPlaying, sourceName, config, soundOnPress, soundProfile,
+  indicesDeck, activePage, setActivePage, posDeck, nombrePagina,
+}: FranjaInferiorProps) {
+  const VD = useTheme();
+  const t = useT();
+
+  return (
+    <div style={{
+      borderTop: `1px solid ${VD.border}`,
+      padding: enBarra ? '4px 8px' : '6px 10px', display: 'flex', gap: enBarra ? 4 : 6,
+      background: VD.surface, flexShrink: 0, position: 'relative', zIndex: 1,
+    }}>
+      <SonandoAhora
+        nowPlaying={nowPlaying}
+        isPlaying={isPlaying}
+        sourceName={sourceName}
+        config={config}
+        soundOnPress={soundOnPress}
+        soundProfile={soundProfile}
+        compacto={enBarra}
+      />
+
+      {enBarra ? (
+        // Fichas pequeñas: el número, y el nombre de la página en el tooltip.
+        <div style={{ display: 'flex', gap: 3, flexShrink: 0, alignItems: 'center' }}>
+          {indicesDeck.map((realIdx, pos) => {
+            const p = config.pages[realIdx];
+            const isActive = realIdx === activePage;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setActivePage(realIdx)}
+                title={p.name}
+                style={{
+                  minWidth: 30, height: 30, padding: '0 7px',
+                  background: isActive ? config.accent : VD.elevated,
+                  border: `1px solid ${isActive ? config.accent : VD.border}`,
+                  color: isActive ? textoSobre(config.accent) : VD.textMuted,
+                  fontFamily: VD.mono, fontSize: 10, letterSpacing: 1,
+                  cursor: 'pointer', borderRadius: VD.radius.sm, flexShrink: 0,
+                }}
+              >
+                {pos + 1}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="vd-fs-page" style={{
+          width: 86, border: `1px solid ${VD.border}`, padding: '5px 8px',
+          background: VD.elevated, flexShrink: 0, display: 'flex', flexDirection: 'column',
+          justifyContent: 'center', gap: 2,
+        }}>
+          <DotLabel size={7} color={VD.textMuted} spacing={2}>{t('full.page')}</DotLabel>
+          <div style={{ fontFamily: VD.mono, fontSize: 15, color: VD.text, lineHeight: 1 }}>
+            {posDeck === null ? '--' : String(posDeck + 1).padStart(2, '0')}/{indicesDeck.length}
+          </div>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {nombrePagina}
+          </div>
+        </div>
       )}
     </div>
   );

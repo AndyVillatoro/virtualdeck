@@ -21,24 +21,29 @@ interface Props {
   config: DeckConfig;
   soundOnPress: boolean;
   soundProfile: SoundProfileId;
+  /** Franja baja del kiosko en `barra`: carátula y transporte más pequeños. */
+  compacto?: boolean;
 }
 
-export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundOnPress, soundProfile }: Props) {
+export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundOnPress, soundProfile, compacto = false }: Props) {
   const VD = useTheme();
   const t = useT();
+  const lado = compacto ? 28 : 36;
+  const boton = compacto ? 30 : 36;
 
   return (
       <div style={{
         flex: 1, minWidth: 0, border: `1px solid ${VD.border}`,
-        padding: '5px 8px', display: 'flex', gap: 8, alignItems: 'center', background: VD.elevated,
+        padding: compacto ? '3px 6px' : '5px 8px',
+        display: 'flex', gap: compacto ? 6 : 8, alignItems: 'center', background: VD.elevated,
       }}>
         <div className="vd-fs-thumb" style={{
-          width: 36, height: 36, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.md,
+          width: lado, height: lado, background: VD.overlay, flexShrink: 0, borderRadius: VD.radius.md,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           overflow: 'hidden', border: `1px solid ${VD.border}`, position: 'relative',
         }}>
           <div style={{ opacity: 0.35 }}>
-            <DotGlyphIcon glyph={isPlaying ? 'PLAY' : 'PAUSE'} size={14} color={VD.textDim} showRecessed />
+            <DotGlyphIcon glyph={isPlaying ? 'PLAY' : 'PAUSE'} size={compacto ? 11 : 14} color={VD.textDim} showRecessed />
           </div>
           {nowPlaying?.thumbnail && (
             <>
@@ -62,15 +67,15 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
         <div style={{ flex: 1, minWidth: 0 }}>
           {nowPlaying ? (
             <>
-              <div style={{ color: VD.text, fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500, lineHeight: 1.2 }}>
+              <div style={{ color: VD.text, fontSize: compacto ? 10 : 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500, lineHeight: 1.2 }}>
                 {nowPlaying.title || '—'}
               </div>
-              <div style={{ color: VD.textDim, fontSize: 9, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono, lineHeight: 1.2 }}>
+              <div style={{ color: VD.textDim, fontSize: compacto ? 8 : 9, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono, lineHeight: 1.2 }}>
                 {nowPlaying.artist}{sourceName ? ` · ${sourceName}` : ''}
               </div>
             </>
           ) : (
-            <div style={{ color: VD.textMuted, fontSize: 10, fontFamily: VD.mono, letterSpacing: 1 }}>{t('full.noMedia')}</div>
+            <div style={{ color: VD.textMuted, fontSize: compacto ? 9 : 10, fontFamily: VD.mono, letterSpacing: 1 }}>{t('full.noMedia')}</div>
           )}
         </div>
         <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
@@ -87,7 +92,7 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
                 if (soundOnPress) playSound(soundProfile);
               }}
               style={{
-                width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: boton, height: boton, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: VD.overlay, border: `1px solid ${VD.border}`,
                 cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'border-color 0.1s',
                 padding: 0,
@@ -95,7 +100,7 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
             >
-              <DotGlyphIcon glyph={glyph} size={12} color={VD.textDim} showRecessed />
+              <DotGlyphIcon glyph={glyph} size={compacto ? 10 : 12} color={VD.textDim} showRecessed />
             </button>
           ))}
         </div>

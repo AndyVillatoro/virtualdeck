@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 
 interface BarraSuperiorFullscreenProps {
@@ -20,19 +21,22 @@ export function BarraSuperiorFullscreen({
 }: BarraSuperiorFullscreenProps) {
   const VD = useTheme();
   const t = useT();
+  // En `barra` el alto es lo escaso: 40 → 32 px y todo un punto más pequeño.
+  // En kiosko la barra ni se monta (la oculta `FullscreenB`).
+  const compacta = useFormatoPantalla().formato === 'barra';
 
   return (
     <div
       style={{
-        height: 40,
+        height: compacta ? 32 : 40,
         display: 'flex',
         alignItems: 'center',
-        padding: '0 20px',
-        gap: 16,
+        padding: compacta ? '0 12px' : '0 20px',
+        gap: compacta ? 8 : 16,
         borderBottom: `1px solid ${VD.border}`,
         fontFamily: VD.mono,
-        fontSize: 9,
-        letterSpacing: 2,
+        fontSize: compacta ? 8 : 9,
+        letterSpacing: compacta ? 1 : 2,
         color: VD.textDim,
         flexShrink: 0,
         position: 'relative',
@@ -53,10 +57,10 @@ export function BarraSuperiorFullscreen({
           border: `1px solid ${VD.border}`,
           color: VD.textDim,
           fontFamily: VD.mono,
-          fontSize: 9,
+          fontSize: compacta ? 8 : 9,
           letterSpacing: 1,
-          padding: '0 12px',
-          minHeight: 32,
+          padding: compacta ? '0 8px' : '0 12px',
+          minHeight: compacta ? 24 : 32,
           cursor: 'pointer',
           marginRight: 4,
           display: 'inline-flex',
@@ -75,10 +79,10 @@ export function BarraSuperiorFullscreen({
           border: `1px solid ${VD.border}`,
           color: VD.textDim,
           fontFamily: VD.mono,
-          fontSize: 9,
+          fontSize: compacta ? 8 : 9,
           letterSpacing: 1,
-          padding: '0 12px',
-          minHeight: 32,
+          padding: compacta ? '0 8px' : '0 12px',
+          minHeight: compacta ? 24 : 32,
           cursor: 'pointer',
           display: 'inline-flex',
           alignItems: 'center',

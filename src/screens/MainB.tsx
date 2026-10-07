@@ -4,6 +4,7 @@ import { useT } from '../utils/i18n';
 import { BarraLateral } from './main/BarraLateral';
 import { BotonIcono } from '../components/ui/BotonIcono';
 import { useTamanoVentana } from '../utils/useTamanoVentana';
+import { useFormatoPantalla } from '../utils/useFormatoPantalla';
 import { PanelMusicaLateral } from './main/PanelesMusica';
 import { AvisosContextuales } from './main/AvisosContextuales';
 import { BarraSuperiorMain } from './main/BarraSuperiorMain';
@@ -81,11 +82,14 @@ export function MainB({
 
   const { ancho: anchoVentana, alto: altoVentana } = useTamanoVentana();
   const isCompact = altoVentana < 540;
+  // En `barra` (1280×480 del dueño) la rejilla manda: el panel de música, si
+  // está encendido, sustituye a la barra lateral en vez de sumarse.
+  const enBarra = useFormatoPantalla().formato === 'barra';
   // En ventanas estrechas los paneles laterales (barra 220 px, música 300 px)
   // aplastaban la rejilla. Por debajo de 760 px no se enseña ninguno; por
   // debajo de 1100 px no caben los dos, y se queda la barra lateral, que ya
   // lleva su propia franja de música.
-  const { verBarraLateral, panelMusicaVisible } = panelesQueCaben(anchoVentana, showSidebar, panelMusica);
+  const { verBarraLateral, panelMusicaVisible } = panelesQueCaben(anchoVentana, showSidebar, panelMusica, enBarra);
 
   // Grid sizing — JS-driven because pure-CSS `aspect-ratio + max-width/height`
   // collapses when children are 100%-sized (no intrinsic dimension). We measure
@@ -303,6 +307,7 @@ export function MainB({
           showToast={showToast}
           confirmRename={confirmRename}
           compact={isCompact}
+          barra={enBarra}
         />
 
 
@@ -344,7 +349,7 @@ export function MainB({
             botones={pageButtons}
             columnas={gridSize}
             filas={gridRows}
-            modo={config.tileMode === 'fill' ? 'fill' : 'square'}
+            modo={enBarra || config.tileMode === 'fill' ? 'fill' : 'square'}
             relleno={isCompact ? 6 : 16}
             senal={showSidebar}
             onTouchStart={(e) => {
@@ -440,6 +445,8 @@ export function MainB({
               sourceName={sourceName}
               showToast={showToast}
               ocultarMusica={panelMusicaVisible.enabled}
+              panelMusicaAbierto={panelMusica.enabled}
+              onAlternarPanelMusica={() => onConfigChange({ ...config, musicPanel: { ...panelMusica, enabled: !panelMusica.enabled } })}
             />
           )}
 
@@ -518,14 +525,18 @@ export function MainB({
 
 // ── Folder sub-deck overlay ────────────────────────────────────────────────
 
-/** Qué paneles laterales se enseñan según el ancho (ver el comentario en `MainB`). */
-function panelesQueCaben<P extends { enabled: boolean }>(ancho: number, showSidebar: boolean, panelMusica: P) {
+/**
+ * Qué paneles laterales se enseñan según el ancho (ver el comentario en
+ * `MainB`). En `barra` el panel de música encendido sustituye a la barra
+ * lateral: ahí el ancho es para la rejilla, no para dos columnas.
+ */
+function panelesQueCaben<P extends { enabled: boolean }>(ancho: number, showSidebar: boolean, panelMusica: P, enBarra = false) {
   const cabeLateral = ancho >= 760;
   const cabenAmbos = ancho >= 1100;
-  const verBarraLateral = showSidebar && cabeLateral;
+  const verBarraLateral = showSidebar && cabeLateral && !(enBarra && panelMusica.enabled);
   const panelMusicaVisible: P = {
     ...panelMusica,
-    enabled: panelMusica.enabled && cabeLateral && (cabenAmbos || !verBarraLateral),
+    enabled: panelMusica.enabled && cabeLateral && (enBarra || cabenAmbos || !verBarraLateral),
   };
   return { verBarraLateral, panelMusicaVisible };
 }

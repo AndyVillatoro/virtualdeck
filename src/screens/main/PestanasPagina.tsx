@@ -44,6 +44,15 @@ interface Props {
   /** Confirmar el renombrado en curso. Vive en MainB porque es quien guarda. */
   confirmRename: (id: string) => void;
   compact?: boolean;
+  /** Formato `barra` (1280×480): pestañas como fichas pequeñas. */
+  barra?: boolean;
+}
+
+/** Medidas de la fila y de cada pestaña según el hueco disponible. */
+function medidasPestanas(compact: boolean, barra: boolean) {
+  if (barra) return { fila: '2px 8px 0', pestana: '2px 8px', fuente: 8, espaciado: 1 };
+  if (compact) return { fila: '4px 12px 0', pestana: '4px 10px', fuente: 9, espaciado: 1 };
+  return { fila: '12px 20px 0', pestana: '8px 16px', fuente: 10, espaciado: 2 };
 }
 
 interface ContenidoPestanaProps {
@@ -112,17 +121,18 @@ function ContenidoPestana({
   );
 }
 
-export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, onPageExport, onPageImport, onPageReorder, onMoveButtonToPage, renamingPageId, setRenamingPageId, renameValue, setRenameValue, setPageContextMenu, dragPageIdx, setDragPageIdx, dragOverPageIdx, setDragOverPageIdx, dragSourceId, setDragSourceId, showSidebar, setShowSidebar, showToast, confirmRename, compact = false }: Props) {
+export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, onPageExport, onPageImport, onPageReorder, onMoveButtonToPage, renamingPageId, setRenamingPageId, renameValue, setRenameValue, setPageContextMenu, dragPageIdx, setDragPageIdx, dragOverPageIdx, setDragOverPageIdx, dragSourceId, setDragSourceId, showSidebar, setShowSidebar, showToast, confirmRename, compact = false, barra = false }: Props) {
   const VD = useTheme();
   const t = useT();
   // Solo las páginas del deck: las de los docks se editan en `Dispositivos`
   // (ver `utils/paginasDeck`). Los índices que viajan son reales (posición en
   // `config.pages`), porque `activePage` y el arrastre los usan tal cual.
   const indicesDeck = indicesPaginasDeck(config.pages);
+  const medidas = medidasPestanas(compact, barra);
 
   return (
       <div style={{
-        display: 'flex', padding: compact ? '4px 12px 0' : '12px 20px 0', gap: 4,
+        display: 'flex', padding: medidas.fila, gap: 4,
         borderBottom: `1px solid ${VD.border}`,
         background: VD.surface, flexShrink: 0, alignItems: 'flex-end', minWidth: 0,
       }}>
@@ -162,8 +172,8 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
               setPageContextMenu({ id: p.id, x: e.clientX, y: e.clientY });
             }}
             style={{
-              padding: compact ? '4px 10px' : '8px 16px',
-              fontFamily: VD.mono, fontSize: compact ? 9 : 10, letterSpacing: compact ? 1 : 2,
+              padding: medidas.pestana,
+              fontFamily: VD.mono, fontSize: medidas.fuente, letterSpacing: medidas.espaciado,
               color: i === activePage ? VD.text : VD.textDim,
               borderBottom: i === activePage
                 ? `2px solid ${config.accent}`
