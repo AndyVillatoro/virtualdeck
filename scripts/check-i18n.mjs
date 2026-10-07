@@ -392,7 +392,12 @@ for (const ruta of [...archivos(RAIZ), ...archivos(RAIZ_MAIN)]) {
     // Se excluye lo que acaba en coma: es una propiedad de objeto partida en
     // varias líneas (`color,`), no un texto de la interfaz.
     if (suelto.length >= 3 && !/[<>{}=;()[\]`'"]/.test(suelto) && !/[,]$/.test(suelto)
-        && !/^(\/\/|\*|import|export)/.test(suelto)) {
+        && !/^(\/\/|\*|import|export)/.test(suelto)
+        // Una sentencia partida en varias líneas también deja una línea sin
+        // signos: `return texto` seguido de `.toLowerCase()` en la siguiente
+        // (capturaVentana.ts, 2026-10-07). Si empieza por una palabra clave de
+        // JS es código, no un rótulo.
+        && !/^(return|throw|await|yield|case|typeof|delete|new)\s/.test(suelto)) {
       sospechas.push(suelto);
     }
     for (const s of sospechas) {
