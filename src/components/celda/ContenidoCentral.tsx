@@ -51,7 +51,10 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
     efectoPulsar: boton.efectoPulsar,
     pulsoId,
   });
-  if (widgetData) return <Widget datos={widgetData} />;
+  // Con fondo propio, el widget usa el mismo color que el icono (el suyo o el
+  // que se lee sobre ese fondo): con el del tema, un fondo oscuro en tema
+  // claro dejaba el texto negro sobre negro.
+  if (widgetData) return <Widget datos={widgetData} colorPropio={button.bgColor ? iconColor : undefined} />;
 
   const tamano = isEmpty ? 20 : 24;
   const ocupadoPorFondo = !!boton.imageData || !!boton.brandIcon;
@@ -188,9 +191,11 @@ function CentroSobreFondo({ button, tamano }: { button: ButtonConfig; tamano: nu
   );
 }
 
-function Widget({ datos }: { datos: NonNullable<Props['widgetData']> }) {
+function Widget({ datos, colorPropio }: { datos: NonNullable<Props['widgetData']>; colorPropio?: string }) {
   const VD = useTheme();
-  const color = datos.tone === 'crit' ? VD.danger : datos.tone === 'warn' ? VD.warning : VD.text;
+  const base = colorPropio ?? VD.text;
+  const color = datos.tone === 'crit' ? VD.danger : datos.tone === 'warn' ? VD.warning : base;
+  const atenuado = colorPropio ? `color-mix(in srgb, ${colorPropio} 65%, transparent)` : VD.textMuted;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       {datos.glyph && (
@@ -213,7 +218,7 @@ function Widget({ datos }: { datos: NonNullable<Props['widgetData']> }) {
       }}>{datos.line1}</div>
       {datos.line2 && (
         <div style={{
-          fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, marginTop: 2, letterSpacing: 0.5,
+          fontFamily: VD.mono, fontSize: 7, color: atenuado, marginTop: 2, letterSpacing: 0.5,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 84,
         }}>{datos.line2}</div>
       )}
