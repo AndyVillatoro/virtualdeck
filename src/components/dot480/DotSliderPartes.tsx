@@ -13,12 +13,16 @@ export interface PropsCabeceraSlider {
   showValue: boolean;
   isDragging: boolean;
   accent: string;
+  colorPropio?: string;
 }
 
-export function CabeceraSlider({ target, etiqueta, varName, value, showValue, isDragging, accent }: PropsCabeceraSlider) {
+export function CabeceraSlider({ target, etiqueta, varName, value, showValue, isDragging, accent, colorPropio }: PropsCabeceraSlider) {
   const VD = useTheme();
   const glyph = target === 'brightness' ? 'SUN' : target === 'variable' ? 'CODE' : 'VOLUME';
   const displayLabel = etiqueta || (target === 'brightness' ? 'BRILLO' : target === 'variable' ? (varName || 'VAR') : 'VOLUMEN');
+  const colorTexto = colorPropio ?? VD.text;
+  const colorAtenuado = colorPropio ? `color-mix(in srgb, ${colorPropio} 65%, transparent)` : VD.textMuted;
+  const colorDim = colorPropio ? `color-mix(in srgb, ${colorPropio} 45%, transparent)` : VD.textDim;
   return (
     <div style={{
       display: 'flex',
@@ -29,13 +33,13 @@ export function CabeceraSlider({ target, etiqueta, varName, value, showValue, is
       gap: 4,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, overflow: 'hidden' }}>
-        <DotGlyphIcon glyph={glyph} size={8} color={isDragging ? accent : VD.textMuted} />
+        <DotGlyphIcon glyph={glyph} size={8} color={isDragging ? accent : colorAtenuado} />
         <span style={{
           fontFamily: VD.mono,
           fontSize: 7.5,
           fontWeight: 700,
           letterSpacing: 0.5,
-          color: isDragging ? VD.text : VD.textDim,
+          color: isDragging ? colorTexto : colorDim,
           textTransform: 'uppercase',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -51,7 +55,7 @@ export function CabeceraSlider({ target, etiqueta, varName, value, showValue, is
           fontSize: 8,
           fontWeight: 700,
           letterSpacing: 0.5,
-          color: isDragging ? accent : VD.text,
+          color: isDragging ? accent : colorTexto,
           background: isDragging ? `${accent}18` : 'transparent',
           padding: '1px 3px',
           borderRadius: VD.radius.sm,
@@ -75,14 +79,17 @@ export interface PropsPistaSlider {
   onPointerMove: ManejadorPuntero;
   onPointerUp: ManejadorPuntero;
   onPointerCancel: ManejadorPuntero;
+  colorPropio?: string;
 }
 
-export function PistaSlider({ value, min, max, orientation, accent, isDragging, trackRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel }: PropsPistaSlider) {
+export function PistaSlider({ value, min, max, orientation, accent, isDragging, trackRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, colorPropio }: PropsPistaSlider) {
   const VD = useTheme();
   const ratio = Math.max(0, Math.min(1, (value - min) / (max - min || 1)));
   const vertical = orientation === 'vertical';
   const numSegments = vertical ? 12 : 16;
   const activeSegments = Math.round(ratio * numSegments);
+  const colorTexto = colorPropio ?? VD.text;
+  const colorIdle = colorPropio ? `color-mix(in srgb, ${colorPropio} 25%, transparent)` : VD.dotIdle;
   return (
     <div
       ref={trackRef}
@@ -131,8 +138,8 @@ export function PistaSlider({ value, min, max, orientation, accent, isDragging, 
                   height: 2.5,
                   borderRadius: '50%',
                   background: isActive
-                    ? (isLeading ? VD.text : accent)
-                    : VD.dotIdle,
+                    ? (isLeading ? colorTexto : accent)
+                    : colorIdle,
                   boxShadow: isActive && isDragging ? `0 0 2px ${accent}` : 'none',
                   transition: 'background 0.06s ease',
                   pointerEvents: 'none',
@@ -146,10 +153,11 @@ export function PistaSlider({ value, min, max, orientation, accent, isDragging, 
   );
 }
 
-export function EscalaSlider({ max, orientation = 'horizontal' }: { max: number; orientation?: 'horizontal' | 'vertical' }) {
+export function EscalaSlider({ max, orientation = 'horizontal', colorPropio }: { max: number; orientation?: 'horizontal' | 'vertical'; colorPropio?: string }) {
   const VD = useTheme();
   const vertical = orientation === 'vertical';
   const marcas = vertical ? [max, 50, 0] : [0, 50, max];
+  const colorAtenuado = colorPropio ? `color-mix(in srgb, ${colorPropio} 65%, transparent)` : VD.textMuted;
   return (
     <div style={{
       display: 'flex',
@@ -160,7 +168,7 @@ export function EscalaSlider({ max, orientation = 'horizontal' }: { max: number;
       height: vertical ? '100%' : undefined,
       fontFamily: VD.mono,
       fontSize: 6,
-      color: VD.textMuted,
+      color: colorAtenuado,
       letterSpacing: 0.5,
       pointerEvents: 'none',
       lineHeight: 1,

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { playSound } from '../../utils/sound';
+import { textoSobre } from '../../comun/contraste';
 import { CabeceraSlider, EscalaSlider, PistaSlider } from './DotSliderPartes';
 import type { ButtonConfig, SliderWidgetConfig, SoundProfileId } from '../../types';
 
@@ -20,6 +21,7 @@ export interface DotContinuousSliderProps {
  * con control nativo de volumen del sistema, brillo de pantalla o variables de estado.
  */
 export function DotContinuousSlider({
+  button,
   sliderConfig,
   accent,
   deckState,
@@ -34,6 +36,7 @@ export function DotContinuousSlider({
   const max = cfg.max ?? 100;
   const step = cfg.step ?? (target === 'variable' ? 1 : 5);
   const showValue = cfg.showValue !== false;
+  const colorPropio = button.bgColor ? (button.fgColor || textoSobre(button.bgColor)) : undefined;
 
   // Estado local para respuesta inmediata (0ms latencia táctil)
   const [value, setValue] = useState<number>(() => {
@@ -253,6 +256,7 @@ export function DotContinuousSlider({
         showValue={showValue}
         isDragging={isDragging}
         accent={accent}
+        colorPropio={colorPropio}
       />
 
       {/* En vertical la pista y su escala van lado a lado; en horizontal la
@@ -276,11 +280,12 @@ export function DotContinuousSlider({
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
+          colorPropio={colorPropio}
         />
-        {esVertical && <EscalaSlider max={max} orientation="vertical" />}
+        {esVertical && <EscalaSlider max={max} orientation="vertical" colorPropio={colorPropio} />}
       </div>
 
-      {!esVertical && <EscalaSlider max={max} />}
+      {!esVertical && <EscalaSlider max={max} colorPropio={colorPropio} />}
     </div>
   );
 }
