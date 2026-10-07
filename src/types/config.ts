@@ -131,6 +131,11 @@ export interface ButtonConfig {
   };
   /** Ejecutar automáticamente a esta hora (formato HH:MM). */
   timerTriggerAt?: string;
+  /**
+   * Días de la semana en que vale el disparo por hora, como los devuelve
+   * `Date.getDay()` (0 = domingo … 6 = sábado). Ausente o vacío = todos los días.
+   */
+  timerTriggerDias?: number[];
   /** Disparar acción cuando un sensor cruza un umbral (edge-triggered con cooldown). */
   sensorTrigger?: SensorCondition & { cooldownMs?: number };
   /** 4.5 — Subdivisión modular de mosaico 2×2 (4 mini-botones: TL, TR, BL, BR). */

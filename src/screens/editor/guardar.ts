@@ -53,6 +53,7 @@ export interface CamposDelEditor {
   visibleIfSensorOp: '>' | '<' | '>=' | '<=' | '==';
   visibleIfSensorVal: string;
   timerTriggerAt: string;
+  timerTriggerDias: number[];
   sensorTriggerId: string;
   sensorTriggerOp: '>' | '<' | '>=' | '<=' | '==';
   sensorTriggerVal: string;
@@ -191,6 +192,15 @@ function subButtonsDeBoton(c: CamposDelEditor) {
   return undefined;
 }
 
+/**
+ * Los días marcados para el disparo por hora, ordenados y sin repetidos.
+ * Sin ninguno, `undefined`: el disparo vale todos los días.
+ */
+function diasDeTimer(c: CamposDelEditor): number[] | undefined {
+  if (c.timerTriggerDias.length === 0) return undefined;
+  return [...new Set(c.timerTriggerDias)].sort((a, b) => a - b);
+}
+
 export function construirBoton(button: ButtonConfig, c: CamposDelEditor): ButtonConfig {
   return {
     ...button,
@@ -228,6 +238,7 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     sliderWidget: widgetDeSlider(c),
     visibleIf: condicionDeVisibilidad(c),
     timerTriggerAt: c.timerTriggerAt.trim() || undefined,
+    timerTriggerDias: diasDeTimer(c),
     sensorTrigger: disparadorDeSensor(c),
     fijo: c.fijo || undefined,
     subButtons: subButtonsDeBoton(c),

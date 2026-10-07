@@ -133,7 +133,9 @@ Regardless of type, a button can have:
 - `globalHotkey`: a key combination registered with the OS, e.g. `Ctrl+Alt+1`.
   Works whether VirtualDeck is visible or in the tray.
 - `inTrayMenu`: shows up in the tray icon's context menu.
-- `timerTriggerAt`: fires at a given time of day.
+- `timerTriggerAt`: fires at a given time of day. `timerTriggerDias` (a list of
+  `Date.getDay()` numbers, 0 = Sunday … 6 = Saturday) limits it to those
+  weekdays; empty or absent means every day.
 - a sensor threshold: fires when a reading crosses a value.
 
 Both run the button's action sequence via the `button:trigger` IPC channel.

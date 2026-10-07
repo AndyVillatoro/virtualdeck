@@ -57,6 +57,20 @@ function cruzoLaHora(hhmm: string, previo: number, ahora: Date): boolean {
   return t > previo && t <= ahora.getTime();
 }
 
+/**
+ * ¿Toca hoy según los días elegidos? Sin lista (ausente) o vacía, todos los días:
+ * así lo guardado antes de este campo sigue disparando igual.
+ *
+ * Cuando `cruzoLaHora` da verdadero, el instante objetivo cae **el mismo día
+ * natural** que `ahora` —`objetivo` copia su fecha y solo cambia la hora—, así
+ * que mirar el día de `ahora` es mirar el del objetivo. En el salto de
+ * medianoche el tic siguiente lo resuelve, como el resto del hueco.
+ */
+function tocaHoy(dias: number[] | undefined, fecha: Date): boolean {
+  if (!dias || dias.length === 0) return true;
+  return dias.includes(fecha.getDay());
+}
+
 export function useDisparadores({ botones, sensores, disparar }: Opciones) {
 
   // Las opciones van por referencia para que los efectos no se rearmen con
@@ -88,6 +102,7 @@ export function useDisparadores({ botones, sensores, disparar }: Opciones) {
       for (const b of ref.current.botones) {
         if (!b.timerTriggerAt) continue;
         if (!cruzoLaHora(b.timerTriggerAt, previo, ahora)) continue;
+        if (!tocaHoy(b.timerTriggerDias, ahora)) continue;
         void ref.current.disparar(b);
       }
     }, MS_TIC_RELOJ);

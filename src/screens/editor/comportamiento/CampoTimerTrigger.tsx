@@ -1,12 +1,15 @@
 import React from 'react';
 import { useTheme } from '../../../utils/theme';
-import { useFieldText } from '../../../utils/i18n';
+import { useT, useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
+import { Chip } from '../../../components/ui/Chip';
 import { estiloEntrada } from '../comunes';
 
 interface CampoTimerTriggerProps {
   value: string;
   onChange: (hora: string) => void;
+  dias: number[];
+  onDiasChange: (dias: number[]) => void;
   accent: string;
 }
 
@@ -18,8 +21,23 @@ const PRESETS_HORA = [
   { hora: '00:00', etiqueta: '00:00' },
 ];
 
-export function CampoTimerTrigger({ value, onChange, accent }: CampoTimerTriggerProps) {
+/**
+ * Lunes → domingo para la vista; `dia` es el número de `Date.getDay()`
+ * (0 = domingo), que es lo que se guarda en `timerTriggerDias`.
+ */
+const DIAS = [
+  { dia: 1, clave: 'ed.dia.lun' },
+  { dia: 2, clave: 'ed.dia.mar' },
+  { dia: 3, clave: 'ed.dia.mie' },
+  { dia: 4, clave: 'ed.dia.jue' },
+  { dia: 5, clave: 'ed.dia.vie' },
+  { dia: 6, clave: 'ed.dia.sab' },
+  { dia: 0, clave: 'ed.dia.dom' },
+];
+
+export function CampoTimerTrigger({ value, onChange, dias, onDiasChange, accent }: CampoTimerTriggerProps) {
   const VD = useTheme();
+  const t = useT();
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
 
@@ -28,6 +46,10 @@ export function CampoTimerTrigger({ value, onChange, accent }: CampoTimerTrigger
     const hh = String(ahora.getHours()).padStart(2, '0');
     const mm = String(ahora.getMinutes()).padStart(2, '0');
     onChange(`${hh}:${mm}`);
+  };
+
+  const alternarDia = (dia: number) => {
+    onDiasChange(dias.includes(dia) ? dias.filter((d) => d !== dia) : [...dias, dia]);
   };
 
   return (
@@ -148,11 +170,31 @@ export function CampoTimerTrigger({ value, onChange, accent }: CampoTimerTrigger
         })}
       </div>
 
+      {/* Días de la semana: sin ninguno marcado, el disparo vale todos los días */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {DIAS.map((d) => (
+          <Chip
+            key={d.dia}
+            activo={dias.includes(d.dia)}
+            onClick={() => alternarDia(d.dia)}
+            disabled={!value}
+            accent={accent}
+          >
+            {t(d.clave)}
+          </Chip>
+        ))}
+        {dias.length === 0 && (
+          <span style={{ fontFamily: VD.mono, fontSize: 8, letterSpacing: 1, color: VD.textMuted }}>
+            {tf('TODOS LOS DÍAS')}
+          </span>
+        )}
+      </div>
+
       {/* Nota y línea descriptiva */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>
           {value
-            ? `${tf('Se ejecutará automáticamente todos los días a las')} ${value}.`
+            ? `${dias.length === 0 ? tf('Se ejecutará automáticamente todos los días a las') : tf('Se ejecutará automáticamente los días marcados a las')} ${value}.`
             : tf('Ejecuta la acción automáticamente a una hora fija del día.')}
         </div>
         <div style={{ fontFamily: VD.mono, fontSize: 7.5, color: VD.textDim }}>

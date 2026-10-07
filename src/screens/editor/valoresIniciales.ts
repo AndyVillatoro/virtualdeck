@@ -83,6 +83,8 @@ export function disparadoresInicial(button: ButtonConfig) {
     globalHotkey: button.globalHotkey ?? '',
     inTrayMenu: button.inTrayMenu ?? false,
     timerTriggerAt: button.timerTriggerAt ?? '',
+    // Copia, no la referencia: el formulario alterna días y no debe tocar el botón.
+    timerTriggerDias: (button.timerTriggerDias ?? []).slice(),
     sensorTriggerId: button.sensorTrigger?.id ?? '',
     sensorTriggerOp: (button.sensorTrigger?.op ?? '>') as '>' | '<' | '>=' | '<=' | '==',
     sensorTriggerVal: button.sensorTrigger?.value?.toString() ?? '',

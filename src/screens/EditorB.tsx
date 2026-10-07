@@ -360,6 +360,8 @@ export function EditorB({
                 setSensorTriggerVal={e.setSensorTriggerVal}
                 timerTriggerAt={e.timerTriggerAt}
                 setTimerTriggerAt={e.setTimerTriggerAt}
+                timerTriggerDias={e.timerTriggerDias}
+                setTimerTriggerDias={e.setTimerTriggerDias}
                 visibleIfApp={e.visibleIfApp}
                 setVisibleIfApp={e.setVisibleIfApp}
                 visibleIfSensorId={e.visibleIfSensorId}

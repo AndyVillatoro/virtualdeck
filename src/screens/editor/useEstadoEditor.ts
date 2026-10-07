@@ -135,6 +135,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
   const [visibleIfSensorOp, setVisibleIfSensorOp] = useState(vis.visibleIfSensorOp);
   const [visibleIfSensorVal, setVisibleIfSensorVal] = useState(vis.visibleIfSensorVal);
   const [timerTriggerAt, setTimerTriggerAt] = useState(dis.timerTriggerAt);
+  const [timerTriggerDias, setTimerTriggerDias] = useState(dis.timerTriggerDias);
   const [sensorTriggerId, setSensorTriggerId] = useState(dis.sensorTriggerId);
   const [sensorTriggerOp, setSensorTriggerOp] = useState(dis.sensorTriggerOp);
   const [sensorTriggerVal, setSensorTriggerVal] = useState(dis.sensorTriggerVal);
@@ -258,6 +259,7 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
       visibleIfSensorOp,
       visibleIfSensorVal,
       timerTriggerAt,
+      timerTriggerDias,
       sensorTriggerId,
       sensorTriggerOp,
       sensorTriggerVal,
@@ -482,6 +484,8 @@ export function useEstadoEditor({ button, onSave, dockGesto }: UseEstadoEditorOp
     setVisibleIfSensorVal,
     timerTriggerAt,
     setTimerTriggerAt,
+    timerTriggerDias,
+    setTimerTriggerDias,
     sensorTriggerId,
     setSensorTriggerId,
     sensorTriggerOp,

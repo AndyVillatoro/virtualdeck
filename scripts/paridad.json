@@ -185,7 +185,13 @@
     "pantallas": "no-aplica",
     "movil": "no-aplica",
     "dock": "no-aplica",
-    "nota": "disparo de fondo a nivel de app (src/utils/useDisparadores.ts:89-90, montado en App); ninguna superficie lo implementa por separado"
+    "nota": "disparo de fondo a nivel de app (src/utils/useDisparadores.ts:102-104, montado en App); ninguna superficie lo implementa por separado"
+  },
+  "timerTriggerDias": {
+    "pantallas": "no-aplica",
+    "movil": "no-aplica",
+    "dock": "no-aplica",
+    "nota": "filtro de días del disparo por hora, en el mismo efecto de fondo (src/utils/useDisparadores.ts:105, montado en App); ninguna superficie lo implementa por separado"
   },
   "sensorTrigger": {
     "pantallas": "no-aplica",

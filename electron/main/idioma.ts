@@ -32,7 +32,7 @@ type Clave =
   // Fragmentos del resumen de riesgo de la galería (los enseña el renderer).
   | 'gal.risk.click' | 'gal.risk.move' | 'gal.risk.scroll' | 'gal.risk.voice'
   | 'gal.risk.kill' | 'gal.risk.clipboard' | 'gal.risk.audio' | 'gal.risk.capture'
-  | 'gal.risk.discord' | 'gal.risk.spotify' | 'gal.risk.timer' | 'gal.risk.sensor'
+  | 'gal.risk.discord' | 'gal.risk.spotify' | 'gal.risk.timer' | 'gal.risk.timerDias' | 'gal.risk.sensor'
   | 'gal.risk.play' | 'gal.risk.macroNumerico'
   | 'discord.notRunning' | 'discord.disconnected' | 'discord.timeout' | 'discord.notAuthenticated' | 'discord.error'
   | 'spotify.tokenRequired' | 'spotify.noUri';
@@ -89,6 +89,7 @@ const ES: Record<Clave, string> = {
   'gal.risk.discord': 'Discord: {accion}',
   'gal.risk.spotify': 'Spotify: {accion}',
   'gal.risk.timer': 'temporizador {hora}',
+  'gal.risk.timerDias': 'temporizador {hora} (días: {dias})',
   'gal.risk.sensor': 'sensor {id} {op} {valor}',
   'gal.risk.play': 'reproducir',
   'gal.risk.macroNumerico': 'paso de macro con un número que no es número (intento de código en una pausa o una coordenada)',
@@ -153,6 +154,7 @@ const EN: Record<Clave, string> = {
   'gal.risk.discord': 'Discord: {accion}',
   'gal.risk.spotify': 'Spotify: {accion}',
   'gal.risk.timer': 'timer {hora}',
+  'gal.risk.timerDias': 'timer {hora} (days: {dias})',
   'gal.risk.sensor': 'sensor {id} {op} {valor}',
   'gal.risk.play': 'play',
   'gal.risk.macroNumerico': 'macro step with a non-numeric number (attempt to inject code through a delay or a coordinate)',
@@ -187,4 +189,22 @@ export function tm(clave: Clave, vars?: Record<string, string>): string {
   const texto = actual[clave];
   if (!vars) return texto;
   return texto.replace(/\{(\w+)\}/g, (todo, n) => vars[n] ?? todo);
+}
+
+/** Nombres cortos de los días, indexados como `Date.getDay()` (0 = domingo). */
+const DIAS_ES = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+const DIAS_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+/**
+ * Los días de `timerTriggerDias` en el idioma fijado, para el resumen de
+ * riesgos de la galería. Se saltan los números fuera de rango: vienen de un
+ * perfil ajeno y no hay por qué repetir lo que no se entiende.
+ */
+export function diasDeLaSemana(dias: number[]): string {
+  const tabla = actual === ES ? DIAS_ES : DIAS_EN;
+  return dias
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+    .sort((a, b) => a - b)
+    .map((d) => tabla[d])
+    .join(', ');
 }

@@ -131,6 +131,7 @@ Independientemente del tipo, un botón puede tener:
 
 - `globalHotkey`: combinación de teclas registrada a nivel SO (ej. `Ctrl+Alt+1`). Funciona aunque VirtualDeck esté en background.
 - `inTrayMenu`: aparece en el menú contextual del tray.
+- `timerTriggerAt`: se dispara a una hora fija del día. `timerTriggerDias` (lista de números de `Date.getDay()`, 0 = domingo … 6 = sábado) lo limita a esos días de la semana; vacío o ausente significa todos los días.
 
 Ambos ejecutan la cadena del botón mediante el canal IPC `button:trigger`. Los interruptores, las variables y los demás efectos se aplican igual que con un clic en la cuadrícula.
 

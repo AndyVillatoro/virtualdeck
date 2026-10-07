@@ -669,6 +669,17 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **AVISO stash:** a mitad del turno se hizo `git stash push --include-untracked` para comprobar un error de `tsc` y el `pop` abortó (otro agente editaba `comunes.tsx` a la vez). Los 4 archivos propios se restauraron con `git restore --source=stash@{0} --worktree` y los demás agentes regrabaron lo suyo (verificado: worktree completo, nadie perdió nada). Queda `stash@{0}` (`wip-t-rev-05`) como copia redundante: **NO hacer `pop`** (abortaría igual); si hiciera falta algo, `git checkout stash@{0} -- <archivo>` tras difuminar. No volver a usar `stash` con agentes concurrentes.
 * **No tocado:** `injectUtf8Prefix` (complejidad 20, fuera del encargo: solo comentarios en esos dos archivos).
 
+## Turno 2026-10-07 — T-REV-08 días de la semana en el disparo por hora (DONE sin commit)
+
+* **Modelo:** DeepSeek V4.1 Flash (opencode), rama `task/p1-revision-ui`. Sin commits ni push (lo pide el encargo). Cuota de pago `opencode-go/`; nada por agy.
+* **Modelo de datos:** `ButtonConfig.timerTriggerDias?: number[]` (`src/types/config.ts`, JSDoc con `Date.getDay()`); ausente o vacío = todos los días, así lo guardado antes sigue igual.
+* **Disparo:** `src/utils/useDisparadores.ts` gana `tocaHoy(dias, fecha)` (pura, sin exportar) y el bucle del reloj filtra por el día de `ahora`, que cuando `cruzoLaHora` da verdadero es el mismo día natural del instante objetivo (el salto de medianoche lo resuelve el tic siguiente).
+* **Editor:** `CampoTimerTrigger` añade una fila de 7 `Chip` (lunes→domingo, deshabilitadas sin hora; se guarda el número de `getDay`), "TODOS LOS DÍAS" cuando no hay ninguno y la línea descriptiva cambia a «los días marcados». Cableado en `valoresIniciales` (copia del array), `useEstadoEditor`, `guardar` (`diasDeTimer`: sin días → `undefined`, con días ordenados y sin repetidos), `SeccionComportamiento` y `EditorB`.
+* **Resto:** `scripts/paridad.json` con `timerTriggerDias` (no-aplica en las tres, como `timerTriggerAt`); `galeria.ts` avisa `temporizador {hora} (días: …)` con `diasDeLaSemana` en `idioma.ts` (ES/EN, se saltan números fuera de rango); claves `ed.dia.*` en `*Editor` y los dos textos nuevos en `campos.ts`; wiki ES y EN (una línea cada una).
+* **Prueba de `tocaHoy`:** script desechable fuera del repo (temp) que extrae la función del fuente y evalúa 15 aserciones: domingo, sábado y lunes (fechas reales 2026-10-03/04/05), lista vacía y ausente en los tres, domingo solo, sábado solo y lista múltiple. Todas en verde; script borrado.
+* **Verificación:** `npm run check` 0 errores, 22 warnings (los 22 preexistentes; el cambio había subido `mirarBoton` a complejidad 19 y se extrajo `mirarTimer` para dejarlo en 18 o menos); guardianes: i18n 1290 claves/334 textos, paridad 38 campos/0 huecos; `npm run build` ok.
+* **Falta (dueño):** verlo en pantalla — marcar días, guardar, reiniciar y comprobar que solo salta el día elegido; y el aviso de la ficha de riesgo con días.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

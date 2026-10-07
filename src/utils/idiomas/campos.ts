@@ -326,7 +326,9 @@ export const FIELDS_EN: Record<string, string> = {
     'Executes this action automatically when a sensor reaches or exceeds a threshold.',
   'HORA ACTUAL': 'CURRENT TIME',
   'DESACTIVAR DISPARO POR HORA': 'DISABLE TIME TRIGGER',
+  'TODOS LOS DÍAS': 'EVERY DAY',
   'Se ejecutará automáticamente todos los días a las': 'Will run automatically every day at',
+  'Se ejecutará automáticamente los días marcados a las': 'Will run automatically on the marked days at',
   'Ejecuta la acción automáticamente a una hora fija del día.': 'Executes the action automatically at a fixed time of day.',
   'Nota: el disparador por hora se ejecuta una vez al día a la hora indicada (HH:MM).':
     'Note: time trigger runs once a day at the specified time (HH:MM).',

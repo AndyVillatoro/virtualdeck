@@ -1,5 +1,5 @@
 import { net } from 'electron';
-import { tm } from './idioma';
+import { tm, diasDeLaSemana } from './idioma';
 
 /**
  * La galería de perfiles (6.1): traerse un perfil de una dirección.
@@ -269,6 +269,22 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   };
 
   /**
+   * El disparo programado: la hora y, si el perfil los trae, los días elegidos
+   * (`timerTriggerDias`, números de `Date.getDay()`).
+   */
+  const mirarTimer = (y: Record<string, any>): void => {
+    if (typeof y.timerTriggerAt !== 'string' || !y.timerTriggerAt) return;
+    const dias = Array.isArray(y.timerTriggerDias)
+      ? (y.timerTriggerDias as unknown[]).filter((d): d is number => typeof d === 'number')
+      : [];
+    if (dias.length === 0) {
+      automaticos.push(tm('gal.risk.timer', { hora: y.timerTriggerAt }));
+      return;
+    }
+    automaticos.push(tm('gal.risk.timerDias', { hora: y.timerTriggerAt, dias: diasDeLaSemana(dias) }));
+  };
+
+  /**
    * Lo propio de cada botón: sus acciones más lo que se dispara solo.
    * Un temporizador o un sensor ejecutan código sin que nadie pulse nada,
    * así que van en lista aparte (`automaticos`), no mezclados con el resto.
@@ -277,7 +293,7 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     if (!b || typeof b !== 'object') return;
     const y = b as Record<string, any>;
     if (y.globalHotkey) atajosGlobales.push(String(y.globalHotkey));
-    if (typeof y.timerTriggerAt === 'string' && y.timerTriggerAt) automaticos.push(tm('gal.risk.timer', { hora: y.timerTriggerAt }));
+    mirarTimer(y);
     const st = y.sensorTrigger;
     if (st && typeof st === 'object') automaticos.push(tm('gal.risk.sensor', { id: String(st.id ?? '?'), op: String(st.op ?? '?'), valor: String(st.value ?? '?') }));
     mirar(y.action);

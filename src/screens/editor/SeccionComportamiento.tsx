@@ -32,6 +32,8 @@ interface SeccionComportamientoProps {
   setInTrayMenu: (v: boolean) => void;
   timerTriggerAt: string;
   setTimerTriggerAt: (s: string) => void;
+  timerTriggerDias: number[];
+  setTimerTriggerDias: (d: number[]) => void;
   visibleIfApp: string;
   setVisibleIfApp: (s: string) => void;
   visibleIfSensorId: string;
@@ -83,6 +85,8 @@ export function SeccionComportamiento({
   setInTrayMenu,
   timerTriggerAt,
   setTimerTriggerAt,
+  timerTriggerDias,
+  setTimerTriggerDias,
   visibleIfApp,
   setVisibleIfApp,
   visibleIfSensorId,
@@ -271,6 +275,8 @@ export function SeccionComportamiento({
             <CampoTimerTrigger
               value={timerTriggerAt}
               onChange={setTimerTriggerAt}
+              dias={timerTriggerDias}
+              onDiasChange={setTimerTriggerDias}
               accent={accent}
             />
           </Field>
