@@ -143,24 +143,24 @@ export function TitleBar({
           padding: compact ? '0 8px' : '0 14px', gap: compact ? 6 : 10,
           borderBottom: `1px solid ${VD.border}`,
           fontFamily: VD.mono, fontSize: compact ? 10 : 11, color: VD.textDim,
-          background: VD.surface,
+          background: VD.surface, minWidth: 0,
           WebkitAppRegion: 'drag',
         } as React.CSSProperties}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 4 : 6, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 4 : 6, flexShrink: 0, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <div style={{ width: compact ? 5 : 6, height: compact ? 5 : 6, borderRadius: '50%', background: effectiveAccent }} />
           <span style={{ color: VD.text, letterSpacing: compact ? 1 : 2, fontSize: compact ? 9 : 10 }}>VIRTUALDECK</span>
         </div>
         {pageName && (
           <>
             <div style={{ width: 1, height: compact ? 10 : 14, background: VD.border }} />
-            <span style={{ fontSize: compact ? 9 : 10, letterSpacing: 1, color: VD.textMuted }}>{pageName}</span>
+            <span style={{ fontSize: compact ? 9 : 10, letterSpacing: 1, color: VD.textMuted, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pageName}</span>
           </>
         )}
         <div style={{ flex: 1 }} />
 
         {showControls && (
-          <div style={{ display: 'flex', gap: compact ? 2 : 4, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <div style={{ display: 'flex', gap: compact ? 2 : 4, flexShrink: 0, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <BotonesNavegacion
               effectiveAccent={effectiveAccent}
               onConfigExport={onConfigExport}

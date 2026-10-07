@@ -166,8 +166,11 @@ export function ContenidoTienda({ instalados, accent }: {
   );
   const menudo: React.CSSProperties = { fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6 };
 
+  // La ventana entera es `overflow: hidden` (index.css): el scroll lo pone
+  // este contenedor, o lo que pase de 680 px de alto no se alcanza nunca.
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div className="vd-scroll" style={{ height: '100%', overflowY: 'auto', background: VD.bg }}>
+    <div style={{ maxWidth: 920, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>
           {t('tienda.title')}
@@ -235,6 +238,7 @@ export function ContenidoTienda({ instalados, accent }: {
           onCerrar={() => setElegido(null)}
         />
       )}
+    </div>
     </div>
   );
 }

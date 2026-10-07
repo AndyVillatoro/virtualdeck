@@ -55,10 +55,10 @@ export function DisplaysSection({ accent, targetDisplayId, onTargetDisplayChange
               }}
             >
               {/* Header row */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, flexWrap: 'wrap', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: '1 1 auto' }}>
                   <DotGlyphIcon glyph="MONITOR" size={10} color={d.isCurrent ? accent : VD.textDim} />
-                  <span style={{ fontFamily: VD.mono, fontSize: 9, fontWeight: 700, color: d.isCurrent ? VD.text : VD.textDim, letterSpacing: 0.5 }}>
+                  <span style={{ fontFamily: VD.mono, fontSize: 9, fontWeight: 700, color: d.isCurrent ? VD.text : VD.textDim, letterSpacing: 0.5, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {d.name ? d.name.toUpperCase() : `MONITOR ${idx + 1}`}
                   </span>
                 </div>
@@ -67,7 +67,7 @@ export function DisplaysSection({ accent, targetDisplayId, onTargetDisplayChange
                   {d.isPrimary && (
                     <span style={{
                       fontFamily: VD.mono, fontSize: 7, padding: '1px 4px',
-                      background: 'rgba(255, 255, 255, 0.06)', borderRadius: VD.radius.sm,
+                      background: VD.elevated, borderRadius: VD.radius.sm,
                       color: VD.textMuted, letterSpacing: 0.5,
                     }}>
                       {t('set.monPrimary')}
@@ -85,8 +85,8 @@ export function DisplaysSection({ accent, targetDisplayId, onTargetDisplayChange
                   {isTarget && (
                     <span style={{
                       fontFamily: VD.mono, fontSize: 7, padding: '1px 4px',
-                      background: 'rgba(52, 199, 89, 0.15)', border: '1px solid #34c759', borderRadius: VD.radius.sm,
-                      color: '#34c759', letterSpacing: 0.5, fontWeight: 700,
+                      background: `${VD.success}26`, border: `1px solid ${VD.success}`, borderRadius: VD.radius.sm,
+                      color: VD.success, letterSpacing: 0.5, fontWeight: 700,
                     }}>
                       {t('set.monKioskTarget')}
                     </span>
@@ -95,19 +95,19 @@ export function DisplaysSection({ accent, targetDisplayId, onTargetDisplayChange
               </div>
 
               {/* Specs row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>
                 <span>{d.bounds.width}×{d.bounds.height}</span>
-                <span>•</span>
+                <span aria-hidden="true">·</span>
                 <span>{Math.round(d.scaleFactor * 100)}%</span>
                 {d.frequency ? (
                   <>
-                    <span>•</span>
+                    <span aria-hidden="true">·</span>
                     <span>{d.frequency}HZ</span>
                   </>
                 ) : null}
                 {d.touchSupport === 'available' && (
                   <>
-                    <span>•</span>
+                    <span aria-hidden="true">·</span>
                     <span style={{ color: accent }}>{t('set.monTouch')}</span>
                   </>
                 )}
@@ -134,15 +134,15 @@ export function DisplaysSection({ accent, targetDisplayId, onTargetDisplayChange
                   onClick={() => onTargetDisplayChange?.(isTarget ? undefined : d.id)}
                   style={{
                     flex: 1, padding: '4px 6px',
-                    background: isTarget ? 'rgba(52, 199, 89, 0.12)' : 'transparent',
-                    border: `1px solid ${isTarget ? '#34c759' : VD.border}`,
-                    color: isTarget ? '#34c759' : VD.textMuted,
+                    background: isTarget ? `${VD.success}1f` : 'transparent',
+                    border: `1px solid ${isTarget ? VD.success : VD.border}`,
+                    color: isTarget ? VD.success : VD.textMuted,
                     fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
                     cursor: 'pointer', borderRadius: VD.radius.sm,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                   }}
                 >
-                  <DotGlyphIcon glyph={isTarget ? 'CHECK' : 'FULLSCREEN'} size={7} color={isTarget ? '#34c759' : VD.textMuted} />
+                  <DotGlyphIcon glyph={isTarget ? 'CHECK' : 'FULLSCREEN'} size={7} color={isTarget ? VD.success : VD.textMuted} />
                   <span>{isTarget ? t('set.monIsKioskTarget') : t('set.monSetKiosk')}</span>
                 </button>
               </div>

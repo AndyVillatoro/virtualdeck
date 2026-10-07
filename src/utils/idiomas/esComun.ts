@@ -96,6 +96,11 @@ export const ES_COMUN: Dict = {
   'tip.close': 'Cerrar (minimiza a bandeja)',
   'comun.cerrar': 'Cerrar',
   'folder.titulo': 'CARPETA',
+  'set.spotifyActivo': 'ACTIVO',
+  'bulk.deseleccionar': 'Quitar la selección',
+  'rgb.titulo': 'GESTOR RGB',
+  'panel.ocultarRegistro': 'OCULTAR REGISTRO',
+  'panel.verRegistro': 'VER REGISTRO',
   // — Pantalla de fondos (WallpaperB) —
   'wp.back': 'VOLVER',
   'wp.preview': 'VISTA PREVIA',

@@ -52,6 +52,7 @@ export function SeccionAjustes({
       <button
         type="button"
         onClick={toggle}
+        aria-expanded={estaAbierto}
         style={{
           width: '100%',
           display: 'flex',
@@ -81,12 +82,18 @@ export function SeccionAjustes({
         }}
       >
         <DotGlyphIcon glyph={glyph} size={8} color={estaAbierto ? accent : VD.textMuted} />
-        <span style={{ flex: 1, fontWeight: estaAbierto ? 600 : 400 }}>{titulo}</span>
+        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: estaAbierto ? 600 : 400 }}>{titulo}</span>
         {badge && (
           <span
+            title={typeof badge === 'string' ? badge : undefined}
             style={{
-              fontSize: 7,
-              padding: '1px 5px',
+              fontSize: 8,
+              maxWidth: '45%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flexShrink: 1,
+              padding: '1px 4px',
               borderRadius: VD.radius.sm,
               background: VD.accentBg,
               color: accent,

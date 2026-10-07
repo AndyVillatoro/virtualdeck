@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { BarraLateral } from './main/BarraLateral';
+import { BotonIcono } from '../components/ui/BotonIcono';
+import { useTamanoVentana } from '../utils/useTamanoVentana';
 import { PanelMusicaLateral } from './main/PanelesMusica';
 import { AvisosContextuales } from './main/AvisosContextuales';
 import { BarraSuperiorMain } from './main/BarraSuperiorMain';
@@ -20,7 +22,6 @@ import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/
 import { useEstadoSistema } from '../utils/estadoSistema';
 import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { resolverBotonesPagina } from '../utils/botonesPagina';
-import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import type { ButtonConfig } from '../types';
@@ -78,14 +79,13 @@ export function MainB({
   const touchStartYRef = useRef<number>(0);
   const lastSwipeAtRef = useRef<number>(0);
 
-  const [windowHeight, setWindowHeight] = useState(() => (typeof window !== 'undefined' ? window.innerHeight : 720));
-  useEffect(() => {
-    const handleResize = () => setWindowHeight(window.innerHeight);
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [uiScale]);
-  const isCompact = windowHeight < 540;
+  const { ancho: anchoVentana, alto: altoVentana } = useTamanoVentana();
+  const isCompact = altoVentana < 540;
+  // En ventanas estrechas los paneles laterales (barra 220 px, música 300 px)
+  // aplastaban la rejilla. Por debajo de 760 px no se enseña ninguno; por
+  // debajo de 1100 px no caben los dos, y se queda la barra lateral, que ya
+  // lleva su propia franja de música.
+  const { verBarraLateral, panelMusicaVisible } = panelesQueCaben(anchoVentana, showSidebar, panelMusica);
 
   // Grid sizing — JS-driven because pure-CSS `aspect-ratio + max-width/height`
   // collapses when children are 100%-sized (no intrinsic dimension). We measure
@@ -325,7 +325,7 @@ export function MainB({
           {/* El panel de musica, si toca por la izquierda. */}
           <PanelMusicaLateral
             config={config}
-            panelMusica={panelMusica}
+            panelMusica={panelMusicaVisible}
             lado="left"
             onConfigChange={onConfigChange}
             nowPlaying={nowPlaying}
@@ -422,7 +422,7 @@ export function MainB({
           />
 
           {/* Sidebar */}
-          {showSidebar && (
+          {verBarraLateral && (
             <BarraLateral
               config={config}
               clock={clock}
@@ -439,13 +439,13 @@ export function MainB({
               isPlaying={isPlaying}
               sourceName={sourceName}
               showToast={showToast}
-              ocultarMusica={panelMusica.enabled}
+              ocultarMusica={panelMusicaVisible.enabled}
             />
           )}
 
           <PanelMusicaLateral
             config={config}
-            panelMusica={panelMusica}
+            panelMusica={panelMusicaVisible}
             lado="right"
             onConfigChange={onConfigChange}
             nowPlaying={nowPlaying}
@@ -460,15 +460,13 @@ export function MainB({
               position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
               background: VD.surface, border: `1px solid ${VD.borderStrong}`,
               borderRadius: VD.radius.lg, padding: '10px 16px',
-              maxWidth: 'min(500px, 60%)', minWidth: 240,
+              maxWidth: 'min(500px, 90%)', minWidth: 'min(240px, 90%)',
               fontFamily: VD.mono, fontSize: 10, color: VD.text,
               boxShadow: VD.shadow.menu, zIndex: 100,
               display: 'flex', gap: 12, alignItems: 'flex-start',
             }}>
               <span style={{ flex: 1, whiteSpace: 'pre-wrap', maxHeight: 140, overflowY: 'auto', lineHeight: 1.6 }}>{toast}</span>
-              <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', flexShrink: 0, padding: 2, display: 'flex', alignItems: 'center' }}>
-                <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textMuted} />
-              </button>
+              <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={() => setToast(null)} tamano={20} tamanoGlifo={8} color={VD.textMuted} />
             </div>
           )}
         </div>
@@ -519,3 +517,15 @@ export function MainB({
 }
 
 // ── Folder sub-deck overlay ────────────────────────────────────────────────
+
+/** Qué paneles laterales se enseñan según el ancho (ver el comentario en `MainB`). */
+function panelesQueCaben<P extends { enabled: boolean }>(ancho: number, showSidebar: boolean, panelMusica: P) {
+  const cabeLateral = ancho >= 760;
+  const cabenAmbos = ancho >= 1100;
+  const verBarraLateral = showSidebar && cabeLateral;
+  const panelMusicaVisible: P = {
+    ...panelMusica,
+    enabled: panelMusica.enabled && cabeLateral && (cabenAmbos || !verBarraLateral),
+  };
+  return { verBarraLateral, panelMusicaVisible };
+}

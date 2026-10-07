@@ -35,6 +35,7 @@ export function BarraSeleccionLote({
     <div style={{
       position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
       zIndex: 50, display: 'flex', alignItems: 'center', gap: 8,
+      flexWrap: 'wrap', justifyContent: 'center', maxWidth: 'calc(100% - 32px)',
       background: VD.surface, border: `1px solid ${VD.borderStrong}`,
       borderRadius: VD.radius.lg, padding: '8px 14px',
       boxShadow: VD.shadow.menu, fontFamily: VD.mono,
@@ -50,7 +51,7 @@ export function BarraSeleccionLote({
         style={{
           background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text,
           fontFamily: VD.mono, fontSize: 8, padding: '3px 6px', borderRadius: VD.radius.sm,
-          outline: 'none',
+          outline: 'none', maxWidth: 160,
         }}
       >
         <option value="">{t('ui.moveTo')}</option>
@@ -107,6 +108,8 @@ export function BarraSeleccionLote({
 
       <button
         onClick={() => { onClearSelection(); setBulkMoveTarget(null); }}
+        title={t('bulk.deseleccionar')}
+        aria-label={t('bulk.deseleccionar')}
         style={{ padding: '4px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center' }}
       >
         <DotGlyphIcon glyph="CLOSE" size={7} color={VD.textMuted} />

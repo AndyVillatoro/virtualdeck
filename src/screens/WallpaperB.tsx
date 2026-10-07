@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { useTheme } from '../utils/theme';
+import { textoSobre } from '../design';
+
+// Texto sobre una miniatura (fondo arbitrario, con sombra): claro pero nunca
+// blanco puro, por la regla de la estética.
+const TEXTO_SOBRE_IMAGEN = '#e6e8eb';
 import { DotLabel } from '../components/DotLabel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { useT } from '../utils/i18n';
@@ -97,9 +102,9 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
       </div>
 
       {/* Panel inferior */}
-      <div style={{
+      <div className="vd-scroll" style={{
         flex: 1, background: VD.surface, borderTop: `1px solid ${VD.border}`,
-        padding: 20, display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0,
+        padding: 20, display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0, overflowY: 'auto',
       }}>
         {/* Cabecera + botón aplicar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -107,10 +112,10 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
           <button onClick={handleApply} style={{
             padding: '8px 20px', background: applied ? VD.success : VD.accent,
             border: 'none', fontFamily: VD.mono, fontSize: 10, letterSpacing: 2,
-            color: '#fff', cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'background 0.3s',
+            color: textoSobre(applied ? VD.success : VD.accent), cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'background 0.3s',
             display: 'inline-flex', alignItems: 'center', gap: 6,
           }}>
-            <DotGlyphIcon glyph={applied ? 'CHECK' : 'ARROW_RIGHT'} size={8} color="#fff" />
+            <DotGlyphIcon glyph={applied ? 'CHECK' : 'ARROW_RIGHT'} size={8} color={textoSobre(applied ? VD.success : VD.accent)} />
             <span>{applied ? t('wp.applied') : t('wp.apply')}</span>
           </button>
         </div>
@@ -138,11 +143,11 @@ export function WallpaperB({ config, onBack, onSave }: WallpaperBProps) {
               {selected === w.id && (
                 <div style={{
                   position: 'absolute', bottom: 4, left: 0, right: 0, textAlign: 'center',
-                  fontFamily: VD.mono, fontSize: 8, color: '#fff', letterSpacing: 1,
+                  fontFamily: VD.mono, fontSize: 8, color: TEXTO_SOBRE_IMAGEN, letterSpacing: 1,
                   textShadow: '0 1px 3px rgba(0,0,0,0.9)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                 }}>
-                  <DotGlyphIcon glyph="CHECK" size={8} color="#fff" />
+                  <DotGlyphIcon glyph="CHECK" size={8} color={TEXTO_SOBRE_IMAGEN} />
                   <span>{t('wp.selected')}</span>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { indicesPaginasDeck } from '../../utils/paginasDeck';
@@ -73,7 +74,7 @@ function ContenidoPestana({
       onClick={onPageChange}
       onDoubleClick={onStartRename}
       title={page.targetApp ? `${t('page.tip')} · ${t('page.boundApp')}: ${page.targetApp}` : t('page.tip')}
-      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4, minWidth: 0 }}
     >
       {page.iconoApp && (
         <IconoPuntos
@@ -82,7 +83,7 @@ function ContenidoPestana({
           color={isActive ? vd.text : vd.textDim}
         />
       )}
-      <span>{page.name}</span>
+      <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.name}</span>
       {page.targetApp && (
         <span
           title={`${t('page.boundApp')}: ${page.targetApp}`}
@@ -95,17 +96,17 @@ function ContenidoPestana({
             background: `${accent}1c`,
             border: `1px solid ${accent}55`,
             color: accent,
-            fontSize: 7,
+            fontSize: 8,
             letterSpacing: 0.5,
             textTransform: 'uppercase',
           }}
         >
           <DotGlyphIcon glyph="APP_WINDOW" size={6} color={accent} />
-          <span>{page.targetApp}</span>
+          <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.targetApp}</span>
         </span>
       )}
       {gs !== 4 && (
-        <span style={{ fontSize: 7, marginLeft: 2, opacity: 0.5 }}>{gs}×{rows}</span>
+        <span style={{ fontSize: 8, marginLeft: 2, opacity: 0.5 }}>{gs}×{rows}</span>
       )}
     </span>
   );
@@ -121,10 +122,16 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
 
   return (
       <div style={{
-        display: 'flex', padding: compact ? '4px 12px 0' : '12px 20px 0', gap: 2,
+        display: 'flex', padding: compact ? '4px 12px 0' : '12px 20px 0', gap: 4,
         borderBottom: `1px solid ${VD.border}`,
-        background: VD.surface, flexShrink: 0, alignItems: 'flex-end',
+        background: VD.surface, flexShrink: 0, alignItems: 'flex-end', minWidth: 0,
       }}>
+        {/* Las pestañas se desplazan en horizontal (rueda incluida) en vez de
+            empujar fuera de la ventana los botones de la derecha. */}
+        <div
+          onWheel={(e) => { if (e.deltaY !== 0) e.currentTarget.scrollLeft += e.deltaY; }}
+          style={{ display: 'flex', gap: 2, alignItems: 'flex-end', flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'hidden' }}
+        >
         {indicesDeck.map((i) => {
           const p = config.pages[i];
           return (
@@ -164,7 +171,7 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
                 ? `2px solid ${config.accent}66`
                 : '2px solid transparent',
               position: 'relative', top: 1, cursor: 'grab', userSelect: 'none',
-              display: 'flex', alignItems: 'center',
+              display: 'flex', alignItems: 'center', flexShrink: 0,
               opacity: dragPageIdx === i ? 0.4 : 1,
               transition: 'opacity 0.15s',
             }}
@@ -204,59 +211,23 @@ export function PestanasPagina({ config, activePage, onPageChange, onPageAdd, on
         })}
 
         {config.pages.length < 8 && (
-          <div
-            onClick={onPageAdd}
-            title={t('page.add')}
-            style={{
-              padding: compact ? '4px 6px' : '8px 10px',
-              cursor: 'pointer', userSelect: 'none', position: 'relative', top: 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <DotGlyphIcon glyph="ADD" size={compact ? 9 : 11} color={VD.textMuted} />
-          </div>
+          <BotonIcono glifo="ADD" title={t('page.add')} onClick={onPageAdd} tamano={compact ? 24 : 32} tamanoGlifo={compact ? 9 : 11} color={VD.textMuted} />
         )}
 
-        <div style={{ flex: 1 }} />
-        {onPageExport && (
-          <div
-            onClick={() => onPageExport(activePage)}
-            title={t('page.export')}
-            style={{
-              padding: compact ? '4px 6px' : '8px 10px',
-              cursor: 'pointer', userSelect: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <DotGlyphIcon glyph="EXPORT" size={compact ? 8 : 10} color={VD.textMuted} />
-          </div>
-        )}
-        {onPageImport && (
-          <div
-            onClick={onPageImport}
-            title={t('page.import')}
-            style={{
-              padding: compact ? '4px 6px' : '8px 10px',
-              cursor: 'pointer', userSelect: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <DotGlyphIcon glyph="IMPORT" size={compact ? 8 : 10} color={VD.textMuted} />
-          </div>
-        )}
-        <div
-          onClick={() => setShowSidebar((v) => !v)}
-          title={t(showSidebar ? 'sidebar.hide' : 'sidebar.show')}
-          style={{
-            padding: compact ? '4px 6px' : '8px 10px',
-            cursor: 'pointer', userSelect: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'color 0.15s',
-          }}
-        >
-          <DotGlyphIcon
-            glyph={showSidebar ? 'ARROW_RIGHT' : 'ARROW_LEFT'}
-            size={compact ? 9 : 11}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, paddingBottom: 2 }}>
+          {onPageExport && (
+            <BotonIcono glifo="EXPORT" title={t('page.export')} onClick={() => onPageExport(activePage)} tamano={compact ? 24 : 32} tamanoGlifo={compact ? 8 : 10} color={VD.textMuted} />
+          )}
+          {onPageImport && (
+            <BotonIcono glifo="IMPORT" title={t('page.import')} onClick={onPageImport} tamano={compact ? 24 : 32} tamanoGlifo={compact ? 8 : 10} color={VD.textMuted} />
+          )}
+          <BotonIcono
+            glifo={showSidebar ? 'ARROW_RIGHT' : 'ARROW_LEFT'}
+            title={t(showSidebar ? 'sidebar.hide' : 'sidebar.show')}
+            onClick={() => setShowSidebar((v) => !v)}
+            tamano={compact ? 24 : 32}
+            tamanoGlifo={compact ? 9 : 11}
             color={showSidebar ? VD.textDim : VD.textMuted}
           />
         </div>

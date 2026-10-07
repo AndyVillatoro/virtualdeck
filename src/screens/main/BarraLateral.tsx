@@ -66,15 +66,17 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
   const DATE_FMT = useMemo(() => formatoFecha(lang), [lang]);
 
   return (
-        <div style={{
+        <div className="vd-scroll" style={{
           width: 220, borderLeft: `1px solid ${VD.border}`,
           padding: '10px 14px 10px', background: VD.surface,
           display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0,
-          // La columna **no** se desplaza. Antes si, y con unos cuantos
-          // sensores la franja de musica —que va anclada abajo— se salia por
-          // debajo del borde y habia que buscarla desplazando. Ahora lo unico
-          // que se desplaza es la lista de sensores, que es lo que crece.
-          overflow: 'hidden',
+          // Lo que crece es la lista de sensores, y es la que se desplaza (va
+          // con `flex: 1` y su propio scroll), así la franja de música anclada
+          // abajo no se va del borde. Pero en una ventana baja ni sin sensores
+          // cabe el resto (reloj, clima, RGB, registro, música), y con
+          // `overflow: hidden` se recortaba la música: la columna entera se
+          // desplaza **solo** en ese caso.
+          overflowX: 'hidden', overflowY: 'auto',
         }}>
           {/* Clock — DotText es la firma del reloj */}
           <div style={{
@@ -157,6 +159,8 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
                 )}
                 <span
                   onClick={() => setShowLog((v) => !v)}
+                  title={t(showLog ? 'panel.ocultarRegistro' : 'panel.verRegistro')}
+                  role="button"
                   style={{ cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center' }}
                 >
                   <DotGlyphIcon glyph={showLog ? 'ARROW_UP' : 'ARROW_DOWN'} size={8} color={VD.textMuted} />

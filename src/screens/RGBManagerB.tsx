@@ -8,6 +8,7 @@ import {
 import { ListaDispositivos } from './rgb/ListaDispositivos';
 import { PanelPerfiles } from './rgb/PanelPerfiles';
 import { TitleBar } from '../components/TitleBar';
+import { useTamanoVentana } from '../utils/useTamanoVentana';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import type {
   DeckConfig, RGBDeviceInfo, RGBProfile, RGBSettings, RGBStatus, RGBDeviceState,
@@ -356,6 +357,24 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
   };
 
   const accent = config.accent;
+  // Por debajo de ~1000 px las dos columnas de 240 px y el detalle no caben:
+  // los perfiles pasan debajo del detalle en vez de recortarse.
+  const { ancho } = useTamanoVentana();
+  const perfilesAlLado = ancho >= 1000;
+  const panelPerfiles = (
+    <PanelPerfiles
+        enLinea={!perfilesAlLado}
+      accent={accent}
+      conectado={status.connected}
+      profiles={rgbCfg.profiles}
+      startupProfileId={rgbCfg.startupProfileId}
+      onAplicarPreset={aplicarPreset}
+      onGuardar={saveProfile}
+      onAplicar={applyProfile}
+      onBorrar={deleteProfile}
+      onAlternarArranque={toggleStartupProfile}
+    />
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -364,7 +383,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
       background: VD.bg, color: VD.text, fontFamily: VD.font,
       display: 'flex', flexDirection: 'column',
     }}>
-      <TitleBar accent={accent} pageName="RGB MANAGER" showControls={false} />
+      <TitleBar accent={accent} pageName={t('rgb.titulo')} showControls={false} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: `1px solid ${VD.border}`, background: VD.surface, flexShrink: 0 }}>
         <button onClick={onBack} style={{ ...btnSecondary, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <DotGlyphIcon glyph="ARROW_LEFT" size={8} color={VD.textDim} />
@@ -399,7 +418,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
 
       {status.connected && uncalibratedCount > 0 && (
         <div style={{
-          padding: '10px 16px', borderBottom: `1px solid ${VD.border}`, background: 'rgba(212,162,52,0.08)',
+          padding: '10px 16px', borderBottom: `1px solid ${VD.border}`, background: `${VD.warning}14`,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.warning, letterSpacing: 1 }}>{t('rgb.calibPending')}</span>
@@ -426,7 +445,7 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
         />
 
         {/* Detail */}
-        <div style={{ flex: 1, padding: 16, overflowY: 'auto' }}>
+        <div className="vd-scroll" style={{ flex: 1, minWidth: 0, padding: 16, overflowY: 'auto' }}>
           {!selected && (
             <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textMuted, padding: 20 }}>
               {t('rgb.pickDevice')}
@@ -442,19 +461,10 @@ export function RGBManagerB({ config, onConfigChange, onBack }: RGBManagerBProps
               onSetSingleLed={setSingleLedHandler}
             />
           )}
+          {!perfilesAlLado && <div style={{ marginTop: 16 }}>{panelPerfiles}</div>}
         </div>
 
-        <PanelPerfiles
-          accent={accent}
-          conectado={status.connected}
-          profiles={rgbCfg.profiles}
-          startupProfileId={rgbCfg.startupProfileId}
-          onAplicarPreset={aplicarPreset}
-          onGuardar={saveProfile}
-          onAplicar={applyProfile}
-          onBorrar={deleteProfile}
-          onAlternarArranque={toggleStartupProfile}
-        />
+        {perfilesAlLado && panelPerfiles}
       </div>
 
       {showCalibrator && (

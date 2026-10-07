@@ -4,6 +4,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { estilo_btnStyle } from './estilos';
+import { useTamanoVentana } from '../../utils/useTamanoVentana';
 
 export interface BotonesNavegacionProps {
   effectiveAccent: string;
@@ -31,6 +32,11 @@ export function BotonesNavegacion({
   const VD = useTheme();
   const t = useT();
   const btnStyle = estilo_btnStyle(VD, compact);
+  // Por debajo de ~900 px los seis botones con texto no caben junto a los
+  // controles de la ventana: quedan solo los iconos (cada uno con su `title`).
+  const { ancho } = useTamanoVentana();
+  const soloIcono = ancho < 900;
+  const rotulo = (texto: string) => (soloIcono ? null : <span>{texto}</span>);
 
   return (
     <>
@@ -41,7 +47,7 @@ export function BotonesNavegacion({
           title={t('tip.export')}
         >
           <DotGlyphIcon glyph="EXPORT" size={9} color={VD.textDim} />
-          <span>EXP</span>
+          {rotulo('EXP')}
         </button>
       )}
       {onConfigImport && (
@@ -51,19 +57,19 @@ export function BotonesNavegacion({
           title={t('tip.import')}
         >
           <DotGlyphIcon glyph="IMPORT" size={9} color={VD.textDim} />
-          <span>IMP</span>
+          {rotulo('IMP')}
         </button>
       )}
       {onFloatingBar && (
         <button onClick={onFloatingBar} title={t('tip.bar')} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <DotGlyphIcon glyph="TERMINAL" size={9} color={VD.textDim} />
-          <span>{t('bar.short')}</span>
+          {rotulo(t('bar.short'))}
         </button>
       )}
       {onWallpaper && (
-        <button onClick={onWallpaper} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <button onClick={onWallpaper} title={t('ui.wallpaper')} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <DotGlyphIcon glyph="SPARKLE" size={9} color={VD.textDim} />
-          <span>{t('ui.wallpaper')}</span>
+          {rotulo(t('ui.wallpaper'))}
         </button>
       )}
       {/* Conectado se marca con el acento, no con el verde del tema: es
@@ -85,7 +91,7 @@ export function BotonesNavegacion({
             size={8}
             color={rgbStatus?.connected ? effectiveAccent : VD.textMuted}
           />
-          <span>RGB</span>
+          {rotulo('RGB')}
         </button>
       )}
       {onDispositivos && (
@@ -95,7 +101,7 @@ export function BotonesNavegacion({
           style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
           <DotGlyphIcon glyph="USB_PLUG" size={9} color={VD.textDim} />
-          <span>{t('disp.nav')}</span>
+          {rotulo(t('disp.nav'))}
         </button>
       )}
     </>

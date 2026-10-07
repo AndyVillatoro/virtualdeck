@@ -232,6 +232,7 @@ function BloqueSpotify({ spotifyToken, onSpotifyTokenChange }: Props) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 8,
                 background: VD.elevated,
                 border: `1px solid ${d.isActive ? '#1db954' : VD.border}`,
                 padding: '3px 6px',
@@ -240,10 +241,10 @@ function BloqueSpotify({ spotifyToken, onSpotifyTokenChange }: Props) {
                 fontSize: 7,
               }}
             >
-              <span style={{ color: d.isActive ? '#1db954' : VD.text, fontWeight: d.isActive ? 'bold' : 'normal' }}>
-                {d.name} ({d.type}) {d.isActive ? '· [ACTIVO]' : ''}
+              <span style={{ color: d.isActive ? '#1db954' : VD.text, fontWeight: d.isActive ? 'bold' : 'normal', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {d.name} ({d.type}) {d.isActive ? `· ${t('set.spotifyActivo')}` : ''}
               </span>
-              <span style={{ color: VD.textMuted, userSelect: 'all' }}>
+              <span title={d.id} style={{ color: VD.textMuted, userSelect: 'all', minWidth: 0, maxWidth: '40%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {d.id}
               </span>
             </div>

@@ -20,7 +20,7 @@ function FilaFirewall({
   port: number;
   accent: string;
   abriendoFirewall: boolean;
-  mensajeFirewall: string | null;
+  mensajeFirewall: { ok: boolean; texto: string } | null;
   onAbrir: () => void;
 }) {
   const VD = useTheme();
@@ -54,8 +54,8 @@ function FilaFirewall({
         )}
       </div>
       {mensajeFirewall && (
-        <div style={{ fontFamily: VD.mono, fontSize: 8, color: mensajeFirewall.includes('creada') || mensajeFirewall.includes('created') ? VD.success : VD.danger }}>
-          {mensajeFirewall}
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: mensajeFirewall.ok ? VD.success : VD.danger }}>
+          {mensajeFirewall.texto}
         </div>
       )}
     </div>
@@ -92,7 +92,7 @@ function TarjetaConexionMovil({
   port: number;
   accent: string;
   abriendoFirewall: boolean;
-  mensajeFirewall: string | null;
+  mensajeFirewall: { ok: boolean; texto: string } | null;
   onAbrirFirewall: () => void;
 }) {
   const VD = useTheme();
@@ -119,7 +119,7 @@ function TarjetaConexionMovil({
           </button>
         </div>
         {urlMdns && (
-          <div style={{ marginTop: 4, fontFamily: VD.mono, fontSize: 7, color: VD.textDim }}>
+          <div style={{ marginTop: 4, fontFamily: VD.mono, fontSize: 8, color: VD.textDim, overflowWrap: 'anywhere' }}>
             {t('set.remoteMdns', { url: urlMdns })}
           </div>
         )}
@@ -311,7 +311,7 @@ export function RemoteSection({
   const [copiadoUrl, setCopiadoUrl] = useState(false);
   const [firewall, setFirewall] = useState<FirewallStatus | null>(null);
   const [abriendoFirewall, setAbriendoFirewall] = useState(false);
-  const [mensajeFirewall, setMensajeFirewall] = useState<string | null>(null);
+  const [mensajeFirewall, setMensajeFirewall] = useState<{ ok: boolean; texto: string } | null>(null);
 
   const comprobarFw = useCallback((portToCheck?: number) => {
     if (!api?.remote?.checkFirewall) return;
@@ -332,10 +332,10 @@ export function RemoteSection({
     try {
       const res = await api.remote.addFirewallRule(config.port);
       if (res.ok) {
-        setMensajeFirewall(t('set.remoteFirewallDone'));
+        setMensajeFirewall({ ok: true, texto: t('set.remoteFirewallDone') });
         comprobarFw();
       } else {
-        setMensajeFirewall(t('set.remoteFirewallFailed', { error: res.error ?? '?' }));
+        setMensajeFirewall({ ok: false, texto: t('set.remoteFirewallFailed', { error: res.error ?? '?' }) });
       }
     } finally {
       setAbriendoFirewall(false);

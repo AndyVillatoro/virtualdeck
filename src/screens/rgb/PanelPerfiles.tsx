@@ -15,7 +15,7 @@ import type { RGBProfile } from '../../types';
  */
 export function PanelPerfiles({
   accent, conectado, profiles, startupProfileId,
-  onAplicarPreset, onGuardar, onAplicar, onBorrar, onAlternarArranque,
+  onAplicarPreset, onGuardar, onAplicar, onBorrar, onAlternarArranque, enLinea,
 }: {
   accent: string;
   conectado: boolean;
@@ -26,12 +26,16 @@ export function PanelPerfiles({
   onAplicar: (id: string) => void;
   onBorrar: (id: string) => void;
   onAlternarArranque: (id: string) => void;
+  /** Dentro de la columna del detalle (ventana estrecha), sin ancho fijo ni borde. */
+  enLinea?: boolean;
 }) {
   const VD = useTheme();
   const t = useT();
 
   return (
-    <div style={{ width: 240, borderLeft: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
+    <div className={enLinea ? undefined : 'vd-scroll'} style={enLinea
+      ? { background: VD.surface, border: `1px solid ${VD.border}`, borderRadius: VD.radius.sm, padding: 12 }
+      : { width: 240, borderLeft: `1px solid ${VD.border}`, background: VD.surface, padding: 10, overflowY: 'auto', flexShrink: 0 }}>
       <PresetsRapidos accent={accent} activo={conectado} onAplicar={onAplicarPreset} />
 
       <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 8 }}>{t('rgb.profiles')}</DotLabel>
