@@ -470,6 +470,12 @@ pub struct NowPlaying {
     pub is_shuffle_active: Option<bool>,
     /// `"none"`, `"track"` o `"list"`. Ausente = no se sabe.
     pub auto_repeat_mode: Option<String>,
+    /// Posición de la pista en ms. Ausente = sin barra (sin timeline o sin SMTC).
+    pub position_ms: Option<i64>,
+    /// Duración de la pista en ms. Ausente = sin barra.
+    pub duration_ms: Option<i64>,
+    /// Cuándo SMTC midió la posición, en epoch ms Unix.
+    pub timeline_updated_at: Option<i64>,
 }
 
 /// Capacidades de una sesión SMTC, de `GetPlaybackInfo().Controls`.
@@ -521,6 +527,9 @@ pub fn get_now_playing() -> Option<NowPlaying> {
         }),
         is_shuffle_active: n.is_shuffle_active,
         auto_repeat_mode: n.auto_repeat_mode.map(|m| m.as_str().to_string()),
+        position_ms: n.position_ms,
+        duration_ms: n.duration_ms,
+        timeline_updated_at: n.timeline_updated_at,
     })
 }
 

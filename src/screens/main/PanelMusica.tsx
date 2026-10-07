@@ -4,6 +4,7 @@ import { useT } from '../../utils/i18n';
 import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import { DotLabel } from '../../components/DotLabel';
+import { BarraProgreso } from '../../components/BarraProgreso';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import { BotonTransporte } from './musica/BotonTransporte';
@@ -189,6 +190,8 @@ export function PanelMusica({
         sourceName={sourceName}
         unaLinea={false}
       />
+
+      <BarraProgreso datos={nowPlaying} />
 
       <FilaAleatorioRepetir
         puede={puede}

@@ -24,6 +24,15 @@ export interface NowPlaying {
   isShuffleActive?: boolean;
   /** Repetición activa. Ausente = no se sabe. */
   autoRepeatMode?: 'none' | 'track' | 'list';
+  /**
+   * Posición de la pista en ms, solo del núcleo nativo (el respaldo PowerShell
+   * no la pide). Ausente = sin barra: la app no publica timeline o no hay sesión.
+   */
+  positionMs?: number;
+  /** Duración publicable de la pista en ms. Ausente = sin barra. */
+  durationMs?: number;
+  /** Cuándo SMTC midió la posición, en epoch ms Unix. */
+  timelineUpdatedAt?: number;
 }
 
 export type MediaCommand = 'play-pause' | 'next' | 'prev' | 'stop';

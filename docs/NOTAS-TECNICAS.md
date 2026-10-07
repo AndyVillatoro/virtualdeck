@@ -274,6 +274,18 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   ~500 ms pero corre en otro proceso.
   El núcleo ya compila y su `diagnose` tiene límite de 5 s (`en_hilo_mta_con_limite`), pero
   se queda en PowerShell a propósito: ver la nota de arriba (roadmap 71).
+- **Timeline SMTC (solo el núcleo nativo).** Posición y duración de la pista
+  salen de `GetTimelineProperties()` de la sesión SMTC (`crates/vd-core/src/media/timeline.rs`).
+  Es una llamada síncrona, como `GetPlaybackInfo()` —no es la que se cuelga con una
+  sesión zombi, esa es `TryGetMediaPropertiesAsync`—, así que cuesta una llamada más
+  por consulta sin hilos nuevos. `None` con duración 0: algunas apps publican
+  `EndTime = 0` mientras suenan, y sin duración no hay barra que dibujar, así que los
+  tres datos quedan ausentes, no inventados. WinRT devuelve ticks de 100 ns desde
+  1601 (FILETIME): `TimeSpan` se divide entre 10 000 para milisegundos y
+  `DateTime.UniversalTime` se convierte a epoch ms Unix restando
+  11 644 473 600 000 ms. Solo lo da el núcleo: PowerShell no expone esta lectura.
+  La pantalla **interpola** la posición entre consultas (parte de
+  `updated_at_epoch_ms`) en vez de sondear SMTC más rápido.
 - **Núcleo asíncrono (2026-10-06).** `runScript`, `playMacro` y `speakText` del `.node` son
   `AsyncTask` (devuelven Promise): un script de 30 s o una macro con pausas ya no paran IPC, bandeja
   ni el HID del dock. `run_script` mata al hijo a los 30 s (como el respaldo). La voz vive en un hilo

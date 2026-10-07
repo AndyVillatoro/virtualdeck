@@ -4,6 +4,7 @@ import { useT } from '../../utils/i18n';
 import { playSound } from '../../utils/sound';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
+import { BarraProgreso } from '../../components/BarraProgreso';
 import type { DeckConfig, SoundProfileId } from '../../types';
 
 /**
@@ -14,7 +15,10 @@ import type { DeckConfig, SoundProfileId } from '../../types';
  */
 
 interface Props {
-  nowPlaying: { title: string; artist: string; status: string; source: string; thumbnail?: string } | null;
+  nowPlaying: {
+    title: string; artist: string; status: string; source: string; thumbnail?: string;
+    positionMs?: number; durationMs?: number; timelineUpdatedAt?: number;
+  } | null;
   isPlaying: boolean;
   /** Nombre presentable del reproductor ("Spotify" en vez de su id interno). */
   sourceName: string;
@@ -73,6 +77,8 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
               <div style={{ color: VD.textDim, fontSize: compacto ? 8 : 9, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: VD.mono, lineHeight: 1.2 }}>
                 {nowPlaying.artist}{sourceName ? ` · ${sourceName}` : ''}
               </div>
+              {/* En compacto la franja es baja: la pista sola, sin tiempos. */}
+              <BarraProgreso datos={nowPlaying} conTiempos={!compacto} />
             </>
           ) : (
             <div style={{ color: VD.textMuted, fontSize: compacto ? 9 : 10, fontFamily: VD.mono, letterSpacing: 1 }}>{t('full.noMedia')}</div>

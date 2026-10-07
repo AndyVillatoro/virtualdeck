@@ -3,6 +3,7 @@ import { useTheme } from '../../../utils/theme';
 import { useT } from '../../../utils/i18n';
 import { useNowPlayingRefresh } from '../../../utils/nowPlaying';
 import { DotLabel } from '../../../components/DotLabel';
+import { BarraProgreso } from '../../../components/BarraProgreso';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../../components/dot480/DotMatrixImageOverlay';
 import { BotonTransporte } from './BotonTransporte';
@@ -148,6 +149,9 @@ export function PanelMusicaBarra({
             onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
           />
         </div>
+
+        {/* Con 236 px de columna caben los tiempos: la barra va con ellos. */}
+        <BarraProgreso datos={nowPlaying} />
 
         <FilaAleatorioRepetir
           puede={puede}

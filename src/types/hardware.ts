@@ -143,6 +143,12 @@ export interface NowPlaying {
   isShuffleActive?: boolean;
   /** Repetición activa. Ausente = no se sabe (respaldo PowerShell). */
   autoRepeatMode?: 'none' | 'track' | 'list';
+  /** Posición de la pista en ms. Ausente = sin barra (respaldo PowerShell o la app no publica timeline). */
+  positionMs?: number;
+  /** Duración publicable de la pista en ms. Ausente = sin barra. */
+  durationMs?: number;
+  /** Cuándo SMTC midió la posición, en epoch ms Unix: de dónde parte el cronómetro para interpolar. */
+  timelineUpdatedAt?: number;
 }
 
 export type SensorKind =

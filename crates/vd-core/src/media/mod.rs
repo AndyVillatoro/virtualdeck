@@ -13,6 +13,7 @@
 //!
 //! Aca eso es `.join()`. Toda esa clase de bug deja de existir.
 
+mod timeline;
 mod window_titles;
 
 pub use window_titles::{parse_window_title, ParsedTitle};
@@ -76,6 +77,13 @@ pub struct NowPlaying {
     pub is_shuffle_active: Option<bool>,
     /// Modo de repeticion activo ahora mismo.
     pub auto_repeat_mode: Option<RepeatMode>,
+    /// Posicion de la pista en ms. `None` = sin barra (sin timeline, duracion
+    /// 0, o el camino por titulos de ventana, que no tiene sesion SMTC).
+    pub position_ms: Option<i64>,
+    /// Duracion publicable (`EndTime - StartTime`) en ms.
+    pub duration_ms: Option<i64>,
+    /// Cuando SMTC midio la posicion, en epoch ms Unix.
+    pub timeline_updated_at: Option<i64>,
 }
 
 /// Lo que la sesion declara admitir, de `GetPlaybackInfo().Controls`.
@@ -393,6 +401,8 @@ fn now_playing_smtc_aqui() -> Option<NowPlaying> {
         }
     };
 
+    let timeline = timeline::leer_timeline(&session);
+
     Some(NowPlaying {
         title: title.trim().to_string(),
         artist: artist.trim().to_string(),
@@ -402,6 +412,9 @@ fn now_playing_smtc_aqui() -> Option<NowPlaying> {
         controls,
         is_shuffle_active,
         auto_repeat_mode,
+        position_ms: timeline.map(|t| t.position_ms),
+        duration_ms: timeline.map(|t| t.duration_ms),
+        timeline_updated_at: timeline.map(|t| t.updated_at_epoch_ms),
     })
 }
 
@@ -476,6 +489,10 @@ pub fn now_playing_from_windows() -> Option<NowPlaying> {
         controls: None,
         is_shuffle_active: None,
         auto_repeat_mode: None,
+        // Sin sesion tampoco hay linea de tiempo.
+        position_ms: None,
+        duration_ms: None,
+        timeline_updated_at: None,
     })
 }
 
