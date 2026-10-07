@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import type {
   EntradaGaleria, ResumenRiesgo, InstaladoTienda, OrigenInstalacion, PedidoTienda, ResultadoTienda,
 } from '../../types';
-import { estiloEntradaAjustes, estiloBotonMiniAjustes } from '../../components/settings/settingHelpers';
 import { BarraTienda } from './BarraTienda';
 import { ListaTienda } from './ListaTienda';
 import { FichaTienda } from './FichaTienda';
@@ -28,8 +28,7 @@ interface Elegido {
  *
  * La tienda lee y pide, no aplica: el pedido de instalar viaja a la ventana
  * principal (`tienda:importar`), que valida con sus funciones y responde
- * (`tienda:hecho`). La respuesta tarda lo que tarde el usuario... no, tarda
- * lo que tarde el IPC: si en 10 s no hay respuesta, se dice.
+ * (`tienda:hecho`).
  */
 export function ContenidoTienda({ instalados, accent }: {
   instalados: InstaladoTienda[];
@@ -38,8 +37,11 @@ export function ContenidoTienda({ instalados, accent }: {
   const VD = useTheme();
   const t = useT();
   const api = window.electronAPI;
-  const inputStyle = estiloEntradaAjustes(VD);
-  const miniBtn = (c: string) => estiloBotonMiniAjustes(VD, c);
+  const { formato } = useFormatoPantalla();
+
+  const esBarra = formato === 'barra';
+  const paddingContenedor = esBarra ? 12 : 16;
+  const maxAncho = esBarra ? 1200 : 960;
 
   const [url, setUrl] = useState('');
   const [manifestUrl, setManifestUrl] = useState('');
@@ -51,7 +53,6 @@ export function ContenidoTienda({ instalados, accent }: {
   const [filtros, setFiltros] = useState<FiltrosTienda>(FILTROS_VACIOS);
   const [elegido, setElegido] = useState<Elegido | null>(null);
 
-  // Quien espera la respuesta de la principal a un pedido de instalar.
   const esperaRef = useRef<((r: ResultadoTienda) => void) | null>(null);
   useEffect(() => {
     if (!api?.tienda) return;
@@ -164,81 +165,136 @@ export function ContenidoTienda({ instalados, accent }: {
     () => (lista ?? []).filter((e) => estadoDeEntrada(e, instalados, manifestUrl).estado === 'update').length,
     [lista, instalados, manifestUrl],
   );
-  const menudo: React.CSSProperties = { fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6 };
 
-  // La ventana entera es `overflow: hidden` (index.css): el scroll lo pone
-  // este contenedor, o lo que pase de 680 px de alto no se alcanza nunca.
+  const menudo: React.CSSProperties = {
+    fontFamily: VD.mono,
+    fontSize: 8,
+    color: VD.textMuted,
+    lineHeight: 1.6,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: VD.surface,
+    border: `1px solid ${VD.border}`,
+    borderRadius: VD.radius.sm,
+    color: VD.text,
+    fontFamily: VD.mono,
+    fontSize: 9,
+    padding: '4px 8px',
+    minHeight: 28,
+    boxSizing: 'border-box',
+    outline: 'none',
+  };
+
+  const miniBtn = (c: string, primario = false): React.CSSProperties => ({
+    padding: '4px 12px',
+    minHeight: 28,
+    background: primario ? c : VD.elevated,
+    border: `1px solid ${primario ? c : VD.border}`,
+    borderRadius: VD.radius.sm,
+    color: primario ? VD.onAccent : c,
+    fontFamily: VD.mono,
+    fontSize: 8,
+    letterSpacing: 1,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  });
+
   return (
     <div className="vd-scroll" style={{ height: '100%', overflowY: 'auto', background: VD.bg }}>
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>
-          {t('tienda.title')}
-        </div>
-        {updates > 0 && (
-          <div style={{ ...menudo, color: VD.warning, border: `1px solid ${VD.warning}`, borderRadius: VD.radius.sm, padding: '1px 7px' }}>
-            {t('tienda.updates', { n: updates })}
+      <div style={{
+        maxWidth: maxAncho,
+        margin: '0 auto',
+        padding: paddingContenedor,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>
+            {t('tienda.title')}
           </div>
+          {updates > 0 && (
+            <div style={{
+              ...menudo,
+              color: VD.warning,
+              border: `1px solid ${VD.warning}`,
+              borderRadius: VD.radius.sm,
+              padding: '1px 8px',
+            }}>
+              {t('tienda.updates', { n: updates })}
+            </div>
+          )}
+          <div style={{ flex: 1 }} />
+          <button type="button" onClick={() => api?.tienda.close()} style={miniBtn(VD.textMuted)}>
+            {t('tienda.close')}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') cargar(); }}
+            placeholder="https://…/manifest.json"
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <button
+            type="button"
+            onClick={() => cargar()}
+            disabled={cargando || !url.trim()}
+            style={miniBtn(accent, true)}
+          >
+            {t(cargando ? 'gal.loading' : 'gal.load')}
+          </button>
+          <button
+            type="button"
+            onClick={() => cargar(GALERIA_OFICIAL)}
+            disabled={cargando}
+            style={miniBtn(accent)}
+          >
+            {t('gal.official')}
+          </button>
+        </div>
+
+        <div style={menudo}>{t('tienda.hint')}</div>
+        {error && <div style={{ ...menudo, color: VD.danger }}>{error}</div>}
+        {aviso && <div style={menudo}>{aviso}</div>}
+
+        {lista && !elegido && (
+          <>
+            <BarraTienda
+              filtros={filtros}
+              apps={appsDeEntradas(lista)}
+              tags={tagsDeEntradas(lista)}
+              total={filtrada.length}
+              onFiltros={setFiltros}
+              onLimpiar={() => setFiltros(FILTROS_VACIOS)}
+            />
+            <ListaTienda
+              lista={filtrada}
+              instalados={instalados}
+              manifestUrl={manifestUrl}
+              elegidoId={null}
+              onMirar={mirar}
+            />
+          </>
         )}
-        <div style={{ flex: 1 }} />
-        <button onClick={() => api?.tienda.close()} style={miniBtn(VD.textMuted)}>
-          {t('tienda.close')}
-        </button>
-      </div>
 
-      <div style={{ display: 'flex', gap: 6 }}>
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') cargar(); }}
-          placeholder="https://…/manifest.json"
-          style={{ ...inputStyle, flex: 1 }}
-        />
-        <button onClick={() => cargar()} disabled={cargando || !url.trim()} style={miniBtn(accent)}>
-          {t(cargando ? 'gal.loading' : 'gal.load')}
-        </button>
-        <button onClick={() => cargar(GALERIA_OFICIAL)} disabled={cargando} style={miniBtn(accent)}>
-          {t('gal.official')}
-        </button>
-      </div>
-      <div style={menudo}>{t('tienda.hint')}</div>
-      {error && <div style={{ ...menudo, color: VD.danger }}>{error}</div>}
-      {aviso && <div style={menudo}>{aviso}</div>}
-
-      {lista && !elegido && (
-        <>
-          <BarraTienda
-            filtros={filtros}
-            apps={appsDeEntradas(lista)}
-            tags={tagsDeEntradas(lista)}
-            total={filtrada.length}
-            onFiltros={setFiltros}
-            onLimpiar={() => setFiltros(FILTROS_VACIOS)}
+        {elegido && (
+          <FichaTienda
+            entrada={elegido.entrada}
+            riesgo={elegido.riesgo}
+            estado={elegido.estado}
+            versionInstalada={elegido.versionInstalada}
+            readme={elegido.readme}
+            puedeAgregarPagina
+            onInstalarPerfil={instalarPerfil}
+            onInstalarPagina={instalarPagina}
+            onCerrar={() => setElegido(null)}
           />
-          <ListaTienda
-            lista={filtrada}
-            instalados={instalados}
-            manifestUrl={manifestUrl}
-            elegidoId={null}
-            onMirar={mirar}
-          />
-        </>
-      )}
-
-      {elegido && (
-        <FichaTienda
-          entrada={elegido.entrada}
-          riesgo={elegido.riesgo}
-          estado={elegido.estado}
-          versionInstalada={elegido.versionInstalada}
-          readme={elegido.readme}
-          puedeAgregarPagina
-          onInstalarPerfil={instalarPerfil}
-          onInstalarPagina={instalarPagina}
-          onCerrar={() => setElegido(null)}
-        />
-      )}
-    </div>
+        )}
+      </div>
     </div>
   );
 }
