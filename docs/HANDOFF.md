@@ -680,6 +680,27 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores, 22 warnings (los 22 preexistentes; el cambio había subido `mirarBoton` a complejidad 19 y se extrajo `mirarTimer` para dejarlo en 18 o menos); guardianes: i18n 1290 claves/334 textos, paridad 38 campos/0 huecos; `npm run build` ok.
 * **Falta (dueño):** verlo en pantalla — marcar días, guardar, reiniciar y comprobar que solo salta el día elegido; y el aviso de la ficha de riesgo con días.
 
+## Turno 2026-10-06 — revisión integral de la interfaz (90), supervisor Claude Opus 5.5
+
+* **Rama:** `task/p1-revision-ui` (sale de `task/p1-hw-streamdock`). Plan en 6 fases aprobado por el dueño.
+* **Reparto (herdr):** agy `wK` (rejilla de acciones, integridad visual, 107 fichas a `Chip`);
+  opencode `wN` DeepSeek V4.1 Flash por Go (catálogo de iconos, días de la semana, `PARIDAD.md`; ~$0.6);
+  opencode `wR` Muse Spark free (núcleo Rust, complejidad, mojibake, catálogo en español).
+  Supervisor: primitivas `src/components/ui/`, tokens y oscuro = OLED, desbordes, kiosko/barra
+  flotante táctiles, `folder`/`page-nav`, docs, revisión de cada diff.
+* **Corregido en revisión:** la voz se soltaba al volver y cortaba la frase (ahora hilo `vd-voz` con
+  una sola `ISpVoice`); la caché de carátula guardaba el `None` del primer instante; dos rodeos al
+  guardián de i18n (`'acc' + 'iones'` y una función para no escribir el literal) → `'acciones'`
+  declarada en `PERMITIDOS` con su razón (es el prefijo guardado en `iconoPuntos.origen`).
+* **Guardianes nuevos:** `check-acciones` exige familia a cada tipo; eslint prohíbe `#fff`/`#ffffff`
+  en propiedades y atributos de color (`src/**/*.tsx`).
+* **Verificación:** `npm run check` 0 errores, 22 avisos (eran 33), 7 guardianes en verde;
+  `npm run build` OK; `cargo test -p vd-core` en verde; `.node` reconstruido y medido (voz 20–58 ms,
+  script cortado a 1 s, nowPlaying con controles). App probada por CDP en oscuro, claro y a 1280/900/800 px.
+* **Falta (dueño):** oír el texto a voz; pasar editor y catálogo con su configuración real; el
+  `CHANGELOG [Unreleased]` no resume aún los ítems 56–89.
+* **Próximo:** fusionar la rama tras la prueba del dueño; luego 0.14.0.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
