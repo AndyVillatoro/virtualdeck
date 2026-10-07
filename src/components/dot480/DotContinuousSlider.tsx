@@ -221,10 +221,13 @@ export function DotContinuousSlider({
     despachar(next, true);
   };
 
+  const esVertical = orientation === 'vertical';
+
   return (
     <div
       data-widget="slider"
       data-target={target}
+      data-orientation={orientation}
       onWheel={onWheel}
       onMouseDown={(e) => e.stopPropagation()}
       onMouseUp={(e) => e.stopPropagation()}
@@ -252,23 +255,32 @@ export function DotContinuousSlider({
         accent={accent}
       />
 
-      {/* Pista interactiva de puntos (Track) */}
-      <PistaSlider
-        value={value}
-        min={min}
-        max={max}
-        orientation={orientation}
-        accent={accent}
-        isDragging={isDragging}
-        trackRef={trackRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-      />
+      {/* En vertical la pista y su escala van lado a lado; en horizontal la
+          escala cierra la columna debajo. */}
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: esVertical ? 'row' : 'column',
+        gap: 4,
+      }}>
+        <PistaSlider
+          value={value}
+          min={min}
+          max={max}
+          orientation={orientation}
+          accent={accent}
+          isDragging={isDragging}
+          trackRef={trackRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+        />
+        {esVertical && <EscalaSlider max={max} orientation="vertical" />}
+      </div>
 
-      {/* Marcas de escala y calibración */}
-      <EscalaSlider max={max} />
+      {!esVertical && <EscalaSlider max={max} />}
     </div>
   );
 }

@@ -2,6 +2,53 @@
 
 Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza este archivo.
 
+## Turno 2026-10-07 — T-REV-19 Deslizador vertical DOT (DONE)
+
+* **Modelo saliente:** opencode wS (Qwen3.8 Max, Go).
+* **Base git:** `task/p1-revision-ui` (sin commit ni push, por encargo).
+* **Archivos de este turno:**
+  * `src/components/dot480/DotSliderPartes.tsx`: `PistaSlider` unifica las dos orientaciones en un solo segmento espejado — columnas de 3 puntos redondos en horizontal, **filas** de 3 en vertical (antes la vertical eran 12 barras macizas `height: 3`); los puntos apagados pasan del `rgba(255,255,255,0.08)` fijo a `VD.dotIdle` (visibles en modo claro). `EscalaSlider` acepta `orientation`: en vertical es una columna con el max arriba y el 0 abajo.
+  * `src/components/dot480/DotContinuousSlider.tsx`: en vertical la pista y la escala van lado a lado (envoltorio `row`); en horizontal la escala sigue cerrando la columna. Añadido `data-orientation` para pruebas.
+  * `electron/main/vivoMandoPagina.ts`: nuevo bloque `JS_SLIDER_MANDO` con `sliderPuntosMovil`, el constructor de la pista de puntos del mando móvil (respeta `orientation`, segmentos de 3 puntos redondos, colores por variables CSS del tema `--ac`/`--txt`/`--sub-bor`, arrastre con puntero y throttle de envío de 60 ms como el `<input range>` anterior).
+  * `electron/main/paginaMando.ts`: la rama del slider ya no crea un `<input type="range">` (ignoraba la orientación y no era DOT); llama a `sliderPuntosMovil`. El CSS `.slider-control` de `estiloMandoPagina.ts` queda sin uso, pero ese archivo es de otro agente (T-REV-18): no se tocó.
+  * `docs/AGENT_COMMUNICATION.md`: T-REV-19 pasado a `DONE`.
+* **Tecla del dock:** confirmado que el pintor no dibuja deslizadores — `useWidgetsSuperficie.ts:70` excluye `widget === 'slider'`; no se añadió nada.
+
+### Verificacion
+
+* `npx tsc --noEmit`: ok. `npm run build`: ok.
+* `npm run check`: 0 errores, 26 warnings (todos preexistentes/de otros). **`check-wiki` falla con 1 problema** (`Barra-Flotante.md` enlaza a `Floating-Bar`, que no existe): archivos del turno T-REV-22, no de este. `check-campos`, `check-paridad` y `check-perfiles` corrieron aparte: ok.
+* **Prueba en la app** (`node scripts/probar-app.mjs abrir wS`, CDP 9333, config sembrada con un slider vertical de volumen y uno horizontal de variable al 25%):
+  * Oscuro: vertical 12 segmentos, filas (`row`) de 3 puntos redondos 2,5 px, pista `column-reverse`, escala en columna al lado (`100/50/0`); horizontal 16 segmentos en columnas; punto apagado `rgba(255,255,255,0.04)` = `VD.dotIdle`; puntero `VD.text`, activo = acento.
+  * Claro: punto apagado `rgba(0,0,0,0.08)` = `dotIdle` claro; puntero `#111418`.
+  * Mando móvil: servidor arriba, página servida (52 KB); sintaxis del script completo OK (`new Function`); prueba funcional con DOM falso de `sliderPuntosMovil` en las dos orientaciones: segmentos, 3 puntos redondos por segmento, dirección correcta, valor inicial 50, arrastre al 25% → 25.
+  * Copia de prueba cerrada al terminar (`probar-app.mjs estado`: sin copia abierta).
+
+### Proximo paso concreto
+
+* Quien cierre T-REV-18 (dueño de `estiloMandoPagina.ts`) puede borrar el CSS muerto de `.slider-control` y sus pseudo-clases; el mando ya no usa `<input type="range">`.
+
+## Turno 2026-10-07 — T-REV-20 Aplicar icono del catálogo al elegir preset (DONE)
+
+* **Modelo saliente:** opencode wV (Kimi K2.7 Code, Go).
+* **Base git:** `task/p1-revision-ui` (sin commit ni push, por encargo).
+* **Archivos de este turno:**
+  * `src/screens/editor/useEstadoEditor.ts`: `applyPreset` y `applyDockPreset` ahora resuelven `iconoCatalogo`, aplican primero el glifo de respaldo y sustituyen por `iconoPuntos` si el usuario no cambió el icono entretanto.
+  * `src/utils/useDeck/botones.ts`: `rellenarBotones` acepta `iconoCatalogo` como campo extra; aplica el glifo en un paso de historial y resuelve el icono del catálogo después sin apilar otro deshacer.
+  * `src/utils/useDeck/paginas.ts`: `crearPaginaDesdePlantilla` ahora también resuelve `iconoCatalogo` de los huecos de plantilla.
+  * `docs/AGENT_COMMUNICATION.md`: T-REV-20 pasado a `DONE`.
+* **Caminos de aplicar preset cubiertos:** presets del editor (`applyPreset`), presets del dock en el editor (`applyDockPreset`), presets de controles de dock desde el inspector (`rellenarBotones` vía `useDockHardwareState`), y páginas creadas desde plantillas de app (`crearPaginaDesdePlantilla`).
+
+### Verificacion
+
+* `npm run check`: **0 errores, 22 warnings** (ninguno introducido por este turno; el warning de `max-lines` en `useEstadoEditor.ts` quedó resuelto).
+* `npm run build`: **ok**.
+* **Prueba en la app:** no se pudo realizar — la copia de prueba estaba ocupada por `wS` (`node scripts/probar-app.mjs abrir wV` reportó PID 19384 abierto desde las 12:07:37 a.m.).
+
+### Proximo paso concreto
+
+* Cuando la copia de prueba esté libre, abrir con `node scripts/probar-app.mjs abrir <quien>`, elegir el preset **Spotify** y el de **Apagar**, guardar, y verificar que el icono del catálogo aparece en la celda.
+
 ## Turno 2026-09-15 — Estabilizacion del protocolo
 
 * **Modelo saliente:** Muse Spark (OpenCode, modo build).

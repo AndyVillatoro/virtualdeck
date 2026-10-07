@@ -80,7 +80,8 @@ export interface PropsPistaSlider {
 export function PistaSlider({ value, min, max, orientation, accent, isDragging, trackRef, onPointerDown, onPointerMove, onPointerUp, onPointerCancel }: PropsPistaSlider) {
   const VD = useTheme();
   const ratio = Math.max(0, Math.min(1, (value - min) / (max - min || 1)));
-  const numSegments = orientation === 'vertical' ? 12 : 16;
+  const vertical = orientation === 'vertical';
+  const numSegments = vertical ? 12 : 16;
   const activeSegments = Math.round(ratio * numSegments);
   return (
     <div
@@ -94,50 +95,30 @@ export function PistaSlider({ value, min, max, orientation, accent, isDragging, 
         flex: 1,
         width: '100%',
         display: 'flex',
-        flexDirection: orientation === 'vertical' ? 'column-reverse' : 'row',
+        flexDirection: vertical ? 'column-reverse' : 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: orientation === 'vertical' ? 2 : 2,
+        gap: 2,
         padding: '4px 0',
-        cursor: orientation === 'vertical' ? 'ns-resize' : 'ew-resize',
+        cursor: vertical ? 'ns-resize' : 'ew-resize',
         touchAction: 'none',
       }}
     >
       {Array.from({ length: numSegments }, (_, i) => {
         const isActive = i < activeSegments;
         const isLeading = i === activeSegments - 1;
-
-        if (orientation === 'vertical') {
-          return (
-            <div
-              key={i}
-              style={{
-                width: '100%',
-                height: 3,
-                borderRadius: 1,
-                background: isActive
-                  ? (isLeading ? VD.text : accent)
-                  : 'rgba(255, 255, 255, 0.08)',
-                boxShadow: isActive && isDragging ? `0 0 4px ${accent}` : 'none',
-                transition: 'background 0.06s ease',
-                pointerEvents: 'none',
-              }}
-            />
-          );
-        }
-
-        // Orientación Horizontal: Columnas de 3 micro-puntos LED discretos
         return (
           <div
             key={i}
             style={{
               flex: 1,
-              height: 18,
+              width: vertical ? 18 : undefined,
+              height: vertical ? undefined : 18,
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: vertical ? 'row' : 'column',
               justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '1px 0',
+              padding: vertical ? '0 1px' : '1px 0',
               borderRadius: 1,
               pointerEvents: 'none',
             }}
@@ -151,7 +132,7 @@ export function PistaSlider({ value, min, max, orientation, accent, isDragging, 
                   borderRadius: '50%',
                   background: isActive
                     ? (isLeading ? VD.text : accent)
-                    : 'rgba(255, 255, 255, 0.08)',
+                    : VD.dotIdle,
                   boxShadow: isActive && isDragging ? `0 0 2px ${accent}` : 'none',
                   transition: 'background 0.06s ease',
                   pointerEvents: 'none',
@@ -165,13 +146,18 @@ export function PistaSlider({ value, min, max, orientation, accent, isDragging, 
   );
 }
 
-export function EscalaSlider({ max }: { max: number }) {
+export function EscalaSlider({ max, orientation = 'horizontal' }: { max: number; orientation?: 'horizontal' | 'vertical' }) {
   const VD = useTheme();
+  const vertical = orientation === 'vertical';
+  const marcas = vertical ? [max, 50, 0] : [0, 50, max];
   return (
     <div style={{
       display: 'flex',
+      flexDirection: vertical ? 'column' : 'row',
       justifyContent: 'space-between',
-      width: '100%',
+      alignItems: 'center',
+      width: vertical ? undefined : '100%',
+      height: vertical ? '100%' : undefined,
       fontFamily: VD.mono,
       fontSize: 6,
       color: VD.textMuted,
@@ -179,11 +165,9 @@ export function EscalaSlider({ max }: { max: number }) {
       pointerEvents: 'none',
       lineHeight: 1,
     }}>
-      <span>0</span>
-      <span>•</span>
-      <span>50</span>
-      <span>•</span>
-      <span>{max}</span>
+      {marcas.map((m, i) => (
+        <span key={m}>{!vertical && i === 1 ? `• ${m} •` : m}</span>
+      ))}
     </div>
   );
 }

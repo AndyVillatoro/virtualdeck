@@ -20,7 +20,7 @@
 import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
 import { estiloPaginaMando } from './estiloMandoPagina';
 import { JS_ANIMACION_MANDO } from './iconosMando';
-import { JS_VIVO_MANDO } from './vivoMandoPagina';
+import { JS_VIVO_MANDO, JS_SLIDER_MANDO } from './vivoMandoPagina';
 import { JS_TACTIL_MANDO } from './tactilMandoPagina';
 
 const TEXTOS = {
@@ -321,9 +321,10 @@ function dibujarIconoBoton(b, fgColor, tam, celdas) {
 // líneas de este archivo: es código de la página, no del servidor.
 ${JS_ANIMACION_MANDO}
 
-// El refresco vivo (botones + widgets cada 3 s) vive en vivoMandoPagina por
-// lo mismo: este archivo ya va cargado.
+// El refresco vivo (botones + widgets cada 3 s) y el deslizador de puntos
+// viven en vivoMandoPagina por lo mismo: este archivo ya va cargado.
 ${JS_VIVO_MANDO}
+${JS_SLIDER_MANDO}
 ${JS_TACTIL_MANDO}
 
 function pantallaEmparejar(error) {
@@ -464,40 +465,12 @@ async function pantallaDeck() {
       cab.append(valSpan);
       sc.append(cab);
 
-      const range = nodo('input', {
-        type: 'range',
-        className: 'slider-control',
-        min: String(min),
-        max: String(max),
-        step: String(step),
-        value: '50',
-      });
-
-      if (target === 'volume' || target === 'brightness') {
-        pedir('/api/value/' + target).then((r) => r.json()).then((d) => {
-          if (d.ok && typeof d.value === 'number') {
-            range.value = String(d.value);
-            valSpan.textContent = d.value + '%';
-          }
-        }).catch(() => {});
-      }
-
-      let timerSlider = null;
-      range.oninput = () => {
-        valSpan.textContent = range.value + (target === 'variable' ? '' : '%');
-        if (timerSlider) clearTimeout(timerSlider);
-        timerSlider = setTimeout(() => {
-          if (target === 'volume' || target === 'brightness') {
-            pedir('/api/value/' + target, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ value: parseFloat(range.value) }),
-            }).catch(() => {});
-          }
-        }, 60);
-      };
-      range.onclick = (e) => e.stopPropagation();
-      sc.append(range);
+      // Pista de puntos DOT que respeta la orientación del widget (roadmap
+      // 101); el constructor vive en vivoMandoPagina (este archivo va cargado).
+      sc.append(sliderPuntosMovil({
+        target, min, max, step, valSpan,
+        orientation: sw.orientation === 'vertical' ? 'vertical' : 'horizontal',
+      }));
       celda.append(sc);
       rejilla.append(celda);
       continue;
