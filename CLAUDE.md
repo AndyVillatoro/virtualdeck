@@ -95,18 +95,19 @@ vez de a `AGENTS.md` por lo mismo.
 - `src/screens/main/` — piezas de la principal: `BarraLateral` (reloj, clima, sensores, RGB,
   registro y música), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
   arrastrados), `OverlayCarpeta` y `formatos.ts` (reloj y fecha, en el idioma elegido)
-- `src/screens/editor/` — el editor por partes: `PasoAccion` (elegir qué hace),
-  `valoresIniciales.ts` (de qué botón guardado salen los campos del formulario — ahí viven
-  todos los `?? ''`, que eran la mitad de la complejidad de `EditorB`),
-  `PasoConfigurar` (los apartados comunes: toggle, mantener pulsado, disparadores),
+- `src/screens/editor/` — el editor en secciones plegables (`SeccionPresets`, `SeccionAccion`,
+  `SeccionApariencia`, `SeccionComportamiento`, `SeccionAvanzado`) con la vista previa al lado;
+  el estado vive en `useEstadoEditor.ts`. `valoresIniciales.ts` (de qué botón guardado salen los
+  campos del formulario — ahí viven todos los `?? ''`, que eran la mitad de la complejidad de `EditorB`),
   `formularios/` (**un componente por tipo de acción en un mapa `FORMULARIOS`** — añadir un tipo
   es añadir una entrada, no tocar una cadena de condiciones; repartidos por familia: `basicos`,
-  `sistema`, `datos`, `rgb`, `compuestos`), `PasoEstilo` (etiqueta,
-  iconos, colores, widget y disparadores), `guardar.ts` (arma el botón a guardar, función pura),
+  `sistema`, `datos`, `rgb`, `compuestos`), `guardar.ts` (arma el botón a guardar, función pura),
   `actionData.ts` deriva `PRESET_CATEGORIES` **de los propios presets**: escrita a mano faltaba
   'RGB', y sus doce botones sembrados no salían por ninguna pestaña — solo buscándolos.
   `comunes.tsx` (`Field`, `Btn`, los sub-selectores
-  y las funciones de estilo que comparten los pasos), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
+  y las funciones de estilo que comparten las secciones), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
+  (El editor viejo por pasos —`PasoAccion`/`PasoEstilo`/`PasoConfigurar`— se borró el 2026-10-06:
+  llevaba muerto desde el 80 y seguía descrito aquí como vivo.)
   `EditorB.tsx` se queda con el estado y el armado de la pantalla.
 - `src/components/ButtonCell.tsx` — celda de botón: estructura y estado (~260 líneas).
   El arrastre (los dos extremos, ratón y dedo) está en `celda/useArrastreCelda`; lo que
@@ -344,7 +345,7 @@ vez de a `AGENTS.md` por lo mismo.
   cruza las dos cadenas.
 - `IPolicyConfig` COM: IID correcto es `F8679F50-850A-41CF-9C72-430F290290C8` (no confundir con CLSID `870AF99C-...`). El orden de métodos en la interfaz debe coincidir con la vtable real.
 - Widget `now-playing` no se aplica a botones de tipo `audio-device`: el editor deshabilita
-  esa combinación (`PasoEstilo`) y `useDatosWidget` la descarta también.
+  esa combinación (`BloqueWidgetApariencia`) y `useDatosWidget` la descarta también.
 - `media.ts` re-consulta ventanas activas en cada ciclo cuando SMTC falla, para reflejar cambios de pestaña/video.
 - **SMTC await (NO tocar)**: el `Await-Op` del PREAMBLE de `media.ts` convierte el `IAsyncOperation` de WinRT a un `Task` de .NET vía `System.Runtime.WindowsRuntime` + reflection (`AsTask`), pasando el tipo de resultado explícito. **NO** volver al polling de `$op.Status`: en PowerShell 5.1 stock esa propiedad no se proyecta (queda vacía), el await devuelve siempre `$null`, el manager sale `null` y el widget de música deja de mostrar nada. Verificado en vivo (polling → manager null, AsTask → OK). Los alias de tipo (`$TMgr`, `$TProps`, `$TStream`) usan el loader WinRT completo `,Namespace,ContentType=WindowsRuntime` para resolver sin depender del orden de carga del winmd. El thumbnail (`OpenReadAsync`) devuelve `IAsyncOperationWithProgress`, por eso se le pasa también `$progressType` (`[UInt64]`).
 - **2026-10-04: aunque el núcleo ya compila y su `diagnose` tiene límite de 5 s, se queda en PowerShell a propósito** (roadmap 71): 20 ms contra ~500 ms no compensa que una sesión colgada bloquee el proceso principal 5 s; PowerShell corre aparte.

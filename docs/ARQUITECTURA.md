@@ -72,8 +72,6 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `editor/MacroEditor.tsx` | Editor manual de pasos de macro. | ✅ |
 | `editor/botonConfigurado.ts` | Dice si un botón cuenta como configurado (función pura). | ✅ |
 | `editor/CabeceraEditorB.tsx` | Cabecera del editor: título y selector de modo 1×1/2×2. | ✅ |
-| `editor/FranjaPasosEditorB.tsx` | Franja de pasos 01–03 o aviso de modo 2×2 (+`STEPS`). | ✅ |
-| `editor/FormularioPasoEditorB.tsx` | Cuadrantes 2×2 o el paso 0/1/2 del formulario. | ✅ |
 | `main/atajosSeleccion.ts` | Atajos de selección múltiple (hook + resolutor puro). | ✅ |
 | `main/BarraSuperiorMain.tsx` | `TitleBar` de la principal con su cableado de config. | ✅ |
 | `main/AvisosContextuales.tsx` | Hints contextuales (uno a la vez, descartables). | ✅ |
@@ -102,7 +100,7 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `WeatherWidget.tsx` | Widget de clima (Open-Meteo). | ✅ |
 | `SensorPanel.tsx` | Tarjetas/agrupación de sensores. | ✅ |
 | `VDIcon.tsx` | Wrapper de íconos (lucide-react). | ✅ |
-| `BrandIconPicker` / `BrandIconEditor` / `BrandIconDisplay` | Íconos de marca: elegir / dibujar / mostrar. | ✅ |
+| `BrandIconDisplay` | Ícono de marca 17×17 (legado): mostrar. Elegir va por el catálogo (`editor/SelectorIconosDot`). | ✅ |
 | `settings/RGBSection` · `settings/SensorsSection` | Secciones extraídas de TitleBar. | ✅ |
 | `help/HelpAboutPanel.tsx` | Panel Ayuda y Acerca de. | ✅ |
 
