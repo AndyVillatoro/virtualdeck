@@ -43,9 +43,16 @@ interface Props {
   isPlaying: boolean;
   sourceName: string;
   showToast: (s: string) => void;
+  /**
+   * Abrir y cerrar el panel de música desde su franja (misma clave que
+   * Ajustes → SONIDO). Opcionales: los cablea quien renderiza la barra
+   * (MainB); sin ellos la franja no enseña el botón.
+   */
+  panelMusicaAbierto?: boolean;
+  onAlternarPanelMusica?: () => void;
 }
 
-export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgbStatus, onRGB, execLog, setExecLog, showLog, setShowLog, nowPlaying, isPlaying, sourceName, showToast, ocultarMusica }: Props) {
+export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgbStatus, onRGB, execLog, setExecLog, showLog, setShowLog, nowPlaying, isPlaying, sourceName, showToast, ocultarMusica, panelMusicaAbierto, onAlternarPanelMusica }: Props) {
   const VD = useTheme();
   const t = useT();
   const lang = useLang();
@@ -111,7 +118,7 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
           <RegistroEjecucion execLog={execLog} setExecLog={setExecLog} showLog={showLog} setShowLog={setShowLog} />
 
           {!ocultarMusica && (
-            <FranjaMusica nowPlaying={nowPlaying} isPlaying={isPlaying} sourceName={sourceName} api={api} accent={config.accent} showToast={showToast} />
+            <FranjaMusica nowPlaying={nowPlaying} isPlaying={isPlaying} sourceName={sourceName} api={api} accent={config.accent} showToast={showToast} panelAbierto={panelMusicaAbierto} onAlternarPanel={onAlternarPanelMusica} />
           )}
         </div>
   );

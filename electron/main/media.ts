@@ -112,9 +112,13 @@ if ($null -eq $best) { Write-Output 'NONE|||'; exit }
 $src = if ($best.S.SourceAppUserModelId) { $best.S.SourceAppUserModelId } else { '' }
 $title = if ($best.P.Title) { $best.P.Title } else { '' }
 $artist = if ($best.P.Artist) { $best.P.Artist } else { '' }
-$c = $best.S.GetPlaybackInfo().Controls
+$info = $best.S.GetPlaybackInfo()
+$c = $info.Controls
 $caps = "$($c.IsNextEnabled)/$($c.IsPreviousEnabled)/$($c.IsShuffleEnabled)/$($c.IsRepeatEnabled)"
-Write-Output "$title|$artist|$($best.St)|$src|$caps"
+$shuf = "$($info.IsShuffleActive)"
+$rep = -1
+try { if ($null -ne $info.AutoRepeatMode -and $null -ne $info.AutoRepeatMode.Value) { $rep = [int]$info.AutoRepeatMode.Value } } catch {}
+Write-Output "$title|$artist|$($best.St)|$src|$caps|$shuf|$rep"
 `.trim();
 
 /**
@@ -454,8 +458,24 @@ const ESTADOS: NowPlaying['status'][] = ['Playing', 'Paused', 'Stopped', 'Unknow
  * `null` si no trae ni titulo ni artista, que es como SMTC dice «hay sesion
  * pero no sabe que suena».
  */
+/** `True`/`False` de SMTC para el aleatorio activo. Otro valor = no se sabe. */
+function parsearAleatorio(valor: string | undefined): boolean | undefined {
+  if (valor?.trim() === 'True') return true;
+  if (valor?.trim() === 'False') return false;
+  return undefined;
+}
+
+/** 0 = ninguna, 1 = pista, 2 = lista. Otro valor (incluido -1) = no se sabe. */
+function parsearRepeticion(valor: string | undefined): NowPlaying['autoRepeatMode'] {
+  const n = valor?.trim();
+  if (n === '0') return 'none';
+  if (n === '1') return 'track';
+  if (n === '2') return 'list';
+  return undefined;
+}
+
 function parsearPista(stdout: string): NowPlaying | null {
-  const [title, artist, status, source, caps] = stdout.split('|');
+  const [title, artist, status, source, caps, shuf, rep] = stdout.split('|');
   const titleStr = title?.trim() ?? '';
   const artistStr = artist?.trim() ?? '';
   if (!titleStr && !artistStr) return null;
@@ -464,6 +484,8 @@ function parsearPista(stdout: string): NowPlaying | null {
   if (trackKey !== _thumbTrack) pedirCaratula(trackKey);
 
   const est = status?.trim() ?? '';
+  const aleatorio = parsearAleatorio(shuf);
+  const repeticion = parsearRepeticion(rep);
   return {
     title: titleStr,
     artist: artistStr,
@@ -471,6 +493,8 @@ function parsearPista(stdout: string): NowPlaying | null {
     source: source?.trim() ?? '',
     thumbnail: _thumbData || undefined,
     controls: parsearControles(caps),
+    ...(aleatorio !== undefined ? { isShuffleActive: aleatorio } : {}),
+    ...(repeticion !== undefined ? { autoRepeatMode: repeticion } : {}),
   };
 }
 

@@ -2,9 +2,14 @@ import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { useNowPlayingRefresh } from '../../utils/nowPlaying';
+import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
+import { BotonTransporte } from './musica/BotonTransporte';
+import { DatosPista } from './musica/DatosPista';
+import { FilaAleatorioRepetir } from './musica/FilaAleatorioRepetir';
+import { PanelMusicaBarra } from './musica/PanelMusicaBarra';
 import type { NowPlaying, ElectronAPI } from '../../types';
 
 /**
@@ -52,7 +57,24 @@ export function PanelMusica({
   // Antes del `return` de abajo: los hooks tienen que llamarse siempre en el
   // mismo orden, y este panel se desmonta en cuanto deja de sonar algo.
   const refrescarMedios = useNowPlayingRefresh();
+  const { formato } = useFormatoPantalla();
   if (!nowPlaying) return null;
+
+  // En una ventana baja y ancha (1280×480) la carátula cuadrada ocupaba casi
+  // todo el alto y los controles quedaban fuera: va en horizontal.
+  if (formato === 'barra') {
+    return (
+      <PanelMusicaBarra
+        nowPlaying={nowPlaying}
+        isPlaying={isPlaying}
+        sourceName={sourceName}
+        accent={accent}
+        api={api}
+        lado={lado}
+        onCerrar={onCerrar}
+      />
+    );
+  }
 
   const borde = lado === 'left'
     ? { borderRight: `1px solid ${VD.border}` }
@@ -61,46 +83,8 @@ export function PanelMusica({
   // Lo que la fuente dice que admite. Sin dato se enseña todo: mejor un boton
   // que quiza no haga nada que esconder uno que si funciona.
   const puede = nowPlaying.controls;
-
-  const control = (
-    key: 'prev' | 'play-pause' | 'next',
-    glyph: string,
-    titulo: string,
-    lado_: number,
-    principal: boolean,
-    activo = true,
-  ) => (
-    <button
-      key={key}
-      title={activo ? titulo : t('media.unsupported', { que: titulo })}
-      aria-label={titulo}
-      disabled={!activo}
-      onClick={() => { if (activo) api?.media.control(key).then(refrescarMedios); }}
-      style={{
-        width: lado_, height: lado_, flexShrink: 0,
-        opacity: activo ? 1 : 0.35,
-        cursor: activo ? 'pointer' : 'not-allowed',
-        background: principal ? VD.accentBg : VD.elevated,
-        border: `1px solid ${principal ? accent : VD.border}`,
-        borderRadius: VD.radius.lg,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        // Sin esto, mantener el dedo sobre el botón selecciona el icono y
-        // Windows saca el menú de copiar en mitad de la canción.
-        userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'manipulation',
-        transition: 'transform 0.08s, border-color 0.12s',
-      }}
-      onPointerDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.94)'; }}
-      onPointerUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
-      onPointerLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
-    >
-      <DotGlyphIcon
-        glyph={glyph}
-        size={principal ? 28 : 20}
-        color={principal ? accent : VD.textDim}
-        showRecessed
-      />
-    </button>
-  );
+  const tituloCon = (titulo: string, activo: boolean) =>
+    (activo ? titulo : t('media.unsupported', { que: titulo }));
 
   return (
     <div style={{
@@ -158,8 +142,8 @@ export function PanelMusica({
           </>
         )}
         {/* Transporte sobre la carátula: anterior / reproducir / siguiente con
-            glifos dot-matrix en franja inferior. Es el mismo `control` de
-            abajo, solo que vive sobre la imagen: un bloque solo, siempre
+            glifos dot-matrix en franja inferior. Es el mismo `BotonTransporte`
+            compartido, solo que vive sobre la imagen: un bloque solo, siempre
             visible, sin empujar título ni botones. */}
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: 0,
@@ -168,60 +152,51 @@ export function PanelMusica({
           background: 'rgba(7,8,9,0.78)',
           borderTop: `1px solid ${VD.border}`,
         }}>
-          {control('prev', 'PREV', t('media.prev'), LADO_SECUNDARIO, false, puede?.prev !== false)}
-          {control('play-pause', isPlaying ? 'PAUSE' : 'PLAY', t('media.playPause'), LADO_PRINCIPAL, true)}
-          {control('next', 'NEXT', t('media.next'), LADO_SECUNDARIO, false, puede?.next !== false)}
+          <BotonTransporte
+            glyph="PREV"
+            titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
+            lado={LADO_SECUNDARIO}
+            principal={false}
+            enabled={puede?.prev !== false}
+            accent={accent}
+            onPulsar={() => { void api?.media.control('prev').then(refrescarMedios); }}
+          />
+          <BotonTransporte
+            glyph={isPlaying ? 'PAUSE' : 'PLAY'}
+            titulo={t('media.playPause')}
+            lado={LADO_PRINCIPAL}
+            principal
+            enabled
+            accent={accent}
+            onPulsar={() => { void api?.media.control('play-pause').then(refrescarMedios); }}
+          />
+          <BotonTransporte
+            glyph="NEXT"
+            titulo={tituloCon(t('media.next'), puede?.next !== false)}
+            lado={LADO_SECUNDARIO}
+            principal={false}
+            enabled={puede?.next !== false}
+            accent={accent}
+            onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
+          />
         </div>
       </div>
 
-      <div>
-        <div style={{
-          fontFamily: VD.font, fontSize: 15, color: VD.text, fontWeight: 500,
-          lineHeight: 1.3, wordBreak: 'break-word',
-          // Dos líneas y elipsis: un título de YouTube puede ocupar cinco.
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-        }}>
-          {nowPlaying.title || '—'}
-        </div>
-        {nowPlaying.artist && (
-          <div style={{
-            fontFamily: VD.mono, fontSize: 11, color: VD.textDim, marginTop: 4,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {nowPlaying.artist}
-          </div>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-          <div style={{
-            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-            background: isPlaying ? VD.success : VD.textMuted,
-          }} />
-          <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, letterSpacing: 0.5 }}>
-            {t(isPlaying ? 'media.playing' : 'media.paused')}{sourceName ? ` · ${sourceName}` : ''}
-          </span>
-        </div>
-      </div>
+      <DatosPista
+        titulo={nowPlaying.title}
+        artista={nowPlaying.artist}
+        isPlaying={isPlaying}
+        sourceName={sourceName}
+        unaLinea={false}
+      />
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        {([
-          { key: 'shuffle' as const, texto: t('media.shuffle'), activo: puede?.shuffle !== false },
-          { key: 'repeat' as const, texto: t('media.repeat'), activo: puede?.repeat !== false },
-        ]).map(({ key, texto, activo }) => (
-          <button
-            key={key}
-            disabled={!activo}
-            title={activo ? texto : t('media.unsupported', { que: texto })}
-            onClick={() => { if (!activo) return; if (key === 'shuffle') api?.media.shuffle(); else api?.media.repeat(); }}
-            style={{
-              flex: 1, height: 40, background: VD.elevated,
-              border: `1px solid ${VD.border}`, borderRadius: VD.radius.md,
-              color: VD.textMuted, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-              opacity: activo ? 1 : 0.35, cursor: activo ? 'pointer' : 'not-allowed',
-              touchAction: 'manipulation',
-            }}
-          >{texto}</button>
-        ))}
-      </div>
+      <FilaAleatorioRepetir
+        puede={puede}
+        shuffleActive={nowPlaying.isShuffleActive}
+        repeatMode={nowPlaying.autoRepeatMode}
+        api={api}
+        altura={40}
+      />
 
       {puede && !puede.next && !puede.prev && (
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>

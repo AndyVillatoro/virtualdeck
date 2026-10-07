@@ -5,6 +5,7 @@ import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import type { ElectronAPI, NowPlaying, RGBStatus } from '../../types';
 
 /**
@@ -108,13 +109,21 @@ export function RegistroEjecucion({ execLog, setExecLog, showLog, setShowLog }: 
   );
 }
 
-export function FranjaMusica({ nowPlaying, isPlaying, sourceName, api, accent, showToast }: {
+export function FranjaMusica({ nowPlaying, isPlaying, sourceName, api, accent, showToast, panelAbierto, onAlternarPanel }: {
   nowPlaying: NowPlaying | null;
   isPlaying: boolean;
   sourceName: string;
   api: ElectronAPI | undefined;
   accent: string;
   showToast: (s: string) => void;
+  /**
+   * El panel grande de música está abierto. Junto con `onAlternarPanel`, enseña
+   * el botón que lo abre y lo cierra desde esta franja — antes solo se podía
+   * desde Ajustes → SONIDO, con la misma clave (`config.musicPanel`).
+   * Opcionales: sin manejador no se enseña ningún botón muerto.
+   */
+  panelAbierto?: boolean;
+  onAlternarPanel?: () => void;
 }) {
   const VD = useTheme();
   const t = useT();
@@ -123,20 +132,33 @@ export function FranjaMusica({ nowPlaying, isPlaying, sourceName, api, accent, s
     <div style={{ marginTop: 'auto', paddingTop: 10, borderTop: `1px solid ${VD.border}`, flexShrink: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.playing')}</DotLabel>
-        <span
-          onClick={async () => {
-            const r = await api?.media.diagnose();
-            if (!r) return;
-            const lines = r.stdout.split(/\r?\n/).slice(0, 25).join('\n');
-            showToast(`${t('media.diagTitle')}\n${lines}${r.stderr ? '\n\nstderr:\n' + r.stderr.slice(0, 300) : ''}`);
-          }}
-          title={t('media.diagnose')}
-          style={{
-            cursor: 'pointer', padding: '2px 4px', display: 'inline-flex', alignItems: 'center',
-          }}
-        >
-          <DotGlyphIcon glyph="HELP" size={9} color={VD.textMuted} />
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {onAlternarPanel && (
+            <BotonIcono
+              glifo="AUDIO_WAVE"
+              title={panelAbierto ? t('music.hide') : t('set.musicPanel')}
+              onClick={() => onAlternarPanel()}
+              tamano={32}
+              tamanoGlifo={13}
+              conMarco
+              color={panelAbierto ? accent : VD.textMuted}
+            />
+          )}
+          <span
+            onClick={async () => {
+              const r = await api?.media.diagnose();
+              if (!r) return;
+              const lines = r.stdout.split(/\r?\n/).slice(0, 25).join('\n');
+              showToast(`${t('media.diagTitle')}\n${lines}${r.stderr ? '\n\nstderr:\n' + r.stderr.slice(0, 300) : ''}`);
+            }}
+            title={t('media.diagnose')}
+            style={{
+              cursor: 'pointer', padding: '2px 4px', display: 'inline-flex', alignItems: 'center',
+            }}
+          >
+            <DotGlyphIcon glyph="HELP" size={9} color={VD.textMuted} />
+          </span>
+        </div>
       </div>
       {nowPlaying ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -212,13 +234,14 @@ export function FranjaMusica({ nowPlaying, isPlaying, sourceName, api, accent, s
                   api?.media.control(key as 'play-pause' | 'next' | 'prev').then(refrescarMedios);
                 }}
                 style={{
-                  flex: 1, padding: '6px 0',
+                  flex: 1, padding: '6px 0', minHeight: 32,
                   background: VD.elevated, border: `1px solid ${VD.border}`,
                   cursor: activo ? 'pointer' : 'not-allowed',
                   opacity: activo ? 1 : 0.35,
                   borderRadius: VD.radius.md,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'background 0.1s, border-color 0.1s',
+                  touchAction: 'manipulation',
                 }}
                 onMouseEnter={(e) => { if (activo) (e.currentTarget as HTMLButtonElement).style.borderColor = accent; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}

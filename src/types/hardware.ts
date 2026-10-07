@@ -133,12 +133,16 @@ export interface SpotifyPlaybackState {
 }
 
 export interface NowPlaying {
-  controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
+  controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean; play?: boolean; pause?: boolean };
   title: string;
   artist: string;
   status: 'Playing' | 'Paused' | 'Stopped' | 'Unknown';
   source: string;
   thumbnail?: string;
+  /** Si el aleatorio está activo. Ausente = no se sabe (respaldo PowerShell). */
+  isShuffleActive?: boolean;
+  /** Repetición activa. Ausente = no se sabe (respaldo PowerShell). */
+  autoRepeatMode?: 'none' | 'track' | 'list';
 }
 
 export type SensorKind =
