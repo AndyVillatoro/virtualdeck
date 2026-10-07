@@ -89,6 +89,7 @@ export const EN_COMUN: Dict = {
   'tip.close': 'Close (minimizes to tray)',
   'comun.cerrar': 'Close',
   'folder.titulo': 'FOLDER',
+  'full.kioskTip': 'Enable kiosk mode (hides the interface; ESC asks for the PIN)',
   'set.spotifyActivo': 'ACTIVE',
   'bulk.deseleccionar': 'Clear selection',
   'rgb.titulo': 'RGB MANAGER',

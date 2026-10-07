@@ -96,6 +96,7 @@ export const ES_COMUN: Dict = {
   'tip.close': 'Cerrar (minimiza a bandeja)',
   'comun.cerrar': 'Cerrar',
   'folder.titulo': 'CARPETA',
+  'full.kioskTip': 'Activar modo kiosko (oculta la interfaz; ESC pide el PIN)',
   'set.spotifyActivo': 'ACTIVO',
   'bulk.deseleccionar': 'Quitar la selección',
   'rgb.titulo': 'GESTOR RGB',

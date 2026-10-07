@@ -191,7 +191,7 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
         height: '100%',
         padding: 3,
         boxSizing: 'border-box',
-        background: '#070809',
+        background: VD.bg,
         borderRadius: VD.radius.lg,
         overflow: 'hidden',
         touchAction: 'none',
@@ -209,14 +209,14 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
           : isToggled
             ? (sub.bgColor ? sub.bgColor : `${accent}22`)
             : isHovered
-              ? (sub.bgColor ? `${sub.bgColor}dd` : 'rgba(255, 255, 255, 0.08)')
-              : (sub.bgColor || '#111315');
+              ? (sub.bgColor ? `${sub.bgColor}dd` : VD.elevatedHover)
+              : (sub.bgColor || VD.surface);
 
         const quadBorder = isToggled
           ? `1px solid ${accent}`
           : isHovered
-            ? '1px solid rgba(255, 255, 255, 0.22)'
-            : '1px solid rgba(255, 255, 255, 0.07)';
+            ? `1px solid ${VD.borderStrong}`
+            : `1px solid ${VD.border}`;
 
         const glyphName = (sub.dotGlyph || sub.icon || '').toUpperCase();
         const displayColor = isToggled

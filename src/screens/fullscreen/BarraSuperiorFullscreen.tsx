@@ -24,7 +24,7 @@ export function BarraSuperiorFullscreen({
   return (
     <div
       style={{
-        height: 30,
+        height: 40,
         display: 'flex',
         alignItems: 'center',
         padding: '0 20px',
@@ -47,7 +47,7 @@ export function BarraSuperiorFullscreen({
       </span>
       <button
         onClick={onEnterKiosk}
-        title="Activar modo kiosko (oculta UI, ESC pide PIN)"
+        title={t('full.kioskTip')}
         style={{
           background: 'transparent',
           border: `1px solid ${VD.border}`,
@@ -55,7 +55,8 @@ export function BarraSuperiorFullscreen({
           fontFamily: VD.mono,
           fontSize: 9,
           letterSpacing: 1,
-          padding: '3px 8px',
+          padding: '0 12px',
+          minHeight: 32,
           cursor: 'pointer',
           marginRight: 4,
           display: 'inline-flex',
@@ -68,6 +69,7 @@ export function BarraSuperiorFullscreen({
       </button>
       <button
         onClick={onExit}
+        title={t('full.exit')}
         style={{
           background: 'transparent',
           border: `1px solid ${VD.border}`,
@@ -75,7 +77,8 @@ export function BarraSuperiorFullscreen({
           fontFamily: VD.mono,
           fontSize: 9,
           letterSpacing: 1,
-          padding: '3px 8px',
+          padding: '0 12px',
+          minHeight: 32,
           cursor: 'pointer',
           display: 'inline-flex',
           alignItems: 'center',

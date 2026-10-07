@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { DotLabel } from './DotLabel';
+import { DotGlyphIcon, resolveDotGlyph } from './dot480/DotGlyphIcon';
+import { GLIFO_POR_TIPO_ACCION } from './dot480/glifosPorTipoAccion';
 import { useT } from '../utils/i18n';
 import type { ButtonConfig, DeckConfig } from '../types';
 
@@ -112,7 +114,7 @@ export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlay
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 220,
-        background: 'rgba(0,0,0,0.7)',
+        background: VD.backdrop,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
         paddingTop: '12vh',
       }}
@@ -182,9 +184,13 @@ export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlay
                   background: b.bgColor || VD.elevated,
                   border: `1px solid ${VD.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, color: b.fgColor || VD.text,
                 }}>
-                  {b.icon || (b.brandIcon ? '◆' : '·')}
+                  {/* El glifo dibujado, no su nombre en texto ni un rombo unicode. */}
+                  <DotGlyphIcon
+                    glyph={(b.icon && resolveDotGlyph(b.icon)) || GLIFO_POR_TIPO_ACCION[b.action.type] || 'DOTS'}
+                    size={14}
+                    color={b.fgColor || VD.text}
+                  />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{

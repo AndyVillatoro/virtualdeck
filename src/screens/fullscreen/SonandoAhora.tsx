@@ -87,7 +87,7 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
                 if (soundOnPress) playSound(soundProfile);
               }}
               style={{
-                width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: VD.overlay, border: `1px solid ${VD.border}`,
                 cursor: 'pointer', borderRadius: VD.radius.sm, transition: 'border-color 0.1s',
                 padding: 0,
@@ -95,7 +95,7 @@ export function SonandoAhora({ nowPlaying, isPlaying, sourceName, config, soundO
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = config.accent; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = VD.border; }}
             >
-              <DotGlyphIcon glyph={glyph} size={10} color={VD.textDim} showRecessed />
+              <DotGlyphIcon glyph={glyph} size={12} color={VD.textDim} showRecessed />
             </button>
           ))}
         </div>

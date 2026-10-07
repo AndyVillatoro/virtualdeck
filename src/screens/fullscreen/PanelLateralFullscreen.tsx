@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
+import { textoSobre } from '../../design';
 import { useT } from '../../utils/i18n';
 import { DotText } from '../../components/DotText';
 import { DotLabel } from '../../components/DotLabel';
@@ -117,12 +118,13 @@ export function PanelLateralFullscreen({
               onClick={() => setActivePage(realIdx)}
               style={{
                 flex: 1,
-                padding: '4px 0',
+                padding: '0 4px',
+                minHeight: 32,
                 background: isActive ? accent : VD.elevated,
                 border: `1px solid ${isActive ? accent : VD.border}`,
-                color: isActive ? '#fff' : VD.textMuted,
+                color: isActive ? textoSobre(accent) : VD.textMuted,
                 fontFamily: VD.mono,
-                fontSize: 8,
+                fontSize: 9,
                 letterSpacing: 1,
                 cursor: 'pointer',
                 borderRadius: VD.radius.sm,

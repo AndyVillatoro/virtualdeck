@@ -286,24 +286,26 @@ function Contenido({ config, onGuardar }: { config: DeckConfig; onGuardar: (c: D
         );
       })}
 
-      {/* Cerrar: arriba a la derecha de la columna, solo al pasar el cursor. */}
+      {/* Cerrar: arriba a la derecha de la columna. Siempre pulsable y tenue
+          sin cursor encima: con el dedo no hay «pasar el cursor», y oculto del
+          todo la barra no se podía cerrar en una pantalla táctil. */}
       <button
         onClick={cerrar}
         title={t('bar.close')}
+        aria-label={t('bar.close')}
         style={{
           position: 'absolute', top: 2, right: 2,
-          width: 18, height: 18, padding: 0,
+          width: 24, height: 24, padding: 0,
           border: `1px solid ${VD.borderStrong}`, borderRadius: VD.radius.sm,
           background: VD.surface, color: VD.danger,
           cursor: 'pointer',
-          opacity: hover ? 1 : 0,
-          pointerEvents: hover ? 'auto' : 'none',
+          opacity: hover ? 1 : 0.35,
           transition: 'opacity 120ms',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           WebkitAppRegion: 'no-drag',
         } as React.CSSProperties}
       >
-        <DotGlyphIcon glyph="CLOSE" size={9} color={VD.danger} />
+        <DotGlyphIcon glyph="CLOSE" size={10} color={VD.danger} />
       </button>
     </div>
   );
