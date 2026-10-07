@@ -228,7 +228,7 @@ export interface DeckConfig {
   theme?: ThemeMode;
   sensors?: SensorsSettings;
   remote?: RemoteSettings;
-  musicPanel?: { enabled: boolean; side: 'left' | 'right' };
+  musicPanel?: { enabled: boolean; side: 'left' | 'right'; plegado?: boolean };
   tileMode?: 'square' | 'fill';
   language?: 'es' | 'en' | 'system';
   onboardingCompleted?: boolean;

@@ -9,7 +9,7 @@ type PropsMusica = Pick<
 
 interface PanelMusicaLateralProps extends PropsMusica {
   config: DeckConfig;
-  panelMusica: { enabled: boolean; side: 'left' | 'right' };
+  panelMusica: { enabled: boolean; side: 'left' | 'right'; plegado?: boolean };
   lado: 'left' | 'right';
   onConfigChange: (c: DeckConfig) => void;
 }
@@ -26,6 +26,8 @@ export function PanelMusicaLateral({ config, panelMusica, lado, onConfigChange, 
     <PanelMusica
       accent={config.accent}
       lado={lado}
+      plegado={panelMusica.plegado === true}
+      onPlegar={(plegado) => onConfigChange({ ...config, musicPanel: { ...panelMusica, plegado } })}
       onCerrar={() => onConfigChange({ ...config, musicPanel: { ...panelMusica, enabled: false } })}
       {...musica}
     />

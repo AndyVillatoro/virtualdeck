@@ -43,7 +43,7 @@ const LADO_PRINCIPAL = 64;
 const LADO_SECUNDARIO = 52;
 
 export function PanelMusica({
-  nowPlaying, isPlaying, sourceName, accent, api, lado, onCerrar,
+  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar,
 }: {
   nowPlaying: NowPlaying | null;
   isPlaying: boolean;
@@ -51,6 +51,9 @@ export function PanelMusica({
   accent: string;
   api: ElectronAPI | undefined;
   lado: 'left' | 'right';
+  /** Solo formato `barra`: el panel plegado a su lengüeta. */
+  plegado: boolean;
+  onPlegar: (plegado: boolean) => void;
   onCerrar: () => void;
 }) {
   const VD = useTheme();
@@ -72,6 +75,8 @@ export function PanelMusica({
         accent={accent}
         api={api}
         lado={lado}
+        plegado={plegado}
+        onPlegar={onPlegar}
         onCerrar={onCerrar}
       />
     );

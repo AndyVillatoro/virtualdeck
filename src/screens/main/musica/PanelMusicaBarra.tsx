@@ -9,16 +9,19 @@ import { DotMatrixImageOverlay } from '../../../components/dot480/DotMatrixImage
 import { BotonTransporte } from './BotonTransporte';
 import { DatosPista } from './DatosPista';
 import { FilaAleatorioRepetir } from './FilaAleatorioRepetir';
+import { LenguetaMusica } from './LenguetaMusica';
 import type { NowPlaying, ElectronAPI } from '../../../types';
 
 /**
  * El panel de música en formato barra (alto <= 600, como 1280×480).
  *
- * En vertical la carátula cuadrada de 300 px se comía casi todo el alto y los
- * botones de control quedaban fuera de la pantalla. Aquí va en horizontal: la
- * carátula a la izquierda con el alto disponible (cuadrada, sin encogerse) y
- * el título, el estado y los controles a la derecha, en una columna que no se
- * desplaza — lo que suena y cómo pararlo se ve siempre, sin scroll.
+ * Columna de 300 px a todo el alto, anclada arriba: la carátula cuadrada con
+ * el 40 % del alto como mucho, y debajo el título, el transporte, la barra de
+ * progreso y aleatorio/repetir, todo pegado arriba. Sin centrado vertical, así
+ * no quedan bandas vacías por encima y por debajo.
+ *
+ * Se puede plegar a una lengüeta de 28 px en el borde (`LenguetaMusica`). El
+ * estado plegado vive en `config.musicPanel.plegado`; sin él, va desplegado.
  *
  * Sin `overflow` con scroll a propósito: si algo no cabe, es que la columna es
  * demasiado ancha, no que falte desplazar. La nota de «no admite saltar» del
@@ -26,12 +29,15 @@ import type { NowPlaying, ElectronAPI } from '../../../types';
  * deshabilitados ya lo dicen con su atenuado.
  */
 
+/** Ancho del panel desplegado. Antes 440 px: era un tercio de la pantalla. */
+const ANCHO_PANEL = 300;
+
 /** Transporte algo menor que en vertical, pero sin bajar de 32 px. */
 const LADO_PRINCIPAL_BARRA = 44;
 const LADO_SECUNDARIO_BARRA = 36;
 
 export function PanelMusicaBarra({
-  nowPlaying, isPlaying, sourceName, accent, api, lado, onCerrar,
+  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar,
 }: {
   nowPlaying: NowPlaying;
   isPlaying: boolean;
@@ -39,15 +45,35 @@ export function PanelMusicaBarra({
   accent: string;
   api: ElectronAPI | undefined;
   lado: 'left' | 'right';
+  plegado: boolean;
+  onPlegar: (plegado: boolean) => void;
   onCerrar: () => void;
 }) {
   const VD = useTheme();
   const t = useT();
   const refrescarMedios = useNowPlayingRefresh();
 
+  if (plegado) {
+    return (
+      <LenguetaMusica
+        lado={lado}
+        isPlaying={isPlaying}
+        accent={accent}
+        onDesplegar={() => onPlegar(false)}
+      />
+    );
+  }
+
   const borde = lado === 'left'
     ? { borderRight: `1px solid ${VD.border}` }
     : { borderLeft: `1px solid ${VD.border}` };
+
+  // La flecha apunta hacia el borde al que se pliega el panel.
+  const glifoPlegar = lado === 'left' ? 'ARROW_LEFT' : 'ARROW_RIGHT';
+  const estiloBoton = {
+    background: 'none', border: 'none', color: VD.textMuted,
+    cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center',
+  } as const;
 
   // Lo que la fuente dice que admite. Sin dato se enseña todo: mejor un botón
   // que quizá no haga nada que esconder uno que sí funciona.
@@ -57,13 +83,35 @@ export function PanelMusicaBarra({
 
   return (
     <div style={{
-      height: '100%', width: 440, flexShrink: 0, background: VD.surface, ...borde,
-      display: 'flex', flexDirection: 'row', gap: 12,
-      padding: 8, overflow: 'hidden', alignItems: 'stretch',
+      height: '100%', width: ANCHO_PANEL, flexShrink: 0, background: VD.surface, ...borde,
+      display: 'flex', flexDirection: 'column', gap: 8,
+      padding: 8, overflow: 'hidden',
     }}>
-      {/* Carátula fija de 176 px: al alto completo se comía media pantalla de barra. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.music')}</DotLabel>
+        <div style={{ flex: 1 }} />
+        <button
+          type="button"
+          onClick={() => onPlegar(true)}
+          title={t('music.collapse')}
+          aria-label={t('music.collapse')}
+          style={estiloBoton}
+        >
+          <DotGlyphIcon glyph={glifoPlegar} size={10} color={VD.textMuted} />
+        </button>
+        <button
+          type="button"
+          onClick={onCerrar}
+          title={t('music.hide')}
+          style={estiloBoton}
+        >
+          <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
+        </button>
+      </div>
+
+      {/* Carátula anclada arriba: cuadrada, con el 40 % del alto como mucho. */}
       <div style={{
-        width: 176, height: 176, alignSelf: 'center', borderRadius: VD.radius.lg,
+        height: '40%', aspectRatio: '1', alignSelf: 'center', borderRadius: VD.radius.lg,
         background: VD.overlay, border: `1px solid ${VD.border}`,
         overflow: 'hidden', position: 'relative', flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -91,27 +139,8 @@ export function PanelMusicaBarra({
         )}
       </div>
 
-      {/* Título, estado y controles: todo visible sin desplazar. */}
-      <div style={{
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        gap: 8, minWidth: 0, flex: 1,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.music')}</DotLabel>
-          <div style={{ flex: 1 }} />
-          <button
-            type="button"
-            onClick={onCerrar}
-            title={t('music.hide')}
-            style={{
-              background: 'none', border: 'none', color: VD.textMuted,
-              cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center',
-            }}
-          >
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
-          </button>
-        </div>
-
+      {/* Título, estado y controles, pegados arriba bajo la carátula. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
         <DatosPista
           titulo={nowPlaying.title}
           artista={nowPlaying.artist}
@@ -120,7 +149,7 @@ export function PanelMusicaBarra({
           unaLinea
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <BotonTransporte
             glyph="PREV"
             titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
@@ -150,7 +179,7 @@ export function PanelMusicaBarra({
           />
         </div>
 
-        {/* Con 236 px de columna caben los tiempos: la barra va con ellos. */}
+        {/* Con 284 px de columna caben los tiempos: la barra va con ellos. */}
         <BarraProgreso datos={nowPlaying} />
 
         <FilaAleatorioRepetir

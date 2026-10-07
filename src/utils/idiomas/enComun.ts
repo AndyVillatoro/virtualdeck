@@ -229,6 +229,8 @@ export const EN_COMUN: Dict = {
   'config.damaged': 'The configuration could not be read: the file was damaged. A copy was saved to {ruta}. If you had buttons, restore them from Settings → Backups before carrying on.',
   'panel.music': 'MUSIC',
   'music.hide': 'Hide the panel',
+  'music.expand': 'Expand the music panel',
+  'music.collapse': 'Collapse the music panel',
   'media.unsupported': '{que} — the source does not support it',
   'media.noSkip': '{fuente} does not support skipping tracks for this playback. That is a limit of the app that is playing, not of the deck.',
   'media.shuffle': 'SHUFFLE',

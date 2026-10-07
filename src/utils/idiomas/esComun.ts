@@ -237,6 +237,8 @@ export const ES_COMUN: Dict = {
   'config.damaged': 'No se pudo leer la configuracion: el archivo estaba dañado. Se guardo una copia en {ruta}. Si tenia botones, restaurelos desde Ajustes → Copias de seguridad antes de seguir trabajando.',
   'panel.music': 'MUSICA',
   'music.hide': 'Ocultar el panel',
+  'music.expand': 'Desplegar el panel de música',
+  'music.collapse': 'Plegar el panel de música',
   'media.unsupported': '{que} — la fuente no lo admite',
   'media.noSkip': '{fuente} no admite pasar de pista en esta reproduccion. Es una limitacion de la aplicacion que suena, no del deck.',
   'media.shuffle': 'ALEATORIO',
