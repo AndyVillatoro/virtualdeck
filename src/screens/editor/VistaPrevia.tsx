@@ -1,188 +1,27 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { ButtonCell } from '../../components/ButtonCell';
-import type { ButtonConfig, ButtonAction, SubButtonConfig, TipoWidget, SliderWidgetConfig } from '../../types';
+import { interpolate } from '../../comun/interpolar';
+import type {
+  ButtonAction,
+  SubButtonConfig,
+} from '../../types';
+import {
+  armarBotonParaVista,
+  AlternadorToggle,
+  AlternadorCuadrantes2x2,
+  SeccionHardwareDock,
+  InfoAccionesExtra,
+  ejecutarClickPreview,
+  useConfigVivo,
+  useLiveWidgetData,
+  useDockInfoVista,
+} from './VistaPreviaPiezas';
+import type { VistaCampos } from './VistaPreviaPiezas';
 
-export interface VistaCampos {
-  label: string;
-  sublabel: string;
-  icon: string;
-  imageData: string;
-  brandIcon: string;
-  brandIconAlwaysAnimate?: boolean;
-  brandIconCustomBitmap?: string[];
-  brandIconCustomColor?: string;
-  brandIconCustomPalette?: Record<string, string>;
-  customGlyph57?: number[];
-  bgColor: string;
-  fgColor: string;
-  fijo?: boolean;
-  widget?: TipoWidget;
-  sliderWidget?: SliderWidgetConfig;
-  iconoPuntos?: { bits: string; origen: string };
-  animacion?: ButtonConfig['animacion'];
-  efectoPulsar?: ButtonConfig['efectoPulsar'];
-  aspectoEncendido?: ButtonConfig['aspectoEncendido'];
-}
-
-function resolverIconoParaVista(isEncendido: boolean, campos: VistaCampos) {
-  if (isEncendido && campos.aspectoEncendido) {
-    const enc = campos.aspectoEncendido;
-    if (enc.icon || enc.iconoPuntos) {
-      return {
-        icon: enc.icon || (enc.iconoPuntos ? '' : campos.icon),
-        iconoPuntos: enc.iconoPuntos || (enc.icon ? undefined : campos.iconoPuntos),
-      };
-    }
-  }
-  return { icon: campos.icon, iconoPuntos: campos.iconoPuntos };
-}
-
-function resolverColoresParaVista(isEncendido: boolean, campos: VistaCampos) {
-  if (isEncendido && campos.aspectoEncendido) {
-    const enc = campos.aspectoEncendido;
-    return {
-      bgColor: enc.bgColor || campos.bgColor || undefined,
-      fgColor: enc.fgColor || campos.fgColor || undefined,
-    };
-  }
-  return {
-    bgColor: campos.bgColor || undefined,
-    fgColor: campos.fgColor || undefined,
-  };
-}
-
-function armarBotonParaVista({
-  id,
-  page,
-  action,
-  extraActions,
-  isToggle,
-  campos,
-  subButtons,
-  is2x2Mode,
-  isEncendido,
-}: {
-  id: string;
-  page: number;
-  action: ButtonAction;
-  extraActions: ButtonAction[];
-  isToggle: boolean;
-  campos: VistaCampos;
-  subButtons?: SubButtonConfig[];
-  is2x2Mode?: boolean;
-  isEncendido: boolean;
-}): ButtonConfig {
-  const iconoRes = resolverIconoParaVista(isEncendido, campos);
-  const coloresRes = resolverColoresParaVista(isEncendido, campos);
-  const subBtnRes = is2x2Mode && subButtons && subButtons.length === 4 ? subButtons : undefined;
-
-  return {
-    id,
-    page,
-    label: campos.label,
-    sublabel: campos.sublabel,
-    icon: iconoRes.icon,
-    iconoPuntos: iconoRes.iconoPuntos,
-    imageData: campos.imageData || undefined,
-    brandIcon: campos.brandIcon || undefined,
-    brandIconAlwaysAnimate: campos.brandIconAlwaysAnimate,
-    brandIconCustomBitmap: campos.brandIconCustomBitmap,
-    brandIconCustomColor: campos.brandIconCustomColor,
-    brandIconCustomPalette: campos.brandIconCustomPalette,
-    customGlyph57: campos.customGlyph57,
-    bgColor: coloresRes.bgColor,
-    fgColor: coloresRes.fgColor,
-    action,
-    actions: extraActions.length > 0 ? [action, ...extraActions] : undefined,
-    isToggle,
-    fijo: campos.fijo || undefined,
-    widget: campos.widget,
-    sliderWidget: campos.sliderWidget,
-    subButtons: subBtnRes,
-    animacion: campos.animacion,
-    efectoPulsar: campos.efectoPulsar,
-    aspectoEncendido: campos.aspectoEncendido,
-  };
-}
-
-function AlternadorToggle({
-  isEncendido,
-  onTogglePreview,
-  accent,
-  vdElevated,
-  vdBorder,
-  vdRadiusSm,
-  vdTextDim,
-  vdMono,
-  labelApagado,
-  labelEncendido,
-  labelModo,
-}: {
-  isEncendido: boolean;
-  onTogglePreview?: () => void;
-  accent: string;
-  vdElevated: string;
-  vdBorder: string;
-  vdRadiusSm: number | string;
-  vdTextDim: string;
-  vdMono: string;
-  labelApagado: string;
-  labelEncendido: string;
-  labelModo: string;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div style={{ fontFamily: vdMono, fontSize: 9, color: accent, textAlign: 'center' }}>
-        {labelModo}
-      </div>
-      <div style={{ display: 'flex', gap: 4 }}>
-        <button
-          type="button"
-          onClick={() => {
-            if (isEncendido && onTogglePreview) onTogglePreview();
-          }}
-          style={{
-            height: 24,
-            padding: '0 8px',
-            background: !isEncendido ? `${accent}24` : vdElevated,
-            border: `1px solid ${!isEncendido ? accent : vdBorder}`,
-            borderRadius: vdRadiusSm,
-            color: !isEncendido ? accent : vdTextDim,
-            fontFamily: vdMono,
-            fontSize: 8.5,
-            fontWeight: !isEncendido ? 600 : 400,
-            cursor: 'pointer',
-          }}
-        >
-          {labelApagado}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (!isEncendido && onTogglePreview) onTogglePreview();
-          }}
-          style={{
-            height: 24,
-            padding: '0 8px',
-            background: isEncendido ? `${accent}24` : vdElevated,
-            border: `1px solid ${isEncendido ? accent : vdBorder}`,
-            borderRadius: vdRadiusSm,
-            color: isEncendido ? accent : vdTextDim,
-            fontFamily: vdMono,
-            fontSize: 8.5,
-            fontWeight: isEncendido ? 600 : 400,
-            cursor: 'pointer',
-          }}
-        >
-          {labelEncendido}
-        </button>
-      </div>
-    </div>
-  );
-}
+export type { VistaCampos };
 
 export function VistaPrevia({
   id,
@@ -212,9 +51,17 @@ export function VistaPrevia({
   const VD = useTheme();
   const t = useT();
   const tf = useFieldText();
+  const api = window.electronAPI;
+
+  const deckConfig = useConfigVivo(api);
+  const deckState = useMemo(() => deckConfig?.state ?? {}, [deckConfig?.state]);
+  const botonOriginal = useMemo(
+    () => deckConfig?.buttons?.find((b) => b.id === id),
+    [deckConfig?.buttons, id],
+  );
 
   const isEncendido = Boolean(isToggle && previewToggled);
-  const boton = armarBotonParaVista({
+  const boton = useMemo(() => armarBotonParaVista({
     id,
     page,
     action,
@@ -224,8 +71,22 @@ export function VistaPrevia({
     subButtons,
     is2x2Mode,
     isEncendido,
-  });
+    deckState,
+    botonOriginal,
+  }), [id, page, action, extraActions, isToggle, campos, subButtons, is2x2Mode, isEncendido, deckState, botonOriginal]);
 
+  const resolvedLabel = useMemo(() => interpolate(campos.label, deckState), [campos.label, deckState]);
+  const widgetData = useLiveWidgetData(boton, deckState, api);
+
+  const [subToggled, setSubToggled] = useState<boolean[]>([false, false, false, false]);
+
+  const dockInfo = useDockInfoVista(boton, deckConfig?.pages, isEncendido, widgetData);
+  const tituloHardware = useMemo(() => {
+    const num = dockInfo.indice;
+    return `${t('disp.paginaEnAparato').toUpperCase()} · ${t('disp.tecla', { n: num }).toUpperCase()}`;
+  }, [dockInfo.indice, t]);
+
+  const esModo2x2Activo = Boolean(is2x2Mode && subButtons && subButtons.length === 4);
   const textoAccionesExtra = extraActions.length > 1 ? tf('acciones adicionales') : tf('acción adicional');
 
   return (
@@ -233,14 +94,15 @@ export function VistaPrevia({
       style={{
         width: 200,
         borderRight: `1px solid ${VD.border}`,
-        padding: 24,
+        padding: '20px 16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         background: VD.bg,
         flexShrink: 0,
-        gap: 14,
+        gap: 12,
+        overflowY: 'auto',
       }}
     >
       <DotLabel size={9} color={VD.textMuted} spacing={2}>
@@ -251,17 +113,19 @@ export function VistaPrevia({
           button={boton}
           accent={accent}
           toggled={isEncendido}
+          subToggled={subToggled}
           soundEnabled={false}
+          widgetData={widgetData}
+          deckState={deckState}
+          resolvedLabel={resolvedLabel}
           onEdit={() => {}}
-          onExecute={() => {
-            if (isToggle && onTogglePreview) {
-              onTogglePreview();
-            }
+          onExecute={(target) => {
+            ejecutarClickPreview(esModo2x2Activo, target?.id, subButtons, setSubToggled, isToggle, onTogglePreview);
           }}
         />
       </div>
 
-      {isToggle && (
+      {isToggle && !esModo2x2Activo && (
         <AlternadorToggle
           isEncendido={isEncendido}
           onTogglePreview={onTogglePreview}
@@ -277,11 +141,45 @@ export function VistaPrevia({
         />
       )}
 
-      {extraActions.length > 0 && (
-        <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center' }}>
-          + {extraActions.length} {textoAccionesExtra}
-        </div>
+      {esModo2x2Activo && subButtons && (
+        <AlternadorCuadrantes2x2
+          subButtons={subButtons}
+          subToggled={subToggled}
+          onToggleCuadrante={(idx) => {
+            setSubToggled((prev) => {
+              const next = [...prev];
+              next[idx] = !next[idx];
+              return next;
+            });
+          }}
+          accent={accent}
+          vdElevated={VD.elevated}
+          vdBorder={VD.border}
+          vdRadiusSm={VD.radius.sm}
+          vdTextDim={VD.textDim}
+          vdMono={VD.mono}
+          labelModo={`2×2 · ${t('ed.split.toggle')}`}
+        />
       )}
+
+      <SeccionHardwareDock
+        esDock={dockInfo.esDock}
+        conPantalla={dockInfo.conPantalla}
+        lcdDataUrl={dockInfo.lcdDataUrl}
+        titulo={tituloHardware}
+        vdBorder={VD.border}
+        vdRadiusSm={VD.radius.sm}
+        vdMono={VD.mono}
+        vdTextDim={VD.textDim}
+        avisoSinPantalla={tf('Este control no tiene pantalla: solo la etiqueta se ve en la vista del deck.')}
+      />
+
+      <InfoAccionesExtra
+        count={extraActions.length}
+        vdMono={VD.mono}
+        vdTextMuted={VD.textMuted}
+        label={textoAccionesExtra}
+      />
 
       <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, textAlign: 'center', lineHeight: 1.6 }}>
         {t('editor.previewHint')}<br />{t('editor.previewHint2')}
@@ -289,3 +187,4 @@ export function VistaPrevia({
     </div>
   );
 }
+
