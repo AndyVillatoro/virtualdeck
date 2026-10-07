@@ -4,6 +4,7 @@ import { useT } from '../../utils/i18n';
 import { SettingLabel, ToggleRow } from './settingHelpers';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import { BotonIcono } from '../ui/BotonIcono';
+import { estiloBotonTexto } from '../ui/estilos';
 import type { Profile } from '../../types';
 
 interface SeccionPerfilesProps {
@@ -20,6 +21,8 @@ interface SeccionPerfilesProps {
   onAutoProfileSwitchToggle?: () => void;
   autoProfileRestoreDefault?: boolean;
   onAutoProfileRestoreDefaultToggle?: () => void;
+  onConfigExport?: () => void;
+  onConfigImport?: () => void;
   onCerrar: () => void;
 }
 
@@ -73,6 +76,8 @@ export function SeccionPerfiles({
   onAutoProfileSwitchToggle,
   autoProfileRestoreDefault,
   onAutoProfileRestoreDefaultToggle,
+  onConfigExport,
+  onConfigImport,
   onCerrar,
 }: SeccionPerfilesProps) {
   const VD = useTheme();
@@ -167,6 +172,39 @@ export function SeccionPerfiles({
           />
         </div>
       </div>
+
+      {(onConfigExport || onConfigImport) && (
+        <div style={{ marginTop: 8, borderTop: `1px solid ${VD.border}`, paddingTop: 8 }}>
+          <SettingLabel>{t('set.backup')}</SettingLabel>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            {onConfigExport && (
+              <button
+                type="button"
+                onClick={onConfigExport}
+                title={t('tip.export')}
+                style={{ ...estiloBotonTexto(VD, false, effectiveAccent), flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <DotGlyphIcon glyph="EXPORT" size={8} color={VD.textDim} />
+                <span>{t('set.backupExport')}</span>
+              </button>
+            )}
+            {onConfigImport && (
+              <button
+                type="button"
+                onClick={onConfigImport}
+                title={t('tip.import')}
+                style={{ ...estiloBotonTexto(VD, false, effectiveAccent), flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <DotGlyphIcon glyph="IMPORT" size={8} color={VD.textDim} />
+                <span>{t('set.backupImport')}</span>
+              </button>
+            )}
+          </div>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.4, marginTop: 4 }}>
+            {t('set.backupHint')}
+          </div>
+        </div>
+      )}
     </>
   );
 }

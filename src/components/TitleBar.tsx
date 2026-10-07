@@ -163,8 +163,6 @@ export function TitleBar({
           <div style={{ display: 'flex', gap: compact ? 2 : 4, flexShrink: 0, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <BotonesNavegacion
               effectiveAccent={effectiveAccent}
-              onConfigExport={onConfigExport}
-              onConfigImport={onConfigImport}
               onFloatingBar={onFloatingBar}
               onWallpaper={onWallpaper}
               onRGB={onRGB}
@@ -223,6 +221,8 @@ export function TitleBar({
           onLoadProfile={onLoadProfile}
           onAppendProfilePages={onAppendProfilePages}
           onDeleteProfile={onDeleteProfile}
+          onConfigExport={onConfigExport}
+          onConfigImport={onConfigImport}
           onUpdateProfileTargetApp={onUpdateProfileTargetApp}
           autoProfileSwitch={autoProfileSwitch}
           onAutoProfileSwitchToggle={onAutoProfileSwitchToggle}

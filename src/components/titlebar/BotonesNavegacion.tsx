@@ -8,8 +8,6 @@ import { useTamanoVentana } from '../../utils/useTamanoVentana';
 
 export interface BotonesNavegacionProps {
   effectiveAccent: string;
-  onConfigExport?: () => void;
-  onConfigImport?: () => void;
   onFloatingBar?: () => void;
   onWallpaper?: () => void;
   onRGB?: () => void;
@@ -20,8 +18,6 @@ export interface BotonesNavegacionProps {
 
 export function BotonesNavegacion({
   effectiveAccent,
-  onConfigExport,
-  onConfigImport,
   onFloatingBar,
   onWallpaper,
   onRGB,
@@ -32,7 +28,7 @@ export function BotonesNavegacion({
   const VD = useTheme();
   const t = useT();
   const btnStyle = estilo_btnStyle(VD, compact);
-  // Por debajo de ~900 px los seis botones con texto no caben junto a los
+  // Por debajo de ~900 px los botones con texto no caben junto a los
   // controles de la ventana: quedan solo los iconos (cada uno con su `title`).
   const { ancho } = useTamanoVentana();
   const soloIcono = ancho < 900;
@@ -40,26 +36,6 @@ export function BotonesNavegacion({
 
   return (
     <>
-      {onConfigExport && (
-        <button
-          onClick={onConfigExport}
-          style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          title={t('tip.export')}
-        >
-          <DotGlyphIcon glyph="EXPORT" size={9} color={VD.textDim} />
-          {rotulo('EXP')}
-        </button>
-      )}
-      {onConfigImport && (
-        <button
-          onClick={onConfigImport}
-          style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-          title={t('tip.import')}
-        >
-          <DotGlyphIcon glyph="IMPORT" size={9} color={VD.textDim} />
-          {rotulo('IMP')}
-        </button>
-      )}
       {onFloatingBar && (
         <button onClick={onFloatingBar} title={t('tip.bar')} style={{ ...btnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <DotGlyphIcon glyph="TERMINAL" size={9} color={VD.textDim} />

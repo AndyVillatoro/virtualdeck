@@ -55,6 +55,8 @@ interface Props {
   onLoadProfile?: (id: string) => void;
   onAppendProfilePages?: (id: string) => void;
   onDeleteProfile?: (id: string) => void;
+  onConfigExport?: () => void;
+  onConfigImport?: () => void;
   onUpdateProfileTargetApp?: (id: string, targetApp: string) => void;
   autoProfileSwitch?: boolean;
   onAutoProfileSwitchToggle?: () => void;
@@ -76,7 +78,7 @@ export function PanelAjustes({
   alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange,
   rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus,
   remoteConfig, onRemoteConfigChange, onImportarDeGaleria, onAppendPageFromGallery, onAppendProfilePages, musicPanel, onMusicPanelChange,
-  profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onUpdateProfileTargetApp,
+  profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onUpdateProfileTargetApp, onConfigExport, onConfigImport,
   autoProfileSwitch, onAutoProfileSwitchToggle, autoProfileRestoreDefault, onAutoProfileRestoreDefaultToggle,
   targetDisplayId, onTargetDisplayChange, onReplayOnboarding, newProfileName, setNewProfileName,
   panelRef, onCerrar,
@@ -293,8 +295,8 @@ export function PanelAjustes({
         />
       </SeccionAjustes>
 
-      {/* 5. Perfiles y Automatización */}
-      <SeccionAjustes titulo={t('set.profiles')} glyph="FOLDER" accent={effectiveAccent}>
+      {/* 5. Perfiles y respaldo */}
+      <SeccionAjustes titulo={t('set.profilesBackup')} glyph="FOLDER" accent={effectiveAccent}>
         <SeccionPerfiles
           effectiveAccent={effectiveAccent}
           profiles={profiles}
@@ -304,6 +306,8 @@ export function PanelAjustes({
           onLoadProfile={onLoadProfile}
           onAppendProfilePages={onAppendProfilePages}
           onDeleteProfile={onDeleteProfile}
+          onConfigExport={onConfigExport}
+          onConfigImport={onConfigImport}
           onUpdateProfileTargetApp={onUpdateProfileTargetApp}
           autoProfileSwitch={autoProfileSwitch}
           onAutoProfileSwitchToggle={onAutoProfileSwitchToggle}
