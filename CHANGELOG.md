@@ -28,6 +28,10 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   multimedia, zoom, pestañas, deshacer/rehacer, vídeo, pincel, escritorios, contador),
   siete botones ciegos y presets de página; uno de perilla rellena sus tres gestos de
   una vez.
+- **Perfiles completos para el N3**: tres perfiles (multimedia, streaming y productividad) que
+  rellenan de una vez los 18 huecos de la página del dock, reutilizando por id los presets que
+  ya existen. Se ofrecen en el inspector de Dispositivos cuando no hay ningún control elegido,
+  con confirmación, y solo encajan con un modelo de 6 teclas, 3 botones y 3 perillas.
 - **Acción `page-nav`**: anterior y siguiente (se paran en los extremos), primera, ir a
   una y modo `cycle` que da la vuelta; desde un dock navega sus páginas.
 - **Volumen por aplicación (`app-volume`)**: subir, bajar, fijar y silenciar por programa
@@ -56,6 +60,36 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Catálogo grande de iconos en puntos**: unas 2.900 marcas y 5.100 iconos de acción
   generados en compilación; al elegir uno se copia en el botón y las marcas viejas
   dibujadas a mano ya no se ofrecen.
+- **Icono del catálogo en los presets**: unos 90 presets del deck y 80 del dock llevan el icono que
+  les corresponde (Spotify con su marca, OBS, el portapapeles, las flechas); al elegir uno el botón
+  lo recibe, y si el catálogo no resuelve queda el glifo de respaldo. También al rellenar un dock
+  con presets fuera del editor y al crear una página desde una plantilla de app.
+- **Icono por cuadrante del 2×2**: cada cuadrante puede llevar un icono del catálogo grande y se
+  pinta en la celda, en el mando móvil y en la tecla del dock.
+- **El editor sabe si edita un control del dock**: si es teclado, botón, perilla o tira, con su gesto
+  y si tiene pantalla; en el dock no ofrece 2×2 ni mantener pulsado en las perillas, avisa cuando los
+  modos de la perilla anulan la acción de pulsar, deja Apariencia en lo justo en los controles sin
+  pantalla y abre en la pestaña DOCK. El inspector avisa de los cuadrantes, la secuencia, mantener y
+  el apagado, y su mini vista pinta el icono real.
+- **Atajos globales sugeridos con nombre**: lista con el atajo, el nombre de la acción y para qué
+  sirve, más una nota que lo distingue del atajo que teclea la acción.
+- **Monitor de barra (1280×480) en Dispositivos**: el dibujo del aparato a la izquierda ocupa todo el
+  alto útil, los dispositivos son fichas arriba, la configuración de la página va en un desplegable
+  PÁGINA cerrado y el inspector se superpone con el control que elijas.
+- **Panel de música horizontal en pantallas bajas**: con 600 px de alto o menos el panel se tiende
+  (carátula a la izquierda al alto disponible, título, artista y controles a la derecha), enseña el
+  estado de aleatorio y repetición (con una insignia «1» para repetir una sola pista), atenúa lo que
+  la fuente no admite y se abre y se cierra desde la propia franja de música, no solo desde Ajustes.
+- **Kiosko y principal en formato barra**: con la ventana baja y ancha el panel lateral se pliega a un
+  reloj compacto y dos o tres sensores, la rejilla llena el ancho con casillas rectangulares, la
+  música va junto a las fichas de página en una sola franja inferior y la barra superior se oculta
+  sola en kiosko.
+- **Barra de progreso de la canción**: la posición y la duración las lee el núcleo con el timeline de
+  SMTC (sin duración no hay barra y el respaldo de PowerShell no la pide) y la pantalla las interpola
+  desde la última medida mientras suena, con un reloj de 1 s solo mientras hay barra. Sale en el
+  panel de música (normal y de barra) y en el kiosko; el sondeo sigue en 5 s.
+- **Icono, portada y capturas en el manifiesto de la tienda**: campos opcionales por entrada —
+  icono del catálogo DOT o glifo 8×8, portada y hasta 6 capturas —, filtrados como URL.
 
 ### Changed
 
@@ -84,6 +118,39 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   que recibe el aparato.
 - **Arranque más ligero**: las pantallas que no se ven cargan bajo demanda.
 - **Cada preset dice qué hace por gesto** y el inspector enseña la acción en palabras.
+- **COMPORTAMIENTO con estado vacío**: en un botón sin acción el apartado quedaba en blanco; ahora
+  explica que depende de la acción elegida y ofrece atajos a PRESETS y ACCIÓN, y en un 2×2 no enseña
+  las opciones del padre, que no hacen nada.
+- **La secuencia de acciones se edita junto a la acción**: «+ AÑADIR OTRA ACCIÓN DESPUÉS» en ACCIÓN,
+  con un ejemplo y la diferencia con la macro, en vez de escondida en AVANZADO; el tope es 8 en
+  total y no se guarda con acciones donde no corre.
+- **Vista previa completa del editor**: los widgets salen en vivo (reloj, clima, divisa, sensor,
+  música), las variables `{var}` se resuelven, los cuatro cuadrantes del 2×2 se rotulan y se pueden
+  encender y apagar uno a uno, y un control del dock se enseña con su tecla de 64 px tal como la
+  pinta el aparato (o «sin pantalla»).
+- **La pulsación se nota más**: destello de ~420 ms que lleva el icono al acento y vuelve, onda más
+  ancha (~620 ms) y un tinte breve de acento en el fondo, también con color propio; «ninguno» quita
+  el barrido y el tinte, la tecla del dock y el mando móvil tienen su propio tiempo y «reducir
+  movimiento» solo quita lo decorativo.
+- **Deslizador vertical en puntos DOT**: filas de puntos redondos como el horizontal (los apagados ya
+  se ven en modo claro), escala al lado y el mando móvil respeta la orientación.
+- **Respaldo dentro de Ajustes**: PERFILES pasa a PERFILES Y RESPALDO y suma EXPORTAR TODO e IMPORTAR
+  con lo que incluye el respaldo; EXP/IMP salen de la barra de título, que se llenaba en ventanas
+  estrechas.
+- **Tutorial, wiki, página pública y ficha de la Store al día**: el tutorial pasa a nueve pasos
+  (docks, móvil, barra flotante, tienda, disparadores), la wiki corrige el editor por secciones y
+  gana cinco páginas nuevas en español e inglés.
+- **Aviso de página 6×2 en formato barra**: si la página actual es cuadrada en una ventana baja y
+  ancha, un aviso propone crear una página 6×2 nueva (la rejilla admite hasta 6 columnas) sin tocar
+  las existentes; no se recuerda.
+- **Panel de música plegable y sin huecos en formato barra**: en 1280×480 mide 300 px en vez de 440
+  y va anclado arriba (carátula cuadrada hasta el 40 % del alto, luego título, transporte, progreso
+  y aleatorio/repetir); se pliega a una lenguieta de 28 px con el glifo de onda, «MÚSICA» en vertical
+  y un punto de estado. El plegado se guarda (`musicPanel.plegado`, opcional y sin migración).
+- **Una sola tienda, con tarjetas**: la galería sale de Ajustes (la sección TIENDA abre la ventana
+  de la tienda) y la tienda se rediseña con tarjetas compactas (icono DOT, portada recortada si la
+  hay, nombre, autor, tipo y estado) y ficha con portada, tira de capturas con ampliación, nota del
+  autor, requisitos y el aviso de riesgo completo de siempre; una imagen que no carga cae al icono.
 - Prototipo interno de anfitrión de plugins de Stream Deck (solo con variable de entorno,
   sin interfaz de usuario).
 
@@ -104,6 +171,28 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - Las páginas de los docks ya no aparecen en las pestañas de la principal.
 - La pantalla de dispositivos se adapta a ventanas pequeñas y Dispositivos, Fondos y Barra
   se pueden arrastrar.
+- **Contraste automático en celda, tecla y móvil**: con color de fondo propio y sin color de texto, el
+  icono y el rótulo usaban el color del tema (claro sobre claro); ahora eligen el que contrasta con su
+  fondo, y la franja del rótulo deja de ser negra sobre fondos claros. La tecla del dock sigue con su
+  paleta OLED propia.
+- **La ventana recuerda su monitor**: al arrancar con la sesión el segundo monitor puede no estar
+  aún, y un monitor que se dormía la movía al principal guardando esa posición; ahora se guarda la
+  huella del monitor (nombre, tamaño y escala) y la posición relativa a su área de trabajo, vuelve a él
+  cuando reaparece y no guarda lo que mueve la propia aplicación.
+- **El lápiz de editar ya no queda debajo de la trama** del filtro de puntos: las insignias (lápiz,
+  ×N, toggle, carpeta, configurado, activo) van en una capa por encima de la trama y de la imagen, y el
+  lápiz lleva un chip OLED fijo, legible en modo claro y sobre cualquier icono.
+- **Los textos de los presets ya no se salen** del inspector: dos líneas con el texto entero en el
+  título y el «otra vez» en su propia línea, en los presets del dock, del editor y en el resto de
+  Dispositivos.
+- Los atajos globales con Ctrl+Shift+Alt nunca aparecían ni activos ni ocupados (se comparaban sin
+  normalizar) y la tecla Windows se perdía al grabar.
+- El estado de los sensores en el kiosko decía «DISABLED» sin traducir.
+- **Widgets y deslizador legibles sobre fondo propio al cambiar de tema**: con color de fondo
+  propio, el texto de los widgets de la celda (reloj, clima, divisa, sensor, música) y del
+  deslizador (cabecera, valor, escala y puntos apagados) usaba siempre el color del tema, con lo que
+  un botón de fondo oscuro quedaba negro sobre negro en tema claro; ahora eligen el color del icono
+  (`fgColor`) o el que contrasta con su fondo, como el resto de la celda.
 
 ## [0.13.0] — 2026-09-15
 

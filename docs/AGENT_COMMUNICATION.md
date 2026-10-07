@@ -50,6 +50,19 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-REV-20** | P1 | Aplicar icono del catálogo al elegir preset (98) | opencode wV (Kimi K2.7 Code, Go) | `useEstadoEditor`, caminos de preset del dock | `DONE` | 2026-10-07 |
 | **T-REV-21** | P2 | Respaldo dentro de Ajustes (104) | opencode wR | `PanelAjustes`, `SeccionPerfiles`, `BotonesNavegacion`, `TitleBar`, `App.tsx` (props), idiomas `*Ajustes` | `DONE` (revisado y en la rama) | 2026-10-07 |
 | **T-REV-22** | P2 | Wiki y galeria.md al día (106) | opencode wT (Fledge, gratis) | `docs/wiki/**`, `docs/galeria.md` | `DONE` (revisado y en la rama) | 2026-10-07 |
+| **T-TND-01** | P2 | Quitar la galería de Ajustes, solo tienda (105a) | opencode wR (Muse Spark, gratis) | `src/components/settings/**`, `docs/galeria*`, `docs/wiki/**` | `DONE` (f333e6a) | 2026-10-07 |
+| **T-TND-02** | P2 | Tienda con iconos, portada y capturas (105b) | agy wK (Gemini Flash) | `src/screens/tienda/**`, `TiendaB.tsx`, idiomas `*Ajustes` | `DONE` (bd9a8d4) | 2026-10-07 |
+| **T-DOCK-01** | P2 | Tres perfiles completos del N3 (62) | opencode wN (Claude Haiku 5.5, Go) | `src/data/presetsDock.ts`, `perfilesDock.ts`, `src/screens/dispositivos/**`, `SeccionPresets`, `useDockPresets`, idiomas `*Editor`/`*Dispositivos` | `DONE` (9bf5233) | 2026-10-07 |
+| **T-BAR-01** | P2 | Proponer página 8×2 en formato barra (110) | opencode run Nemotron 3 Ultra (Exo no respondía) | `src/screens/main/**`, `MainB.tsx`, idiomas `*Comun` | `DONE` (f333e6a) | 2026-10-07 |
+| **T-DOC-03** | P2 | Wiki de perfiles completos del N3 + timeline SMTC en NOTAS-TECNICAS (encargo en `_referencias/encargos/`) | opencode wT | `docs/wiki/Docks-y-Controladores.md`, `docs/wiki/Docks-and-Controllers.md`, `docs/NOTAS-TECNICAS.md` | `DONE` (check-wiki verde; sin cambios de código) | 2026-10-07 |
+| **T-DOC-02** | P2 | CHANGELOG al día con 91–110 | opencode wV (Space Bunny, gratis; LongCat no entregó) | `CHANGELOG.md` | `DONE` | 2026-10-07 |
+| **T-MUS-01** | P3 | Investigar barra de progreso SMTC (109) | opencode wT (Fledge, gratis) | solo `_referencias/informes/` | `DONE` (informe revisado) | 2026-10-07 |
+| **T-MUS-02** | P2 | Posición/duración de la canción en el núcleo (109), encargo `_referencias/encargos/T-MUS-02-timeline-nativo.md` | opencode wT (Fledge, gratis) | `crates/vd-core/src/media/**`, `crates/vd-node/src/lib.rs`, `src/types/hardware.ts`, `electron/main/media.ts` | `DONE` (f260ad5) | 2026-10-07 |
+| **T-MUS-03** | P2 | Investigar panel de música compacto (111) | opencode wR (Muse Spark, gratis) | solo `_referencias/informes/` | `DONE` (informe revisado) | 2026-10-07 |
+| **T-WID-01** | P2 | Widgets legibles con fondo propio (112) | opencode wS (LongCat, gratis) | `src/components/dot480/DotContinuousSlider.tsx` | `DONE` (9901bff, sin capturas) | 2026-10-07 |
+| **T-MUS-04** | P2 | Barra de progreso en pantalla (109) | opencode wN (Claude Haiku 5.5, Go) | `progresoCancion.ts`, `BarraProgreso.tsx`, paneles de música | `DONE` (f260ad5) | 2026-10-07 |
+| **T-MUS-05** | P2 | Panel de música plegable en formato barra (111) | opencode wN (Claude Haiku 5.5, Go) | `src/screens/main/**`, `MainB.tsx`, `config.ts` (musicPanel), idiomas `*Comun` | `DONE` (2a4f021) | 2026-10-07 |
+| **T-DOC-04** | P2 | Documentar la tanda de la tarde: CHANGELOG, ROADMAP, tablero y este HANDOFF | opencode wV (Space Bunny, gratis) | `CHANGELOG.md`, `docs/ROADMAP.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` (sin commit: lo pide el encargo) | 2026-10-07 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

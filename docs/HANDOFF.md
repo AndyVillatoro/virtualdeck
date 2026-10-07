@@ -4,6 +4,55 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
+## Turno 2026-10-07 (tarde) — tanda de tiendas, perfiles del N3, panel de música y widgets (DONE)
+
+* **Reparto:** opencode `wN` Claude Haiku 5.5 por Go (partes 2 de 109 y 111); agy `wK` Gemini Flash (105b, con 105a revisado);
+  opencode `wR` Muse Spark, `wS` LongCat, `wT` Fledge y `wV` Space Bunny, todos gratis (investigaciones de 109 y 111, wiki y
+  notas técnicas, tablero y documentación); Nemotron 3 Ultra por `opencode run` cuando Exo no respondía (aviso de página 6×2).
+* **Rama:** `task/p1-revision-ui`. Los siete commits de código están; la documentación de esta tanda va sin commit (lo pide el encargo).
+
+### Qué entró (2026-10-07, tarde)
+
+| Commit | Qué |
+|---|---|
+| `f333e6a` | 105a + aviso de página 6×2 del 110: Ajustes pierde la galería (TIENDA abre la ventana de la tienda), manifiesto con `icono`/`portada`/`capturas` |
+| `9bf5233` | 62: los tres perfiles completos del N3 (multimedia, streaming, productividad) rellenan los 18 huecos de la página del dock |
+| `f260ad5` | 109: `GetTimelineProperties()` en el núcleo (posición, duración e instante de la medida, FILETIME a epoch ms; el respaldo PowerShell no la pide) + `BarraProgreso` en el panel de música (normal y de barra) y en el kiosko, interpolando desde la última medida mientras suena |
+| `26705e6` | 112: los widgets de la celda usan `fgColor` o `textoSobre(bgColor)` cuando el botón tiene fondo propio |
+| `9901bff` | 112: lo mismo en el deslizador (cabecera, valor, escala y puntos apagados) |
+| `2a4f021` | 111: panel de música de 300 px anclado arriba y lengüeta de 28 px para plegarlo; se guarda en `musicPanel.plegado` (opcional, sin migración) |
+| `bd9a8d4` | 105b: tienda con tarjetas (icono DOT, portada recortada, nombre, autor, tipo, estado) y ficha con portada, tira de capturas, requisitos y el riesgo completo |
+
+Además, sin commit: wiki ES/EN `Docks-y-Controladores` / `Docks-and-Controllers` con la sección «Perfiles completos» / «Full profiles»
+(T-DOC-03, wT), `NOTAS-TECNICAS.md` con «Timeline SMTC (solo el núcleo nativo)» (`GetTimelineProperties()` síncrono, `None` con
+duración 0, FILETIME → epoch Unix, solo nativo, la pantalla interpola vía `timelineUpdatedAt` en vez de sondear), `docs/galeria.md`
+con los campos `icono`/`portada`/`capturas` y el ejemplo v2, y el CHANGELOG/ROADMAP/tablero de esta misma tanda (T-DOC-04).
+
+### Verificación
+
+* `npm run check`: **0 errores, 28 warnings** (deuda previa, ninguno de estos archivos) y los **7 guardianes en verde** —
+  `check-i18n` 1366 claves ES/EN, `check-acciones` 43 tipos, `check-ipc` 135 canales y 16 eventos, `check-wiki` 24 páginas y 12
+  parejas ES/EN, `check-campos` 69 campos, `check-paridad` 38 campos con 0 huecos, `check-perfiles` 2 revisados.
+* Capturas en `_referencias/informes/`: `capturas-musica/` (principal en oscuro y en claro, con y sin el panel) y
+  `capturas-widgets/` (widgets en los dos temas). Informes: `barra-progreso-smtc.md`, `panel-musica-compacto.md`.
+* Los errores que quedaban a media tanda (`TitleBar.tsx:213` por la cadena de la galería, `check-i18n` en `tienda/**`) están
+  cerrados: los quitó `f333e6a` y `bd9a8d4`.
+
+### Falta (dueño)
+
+* **N3**: los tres perfiles completos del 62 y el resto del dock físico — en esta tanda no había aparato conectado.
+* **Monitor 1280×480 con la app instalada**: sin empaquetar la ventana ignora las coordenadas guardadas (103).
+* **Voz**: oír el texto a voz; desde el agente no se puede escuchar.
+* **CPU en reposo**: repetir el A/B de 100 en las mismas condiciones que el 84 (la de entonces era con música sonando).
+* **Regenerar `native/vd-core.node`** con `npm run build:native` **con la app cerrada**: el `.node` instalado es anterior a
+  `GetTimelineProperties()`, así que la barra de progreso de la canción (109) todavía no sale en pantalla.
+
+### Próximo paso
+
+1. Pruebas del dueño (las de arriba).
+2. Fusionar `task/p1-revision-ui` y publicar **0.14.0**: el `[Unreleased]` del CHANGELOG ya resume 56–112.
+3. Después: 105c (plugins, atado al MVP del 83) y 107 (vídeo para la Store y la página).
+
 ## Turno 2026-10-07 — T-REV-19 Deslizador vertical DOT (DONE)
 
 * **Modelo saliente:** opencode wS (Qwen3.8 Max, Go).
