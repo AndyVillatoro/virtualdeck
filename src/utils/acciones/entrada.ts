@@ -46,10 +46,10 @@ export const ENTRADA: Record<string, Manejador> = {
   'tts': async ({ action, api, state, t }) => {
     const text = interpolate(action.ttsText, state);
     if (!text) return fail(t('act.err.noTtsText'));
-    // Comilla simple duplicada: es como PowerShell escapa dentro de '...'.
-    const escaped = text.replace(/'/g, "''");
-    const ps = `Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('${escaped}')`;
-    const ok = await api.launch.script(ps, 'powershell');
+    // Nativo (SAPI asíncrono) o System.Speech sin núcleo: lo decide el
+    // proceso principal. Antes se armaba el script aquí y se mandaba por
+    // `script`, que con núcleo esperaba al hijo toda la frase.
+    const ok = await api.launch.speak(text);
     return ok ? OK : fail(t('act.err.tts'));
   },
 };

@@ -48,7 +48,12 @@ export interface NucleoNativo {
   launchApp: (appPath: string, args: string[]) => boolean;
   /** Cubre a la vez `openUrl` y `openShortcut`: hacían lo mismo. */
   openPath: (target: string) => boolean;
-  runScript: (script: string, shell?: string) => { success: boolean; output: string };
+  /**
+   * Ejecuta un script y devuelve su salida. **Asíncrono**: llega como Promise
+   * porque el hijo puede tardar hasta el límite; esperar en el hilo principal
+   * congelaría IPC, bandeja e HID del dock.
+   */
+  runScript: (script: string, shell?: string, timeoutMs?: number) => Promise<{ success: boolean; output: string }>;
   setBrightness: (level: number) => boolean;
   getBrightness: () => number | null;
   copyToClipboard: (text: string) => boolean;
@@ -97,8 +102,19 @@ export interface NucleoNativo {
   diagnoseMedia: () => string;
 
   // --- macros ---
-  /** Los pasos van como JSON: el núcleo los lee con el modelo de la config. */
-  playMacro: (stepsJson: string, repeat?: number) => boolean;
+  /**
+   * Los pasos van como JSON: el núcleo los lee con el modelo de la config.
+   * **Asíncrono**: una macro con pausas duerme entre pasos y eso no puede
+   * pasar en el hilo principal.
+   */
+  playMacro: (stepsJson: string, repeat?: number) => Promise<boolean>;
+
+  // --- voz (SAPI) ---
+  /**
+   * Lee un texto en voz alta. **Asíncrono**: llega como Promise para no atar
+   * el hilo principal a COM en plena frase.
+   */
+  speakText: (text: string) => Promise<boolean>;
 
   // --- sensores ---
   /**
@@ -121,7 +137,9 @@ export interface SesionAudioApp {
   silenciada: boolean;
 }
 
-/** Lo que devuelve el núcleo. Coincide con `NowPlaying` de `src/types.ts`. */
+/** Lo que devuelve el núcleo. Coincide con `NowPlaying` de `src/types.ts`, más
+ * lo que la sesión dice de sí misma (opcionales: ausentes sin SMTC o con un
+ * `.node` anterior a estas). */
 interface NowPlayingNativo {
   title: string;
   artist: string;
@@ -134,6 +152,12 @@ interface NowPlayingNativo {
    * tal cual— y el puente la codifica, porque aquí manda un WebView.
    */
   thumbnail?: string;
+  /** Lo que la sesión admite. Ausente = no se sabe. */
+  controls?: { play: boolean; pause: boolean; next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
+  /** Si el aleatorio está activo. Ausente = no se sabe. */
+  isShuffleActive?: boolean;
+  /** Repetición activa. Ausente = no se sabe. */
+  autoRepeatMode?: 'none' | 'track' | 'list';
 }
 
 /** Rutas donde puede estar el `.node`, en orden de preferencia. */

@@ -16,9 +16,14 @@ export interface NowPlaying {
    * declara `next=False prev=False shuffle=False repeat=False`, y el sistema
    * acepta la orden y no pasa nada. Sin esto la interfaz enseña cuatro botones
    * que en ese caso no hacen nada y no lo dicen. Ausente = no se sabe (camino
-   * nativo o version vieja), y entonces se enseñan todos.
+   * PowerShell, o un `.node` anterior a los controles nativos), y entonces se
+   * enseñan todos.
    */
-  controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
+  controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean; play?: boolean; pause?: boolean };
+  /** Si el aleatorio está activo. Ausente = no se sabe. */
+  isShuffleActive?: boolean;
+  /** Repetición activa. Ausente = no se sabe. */
+  autoRepeatMode?: 'none' | 'track' | 'list';
 }
 
 export type MediaCommand = 'play-pause' | 'next' | 'prev' | 'stop';
@@ -115,16 +120,10 @@ Write-Output "$title|$artist|$($best.St)|$src|$caps"
 /**
  * Solo lo que la sesion **admite**, sin pedir la pista.
  *
- * Existe porque el nucleo nativo devuelve titulo, artista, estado, fuente y
- * caratula, pero **no** las capacidades: `controls` sale siempre `undefined`
- * por ese camino, que es el que corre cuando el `.node` carga. El resultado es
- * que la interfaz enseña los cuatro botones habilitados y, en un video suelto
- * de YouTube, ninguno hace nada y nadie lo dice. Medido en esta maquina con un
- * video en Edge: `False/False/False/False`.
- *
- * Lo arreglaria el propio nucleo, pero no se puede recompilar. Asi que se
- * pregunta aparte, y **una vez por cancion**, no en cada tick: medido en 239 ms,
- * que es asumible una vez por pista y no lo seria cuatro veces por segundo.
+ * Respaldo para cuando el nativo no trae `controls` (sin nucleo, o un `.node`
+ * anterior a los controles nativos): se pregunta aparte, y **una vez por
+ * cancion**, no en cada tick: medido en 239 ms, que es asumible una vez por
+ * pista y no lo seria cuatro veces por segundo.
  *
  * No usa `TryGetMediaPropertiesAsync`: esa es la llamada que puede no volver
  * nunca si hay una sesion a medio cerrar. `GetPlaybackInfo()` es sincrona.
@@ -527,7 +526,9 @@ export async function getNowPlaying(): Promise<NowPlaying | null> {
   {
     const crudo = intentarNativo('getNowPlaying', (n) => n.getNowPlaying());
     if (crudo !== undefined) {
-      // El nucleo no devuelve `controls`; se piden aparte, una vez por cancion.
+      // El nucleo actual ya trae `controls` (y shuffle/repeat activos): en ese
+      // caso no se lanza el CAPS_SCRIPT de PowerShell. Si viene sin ellos (un
+      // `.node` anterior), se piden aparte, una vez por cancion.
       const nativo = crudo ? conControles(crudo) : crudo;
       _cache.ts = Date.now();
       _cache.data = nativo;

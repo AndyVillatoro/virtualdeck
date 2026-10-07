@@ -4,7 +4,7 @@ import { ipcMain, shell, BrowserWindow } from 'electron';
 import { urlAbrible } from '../abrirExterno';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
-  sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume,
+  sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume, speakText,
   getRunningProcesses, snapWindow, cycleWindow, openApps, iconoApp, isProcessRunning, focusWindow, closeWindow,
 } from '../launcher';
 
@@ -44,6 +44,7 @@ export function registerLauncherIpc(win: BrowserWindow) {
     return runScript(`(New-Object -ComObject WScript.Shell).SendKeys([char]${codes[key] ?? 179})`, 'powershell');
   });
   ipcMain.handle('launch:clipboard', (_e: any, text: string) => copyToClipboard(text));
+  ipcMain.handle('launch:speak', (_e: any, text: string) => speakText(String(text ?? '')));
   ipcMain.handle('launch:typeText', async (_e: any, text: string) => {
     win.blur();
     await new Promise(r => setTimeout(r, 80));

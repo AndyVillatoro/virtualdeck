@@ -132,8 +132,17 @@ export async function abrirAjustesTactiles(): Promise<boolean> {
 
 export async function runScript(script: string, shell_: string = 'powershell'): Promise<boolean> {
   const listo = conUtf8(script, shell_);
-  const r = intentarNativo('runScript', (n) => n.runScript(listo, shell_).success);
-  if (r !== undefined) return r;
+  // Nativo asíncrono (Promise): el hijo puede tardar hasta el límite sin
+  // congelar el proceso principal. Si la Promise se rechaza, se cae al
+  // respaldo de siempre en vez de reventar al llamador.
+  const promesa = intentarNativo('runScript', (n) => n.runScript(listo, shell_));
+  if (promesa !== undefined) {
+    try {
+      return (await promesa).success;
+    } catch (e) {
+      console.error('[nativo] runScript falló:', (e as Error).message);
+    }
+  }
 
   // Los dos van por su ayudante, que escribe un archivo temporal. El comentario
   // que habia aqui decia que los de `cmd` son «one-liners del usuario»; el
@@ -145,8 +154,14 @@ export async function runScript(script: string, shell_: string = 'powershell'): 
 
 export async function runScriptCapture(script: string, shell_: string = 'powershell'): Promise<{ success: boolean; output: string }> {
   const listo = conUtf8(script, shell_);
-  const r = intentarNativo('runScriptCapture', (n) => n.runScript(listo, shell_));
-  if (r !== undefined) return r;
+  const promesa = intentarNativo('runScriptCapture', (n) => n.runScript(listo, shell_));
+  if (promesa !== undefined) {
+    try {
+      return await promesa;
+    } catch (e) {
+      console.error('[nativo] runScriptCapture falló:', (e as Error).message);
+    }
+  }
 
   if (shell_ === 'powershell') {
     const r = await runPS(listo, { timeoutMs: 30000 });
@@ -157,6 +172,33 @@ export async function runScriptCapture(script: string, shell_: string = 'powersh
   // **solo corria la primera**, y los acentos volvian rotos.
   const r2 = await runCmd(listo, { timeoutMs: 30000 });
   return { success: r2.ok, output: (r2.stdout || r2.stderr || '').trim() };
+}
+
+/**
+ * Lee un texto en voz alta (SAPI).
+ *
+ * Camino nativo: síntesis en proceso y llamada asíncrona — no congela el
+ * proceso principal ni siquiera con frases largas. Antes se armaba un script
+ * de `System.Speech` con `.Speak()` síncrono y se mandaba por `runScript`
+ * nativo, que esperaba al hijo: **toda la frase con el IPC parado**.
+ *
+ * Sin núcleo, el script de siempre (corre en otro proceso, así que tampoco
+ * bloquea; solo tarda más en arrancar).
+ */
+export async function speakText(text: string): Promise<boolean> {
+  const promesa = intentarNativo('speakText', (n) => n.speakText(text));
+  if (promesa !== undefined) {
+    try {
+      return await promesa;
+    } catch (e) {
+      console.error('[nativo] speakText falló:', (e as Error).message);
+    }
+  }
+
+  // Comilla simple duplicada: es como PowerShell escapa dentro de '...'.
+  const escaped = text.replace(/'/g, "''");
+  const ps = `Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('${escaped}')`;
+  return runScript(ps, 'powershell');
 }
 
 /**

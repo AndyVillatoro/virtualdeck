@@ -31,6 +31,10 @@
 
 #![deny(clippy::all)]
 
+use std::time::Duration;
+
+use napi::bindgen_prelude::AsyncTask;
+use napi::{Env, Task};
 use napi_derive::napi;
 
 /// Un dispositivo de salida de audio.
@@ -163,25 +167,55 @@ pub struct SalidaScript {
     pub output: String,
 }
 
-/// Ejecuta un script y devuelve su salida.
+/// Ejecuta un script y devuelve su salida, sin bloquear el proceso principal.
 ///
-/// `shell` acepta `"powershell"` (por defecto) o `"cmd"`, los mismos valores que
-/// guarda `deck-config.json`.
+/// Va como [`AsyncTask`]: el hijo puede tardar hasta el limite y esperar en el
+/// hilo principal de Electron congelaria IPC, bandeja e HID del dock. El
+/// cómputo corre en el pool de libuv y JavaScript recibe una Promise.
+///
+/// `timeout_ms` por defecto 30 s, como el respaldo PowerShell de Electron.
 #[napi]
-pub fn run_script(script: String, shell: Option<String>) -> SalidaScript {
+pub fn run_script(
+    script: String,
+    shell: Option<String>,
+    timeout_ms: Option<u32>,
+) -> AsyncTask<TareaScript> {
     let shell = match shell.as_deref() {
         Some("cmd") => vd_core::launcher::Shell::Cmd,
         _ => vd_core::launcher::Shell::PowerShell,
     };
-    match vd_core::launcher::run_script(&script, shell) {
-        Ok(output) => SalidaScript {
-            success: true,
-            output,
-        },
-        Err(e) => SalidaScript {
-            success: false,
-            output: e.to_string(),
-        },
+    AsyncTask::new(TareaScript {
+        script,
+        shell,
+        limite: Duration::from_millis(u64::from(timeout_ms.unwrap_or(30_000)).max(1)),
+    })
+}
+
+pub struct TareaScript {
+    script: String,
+    shell: vd_core::launcher::Shell,
+    limite: Duration,
+}
+
+impl Task for TareaScript {
+    type Output = SalidaScript;
+    type JsValue = SalidaScript;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        match vd_core::launcher::run_script_con_limite(&self.script, self.shell, self.limite) {
+            Ok(output) => Ok(SalidaScript {
+                success: true,
+                output,
+            }),
+            Err(e) => Ok(SalidaScript {
+                success: false,
+                output: e.to_string(),
+            }),
+        }
+    }
+
+    fn resolve(&mut self, _env: Env, salida: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(salida)
     }
 }
 
@@ -419,7 +453,8 @@ pub fn close_window(process_name: Option<String>) -> bool {
 // Media (SMTC)
 // ---------------------------------------------------------------------------
 
-/// Qué se está reproduciendo. Mismos campos que `NowPlaying` de `src/types.ts`.
+/// Qué se está reproduciendo. Mismos campos que `NowPlaying` de `src/types.ts`,
+/// más lo que la sesión dice de sí misma (opcionales: ausentes sin SMTC).
 #[napi(object)]
 pub struct NowPlaying {
     pub title: String,
@@ -429,6 +464,23 @@ pub struct NowPlaying {
     pub source: String,
     /// Carátula como data-URL, o `null`.
     pub thumbnail: Option<String>,
+    /// Lo que la sesión admite. Ausente = no se sabe (sin SMTC).
+    pub controls: Option<ControlesSesion>,
+    /// Si el aleatorio está activo. Ausente = no se sabe.
+    pub is_shuffle_active: Option<bool>,
+    /// `"none"`, `"track"` o `"list"`. Ausente = no se sabe.
+    pub auto_repeat_mode: Option<String>,
+}
+
+/// Capacidades de una sesión SMTC, de `GetPlaybackInfo().Controls`.
+#[napi(object)]
+pub struct ControlesSesion {
+    pub play: bool,
+    pub pause: bool,
+    pub next: bool,
+    pub prev: bool,
+    pub shuffle: bool,
+    pub repeat: bool,
 }
 
 /// Lo que se está reproduciendo ahora mismo.
@@ -459,6 +511,16 @@ pub fn get_now_playing() -> Option<NowPlaying> {
         // El núcleo devuelve bytes crudos porque una interfaz nativa los
         // consume tal cual. Aquí manda un WebView, que necesita un data-URL.
         thumbnail: n.thumbnail.map(|t| a_data_url(&t.mime, &t.bytes)),
+        controls: n.controls.map(|c| ControlesSesion {
+            play: c.play,
+            pause: c.pause,
+            next: c.next,
+            prev: c.prev,
+            shuffle: c.shuffle,
+            repeat: c.repeat,
+        }),
+        is_shuffle_active: n.is_shuffle_active,
+        auto_repeat_mode: n.auto_repeat_mode.map(|m| m.as_str().to_string()),
     })
 }
 
@@ -556,7 +618,7 @@ fn a_data_url(mime: &str, bytes: &[u8]) -> String {
 // Macros
 // ---------------------------------------------------------------------------
 
-/// Reproduce una macro grabada.
+/// Reproduce una macro grabada, sin bloquear el proceso principal.
 ///
 /// Los pasos llegan como **JSON**, no como un objeto declarado aquí, y se leen
 /// con el mismo modelo (`vd_core::config::model::MacroStep`) que ya lee la
@@ -564,29 +626,95 @@ fn a_data_url(mime: &str, bytes: &[u8]) -> String {
 /// podría desviarse del modelo sin que nada fallara al compilar; así es
 /// imposible.
 ///
+/// Va como [`AsyncTask`] porque una macro con pausas duerme entre pasos: en
+/// síncrono, esos segundos congelaban IPC, bandeja e HID del dock.
+///
 /// La **grabación** no pasa por aquí: ya era nativa con `uiohook-napi`. Lo único
 /// que usaba PowerShell era la reproducción, con un script generado al vuelo que
 /// mezclaba `SendKeys` y `mouse_event` de `user32.dll`.
 #[napi]
-pub fn play_macro(steps_json: String, repeat: Option<i64>) -> bool {
-    let pasos: Vec<vd_core::config::model::MacroStep> = match serde_json::from_str(&steps_json) {
-        Ok(p) => p,
-        Err(e) => {
-            eprintln!("[macro] no se entienden los pasos: {e}");
-            return false;
+pub fn play_macro(steps_json: String, repeat: Option<i64>) -> AsyncTask<TareaMacro> {
+    AsyncTask::new(TareaMacro {
+        steps_json,
+        repeat: repeat.unwrap_or(1),
+    })
+}
+
+pub struct TareaMacro {
+    steps_json: String,
+    repeat: i64,
+}
+
+impl Task for TareaMacro {
+    type Output = bool;
+    type JsValue = bool;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        let pasos: Vec<vd_core::config::model::MacroStep> =
+            match serde_json::from_str(&self.steps_json) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("[macro] no se entienden los pasos: {e}");
+                    return Ok(false);
+                }
+            };
+        if pasos.is_empty() {
+            eprintln!("[macro] la macro no tiene ningun paso");
+            return Ok(false);
         }
-    };
-    if pasos.is_empty() {
-        eprintln!("[macro] la macro no tiene ningun paso");
-        return false;
+
+        match vd_core::macros::play(&pasos, self.repeat) {
+            Ok(()) => Ok(true),
+            Err(e) => {
+                eprintln!("[macro] reproduccion: {e}");
+                Ok(false)
+            }
+        }
     }
 
-    match vd_core::macros::play(&pasos, repeat.unwrap_or(1)) {
-        Ok(()) => true,
-        Err(e) => {
-            eprintln!("[macro] reproduccion: {e}");
-            false
+    fn resolve(&mut self, _env: Env, ok: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(ok)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Voz
+// ---------------------------------------------------------------------------
+
+/// Lee un texto en voz alta (SAPI), sin bloquear el proceso principal.
+///
+/// `hablar` ya vuelve enseguida por su cuenta (SAPI asíncrono), pero crearlo y
+/// llamarlo en el hilo principal seguía atando ese hilo a COM en plena frase.
+/// Como [`AsyncTask`], JavaScript recibe una Promise y el principal sigue
+/// atendiendo IPC, bandeja e HID. `false` si no hay nada que leer o SAPI falla.
+#[napi]
+pub fn speak_text(texto: String) -> AsyncTask<TareaVoz> {
+    AsyncTask::new(TareaVoz { texto })
+}
+
+pub struct TareaVoz {
+    texto: String,
+}
+
+impl Task for TareaVoz {
+    type Output = bool;
+    type JsValue = bool;
+
+    fn compute(&mut self) -> napi::Result<Self::Output> {
+        if self.texto.trim().is_empty() {
+            return Ok(false);
         }
+        match vd_core::voz::hablar(&self.texto) {
+            Ok(()) => Ok(true),
+            Err(e) => {
+                eprintln!("[voz] no se pudo hablar: {e}");
+                Ok(false)
+            }
+        }
+    }
+
+    fn resolve(&mut self, _env: Env, ok: Self::Output) -> napi::Result<Self::JsValue> {
+        Ok(ok)
     }
 }
 

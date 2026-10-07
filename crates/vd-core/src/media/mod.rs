@@ -17,6 +17,9 @@ mod window_titles;
 
 pub use window_titles::{parse_window_title, ParsedTitle};
 
+use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
+
 use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSession as Session,
     GlobalSystemMediaTransportControlsSessionManager as SessionManager,
@@ -66,6 +69,56 @@ pub struct NowPlaying {
     /// ventana cuando se uso el fallback.
     pub source: String,
     pub thumbnail: Option<Thumbnail>,
+    /// Lo que la sesion dice que admite, segun ella misma. `None` = no se
+    /// sabe (el fallback por titulos no tiene sesion SMTC).
+    pub controls: Option<Controles>,
+    /// Si el modo aleatorio esta activo ahora mismo.
+    pub is_shuffle_active: Option<bool>,
+    /// Modo de repeticion activo ahora mismo.
+    pub auto_repeat_mode: Option<RepeatMode>,
+}
+
+/// Lo que la sesion declara admitir, de `GetPlaybackInfo().Controls`.
+///
+/// No todas las fuentes hacen todo: un video suelto de YouTube en Edge declara
+/// todo en `false`, y sin esto la interfaz ensena botones que no hacen nada.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Controles {
+    pub play: bool,
+    pub pause: bool,
+    pub next: bool,
+    pub prev: bool,
+    pub shuffle: bool,
+    pub repeat: bool,
+}
+
+/// Modo de repeticion activo, normalizado a lo que la interfaz entiende.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RepeatMode {
+    None,
+    Track,
+    List,
+}
+
+impl RepeatMode {
+    /// `"none"` / `"track"` / `"list"`: lo que viaja hacia la interfaz.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RepeatMode::None => "none",
+            RepeatMode::Track => "track",
+            RepeatMode::List => "list",
+        }
+    }
+}
+
+impl From<MediaPlaybackAutoRepeatMode> for RepeatMode {
+    fn from(m: MediaPlaybackAutoRepeatMode) -> Self {
+        match m {
+            MediaPlaybackAutoRepeatMode::Track => RepeatMode::Track,
+            MediaPlaybackAutoRepeatMode::List => RepeatMode::List,
+            _ => RepeatMode::None,
+        }
+    }
 }
 
 /// Comandos de control de reproduccion.
@@ -254,7 +307,7 @@ where
 }
 
 pub fn now_playing_smtc() -> Option<NowPlaying> {
-    en_hilo_mta(now_playing_smtc_aqui).flatten()
+    en_hilo_mta_con_limite(now_playing_smtc_aqui, LIMITE_NOW_PLAYING).flatten()
 }
 
 pub fn control(cmd: MediaCommand) -> Result<(), MediaError> {
@@ -268,6 +321,14 @@ pub fn toggle_shuffle() -> Result<bool, MediaError> {
 pub fn cycle_repeat() -> Result<MediaPlaybackAutoRepeatMode, MediaError> {
     en_hilo_mta(cycle_repeat_aqui).unwrap_or(Err(MediaError::NoSession))
 }
+
+/// Cuanto se espera a una consulta de `now_playing` antes de darla por colgada.
+///
+/// Un segundo y medio: lo normal son milisegundos, y el sondeo del widget
+/// pregunta cada segundo. Sin limite, una sesion zombi (una app que dejo su
+/// sesion a medio cerrar y ya no contesta) cuelga el hilo que llama — y del
+/// otro lado esta el proceso principal de Electron.
+const LIMITE_NOW_PLAYING: Duration = Duration::from_millis(1500);
 
 /// Cuanto se espera al diagnostico antes de darlo por colgado.
 ///
@@ -305,25 +366,99 @@ fn now_playing_smtc_aqui() -> Option<NowPlaying> {
         return None;
     }
 
-    let status = session
-        .GetPlaybackInfo()
-        .ok()
-        .and_then(|i| i.PlaybackStatus().ok())
-        .map(PlayState::from)
-        .unwrap_or(PlayState::Unknown);
-
     let source = session
         .SourceAppUserModelId()
         .map(|s| s.to_string())
         .unwrap_or_default();
+
+    let (status, controls, is_shuffle_active, auto_repeat_mode) = leer_estado_sesion(&session);
+
+    // La caratula se relee solo si cambio de pista: pesa decenas de KB y el
+    // sondeo pregunta cada segundo.
+    let clave = clave_pista(&source, &title, &artist);
+    let thumbnail = {
+        let mut cache = caratula_cache()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        // Solo se reutiliza una carátula **leída**: muchas apps publican el
+        // título antes que la imagen, y guardar el `None` de ese primer
+        // instante dejaba la canción entera sin carátula.
+        if cache.0 == clave && cache.1.is_some() {
+            cache.1.clone()
+        } else {
+            let t = read_thumbnail(&session);
+            cache.0 = clave;
+            cache.1 = t.clone();
+            t
+        }
+    };
 
     Some(NowPlaying {
         title: title.trim().to_string(),
         artist: artist.trim().to_string(),
         status,
         source,
-        thumbnail: read_thumbnail(&session),
+        thumbnail,
+        controls,
+        is_shuffle_active,
+        auto_repeat_mode,
     })
+}
+
+/// Estado, capacidades y modos de la sesion, en una sola lectura.
+///
+/// `GetPlaybackInfo()` es sincrona: no es la llamada que se cuelga con una
+/// sesion zombi (esa es `TryGetMediaPropertiesAsync`, que ya se hizo arriba).
+/// Cada capacidad que falle se cuenta como `false`, no como error: una
+/// capacidad ausente no debe tumbar la consulta entera.
+fn leer_estado_sesion(
+    session: &Session,
+) -> (
+    PlayState,
+    Option<Controles>,
+    Option<bool>,
+    Option<RepeatMode>,
+) {
+    let info = match session.GetPlaybackInfo() {
+        Ok(i) => i,
+        Err(_) => return (PlayState::Unknown, None, None, None),
+    };
+    let status = info
+        .PlaybackStatus()
+        .map(PlayState::from)
+        .unwrap_or(PlayState::Unknown);
+    let controls = info.Controls().ok().map(|c| Controles {
+        play: c.IsPlayEnabled().unwrap_or(false),
+        pause: c.IsPauseEnabled().unwrap_or(false),
+        next: c.IsNextEnabled().unwrap_or(false),
+        prev: c.IsPreviousEnabled().unwrap_or(false),
+        shuffle: c.IsShuffleEnabled().unwrap_or(false),
+        repeat: c.IsRepeatEnabled().unwrap_or(false),
+    });
+    let shuffle = info
+        .IsShuffleActive()
+        .ok()
+        .and_then(|r| r.Value().ok());
+    let repeat = info
+        .AutoRepeatMode()
+        .ok()
+        .and_then(|r| r.Value().ok())
+        .map(RepeatMode::from);
+    (status, controls, shuffle, repeat)
+}
+
+/// Clave de la pista para la cache de caratulas: app + titulo + artista.
+fn clave_pista(source: &str, title: &str, artist: &str) -> String {
+    format!("{source}\x1f{title}\x1f{artist}")
+}
+
+/// Caratula de la ultima pista consultada, con su clave.
+///
+/// Vive en un estatico porque `now_playing` se llama sin estado (via napi) una
+/// vez por segundo: recrearlo en cada llamada perderia la cache.
+fn caratula_cache() -> &'static Mutex<(String, Option<Thumbnail>)> {
+    static CACHE: OnceLock<Mutex<(String, Option<Thumbnail>)>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new((String::new(), None)))
 }
 
 /// Fallback: deduce lo que suena leyendo titulos de ventanas.
@@ -337,6 +472,10 @@ pub fn now_playing_from_windows() -> Option<NowPlaying> {
         status: PlayState::Playing,
         source: parsed.source,
         thumbnail: None,
+        // Sin sesion no hay capacidades ni modos que leer.
+        controls: None,
+        is_shuffle_active: None,
+        auto_repeat_mode: None,
     })
 }
 
@@ -487,5 +626,33 @@ mod tests {
         // Test de humo: puede no haber nada sonando (devuelve None), pero la
         // cadena WinRT completa no debe romperse.
         let _ = now_playing();
+    }
+
+    #[test]
+    fn la_clave_de_pista_distigue_cancion_y_origen() {
+        let a = clave_pista("Spotify", "Titulo", "Artista");
+        assert_eq!(a, clave_pista("Spotify", "Titulo", "Artista"));
+        assert_ne!(a, clave_pista("Spotify", "Otro", "Artista"));
+        // Misma cancion en otra app es otra pista (otra caratula).
+        assert_ne!(a, clave_pista("Edge", "Titulo", "Artista"));
+    }
+
+    #[test]
+    fn el_modo_de_repeticion_se_normaliza() {
+        assert_eq!(
+            RepeatMode::from(MediaPlaybackAutoRepeatMode::None),
+            RepeatMode::None
+        );
+        assert_eq!(
+            RepeatMode::from(MediaPlaybackAutoRepeatMode::Track),
+            RepeatMode::Track
+        );
+        assert_eq!(
+            RepeatMode::from(MediaPlaybackAutoRepeatMode::List),
+            RepeatMode::List
+        );
+        assert_eq!(RepeatMode::Track.as_str(), "track");
+        assert_eq!(RepeatMode::List.as_str(), "list");
+        assert_eq!(RepeatMode::None.as_str(), "none");
     }
 }

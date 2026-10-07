@@ -69,10 +69,15 @@ export function configure(opts: { host?: string; port?: number; enabled?: boolea
   if (opts.enabled !== undefined) enabled = opts.enabled;
   if (opts.categories && Array.isArray(opts.categories)) allowedCategories = new Set(opts.categories);
 
-  // Sincronizar también con el núcleo nativo en Rust (vd-node) si está disponible
+  // Sincronizar también con el núcleo nativo en Rust (vd-node) si está disponible.
+  // A Rust se le pasa LHM **desactivado**: su petición WinHTTP es síncrona (4 s
+  // de límite) y congelaba el proceso principal cada vez que LHM estaba caído,
+  // para luego volver a pedir lo mismo aquí en JS de forma asíncrona. LHM queda
+  // solo en esta capa; al núcleo solo van las categorías (filtran también los
+  // sensores nativos) y los sensores nativos siguen saliendo igual.
   intentarNativo('configureSensors', (n) => {
     return n.configureSensors(JSON.stringify({
-      enabled,
+      enabled: false,
       host,
       port,
       categories: Array.from(allowedCategories),

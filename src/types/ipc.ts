@@ -138,6 +138,8 @@ export interface ElectronAPI {
     brightness: (level: number) => Promise<boolean>;
     hotkey: (combo: string) => Promise<boolean>;
     clipboard: (text: string) => Promise<boolean>;
+    /** Lee un texto en voz alta (SAPI nativo, o System.Speech sin núcleo). */
+    speak: (text: string) => Promise<boolean>;
     typeText: (text: string) => Promise<boolean>;
     killProcess: (name: string) => Promise<boolean>;
     isProcessRunning: (name: string) => Promise<boolean>;

@@ -4,23 +4,64 @@
 //! Windows desde XP y usa las voces que el usuario tenga configuradas en el
 //! sistema, incluidas las que haya añadido para su idioma.
 //!
-//! # Por qué habla en otro hilo
+//! # Por qué habla en un hilo propio, con una sola voz
 //!
 //! `Speak` puede bloquear hasta que termina de leer, y una frase larga son
-//! varios segundos. En la aplicación eso congelaría la interfaz, así que la
-//! llamada se hace con la marca de asíncrono y se devuelve el control enseguida.
+//! varios segundos: se llama con la marca de asíncrono. Pero la lectura
+//! asíncrona **vive en el objeto voz**: si el `ISpVoice` se suelta al volver,
+//! la frase se corta. Y `SPF_PURGEBEFORESPEAK` solo purga la cola de **esa**
+//! voz: con una voz nueva por llamada, pulsar dos botones encadenaba frases.
+//! Así que hay un hilo `vd-voz` (MTA, sin bombeo de mensajes que atender) que
+//! crea una voz al empezar, la conserva y recibe los textos por un canal.
+
+use std::sync::mpsc::{channel, Sender};
+use std::sync::{Mutex, OnceLock};
 
 use windows::core::HSTRING;
 use windows::Win32::Media::Speech::{ISpVoice, SpVoice, SPF_ASYNC, SPF_PURGEBEFORESPEAK};
-use windows::Win32::System::Com::{CoCreateInstance, CLSCTX_ALL};
+use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
 
 #[derive(Debug, thiserror::Error)]
 pub enum VozError {
     #[error("no se pudo usar la sintesis de voz de Windows: {0}")]
     Com(#[from] windows::core::Error),
 
+    #[error("no se pudo usar la sintesis de voz de Windows: {0}")]
+    Hilo(String),
+
     #[error("no hay nada que leer")]
     Vacio,
+}
+
+/// Un encargo al hilo de voz: el texto y por dónde contestar.
+type Encargo = (String, Sender<Result<(), String>>);
+
+static HILO_VOZ: OnceLock<Mutex<Sender<Encargo>>> = OnceLock::new();
+
+fn hilo_voz() -> &'static Mutex<Sender<Encargo>> {
+    HILO_VOZ.get_or_init(|| {
+        let (tx, rx) = channel::<Encargo>();
+        let _ = std::thread::Builder::new().name("vd-voz".into()).spawn(move || {
+            // SAFETY: inicialización COM de este hilo; la voz se crea y se usa
+            // solo aquí y vive lo que vive el hilo (el proceso).
+            let voz: Result<ISpVoice, String> = unsafe {
+                let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+                CoCreateInstance(&SpVoice, None, CLSCTX_ALL).map_err(|e| e.to_string())
+            };
+            for (texto, responder) in rx {
+                let r = match &voz {
+                    Ok(v) => unsafe {
+                        v.Speak(&HSTRING::from(texto.as_str()), (SPF_ASYNC.0 | SPF_PURGEBEFORESPEAK.0) as u32, None)
+                            .map(|_| ())
+                            .map_err(|e| e.to_string())
+                    },
+                    Err(e) => Err(e.clone()),
+                };
+                let _ = responder.send(r);
+            }
+        });
+        Mutex::new(tx)
+    })
 }
 
 /// Lee un texto en voz alta.
@@ -33,19 +74,17 @@ pub fn hablar(texto: &str) -> Result<(), VozError> {
     if texto.is_empty() {
         return Err(VozError::Vacio);
     }
-
-    // SAFETY: cadena COM estandar. La voz se crea, se le pasa el texto y se
-    // suelta; SAPI mantiene viva su propia sesion hasta terminar de leer.
-    unsafe {
-        crate::audio::ensure_com();
-        let voz: ISpVoice = CoCreateInstance(&SpVoice, None, CLSCTX_ALL)?;
-        voz.Speak(
-            &HSTRING::from(texto),
-            (SPF_ASYNC.0 | SPF_PURGEBEFORESPEAK.0) as u32,
-            None,
-        )?;
-    }
-    Ok(())
+    let (tx, rx) = channel();
+    hilo_voz()
+        .lock()
+        .map_err(|e| VozError::Hilo(e.to_string()))?
+        .send((texto.to_string(), tx))
+        .map_err(|e| VozError::Hilo(e.to_string()))?;
+    // `Speak` asíncrono contesta en milisegundos; el plazo es solo la red por
+    // si el hilo de voz se hubiera caído.
+    rx.recv_timeout(std::time::Duration::from_secs(5))
+        .map_err(|e| VozError::Hilo(e.to_string()))?
+        .map_err(VozError::Hilo)
 }
 
 #[cfg(test)]

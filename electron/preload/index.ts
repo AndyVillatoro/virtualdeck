@@ -160,6 +160,8 @@ const api = {
     getVolume: (): Promise<number | null> => ipcRenderer.invoke('launch:getVolume'),
     hotkey: (combo: string): Promise<boolean> => ipcRenderer.invoke('launch:hotkey', combo),
     clipboard: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:clipboard', text),
+    /** Lee un texto en voz alta (SAPI nativo, o System.Speech sin núcleo). */
+    speak: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:speak', text),
     typeText: (text: string): Promise<boolean> => ipcRenderer.invoke('launch:typeText', text),
     killProcess: (name: string): Promise<boolean> => ipcRenderer.invoke('launch:killProcess', name),
     isProcessRunning: (name: string): Promise<boolean> => ipcRenderer.invoke('launch:isProcessRunning', name),

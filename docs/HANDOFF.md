@@ -647,6 +647,19 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **Verificación:** `npm run check` 0 errores, 33 warnings; `npm run build` OK; sin `VD_PLUGIN_PROTO` no aparece ninguna línea `[plugins]`; tras cerrar no queda ningún proceso de plugin.
 * **Pendiente:** el MVP (fase 1, semanas; decisión del dueño) y revisar si el proceso principal tarda en salir con `app.quit()` (lo vio opencode, sin verificar).
 
+## Turno 2026-10-07 — T-REV-03 núcleo Rust (fases 1–5 del encargo, DONE sin commit)
+
+* **Modelo:** Muse Spark (opencode), rama `task/p1-revision-ui`. Sin commits ni push (lo pide el encargo).
+* **Punto 1 (controles SMTC):** `vd-core/src/media/mod.rs` — `NowPlaying` gana `controls` (play/pause/next/prev/shuffle/repeat de `GetPlaybackInfo().Controls`), `is_shuffle_active` y `auto_repeat_mode` (`RepeatMode::None/Track/List`); `vd-node` los expone (`ControlesSesion` + opcionales); `media.ts` ya no lanza `CAPS_SCRIPT` si el nativo los trae (queda de respaldo para `.node` viejo/sin núcleo) y su `NowPlaying` gana los tres campos opcionales.
+* **Punto 2 (límite + carátula):** `now_playing_smtc` va por `en_hilo_mta_con_limite` (1500 ms); carátula en caché por pista (app+título+artista) en un estático con `Mutex`.
+* **Punto 3 (TTS):** `speak_text` como `AsyncTask` (Promise), canal nuevo `launch:speak` (`launcher.ts`+`launcherIpc.ts`, preload, `src/types/ipc.ts`), `entrada.ts` usa `api.launch.speak` con el script System.Speech de respaldo sin núcleo.
+* **Punto 4 (async + límite):** `run_script`/`play_macro` como `AsyncTask` (Promise); `run_script_con_limite` (30 s por defecto, mata al hijo por PID al vencer, variante nueva `LauncherError::Timeout`); llamadores TS (`launcher.ts`, `macro.ts`, `native.ts`) con `await` y caída al respaldo si la Promise se rechaza.
+* **Punto 5 (LHM):** `sensors.ts` pasa `enabled:false` a Rust; LHM queda solo en la capa JS asíncrona (medido: 42 sensores `/native/` sin LHM).
+* **Verificación:** `cargo test -p vd-core` 176 verde (4 tests nuevos); `npm run build:native` ok (`.node` 2287 KB, sin warnings propios); `npm run check` 0 errores (32 warnings preexistentes en archivos ajenos); `npm run build` ok; `check-ipc` 135 canales.
+* **Medido en app real** (`probar-app.mjs`, copia `opencode`, con Edge sonando): controles nativos `{play:false,pause:true,next/prev/shuffle/repeat:false}`; TTS frase larga 0.16–0.23 s; script de 10 s con `nowPlaying` respondiendo en 0.00 s a la vez; timeout de 2 s mata al hijo (sin `powershell.exe` colgados); con `VD_SIN_NUCLEO=1` el respaldo PS anda (pista+controles, script, speak).
+* **No tocado:** `media.diagnose` (sigue en PowerShell a propósito), `typeText`/`controlMedia`/sensores Rust (síncronos, fuera del encargo), `src/types/hardware.ts` (sin cambios: los campos nuevos viajan como opcionales y la UI no los lee aún).
+* **Aviso:** `scripts/generar-iconos-dot.mjs` aparece modificado (+182) y no es de este turno (mtime 20:30, reclama T-REV-01); se dejó intacto.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

@@ -131,9 +131,13 @@ export async function playMacro(
     n.playMacro(JSON.stringify(pasos), veces),
   );
   if (nativo !== undefined) {
-    return nativo
-      ? { ok: true }
-      : { ok: false, error: tm('macro.playFailed') };
+    try {
+      return (await nativo)
+        ? { ok: true }
+        : { ok: false, error: tm('macro.playFailed') };
+    } catch (e) {
+      console.error('[macro] nativo falló:', (e as Error).message);
+    }
   }
 
   const script = buildPlaybackScript(pasos, veces);
