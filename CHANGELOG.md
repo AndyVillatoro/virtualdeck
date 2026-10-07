@@ -6,6 +6,42 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+> Pendiente: lo de los ítems 56–89 del roadmap (docks, mando móvil, paridad, plugins fase 0…)
+> salió después de la 0.13.0 y todavía no está resumido aquí.
+
+### Added
+
+- **Tipos de acción por familias**: la sección ACCIÓN del editor tiene buscador (sin acentos ni
+  mayúsculas) y fichas por familia (apps, audio, música, teclado, lógica, sistema, RGB,
+  integraciones); también el selector de acciones extra.
+- **Catálogo de iconos único**: GLIFO y MARCA se funden en CATÁLOGO, con barra lateral de grupos
+  (recientes, glifos 8×8, acciones por categoría, marcas destacadas, marcas A-Z), un buscador para
+  todo y búsqueda en español (categorías traducidas y alias para ~120 etiquetas).
+- **Días de la semana** en el disparo por hora (`timerTriggerDias`).
+- **Texto a voz nativo** (SAPI en el núcleo, sin PowerShell).
+
+### Changed
+
+- **El tema oscuro es la paleta OLED** de la estética DOT/480 (`#070809` / `#111315` / `#26292e`);
+  el tema DOT/480 se funde en él y quien lo tenía conserva su acento rojo (migración v7→v8).
+- Primitivas comunes (`Chip`, `Segmentado`, `BotonIcono`, `Modal`) y tokens nuevos (`onAccent`,
+  `backdrop`, escala tipográfica): fichas, botones de icono y velos de modal iguales en toda la app.
+- **Ventanas pequeñas**: pestañas con desplazamiento, barra de título en solo iconos bajo 900 px,
+  paneles laterales que se ocultan según el ancho, gestor RGB con perfiles debajo del detalle.
+- Objetivos táctiles de 32 px o más en kiosko; el cierre de la barra flotante se puede pulsar con el dedo.
+- Índice del catálogo de iconos 39 % más ligero (716 → 438 KB).
+
+### Fixed
+
+- La sección ACCIÓN del editor se salía de la ventana (rejilla `repeat(4, 1fr)` con textos sin recortar).
+- La tienda no se podía desplazar; una carpeta grande se salía de la pantalla.
+- Teclas 2×2 negras en modo claro; colores fijos y blanco puro en varios botones; iconos que eran
+  caracteres unicode; ~25 botones de solo icono sin nombre.
+- Una carpeta o un cambio de página pulsados donde no se pueden hacer (barra flotante, dock, móvil)
+  daban OK sin hacer nada: ahora avisan.
+- El núcleo ya no congela la aplicación: scripts y macros son asíncronos y con límite de 30 s, la
+  música no lanza PowerShell en cada canción, y los sensores no esperan 4 s a LHM caído.
+
 ## [0.13.0] — 2026-09-15
 
 ### Added
