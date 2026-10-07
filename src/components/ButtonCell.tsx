@@ -59,6 +59,16 @@ interface ButtonCellProps {
   onAvisoFijo?: () => void;
 }
 
+/** La celda se arrastra salvo vacía, deslizador o con sub-botones. */
+function puedeArrastrarCelda(vacia: boolean, esDeslizador: boolean, conSubBotones: boolean): boolean {
+  return !vacia && !esDeslizador && !conSubBotones;
+}
+
+/** Hay pulsación larga si la celda hace algo y trae manejador para mantener. */
+function quierePulsacionLarga(vacia: boolean, conSubBotones: boolean, alMantener: unknown): boolean {
+  return !vacia && !conSubBotones && Boolean(alMantener);
+}
+
 function useRotaryHandler(
   button: ButtonConfig,
   onAdjustWheelRef: React.MutableRefObject<((signo: 1 | -1) => void) | undefined>,
@@ -126,7 +136,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   const hasSubButtons = Boolean(button.subButtons && button.subButtons.length === 4);
   const isSlider = button.widget === 'slider';
   const isAdjust = button.action.type === 'adjust';
-  const hasLongPress = !isEmpty && Boolean(onLongPress) && !hasSubButtons;
+  const hasLongPress = quierePulsacionLarga(isEmpty, hasSubButtons, onLongPress);
 
   const { rotaryStep, lastRotaryDir, lastRotaryTime, handleWheel, handleAdjustClick } =
     useRotaryHandler(button, onAdjustWheelRef);
@@ -161,7 +171,7 @@ function ButtonCellInner(props: ButtonCellProps) {
     };
   }, [contextMenu]);
 
-  const canDrag = !isEmpty && !isSlider && !hasSubButtons;
+  const canDrag = puedeArrastrarCelda(isEmpty, isSlider, hasSubButtons);
 
   usePulsacionTactil({
     ref: cellRef,

@@ -20,6 +20,35 @@ export interface Subdivision2x2Props {
 const MS_DESTELLO = 420;
 const MS_LARGA = 500;
 
+/** Lo que necesita cada decisión de color de un cuadrante. */
+interface EstadoCuadrante {
+  isToggled: boolean;
+  isHovered: boolean;
+  isFlashing: boolean;
+  bgPropio?: string;
+}
+
+/** Fondo del cuadrante: el destello manda, luego el toggle, luego el hover. */
+function fondoCuadrante(e: EstadoCuadrante, accent: string, VD: { elevatedHover: string; surface: string }): string {
+  if (e.isFlashing) return `${accent}33`;
+  if (e.isToggled) return e.bgPropio ? e.bgPropio : `${accent}22`;
+  if (e.isHovered) return e.bgPropio ? `${e.bgPropio}dd` : VD.elevatedHover;
+  return e.bgPropio || VD.surface;
+}
+
+/** Borde del cuadrante: acento si toggle, fuerte si hover. */
+function bordeCuadrante(e: Pick<EstadoCuadrante, 'isToggled' | 'isHovered'>, accent: string, VD: { border: string; borderStrong: string }): string {
+  if (e.isToggled) return `1px solid ${accent}`;
+  if (e.isHovered) return `1px solid ${VD.borderStrong}`;
+  return `1px solid ${VD.border}`;
+}
+
+/** Color de glifo y etiquetas del cuadrante. */
+function colorCuadrante(e: Pick<EstadoCuadrante, 'isToggled' | 'isHovered'>, fgPropio: string | undefined, accent: string, VD: { text: string; textDim: string }): string {
+  if (e.isToggled) return accent;
+  return fgPropio || (e.isHovered ? VD.text : VD.textDim);
+}
+
 export const Subdivision2x2 = memo(function Subdivision2x2({
   subButtons,
   parentButton,
@@ -199,29 +228,20 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
       onContextMenu={onContextMenu}
     >
       {cuadrantes.map((sub, idx) => {
-        const isToggled = !!subToggled[idx];
-        const isHovered = hoveredIdx === idx;
-        const isFlashing = flashIdx === idx;
+        const estado: EstadoCuadrante = {
+          isToggled: !!subToggled[idx],
+          isHovered: hoveredIdx === idx,
+          isFlashing: flashIdx === idx,
+          bgPropio: sub.bgColor,
+        };
 
         // Color de fondo del cuadrante
-        const quadBg = isFlashing
-          ? `${accent}33`
-          : isToggled
-            ? (sub.bgColor ? sub.bgColor : `${accent}22`)
-            : isHovered
-              ? (sub.bgColor ? `${sub.bgColor}dd` : VD.elevatedHover)
-              : (sub.bgColor || VD.surface);
+        const quadBg = fondoCuadrante(estado, accent, VD);
 
-        const quadBorder = isToggled
-          ? `1px solid ${accent}`
-          : isHovered
-            ? `1px solid ${VD.borderStrong}`
-            : `1px solid ${VD.border}`;
+        const quadBorder = bordeCuadrante(estado, accent, VD);
 
         const glyphName = (sub.dotGlyph || sub.icon || '').toUpperCase();
-        const displayColor = isToggled
-          ? accent
-          : (sub.fgColor || (isHovered ? VD.text : VD.textDim));
+        const displayColor = colorCuadrante(estado, sub.fgColor, accent, VD);
 
         return (
           <div
@@ -260,10 +280,10 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
             }}
           >
             {/* 5.3 — Barrido de matriz de puntos compacto al pulsar */}
-            {isFlashing && <DotRadialSweep accent={accent} compact />}
+            {estado.isFlashing && <DotRadialSweep accent={accent} compact />}
 
             {/* Indicador LED de Toggle ON (micro-dot de acento en esquina) */}
-            {isToggled && (
+            {estado.isToggled && (
               <span
                 style={{
                   position: 'absolute',
@@ -284,7 +304,7 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
                 glyph={glyphName}
                 size={14}
                 color={displayColor}
-                showRecessed={!isToggled}
+                showRecessed={!estado.isToggled}
               />
             ) : (
               <span style={{ width: 4, height: 4, borderRadius: '50%', background: displayColor, opacity: 0.3 }} />
@@ -316,7 +336,7 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
                   fontFamily: VD.mono,
                   fontSize: 6.5,
                   letterSpacing: '0.4px',
-                  color: isToggled ? `${accent}cc` : VD.textDim,
+                  color: estado.isToggled ? `${accent}cc` : VD.textDim,
                   textTransform: 'uppercase',
                   maxWidth: '100%',
                   overflow: 'hidden',

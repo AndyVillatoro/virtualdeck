@@ -143,42 +143,72 @@ export async function runActionSequence(
   let ultimoDetalle: DetalleAccion | undefined;
 
   for (const [i, a] of actions.entries()) {
-    if (a.onlyIfPrevOk && !lastOk) continue;
-    if (a.onlyIfPrevFailed && lastOk) continue;
+    if (debeSaltarPaso(a, lastOk)) continue;
 
-    const reps = Math.max(1, a.repeat ?? 1);
-    let stepOk = true;
-    for (let r = 0; r < reps; r++) {
-      const delay = a.delayMs ?? (i > 0 ? 150 : 0);
-      if (delay > 0) await new Promise((res) => setTimeout(res, delay));
-
-      const especial = EN_SECUENCIA[a.type];
-      const res = especial
-        ? await especial(a, entorno)
-        : await executeAction(a, api, merged, rgbProfiles, t);
-
-      stepOk = res.ok;
-      if (res.stateUpdate) Object.assign(merged, res.stateUpdate);
-      if (res.detalle) ultimoDetalle = res.detalle;
-      if (!res.ok) {
-        if (!firstError) firstError = res.error;
-        break;
-      }
-    }
-
-    lastOk = stepOk;
+    const paso = await ejecutarPaso(a, i, entorno);
+    lastOk = paso.stepOk;
+    if (paso.detalle !== undefined) ultimoDetalle = paso.detalle;
     // Si este paso era de recuperación (onlyIfPrevFailed) y terminó bien, el fallo previo queda subsanado
-    if (a.onlyIfPrevFailed && stepOk) {
+    if (a.onlyIfPrevFailed && paso.stepOk) {
       firstError = undefined;
+    } else if (!paso.stepOk && !firstError) {
+      firstError = paso.error;
     }
 
-    if (!stepOk) {
-      const hasFallback = actions.slice(i + 1).some((next) => next.onlyIfPrevFailed);
-      const shouldContinue = a.continueOnError || hasFallback;
-      if (!shouldContinue) {
-        break;
-      }
+    if (!debeSeguir(a, i, actions, paso.stepOk)) {
+      break;
     }
   }
   return { ok: !firstError, error: firstError, stateUpdate: merged, detalle: ultimoDetalle };
+}
+
+/** Un paso con `onlyIf*` que no le toca correr se salta sin tocar `lastOk`. */
+function debeSaltarPaso(a: ButtonAction, lastOk: boolean): boolean {
+  if (a.onlyIfPrevOk && !lastOk) return true;
+  if (a.onlyIfPrevFailed && lastOk) return true;
+  return false;
+}
+
+/** Lo que deja un paso al terminar: si fue bien y, si no, su error y su aviso. */
+interface ResultadoPaso {
+  stepOk: boolean;
+  error?: string;
+  detalle?: DetalleAccion;
+}
+
+/**
+ * Corre un paso con sus repeticiones y su espera, acumulando en `entorno`
+ * (variables y último aviso) igual que hacía el cuerpo del bucle.
+ */
+async function ejecutarPaso(a: ButtonAction, indice: number, entorno: EntornoSecuencia): Promise<ResultadoPaso> {
+  const reps = Math.max(1, a.repeat ?? 1);
+  let stepOk = true;
+  let detalle: DetalleAccion | undefined;
+  for (let r = 0; r < reps; r++) {
+    const delay = a.delayMs ?? (indice > 0 ? 150 : 0);
+    if (delay > 0) await new Promise((res) => setTimeout(res, delay));
+
+    const especial = EN_SECUENCIA[a.type];
+    const res = especial
+      ? await especial(a, entorno)
+      : await executeAction(a, entorno.api, entorno.merged, entorno.rgbProfiles, entorno.t);
+
+    stepOk = res.ok;
+    if (res.stateUpdate) Object.assign(entorno.merged, res.stateUpdate);
+    if (res.detalle) detalle = res.detalle;
+    if (!res.ok) {
+      return { stepOk, error: res.error, detalle };
+    }
+  }
+  return { stepOk, detalle };
+}
+
+/**
+ * Tras un fallo: se sigue si el paso lo pide o si queda algún paso de
+ * recuperación por delante; si no, la secuencia se corta aquí.
+ */
+function debeSeguir(a: ButtonAction, indice: number, actions: ButtonAction[], stepOk: boolean): boolean {
+  if (stepOk) return true;
+  const hasFallback = actions.slice(indice + 1).some((next) => next.onlyIfPrevFailed);
+  return a.continueOnError || hasFallback;
 }

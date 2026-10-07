@@ -660,6 +660,15 @@ Registro de traspaso exigido por `AGENTS.md` (Canal 2). Cada turno actualiza est
 * **No tocado:** `media.diagnose` (sigue en PowerShell a propósito), `typeText`/`controlMedia`/sensores Rust (síncronos, fuera del encargo), `src/types/hardware.ts` (sin cambios: los campos nuevos viajan como opcionales y la UI no los lee aún).
 * **Aviso:** `scripts/generar-iconos-dot.mjs` aparece modificado (+182) y no es de este turno (mtime 20:30, reclama T-REV-01); se dejó intacto.
 
+## Turno 2026-10-07 — T-REV-05 mojibake + complejidad (DONE sin commit)
+
+* **Modelo:** Muse Spark (opencode), rama `task/p1-revision-ui`. Sin commits ni push (lo pide el encargo).
+* **Mojibake:** `macro.ts` traía doble codificación cp1252→UTF-8 en comentarios (ó/í/—/→/·/«» salían como `Ã³`/`â€"`/etc.); reparado por script (46 secuencias, 0 restos en `electron/main/*.ts`). `ps-helpers.ts:58` mostraba el mojibake a propósito como ejemplo de salida sin BOM: se sustituyó por descripción equivalente para que el grep del encargo quede vacío.
+* **Complejidad:** `SensorsSection` 29→sin aviso (3 subcomponentes a nivel de módulo en el mismo archivo: `CampoRutaLHM`, `CamposHostPuerto`, `FilaBotonesLHM`, `LineaEstadoLHM` — a nivel de módulo para no perder el foco de los inputs); `runActionSequence` 22→sin aviso (`debeSaltarPaso`, `ejecutarPaso`, `debeSeguir`; semántica idéntica incluido el borde de error `''`); `Subdivision2x2` 21→sin aviso (`fondoCuadrante`, `bordeCuadrante`, `colorCuadrante` puros); `ButtonCellInner` 19→sin aviso (`puedeArrastrarCelda`, `quierePulsacionLarga`; props/comparador/manejadores intactos). Equivalencia comprobada con tablas de verdad (TODO IGUAL).
+* **Verificación:** `tsc` 0 errores en los 6 archivos tocados (los errores que salen son de `comunes.tsx`/`SelectorIconosDot.tsx`/`tipos.ts`, del catálogo de iconos que otro agente edita en vivo); `eslint` en lo tocado: solo 2 warnings preexistentes en código no tocado (`require` en `macro.ts:31`, `injectUtf8Prefix` 20); `check-acciones.mjs` ok (43 tipos); `npm run build` ok. Todos los tocados ≤600 líneas.
+* **AVISO stash:** a mitad del turno se hizo `git stash push --include-untracked` para comprobar un error de `tsc` y el `pop` abortó (otro agente editaba `comunes.tsx` a la vez). Los 4 archivos propios se restauraron con `git restore --source=stash@{0} --worktree` y los demás agentes regrabaron lo suyo (verificado: worktree completo, nadie perdió nada). Queda `stash@{0}` (`wip-t-rev-05`) como copia redundante: **NO hacer `pop`** (abortaría igual); si hiciera falta algo, `git checkout stash@{0} -- <archivo>` tras difuminar. No volver a usar `stash` con agentes concurrentes.
+* **No tocado:** `injectUtf8Prefix` (complejidad 20, fuera del encargo: solo comentarios en esos dos archivos).
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)

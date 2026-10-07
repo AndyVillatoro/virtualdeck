@@ -1,11 +1,11 @@
 /**
- * Motor de macros â€” grabaciÃ³n con uiohook-napi (hook global) y reproducciÃ³n
- * con el nÃºcleo nativo.
+ * Motor de macros — grabación con uiohook-napi (hook global) y reproducción
+ * con el núcleo nativo.
  *
- * La grabaciÃ³n ya era nativa desde el principio: uiohook-napi usa un binario
- * N-API estable, sin recompilar por versiÃ³n de Electron. Lo que sÃ­ pasaba por
- * PowerShell era la **reproducciÃ³n**, con un script generado al vuelo que
- * mezclaba SendKeys y `mouse_event` de user32.dll â€” con todo el escapado de
+ * La grabación ya era nativa desde el principio: uiohook-napi usa un binario
+ * N-API estable, sin recompilar por versión de Electron. Lo que sí pasaba por
+ * PowerShell era la **reproducción**, con un script generado al vuelo que
+ * mezclaba SendKeys y `mouse_event` de user32.dll — con todo el escapado de
  * metacaracteres que eso arrastraba. Ahora lo hace `vd-core` con SendInput, y
  * el script se conserva solo como respaldo.
  */
@@ -42,13 +42,13 @@ let _lastTs = 0;
 let _esNuestro: ((x: number, y: number) => boolean) | null = null;
 
 /**
- * Empieza a capturar teclado y ratÃ³n, globalmente.
+ * Empieza a capturar teclado y ratón, globalmente.
  *
  * `esNuestro` dice si un punto de la pantalla cae sobre la propia ventana de
- * VirtualDeck. Los clics ahÃ­ **no son parte de la macro**: son los de quien
- * estÃ¡ manejando el grabador. Sin esto, toda macro grabada terminaba con un
- * clic en las coordenadas del botÃ³n de detener â€” y al reproducirla, ese clic
- * se repetÃ­a sobre lo que hubiera en ese punto.
+ * VirtualDeck. Los clics ahí **no son parte de la macro**: son los de quien
+ * está manejando el grabador. Sin esto, toda macro grabada terminaba con un
+ * clic en las coordenadas del botón de detener — y al reproducirla, ese clic
+ * se repetía sobre lo que hubiera en ese punto.
  */
 export function startRecording(esNuestro?: (x: number, y: number) => boolean): void {
   const uio = getUio();
@@ -68,8 +68,8 @@ export function startRecording(esNuestro?: (x: number, y: number) => boolean): v
     const now = Date.now();
     const delay = Math.max(0, now - _lastTs - 30);
     _lastTs = now;
-    // `Ctrl+C` y no `^c`: es el formato que documenta el nÃºcleo nativo como el
-    // de disco, el que acepta tambiÃ©n escrito a mano en el editor, y el Ãºnico
+    // `Ctrl+C` y no `^c`: es el formato que documenta el núcleo nativo como el
+    // de disco, el que acepta también escrito a mano en el editor, y el único
     // que se lee en la lista de pasos.
     const mods = [
       e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Win',
@@ -119,14 +119,14 @@ export async function playMacro(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!Array.isArray(steps) || steps.length === 0) return { ok: false, error: tm('macro.noSteps') };
 
-  // Los numÃ©ricos se acotan **antes** de los dos caminos. Ver `pasoSeguro`.
+  // Los numéricos se acotan **antes** de los dos caminos. Ver `pasoSeguro`.
   const pasos = steps.map(pasoSeguro);
   const veces = entero(repeat, 1, MAX_REPETICIONES, 1);
 
-  // Camino nativo: SendInput directo, sin generar ni ejecutar ningÃºn script.
+  // Camino nativo: SendInput directo, sin generar ni ejecutar ningún script.
   // Los pasos viajan como JSON y los lee el mismo modelo que lee la
-  // configuraciÃ³n del disco, asÃ­ que no hay forma de que las dos formas del
-  // paso se desvÃ­en entre sÃ­.
+  // configuración del disco, así que no hay forma de que las dos formas del
+  // paso se desvíen entre sí.
   const nativo = intentarNativo('playMacro', (n) =>
     n.playMacro(JSON.stringify(pasos), veces),
   );
@@ -148,24 +148,24 @@ export async function playMacro(
 
 
 // ---------------------------------------------------------------------------
-// CÃ³digo de uiohook â†’ nombre de tecla
+// Código de uiohook → nombre de tecla
 // ---------------------------------------------------------------------------
 
 /**
  * El mapa se **deriva de `UiohookKey`**, la tabla que publica la propia
- * librerÃ­a. Antes estaba escrito a mano y suponÃ­a los cÃ³digos virtuales de
+ * librería. Antes estaba escrito a mano y suponía los códigos virtuales de
  * Windows (`A` = 0x41), cuando uiohook entrega scancodes (`A` = 0x1E). Medido
  * grabando `abc1` y `Ctrl+C`:
  *
- *   a (0x1E) descartado Â· b (0x30) guardado como Â«0Â» Â· c (0x2E) descartado
- *   1 (0x02) descartado Â· Ctrl (0x1D) descartado Â· c descartado
+ *   a (0x1E) descartado · b (0x30) guardado como «0» · c (0x2E) descartado
+ *   1 (0x02) descartado · Ctrl (0x1D) descartado · c descartado
  *
  * O sea: cinco de seis teclas perdidas y la sexta cambiada por otra. El
  * grabador de macros no ha producido nunca una macro correcta. Escrito a mano
- * volverÃ­a a pasar en cuanto la librerÃ­a cambie un nÃºmero; derivado, no puede.
+ * volvería a pasar en cuanto la librería cambie un número; derivado, no puede.
  */
 
-/** Nombres de `UiohookKey` que no siguen ningÃºn patrÃ³n. */
+/** Nombres de `UiohookKey` que no siguen ningún patrón. */
 const NOMBRADAS: Record<string, string> = {
   Backspace: '{BACKSPACE}', Tab: '{TAB}', Enter: '{ENTER}', NumpadEnter: '{ENTER}',
   Escape: '{ESC}', Space: ' ', Insert: '{INSERT}', Delete: '{DELETE}',
@@ -183,7 +183,7 @@ const NOMBRADAS: Record<string, string> = {
 };
 
 /**
- * Lo que se deja fuera a propÃ³sito, no por olvido.
+ * Lo que se deja fuera a propósito, no por olvido.
  *
  * Los modificadores porque viajan pegados a la tecla siguiente; los tres
  * bloqueos porque el reproductor no sabe pulsarlos y un paso que no hace nada
@@ -213,11 +213,11 @@ function mapaTeclas(): Record<number, string> {
     else if (NOMBRADAS[nombre]) token = NOMBRADAS[nombre];
 
     if (token === null) { sinCubrir.push(nombre); continue; }
-    // El primero gana: `Enter` antes que `NumpadEnter` si compartieran cÃ³digo.
+    // El primero gana: `Enter` antes que `NumpadEnter` si compartieran código.
     if (m[codigo] === undefined) m[codigo] = token;
   }
 
-  // Una actualizaciÃ³n de la librerÃ­a que aÃ±ada teclas se ve aquÃ­, y no en una
+  // Una actualización de la librería que añada teclas se ve aquí, y no en una
   // macro grabada a la que le faltan pasos.
   if (sinCubrir.length > 0) console.error('[macro] teclas sin mapear:', sinCubrir.join(', '));
   _mapa = m;

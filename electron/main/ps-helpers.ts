@@ -55,7 +55,7 @@ export function runPS(script: string, opts: PSOptions = {}): Promise<PSResult> {
       // UTF-8 que se inyecta arriba:
       //
       //   esperado  Hola, ¿qué hora es? Añadí más música
-      //   sin BOM   Hola, Â¿quÃ© hora es? AÃ±adÃ­ mÃ¡s mÃºsica
+      //   sin BOM   (ilegible: mojibake — la interrogación y las tildes salen rotas)
       //   con BOM   Hola, ¿qué hora es? Añadí más música
       //
       // Eso afectaba a todo texto del usuario que se interpole en un script:

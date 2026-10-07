@@ -28,6 +28,147 @@ const CAT_GLYPH: Record<SensorCategory, string> = {
   other: 'DOTS',
 };
 
+/** Ruta del ejecutable de LHM + avisos (falta o detectada en ruta habitual). */
+function CampoRutaLHM({ accent, config, rutaDetectada, onChange }: {
+  accent: string;
+  config: SensorsSettings;
+  rutaDetectada: string | null;
+  onChange: (next: SensorsSettings) => void;
+}) {
+  const t = useT();
+  const VD = useTheme();
+  const inputStyleSettings = estiloEntradaAjustes(VD);
+  const sinRuta = !config.lhmPath?.trim();
+  return (
+    <div>
+      <SettingLabel>{t('set.lhmPath')}</SettingLabel>
+      <input
+        value={config.lhmPath ?? ''}
+        onChange={(e) => onChange({ ...config, lhmPath: e.target.value })}
+        placeholder="C:\\…\\LibreHardwareMonitor.exe"
+        style={{ ...inputStyleSettings, marginTop: 4 }}
+      />
+      {/* VirtualDeck ya no empaqueta LHM. Sin estas dos frases, quien no lo
+          tenga solo ve que los sensores «no funcionan»: el servidor web de
+          LHM viene apagado de fábrica y no hay forma de adivinarlo. */}
+      {sinRuta && !rutaDetectada && (
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
+          {t('sensors.lhmMissing')}{' '}
+          <a
+            href={LINKS.lhm}
+            onClick={(e) => { e.preventDefault(); window.electronAPI?.launch.url(LINKS.lhm); }}
+            style={{ color: accent, cursor: 'pointer' }}
+          >{t('sensors.lhmDownload')}</a>
+        </div>
+      )}
+      {rutaDetectada && sinRuta && (
+        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
+          {t('sensors.lhmFound', { ruta: rutaDetectada })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Host + puerto del servidor web de LHM. */
+function CamposHostPuerto({ config, onChange }: {
+  config: SensorsSettings;
+  onChange: (next: SensorsSettings) => void;
+}) {
+  const t = useT();
+  const VD = useTheme();
+  const inputStyleSettings = estiloEntradaAjustes(VD);
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ flex: 1 }}>
+        <SettingLabel>HOST</SettingLabel>
+        <input
+          value={config.host}
+          onChange={(e) => onChange({ ...config, host: e.target.value })}
+          placeholder={SENSORES_POR_DEFECTO.host}
+          style={{ ...inputStyleSettings, marginTop: 4 }}
+        />
+        {config.host?.trim() === '0.0.0.0' && (
+          <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.warning, marginTop: 3, lineHeight: 1.3 }}>
+            {t('sensors.hostHint0000')}
+          </div>
+        )}
+      </div>
+      <div style={{ width: 70 }}>
+        <SettingLabel>{t('ui.port')}</SettingLabel>
+        <input
+          type="number"
+          value={config.port}
+          onChange={(e) => onChange({ ...config, port: parseInt(e.target.value, 10) || SENSORES_POR_DEFECTO.port })}
+          style={{ ...inputStyleSettings, marginTop: 4 }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Botones de arrancar/detener/probar LHM + registro del ACL de la URL. */
+function FilaBotonesLHM({ accent, status, spawning, testing, registeringAcl, onStart, onStop, onProbe, onAcl }: {
+  accent: string;
+  status: SensorsStatus | null;
+  spawning: boolean;
+  testing: boolean;
+  registeringAcl: boolean;
+  onStart: () => void;
+  onStop: () => void;
+  onProbe: () => void;
+  onAcl: () => void;
+}) {
+  const t = useT();
+  const VD = useTheme();
+  const miniBtnSettings = (c: string) => estiloBotonMiniAjustes(VD, c);
+  const enMarcha = status?.bundledRunning === true;
+  const etiquetaArranque = spawning
+    ? 'sensors.lhmStarting'
+    : enMarcha ? 'sensors.lhmRunning' : 'sensors.lhmStart';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+      <button onClick={onStart} disabled={spawning || enMarcha} style={miniBtnSettings(accent)}>
+        {t(etiquetaArranque)}
+      </button>
+      {enMarcha && (
+        <button onClick={onStop} style={{ ...miniBtnSettings(accent), color: VD.danger, borderColor: VD.danger }}>
+          {t('sensors.lhmStop')}
+        </button>
+      )}
+      <button onClick={onProbe} disabled={testing} style={miniBtnSettings(accent)}>
+        {t(testing ? 'sensors.testing' : 'sensors.test')}
+      </button>
+      <button
+        onClick={onAcl}
+        disabled={registeringAcl}
+        title={t('set.urlAcl')}
+        style={miniBtnSettings(accent)}
+      >
+        {t(registeringAcl ? 'sensors.registering' : 'sensors.registerAcl')}
+      </button>
+    </div>
+  );
+}
+
+/** Línea de resultado de la última prueba (o estado de conexión si no hay). */
+function LineaEstadoLHM({ testResult, status }: {
+  testResult: string | null;
+  status: SensorsStatus | null;
+}) {
+  const t = useT();
+  const VD = useTheme();
+  const esOk = testResult?.startsWith('OK') === true;
+  const texto = testResult ?? (status?.connected
+    ? t('sensors.connectedCount', { n: status.count })
+    : t(status?.enabled ? 'sensors.enabledNoConn' : 'sensors.disabledDot'));
+  return (
+    <div style={{ fontFamily: VD.mono, fontSize: 9, minHeight: 14, color: esOk ? VD.success : testResult ? VD.danger : VD.textMuted }}>
+      {texto}
+    </div>
+  );
+}
+
 export function SensorsSection({
   accent, config, status, onChange,
 }: {
@@ -38,8 +179,6 @@ export function SensorsSection({
 }) {
   const t = useT();
   const VD = useTheme();
-  const inputStyleSettings = estiloEntradaAjustes(VD);
-  const miniBtnSettings = (c: string) => estiloBotonMiniAjustes(VD, c);
   const api = window.electronAPI;
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -56,8 +195,6 @@ export function SensorsSection({
 
   const enabledCats = new Set(config.categories ?? ['cpu', 'gpu', 'mainboard', 'memory', 'storage']);
   const setEnabled = () => onChange({ ...config, enabled: !config.enabled });
-  const setHost = (host: string) => onChange({ ...config, host });
-  const setPort = (port: number) => onChange({ ...config, port });
   const setSpawn = () => onChange({ ...config, spawnOnStart: !config.spawnOnStart });
   const toggleCategory = (cat: SensorCategory) => {
     const next = new Set(enabledCats);
@@ -122,59 +259,9 @@ export function SensorsSection({
         <ToggleRow label={t('set.lhmStart')} value={!!config.spawnOnStart} accent={accent} onClick={setSpawn} />
         <ToggleRow label={t('set.lhmAdmin')} value={!!config.spawnElevated} accent={accent} onClick={() => onChange({ ...config, spawnElevated: !config.spawnElevated })} />
 
-        <div>
-          <SettingLabel>{t('set.lhmPath')}</SettingLabel>
-          <input
-            value={config.lhmPath ?? ''}
-            onChange={(e) => onChange({ ...config, lhmPath: e.target.value })}
-            placeholder="C:\\…\\LibreHardwareMonitor.exe"
-            style={{ ...inputStyleSettings, marginTop: 4 }}
-          />
-          {/* VirtualDeck ya no empaqueta LHM. Sin estas dos frases, quien no lo
-              tenga solo ve que los sensores «no funcionan»: el servidor web de
-              LHM viene apagado de fábrica y no hay forma de adivinarlo. */}
-          {!config.lhmPath?.trim() && !rutaDetectada && (
-            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
-              {t('sensors.lhmMissing')}{' '}
-              <a
-                href={LINKS.lhm}
-                onClick={(e) => { e.preventDefault(); window.electronAPI?.launch.url(LINKS.lhm); }}
-                style={{ color: accent, cursor: 'pointer' }}
-              >{t('sensors.lhmDownload')}</a>
-            </div>
-          )}
-          {rutaDetectada && !config.lhmPath?.trim() && (
-            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5, marginTop: 5 }}>
-              {t('sensors.lhmFound', { ruta: rutaDetectada })}
-            </div>
-          )}
-        </div>
+        <CampoRutaLHM accent={accent} config={config} rutaDetectada={rutaDetectada} onChange={onChange} />
 
-        <div style={{ display: 'flex', gap: 6 }}>
-          <div style={{ flex: 1 }}>
-            <SettingLabel>HOST</SettingLabel>
-            <input
-              value={config.host}
-              onChange={(e) => setHost(e.target.value)}
-              placeholder={SENSORES_POR_DEFECTO.host}
-              style={{ ...inputStyleSettings, marginTop: 4 }}
-            />
-            {config.host?.trim() === '0.0.0.0' && (
-              <div style={{ fontFamily: VD.mono, fontSize: 7, color: VD.warning, marginTop: 3, lineHeight: 1.3 }}>
-                {t('sensors.hostHint0000')}
-              </div>
-            )}
-          </div>
-          <div style={{ width: 70 }}>
-            <SettingLabel>{t('ui.port')}</SettingLabel>
-            <input
-              type="number"
-              value={config.port}
-              onChange={(e) => setPort(parseInt(e.target.value, 10) || SENSORES_POR_DEFECTO.port)}
-              style={{ ...inputStyleSettings, marginTop: 4 }}
-            />
-          </div>
-        </div>
+        <CamposHostPuerto config={config} onChange={onChange} />
 
         <div>
           <SettingLabel>{t('set.categories')}</SettingLabel>
@@ -203,32 +290,18 @@ export function SensorsSection({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <button onClick={startLHM} disabled={spawning || status?.bundledRunning} style={miniBtnSettings(accent)}>
-            {t(spawning ? 'sensors.lhmStarting' : status?.bundledRunning ? 'sensors.lhmRunning' : 'sensors.lhmStart')}
-          </button>
-          {status?.bundledRunning && (
-            <button onClick={stopLHM} style={{ ...miniBtnSettings(accent), color: VD.danger, borderColor: VD.danger }}>
-              {t('sensors.lhmStop')}
-            </button>
-          )}
-          <button onClick={probe} disabled={testing} style={miniBtnSettings(accent)}>
-            {t(testing ? 'sensors.testing' : 'sensors.test')}
-          </button>
-          <button
-            onClick={registerAcl}
-            disabled={registeringAcl}
-            title={t('set.urlAcl')}
-            style={miniBtnSettings(accent)}
-          >
-            {t(registeringAcl ? 'sensors.registering' : 'sensors.registerAcl')}
-          </button>
-        </div>
-        <div style={{ fontFamily: VD.mono, fontSize: 9, minHeight: 14, color: testResult?.startsWith('OK') ? VD.success : testResult ? VD.danger : VD.textMuted }}>
-          {testResult ?? (status?.connected
-            ? t('sensors.connectedCount', { n: status.count })
-            : t(status?.enabled ? 'sensors.enabledNoConn' : 'sensors.disabledDot'))}
-        </div>
+        <FilaBotonesLHM
+          accent={accent}
+          status={status}
+          spawning={spawning}
+          testing={testing}
+          registeringAcl={registeringAcl}
+          onStart={startLHM}
+          onStop={stopLHM}
+          onProbe={probe}
+          onAcl={registerAcl}
+        />
+        <LineaEstadoLHM testResult={testResult} status={status} />
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.5 }}>
           {t('sensors.adminHint')}
         </div>
