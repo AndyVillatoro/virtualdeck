@@ -47,7 +47,7 @@ function calcularInsignias(
     ? `${dockInfo.controlMeta.control.toUpperCase()}${dockInfo.controlMeta.gesto ? ` · ${dockInfo.controlMeta.gesto.toUpperCase()}` : ''}`
     : undefined;
   const appearanceBadge = e.label || (e.icon ? e.icon : undefined);
-  const behaviorBadge = e.isToggle ? 'TOGGLE' : (e.fijo ? 'FIJO' : undefined);
+  const behaviorBadge = e.isToggle ? t('ed.badge.toggle') : (e.fijo ? t('ed.badge.fijo') : undefined);
   const advancedBadge = e.is2x2Mode ? '2×2' : (e.extraActions.length > 0 ? `+${e.extraActions.length}` : undefined);
   return { actionBadge, dockBadge, appearanceBadge, behaviorBadge, advancedBadge };
 }

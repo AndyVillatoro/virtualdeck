@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../../../utils/theme';
+import { textoSobre } from '../../../design';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { Field, Btn, estiloEntrada } from '../comunes';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
@@ -336,7 +337,7 @@ export function FormAdjust(p: PropsFormulario) {
               style={{
                 flex: 1, padding: '7px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
                 background: accent, border: 'none',
-                color: '#fff', fontFamily: VD.mono, fontSize: 9, fontWeight: 700, letterSpacing: 1,
+                color: textoSobre(accent), fontFamily: VD.mono, fontSize: 9, fontWeight: 700, letterSpacing: 1,
               }}
             >
               {tf('ACTIVAR SLIDER TÁCTIL (IR A ESTILO)')}

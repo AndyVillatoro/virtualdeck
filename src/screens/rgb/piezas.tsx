@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import type { VDTokens } from '../../design';
+import { textoSobre } from '../../design';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import { ColorPicker } from '../../components/ColorPicker';
 import type { RGBDeviceInfo, RGBSettings, RGBStatus } from '../../types';
 
@@ -326,14 +328,12 @@ export function CalibratorModal({
   };
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
+    <div style={estiloOverlay(VD)} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={modalStyle}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${VD.border}` }}>
           <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>{t('rgb.calibrator')}</div>
           <div style={{ flex: 1 }} />
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
-          </button>
+          <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onClose} />
         </div>
         <div style={{ padding: 14, maxHeight: '70vh', overflowY: 'auto' }}>
           <div style={{ fontFamily: VD.mono, fontSize: 10, color: VD.textDim, lineHeight: 1.6, marginBottom: 14 }}>
@@ -359,8 +359,9 @@ export function CalibratorModal({
                   {t('rgb.range', { min: zone.ledsMin, max: zone.ledsMax, cur: zone.ledCount })}{saved ? t('rgb.saved', { n: saved }) : ''}
                 </div>
                 {hint && (
-                  <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.warning, marginTop: 4 }}>
-                    {t('rgb.suggestion', { note: t(hint.note) })}
+                  <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.warning, marginTop: 4, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <DotGlyphIcon glyph="SPARKLE" size={8} color={VD.warning} />
+                    <span>{t('rgb.suggestion', { note: t(hint.note) })}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
@@ -393,7 +394,7 @@ export function CalibratorModal({
                   >{t('rgb.identify')}</button>
                   <button
                     onClick={() => onCommit(device.name, device.id, zone.id, zone.name, value)}
-                    style={{ ...btnPrimary, background: accent, color: '#000', borderColor: accent }}
+                    style={{ ...btnPrimary, background: accent, color: textoSobre(accent), borderColor: accent }}
                   >{t('rgb.save')}</button>
                 </div>
               </div>
@@ -428,10 +429,12 @@ function estiloSelector(VD: VDTokens): React.CSSProperties {
     outline: 'none', borderRadius: VD.radius.sm,
   };
 }
-const overlayStyle: React.CSSProperties = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
-};
+function estiloOverlay(VD: VDTokens): React.CSSProperties {
+  return {
+    position: 'fixed', inset: 0, background: VD.backdrop,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500,
+  };
+}
 function estiloModal(VD: VDTokens): React.CSSProperties {
   return {
     width: 'min(700px, 92vw)', maxHeight: '85vh',

@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { LienzoPuntos } from './LienzoPuntos';
 import { VistaPreviaPuntos } from './VistaPreviaPuntos';
+import { PadFlechas } from './PadFlechas';
 import { useEditorPuntos, type ManejadorPestanaPuntos } from './useEditorPuntos';
 import {
   ALTO_GLIFO,
@@ -82,21 +83,6 @@ export const PestanaGlifo = forwardRef<ManejadorPestanaPuntos, PestanaGlifoProps
   }
 
   const puntos = contarPuntos(ed.matriz);
-  const pad: React.CSSProperties = {
-    width: 20,
-    height: 20,
-    background: VD.elevated,
-    border: `1px solid ${VD.border}`,
-    fontFamily: VD.mono,
-    fontSize: 8,
-    color: VD.textDim,
-    cursor: 'pointer',
-    borderRadius: VD.radius.sm,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -117,7 +103,7 @@ export const PestanaGlifo = forwardRef<ManejadorPestanaPuntos, PestanaGlifoProps
               width: 54,
               height: 54,
               borderRadius: VD.radius.md,
-              background: '#070809',
+              background: VD.bg, /* Previa de matriz OLED: fondo de pantalla física */
               border: `1px solid ${accent}44`,
               display: 'flex',
               alignItems: 'center',
@@ -130,24 +116,8 @@ export const PestanaGlifo = forwardRef<ManejadorPestanaPuntos, PestanaGlifoProps
           <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>
             {t('puntos.puntos', { n: String(puntos) })}
           </span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 20px)', gap: 2, marginTop: 4 }}>
-            <div />
-            <button type="button" onClick={() => ed.transformar((m) => desplazarMatriz(m, 0, -1))} style={pad}>
-              ▲
-            </button>
-            <div />
-            <button type="button" onClick={() => ed.transformar((m) => desplazarMatriz(m, -1, 0))} style={pad}>
-              ◀
-            </button>
-            <div />
-            <button type="button" onClick={() => ed.transformar((m) => desplazarMatriz(m, 1, 0))} style={pad}>
-              ▶
-            </button>
-            <div />
-            <button type="button" onClick={() => ed.transformar((m) => desplazarMatriz(m, 0, 1))} style={pad}>
-              ▼
-            </button>
-            <div />
+          <div style={{ marginTop: 4 }}>
+            <PadFlechas onMover={(dx, dy) => ed.transformar((m) => desplazarMatriz(m, dx, dy))} />
           </div>
           {ed.puedeDeshacer && (
             <button type="button" onClick={ed.deshacer} style={estiloHerramienta(VD)}>

@@ -236,7 +236,7 @@ export const PestanaMarca = forwardRef<ManejadorPestanaPuntos, PestanaMarcaProps
               width: 60,
               height: 60,
               borderRadius: VD.radius.lg,
-              background: '#070809',
+              background: VD.bg, /* Previa de matriz OLED: fondo de pantalla física */
               border: `1px solid ${VD.borderStrong}`,
               display: 'flex',
               alignItems: 'center',

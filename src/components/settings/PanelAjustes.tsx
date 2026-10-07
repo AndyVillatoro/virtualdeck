@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ACCENT_PRESETS } from '../../design';
 import { useTheme } from '../../utils/theme';
 import { Segmentado } from '../ui/Chip';
+import { BotonIcono } from '../ui/BotonIcono';
 import { useT } from '../../utils/i18n';
 import { SOUND_PROFILES, playSound } from '../../utils/sound';
 import { SeccionAjustes } from './SeccionAjustes';
@@ -15,7 +16,6 @@ import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
 import { SoporteSection } from './SoporteSection';
 import { SeccionIntegraciones } from './SeccionIntegraciones';
-import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import type { Profile, PageConfig, ButtonConfig, OrigenInstalacion, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../../types';
 
 interface Props {
@@ -117,10 +117,21 @@ export function PanelAjustes({
             <span style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textDim }}>{effectiveAccent}</span>
             <div style={{ display: 'flex', gap: 3, marginLeft: 'auto', flexWrap: 'wrap', maxWidth: 140, justifyContent: 'flex-end' }}>
               {ACCENT_PRESETS.map((c) => (
-                <div
+                <button
                   key={c}
+                  type="button"
                   onClick={() => onAccentChange?.(c)}
-                  style={{ width: 13, height: 13, borderRadius: '50%', background: c, cursor: 'pointer', border: c === effectiveAccent ? `2px solid ${VD.text}` : '1px solid transparent' }}
+                  title={c}
+                  aria-pressed={c === effectiveAccent}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: c,
+                    cursor: 'pointer',
+                    border: c === effectiveAccent ? `2px solid ${VD.text}` : '1px solid transparent',
+                    padding: 0,
+                  }}
                 />
               ))}
             </div>
@@ -131,26 +142,31 @@ export function PanelAjustes({
           <div>
             <SettingLabel>{t('set.scale')}</SettingLabel>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}>
-              <button
+              <BotonIcono
+                glifo="SUBTRACT"
+                title={t('set.scaleDown')}
                 onClick={() => onUiScaleChange(Math.max(0.75, uiScale - 0.25))}
-                style={{ width: 26, height: 26, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <DotGlyphIcon glyph="SUBTRACT" size={7} color={VD.text} />
-              </button>
+                tamano={26}
+                tamanoGlifo={7}
+                conMarco
+              />
               <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, flex: 1, textAlign: 'center', letterSpacing: 1 }}>
                 {Math.round(uiScale * 100)}%
               </span>
-              <button
+              <BotonIcono
+                glifo="ADD"
+                title={t('set.scaleUp')}
                 onClick={() => onUiScaleChange(Math.min(1.75, uiScale + 0.25))}
-                style={{ width: 26, height: 26, background: VD.elevated, border: `1px solid ${VD.border}`, color: VD.text, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <DotGlyphIcon glyph="ADD" size={7} color={VD.text} />
-              </button>
+                tamano={26}
+                tamanoGlifo={7}
+                conMarco
+              />
               {uiScale !== 1 && (
                 <button
+                  type="button"
                   onClick={() => onUiScaleChange(1)}
                   style={{ padding: '0 6px', height: 26, background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, cursor: 'pointer', borderRadius: VD.radius.sm, fontFamily: VD.mono, fontSize: 7, letterSpacing: 1 }}
-                >RESET</button>
+                >{t('set.scaleReset')}</button>
               )}
             </div>
             <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>{t('settings.scaleRange')}</div>
@@ -160,20 +176,18 @@ export function PanelAjustes({
         {onTileModeChange && (
           <div>
             <SettingLabel>{t('set.tiles')}</SettingLabel>
-            <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-              {(['square', 'fill'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => onTileModeChange(m)}
-                  style={{
-                    flex: 1, padding: '5px 0', cursor: 'pointer', borderRadius: VD.radius.sm,
-                    background: tileMode === m ? VD.accentBg : VD.elevated,
-                    border: `1px solid ${tileMode === m ? effectiveAccent : VD.border}`,
-                    color: tileMode === m ? effectiveAccent : VD.textDim,
-                    fontFamily: VD.mono, fontSize: 8, letterSpacing: 0.5,
-                  }}
-                >{t(m === 'square' ? 'settings.tile.square' : 'settings.tile.fill')}</button>
-              ))}
+            <div style={{ marginTop: 6 }}>
+              <Segmentado
+                repartir
+                accent={effectiveAccent}
+                etiquetaGrupo={t('set.tiles')}
+                valor={tileMode}
+                onChange={onTileModeChange}
+                opciones={[
+                  { valor: 'square', etiqueta: t('settings.tile.square') },
+                  { valor: 'fill', etiqueta: t('settings.tile.fill') },
+                ]}
+              />
             </div>
           </div>
         )}
@@ -259,22 +273,16 @@ export function PanelAjustes({
                 accent={effectiveAccent}
                 onClick={() => onMusicPanelChange({ ...musicPanel, enabled: !musicPanel.enabled })}
               />
-              <div style={{ display: 'flex', gap: 6 }}>
-                {(['left', 'right'] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => onMusicPanelChange({ ...musicPanel, side: s })}
-                    style={{
-                      flex: 1, padding: '4px 6px',
-                      background: musicPanel.side === s ? VD.accentBg : 'transparent',
-                      border: `1px solid ${musicPanel.side === s ? effectiveAccent : VD.border}`,
-                      color: musicPanel.side === s ? effectiveAccent : VD.textMuted,
-                      fontFamily: VD.mono, fontSize: 8, letterSpacing: 1,
-                      cursor: 'pointer', borderRadius: VD.radius.sm,
-                    }}
-                  >{t(s === 'left' ? 'ui.left' : 'ui.right')}</button>
-                ))}
-              </div>
+              <Segmentado
+                repartir
+                accent={effectiveAccent}
+                valor={musicPanel.side}
+                onChange={(s) => onMusicPanelChange({ ...musicPanel, side: s })}
+                opciones={[
+                  { valor: 'left', etiqueta: t('ui.left') },
+                  { valor: 'right', etiqueta: t('ui.right') },
+                ]}
+              />
             </div>
           </div>
         )}

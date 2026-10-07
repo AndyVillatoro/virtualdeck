@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { PadFlechas } from './PadFlechas';
 
 interface HerramientasMoverPuntosProps {
   alDesplazar: (dx: number, dy: number) => void;
@@ -21,21 +22,6 @@ export function HerramientasMoverPuntos({
 }: HerramientasMoverPuntosProps) {
   const VD = useTheme();
   const t = useT();
-  const pad: React.CSSProperties = {
-    width: 20,
-    height: 20,
-    background: VD.elevated,
-    border: `1px solid ${VD.border}`,
-    fontFamily: VD.mono,
-    fontSize: 8,
-    color: VD.textDim,
-    cursor: 'pointer',
-    borderRadius: VD.radius.sm,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-  };
   const btn: React.CSSProperties = {
     padding: '4px 7px',
     background: 'transparent',
@@ -49,25 +35,7 @@ export function HerramientasMoverPuntos({
   };
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 20px)', gap: 2 }}>
-        <div />
-        <button type="button" onClick={() => alDesplazar(0, -1)} style={pad}>
-          ▲
-        </button>
-        <div />
-        <button type="button" onClick={() => alDesplazar(-1, 0)} style={pad}>
-          ◀
-        </button>
-        <div />
-        <button type="button" onClick={() => alDesplazar(1, 0)} style={pad}>
-          ▶
-        </button>
-        <div />
-        <button type="button" onClick={() => alDesplazar(0, 1)} style={pad}>
-          ▼
-        </button>
-        <div />
-      </div>
+      <PadFlechas onMover={(dx, dy) => alDesplazar(dx, dy)} />
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <button type="button" onClick={alInvertir} style={btn}>
           {t('puntos.invertir')}

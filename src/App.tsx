@@ -13,6 +13,7 @@ const BarConfigB = React.lazy(() => import('./screens/BarConfigB').then((m) => (
 const DispositivosB = React.lazy(() => import('./screens/DispositivosB').then((m) => ({ default: m.DispositivosB })));
 const Onboarding = React.lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
 import { DotGlyphIcon } from './components/dot480/DotGlyphIcon';
+import { BotonIcono } from './components/ui/BotonIcono';
 import { NowPlayingProvider } from './utils/nowPlaying';
 import { LanguageProvider, useT } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
@@ -92,6 +93,7 @@ function AvisoDeshacer({ texto, onUndo }: { texto: string; onUndo?: () => void }
 
 function AvisoError({ texto, onCerrar }: { texto: string; onCerrar: () => void }) {
   const VD = useTheme();
+  const t = useT();
   return (
     <div style={{
       position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
@@ -106,16 +108,7 @@ function AvisoError({ texto, onCerrar }: { texto: string; onCerrar: () => void }
         <DotGlyphIcon glyph="WARN" size={9} color={VD.danger} />
       </div>
       <span style={{ flex: 1, lineHeight: 1.5 }}>{texto}</span>
-      <button
-        onClick={onCerrar}
-        style={{
-          background: 'none', border: 'none', color: VD.textMuted,
-          cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center',
-          marginTop: 2,
-        }}
-      >
-        <DotGlyphIcon glyph="CLOSE" size={8} color={VD.textMuted} />
-      </button>
+      <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onCerrar} tamano={16} tamanoGlifo={8} color={VD.textMuted} />
     </div>
   );
 }
@@ -135,7 +128,7 @@ function UpdateBanner({ version, onRestart, onLater }: { version: string; onRest
       <span>{t('update.ready', { version })}</span>
       <button
         onClick={onRestart}
-        style={{ padding: '5px 12px', background: VD.accent, border: 'none', color: '#fff', fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
+        style={{ padding: '5px 12px', background: VD.accent, border: 'none', color: VD.onAccent, fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
       >{t('update.restart')}</button>
       <button
         onClick={onLater}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
+import { textoSobre } from '../../design';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
 import type { ButtonConfig } from '../../types';
@@ -142,7 +143,7 @@ export function Insignias({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           lineHeight: 1,
         }}>
-          <DotGlyphIcon glyph="CHECK" size={8} color="#fff" />
+          <DotGlyphIcon glyph="CHECK" size={8} color={textoSobre(accent)} />
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { estiloCampo, estiloDesplegable } from '../../components/ui/estilos';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon, resolveDotGlyph } from '../../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import { ACTION_TYPES } from './actionData';
 import type { ActionType, ButtonAction, FolderButton, Sensor } from '../../types';
 import { RGB_PRESET_IDS, clavePreset } from '../../data/rgbPresets';
@@ -23,6 +24,7 @@ export function FolderButtonSlot({ button, accent, onChange }: {
   onChange: (b: FolderButton | null) => void;
 }) {
   const VD = useTheme();
+  const t = useT();
   const tf = useFieldText();
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(button?.label ?? '');
@@ -64,10 +66,14 @@ export function FolderButtonSlot({ button, accent, onChange }: {
             }
             setEditing(false);
           }} style={{ flex: 1, padding: '3px 0', background: VD.accentBg, border: `1px solid ${accent}`, fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', borderRadius: VD.radius.sm }}>OK</button>
-          <button onClick={() => { onChange(null); setEditing(false); }}
-            style={{ padding: '3px 6px', background: 'transparent', border: `1px solid ${VD.border}`, fontFamily: VD.mono, fontSize: 8, color: VD.danger, cursor: 'pointer', borderRadius: VD.radius.sm, display: 'flex', alignItems: 'center' }}>
-            <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
-          </button>
+          <BotonIcono
+            glifo="CLOSE"
+            title={t('comun.eliminar')}
+            onClick={() => { onChange(null); setEditing(false); }}
+            peligro
+            tamano={20}
+            tamanoGlifo={8}
+          />
         </div>
       </div>
     );
@@ -460,13 +466,7 @@ export function ExtraActionRow({
             <DotGlyphIcon glyph="ARROW_DOWN" size={8} color={canMoveDown ? VD.textDim : VD.border} />
           </button>
         )}
-        <button
-          type="button"
-          onClick={onRemove}
-          style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}
-        >
-          <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
-        </button>
+        <BotonIcono glifo="CLOSE" title={tr('comun.eliminar')} onClick={onRemove} peligro tamano={18} tamanoGlifo={8} />
       </div>
       <ModificadoresPaso action={action} onChange={onChange} />
     </div>

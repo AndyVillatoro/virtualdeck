@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import { normalizarApp } from '../../utils/apps';
 import { SelectorApp } from '../../components/SelectorApp';
 import type { PageConfig } from '../../types';
@@ -57,7 +58,7 @@ export function ModalVincularApp({
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 10000,
-        background: 'rgba(7, 8, 9, 0.85)',
+        background: VD.backdrop,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 20,
       }}
@@ -79,12 +80,7 @@ export function ModalVincularApp({
               {t('page.bindTitle')}
             </span>
           </div>
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', color: VD.textDim, cursor: 'pointer', padding: 2 }}
-          >
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
-          </button>
+          <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onClose} tamano={22} tamanoGlifo={10} color={VD.textDim} />
         </div>
 
         <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, lineHeight: 1.5 }}>

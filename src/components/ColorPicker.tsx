@@ -127,7 +127,7 @@ export function ColorPicker({ value, onChange, onCommit, showHexInput = true, he
           position: 'absolute',
           left: `${s * 100}%`, top: `${(1 - v) * 100}%`,
           width: 12, height: 12, marginLeft: -6, marginTop: -6,
-          border: '2px solid #fff', borderRadius: '50%',
+          border: '2px solid #e6e8eb', borderRadius: '50%',
           boxShadow: '0 0 0 1px rgba(0,0,0,0.6)',
           pointerEvents: 'none',
         }} />
@@ -155,7 +155,7 @@ export function ColorPicker({ value, onChange, onCommit, showHexInput = true, he
           position: 'absolute',
           left: `${(h / 360) * 100}%`, top: -2, bottom: -2,
           width: 4, marginLeft: -2,
-          background: '#fff', borderRadius: VD.radius.sm,
+          background: '#e6e8eb', borderRadius: VD.radius.sm,
           boxShadow: '0 0 0 1px rgba(0,0,0,0.7)',
           pointerEvents: 'none',
         }} />

@@ -135,7 +135,7 @@ export function LienzoPuntos({
         gridTemplateRows: `repeat(${filas}, ${px}px)`,
         gap: 3,
         padding: 8,
-        background: '#070809',
+        background: VD.bg, /* Lienzo de matriz OLED: fondo de pantalla física */
         border: `1px solid ${VD.border}`,
         borderRadius: VD.radius.md,
         userSelect: 'none',
@@ -151,7 +151,7 @@ export function LienzoPuntos({
               width: px,
               height: px,
               borderRadius: '50%',
-              background: c || 'rgba(255, 255, 255, 0.06)',
+              background: c || VD.dotIdle,
               boxShadow: c ? `0 0 6px ${c}66` : undefined,
               pointerEvents: 'none',
             }}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '../utils/theme';
+import { textoSobre } from '../design';
 import { useT } from '../utils/i18n';
 
 interface HintProps {
@@ -48,7 +49,7 @@ export function Hint({ textKey, id, dismissed = [], onDismiss, style, accent }: 
         onClick={() => onDismiss(id)}
         style={{
           alignSelf: 'flex-end', padding: '3px 10px', cursor: 'pointer',
-          background: ac, border: 'none', color: '#fff',
+          background: ac, border: 'none', color: textoSobre(ac),
           fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
           borderRadius: VD.radius.sm, textTransform: 'uppercase',
         }}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../utils/theme';
+import { textoSobre } from '../design';
 import { DotText } from './DotText';
 import { DotLabel } from './DotLabel';
 import { useT } from '../utils/i18n';
@@ -78,7 +79,7 @@ export function Onboarding({
   }, [step]);
 
   const primaryBtn: React.CSSProperties = {
-    padding: '9px 20px', background: accent, border: 'none', color: '#fff',
+    padding: '9px 20px', background: accent, border: 'none', color: textoSobre(accent),
     fontFamily: VD.mono, fontSize: 11, letterSpacing: 1.5, cursor: 'pointer',
     borderRadius: VD.radius.sm, textTransform: 'uppercase',
   };
@@ -92,7 +93,7 @@ export function Onboarding({
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 400,
-        background: 'rgba(0,0,0,0.82)',
+        background: VD.backdrop,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 20,
       }}

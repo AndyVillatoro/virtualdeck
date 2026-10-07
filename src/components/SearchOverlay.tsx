@@ -222,8 +222,15 @@ export function SearchOverlay({ config, accent, onClose, onPick }: SearchOverlay
           fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1,
           display: 'flex', gap: 14,
         }}>
-          <span>{t('main.search.nav')}</span>
-          <span>{t('main.search.edit')}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <DotGlyphIcon glyph="ARROW_UP" size={8} color={VD.textMuted} />
+            <DotGlyphIcon glyph="ARROW_DOWN" size={8} color={VD.textMuted} />
+            {t('main.search.nav')}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <DotGlyphIcon glyph="EDIT" size={8} color={VD.textMuted} />
+            {t('main.search.edit')}
+          </span>
           <span>{t('main.search.exit')}</span>
         </div>
       </div>

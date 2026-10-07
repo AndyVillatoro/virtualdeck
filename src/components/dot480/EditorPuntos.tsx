@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
+import { textoSobre } from '../../design';
 import { useT } from '../../utils/i18n';
-import { DotGlyphIcon } from './DotGlyphIcon';
+import { BotonIcono } from '../ui/BotonIcono';
 import { PestanaGlifo } from './PestanaGlifo';
 import { PestanaMarca } from './PestanaMarca';
 import type { ManejadorPestanaPuntos } from './useEditorPuntos';
@@ -105,7 +106,7 @@ export function EditorPuntos({
         position: 'fixed',
         inset: 0,
         zIndex: 250,
-        background: 'rgba(7, 8, 9, 0.88)',
+        background: VD.backdrop,
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
@@ -148,22 +149,7 @@ export function EditorPuntos({
             </div>
           )}
           <div style={{ flex: 1 }} />
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: VD.textDim,
-              cursor: 'pointer',
-              lineHeight: 1,
-              padding: '0 4px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
-          </button>
+          <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onClose} />
         </div>
 
         <div style={{ overflowY: 'auto', padding: 16 }}>
@@ -230,7 +216,7 @@ export function EditorPuntos({
               fontFamily: VD.mono,
               fontSize: 9,
               letterSpacing: 1,
-              color: '#111418',
+              color: textoSobre(accent),
               cursor: 'pointer',
               borderRadius: VD.radius.sm,
             }}

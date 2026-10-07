@@ -13,6 +13,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
+import { textoSobre } from '../../design';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon, ALL_DOT_GLYPHS } from '../../components/dot480/DotGlyphIcon';
@@ -132,7 +133,7 @@ function QuadColorPicker({
                 height: 20,
                 borderRadius: VD.radius.sm,
                 background: c,
-                border: isSelected ? '2px solid #fff' : `1px solid ${VD.border}`,
+                border: isSelected ? `2px solid ${textoSobre(c)}` : `1px solid ${VD.border}`,
                 cursor: 'pointer',
                 padding: 0,
                 boxShadow: isSelected ? '0 0 6px rgba(255,255,255,0.4)' : undefined,
@@ -363,7 +364,7 @@ export function EditorSubdivision2x2({
               height: 130,
               marginTop: 8,
               padding: 4,
-              background: '#070809',
+              background: VD.bg,
               borderRadius: VD.radius.md,
               border: `1px solid ${VD.borderStrong}`,
             }}
@@ -372,7 +373,7 @@ export function EditorSubdivision2x2({
               const isSel = selectedIdx === q.idx;
               const sub = normalized[q.idx];
               const glyph = (sub.dotGlyph || sub.icon || '').toUpperCase();
-              const bg = sub.bgColor || (isSel ? `${accent}25` : '#111315');
+              const bg = sub.bgColor || (isSel ? `${accent}25` : VD.surface);
               const fg = sub.fgColor || (isSel ? accent : VD.text);
 
               return (

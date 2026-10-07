@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import type { MacroStep, MacroStepType } from '../../types';
 
 // El nombre de cada paso se guarda como **clave**, no como texto: el mapa es
@@ -108,31 +109,31 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
           <button
             onClick={startRec}
             style={{
-              padding: '5px 12px', background: 'rgba(217,95,95,0.15)', border: `1px solid #d95f5f`,
-              color: '#d95f5f', fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
+              padding: '5px 12px', background: `${VD.danger}26`, border: `1px solid ${VD.danger}`,
+              color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1,
               display: 'inline-flex', alignItems: 'center', gap: 6,
             }}
           >
-            <DotGlyphIcon glyph="DOTS" size={8} color="#d95f5f" />
+            <DotGlyphIcon glyph="DOTS" size={8} color={VD.danger} />
             <span>{t('macro.rec.start')}</span>
           </button>
         ) : (
           <button
             onClick={stopRec}
             style={{
-              padding: '5px 12px', background: 'rgba(217,95,95,0.3)', border: `1px solid #d95f5f`,
-              color: '#ff8080', fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
+              padding: '5px 12px', background: `${VD.danger}4d`, border: `1px solid ${VD.danger}`,
+              color: VD.danger, fontFamily: VD.mono, fontSize: 8, cursor: 'pointer',
               borderRadius: VD.radius.sm, letterSpacing: 1, animation: 'vd-blink 0.8s step-end infinite',
               display: 'inline-flex', alignItems: 'center', gap: 6,
             }}
           >
-            <DotGlyphIcon glyph="PAUSE" size={8} color="#ff8080" />
+            <DotGlyphIcon glyph="PAUSE" size={8} color={VD.danger} />
             <span>{t('macro.rec.stop')}</span>
           </button>
         )}
         {recording && (
-          <span style={{ fontFamily: VD.mono, fontSize: 8, color: '#d95f5f', letterSpacing: 1 }}>
+          <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.danger, letterSpacing: 1 }}>
             {t('macro.recording')}
           </span>
         )}
@@ -178,18 +179,38 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
                   {(step.x !== undefined && step.type !== 'scroll') ? ` (${step.x}, ${step.y})` : ''}
                   {step.delayMs ? ` +${step.delayMs}ms` : ''}
                 </span>
-                <button onClick={() => moveStep(idx, -1)} disabled={idx === 0} style={{ ...iconBtnSm(VD) }}>
-                  <DotGlyphIcon glyph="ARROW_UP" size={8} color={VD.textMuted} />
-                </button>
-                <button onClick={() => moveStep(idx, 1)} disabled={idx === steps.length - 1} style={{ ...iconBtnSm(VD) }}>
-                  <DotGlyphIcon glyph="ARROW_DOWN" size={8} color={VD.textMuted} />
-                </button>
-                <button onClick={() => setEditIdx(editIdx === idx ? null : idx)} style={{ ...iconBtnSm(VD), color: editIdx === idx ? accent : VD.textMuted }}>
-                  <DotGlyphIcon glyph="EDIT" size={8} color={editIdx === idx ? accent : VD.textMuted} />
-                </button>
-                <button onClick={() => removeStep(idx)} style={{ ...iconBtnSm(VD), color: VD.danger }}>
-                  <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
-                </button>
+                <BotonIcono
+                  glifo="ARROW_UP"
+                  title={t('comun.subir')}
+                  onClick={() => moveStep(idx, -1)}
+                  disabled={idx === 0}
+                  tamano={20}
+                  tamanoGlifo={8}
+                />
+                <BotonIcono
+                  glifo="ARROW_DOWN"
+                  title={t('comun.bajar')}
+                  onClick={() => moveStep(idx, 1)}
+                  disabled={idx === steps.length - 1}
+                  tamano={20}
+                  tamanoGlifo={8}
+                />
+                <BotonIcono
+                  glifo="EDIT"
+                  title={t('comun.editar')}
+                  onClick={() => setEditIdx(editIdx === idx ? null : idx)}
+                  color={editIdx === idx ? accent : VD.textMuted}
+                  tamano={20}
+                  tamanoGlifo={8}
+                />
+                <BotonIcono
+                  glifo="CLOSE"
+                  title={t('comun.eliminar')}
+                  onClick={() => removeStep(idx)}
+                  peligro
+                  tamano={20}
+                  tamanoGlifo={8}
+                />
               </div>
 
               {/* Step editor */}
@@ -263,14 +284,7 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
   );
 }
 
-function iconBtnSm(VD: any): React.CSSProperties {
-  return {
-    width: 20, height: 20, background: 'none', border: 'none',
-    color: VD.textMuted, cursor: 'pointer', fontFamily: VD.mono,
-    fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 0, borderRadius: VD.radius.sm,
-  };
-}
+
 
 function labelSm(VD: any): React.CSSProperties {
   return { fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, letterSpacing: 1, flexShrink: 0 };

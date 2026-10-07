@@ -46,7 +46,7 @@ export function FormDiscord(p: PropsFormulario) {
             width: 6,
             height: 6,
             borderRadius: '50%',
-            backgroundColor: isConnected ? '#23a55a' : VD.textMuted,
+            backgroundColor: isConnected ? VD.success : VD.textMuted,
             display: 'inline-block',
           }}
         />

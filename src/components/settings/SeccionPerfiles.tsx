@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { SettingLabel, ToggleRow } from './settingHelpers';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import { BotonIcono } from '../ui/BotonIcono';
 import type { Profile } from '../../types';
 
 interface SeccionPerfilesProps {
@@ -121,9 +122,14 @@ export function SeccionPerfiles({
                   <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                   <button onClick={() => { onLoadProfile?.(p.id); onCerrar(); }} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('ui.load')}</button>
                   <button onClick={() => { onAppendProfilePages?.(p.id); onCerrar(); }} title={t('ui.appendPagesHint')} style={{ background: VD.accentBg, border: `1px solid ${effectiveAccent}`, fontFamily: VD.mono, fontSize: 8, color: effectiveAccent, cursor: 'pointer', padding: '2px 5px', borderRadius: VD.radius.sm, letterSpacing: 0.5 }}>{t('ui.appendPages')}</button>
-                  <button onClick={() => onDeleteProfile?.(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}>
-                    <DotGlyphIcon glyph="CLOSE" size={7} color={VD.danger} />
-                  </button>
+                  <BotonIcono
+                    glifo="CLOSE"
+                    title={t('comun.eliminar')}
+                    onClick={() => onDeleteProfile?.(p.id)}
+                    peligro
+                    tamano={18}
+                    tamanoGlifo={7}
+                  />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <DotGlyphIcon glyph="APP_WINDOW" size={7} color={p.targetApp ? effectiveAccent : VD.textMuted} />

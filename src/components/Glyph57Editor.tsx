@@ -3,7 +3,8 @@ import { GLYPHS_5x7 } from '../design';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import { DotLabel } from './DotLabel';
-import { DotGlyphIcon } from './dot480/DotGlyphIcon';
+import { BotonIcono } from './ui/BotonIcono';
+import { PadFlechas } from './dot480/PadFlechas';
 
 export interface Glyph57EditorProps {
   initial?: number[];
@@ -166,7 +167,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
         position: 'fixed',
         inset: 0,
         zIndex: 220,
-        background: 'rgba(7, 8, 9, 0.88)',
+        background: VD.backdrop,
         backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
@@ -212,20 +213,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
               {t('glyph.undo')}
             </button>
           )}
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: VD.textDim,
-              cursor: 'pointer',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textDim} />
-          </button>
+          <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onClose} />
         </div>
 
         {/* Rejilla de edición central + Previews laterales */}
@@ -239,7 +227,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
               gridTemplateRows: `repeat(7, ${cellPx}px)`,
               gap: 3,
               padding: 8,
-              background: '#070809',
+              background: VD.bg, /* Lienzo de matriz OLED: fondo de pantalla física */
               border: `1px solid ${VD.border}`,
               borderRadius: VD.radius.md,
               userSelect: 'none',
@@ -281,7 +269,7 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
                 width: 54,
                 height: 54,
                 borderRadius: VD.radius.md,
-                background: '#070809',
+                background: VD.bg,
                 border: `1px solid ${accent}44`,
                 display: 'flex',
                 alignItems: 'center',
@@ -293,16 +281,8 @@ export function Glyph57Editor({ initial, accent, onSave, onClose }: Glyph57Edito
             </div>
 
             {/* Shift pad */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 20px)', gap: 2, marginTop: 4 }}>
-              <div />
-              <button onClick={() => shift(0, -1)} style={padBtnStyle(VD)}>▲</button>
-              <div />
-              <button onClick={() => shift(-1, 0)} style={padBtnStyle(VD)}>◀</button>
-              <div />
-              <button onClick={() => shift(1, 0)} style={padBtnStyle(VD)}>▶</button>
-              <div />
-              <button onClick={() => shift(0, 1)} style={padBtnStyle(VD)}>▼</button>
-              <div />
+            <div style={{ marginTop: 4 }}>
+              <PadFlechas onMover={(dx, dy) => shift(dx, dy)} />
             </div>
           </div>
         </div>
@@ -462,24 +442,6 @@ function toolBtnStyle(VD: any): React.CSSProperties {
     cursor: 'pointer',
     borderRadius: VD.radius.sm,
     letterSpacing: 0.5,
-  };
-}
-
-function padBtnStyle(VD: any): React.CSSProperties {
-  return {
-    width: 20,
-    height: 20,
-    background: VD.elevated,
-    border: `1px solid ${VD.border}`,
-    fontFamily: VD.mono,
-    fontSize: 8,
-    color: VD.textDim,
-    cursor: 'pointer',
-    borderRadius: VD.radius.sm,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
   };
 }
 

@@ -327,7 +327,7 @@ export function DotContinuousSlider({
                   height: 3,
                   borderRadius: 1,
                   background: isActive
-                    ? (isLeading ? '#ffffff' : accent)
+                    ? (isLeading ? VD.text : accent)
                     : 'rgba(255, 255, 255, 0.08)',
                   boxShadow: isActive && isDragging ? `0 0 4px ${accent}` : 'none',
                   transition: 'background 0.06s ease',
@@ -361,7 +361,7 @@ export function DotContinuousSlider({
                     height: 2.5,
                     borderRadius: '50%',
                     background: isActive
-                      ? (isLeading ? '#ffffff' : accent)
+                      ? (isLeading ? VD.text : accent)
                       : 'rgba(255, 255, 255, 0.08)',
                     boxShadow: isActive && isDragging ? `0 0 2px ${accent}` : 'none',
                     transition: 'background 0.06s ease',

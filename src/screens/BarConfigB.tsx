@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ButtonCell } from '../components/ButtonCell';
 import { DotLabel } from '../components/DotLabel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../components/ui/BotonIcono';
+import { Segmentado } from '../components/ui/Chip';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
 import type { DeckConfig, FloatingBarSettings } from '../types';
@@ -100,9 +102,9 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
         <button onClick={onBack} style={{
           background: 'none', border: `1px solid ${VD.border}`, borderRadius: VD.radius.sm,
           color: VD.textDim, fontFamily: VD.mono, fontSize: 9, letterSpacing: 1,
-          padding: '5px 10px', cursor: 'pointer',
+          padding: '5px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
           WebkitAppRegion: 'no-drag',
-        } as React.CSSProperties}>{t('bar.back')}</button>
+        } as React.CSSProperties}><DotGlyphIcon glyph="ARROW_LEFT" size={8} color={VD.textDim} /> {t('bar.back')}</button>
         <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           <DotLabel size={11} color={VD.text} spacing={2}>{t('bar.title')}</DotLabel>
         </div>
@@ -155,19 +157,16 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
                         onEdit={() => { /* se edita en el deck */ }}
                         onExecute={() => { /* aquí solo se coloca */ }}
                       />
-                      <button
-                        onClick={() => vaciar(i)}
+                      <BotonIcono
+                        glifo="CLOSE"
                         title={t('bar.remove')}
-                        style={{
-                          position: 'absolute', top: -6, right: -6, width: 18, height: 18,
-                          borderRadius: '50%', border: `1px solid ${VD.borderStrong}`,
-                          background: VD.surface, color: VD.danger,
-                          padding: 0, cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
-                      </button>
+                        onClick={() => vaciar(i)}
+                        tamano={24}
+                        tamanoGlifo={8}
+                        peligro
+                        conMarco
+                        style={{ position: 'absolute', top: -8, right: -8, borderRadius: '50%' }}
+                      />
                     </>
                   ) : (
                     <div style={{
@@ -182,23 +181,27 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
           </div>
 
           <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginTop: 12 }}>
-            <button
+            <BotonIcono
+              glifo="SUBTRACT"
+              title={t('bar.menosHuecos')}
               onClick={() => cambiarHuecos(barra.slots.length - 1)}
               disabled={barra.slots.length <= MIN_HUECOS}
-              style={{ ...estiloMini(VD), display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, padding: 0 }}
-            >
-              <DotGlyphIcon glyph="SUBTRACT" size={9} color={barra.slots.length <= MIN_HUECOS ? VD.textMuted : VD.textDim} />
-            </button>
+              tamano={26}
+              tamanoGlifo={9}
+              conMarco
+            />
             <span style={{ fontFamily: VD.mono, fontSize: 10, color: VD.text, minWidth: 24, textAlign: 'center' }}>
               {barra.slots.length}
             </span>
-            <button
+            <BotonIcono
+              glifo="ADD"
+              title={t('bar.masHuecos')}
               onClick={() => cambiarHuecos(barra.slots.length + 1)}
               disabled={barra.slots.length >= maximo}
-              style={{ ...estiloMini(VD), display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, padding: 0 }}
-            >
-              <DotGlyphIcon glyph="ADD" size={9} color={barra.slots.length >= maximo ? VD.textMuted : VD.textDim} />
-            </button>
+              tamano={26}
+              tamanoGlifo={9}
+              conMarco
+            />
           </div>
           <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, textAlign: 'center', marginTop: 6 }}>
             {t('bar.max', { n: maximo })}
@@ -212,15 +215,15 @@ export function BarConfigB({ config, onConfigChange, onBack }: BarConfigBProps) 
               <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>
                 {t('bar.side')}
               </DotLabel>
-                <div style={{ display: 'flex', gap: 6 }}>
-                {(['left', 'right'] as const).map((lado) => (
-                  <button key={lado} onClick={() => guardar({ side: lado })} style={{
-                    ...estiloMini(VD),
-                    borderColor: (barra.side ?? BARRA_POR_DEFECTO.side) === lado ? (config.accent ?? VD.accent) : VD.border,
-                    color: (barra.side ?? BARRA_POR_DEFECTO.side) === lado ? (config.accent ?? VD.accent) : VD.textDim,
-                  }}>{t(lado === 'left' ? 'bar.side.left' : 'bar.side.right')}</button>
-                ))}
-              </div>
+              <Segmentado
+                accent={config.accent ?? VD.accent}
+                valor={barra.side ?? BARRA_POR_DEFECTO.side}
+                onChange={(lado) => guardar({ side: lado })}
+                opciones={[
+                  { valor: 'left', etiqueta: t('bar.side.left') },
+                  { valor: 'right', etiqueta: t('bar.side.right') },
+                ]}
+              />
             </div>
 
             <div>

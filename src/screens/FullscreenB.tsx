@@ -23,6 +23,7 @@ import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import { groupSensorsByHardware } from '../components/SensorPanel';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../components/ui/BotonIcono';
 import { DotLabel } from '../components/DotLabel';
 import type { ButtonConfig, DeckConfig, SoundProfileId } from '../types';
 
@@ -303,12 +304,14 @@ export function FullscreenB({
         }}>
           <DotGlyphIcon glyph="WARN" size={12} color={VD.danger} style={{ flexShrink: 0, marginTop: 2 }} />
           <span style={{ flex: 1, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{runtimeError}</span>
-          <button
+          <BotonIcono
+            glifo="CLOSE"
+            title={t('comun.cerrar')}
             onClick={() => setRuntimeError(null)}
-            style={{ background: 'none', border: 'none', color: VD.textMuted, cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-          >
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
-          </button>
+            tamano={20}
+            tamanoGlifo={10}
+            color={VD.textMuted}
+          />
         </div>
       )}
 

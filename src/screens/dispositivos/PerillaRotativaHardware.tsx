@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import type { ButtonConfig } from '../../types';
 
 interface PerillaRotativaHardwareProps {
@@ -15,7 +16,7 @@ interface PerillaRotativaHardwareProps {
 }
 
 interface BotonSubAccionProps {
-  prefijo: string;
+  prefijoGlifo: string;
   label: string;
   seleccionado: boolean;
   disabled: boolean;
@@ -31,7 +32,7 @@ interface BotonSubAccionProps {
 }
 
 function BotonSubAccion({
-  prefijo,
+  prefijoGlifo,
   label,
   seleccionado,
   disabled,
@@ -65,9 +66,20 @@ function BotonSubAccion({
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 3,
       }}
     >
-      {`${prefijo} ${label}`}
+      <DotGlyphIcon
+        glyph={prefijoGlifo}
+        size={8}
+        color={seleccionado ? accent : textDim}
+      />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
     </button>
   );
 }
@@ -208,7 +220,7 @@ export function PerillaRotativaHardware({
 
       <div style={{ display: 'flex', gap: 2, width: '100%' }}>
         <BotonSubAccion
-          prefijo="↺"
+          prefijoGlifo="ROTATE_CCW"
           label={labelIzq}
           seleccionado={subAccionSeleccionada === 'izq'}
           disabled={disabled}
@@ -223,7 +235,7 @@ export function PerillaRotativaHardware({
           onDoubleClick={() => onEditarGesto('izq')}
         />
         <BotonSubAccion
-          prefijo="◉"
+          prefijoGlifo="KNOB_PRESS"
           label={labelPulsar}
           seleccionado={subAccionSeleccionada === 'pulsar'}
           disabled={disabled}
@@ -238,7 +250,7 @@ export function PerillaRotativaHardware({
           onDoubleClick={() => onEditarGesto('pulsar')}
         />
         <BotonSubAccion
-          prefijo="↻"
+          prefijoGlifo="ROTATE_CW"
           label={labelDer}
           seleccionado={subAccionSeleccionada === 'der'}
           disabled={disabled}

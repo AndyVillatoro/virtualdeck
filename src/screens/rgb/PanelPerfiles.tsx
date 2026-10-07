@@ -3,6 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { BotonIcono } from '../../components/ui/BotonIcono';
 import { SaveProfileBar, PresetsRapidos } from './piezas';
 import type { RGBProfile } from '../../types';
 
@@ -66,9 +67,14 @@ export function PanelPerfiles({
               />
             </button>
             <button onClick={() => onAplicar(p.id)} disabled={!conectado} style={{ background: 'none', border: 'none', fontFamily: VD.mono, fontSize: 8, color: accent, cursor: 'pointer', padding: '2px 4px', letterSpacing: 0.5 }}>{t('rgb.apply')}</button>
-            <button onClick={() => onBorrar(p.id)} style={{ background: 'none', border: 'none', color: VD.danger, cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center' }}>
-              <DotGlyphIcon glyph="CLOSE" size={8} color={VD.danger} />
-            </button>
+            <BotonIcono
+              glifo="CLOSE"
+              title={t('comun.eliminar')}
+              onClick={() => onBorrar(p.id)}
+              peligro
+              tamano={18}
+              tamanoGlifo={8}
+            />
           </div>
         ))}
       </div>

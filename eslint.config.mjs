@@ -60,6 +60,27 @@ export default tseslint.config(
     },
   },
   {
+    // Regla de la estetica: **nada de blanco puro** como color de interfaz.
+    // Se colaba como texto sobre el acento (`color: '#fff'`) en siete sitios a
+    // la vez; el texto sobre acento es `VD.onAccent` y sobre otro color,
+    // `textoSobre(color)`. Solo mira propiedades y atributos de color: un
+    // `'#ffffff'` como **dato** (el color de un LED, una muestra de la paleta
+    // que elige el usuario) no es interfaz y no se toca.
+    files: ['src/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': ['error',
+        {
+          selector: "Property[key.name=/^(color|background|backgroundColor|borderColor|fill|stroke)$/] > Literal[value=/^#(fff|ffffff)$/i]",
+          message: 'Blanco puro prohibido en la interfaz: usa VD.onAccent, textoSobre(color) o un token del tema.',
+        },
+        {
+          selector: "JSXAttribute[name.name=/^(color|fill|stroke)$/] > Literal[value=/^#(fff|ffffff)$/i]",
+          message: 'Blanco puro prohibido en la interfaz: usa VD.onAccent, textoSobre(color) o un token del tema.',
+        },
+      ],
+    },
+  },
+  {
     // Archivos que son datos, no logica: el limite de lineas no dice nada de
     // ellos. `brandIcons.ts` son 1500 lineas de bitmaps de iconos; partirlo en
     // cinco archivos de 300 no lo hace mas facil de leer ni de cambiar. Vive

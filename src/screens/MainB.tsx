@@ -197,8 +197,8 @@ export function MainB({
   const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
     if (!api) return;
     const r = await pulsacionLarga(btn, entorno());
-    if (r) anotar(`⇓ ${btn.label || r.tipo}`, r.tipo, r.ok, r.error);
-  }, [api, entorno, anotar]);
+    if (r) anotar(t('main.log.largo', { boton: btn.label || r.tipo }), r.tipo, r.ok, r.error);
+  }, [api, entorno, anotar, t]);
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
