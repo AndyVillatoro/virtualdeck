@@ -1,5 +1,6 @@
 import { BrowserWindow, screen, Display } from 'electron';
 import { clampBoundsToDisplay } from './windowManager';
+import { huellaDe, marcarPendiente, moverSinGuardar, volverAlPendiente, hayMonitorPendiente } from './ventanaMonitor';
 import type { DisplayInfo } from '../../src/types';
 
 /**
@@ -102,13 +103,20 @@ export function setupDisplayListeners(win: BrowserWindow) {
   };
 
   screen.on('display-added', () => {
+    // Si era el monitor donde estaba la ventana, vuelve a él.
+    if (!win.isDestroyed()) volverAlPendiente(win);
     broadcast();
   });
 
-  screen.on('display-removed', () => {
-    // Si la ventana quedó en un monitor que ya no existe, reubicarla inmediatamente
+  screen.on('display-removed', (_e, quitado: Display) => {
+    // Si la ventana quedó en un monitor que ya no existe, se reubica, pero **sin
+    // guardar** esa posición: el monitor queda pendiente y la ventana vuelve a
+    // él cuando reaparezca (un monitor que se duerme también llega aquí).
     if (!win.isDestroyed()) {
       const b = win.getNormalBounds();
+      const estaba = b.x < quitado.bounds.x + quitado.bounds.width && b.x + b.width > quitado.bounds.x
+        && b.y < quitado.bounds.y + quitado.bounds.height && b.y + b.height > quitado.bounds.y;
+      if (estaba && !hayMonitorPendiente()) marcarPendiente(huellaDe(quitado, b));
       const clamped = clampBoundsToDisplay({
         x: b.x,
         y: b.y,
@@ -117,7 +125,7 @@ export function setupDisplayListeners(win: BrowserWindow) {
         maximized: win.isMaximized(),
       });
       if (clamped.x !== b.x || clamped.y !== b.y) {
-        win.setBounds({ x: clamped.x, y: clamped.y, width: clamped.width, height: clamped.height });
+        moverSinGuardar(win, { x: clamped.x, y: clamped.y, width: clamped.width, height: clamped.height });
       }
     }
     broadcast();

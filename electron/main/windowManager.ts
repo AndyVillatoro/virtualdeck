@@ -3,8 +3,16 @@ import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { app } from 'electron';
 import { asegurarVentana } from './seguridadVentana';
+import {
+  buscarMonitor, esMovimientoPropio, hayMonitorPendiente, huellaDe, limitesEn, marcarPendiente,
+  vigilarPendienteAlArrancar, type HuellaMonitor,
+} from './ventanaMonitor';
 
-export interface WindowBounds { x: number; y: number; width: number; height: number; maximized?: boolean }
+export interface WindowBounds {
+  x: number; y: number; width: number; height: number; maximized?: boolean;
+  /** En qué monitor estaba (ver `ventanaMonitor`). Ausente en estados de antes de 2026-10-06. */
+  monitor?: HuellaMonitor;
+}
 
 function getWindowStatePath() {
   return join(app.getPath('userData'), 'window-state.json');
@@ -58,6 +66,28 @@ export function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
   };
 }
 
+/** Guarda posición, tamaño y el monitor en que está la ventana. */
+function guardarEstado(win: BrowserWindow): void {
+  const b = win.getNormalBounds();
+  const monitor = huellaDe(screen.getDisplayMatching(b), b);
+  saveWindowState({ x: b.x, y: b.y, width: b.width, height: b.height, maximized: win.isMaximized(), monitor });
+}
+
+/**
+ * Dónde abrir la ventana: en su monitor si está conectado (aunque haya cambiado
+ * la disposición), y si no, donde diga `clampBoundsToDisplay` dejando el
+ * monitor como pendiente para volver a él.
+ */
+function restaurarLimites(guardado: WindowBounds): WindowBounds {
+  if (guardado.monitor) {
+    const d = buscarMonitor(guardado.monitor);
+    if (d) return { ...limitesEn(d, guardado.monitor, guardado.width, guardado.height), maximized: guardado.maximized };
+    marcarPendiente(guardado.monitor);
+    console.log(`[ventana] el monitor «${guardado.monitor.etiqueta || `${guardado.monitor.ancho}x${guardado.monitor.alto}`}» no está; se vuelve a él cuando aparezca`);
+  }
+  return clampBoundsToDisplay(guardado);
+}
+
 /**
  * Arrancada por el inicio de sesión de Windows, no por el usuario.
  *
@@ -66,28 +96,32 @@ export function clampBoundsToDisplay(b: WindowBounds): WindowBounds {
  */
 const ARRANQUE_OCULTO = process.argv.includes('--oculto');
 
-export function createMainWindow(): BrowserWindow {
-  const savedRaw = loadWindowState();
+/** Posición y tamaño con que nace la ventana (ver `restaurarLimites`). */
+function limitesIniciales(savedRaw: WindowBounds | null) {
   // En desarrollo nunca reutilizamos coordenadas para no quedar atrapados en monitores virtuales
-  const saved = (isDev || process.argv.includes('--primary')) ? null : (savedRaw ? clampBoundsToDisplay(savedRaw) : null);
-
+  const saved = (isDev || process.argv.includes('--primary')) ? null : (savedRaw ? restaurarLimites(savedRaw) : null);
   const primary = screen.getPrimaryDisplay().workArea;
   const initialWidth = saved?.width ?? Math.min(1100, primary.width - 40);
   const initialHeight = saved?.height ?? Math.min(720, primary.height - 40);
   const initialX = saved?.x ?? Math.round(primary.x + Math.max(0, (primary.width - initialWidth) / 2));
   const initialY = saved?.y ?? Math.round(primary.y + Math.max(0, (primary.height - initialHeight) / 2));
-
   // En desarrollo, reescribir inmediatamente el estado guardado para limpiar restos de pantallas virtuales
   if (isDev) {
     saveWindowState({ x: initialX, y: initialY, width: initialWidth, height: initialHeight, maximized: false });
   }
+  return { saved, initialX, initialY, initialWidth, initialHeight };
+}
+
+export function createMainWindow(): BrowserWindow {
+  const savedRaw = loadWindowState();
+  const { saved, initialX, initialY, initialWidth, initialHeight } = limitesIniciales(savedRaw);
 
   const win = new BrowserWindow({
     width: initialWidth, height: initialHeight,
     x: initialX, y: initialY,
-    center: !saved?.x && !saved?.y,
+    center: !saved,
     minWidth: 400, minHeight: 240,
-    frame: false, titleBarStyle: 'hidden', backgroundColor: '#0f0f0f',
+    frame: false, titleBarStyle: 'hidden', backgroundColor: '#070809',
     icon: join(__dirname, '../../build/icon.png'),
     // Solo bandeja, nunca barra de tareas: la ventana se enseña y se esconde
     // desde el icono de la bandeja (ver `trayManager`). Minimizar la manda
@@ -115,13 +149,15 @@ export function createMainWindow(): BrowserWindow {
     },
   });
 
-  if (savedRaw?.maximized && !isDev && !process.argv.includes('--primary')) win.maximize();
+  if (saved && savedRaw?.maximized) win.maximize();
 
   // Antes de cargarle nada: esta ventana lleva el preload completo delante
   // (unos setenta métodos, incluido `launch.script`), así que una ventana
   // hija que se abriera desde ella heredaría los mismos poderes. Ver
   // `seguridadVentana`.
   asegurarVentana(win);
+  // El monitor preferido no estaba al arrancar: se vuelve a él en cuanto aparezca.
+  vigilarPendienteAlArrancar(win);
 
   // When moving between monitors with different DPI, a 1px size nudge forces
   // Chromium to re-evaluate the scale factor — fixes blurry text on HiDPI moves.
@@ -141,10 +177,14 @@ export function createMainWindow(): BrowserWindow {
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   const persistBounds = () => {
     if (saveTimer) clearTimeout(saveTimer);
+    // Lo que mueve la propia aplicación (recolocar al quitar un monitor,
+    // volver al preferido) no es una elección del usuario y no se guarda.
+    if (esMovimientoPropio()) return;
     saveTimer = setTimeout(() => {
       if (win.isDestroyed()) return;
-      const b = win.getNormalBounds();
-      saveWindowState({ x: b.x, y: b.y, width: b.width, height: b.height, maximized: win.isMaximized() });
+      // Si el usuario mueve la ventana a mano, esa es su nueva preferencia.
+      marcarPendiente(null);
+      guardarEstado(win);
       saveTimer = null;
     }, 500);
   };
@@ -154,10 +194,9 @@ export function createMainWindow(): BrowserWindow {
   win.on('unmaximize', persistBounds);
   win.on('close', () => {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
-    if (!win.isDestroyed()) {
-      const b = win.getNormalBounds();
-      saveWindowState({ x: b.x, y: b.y, width: b.width, height: b.height, maximized: win.isMaximized() });
-    }
+    // Con el monitor preferido ausente, la ventana está donde la dejó la
+    // aplicación, no el usuario: se conserva lo guardado.
+    if (!win.isDestroyed() && !hayMonitorPendiente()) guardarEstado(win);
   });
 
   // La ventana no tiene marco y su fondo es un gris muy oscuro. Si el renderer
