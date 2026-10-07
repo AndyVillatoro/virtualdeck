@@ -82,9 +82,9 @@ export async function openShortcut(path: string): Promise<boolean> {
  *   sin preambulo  Hola ?qu?? A?ad? m?s m?sica
  *   con preambulo  Hola ¿qué? Añadí más música
  *
- * El arreglo de raiz esta en `crates/vd-core`, que ahora mismo no se puede
- * recompilar. Inyectarlo aqui lo arregla con el `.node` que ya hay, y no le
- * hace nada al camino de respaldo porque `injectUtf8Prefix` es idempotente.
+ * El arreglo de raiz ya esta en `crates/vd-core`; inyectarlo aqui cubre un
+ * `.node` anterior y no le hace nada al camino de respaldo porque
+ * `injectUtf8Prefix` es idempotente.
  *
  * Solo para PowerShell: en `cmd` esas tres lineas no son sintaxis valida.
  */

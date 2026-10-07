@@ -331,9 +331,9 @@ vez de a `AGENTS.md` por lo mismo.
   SMTC dan el mismo resultado con y sin el.
   Ademas, el camino **nativo** (`vd-core`, `powershell -Command`) no inyectaba el prefijo y
   leia la salida con `from_utf8_lossy`: cada acento volvia como caracter de reemplazo, y eso
-  afectaba a la accion «script» que guarda la salida en una variable. El arreglo de raiz esta
-  en `crates/vd-core` (que no se puede recompilar); mientras tanto `conUtf8()` en `launcher.ts`
-  inyecta el prefijo **antes** de elegir camino, asi que lo arregla con el `.node` que ya hay.
+  afectaba a la accion «script» que guarda la salida en una variable. El arreglo de raiz ya
+  esta en `crates/vd-core` (`run_script` mete el prefijo); `conUtf8()` en `launcher.ts` lo
+  inyecta igualmente **antes** de elegir camino, por si carga un `.node` anterior.
   `injectUtf8Prefix` es idempotente para que no se aplique dos veces.
 - **Notificaciones y AppUserModelId**: `app.setAppUserModelId('com.virtualdeck.app')` se llama
   al arrancar y **tiene que coincidir con `build.appId` de `package.json`**, que es el que el
@@ -357,11 +357,14 @@ vez de a `AGENTS.md` por lo mismo.
   fuera, eso **congela el proceso principal de Electron entero**: ni un `Promise.race` con
   temporizador llega a dispararse, porque el bucle de eventos está parado. PowerShell tarda
   ~500 ms pero corre en otro proceso.
-  El arreglo de raíz ya está escrito en `vd-core` (`en_hilo_mta_con_limite`, que espera por canal
-  con `recv_timeout` y se rinde a los 5 s) pero **el `.node` no se ha podido recompilar**: una
-  directiva de Control de aplicaciones de Windows bloquea los proc-macro recién compilados
-  (`darling_macro-*.dll`, os error 4551). Cuando se pueda compilar, `diagnose()` puede volver a
-  `intentarNativo`.
+  El núcleo ya compila y su `diagnose` tiene límite de 5 s (`en_hilo_mta_con_limite`), pero
+  se queda en PowerShell a propósito: ver la nota de arriba (roadmap 71).
+- **Núcleo asíncrono (2026-10-06).** `runScript`, `playMacro` y `speakText` del `.node` son
+  `AsyncTask` (devuelven Promise): un script de 30 s o una macro con pausas ya no paran IPC, bandeja
+  ni el HID del dock. `run_script` mata al hijo a los 30 s (como el respaldo). La voz vive en un hilo
+  propio (`vd-voz`) con **una sola** `ISpVoice`: soltarla al volver cortaba la frase. `getNowPlaying`
+  trae `controls`, `isShuffleActive` y `autoRepeatMode`, así que el `CAPS_SCRIPT` de PowerShell solo
+  corre sin núcleo. LHM se lee **solo desde JS**: a Rust va `enabled: false` (su WinHTTP es síncrona).
 - **Audio cache**: `audioIpc.ts` cachea la lista de dispositivos 1 s con núcleo nativo y 30 s por PowerShell. Invalida automáticamente al cambiar dispositivo default. Pasar `force=true` para forzar refresco.
 - **Multi-select**: Ctrl+clic en celdas para seleccionar múltiples botones. La barra de bulk-ops flota sobre la grilla. `selectedIds` se limpia al cambiar de página.
 - **Shuffle/repeat SMTC**: usan `TryChangeShuffleActiveAsync` / `TryChangeAutoRepeatModeAsync` de Windows.Media.Control. Requieren que haya una sesión SMTC activa.
@@ -382,11 +385,9 @@ vez de a `AGENTS.md` por lo mismo.
   aplicarse sobre la cadena entera convertía `{ENTER}` en `{{ENTER}}`. Y los clics sobre la
   propia ventana no se graban (`esNuestro` en `startRecording`): si no, toda macro acaba con un
   clic en el botón de detener.
-- **Atajos con signos (`Ctrl+-`, `Ctrl+=`, `[`) no van por el núcleo nativo.** Su `char_key`
-  (`crates/vd-core/src/macros/keys.rs`) solo sabe letras y dígitos y con lo demás devuelve `false`
-  en vez de fallar, así que `intentarNativo` no cae al respaldo y el atajo no hacía nada.
-  `sendHotkey` (`launcher.ts`) los manda directo a PowerShell hasta que el `.node` se pueda
-  recompilar con las teclas OEM.
+- **Atajos con signos (`Ctrl+-`, `Ctrl+=`, `[`).** El núcleo los resuelve con el idioma de
+  teclado actual (`VkKeyScanW` en `crates/vd-core/src/macros/keys.rs`). Si un `.node` anterior
+  devuelve `false` con un signo, `sendHotkey` (`launcher.ts`) cae a PowerShell (`teclaSigno`).
   El teclado numérico (`Add`, `Subtract`...) va por `uiohook-napi` (`keyTap`, en el propio proceso,
   ~1 ms): no depende del idioma del teclado, que es por lo que el zoom usa `Ctrl+Add` y no `Ctrl+=`
   (en el teclado latinoamericano `=` es `Shift+0`).
