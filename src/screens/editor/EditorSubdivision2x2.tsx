@@ -17,6 +17,7 @@ import { textoSobre } from '../../design';
 import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon, ALL_DOT_GLYPHS } from '../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { ACTION_TYPES } from './actionData';
 import { QuadActionInputs, inputEstilo } from './QuadActionInputs';
 import type { ActionType, SubButtonConfig } from '../../types';
@@ -26,6 +27,8 @@ interface EditorSubdivision2x2Props {
   subButtons: SubButtonConfig[];
   onChange: (subs: SubButtonConfig[]) => void;
   accent: string;
+  /** Abre el catálogo grande para el cuadrante `idx` (roadmap 93). */
+  onAbrirCatalogo?: (idx: number) => void;
 }
 
 const BG_SWATCHES = ['#111315', '#1a1424', '#0d1b2a', '#1a3320', '#2a0000', '#242014', '#1f150a', '#141414'];
@@ -169,6 +172,7 @@ function QuadColorPicker({
 function QuadGlyphPicker({
   selectedGlyph,
   onSelect,
+  onAbrirCatalogo,
   accent,
   VD,
   t,
@@ -176,6 +180,7 @@ function QuadGlyphPicker({
 }: {
   selectedGlyph: string;
   onSelect: (g: string) => void;
+  onAbrirCatalogo?: () => void;
   accent: string;
   VD: ReturnType<typeof useTheme>;
   t: (k: string) => string;
@@ -189,24 +194,30 @@ function QuadGlyphPicker({
     return ALL_DOT_GLYPHS.filter((g) => g.includes(q));
   }, [filtro]);
 
+  const estiloEnlace: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    color: VD.textDim,
+    fontFamily: VD.mono,
+    fontSize: 8,
+    cursor: 'pointer',
+    padding: 0,
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('ed.split.icon')}</DotLabel>
-        <button
-          onClick={() => onSelect('')}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: VD.textDim,
-            fontFamily: VD.mono,
-            fontSize: 8,
-            cursor: 'pointer',
-            padding: 0,
-          }}
-        >
-          {t('ed.split.noIcon')}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {onAbrirCatalogo && (
+            <button onClick={onAbrirCatalogo} style={{ ...estiloEnlace, color: accent }}>
+              {tf('CATÁLOGO')}
+            </button>
+          )}
+          <button onClick={() => onSelect('')} style={estiloEnlace}>
+            {t('ed.split.noIcon')}
+          </button>
+        </div>
       </div>
 
       <input
@@ -275,6 +286,7 @@ export function EditorSubdivision2x2({
   subButtons,
   onChange,
   accent,
+  onAbrirCatalogo,
 }: EditorSubdivision2x2Props) {
   const VD = useTheme();
   const t = useT();
@@ -397,7 +409,9 @@ export function EditorSubdivision2x2({
                   <span style={{ position: 'absolute', top: 3, left: 4, fontFamily: VD.mono, fontSize: 7, color: isSel ? accent : VD.textMuted }}>
                     {q.code}
                   </span>
-                  {glyph ? (
+                  {sub.iconoPuntos?.bits ? (
+                    <IconoPuntos bits={sub.iconoPuntos.bits} size={12} color={fg} />
+                  ) : glyph ? (
                     <DotGlyphIcon glyph={glyph} size={12} color={fg} />
                   ) : (
                     <span style={{ width: 4, height: 4, borderRadius: '50%', background: fg, opacity: 0.4 }} />
@@ -509,7 +523,8 @@ export function EditorSubdivision2x2({
           {/* Selector de Glifo Dot-Matrix */}
           <QuadGlyphPicker
             selectedGlyph={(activeSub.dotGlyph || activeSub.icon || '').toUpperCase()}
-            onSelect={(glyph) => updateActiveSub({ dotGlyph: glyph, icon: glyph })}
+            onSelect={(glyph) => updateActiveSub({ dotGlyph: glyph, icon: glyph, iconoPuntos: undefined })}
+            onAbrirCatalogo={onAbrirCatalogo ? () => onAbrirCatalogo(selectedIdx) : undefined}
             accent={accent}
             VD={VD}
             t={t}

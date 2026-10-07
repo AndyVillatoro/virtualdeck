@@ -125,6 +125,8 @@ export interface BotonFuenteMando {
     sublabel?: string;
     icon?: string;
     dotGlyph?: string;
+    /** Icono del catálogo 16×16 del cuadrante (roadmap 93). */
+    iconoPuntos?: { bits: string; origen: string };
     bgColor?: string;
     fgColor?: string;
     action?: { type: string };
@@ -300,6 +302,7 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
     ...(b.efectoPulsar ? { efectoPulsar: b.efectoPulsar } : {}),
     subButtons: b.subButtons?.map((s) => {
       const sub = resolverIconoMando({
+        iconoPuntos: s.iconoPuntos,
         icon: s.icon,
         dotGlyph: s.dotGlyph,
         actionType: s.action?.type,

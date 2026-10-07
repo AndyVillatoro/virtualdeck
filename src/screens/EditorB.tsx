@@ -40,19 +40,32 @@ function filtrarPresets(presetSearch: string, presetCategory: string, esDock: bo
   return base.filter((p) => p.widget !== 'slider' && p.action.type !== 'folder');
 }
 
+/** El origen del icono que se está editando, para que el catálogo abra en su grupo. */
+function origenDelCatalogo(e: ReturnType<typeof useEstadoEditor>): string | undefined {
+  if (e.destinoCatalogo === 'encendido') return e.encendidoIconoPuntos?.origen;
+  if (typeof e.destinoCatalogo === 'object') {
+    return e.subButtons[e.destinoCatalogo.cuadrante]?.iconoPuntos?.origen;
+  }
+  return e.iconoPuntos?.origen;
+}
+
 function calcularInsignias(
   e: ReturnType<typeof useEstadoEditor>,
   dockInfo: ReturnType<typeof useDockPresets>,
   t: (k: string) => string,
 ) {
   const actionTypeObj = ACTION_TYPES.find((at) => at.type === e.action.type);
-  const actionBadge = e.action.type !== 'none' && actionTypeObj ? t(actionTypeObj.label) : undefined;
+  const base = e.action.type !== 'none' && actionTypeObj ? t(actionTypeObj.label) : undefined;
+  // La secuencia vive en ACCIÓN: su cuenta va en la insignia de esa sección.
+  const conSecuencia = e.extraActions.length > 0
+    && e.action.type !== 'none' && e.action.type !== 'folder' && !e.is2x2Mode;
+  const actionBadge = conSecuencia ? `${base ?? ''} +${e.extraActions.length}`.trim() : base;
   const dockBadge = dockInfo.esDock && dockInfo.controlMeta
     ? `${dockInfo.controlMeta.control.toUpperCase()}${dockInfo.controlMeta.gesto ? ` · ${dockInfo.controlMeta.gesto.toUpperCase()}` : ''}`
     : undefined;
   const appearanceBadge = e.label || (e.icon ? e.icon : undefined);
   const behaviorBadge = e.isToggle ? t('ed.badge.toggle') : (e.fijo ? t('ed.badge.fijo') : undefined);
-  const advancedBadge = e.is2x2Mode ? '2×2' : (e.extraActions.length > 0 ? `+${e.extraActions.length}` : undefined);
+  const advancedBadge = e.is2x2Mode ? '2×2' : undefined;
   return { actionBadge, dockBadge, appearanceBadge, behaviorBadge, advancedBadge };
 }
 
@@ -246,6 +259,11 @@ export function EditorB({
                 setWidget={e.setWidget}
                 sliderWidget={e.sliderWidget}
                 setSliderWidget={e.setSliderWidget}
+                is2x2Mode={e.is2x2Mode}
+                extraActions={e.extraActions}
+                setExtraActions={e.setExtraActions}
+                showExtraPicker={e.showExtraPicker}
+                setShowExtraPicker={e.setShowExtraPicker}
               />
             </SeccionAjustes>
 
@@ -413,12 +431,8 @@ export function EditorB({
                 setIs2x2Mode={e.setIs2x2Mode}
                 subButtons={e.subButtons}
                 setSubButtons={e.setSubButtons}
-                action={e.action}
-                extraActions={e.extraActions}
-                setExtraActions={e.setExtraActions}
-                showExtraPicker={e.showExtraPicker}
-                setShowExtraPicker={e.setShowExtraPicker}
                 accent={accent}
+                onAbrirCatalogoCuadrante={e.abrirCatalogoCuadrante}
               />
             </SeccionAjustes>
           </div>
@@ -449,7 +463,7 @@ export function EditorB({
         catalogoDotAbierto={e.catalogoDotAbierto}
         onCloseCatalogoDot={e.cerrarCatalogoDot}
         onSelectIconoDot={e.seleccionarIconoCatalogo}
-        currentOrigen={e.destinoCatalogo === 'encendido' ? e.encendidoIconoPuntos?.origen : e.iconoPuntos?.origen}
+        currentOrigen={origenDelCatalogo(e)}
         onCloseBrandPicker={() => e.setShowBrandPicker(false)}
         onCloseBrandEditor={() => e.setShowBrandEditor(false)}
         onCloseGlyphEditor={() => e.setShowGlyphEditor(false)}

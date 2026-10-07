@@ -27,6 +27,12 @@ export interface SubButtonConfig {
   sublabel?: string;
   icon?: string;
   dotGlyph?: string;
+  /**
+   * Icono del catálogo grande (16×16) copiado en el cuadrante, igual que
+   * `ButtonConfig.iconoPuntos` (roadmap 93). En la celda va por encima del
+   * glifo 8×8; la tecla LCD y el mando móvil también lo pintan.
+   */
+  iconoPuntos?: { bits: string; origen: string };
   bgColor?: string;
   fgColor?: string;
   action: ButtonAction;

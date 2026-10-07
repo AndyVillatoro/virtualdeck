@@ -313,10 +313,43 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
   return { botones: botones.length, scripts, programas, atajosGlobales, webhooks, urls, teclas, automaticos, integraciones };
 }
 
+/** 32 bytes en base64 (icono 16×16) y origen de uno de los dos catálogos. */
+const BITS_CATALOGO = /^[A-Za-z0-9+/]{43}=$/;
+const ORIGENES_CATALOGO = /^(marcas|acciones):/;
+
+/** Un cuadrante 2×2 con `iconoPuntos` válido, o sin el campo. */
+function sanearIconoPuntosCuadrante(s: unknown): void {
+  if (!s || typeof s !== 'object') return;
+  const o = s as Record<string, any>;
+  const ip = o.iconoPuntos;
+  if (ip === undefined) return;
+  const ok = ip && typeof ip === 'object'
+    && typeof ip.bits === 'string' && BITS_CATALOGO.test(ip.bits)
+    && typeof ip.origen === 'string' && ORIGENES_CATALOGO.test(ip.origen);
+  if (!ok) delete o.iconoPuntos;
+}
+
+/**
+ * Un perfil viene de un desconocido: su icono de catálogo en los cuadrantes
+ * (roadmap 93) solo se acepta con la forma que el pintor sabe dibujar. Lo que
+ * no cuadre se quita, como si el cuadrante no lo trajera.
+ */
+function sanearCuadrantesDePerfil(perfil: unknown): void {
+  const botones = (perfil as { buttons?: unknown })?.buttons;
+  if (!Array.isArray(botones)) return;
+  for (const b of botones) {
+    if (!b || typeof b !== 'object') continue;
+    const subs = (b as { subButtons?: unknown }).subButtons;
+    if (!Array.isArray(subs)) continue;
+    for (const s of subs) sanearIconoPuntosCuadrante(s);
+  }
+}
+
 export async function perfil(url: string): Promise<{ ok: true; perfil: unknown; riesgo: ResumenRiesgo } | { ok: false; error: string }> {
   try {
     const j = await traerJson(url);
     if (!j || typeof j !== 'object') return { ok: false, error: tm('gal.notObject') };
+    sanearCuadrantesDePerfil(j);
     return { ok: true, perfil: j, riesgo: resumirRiesgo(j) };
   } catch (e) {
     return { ok: false, error: String((e as Error).message ?? e) };

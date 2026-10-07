@@ -201,6 +201,20 @@ function diasDeTimer(c: CamposDelEditor): number[] | undefined {
   return [...new Set(c.timerTriggerDias)].sort((a, b) => a - b);
 }
 
+/**
+ * La secuencia de acciones extra (roadmap 94).
+ *
+ * Solo se guarda cuando de verdad corre: con una acción principal que se
+ * ejecute —`none` y `folder` no la lanzan— y sin 2×2, donde la pulsación la
+ * resuelve cada cuadrante. El tope son 8 acciones en total: la principal más
+ * siete pasos (la interfaz ofrece el mismo).
+ */
+function accionesDeBoton(c: CamposDelEditor): ButtonAction[] | undefined {
+  const corre = c.action.type !== 'none' && c.action.type !== 'folder' && !c.is2x2Mode;
+  if (!corre || c.extraActions.length === 0) return undefined;
+  return [c.action, ...c.extraActions.slice(0, 7)];
+}
+
 export function construirBoton(button: ButtonConfig, c: CamposDelEditor): ButtonConfig {
   return {
     ...button,
@@ -222,7 +236,7 @@ export function construirBoton(button: ButtonConfig, c: CamposDelEditor): Button
     action: accionDeBoton(c),
     // Solo se guarda la lista cuando hay más de una: con una sola, `action`
     // ya la tiene y duplicarla haría que se ejecutase dos veces.
-    actions: c.extraActions.length > 0 ? [c.action, ...c.extraActions] : undefined,
+    actions: accionesDeBoton(c),
     isToggle: c.isToggle || undefined,
     actionToggleOff:
       c.isToggle && c.actionToggleOff.type !== 'none' ? c.actionToggleOff : undefined,

@@ -236,12 +236,30 @@ function pasaAccionADot(a: any): void {
   pasaAccionADot(a.longPressAction);
 }
 
+/**
+ * El `iconoPuntos` de un cuadrante 2×2 (roadmap 93): 32 bytes en base64 y un
+ * origen de los dos catálogos. Lo que no cuadre se quita: un perfil importado
+ * no puede dejar bits arbitrarios dentro de la configuración.
+ */
+const BITS_CATALOGO = /^[A-Za-z0-9+/]{43}=$/;
+const ORIGENES_CATALOGO = /^(marcas|acciones):/;
+
+function sanearIconoPuntosCuadrante(s: any): void {
+  if (!isObject(s) || s.iconoPuntos === undefined) return;
+  const ip = s.iconoPuntos;
+  const ok = isObject(ip)
+    && typeof ip.bits === 'string' && BITS_CATALOGO.test(ip.bits)
+    && typeof ip.origen === 'string' && ORIGENES_CATALOGO.test(ip.origen);
+  if (!ok) delete s.iconoPuntos;
+}
+
 function pasaBotonADot(b: any): void {
   if (!isObject(b)) return;
   pasaIconoADot(b);
   if (Array.isArray(b.subButtons)) {
     for (const s of b.subButtons) {
       if (!isObject(s)) continue;
+      sanearIconoPuntosCuadrante(s);
       pasaIconoADot(s);
       pasaAccionADot(s.action);
       if (Array.isArray(s.actions)) for (const sub of s.actions) pasaAccionADot(sub);
@@ -462,6 +480,11 @@ export function sanearConfig(raw: unknown): { config: Partial<DeckConfig>; repar
  * que no existen).
  *
  * Devuelve la lista sin repetidos, para poder decir **cuales** son.
+ *
+ * De paso sanea el `iconoPuntos` de los cuadrantes 2×2: esta función es el
+ * único punto por el que pasa un perfil importado antes de aplicarse —la
+ * galería y la tienda la llaman—, así que aquí se quita el icono de catálogo
+ * que no tenga la forma que el pintor sabe dibujar (roadmap 93).
  */
 export function tiposDesconocidos(botones: unknown): string[] {
   if (!Array.isArray(botones)) return [];
@@ -481,6 +504,7 @@ export function tiposDesconocidos(botones: unknown): string[] {
     }
     for (const sb of (Array.isArray(a.subButtons) ? a.subButtons as unknown[] : [])) {
       if (!isObject(sb)) continue;
+      sanearIconoPuntosCuadrante(sb);
       mirar(sb.action);
       for (const sub of (Array.isArray(sb.actions) ? sb.actions as unknown[] : [])) mirar(sub);
       mirar(sb.actionToggleOff);
@@ -496,6 +520,7 @@ export function tiposDesconocidos(botones: unknown): string[] {
     // Los cuadrantes 2×2 viven en el botón, no en la acción.
     for (const sb of (Array.isArray(b.subButtons) ? b.subButtons as unknown[] : [])) {
       if (!isObject(sb)) continue;
+      sanearIconoPuntosCuadrante(sb);
       mirar(sb.action);
       for (const a of (Array.isArray(sb.actions) ? sb.actions as unknown[] : [])) mirar(a);
       mirar(sb.actionToggleOff);

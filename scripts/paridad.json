@@ -202,7 +202,8 @@
   "subButtons": {
     "pantallas": "si",
     "movil": "si",
-    "dock": "si"
+    "dock": "si",
+    "nota": "los cuadrantes llevan sus propios campos, iconoPuntos del catálogo 16x16 incluido (roadmap 93): celda (components/celda/Subdivision2x2.tsx), móvil (electron/main/iconosMando.ts) y tecla LCD (utils/superficies/subdivisionLcd.ts) los pintan; solo el dispositivo no ejecuta los cuadrantes"
   },
   "fijo": {
     "pantallas": "si",

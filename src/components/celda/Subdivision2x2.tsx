@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { DotGlyphIcon } from '../dot480/DotGlyphIcon';
+import { IconoPuntos } from '../dot480/IconoPuntos';
 import { DotRadialSweep } from '../dot480/DotRadialSweep';
 import { playSound } from '../../utils/sound';
 import type { ButtonConfig, SubButtonConfig, SoundProfileId } from '../../types';
@@ -298,8 +299,16 @@ export const Subdivision2x2 = memo(function Subdivision2x2({
               />
             )}
 
-            {/* Glifo dot-matrix */}
-            {glyphName ? (
+            {/* Icono del catálogo 16×16 del cuadrante, o glifo dot-matrix */}
+            {sub.iconoPuntos?.bits ? (
+              <IconoPuntos
+                bits={sub.iconoPuntos.bits}
+                size={14}
+                color={displayColor}
+                dimColor={VD.dotIdle}
+                showRecessed={!estado.isToggled}
+              />
+            ) : glyphName ? (
               <DotGlyphIcon
                 glyph={glyphName}
                 size={14}

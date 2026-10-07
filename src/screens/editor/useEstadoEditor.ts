@@ -14,12 +14,15 @@ import { useCapturaHotkey } from './useCapturaHotkey';
 import { usePegarImagen } from './usePegarImagen';
 import { resolverIconoInicial, limpiarCamposIcono, type TipoIcono } from './tiposIcono';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
-import { CAT_ACCIONES, PREFIJO_MARCAS } from './constantesCatalogo';
+import { CAT_ACCIONES, CAT_MARCAS, PREFIJO_MARCAS } from './constantesCatalogo';
 import type { IconoElegido, SeccionCatalogo } from './constantesCatalogo';
 import type { ButtonConfig, SubButtonConfig, EfectoPuntos, EfectoPulsar } from '../../types';
 import type { PresetDock } from '../../data/presetsDock';
 
 export type SeccionId = 'presets' | 'action' | 'appearance' | 'behavior' | 'advanced';
+
+/** A qué icono del editor va lo que se elija en el catálogo (roadmap 93). */
+export type DestinoCatalogo = 'principal' | 'encendido' | { cuadrante: number };
 
 interface UseEstadoEditorOptions {
   button: ButtonConfig;
@@ -111,7 +114,7 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
   const [encendidoBgColor, setEncendidoBgColor] = useState<string>(est.aspectoEncendido?.bgColor ?? '');
   const [encendidoFgColor, setEncendidoFgColor] = useState<string>(est.aspectoEncendido?.fgColor ?? '');
   const [previewToggled, setPreviewToggled] = useState(false);
-  const [destinoCatalogo, setDestinoCatalogo] = useState<'principal' | 'encendido'>('principal');
+  const [destinoCatalogo, setDestinoCatalogo] = useState<DestinoCatalogo>('principal');
   const [catalogoDotAbierto, setCatalogoDotAbierto] = useState<SeccionCatalogo | null>(null);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [showBrandEditor, setShowBrandEditor] = useState(false);
@@ -275,7 +278,7 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
     }));
   };
 
-  const abrirCatalogoDot = (cat: NombreCatalogo, destino: 'principal' | 'encendido' = 'principal') => {
+  const abrirCatalogoDot = (cat: NombreCatalogo, destino: DestinoCatalogo = 'principal') => {
     setDestinoCatalogo(destino);
     // Con un glifo 8×8 elegido, el catálogo abre en su grupo, no en Tabler.
     const glifoElegido = destino === 'principal' && tipoIcono === 'glifo';
@@ -283,7 +286,32 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
   };
   const cerrarCatalogoDot = () => setCatalogoDotAbierto(null);
 
+  /** El catálogo de un cuadrante abre donde tenga sentido según su icono actual. */
+  const abrirCatalogoCuadrante = (idx: number) => {
+    const origen = subButtons[idx]?.iconoPuntos?.origen;
+    const cat = origen?.startsWith(PREFIJO_MARCAS) ? CAT_MARCAS : CAT_ACCIONES;
+    abrirCatalogoDot(cat, { cuadrante: idx });
+  };
+
+  /** Elegir en el catálogo con un cuadrante de destino (roadmap 93). */
+  const seleccionarIconoCuadrante = (idx: number, icono: IconoElegido) => {
+    setSubButtons((prev) => {
+      const actuales = prev.length === 4 ? prev : subButtonsIniciales(button);
+      const patch: Partial<SubButtonConfig> = icono.tipo === 'glifo'
+        ? { dotGlyph: icono.icon, icon: icono.icon, iconoPuntos: undefined }
+        : { iconoPuntos: { bits: icono.bits, origen: icono.origen }, dotGlyph: undefined, icon: undefined };
+      const next = [...actuales];
+      next[idx] = { ...actuales[idx], ...patch };
+      return next;
+    });
+    setCatalogoDotAbierto(null);
+  };
+
   const seleccionarIconoCatalogo = (icono: IconoElegido) => {
+    if (typeof destinoCatalogo === 'object') {
+      seleccionarIconoCuadrante(destinoCatalogo.cuadrante, icono);
+      return;
+    }
     if (destinoCatalogo === 'encendido') {
       if (icono.tipo === 'puntos') {
         setEncendidoIconoPuntos(icono);
@@ -559,6 +587,7 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
     catalogoDotAbierto,
     setCatalogoDotAbierto,
     abrirCatalogoDot,
+    abrirCatalogoCuadrante,
     cerrarCatalogoDot,
     seleccionarIconoCatalogo,
   };

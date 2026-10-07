@@ -4,10 +4,10 @@ import type { ButtonConfig } from '../../types';
  * El mosaico 2×2 en una tecla LCD (roadmap 82).
  *
  * Es la versión reducida de `components/celda/Subdivision2x2`: cuatro
- * cuadrantes con su color, su glifo y su etiqueta. La fuente de datos es la
- * misma —`dotGlyph || icon` para el glifo, colores propios del sub-botón y
- * `#111315` cuando no hay `bgColor`—, y la sub-etiqueta de los cuadrantes se
- * omite porque no cabe en 64 px.
+ * cuadrantes con su color, su icono y su etiqueta. La fuente de datos es la
+ * misma —`iconoPuntos` del catálogo 16×16, `dotGlyph || icon` para el glifo,
+ * colores propios del sub-botón y `#111315` cuando no hay `bgColor`—, y la
+ * sub-etiqueta de los cuadrantes se omite porque no cabe en 64 px.
  *
  * Vive aparte de `pintarTecla` por tamaño (`max-lines`): los recursos de
  * dibujo —cargar imágenes, las fuentes reales y el color de los puntos
@@ -135,7 +135,7 @@ export async function dibujarSubdivisionLcd(
       id: sub.id,
       label: sub.label ?? '',
       icon: glifo || undefined,
-      iconoPuntos: undefined,
+      iconoPuntos: sub.iconoPuntos,
       customGlyph57: undefined,
       imageData: undefined,
       brandIcon: undefined,
