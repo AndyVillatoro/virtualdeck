@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FOLDER_PRESETS, type ButtonPreset } from './actionData';
 import {
   accionInicial,
@@ -17,6 +17,7 @@ import type { NombreCatalogo } from '../../data/iconosDot/tipos';
 import { CAT_ACCIONES, CAT_MARCAS, PREFIJO_MARCAS } from './constantesCatalogo';
 import type { IconoElegido, SeccionCatalogo } from './constantesCatalogo';
 import type { ButtonConfig, SubButtonConfig, EfectoPuntos, EfectoPulsar } from '../../types';
+import { resolverIconoCatalogo } from '../../data/iconosDot';
 import type { PresetDock } from '../../data/presetsDock';
 
 export type SeccionId = 'presets' | 'action' | 'appearance' | 'behavior' | 'advanced';
@@ -151,6 +152,20 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
   const [tipoIcono, setTipoIcono] = useState<TipoIcono>(infoIconoIni.tipo);
   const [glifoEncima, setGlifoEncima] = useState<string>(infoIconoIni.glifoEncima);
   const [habiaVariosCamposIcono] = useState<boolean>(infoIconoIni.habiaVarios);
+
+  /** Reflejo mutable del estado de icono para leerlo dentro de promesas de resolución de catálogo. */
+  const iconoRef = useRef({
+    icon,
+    tipoIcono,
+    iconoPuntos,
+    imageData,
+    brandIcon,
+    customGlyph57,
+  });
+  useEffect(() => {
+    iconoRef.current = { icon, tipoIcono, iconoPuntos, imageData, brandIcon, customGlyph57 };
+  }, [icon, tipoIcono, iconoPuntos, imageData, brandIcon, customGlyph57]);
+
   const [presetCategory, setPresetCategory] = useState<string>(esDock ? 'DOCK' : 'APPS');
   const [presetSearch, setPresetSearch] = useState('');
   const [capturing, setCapturing] = useState(false);
@@ -359,6 +374,36 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
     setCatalogoDotAbierto(null);
   };
 
+  // Resuelve `iconoCatalogo` y, si el usuario no tocó el icono entretanto,
+  // sustituye el glifo de respaldo por el icono de puntos correspondiente.
+  const aplicarIconoCatalogo = (origen: string, iconoRespaldo: string) => {
+    resolverIconoCatalogo(origen).then((resuelto) => {
+      if (!resuelto) return;
+      const actual = iconoRef.current;
+      const sinCambios = actual.icon === iconoRespaldo && actual.tipoIcono === (iconoRespaldo ? 'glifo' : 'auto') && !actual.iconoPuntos && !actual.imageData && !actual.brandIcon && !actual.customGlyph57;
+      if (!sinCambios) return;
+      setIconoPuntos(resuelto);
+      setIcon('');
+      setTipoIcono(resuelto.origen.startsWith(PREFIJO_MARCAS) ? 'marca' : 'glifo');
+    });
+  };
+
+  const resetIconoPreset = (iconoRespaldo: string) => {
+    setIconoPuntos(undefined);
+    setImageData('');
+    setBrandIcon('');
+    setBrandIconCustomBitmap(undefined);
+    setBrandIconCustomColor(undefined);
+    setBrandIconCustomPalette(undefined);
+    setCustomGlyph57(undefined);
+    if (iconoRespaldo) {
+      setTipoIcono('glifo');
+      setGlifoEncima('');
+    } else {
+      setTipoIcono('auto');
+    }
+  };
+
   const applyPreset = (preset: ButtonPreset) => {
     setAction(preset.action);
     setLabel(preset.label);
@@ -373,11 +418,9 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
       setWidget(preset.widget);
       if (preset.sliderWidget) setSliderWidget(preset.sliderWidget);
     }
-    if (preset.icon) {
-      setTipoIcono('glifo');
-      setGlifoEncima('');
-    } else {
-      setTipoIcono('auto');
+    resetIconoPreset(preset.icon ?? '');
+    if (preset.iconoCatalogo) {
+      aplicarIconoCatalogo(preset.iconoCatalogo, preset.icon ?? '');
     }
     setSeccionesAbiertas((prev) => ({ ...prev, action: true, appearance: true }));
   };
@@ -393,11 +436,9 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
     setIsToggle(hueco.isToggle ?? false);
     setActionToggleOff(hueco.actionToggleOff ?? { type: 'none' });
     if (hueco.fijo) setFijo(true);
-    if (hueco.icon) {
-      setTipoIcono('glifo');
-      setGlifoEncima('');
-    } else {
-      setTipoIcono('auto');
+    resetIconoPreset(hueco.icon ?? '');
+    if (hueco.iconoCatalogo) {
+      aplicarIconoCatalogo(hueco.iconoCatalogo, hueco.icon ?? '');
     }
     setSeccionesAbiertas((prev) => ({ ...prev, action: true, appearance: true }));
   };

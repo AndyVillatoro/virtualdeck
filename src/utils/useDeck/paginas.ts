@@ -1,6 +1,8 @@
 import { useCallback, useRef } from 'react';
 import type { ActionType, ButtonConfig, DisposicionSuperficie, InfoSuperficie, PageConfig } from '../../types';
 import { PLANTILLAS_APP, repartirPlantillaDock } from '../../data/plantillasApp';
+import { resolverIconoCatalogo } from '../../data/iconosDot';
+import type { PresetHueco } from '../../data/presetsDock';
 import { columnasDock, rejillaDe, totalHuecos } from '../superficies/disposicion';
 import { normalizarApp } from '../apps';
 import type { ContextoDeck } from './contexto';
@@ -233,6 +235,14 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
     if (config.pages.length >= 8) return undefined;
     const id = `page_${Date.now()}`;
     const nombre = t(plantilla.nombre);
+    const contenidos: (PresetHueco | null)[] = destino
+      ? repartirPlantillaDock(plantilla.dock, destino.disposicion)
+      : plantilla.deck;
+    const ids = contenidos.map((_, slot) => `p${Date.now()}_${slot}`);
+    const iconosPendientes = new Map<string, string>();
+    contenidos.forEach((c, i) => {
+      if (c?.iconoCatalogo) iconosPendientes.set(ids[i], c.iconoCatalogo);
+    });
     withHistory(destino ? t('undo.addSurfacePage', { nombre }) : t('undo.addPage'), (prev) => {
       if (prev.pages.length >= 8) return prev;
       const newIdx = prev.pages.length;
@@ -240,14 +250,13 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
         const newPage: PageConfig = { id, name: nombre, gridSize: 4, targetApp: limpio };
         const newButtons: ButtonConfig[] = plantilla.deck.map((contenido, slot) => ({
           ...(contenido ?? { label: '', icon: '', action: { type: 'none' as ActionType } }),
-          id: `p${Date.now()}_${slot}`,
+          id: ids[slot],
           page: newIdx,
         }));
         return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
       }
       const rejilla = rejillaDe(destino.disposicion);
       if (!rejilla) return prev;
-      const contenidos = repartirPlantillaDock(plantilla.dock, destino.disposicion);
       const newPage: PageConfig = {
         id,
         name: nombre,
@@ -258,13 +267,36 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
       };
       const newButtons: ButtonConfig[] = contenidos.map((contenido, slot) => ({
         ...(contenido ?? { label: '', icon: '', action: { type: 'none' as ActionType } }),
-        id: `p${Date.now()}_${slot}`,
+        id: ids[slot],
         page: newIdx,
       }));
       return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
     });
+    if (iconosPendientes.size > 0) {
+      const promesas = Array.from(iconosPendientes.entries()).map(([buttonId, origen]) =>
+        resolverIconoCatalogo(origen).then((resuelto) => ({ buttonId, resuelto }))
+      );
+      Promise.all(promesas).then((resultados) => {
+        const exitosos = resultados.filter(
+          (r): r is { buttonId: string; resuelto: { bits: string; origen: string } } => r.resuelto !== null
+        );
+        if (exitosos.length === 0) return;
+        setConfig((prev) => {
+          const next = {
+            ...prev,
+            buttons: prev.buttons.map((b) => {
+              const r = exitosos.find((x) => x.buttonId === b.id);
+              if (!r) return b;
+              return { ...b, icon: '', iconoPuntos: r.resuelto };
+            }),
+          };
+          api?.config.save(next).catch(() => {});
+          return next;
+        });
+      });
+    }
     return id;
-  }, [config.pages.length, withHistory, t]);
+  }, [config.pages.length, withHistory, t, setConfig, api]);
 
   /**
    * Vincular una página a una aplicación (o desvincularla con `''`).

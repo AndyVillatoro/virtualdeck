@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { ActionType, ButtonConfig, ModoPerilla } from '../../types';
+import { resolverIconoCatalogo } from '../../data/iconosDot';
 import type { ContextoDeck } from './contexto';
 
 /**
@@ -9,7 +10,7 @@ import type { ContextoDeck } from './contexto';
  * estado de este grupo y no de la configuración: no se guarda en disco ni entra
  * en el historial, porque copiar no es un cambio del deck.
  */
-export function useDeckBotones({ config, withHistory, t }: ContextoDeck) {
+export function useDeckBotones({ api, config, setConfig, withHistory, t }: ContextoDeck) {
   const updateButton = useCallback((updated: ButtonConfig) => {
     withHistory(t('undo.edit', { nombre: updated.label || updated.action.type }), (prev) => ({
       ...prev,
@@ -190,20 +191,55 @@ export function useDeckBotones({ config, withHistory, t }: ContextoDeck) {
    * perilla son tres huecos (izq, pulsar, der) y tiene que ser **un** paso de
    * deshacer, no tres. Cada botón se rehace entero (conserva solo id y página)
    * para que no se cuele nada del botón anterior, como un `fgColor` o un widget.
+   *
+   * Acepta `iconoCatalogo` como campo extra: se aplica el glifo de respaldo
+   * primero y, cuando el catálogo resuelve, se sustituye por `iconoPuntos` sin
+   * generar un paso de deshacer adicional.
    */
+  type ContenidoRelleno = Omit<ButtonConfig, 'id' | 'page'> & { iconoCatalogo?: string };
+
   const rellenarBotones = useCallback((
-    ids: string[], contenidos: Omit<ButtonConfig, 'id' | 'page'>[], nombre: string,
+    ids: string[], contenidos: ContenidoRelleno[], nombre: string,
   ) => {
     if (ids.length === 0) return;
     const nuevo = new Map(ids.map((id, i) => [id, contenidos[i]] as const));
+    const iconosPendientes = new Map<string, string>();
+    ids.forEach((id, i) => {
+      const c = contenidos[i];
+      if (c?.iconoCatalogo) iconosPendientes.set(id, c.iconoCatalogo);
+    });
     withHistory(t('undo.applyPreset', { nombre }), (prev) => ({
       ...prev,
       buttons: prev.buttons.map((b) => {
         const contenido = nuevo.get(b.id);
-        return contenido ? { ...contenido, id: b.id, page: b.page } : b;
+        if (!contenido) return b;
+        const { iconoCatalogo: _, ...resto } = contenido;
+        return { ...resto, id: b.id, page: b.page };
       }),
     }));
-  }, [withHistory, t]);
+    if (iconosPendientes.size === 0) return;
+    const promesas = Array.from(iconosPendientes.entries()).map(([id, origen]) =>
+      resolverIconoCatalogo(origen).then((resuelto) => ({ id, resuelto }))
+    );
+    Promise.all(promesas).then((resultados) => {
+      const exitosos = resultados.filter(
+        (r): r is { id: string; resuelto: { bits: string; origen: string } } => r.resuelto !== null
+      );
+      if (exitosos.length === 0) return;
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          buttons: prev.buttons.map((b) => {
+            const r = exitosos.find((x) => x.id === b.id);
+            if (!r) return b;
+            return { ...b, icon: '', iconoPuntos: r.resuelto };
+          }),
+        };
+        api?.config.save(next).catch(() => {});
+        return next;
+      });
+    });
+  }, [api, setConfig, withHistory, t]);
 
   /**
    * Los modos extra de una perilla multimodo (T-HW-19): añadir, quitar y
