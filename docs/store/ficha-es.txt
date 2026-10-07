@@ -10,15 +10,19 @@ VirtualDeck convierte cualquier pantalla táctil, tableta o monitor secundario e
 
 Cada botón hace algo: abrir un programa, cambiar el dispositivo de audio, escribir un texto, lanzar una macro, encender las luces RGB, correr un script. Los organizas en páginas y carpetas, les pones icono y color, y quedan a un toque.
 
+Y no vive solo en la pantalla del PC. Con el mando móvil pulsas los mismos botones desde el navegador del teléfono, con tu tema y tu acento. Y si tienes un dock físico Stream Dock, VirtualDeck lo maneja: sus teclas LCD se pintan con tus iconos y sus botones y perillas disparan acciones, en varias páginas por dispositivo.
+
 QUÉ PUEDES PONER EN UN BOTÓN
 
 Programas, archivos y páginas web. Atajos de teclado y texto automático. Control de multimedia: reproducir, pausar, siguiente, volumen, silencio, aleatorio y repetición. Cambio de dispositivo de audio predeterminado, que en Windows son cuatro clics y aquí es uno. Brillo del monitor. Apagar, reiniciar, suspender y bloquear. Macros de teclado y ratón que grabas una vez y repites. Control RGB por OpenRGB, con 18 presets. Scripts de PowerShell, con la salida guardada en una variable si la necesitas. Contadores, temporizadores y botones que se ramifican según el valor de una variable.
+
+Catálogo de iconos único con buscador en español: unas 2.900 marcas y 5.100 iconos de acción, listos para copiar a cualquier botón. Iconos animados en puntos: barrido, pulso, parpadeo y escaneo sobre cualquier icono.
 
 MÁS QUE BOTONES
 
 Un botón puede mostrar información en lugar de un icono: el reloj, el clima, lo que está sonando con su carátula, la temperatura de la CPU o de la GPU, el tipo de cambio de una moneda, o el valor de tus propias variables.
 
-Y no todos los botones necesitan un dedo. Puedes hacer que uno se dispare solo a una hora determinada, o cuando un sensor pase de un umbral: que la ventilación suba si la GPU llega a 80 grados, o que se ponga el modo noche a las once.
+Y no todos los botones necesitan un dedo. Puedes hacer que uno se dispare solo a una hora determinada (eligiendo los días de la semana), o cuando un sensor pase de un umbral: que la ventilación suba si la GPU llega a 80 grados, o que se ponga el modo noche a las once.
 
 MODO KIOSKO
 
@@ -36,7 +40,7 @@ TUYO Y PORTÁTIL
 
 La configuración es un archivo JSON que puedes exportar, importar y llevarte. Hay una galería de perfiles listos para empezar, y antes de importar cualquiera se te muestra exactamente qué hace: si lanza programas, si ejecuta scripts, si teclea cosas.
 
-Tema claro y oscuro, diez colores de acento, y la aplicación entera en español e inglés.
+Tema oscuro OLED y claro cemento, diez colores de acento, y la aplicación entera en español e inglés.
 
 CÓDIGO ABIERTO
 
@@ -54,18 +58,22 @@ Primera publicación en la Microsoft Store.
 ========================================
 CARACTERÍSTICAS DEL PRODUCTO  (una por campo, «Añadir más»)
 ========================================
+42 tipos de acción agrupados por familias: programas, atajos, multimedia, audio, RGB y scripts
 Convierte cualquier pantalla táctil o monitor extra en un panel de botones
-37 tipos de acción distintos: programas, atajos, multimedia, audio, RGB y scripts
+Compatible con docks físicos Stream Dock: teclas LCD, botones y perillas
+Mando móvil desde el navegador, con el tema y acento del deck
+Catálogo único de iconos con búsqueda en español
+Iconos animados en puntos: barrido, pulso, parpadeo y escaneo
 Cambia el dispositivo de audio predeterminado con un solo toque
 Graba macros de teclado y ratón y repítelas cuando quieras
 Botones que muestran reloj, clima, música, sensores o divisas
-Disparadores automáticos por hora o por umbral de un sensor
+Disparadores automáticos por hora, con días, o por umbral de un sensor
 Modo kiosko a pantalla completa con PIN opcional
 Barra flotante siempre visible sobre las demás ventanas
 Control de luces RGB con 18 presets, vía OpenRGB
 Púlsalo desde el navegador del móvil o desde otro PC de tu red
 Páginas, carpetas y perfiles que puedes exportar e importar
-Tema claro y oscuro, en español e inglés
+Tema oscuro OLED y claro cemento, en español e inglés
 Código abierto con licencia MIT
 
 ========================================
