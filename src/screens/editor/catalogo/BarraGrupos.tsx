@@ -9,6 +9,7 @@ import {
   GRUPO_TODAS,
   grupoAccionCategoria,
   grupoMarcaDestacada,
+  slugCategoria,
 } from './grupos';
 import type { IndiceDot } from '../../../data/iconosDot/tipos';
 
@@ -55,7 +56,12 @@ function construirBloques(
     titulo: t('cat.acciones'),
     filas: [
       fila(GRUPO_TABLER, t('cat.tablerTodas')),
-      ...(indice?.categorias ?? []).map((c) => fila(grupoAccionCategoria(c.titulo), c.titulo)),
+      // La categoría se enseña traducida (`icat.<slug>`); sin clave, el título original.
+      ...(indice?.categorias ?? []).map((c) => {
+        const clave = `icat.${slugCategoria(c.titulo)}`;
+        const traducido = t(clave);
+        return fila(grupoAccionCategoria(c.titulo), traducido === clave ? c.titulo : traducido);
+      }),
     ].filter((f) => !buscando || f.recuento > 0),
   });
   bloques.push({

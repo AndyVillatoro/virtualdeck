@@ -87,18 +87,77 @@ export function construirItems(indice: IndiceDot): ItemCatalogo[] {
 }
 
 /** La misma búsqueda de antes (id, nombre y etiquetas) más la categoría, que dejó de vivir en las etiquetas. */
-export function coincideBusqueda(item: ItemCatalogo, terminos: string[]): boolean {
+export function coincideBusqueda(
+  item: ItemCatalogo,
+  terminos: string[],
+  alias?: MapasAlias,
+): boolean {
   const id = item.id.toLowerCase();
   const nombre = item.nombre.toLowerCase();
   const categoria = (item.categoria ?? '').toLowerCase();
   const etiquetas = item.etiquetas.map((e) => e.toLowerCase());
-  return terminos.every(
-    (t) =>
+  const categoriaTrad =
+    alias && item.categoria ? (alias.categoriaTraducida.get(item.categoria) ?? '') : '';
+  const aliasTexto = alias
+    ? item.etiquetas.map((e) => alias.aliasPorEtiqueta.get(e) ?? '').join(' ')
+    : '';
+  return terminos.every((crudo) => {
+    const t = normalizarBusqueda(crudo);
+    return (
       id.includes(t) ||
       nombre.includes(t) ||
       categoria.includes(t) ||
-      etiquetas.some((e) => e.includes(t)),
-  );
+      categoriaTrad.includes(t) ||
+      aliasTexto.includes(t) ||
+      etiquetas.some((e) => e.includes(t))
+    );
+  });
+}
+
+/** Slug de una categoría de Tabler: el título en minúsculas con guiones (`icat.<slug>`). */
+export function slugCategoria(titulo: string): string {
+  return titulo.toLowerCase().replace(/\s+/g, '-');
+}
+
+/** Minúsculas sin tildes, para comparar lo que se escribe con lo traducido. */
+export function normalizarBusqueda(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Mapa inverso de la búsqueda en el idioma actual: cada etiqueta inglesa y
+ * cada categoría, a su texto traducido ya normalizado. Se construye una vez
+ * por idioma (memo en el hook), no una por icono y tecla.
+ */
+export interface MapasAlias {
+  aliasPorEtiqueta: Map<string, string>;
+  categoriaTraducida: Map<string, string>;
+}
+
+export function construirMapaAlias(
+  items: ItemCatalogo[],
+  t: (clave: string) => string,
+): MapasAlias {
+  const aliasPorEtiqueta = new Map<string, string>();
+  const categoriaTraducida = new Map<string, string>();
+  for (const item of items) {
+    for (const etiqueta of item.etiquetas) {
+      if (aliasPorEtiqueta.has(etiqueta)) continue;
+      const clave = `ialias.${etiqueta}`;
+      const traducido = t(clave);
+      aliasPorEtiqueta.set(etiqueta, clave === traducido ? '' : normalizarBusqueda(traducido));
+    }
+    const categoria = item.categoria;
+    if (categoria && !categoriaTraducida.has(categoria)) {
+      const clave = `icat.${slugCategoria(categoria)}`;
+      const traducido = t(clave);
+      categoriaTraducida.set(categoria, normalizarBusqueda(clave === traducido ? categoria : traducido));
+    }
+  }
+  return { aliasPorEtiqueta, categoriaTraducida };
 }
 
 export function perteneceAGrupo(

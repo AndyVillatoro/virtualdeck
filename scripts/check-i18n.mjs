@@ -42,6 +42,7 @@ const FRAGMENTOS = {
     ['src/utils/idiomas/esEditor.ts', 'ES_EDITOR'],
     ['src/utils/idiomas/esAcciones.ts', 'ES_ACCIONES'],
     ['src/utils/idiomas/esAjustes.ts', 'ES_AJUSTES'],
+    ['src/utils/idiomas/esCatalogo.ts', 'ES_CATALOGO'],
     ['src/utils/idiomas/esDispositivos.ts', 'ES_DISPOSITIVOS'],
   ],
   'EN: Dict': [
@@ -49,6 +50,7 @@ const FRAGMENTOS = {
     ['src/utils/idiomas/enEditor.ts', 'EN_EDITOR'],
     ['src/utils/idiomas/enAcciones.ts', 'EN_ACCIONES'],
     ['src/utils/idiomas/enAjustes.ts', 'EN_AJUSTES'],
+    ['src/utils/idiomas/enCatalogo.ts', 'EN_CATALOGO'],
     ['src/utils/idiomas/enDispositivos.ts', 'EN_DISPOSITIVOS'],
   ],
   'FIELDS_EN': [['src/utils/idiomas/campos.ts', 'FIELDS_EN']],

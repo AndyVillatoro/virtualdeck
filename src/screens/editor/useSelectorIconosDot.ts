@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useT } from '../../utils/i18n';
 import type { CatalogoDot, IndiceDot, NombreCatalogo } from '../../data/iconosDot/tipos';
 import { CAT_ACCIONES } from './constantesCatalogo';
 import type { SeccionCatalogo } from './constantesCatalogo';
@@ -10,6 +11,7 @@ import {
   GRUPO_TODAS,
   coincideBusqueda,
   construirItems,
+  construirMapaAlias,
   contarGrupos,
   grupoInicial,
   indexarIndice,
@@ -68,6 +70,9 @@ export function useSelectorIconosDot(
 
   const mapas = useMemo(() => indexarIndice(indice), [indice]);
   const items = useMemo(() => (indice ? construirItems(indice) : []), [indice]);
+  // Alias traducidos (T-REV-09): una vez por idioma, no una por icono y tecla.
+  const t = useT();
+  const mapaAlias = useMemo(() => construirMapaAlias(items, t), [items, t]);
   const itemsPorClave = useMemo(() => new Map(items.map((i) => [i.clave, i])), [items]);
   const clavesRecientes = useMemo(() => new Set(recientes), [recientes]);
   const buscando = busquedaAplicada.trim().length > 0;
@@ -83,12 +88,12 @@ export function useSelectorIconosDot(
     const terminos = busquedaAplicada.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const encontrados: ItemCatalogo[] = [];
     for (const item of items) {
-      if (!coincideBusqueda(item, terminos)) continue;
+      if (!coincideBusqueda(item, terminos, mapaAlias)) continue;
       encontrados.push(item);
       if (encontrados.length >= MAX_RESULTADOS_BUSQUEDA) break;
     }
     return encontrados;
-  }, [items, buscando, busquedaAplicada]);
+  }, [items, buscando, busquedaAplicada, mapaAlias]);
 
   const recuentos = useMemo(
     () => contarGrupos(coincidentes, mapas, clavesRecientes),
@@ -101,11 +106,11 @@ export function useSelectorIconosDot(
         ? busquedaAplicada.trim().toLowerCase().split(/\s+/).filter(Boolean)
         : [];
       return resolverRecientes(recientes, itemsPorClave)
-        .filter((item) => !terminos.length || coincideBusqueda(item, terminos))
+        .filter((item) => !terminos.length || coincideBusqueda(item, terminos, mapaAlias))
         .slice(0, buscando ? MAX_RESULTADOS_BUSQUEDA : undefined);
     }
     return coincidentes.filter((item) => perteneceAGrupo(item, grupoActivo, mapas, clavesRecientes));
-  }, [grupoActivo, buscando, busquedaAplicada, recientes, itemsPorClave, coincidentes, mapas, clavesRecientes]);
+  }, [grupoActivo, buscando, busquedaAplicada, recientes, itemsPorClave, coincidentes, mapas, clavesRecientes, mapaAlias]);
 
   // Los bitmaps se bajan solo para lo que se está viendo. El nombre del
   // catálogo sale de los propios datos, no de un literal del código.
