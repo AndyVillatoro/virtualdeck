@@ -92,7 +92,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-REV-17** | P1 | Iconos del catálogo en presets, datos (98) | opencode wR | ver encargo | `DONE` (commit f9866a8) | 2026-10-06 |
 | **T-REV-18** | P1 | Pulsación que se note, cinco superficies (100) | opencode wN (DeepSeek, Go) | `DotRadialSweep`, `efectosPuntos.js`, `animacionPuntos`, `index.css`, `celda/usePulsacion*`, `colores.ts`, `ButtonCell` (barrido), `useAnimacionLcd`, `tactilMandoPagina`, `estiloMandoPagina` | `CLAIMED` | 2026-10-06 |
 | **T-REV-19** | P1 | Deslizador vertical DOT (101) | opencode wS (Qwen3.8 Max, Go) | `DotSliderPartes`, `DotContinuousSlider`, `paginaMando.ts` (deslizador), `vivoMandoPagina` | `CLAIMED` | 2026-10-06 |
-| **T-REV-20** | P1 | Aplicar icono del catálogo al elegir preset (98) | opencode wV (Kimi K2.7 Code, Go) | `useEstadoEditor`, caminos de preset del dock | `CLAIMED` | 2026-10-06 |
+| **T-REV-20** | P1 | Aplicar icono del catálogo al elegir preset (98) | opencode wV (Kimi K2.7 Code, Go) | `useEstadoEditor`, caminos de preset del dock | `IN_PROGRESS` | 2026-10-07 |
 | **T-REV-21** | P2 | Respaldo dentro de Ajustes (104) | opencode wR | `PanelAjustes`, `SeccionPerfiles`, `BotonesNavegacion`, `TitleBar`, `App.tsx` (props), idiomas `*Ajustes` | `CLAIMED` | 2026-10-06 |
 | **T-REV-22** | P2 | Wiki y galeria.md al día (106) | opencode wT (Fledge, gratis) | `docs/wiki/**`, `docs/galeria.md` | `CLAIMED` | 2026-10-06 |
 

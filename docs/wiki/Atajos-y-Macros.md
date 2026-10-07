@@ -79,7 +79,7 @@ el ratón.
 ## Servidor local (HTTP)
 
 Para lo que ya habla HTTP —automatizaciones REST, un script en otro equipo, otro
-panel— hay un servidor propio. **Viene apagado**: se activa en ⚙ →
+panel— hay un servidor propio. **Viene apagado**: se activa en Ajustes (rueda) →
 *SERVIDOR LOCAL (HTTP)*, que también genera el token.
 
 | Ruta | Qué hace |
@@ -105,7 +105,7 @@ curl -H "X-VD-Token: SU_TOKEN" http://127.0.0.1:8787/api/press/0-3
 El servidor sirve también una página pensada para el teléfono. Con
 *PERMITIR LA RED LOCAL* activado:
 
-1. En VirtualDeck, ⚙ → *SERVIDOR LOCAL* → **EMPAREJAR TELÉFONO**. Sale un
+1. En VirtualDeck, Ajustes (rueda) → *SERVIDOR LOCAL* → **EMPAREJAR TELÉFONO**. Sale un
    código de seis cifras y la dirección que hay que escribir.
 2. En el teléfono, abra esa dirección (`http://<ip>:8787`) y escriba el código.
 3. La rejilla de botones aparece. Al tocar uno, el borde se enciende si el deck

@@ -44,6 +44,11 @@ const PAREJAS = [
   ['Widgets-y-Variables', 'Widgets-and-Variables'],
   ['Sensores-y-RGB', 'Sensors-and-RGB'],
   ['Atajos-y-Macros', 'Shortcuts-and-Macros'],
+  ['Docks-y-Controladores', 'Docks-and-Controllers'],
+  ['Mando-Movil', 'Mobile-Remote'],
+  ['Barra-Flotante', 'Floating-Bar'],
+  ['Tienda', 'Store'],
+  ['Temas', 'Themes'],
 ];
 for (const [es, en] of PAREJAS) {
   if (!paginas.has(es)) problemas.push(`falta la página en español '${es}'`);

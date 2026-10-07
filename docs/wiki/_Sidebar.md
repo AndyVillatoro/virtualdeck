@@ -8,6 +8,11 @@
 - [Widgets y variables](Widgets-y-Variables)
 - [Sensores y RGB](Sensores-y-RGB)
 - [Atajos y macros](Atajos-y-Macros)
+- [Docks y controladores](Docks-y-Controladores)
+- [Mando móvil](Mando-Movil)
+- [Barra flotante](Barra-Flotante)
+- [Tienda](Tienda)
+- [Temas](Temas)
 
 **English**
 - [Home](Home-EN)
@@ -17,3 +22,8 @@
 - [Widgets & Variables](Widgets-and-Variables)
 - [Sensors & RGB](Sensors-and-RGB)
 - [Shortcuts & Macros](Shortcuts-and-Macros)
+- [Docks & controllers](Docks-and-Controllers)
+- [Mobile remote](Mobile-Remote)
+- [Floating bar](Floating-Bar)
+- [Store](Store)
+- [Themes](Themes)

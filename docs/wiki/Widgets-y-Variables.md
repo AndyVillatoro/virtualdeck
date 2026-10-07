@@ -3,7 +3,7 @@
 Un botón puede, en vez de mostrar su icono, mostrar **un dato en vivo**. Sigue
 siendo un botón: se pulsa y ejecuta su acción igual que cualquier otro.
 
-Se elige en el paso **Estilo** del editor, en el desplegable *WIDGET*.
+Se elige en la sección **APARIENCIA** del editor, en el desplegable *WIDGET*.
 
 ---
 
@@ -51,7 +51,7 @@ cuerpo de un webhook, el texto de una notificación o el que se lee en voz alta.
 ### Un contador
 
 1. Un botón con la acción **Var: Sumar**, variable `pomodoros`, valor `1`.
-2. Al mismo botón, en Estilo, se le pone el widget **Variable** apuntando a
+2. Al mismo botón, en APARIENCIA, se le pone el widget **Variable** apuntando a
    `pomodoros`, con el sufijo ` hoy`.
 
 Cada pulsación sube la cuenta y el propio botón la muestra.

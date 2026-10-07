@@ -3,7 +3,7 @@
 Instead of its icon, a button can show **live data**. It is still a button: it
 runs its action when pressed, like any other.
 
-Pick it in the editor's **Style** step, under *WIDGET*.
+Pick it in the editor's **APPEARANCE** section, under *WIDGET*.
 
 ---
 
@@ -51,7 +51,7 @@ aloud.
 ### A counter
 
 1. A button with **Add to variable**, variable `pomodoros`, value `1`.
-2. On the same button, under Style, the **Variable** widget pointing at
+2. On the same button, under APPEARANCE, the **Variable** widget pointing at
    `pomodoros`, with the suffix ` today`.
 
 Every press bumps the count and the button itself shows it.

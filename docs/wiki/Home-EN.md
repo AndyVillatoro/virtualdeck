@@ -15,6 +15,11 @@ macros and more. 100% local, free, no accounts.
 - [Widgets & Variables](Widgets-and-Variables) — clock, weather, sensors, music, counters.
 - [Sensors & RGB](Sensors-and-RGB) — LibreHardwareMonitor and OpenRGB.
 - [Shortcuts & Macros](Shortcuts-and-Macros) — global hotkeys and the macro recorder.
+- [Docks & controllers](Docks-and-Controllers) — Stream Dock N3, knobs, on-key widgets.
+- [Mobile remote](Mobile-Remote) — pair, widgets and hold from your phone.
+- [Floating bar](Floating-Bar) — an always-on-top column of buttons.
+- [Store & gallery](Store) — the profile catalog and its risk notice.
+- [Themes](Themes) — OLED dark, light and system, with accent.
 
 ## 🔗 Links
 

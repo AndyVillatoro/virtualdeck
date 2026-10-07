@@ -78,7 +78,7 @@ mouse.
 
 For anything that already speaks HTTP — REST automations, a script on another
 machine, another panel — there is a built-in server. **It ships disabled**:
-turn it on in ⚙ → *LOCAL SERVER (HTTP)*, which also generates the token.
+turn it on in Settings (gear) → *LOCAL SERVER (HTTP)*, which also generates the token.
 
 | Route | What it does |
 |---|---|
@@ -103,7 +103,7 @@ curl -H "X-VD-Token: YOUR_TOKEN" http://127.0.0.1:8787/api/press/0-3
 The server also serves a page meant for a phone. With *ALLOW LOCAL NETWORK*
 turned on:
 
-1. In VirtualDeck, ⚙ → *LOCAL SERVER* → **PAIR PHONE**. A six-digit code and
+1. In VirtualDeck, Settings (gear) → *LOCAL SERVER* → **PAIR PHONE**. A six-digit code and
    the address to type appear.
 2. On the phone, open that address (`http://<ip>:8787`) and type the code.
 3. The button grid shows up. Tapping one lights its border if the deck ran it,

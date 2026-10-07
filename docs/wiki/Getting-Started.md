@@ -6,14 +6,14 @@
 
 1. Download the installer from [Releases](https://github.com/AndyVillatoro/virtualdeck/releases) (`VirtualDeck-Setup-X.Y.Z.exe`).
 2. Run it. If Windows shows SmartScreen, choose "More info → Run anyway".
-3. On first launch you'll see a 5-step **tutorial**. You can replay it from ⚙ → Help & About → Replay tutorial.
+3. On first launch you'll see a 7-step **tutorial**. You can replay it from Settings (gear) → Help & About → Replay tutorial.
 
 ## Create your first button
 
 1. **Click an empty cell** in the grid.
 2. Pick the **action type** (open app, website, shortcut, audio, macro…).
 3. Fill in that action's settings (e.g. the app path or the URL).
-4. In the **Style** tab set a label, icon and colors.
+4. In the **APPEARANCE** section set a label, icon and colors.
 5. Save. A **normal click** fires the button; **right-click** edits, duplicates or clears it.
 
 > 💡 Hold **Ctrl** and click to select several buttons at once.
@@ -32,5 +32,5 @@ second monitor.
 ## Search & help
 
 - **Ctrl+K** opens the global button search.
-- **⚙ Settings** gathers theme, **language (Español/English)**, scale and more.
-- **⚙ → Help & About** has documentation, bug reporting and the tutorial.
+- **Settings Settings** gathers theme, **language (Español/English)**, scale and more.
+- **Settings (gear) → Help & About** has documentation, bug reporting and the tutorial.

@@ -16,6 +16,11 @@ ejecutar atajos, macros y más. 100% local, gratis y sin cuentas.
 - [Widgets y variables](Widgets-y-Variables) — reloj, clima, sensores, música, contadores.
 - [Sensores y RGB](Sensores-y-RGB) — LibreHardwareMonitor y OpenRGB.
 - [Atajos y macros](Atajos-y-Macros) — hotkeys globales y grabador de macros.
+- [Docks y controladores](Docks-y-Controladores) — Stream Dock N3, perillas, widgets en la tecla.
+- [Mando móvil](Mando-Movil) — emparejar, widgets y mantener pulsado desde el teléfono.
+- [Barra flotante](Barra-Flotante) — columna de botones siempre visible.
+- [Tienda y galería](Tienda) — catálogo de perfiles y el aviso de riesgo.
+- [Temas](Temas) — oscuro OLED, claro y sistema, con acento.
 
 ## 🔗 Enlaces
 

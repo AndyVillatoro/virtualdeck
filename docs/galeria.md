@@ -89,13 +89,12 @@ actualicen solas.
 
 ## Importar desde URL en VirtualDeck
 
-La app expone `api.config.import()` para JSONs locales. Para galería remota, el flujo equivalente:
+La app importa JSONs locales con `api.config.import()`, y perfiles/páginas remotos con la galería:
 
-1. UI muestra `manifest.json` en una pestaña "Galería" del flyout de configuración.
-2. Al seleccionar un perfil, fetch del `url`, validación con `validateConfig`, y `api.config.save` si pasa.
-3. Se mantiene el perfil actual antes del import como rollback (el sistema de backups de 3.1 ya lo cubre).
+1. **⚙ → GALERÍA DE PERFILES**: se pega la dirección de un `manifest.json`, se lista el catálogo y, al elegir uno, se enseña **qué va a ejecutar** antes de importar (ver más abajo).
+2. **⚙ → GALERÍA → ABRIR TIENDA**: la misma galería en ventana propia (`#tienda`), con buscador por nombre/autor/texto, filtros por tipo (perfil/página), app destino y etiquetas, ficha con nota del autor y riesgo completo, e insignias de INSTALADO y UPDATE comparando cada entrada con el `origen` sellado al instalar.
 
-Por ahora la app solo importa archivos locales — extender a galería remota es un cambio acotado en `App.tsx:handleConfigImport` para aceptar URL en lugar de archivo.
+Ambas validan con `validateConfig` y aplican como perfil o como página suelta, nunca como configuración (el deck montado no se toca; para probarlo hay que cargarlo a mano). El backup anterior al import lo cubre el sistema de backups.
 
 ## Validación
 

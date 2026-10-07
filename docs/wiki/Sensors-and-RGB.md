@@ -89,7 +89,7 @@ profiles to compatible devices. OpenRGB must be running with its SDK server
 enabled.
 
 VirtualDeck can start it for you: set the path to `OpenRGB.exe` in the settings
-panel (⚙ → RGB section) and it will be launched in `--server` mode, without a
+panel (Settings (gear) → RGB section) and it will be launched in `--server` mode, without a
 window.
 
 ### Presets

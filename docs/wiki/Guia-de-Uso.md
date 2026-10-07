@@ -17,16 +17,18 @@ Stream Deck virtual para Windows. Botones configurables que disparan apps, atajo
 |-------|--------|
 | `Ctrl+K` | Búsqueda global de botones |
 | `Ctrl+Z` | Deshacer último cambio |
-| `1` … `8` | Saltar a la página N (hasta las que existan) |
+| `1` … `9` | Saltar a la página N (hasta las que existan) |
 | `Esc` | Salir de modal / fullscreen / kiosko |
 | Botón ⤢ | Modo pantalla completa |
 
 ## Editar un botón
 
 1. Clic en una celda vacía (configurar) o ✎ en una celda con acción (editar).
-2. **Paso 1 · Acción**: escoge el tipo. Atajo, app, web, script, hotkey, webhook, TTS…
-3. **Paso 2 · Configurar**: completa los campos específicos.
-4. **Paso 3 · Estilo**: label, sublabel, icono (emoji, brand icon o glifo 5×7 propio), color de fondo y de texto.
+2. **PRESETS**: botones prearmados por categoría.
+3. **ACCIÓN**: escoge el tipo, agrupado por familias y con buscador; puedes encadenar varias acciones con «añadir otra acción después».
+4. **APARIENCIA**: etiqueta, subtítulo, color de fondo y de texto, y el icono (AUTOMÁTICO / CATÁLOGO / DIBUJO PROPIO / IMAGEN-GIF; el catálogo tiene grupos y búsqueda en español).
+5. **COMPORTAMIENTO**: dos estados, mantener pulsado, fijo en todas las páginas, disparadores (atajo, hora con días, sensor) y visibilidad condicional.
+6. **AVANZADO**: subdivisión 2×2 de la celda, con catálogo por cuadrante.
 
 **Tip — Pegar imagen**: dentro del editor, `Ctrl+V` con una imagen en el portapapeles la aplica directamente como fondo del botón.
 
@@ -52,10 +54,11 @@ notify "Llevas {counter} pomodoros hoy"
 
 ## Disparadores externos
 
-En la sección "DISPARADORES EXTERNOS" del paso CONFIGURAR:
+En la sección **COMPORTAMIENTO** del editor:
 
 - **Hotkey global del SO**: ej. `Ctrl+Alt+1`. Funciona aunque VirtualDeck esté en background.
 - **Mostrar en tray**: el botón aparece en el menú contextual del icono de bandeja.
+- También: disparo por **hora** (con días de la semana) y por **umbral de sensor**.
 
 ## Modo kiosko
 
@@ -67,7 +70,7 @@ Cada vez que guardas, VirtualDeck conserva los últimos **5 backups** en `%APPDA
 
 ## Sonido al press
 
-Cuatro perfiles seleccionables: **Click mecánico**, **Tick**, **Thud** y **Silencio**. Toggle `SONIDO AL PRESIONAR` en el menú ⚙. El timbre se previsualiza al elegirlo.
+Cuatro perfiles seleccionables: **Click mecánico**, **Tick**, **Thud** y **Silencio**. Toggle `SONIDO AL PRESIONAR` en el menú Ajustes. El timbre se previsualiza al elegirlo.
 
 ## Wallpaper
 

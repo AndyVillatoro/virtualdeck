@@ -22,18 +22,22 @@ look.
 |---|---|
 | `Ctrl+K` | Global button search |
 | `Ctrl+Z` | Undo the last change |
-| `1` … `8` | Jump to page N (as many as exist) |
+| `1` … `9` | Jump to page N (as many as exist) |
 | `Esc` | Close whatever is open: search, editor, fullscreen |
 | ⤢ button | Fullscreen mode |
 
 ## Editing a button
 
 1. Click an empty cell to set it up, or ✎ on a configured one to edit it.
-2. **Step 1 · Action**: pick the type — app, website, shortcut, script,
-   hotkey, webhook, text-to-speech and so on.
-3. **Step 2 · Configure**: fill in the fields for that type.
-4. **Step 3 · Style**: label, sublabel, icon (emoji, brand icon or your own
-   5×7 glyph), background and text colour.
+2. **PRESETS**: ready-made buttons by category.
+3. **ACTION**: pick the type, grouped in families with a search box; chain
+   several actions with "add another action after".
+4. **APPEARANCE**: label, sublabel, background and text colour, and the icon
+   (AUTOMATIC / CATALOG / FREEHAND DRAWING / IMAGE-GIF; the catalog has
+   groups and a search box).
+5. **BEHAVIOR**: two states, hold, "pinned on all pages", triggers
+   (shortcut, time with weekdays, sensor) and conditional visibility.
+6. **ADVANCED**: 2×2 subdivision of the cell, with a per-quadrant catalog.
 
 **Tip — paste an image**: with the editor open, `Ctrl+V` applies an image from
 the clipboard directly as the button background.
@@ -54,7 +58,7 @@ back.
 
 ## External triggers
 
-In the *EXTERNAL TRIGGERS* section of the Configure step:
+In the editor's **BEHAVIOR** section:
 
 - **Global OS hotkey**: e.g. `Ctrl+Alt+1`. Works whether VirtualDeck is visible
   or tucked away in the tray.
@@ -83,7 +87,7 @@ something wrong or delete a profile by accident.
 ## Press sound
 
 Four selectable timbres: **mechanical click**, **tick**, **thud** and
-**silent**. Toggle it under ⚙. The timbre is previewed as you pick it.
+**silent**. Toggle it under Settings. The timbre is previewed as you pick it.
 
 ## Wallpaper
 
