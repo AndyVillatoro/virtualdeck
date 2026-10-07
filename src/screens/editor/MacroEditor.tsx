@@ -2,20 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
-import { BotonIcono } from '../../components/ui/BotonIcono';
 import type { MacroStep, MacroStepType } from '../../types';
-
-// El nombre de cada paso se guarda como **clave**, no como texto: el mapa es
-// una constante de modulo y ahi no se puede llamar a `useT()`.
-const STEP_LABELS: Record<MacroStepType, string> = {
-  key: 'macro.step.key',
-  hotkey: 'macro.step.hotkey',
-  text: 'macro.step.text',
-  click: 'macro.step.click',
-  move: 'macro.step.move',
-  delay: 'macro.step.delay',
-  scroll: 'macro.step.scroll',
-};
+import { FilaPasoMacro, STEP_LABELS } from './PasoMacro';
 
 interface MacroEditorProps {
   steps: MacroStep[];
@@ -163,105 +151,18 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 260, overflowY: 'auto' }}>
           {steps.map((step, idx) => (
-            <div key={idx} style={{
-              background: editIdx === idx ? VD.overlay : VD.elevated,
-              border: `1px solid ${editIdx === idx ? accent : VD.border}`,
-              borderRadius: VD.radius.sm, padding: '6px 8px',
-            }}>
-              {/* Step header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, width: 18, textAlign: 'right', flexShrink: 0 }}>
-                  {idx + 1}
-                </span>
-                <span style={{ fontFamily: VD.mono, fontSize: 8, color: accent, letterSpacing: 1, flex: 1 }}>
-                  {t(STEP_LABELS[step.type])}
-                  {step.value ? ` — ${step.value}` : ''}
-                  {(step.x !== undefined && step.type !== 'scroll') ? ` (${step.x}, ${step.y})` : ''}
-                  {step.delayMs ? ` +${step.delayMs}ms` : ''}
-                </span>
-                <BotonIcono
-                  glifo="ARROW_UP"
-                  title={t('comun.subir')}
-                  onClick={() => moveStep(idx, -1)}
-                  disabled={idx === 0}
-                  tamano={20}
-                  tamanoGlifo={8}
-                />
-                <BotonIcono
-                  glifo="ARROW_DOWN"
-                  title={t('comun.bajar')}
-                  onClick={() => moveStep(idx, 1)}
-                  disabled={idx === steps.length - 1}
-                  tamano={20}
-                  tamanoGlifo={8}
-                />
-                <BotonIcono
-                  glifo="EDIT"
-                  title={t('comun.editar')}
-                  onClick={() => setEditIdx(editIdx === idx ? null : idx)}
-                  color={editIdx === idx ? accent : VD.textMuted}
-                  tamano={20}
-                  tamanoGlifo={8}
-                />
-                <BotonIcono
-                  glifo="CLOSE"
-                  title={t('comun.eliminar')}
-                  onClick={() => removeStep(idx)}
-                  peligro
-                  tamano={20}
-                  tamanoGlifo={8}
-                />
-              </div>
-
-              {/* Step editor */}
-              {editIdx === idx && (
-                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                  {(step.type === 'key' || step.type === 'hotkey' || step.type === 'text') && (
-                    <>
-                      <span style={labelSm(VD)}>{t(step.type === 'text' ? 'macro.fieldText' : 'macro.fieldKey')}</span>
-                      <input
-                        value={step.value ?? ''}
-                        onChange={(e) => updateStep(idx, { value: e.target.value })}
-                        placeholder={step.type === 'text' ? t('macro.textPlaceholder') : step.type === 'hotkey' ? 'Ctrl+C' : 'Enter'}
-                        style={{ ...inputStyle, flex: 1, minWidth: 80 }}
-                      />
-                    </>
-                  )}
-                  {(step.type === 'click' || step.type === 'move') && (
-                    <>
-                      <span style={labelSm(VD)}>X</span>
-                      <input type="number" value={step.x ?? 0} onChange={(e) => updateStep(idx, { x: parseInt(e.target.value, 10) || 0 })} style={{ ...inputStyle, width: 60 }} />
-                      <span style={labelSm(VD)}>Y</span>
-                      <input type="number" value={step.y ?? 0} onChange={(e) => updateStep(idx, { y: parseInt(e.target.value, 10) || 0 })} style={{ ...inputStyle, width: 60 }} />
-                      {step.type === 'click' && (
-                        <>
-                          <span style={labelSm(VD)}>BTN</span>
-                          <select value={step.button ?? 0} onChange={(e) => updateStep(idx, { button: parseInt(e.target.value, 10) as 0|1|2 })} style={inputStyle}>
-                            <option value={0}>{t('ui.mouseL')}</option>
-                            <option value={1}>{t('ui.mouseR')}</option>
-                            <option value={2}>{t('ui.mouseM')}</option>
-                          </select>
-                        </>
-                      )}
-                    </>
-                  )}
-                  {step.type === 'scroll' && (
-                    <>
-                      <span style={labelSm(VD)}>{t('ui.units')}</span>
-                      <input type="number" value={step.scrollY ?? 3} onChange={(e) => updateStep(idx, { scrollY: parseInt(e.target.value, 10) || 1 })} style={{ ...inputStyle, width: 60 }} />
-                      <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{t('macro.scrollHint')}</span>
-                    </>
-                  )}
-                  <span style={labelSm(VD)}>{t('ui.pause')}</span>
-                  <input
-                    type="number" min={0} value={step.delayMs ?? 0}
-                    onChange={(e) => updateStep(idx, { delayMs: parseInt(e.target.value, 10) || 0 })}
-                    style={{ ...inputStyle, width: 60 }}
-                  />
-                  <span style={{ fontFamily: VD.mono, fontSize: 7, color: VD.textMuted }}>ms antes</span>
-                </div>
-              )}
-            </div>
+            <FilaPasoMacro
+              key={idx}
+              step={step}
+              idx={idx}
+              total={steps.length}
+              abierto={editIdx === idx}
+              accent={accent}
+              onMove={moveStep}
+              onToggleEdit={(i) => setEditIdx(editIdx === i ? null : i)}
+              onRemove={removeStep}
+              onUpdate={updateStep}
+            />
           ))}
         </div>
       )}
@@ -282,10 +183,4 @@ export function MacroEditor({ steps, repeat, accent, onChange }: MacroEditorProp
       </div>
     </div>
   );
-}
-
-
-
-function labelSm(VD: any): React.CSSProperties {
-  return { fontFamily: VD.mono, fontSize: 7, color: VD.textMuted, letterSpacing: 1, flexShrink: 0 };
 }
