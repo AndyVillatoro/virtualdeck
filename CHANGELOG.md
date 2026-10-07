@@ -6,9 +6,6 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
-> Pendiente: lo de los ítems 56–89 del roadmap (docks, mando móvil, paridad, plugins fase 0…)
-> salió después de la 0.13.0 y todavía no está resumido aquí.
-
 ### Added
 
 - **Tipos de acción por familias**: la sección ACCIÓN del editor tiene buscador (sin acentos ni
@@ -19,6 +16,46 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   todo y búsqueda en español (categorías traducidas y alias para ~120 etiquetas).
 - **Días de la semana** en el disparo por hora (`timerTriggerDias`).
 - **Texto a voz nativo** (SAPI en el núcleo, sin PowerShell).
+- **Docks físicos (Stream Dock N3)**: se detecta al conectarlo, tiene su página propia,
+  las teclas LCD se pintan con el estilo de la app y teclas, botones y perillas disparan
+  acciones; pantalla Dispositivos para configurarlo.
+- **Doce modelos de dock**: la distribución de cada aparato sale de su modelo; solo el N3
+  está verificado y el resto lleva insignia experimental; giro y brillo por dispositivo,
+  con el brillo en vivo al arrastrar.
+- **Varias páginas por dock**: cada dock cambia la suya según la aplicación en primer plano
+  y vuelve a la elegida a mano; la principal ya no salta a páginas de dock.
+- **Presets para docks en el inspector**: diez tríos de perilla (volumen, brillo,
+  multimedia, zoom, pestañas, deshacer/rehacer, vídeo, pincel, escritorios, contador),
+  siete botones ciegos y presets de página; uno de perilla rellena sus tres gestos de
+  una vez.
+- **Acción `page-nav`**: anterior y siguiente (se paran en los extremos), primera, ir a
+  una y modo `cycle` que da la vuelta; desde un dock navega sus páginas.
+- **Volumen por aplicación (`app-volume`)**: subir, bajar, fijar y silenciar por programa
+  (o el que está delante), con perillas de app, Spotify y Discord.
+- **Perillas multimodo**: pulsar la perilla cambia de modo y girar hace lo del modo, con
+  su preset de perilla multimodo.
+- **Ventana anterior/siguiente (`window-cycle`)**: recorre los programas abiertos en orden
+  estable, con perilla de ventanas.
+- **Botones fijos**: un hueco fijo sale igual en todas las páginas de su grupo (deck o
+  dock); las copias no se arrastran ni aceptan soltarles nada y su menú es reducido.
+- **Mantener pulsado en el mando móvil y en las teclas del dock**, también por enlace.
+- **Vincular app sin teclear**: selector con las apps abiertas, buscar el `.exe` y siete
+  páginas preconfiguradas (navegadores, VS Code, Spotify, Discord, Photoshop, Premiere,
+  Explorador) para deck y dock.
+- **GIF en los botones**: animan en las cinco superficies, incluida la tecla física
+  (10 fps, con topes de fotogramas y tamaño).
+- **Iconos animados en puntos**: encendido, barrido, pulso, parpadeo y escaneo calculados
+  sobre cualquier icono; subsección ANIMACIÓN con vista en vivo y cuándo (siempre, al
+  pulsar, encendido); respeta «reducir movimiento».
+- **Efecto al pulsar y aspecto de encendido**: destello u onda por botón (o ninguno) e
+  icono y colores propios para el estado encendido, en las cinco superficies.
+- **Valor en la tecla al girar**: la tecla sobre la perilla enseña el valor un momento
+  (volumen, brillo, página, modo).
+- **Icono de la app vinculada**: el icono del `.exe` en puntos se guarda con la página y
+  sale en las pestañas; el selector lo enseña junto a cada nombre.
+- **Catálogo grande de iconos en puntos**: unas 2.900 marcas y 5.100 iconos de acción
+  generados en compilación; al elegir uno se copia en el botón y las marcas viejas
+  dibujadas a mano ya no se ofrecen.
 
 ### Changed
 
@@ -30,6 +67,25 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   paneles laterales que se ocultan según el ancho, gestor RGB con perfiles debajo del detalle.
 - Objetivos táctiles de 32 px o más en kiosko; el cierre de la barra flotante se puede pulsar con el dedo.
 - Índice del catálogo de iconos 39 % más ligero (716 → 438 KB).
+- **Editor en secciones plegables**: PRESETS (con presets de dock), ACCIÓN, APARIENCIA,
+  COMPORTAMIENTO y AVANZADO; el mismo desde la principal y desde Dispositivos.
+- **Un solo campo ICONO**: automático, glifo, dibujo propio, marca o imagen; cada tipo de
+  acción tiene su glifo DOT y los emojis y símbolos viejos migran solos.
+- **La página elegida a mano es la base**: una app vinculada la sustituye mientras está
+  delante y al irse se vuelve a la base, en el deck y en cada dock.
+- **Comportamiento sin escribir a ciegas**: atajo global con grabación y aviso de choques,
+  visibilidad por app con selector, sensores reales con unidad y valor en vivo, hora con
+  fichas y grupo radio de los existentes.
+- **«Fijo» y «anclado» unificados**: una sola opción «fijo en todas las páginas», con
+  migración automática.
+- **Mando móvil**: con el tema y acento del usuario, sin las páginas de los docks y con
+  las imágenes tras el código.
+- **Teclas físicas con estética DOT**: la pantalla de dispositivos enseña la imagen exacta
+  que recibe el aparato.
+- **Arranque más ligero**: las pantallas que no se ven cargan bajo demanda.
+- **Cada preset dice qué hace por gesto** y el inspector enseña la acción en palabras.
+- Prototipo interno de anfitrión de plugins de Stream Deck (solo con variable de entorno,
+  sin interfaz de usuario).
 
 ### Fixed
 
@@ -41,6 +97,13 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   daban OK sin hacer nada: ahora avisan.
 - El núcleo ya no congela la aplicación: scripts y macros son asíncronos y con límite de 30 s, la
   música no lanza PowerShell en cada canción, y los sensores no esperan 4 s a LHM caído.
+- El zoom de los presets usa el teclado numérico y responde al instante, también con
+  teclado latinoamericano.
+- Encender el mando móvil desde un botón ya no se apaga al cambiar otro ajuste.
+- Botones que en el móvil salían como texto ahora muestran su icono.
+- Las páginas de los docks ya no aparecen en las pestañas de la principal.
+- La pantalla de dispositivos se adapta a ventanas pequeñas y Dispositivos, Fondos y Barra
+  se pueden arrastrar.
 
 ## [0.13.0] — 2026-09-15
 
