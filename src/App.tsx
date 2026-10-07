@@ -419,7 +419,8 @@ export default function App() {
 
   const dispararBoton = useCallback(async (btn: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => {
     if (!api) return;
-    if (btn.action.type === 'folder') return; // Una carpeta necesita interfaz.
+    // Una carpeta necesita pantalla para su overlay: `pulsarBoton` lo avisa
+    // como error en vez de no hacer nada.
     // Suena igual que si lo hubieras pulsado. Un boton que se dispara solo —a
     // una hora, por un sensor, por un atajo global— no da ninguna otra señal
     // de que ha pasado algo, que es justo cuando mas falta hace. Los giros de

@@ -127,6 +127,8 @@ export const ES_ACCIONES: Dict = {
   'act.lbl.muteApp': 'Silenciar',
   'act.lbl.macro': 'Macro ({n} pasos)',
   'act.err.timeout': 'La acción superó los 60 s y se considera bloqueada.',
+  'act.err.carpetaAqui': 'Una carpeta solo se abre en la pantalla del deck (principal o kiosko).',
+  'act.err.paginaAqui': 'Cambiar de página no está disponible desde aquí.',
   'cat.APPS': 'APPS',
   'cat.WEB': 'WEB',
   'cat.MEDIA': 'MEDIA',

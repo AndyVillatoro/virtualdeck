@@ -56,8 +56,8 @@ export interface EntornoPulsacion {
    *
    * Solo él sabe desde dónde se pulsa: un dock navega entre sus páginas con
    * `activarPagina`, el deck entre las suyas con `onPageChange`. Sin callback
-   * (la barra flotante, que no tiene página que cambiar —igual que no tiene
-   * overlay de carpetas—) el paso no hace nada y da OK, como `folder`.
+   * (la barra flotante, que no tiene página que cambiar) el paso **falla con
+   * un aviso**: antes daba OK sin hacer nada, y el botón parecía funcionar.
    */
   navegar?: (accion: ButtonAction) => boolean;
 }
@@ -154,14 +154,31 @@ export interface ResultadoPulsacion {
  * sabe entre qué páginas (ver `pageNav.ts`). Lo que queda se ejecuta normal;
  * si no queda nada, es OK —igual que `folder` cuando abre su overlay—.
  */
-function apartarNavegacion(acciones: ButtonAction[], e: EntornoPulsacion): ButtonAction[] {
-  if (!e.navegar) return acciones;
+function apartarNavegacion(acciones: ButtonAction[], e: EntornoPulsacion): { resto: ButtonAction[]; sinNavegar: boolean } {
   const resto: ButtonAction[] = [];
+  let sinNavegar = false;
   for (const a of acciones) {
-    if (a.type === 'page-nav') e.navegar(a);
-    else resto.push(a);
+    if (a.type !== 'page-nav') resto.push(a);
+    else if (e.navegar) e.navegar(a);
+    else sinNavegar = true;
   }
-  return resto;
+  return { resto, sinNavegar };
+}
+
+/**
+ * Lo que este llamador no sabe hacer, dicho como error en vez de un OK mudo.
+ *
+ * Una carpeta solo se abre donde hay pantalla para su overlay (principal y
+ * kiosko la interceptan antes de llegar aquí). Si llega —barra flotante, dock,
+ * mando móvil, atajo—, el botón no puede hacer nada; antes devolvía OK y daba
+ * la impresión de funcionar. `page-nav` sin `navegar`, lo mismo.
+ */
+function noDisponible(btn: ButtonConfig, sinNavegar: boolean, e: EntornoPulsacion): ResultadoPulsacion | null {
+  const clave = btn.action.type === 'folder' ? 'act.err.carpetaAqui' : sinNavegar ? 'act.err.paginaAqui' : null;
+  if (!clave) return null;
+  const error = e.t(clave);
+  e.avisar(error);
+  return { ok: false, error, tipo: btn.action.type };
 }
 
 export async function pulsarBoton(
@@ -188,7 +205,11 @@ export async function pulsarBoton(
   // Los pasos `page-nav` los resuelve el llamador; lo que queda —si queda—
   // se ejecuta normal. Con la lista vacía la secuencia es OK sin hacer nada,
   // igual que `folder` cuando abre su overlay.
-  const resto = apartarNavegacion(acciones, e);
+  const { resto, sinNavegar } = apartarNavegacion(acciones, e);
+  const fallo = noDisponible(btn, sinNavegar, e);
+  // Una carpeta no tiene nada más que ejecutar; una secuencia con un paso de
+  // página y otros pasos ejecuta los demás (el aviso ya salió).
+  if (fallo && (btn.action.type === 'folder' || resto.length === 0)) return fallo;
   const base = e.config.state ?? {};
   const r = await conPlazo(
     runActionSequence(resto, e.api, base, ganchoScripts(resto, e), e.config.rgb?.profiles, e.t),

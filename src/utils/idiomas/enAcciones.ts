@@ -127,6 +127,8 @@ export const EN_ACCIONES: Dict = {
   'act.lbl.muteApp': 'Mute',
   'act.lbl.macro': 'Macro ({n} steps)',
   'act.err.timeout': 'Action took over 60s and is treated as hung.',
+  'act.err.carpetaAqui': 'A folder only opens on the deck screen (main or kiosk).',
+  'act.err.paginaAqui': 'Changing pages is not available from here.',
   'cat.APPS': 'APPS',
   'cat.WEB': 'WEB',
   'cat.MEDIA': 'MEDIA',
