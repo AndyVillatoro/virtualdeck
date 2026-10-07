@@ -55,9 +55,11 @@ export function estadoDeEntrada(
   return { estado: 'instalado', instalado };
 }
 
+export type TipoFiltroTienda = 'all' | 'profile' | 'page' | 'plugin';
+
 export interface FiltrosTienda {
   texto: string;
-  kind: 'all' | 'profile' | 'page';
+  kind: TipoFiltroTienda;
   app: string;
   tag: string;
 }
@@ -75,6 +77,7 @@ function casaTexto(e: EntradaGaleria, texto: string): boolean {
 
 /** Filtra el manifiesto por texto + tipo + app + etiqueta. Todo a la vez. */
 export function filtrarEntradas(lista: EntradaGaleria[], f: FiltrosTienda): EntradaGaleria[] {
+  if (f.kind === 'plugin') return [];
   return lista.filter((e) => {
     if (f.kind !== 'all' && (e.kind ?? 'profile') !== f.kind) return false;
     if (f.app && (e.targetApp ?? '') !== f.app) return false;

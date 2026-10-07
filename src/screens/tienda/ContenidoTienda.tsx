@@ -8,6 +8,7 @@ import type {
 import { BarraTienda } from './BarraTienda';
 import { ListaTienda } from './ListaTienda';
 import { FichaTienda } from './FichaTienda';
+import { EstadoPluginsTienda } from './EstadoPluginsTienda';
 import {
   FILTROS_VACIOS, estadoDeEntrada, filtrarEntradas,
   appsDeEntradas, tagsDeEntradas, type FiltrosTienda,
@@ -271,13 +272,17 @@ export function ContenidoTienda({ instalados, accent }: {
               onFiltros={setFiltros}
               onLimpiar={() => setFiltros(FILTROS_VACIOS)}
             />
-            <ListaTienda
-              lista={filtrada}
-              instalados={instalados}
-              manifestUrl={manifestUrl}
-              elegidoId={null}
-              onMirar={mirar}
-            />
+            {filtros.kind === 'plugin' ? (
+              <EstadoPluginsTienda onVolver={() => setFiltros((prev) => ({ ...prev, kind: 'all' }))} />
+            ) : (
+              <ListaTienda
+                lista={filtrada}
+                instalados={instalados}
+                manifestUrl={manifestUrl}
+                elegidoId={null}
+                onMirar={mirar}
+              />
+            )}
           </>
         )}
 
