@@ -7,7 +7,7 @@ catalog on GitHub.
 
 ## Open the store
 
-Settings (gear) → **GALLERY** → **OPEN STORE**. It opens in its own window (`#tienda`) with
+Settings (gear) → **STORE** → **OPEN STORE**. It opens in its own window (`#tienda`) with
 search by name/author/text, filters by type (profile/page), target app and
 tags, and cards with the author's notes.
 
@@ -24,7 +24,8 @@ it is like downloading a program.
 - In the store, pick the profile or page and press install. Global hotkeys
   that clash with yours are dropped and you're told how many. An installed
   page can inherit its target app's auto-profile.
-- Outside the store, under **GALLERY** you paste a `manifest.json` URL and the
+- In the store you can also use any catalog hosted by you or someone you trust:
+  paste its `manifest.json` URL and the
   same happens: list, risk card and import.
 - Everything imported lands **as a profile or loose page**, never as
   configuration: your current deck is untouched, and to try it you load it

@@ -7,7 +7,8 @@
       "author": "@AndyVillatoro",
       "description": "Cuatro botones para ver como se ve un perfil de la galeria. No ejecuta scripts.",
       "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/profiles/ejemplo-basico.json",
-      "tags": ["ejemplo"]
+      "tags": ["ejemplo"],
+      "icono": "layout-grid"
     },
     {
       "id": "obs-mini",
@@ -19,7 +20,8 @@
       "tags": ["ejemplo", "obs"],
       "targetApp": "obs64",
       "version": "1.0.0",
-      "minAppVersion": "0.12.0"
+      "minAppVersion": "0.12.0",
+      "icono": "obsstudio"
     }
   ]
 }

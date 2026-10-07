@@ -298,6 +298,12 @@ export interface EntradaGaleria {
   readme?: string;
   /** Dirección de un texto del autor (se trae como la ficha: solo https, tope 64 KiB). */
   readmeUrl?: string;
+  /** Icono DOT de la entrada: id del catálogo 16×16 (`src/data/iconosDot`) o nombre de glifo 8×8. Local, sin red. */
+  icono?: string;
+  /** Imagen de portada (solo https, filtrada como `url`). */
+  portada?: string;
+  /** Capturas de pantalla (solo https, como mucho 6). */
+  capturas?: string[];
 }
 
 /** De qué entrada de qué manifiesto se instaló un perfil o página. */

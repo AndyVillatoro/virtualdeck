@@ -85,6 +85,9 @@ export const ES_COMUN: Dict = {
   'hint.settings': 'El tema, el idioma, la escala y demás opciones están en Configuración.',
   'hint.search': 'Sugerencia: Ctrl+K busca cualquier botón al instante.',
   'hint.dismiss': 'Entendido',
+  'hint.barraPageSuggestion': 'Esta pantalla es ancha: ¿crear una página 6×2?',
+  'hint.barraCreate': 'CREAR PÁGINA',
+  'hint.barraDismiss': 'AHORA NO',
   // — Ayuda y Acerca de —
   'help.title': 'AYUDA Y ACERCA DE',
   'help.docs': 'DOCUMENTACIÓN',

@@ -40,9 +40,6 @@ export interface MainBProps {
   onSaveProfile: (name: string) => void;
   onLoadProfile: (id: string) => void;
   onAppendProfilePages: (id: string) => void;
-  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
-  onAppendPageFromGallery?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
-  onAppendPagesFromProfile: (p: Profile) => void;
   onDeleteProfile: (id: string) => void;
   onAutostartToggle: () => void;
   onSoundToggle: () => void;

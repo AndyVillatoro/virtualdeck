@@ -615,8 +615,6 @@ export default function App() {
           onSaveProfile={saveProfile}
           onLoadProfile={loadProfile}
           onAppendProfilePages={appendProfilePages}
-          onAppendPagesFromProfile={appendPagesFromProfile}
-          onAppendPageFromGallery={appendPageFromGallery}
           onDeleteProfile={deleteProfile}
           onAutostartToggle={toggleAutostart}
           toggledIds={toggledIds}

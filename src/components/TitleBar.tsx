@@ -40,9 +40,6 @@ export interface TitleBarProps {
   sensorsConfig?: SensorsSettings;
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
-  onImportarDeGaleria?: (p: Profile, agregarAlDeck?: boolean) => void;
-  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
-  onAppendPageFromGallery?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
   musicPanel?: { enabled: boolean; side: 'left' | 'right' };
   onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
@@ -100,8 +97,6 @@ export function TitleBar({
   sensorsConfig,
   remoteConfig,
   onRemoteConfigChange,
-  onImportarDeGaleria,
-  onAppendPageFromGallery,
   musicPanel,
   onMusicPanelChange,
   sensorsStatus,
@@ -210,8 +205,6 @@ export function TitleBar({
           sensorsConfig={sensorsConfig}
           remoteConfig={remoteConfig}
           onRemoteConfigChange={onRemoteConfigChange}
-          onImportarDeGaleria={onImportarDeGaleria}
-          onAppendPageFromGallery={onAppendPageFromGallery}
           musicPanel={musicPanel}
           onMusicPanelChange={onMusicPanelChange}
           onSensorsConfigChange={onSensorsConfigChange}

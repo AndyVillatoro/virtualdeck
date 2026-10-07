@@ -13,13 +13,12 @@ interface BarraSuperiorMainProps extends Pick<PropsTitleBar,
   | 'onSaveProfile' | 'onLoadProfile' | 'onAppendProfilePages' | 'onDeleteProfile'
   | 'uiScale' | 'onUiScaleChange' | 'alwaysOnTop' | 'onAlwaysOnTopToggle'
   | 'onFloatingBar' | 'theme' | 'onThemeChange' | 'language' | 'onLanguageChange'
-  | 'hintsDismissed' | 'onDismissHint' | 'onReplayOnboarding' | 'onAppendPageFromGallery'
+  | 'hintsDismissed' | 'onDismissHint' | 'onReplayOnboarding'
 > {
   config: DeckConfig;
   panelMusica: { enabled: boolean; side: 'left' | 'right' };
   compact: boolean;
   onConfigChange: (c: DeckConfig) => void;
-  onAppendPagesFromProfile: (p: Profile) => void;
 }
 
 /**
@@ -28,7 +27,7 @@ interface BarraSuperiorMainProps extends Pick<PropsTitleBar,
  * `??` y callbacks).
  */
 export function BarraSuperiorMain(props: BarraSuperiorMainProps) {
-  const { config, panelMusica, compact, onConfigChange, onAppendPagesFromProfile, ...resto } = props;
+  const { config, panelMusica, compact, onConfigChange, ...resto } = props;
   return (
     <TitleBar
       pageName=""
@@ -40,10 +39,6 @@ export function BarraSuperiorMain(props: BarraSuperiorMainProps) {
       onSensorsConfigChange={(sensors) => onConfigChange({ ...config, sensors })}
       remoteConfig={config.remote ?? REMOTO_POR_DEFECTO}
       onRemoteConfigChange={(remote) => onConfigChange({ ...config, remote })}
-      onImportarDeGaleria={(p, agregarAlDeck) => {
-        onConfigChange({ ...config, profiles: [...(config.profiles ?? []), p] });
-        if (agregarAlDeck) onAppendPagesFromProfile(p);
-      }}
       musicPanel={panelMusica}
       onMusicPanelChange={(musicPanel) => onConfigChange({ ...config, musicPanel })}
       onAccentChange={(color) => onConfigChange({ ...config, accent: color })}

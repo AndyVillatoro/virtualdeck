@@ -7,7 +7,7 @@ catálogo estático en GitHub.
 
 ## Abrir la tienda
 
-Ajustes (rueda) → **GALERÍA DE PERFILES** → **ABRIR TIENDA**. Se abre en una ventana propia
+Ajustes (rueda) → **TIENDA** → **ABRIR TIENDA**. Se abre en una ventana propia
 (`#tienda`) con buscador por nombre/autor/texto, filtros por tipo
 (perfil/página), app destino y etiquetas, y fichas con nota del autor.
 
@@ -24,8 +24,9 @@ Instala con criterio: es como bajar un programa.
 - En la tienda, elige el perfil o la página y pulsa instalar. Los atajos
   globales que choquen con los tuyos se quitan y se avisa cuántos. La página
   instalada puede heredar el auto-perfil de su app destino.
-- Fuera de la tienda, en **GALERÍA DE PERFILES** pegas la dirección de un
-  `manifest.json` y lo mismo: lista, ficha de riesgo e importación.
+- En la tienda sirve además cualquier catálogo que tú o alguien de confianza
+  aloje: pegas la dirección de su `manifest.json` y lo mismo: lista, ficha de
+  riesgo e importación.
 - Todo importado entra **como perfil o página suelta**, nunca como
   configuración: tu deck montado no se toca, y para probarlo hay que cargarlo
   a mano. El backup anterior lo cubre el sistema de backups.

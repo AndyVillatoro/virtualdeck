@@ -19,6 +19,8 @@ const TOPE_BYTES = 2 * 1024 * 1024;
 const MS_ESPERA = 10000;
 /** Un README es texto para leer, no un deck: tope aparte y más chico. */
 const TOPE_README = 64 * 1024;
+/** Capturas por entrada: la ficha no muestra más y así un manifiesto no fuerza cien descargas. */
+const MAX_CAPTURAS = 6;
 
 export type TipoEntradaGaleria = 'profile' | 'page';
 
@@ -43,6 +45,11 @@ export interface EntradaGaleria {
   readme?: string;
   /** Dirección de un texto del autor (mismo filtro https que el resto). */
   readmeUrl?: string;
+  /** Icono DOT (id del catálogo o nombre de glifo): no se pide nada por red. */
+  icono?: string;
+  /** Portada y capturas: solo https y nunca la propia máquina ni la red interna. */
+  portada?: string;
+  capturas?: string[];
 }
 
 /** Cuántas acciones de cada clase de las que preocupan trae un perfil. */
@@ -111,6 +118,11 @@ export async function manifiesto(url: string): Promise<{ ok: true; profiles: Ent
         requires: Array.isArray(p.requires) ? p.requires.map(String) : undefined,
         readme: typeof p.readme === 'string' ? p.readme.slice(0, TOPE_README) : undefined,
         readmeUrl: typeof p.readmeUrl === 'string' && direccionAceptable(p.readmeUrl) ? p.readmeUrl : undefined,
+        icono: typeof p.icono === 'string' ? p.icono.slice(0, 64) : undefined,
+        portada: typeof p.portada === 'string' && direccionAceptable(p.portada) ? p.portada : undefined,
+        capturas: Array.isArray(p.capturas)
+          ? p.capturas.filter((c): c is string => typeof c === 'string' && direccionAceptable(c)).slice(0, MAX_CAPTURAS)
+          : undefined,
       }));
     return { ok: true, profiles };
   } catch (e) {

@@ -10,13 +10,12 @@ import { SeccionPerfiles } from './SeccionPerfiles';
 import { RGBSection } from './RGBSection';
 import { SensorsSection } from './SensorsSection';
 import { RemoteSection } from './RemoteSection';
-import { GallerySection } from './GallerySection';
 import { DisplaysSection } from './DisplaysSection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
 import { SoporteSection } from './SoporteSection';
 import { SeccionIntegraciones } from './SeccionIntegraciones';
-import type { Profile, PageConfig, ButtonConfig, OrigenInstalacion, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../../types';
 
 interface Props {
   accent: string;
@@ -44,9 +43,6 @@ interface Props {
   onSensorsConfigChange?: (next: SensorsSettings) => void;
   remoteConfig?: RemoteSettings;
   onRemoteConfigChange?: (next: RemoteSettings) => void;
-  onImportarDeGaleria?: (p: Profile, agregarAlDeck?: boolean) => void;
-  /** Tienda (T-P4): agrega una página suelta; devuelve atajos limpiados por choque. */
-  onAppendPageFromGallery?: (page: PageConfig, buttons: ButtonConfig[], origen?: OrigenInstalacion) => number;
   musicPanel?: { enabled: boolean; side: 'left' | 'right' };
   onMusicPanelChange?: (next: { enabled: boolean; side: 'left' | 'right' }) => void;
   sensorsStatus?: SensorsStatus | null;
@@ -77,7 +73,7 @@ export function PanelAjustes({
   theme, onThemeChange, language, onLanguageChange, autostart, onAutostartToggle,
   alwaysOnTop, onAlwaysOnTopToggle, soundOnPress, onSoundToggle, soundProfile, onSoundProfileChange,
   rgbConfig, onRGBConfigChange, rgbStatus, sensorsConfig, onSensorsConfigChange, sensorsStatus,
-  remoteConfig, onRemoteConfigChange, onImportarDeGaleria, onAppendPageFromGallery, onAppendProfilePages, musicPanel, onMusicPanelChange,
+  remoteConfig, onRemoteConfigChange, onAppendProfilePages, musicPanel, onMusicPanelChange,
   profiles, onSaveProfile, onLoadProfile, onDeleteProfile, onUpdateProfileTargetApp, onConfigExport, onConfigImport,
   autoProfileSwitch, onAutoProfileSwitchToggle, autoProfileRestoreDefault, onAutoProfileRestoreDefaultToggle,
   targetDisplayId, onTargetDisplayChange, onReplayOnboarding, newProfileName, setNewProfileName,
@@ -348,12 +344,26 @@ export function PanelAjustes({
         </SeccionAjustes>
       )}
 
-      {/* 9. Galería de Perfiles (opcional) */}
-      {onImportarDeGaleria && (
-        <SeccionAjustes titulo={t('set.gallery')} glyph="DOWNLOAD" accent={effectiveAccent}>
-          <GallerySection accent={effectiveAccent} onImportar={onImportarDeGaleria} onAppendPage={onAppendPageFromGallery} />
-        </SeccionAjustes>
-      )}
+      {/* 9. Tienda (ventana propia) */}
+      <SeccionAjustes titulo={t('tienda.title')} glyph="IMPORT" accent={effectiveAccent}>
+        <div>
+          <SettingLabel>{t('tienda.title')}</SettingLabel>
+          <div style={{ marginTop: 6 }}>
+            <Chip
+              activo={false}
+              onClick={() => { window.electronAPI?.tienda.open().catch(() => {}); }}
+              accent={effectiveAccent}
+              ancho
+              title={t('gal.openStoreHint')}
+            >
+              {t('gal.openStore')}
+            </Chip>
+          </div>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.6, marginTop: 6 }}>
+            {t('tienda.hint')}
+          </div>
+        </div>
+      </SeccionAjustes>
 
       {/* 10. Integraciones de Terceros (Discord & Spotify) */}
       <SeccionAjustes titulo={t('settings.integrations')} glyph="AUDIO_WAVE" accent={effectiveAccent}>

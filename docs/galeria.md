@@ -50,7 +50,8 @@ es un perfil, como en v1.
   "targetApp": "obs64",
   "version": "1.0.0",
   "minAppVersion": "0.12.0",
-  "requires": ["OBS instalado"]
+  "requires": ["OBS instalado"],
+  "icono": "obsstudio"
 }
 ```
 
@@ -72,29 +73,42 @@ de apps, portapapeles, Discord/Spotify).
 - `readme`: nota del autor en texto plano, se enseña tal cual en la ficha.
 - `readmeUrl`: dirección de un texto del autor (mismo filtro `https` y tope de
   64 KiB que el resto; se trae al abrir la ficha).
+- `icono`: icono DOT de la entrada: id del catálogo 16×16 (`src/data/iconosDot`,
+  ej. `"obsstudio"`, `"layout-grid"`) o nombre de glifo 8×8 (ej. `"IMPORT"`).
+  Local, sin red: no se descarga nada (se recorta a 64 caracteres).
+- `portada`: imagen de portada de la entrada. Solo `https`, con el mismo filtro
+  que `url` (nada de `http` en claro, ni localhost ni red interna).
+- `capturas`: capturas de pantalla de la entrada. Solo `https` con el mismo
+  filtro que `url`; como mucho 6 (el resto se descarta).
 
 ## Tienda en ventana propia (T-P4 Fase 2)
 
-⚙ → **GALERÍA** → **ABRIR TIENDA**: el manifiesto en ventana aparte
+⚙ → **TIENDA** → **ABRIR TIENDA**: el manifiesto en ventana aparte
 (`index.html#tienda`, patrón de la barra flotante), con buscador por
 nombre/autor/texto, filtros por tipo (perfil/página), app destino y etiquetas,
 ficha con nota del autor + riesgo completo, e insignias de **INSTALADO** y
 **UPDATE → vX** comparando cada entrada con el `origen` sellado al instalar.
 
 La tienda no escribe configuración: pide instalar por `tienda:import` y la
-ventana principal valida (forma + tipos de acción conocidos, igual que la
-galería empotrada) y aplica con las mismas funciones. La respuesta vuelve por
+ventana principal valida (forma + tipos de acción conocidos) y aplica con las
+mismas funciones. La respuesta vuelve por
 `tienda:hecho`; cada guardado reavisa a la tienda para que las insignias se
 actualicen solas.
 
-## Importar desde URL en VirtualDeck
+## Importar desde la tienda en VirtualDeck
 
-La app importa JSONs locales con `api.config.import()`, y perfiles/páginas remotos con la galería:
+La app importa JSONs locales con `api.config.import()`, y perfiles/páginas remotos con la tienda:
 
-1. **⚙ → GALERÍA DE PERFILES**: se pega la dirección de un `manifest.json`, se lista el catálogo y, al elegir uno, se enseña **qué va a ejecutar** antes de importar (ver más abajo).
-2. **⚙ → GALERÍA → ABRIR TIENDA**: la misma galería en ventana propia (`#tienda`), con buscador por nombre/autor/texto, filtros por tipo (perfil/página), app destino y etiquetas, ficha con nota del autor y riesgo completo, e insignias de INSTALADO y UPDATE comparando cada entrada con el `origen` sellado al instalar.
+1. **⚙ → TIENDA → ABRIR TIENDA**: se abre el catálogo en ventana propia (`#tienda`).
+   Sirve la galería del proyecto y cualquier otra que usted o alguien de
+   confianza aloje: se pega la dirección de su `manifest.json`, sale la lista
+   y, al elegir una entrada, se enseña **qué va a ejecutar** antes de importar
+   (ver más abajo). Trae además buscador por nombre/autor/texto, filtros por
+   tipo (perfil/página), app destino y etiquetas, ficha con nota del autor y
+   riesgo completo, e insignias de INSTALADO y UPDATE comparando cada entrada
+   con el `origen` sellado al instalar.
 
-Ambas validan con `validateConfig` y aplican como perfil o como página suelta, nunca como configuración (el deck montado no se toca; para probarlo hay que cargarlo a mano). El backup anterior al import lo cubre el sistema de backups.
+Valida con `validateConfig` y aplica como perfil o como página suelta, nunca como configuración (el deck montado no se toca; para probarlo hay que cargarlo a mano). El backup anterior al import lo cubre el sistema de backups.
 
 ## Validación
 
@@ -109,8 +123,8 @@ Cualquier perfil descargado pasa por `validateConfig`. Los errores se muestran c
 
 ## Lo que ya hace la aplicación
 
-⚙ → **GALERÍA DE PERFILES**: se pega la dirección de un `manifest.json`, sale la
-lista, y al elegir uno se enseña **qué va a ejecutar** antes de importar.
+⚙ → **TIENDA** → **ABRIR TIENDA**: se abre el catálogo en ventana propia, sale la
+lista, y al elegir una entrada se enseña **qué va a ejecutar** antes de importar.
 
 La descarga la hace el proceso principal (`electron/main/galeria.ts`), no la
 pantalla: la CSP del renderer solo deja conectar con `self` y los dos servicios
@@ -152,7 +166,9 @@ flujo entero.
 - Repo de galería: **existe** (`github.com/AndyVillatoro/virtualdeck-gallery`,
   `manifest.json` con 4 perfiles en formato v1: esencial, streaming, trabajo, rgb).
   Los 4 validan en verde con `npm run check:galeria` (tipos, widgets, presets).
-- UI de "Importar desde URL": **hecha** (⚙ → Galería de perfiles) y tienda `#tienda`.
+- UI de "Importar desde URL": la galería empotrada de Ajustes se retiró; queda
+  solo la tienda `#tienda` (⚙ → TIENDA → ABRIR TIENDA), que también acepta
+  pegar la dirección de cualquier `manifest.json`.
 - Manifest schema: **estable** desde la spec inicial (este doc) + v2 (páginas,
   versiones, README) soportado por la app.
 - Diferido a otra versión por decisión del dueño: dejar la galería bien completa

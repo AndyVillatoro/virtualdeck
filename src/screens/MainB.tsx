@@ -7,6 +7,7 @@ import { useTamanoVentana } from '../utils/useTamanoVentana';
 import { useFormatoPantalla } from '../utils/useFormatoPantalla';
 import { PanelMusicaLateral } from './main/PanelesMusica';
 import { AvisosContextuales } from './main/AvisosContextuales';
+import { AvisoBarra } from './main/AvisoBarra';
 import { BarraSuperiorMain } from './main/BarraSuperiorMain';
 import { CeldaPrincipal } from './main/CeldaPrincipal';
 import { useAtajosSeleccion } from './main/atajosSeleccion';
@@ -34,7 +35,7 @@ export function MainB({
   onConfigChange, onUpdateButton, onDuplicateButton, onCopyButton, onPasteButton, canPasteButton, onClearButton,
   onConfigExport, onConfigImport, onSwapButtons,
   onPageRename, onPageAdd, onDuplicatePage, onPageDelete, onPageReorder, onPageSetGrid, onMoveButtonToPage, onMoveButtonsToPage, onClearButtons,
-  onSaveProfile, onLoadProfile, onAppendProfilePages, onAppendPagesFromProfile, onAppendPageFromGallery, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
+  onSaveProfile, onLoadProfile, onAppendProfilePages, onDeleteProfile, onAutostartToggle, onSoundToggle, onSoundProfileChange, onStateUpdate,
   uiScale, onUiScaleChange, alwaysOnTop, onAlwaysOnTopToggle, onFloatingBar, theme, onThemeChange, language, onLanguageChange, hintsDismissed, onDismissHint, onPageExport, onPageImport, onReplayOnboarding, onFijarTargetApp, onCrearDesdePlantilla,
 }: MainBProps) {
   const VD = useTheme();
@@ -71,6 +72,11 @@ export function MainB({
     onConfigChange({ ...config, buttons: nextButtons });
   }, [config, onConfigChange]);
 
+  const handleCrearPaginaBarra = useCallback(() => {
+    pendingBarraPageRef.current = { prevLength: config.pages.length };
+    onPageAdd();
+  }, [config.pages.length, onPageAdd]);
+
   const [execLog, setExecLog] = useState<{ id: number; ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
   const execLogIdRef = useRef(0);
   const [showLog, setShowLog] = useState(false);
@@ -79,6 +85,7 @@ export function MainB({
   const touchStartXRef = useRef<number>(0);
   const touchStartYRef = useRef<number>(0);
   const lastSwipeAtRef = useRef<number>(0);
+  const pendingBarraPageRef = useRef<{ prevLength: number } | null>(null);
 
   const { ancho: anchoVentana, alto: altoVentana } = useTamanoVentana();
   const isCompact = altoVentana < 540;
@@ -121,6 +128,20 @@ export function MainB({
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [pageContextMenu]);
+
+  useEffect(() => {
+    if (!pendingBarraPageRef.current) return;
+    const { prevLength } = pendingBarraPageRef.current;
+    if (config.pages.length > prevLength) {
+      const newPageIdx = prevLength;
+      const newPage = config.pages[newPageIdx];
+      if (newPage) {
+        onPageSetGrid(newPage.id, 6, 2);
+        onPageChange(newPageIdx);
+      }
+      pendingBarraPageRef.current = null;
+    }
+  }, [config.pages, onPageSetGrid, onPageChange]);
 
   const showToast = useCallback((text: string) => {
     setToast(text);
@@ -247,8 +268,6 @@ export function MainB({
           panelMusica={panelMusica}
           compact={isCompact}
           onConfigChange={onConfigChange}
-          onAppendPagesFromProfile={onAppendPagesFromProfile}
-          onAppendPageFromGallery={onAppendPageFromGallery}
           autostart={autostart}
           soundOnPress={soundOnPress}
           soundProfile={soundProfile}
@@ -343,6 +362,16 @@ export function MainB({
             hayBotones={hasConfiguredButtons}
             hintsDismissed={hintsDismissed}
             onDismissHint={onDismissHint}
+            accent={config.accent}
+          />
+          {/* Formato barra: propone una página 6×2 (la rejilla admite hasta 6 columnas). */}
+          <AvisoBarra
+            enBarra={enBarra}
+            gridSize={gridSize}
+            gridRows={gridRows}
+            hintsDismissed={hintsDismissed}
+            onDismissHint={onDismissHint}
+            onCrearPagina={handleCrearPaginaBarra}
             accent={config.accent}
           />
           <RejillaBotones
