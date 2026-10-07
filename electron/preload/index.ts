@@ -2,7 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
-  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie, SesionAudioApp } from '../../src/types';
+  PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie, SesionAudioApp,
+  PistaCaptura, ResultadoVentanas } from '../../src/types';
 
 
 /**
@@ -120,6 +121,9 @@ const api = {
     shuffle: (): Promise<boolean> => ipcRenderer.invoke('media:shuffle'),
     repeat: (): Promise<boolean> => ipcRenderer.invoke('media:repeat'),
     diagnose: (): Promise<MediaDiagnosticResult> => ipcRenderer.invoke('media:diagnose'),
+  },
+  captura: {
+    ventanas: (pista: PistaCaptura): Promise<ResultadoVentanas> => ipcRenderer.invoke('captura:ventanas', pista),
   },
   discord: {
     status: (): Promise<DiscordStatus> => ipcRenderer.invoke('discord:status'),

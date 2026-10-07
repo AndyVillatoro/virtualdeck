@@ -31,6 +31,26 @@ import type {
 } from './hardware';
 import type { ApiSuperficies } from './superficies';
 
+/** Una ventana que se puede mostrar en el panel de música (vídeo de lo que suena). */
+export interface VentanaCaptura {
+  id: string;
+  nombre: string;
+  /** Miniatura pequeña en dataURL; vacía si la ventana no tiene imagen. */
+  miniatura: string;
+}
+
+/** Lo que suena ahora, para adivinar qué ventana es la suya. */
+export interface PistaCaptura {
+  titulo: string;
+  fuente: string;
+}
+
+export interface ResultadoVentanas {
+  ventanas: VentanaCaptura[];
+  /** Id de la ventana que parece la de lo que suena, o `null` si ninguna encaja. */
+  candidata: string | null;
+}
+
 export interface ElectronAPI {
   window: {
     minimize: () => void;
@@ -106,6 +126,10 @@ export interface ElectronAPI {
     shuffle: () => Promise<boolean>;
     repeat: () => Promise<boolean>;
     diagnose: () => Promise<{ ok: boolean; stage: string; stdout: string; stderr: string }>;
+  };
+  captura: {
+    /** Solo ventanas, nunca pantalla completa. */
+    ventanas: (pista: PistaCaptura) => Promise<ResultadoVentanas>;
   };
   discord: {
     status: () => Promise<DiscordStatus>;

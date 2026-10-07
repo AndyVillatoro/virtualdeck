@@ -11,6 +11,7 @@ import { BotonTransporte } from './musica/BotonTransporte';
 import { DatosPista } from './musica/DatosPista';
 import { FilaAleatorioRepetir } from './musica/FilaAleatorioRepetir';
 import { PanelMusicaBarra } from './musica/PanelMusicaBarra';
+import type { AjustesVideo } from './musica/VideoVentana';
 import type { NowPlaying, ElectronAPI } from '../../types';
 
 /**
@@ -43,7 +44,7 @@ const LADO_PRINCIPAL = 64;
 const LADO_SECUNDARIO = 52;
 
 export function PanelMusica({
-  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar,
+  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar, video,
 }: {
   nowPlaying: NowPlaying | null;
   isPlaying: boolean;
@@ -55,6 +56,8 @@ export function PanelMusica({
   plegado: boolean;
   onPlegar: (plegado: boolean) => void;
   onCerrar: () => void;
+  /** Solo formato `barra`: el vídeo de la ventana que suena. */
+  video: AjustesVideo;
 }) {
   const VD = useTheme();
   const t = useT();
@@ -78,6 +81,7 @@ export function PanelMusica({
         plegado={plegado}
         onPlegar={onPlegar}
         onCerrar={onCerrar}
+        video={video}
       />
     );
   }

@@ -10,6 +10,7 @@ import { BotonTransporte } from './BotonTransporte';
 import { DatosPista } from './DatosPista';
 import { FilaAleatorioRepetir } from './FilaAleatorioRepetir';
 import { LenguetaMusica } from './LenguetaMusica';
+import { VideoVentana, type AjustesVideo } from './VideoVentana';
 import type { NowPlaying, ElectronAPI } from '../../../types';
 
 /**
@@ -22,6 +23,9 @@ import type { NowPlaying, ElectronAPI } from '../../../types';
  *
  * Se puede plegar a una lengüeta de 28 px en el borde (`LenguetaMusica`). El
  * estado plegado vive en `config.musicPanel.plegado`; sin él, va desplegado.
+ *
+ * Con VÍDEO activo, la carátula y el título dejan su sitio al vídeo de la
+ * ventana que suena (`VideoVentana`); el transporte sigue debajo.
  *
  * Sin `overflow` con scroll a propósito: si algo no cabe, es que la columna es
  * demasiado ancha, no que falte desplazar. La nota de «no admite saltar» del
@@ -37,7 +41,7 @@ const LADO_PRINCIPAL_BARRA = 44;
 const LADO_SECUNDARIO_BARRA = 36;
 
 export function PanelMusicaBarra({
-  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar,
+  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar, video,
 }: {
   nowPlaying: NowPlaying;
   isPlaying: boolean;
@@ -48,6 +52,7 @@ export function PanelMusicaBarra({
   plegado: boolean;
   onPlegar: (plegado: boolean) => void;
   onCerrar: () => void;
+  video: AjustesVideo;
 }) {
   const VD = useTheme();
   const t = useT();
@@ -92,6 +97,17 @@ export function PanelMusicaBarra({
         <div style={{ flex: 1 }} />
         <button
           type="button"
+          onClick={() => video.onActivo(!video.activo)}
+          title={video.activo ? t('music.videoOff') : t('music.videoOn')}
+          aria-label={video.activo ? t('music.videoOff') : t('music.videoOn')}
+          aria-pressed={video.activo}
+          style={{ ...estiloBoton, gap: 4 }}
+        >
+          <DotGlyphIcon glyph="APP_WINDOW" size={10} color={video.activo ? accent : VD.textMuted} />
+          <DotLabel size={8} color={video.activo ? accent : VD.textMuted} spacing={1}>{t('music.video')}</DotLabel>
+        </button>
+        <button
+          type="button"
           onClick={() => onPlegar(true)}
           title={t('music.collapse')}
           aria-label={t('music.collapse')}
@@ -109,45 +125,58 @@ export function PanelMusicaBarra({
         </button>
       </div>
 
+      {video.activo && (
+        <VideoVentana
+          api={api}
+          pista={{ titulo: nowPlaying.title, fuente: nowPlaying.source }}
+          accent={accent}
+          ajustes={video}
+        />
+      )}
+
       {/* Carátula anclada arriba: cuadrada, con el 52 % del alto como mucho. */}
-      <div style={{
-        height: '52%', maxWidth: '100%', aspectRatio: '1', alignSelf: 'center', borderRadius: VD.radius.lg,
-        background: VD.overlay, border: `1px solid ${VD.border}`,
-        overflow: 'hidden', position: 'relative', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <div style={{ opacity: 0.22 }}>
-          <DotGlyphIcon glyph="AUDIO_WAVE" size={40} color={VD.textMuted} showRecessed />
+      {!video.activo && (
+        <div style={{
+          height: '52%', maxWidth: '100%', aspectRatio: '1', alignSelf: 'center', borderRadius: VD.radius.lg,
+          background: VD.overlay, border: `1px solid ${VD.border}`,
+          overflow: 'hidden', position: 'relative', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ opacity: 0.22 }}>
+            <DotGlyphIcon glyph="AUDIO_WAVE" size={40} color={VD.textMuted} showRecessed />
+          </div>
+          {nowPlaying.thumbnail && (
+            <>
+              <img
+                src={nowPlaying.thumbnail}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  imageRendering: 'pixelated',
+                }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <DotMatrixImageOverlay pitch={4} />
+            </>
+          )}
         </div>
-        {nowPlaying.thumbnail && (
-          <>
-            <img
-              src={nowPlaying.thumbnail}
-              alt=""
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                imageRendering: 'pixelated',
-              }}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-            />
-            <DotMatrixImageOverlay pitch={4} />
-          </>
-        )}
-      </div>
+      )}
 
       {/* Título, estado y controles, pegados arriba bajo la carátula. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-        <DatosPista
-          titulo={nowPlaying.title}
-          artista={nowPlaying.artist}
-          isPlaying={isPlaying}
-          sourceName={sourceName}
-          unaLinea
-        />
+        {!video.activo && (
+          <DatosPista
+            titulo={nowPlaying.title}
+            artista={nowPlaying.artist}
+            isPlaying={isPlaying}
+            sourceName={sourceName}
+            unaLinea
+          />
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <BotonTransporte

@@ -228,7 +228,15 @@ export interface DeckConfig {
   theme?: ThemeMode;
   sensors?: SensorsSettings;
   remote?: RemoteSettings;
-  musicPanel?: { enabled: boolean; side: 'left' | 'right'; plegado?: boolean };
+  musicPanel?: {
+    enabled: boolean;
+    side: 'left' | 'right';
+    plegado?: boolean;
+    /** Vídeo de la ventana que suena dentro del panel (formato barra). */
+    video?: boolean;
+    /** Recorte del vídeo por app (clave = fuente de la pista o nombre de la ventana). Fracciones 0..1. */
+    recortes?: Record<string, { x: number; y: number; w: number; h: number }>;
+  };
   tileMode?: 'square' | 'fill';
   language?: 'es' | 'en' | 'system';
   onboardingCompleted?: boolean;
