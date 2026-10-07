@@ -1,5 +1,4 @@
-// Enlaces externos centralizados. Las URLs de donación son placeholders hasta
-// que el usuario cree las cuentas — reemplazar los valores marcados con TODO.
+// Enlaces externos centralizados (las cuentas de donación ya existen: roadmap 36).
 // No incluir tracking ni nada intrusivo.
 
 export const LINKS = {

@@ -315,7 +315,8 @@ vez de a `AGENTS.md` por lo mismo.
 
 ## Convenciones
 - Estilos inline con tema desde `src/utils/theme.tsx` (`useTheme()` → `VD`)
-- Iconos: lucide-react via `src/components/VDIcon.tsx`, fuentes brand en `src/data/brandIcons.ts`
+- Iconos: glifos DOT (`src/components/dot480/`, `DotGlyphIcon`) y el catálogo 16×16 (`src/data/iconosDot/`); marcas viejas 17×17 en `src/comun/brandIcons.ts`. `VDIcon`/lucide ya no existen.
+- Primitivas de interfaz en `src/components/ui/` (`Chip`, `Segmentado`, `BotonIcono`, `Modal`, `estilos.ts`): usarlas antes de escribir otra ficha, otro botón de icono u otro velo de modal a mano. Tokens de `useTheme()` además de los colores: `onAccent` (texto sobre acento; nunca `#fff`), `backdrop` y la escala `tipo`.
 - Persistencia de config en `userData` (Electron) como JSON UTF-8
 - Estilo: respuestas cortas y directas; preguntar si no se sabe; dar opciones cuando aplique
 
@@ -361,7 +362,7 @@ vez de a `AGENTS.md` por lo mismo.
   directiva de Control de aplicaciones de Windows bloquea los proc-macro recién compilados
   (`darling_macro-*.dll`, os error 4551). Cuando se pueda compilar, `diagnose()` puede volver a
   `intentarNativo`.
-- **Audio cache**: `audioIpc.ts` cachea la lista de dispositivos 30 s. Invalida automáticamente al cambiar dispositivo default. Pasar `force=true` para forzar refresco.
+- **Audio cache**: `audioIpc.ts` cachea la lista de dispositivos 1 s con núcleo nativo y 30 s por PowerShell. Invalida automáticamente al cambiar dispositivo default. Pasar `force=true` para forzar refresco.
 - **Multi-select**: Ctrl+clic en celdas para seleccionar múltiples botones. La barra de bulk-ops flota sobre la grilla. `selectedIds` se limpia al cambiar de página.
 - **Shuffle/repeat SMTC**: usan `TryChangeShuffleActiveAsync` / `TryChangeAutoRepeatModeAsync` de Windows.Media.Control. Requieren que haya una sesión SMTC activa.
 - **Macro**: grabación global via `uiohook-napi` (N-API — no requiere rebuild para Electron 33).

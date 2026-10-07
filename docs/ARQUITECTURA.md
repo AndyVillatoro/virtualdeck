@@ -67,7 +67,7 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `EditorB.tsx` | Editor de un botón: posee el estado y arma cabecera, pasos y formulario con piezas de `editor/`. | ✅ |
 | `FullscreenB.tsx` | Modo panel a pantalla completa (tablet/monitor dedicado). | ✅ |
 | `WallpaperB.tsx` | Elegir el fondo del deck. | ✅ |
-| `RGBManagerB.tsx` | Configurar perfiles y dispositivos RGB. | 🟡 (760 líneas) |
+| `RGBManagerB.tsx` | Configurar perfiles y dispositivos RGB (piezas en `rgb/`). | ✅ |
 | `editor/actionData.ts` | Datos puros del editor (tipos de acción, presets). | ✅ |
 | `editor/MacroEditor.tsx` | Editor manual de pasos de macro. | ✅ |
 | `editor/botonConfigurado.ts` | Dice si un botón cuenta como configurado (función pura). | ✅ |
@@ -99,7 +99,7 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `Wallpaper.tsx` | Render del fondo elegido. | ✅ |
 | `WeatherWidget.tsx` | Widget de clima (Open-Meteo). | ✅ |
 | `SensorPanel.tsx` | Tarjetas/agrupación de sensores. | ✅ |
-| `VDIcon.tsx` | Wrapper de íconos (lucide-react). | ✅ |
+| `ui/` | Primitivas compartidas: `Chip`/`Segmentado`, `BotonIcono` (title obligatorio), `Modal` y `estilos.ts` (campos y botones de texto). | ✅ |
 | `BrandIconDisplay` | Ícono de marca 17×17 (legado): mostrar. Elegir va por el catálogo (`editor/SelectorIconosDot`). | ✅ |
 | `settings/RGBSection` · `settings/SensorsSection` | Secciones extraídas de TitleBar. | ✅ |
 | `help/HelpAboutPanel.tsx` | Panel Ayuda y Acerca de. | ✅ |
@@ -110,7 +110,7 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 
 | Módulo | Responsabilidad única | SRP |
 |--------|----------------------|-----|
-| `actions.ts` | Ejecutar una acción de botón + interpolación `{var}`. | 🟡 (muchos tipos; ok por ahora) |
+| `actions.ts` | Runner de secuencias; los manejadores viven en `acciones/` (uno por familia). | ✅ |
 | `theme.tsx` | Proveer tokens de tema (claro/oscuro/sistema). | ✅ |
 | `i18n.tsx` | Proveer traducción ES/EN (`useT`, diccionarios). | ✅ |
 | `nowPlaying.tsx` | Polling centralizado de la reproducción actual. | ✅ |
