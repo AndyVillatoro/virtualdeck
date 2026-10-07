@@ -1,0 +1,437 @@
+# VirtualDeck — Notas técnicas (detalle)
+
+Lo que antes vivía entero en `CLAUDE.md` y se cargaba en **cada** sesión. Aquí está el detalle: el
+porqué de cada decisión, lo medido y lo que no hay que repetir. `CLAUDE.md` guarda una línea por tema
+y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
+
+## Estructura clave
+- `build/` — app icon (`icon.ico`, `icon.png`, `icon.svg`) generado por `scripts/generate-icon.js`
+- `scripts/generate-icon.js` — renderiza icono dot-matrix SVG → PNG → ICO (requiere `sharp`)
+- `src/screens/` — pantallas: `MainB`, `EditorB`, `FullscreenB`, `RGBManagerB`, `WallpaperB`
+- **Dos manejadores de teclado sobre `document`, y el de `App` corre primero.** `App`
+  registra el suyo al montarse y `FullscreenB` el suyo después, así que en fase de burbuja
+  el de `App` gana. Su rama `if (view === 'fullscreen') setView('main')` no sabe nada del
+  kiosko: **el PIN no protegía nada** — ESC devolvía a la principal sin preguntar, y
+  cerrar el propio diálogo del PIN también salía. `preventDefault` no basta (no detiene a
+  los demás oyentes) y detener la propagación desde burbuja llega tarde: `FullscreenB`
+  escucha en **captura** y llama a `stopImmediatePropagation`. Medido con los cinco pasos:
+  activar, ESC, PIN malo, ESC del diálogo, PIN bueno.
+- `src/screens/fullscreen/` — `PinKiosko` (el PIN que bloquea la salida del modo kiosko,
+  con su estado y su comprobación) y `SonandoAhora` (la franja de reproducción de abajo).
+- `src/screens/rgb/piezas.tsx` — las piezas del gestor RGB: insignia de estado, detalle de
+  dispositivo, pintor LED a LED, guardar perfil, calibrador de zonas y estilos compartidos.
+  `RGBManagerB` se queda con el estado y la conexión.
+- `src/screens/main/` — piezas de la principal: `BarraLateral` (reloj, clima, sensores, RGB,
+  registro y música), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
+  arrastrados), `OverlayCarpeta` y `formatos.ts` (reloj y fecha, en el idioma elegido)
+- `src/screens/editor/` — el editor en secciones plegables (`SeccionPresets`, `SeccionAccion`,
+  `SeccionApariencia`, `SeccionComportamiento`, `SeccionAvanzado`) con la vista previa al lado;
+  el estado vive en `useEstadoEditor.ts`. `valoresIniciales.ts` (de qué botón guardado salen los
+  campos del formulario — ahí viven todos los `?? ''`, que eran la mitad de la complejidad de `EditorB`),
+  `formularios/` (**un componente por tipo de acción en un mapa `FORMULARIOS`** — añadir un tipo
+  es añadir una entrada, no tocar una cadena de condiciones; repartidos por familia: `basicos`,
+  `sistema`, `datos`, `rgb`, `compuestos`), `guardar.ts` (arma el botón a guardar, función pura),
+  `actionData.ts` deriva `PRESET_CATEGORIES` **de los propios presets**: escrita a mano faltaba
+  'RGB', y sus doce botones sembrados no salían por ninguna pestaña — solo buscándolos.
+  `comunes.tsx` (`Field`, `Btn`, los sub-selectores
+  y las funciones de estilo que comparten las secciones), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
+  (El editor viejo por pasos —`PasoAccion`/`PasoEstilo`/`PasoConfigurar`— se borró el 2026-10-06:
+  llevaba muerto desde el 80 y seguía descrito aquí como vivo.)
+  `EditorB.tsx` se queda con el estado y el armado de la pantalla.
+- `src/components/ButtonCell.tsx` — celda de botón: estructura y estado (~260 líneas).
+  El arrastre (los dos extremos, ratón y dedo) está en `celda/useArrastreCelda`; lo que
+  la celda deduce del botón —vacía, etiqueta, icono, color, título— en `celda/derivados.ts`,
+  que es una función pura y se puede leer sin el render delante.
+- `src/components/rejilla/RejillaBotones.tsx` — la rejilla de botones, compartida por
+  `MainB` y `FullscreenB`. Encaja las casillas en el hueco (`square` = casillas cuadradas,
+  `fill` = ocupar todo) y las coloca; **cada pantalla arma su propia celda** vía la prop
+  `celda`, porque la principal pasa veinte props y kiosko seis. El calculo del encaje
+  descuenta el relleno (`clientWidth` lo incluye) y los huecos entre casillas: sin eso las
+  casillas del modo `square` no salian cuadradas y en `fill` la ultima fila se recortaba.
+- `src/utils/useDisparadores.ts` — los botones que se disparan solos (a una hora, o por
+  umbral de un sensor). Los llama `App`, que está montada siempre: dentro de `MainB`
+  **dejaban de sonar en kiosko**, y el programado además solo miraba la página abierta.
+- `src/utils/estadoSistema.ts` — el sondeo de 5 s (salida de audio por defecto, procesos
+  corriendo, estado RGB) y las dos funciones que lo leen: `botonActivo` y `botonVisible`.
+  Estaba dentro de `MainB` y **kiosko no lo tenía**: la visibilidad condicional se ignoraba
+  y el marcador de activo no se pintaba. Las dos pantallas se turnan en la misma ventana,
+  así que compartirlo no duplica el sondeo.
+- `src/utils/formatos.ts` — reloj, fecha y día en el idioma elegido, cacheados por idioma.
+  Vivía bajo `screens/main/`, y el limitador de capas no dejaba que un componente lo usara.
+- `src/components/celda/useDatosWidget.ts` — lo que muestra cada widget (reloj, clima,
+  reproducción, sensor, variable), compartido por las dos pantallas. Estaba dentro de `MainB`
+  y **kiosko no lo tenía**: un botón con widget mostraba el icono de la acción en pantalla
+  completa. Incluye `useClimaWidget`, el sondeo del clima.
+- `src/components/celda/` — las piezas de la celda: `colores.ts` (prioridad de fondo y borde),
+  `ContenidoCentral` (widget o icono, con sus cuatro formas), `Insignias` (las marcas de las esquinas),
+  `MenuContextual`, y los dos hermanos del gesto: `usePulsacionTactil` (dedo) y
+  `usePulsacionRaton` (ratón). El destello y el sonido salen **solo** de
+  `destellar()`, dentro del hook de ratón; estaban copiados en tres sitios que leían
+  las props en vez de las referencias, y el comparador del `memo` ignora esas props.
+- **Los botones se emparejan con los huecos POR POSICIÓN, nunca por id**
+  (`conHuecosCompletos` en `configDefaults.ts`). Al cargar se hacía por id, dando por hecho
+  que el id de un botón es `${página}-${hueco}`, y hay cuatro caminos donde no lo es:
+  `addPage` y `setPageGridSize` acuñan `p<timestamp>_<hueco>`, la importación de una página
+  también, y **borrar una página renumera `b.page` pero no los ids**. En los cuatro el `find`
+  fallaba y devolvía el hueco vacío: los botones seguían en el archivo y desaparecían de la
+  pantalla al reiniciar. Medido con dos páginas en el mismo arranque — la de ids canónicos
+  conservó sus cuatro etiquetas, la creada con «+» ninguna. Mientras borrar una página
+  renumere sin renumerar ids, **el id no puede codificar la posición**.
+- `src/utils/useDeck.ts` — la configuración del deck y las 25 operaciones que la cambian
+  (botones, páginas, perfiles, ajustes), con el historial de deshacer. `App` se queda con la
+  vista y los avisos. `src/utils/configDefaults.ts` — la configuración de una instalación nueva.
+- `src/utils/pulsarBoton.ts` — **lo que pasa al pulsar un botón, en un solo sitio**. Estaba
+  escrito tres veces (principal, kiosko, disparador automático de `App`) y las tres habían
+  divergido: el grupo radio y el tope de 60 s solo en la principal, el gancho de scripts —y con
+  él «guardar la salida en una variable» y «mostrar la salida»— en ninguna de las automáticas,
+  y los errores de una acción disparada sola no se enseñaban en ninguna parte. Cada llamador se
+  queda con lo suyo: el indicador de «ejecutando», el registro lateral y el sonido.
+  **`toggledIds` entra como función, no como `Set`**: `ButtonCell` está memoizado con un
+  comparador que ignora los manejadores, así que una celda solo recibe uno nuevo cuando cambia
+  algo suyo (incluido su propio `toggled`). La celda que se pulsa conserva el manejador de su
+  primer render, con un `toggledIds` vacío — y por eso el grupo radio no funcionaba con el
+  ratón en ninguna pantalla, aunque la acción de apagar sí (esa celda ya había cambiado lo
+  suyo). Cualquier cosa que un manejador de celda lea del estado del padre tiene el mismo
+  problema: va por referencia.
+- **El estado encendido/apagado de los interruptores vive en `config.toggledIds`**, no en el
+  estado de React: es lo único que ven las tres pantallas (principal, kiosko y la barra
+  flotante, que es otra ventana con otro React). Antes cada una llevaba su propia cuenta.
+  `toggleButton` (useDeck) lo escribe con el actualizador **funcional** — el grupo radio llama
+  varias veces seguidas y leyendo del cierre cada llamada pisaría a la anterior — y con el
+  mismo respiro de 400 ms que las variables. Como efecto buscado, sobrevive a reiniciar.
+- **La barra flotante es otra ventana con otra copia de la configuración.** El proceso
+  principal reparte `config:changed` a **las dos**, y quien lo recibe **no vuelve a guardar**:
+  solo adopta lo que la otra ventana puede cambiar (`state` y `floatingBar`). Sin esa regla
+  es un bucle. Antes el aviso iba solo a la barra, así que lo que la barra guardaba se perdía
+  en cuanto el deck volvía a guardar. La barra usa `pulsarBoton` como las otras tres pantallas,
+  y **su estado de encendido sí se comparte con el deck**, en los dos sentidos: medido
+  encendiendo desde cada una y comprobando el borde de acento en la otra y el
+  `toggledIds` del archivo. (Esta nota decía lo contrario y estaba desactualizada.)
+  **Cualquier acción que guarde la configuración por fuera del estado de React** (con
+  `api.config.save` directo) tiene que estar en esa lista de adoptados, o el siguiente guardado
+  normal la pisa. Así pasó con el mando móvil: el botón encendía el servidor, el deck no adoptaba
+  `remote` y al siguiente cambio lo mandaba sin él, que **apagaba el servidor** sin decir nada. Hoy
+  se adoptan `state`, `floatingBar`, `toggledIds` y `remote`. Los valores por defecto del servidor
+  están una sola vez, en `REMOTO_POR_DEFECTO` (`src/types/config.ts`), para los dos procesos.
+- `src/utils/actions.ts` — despachador de acciones y runner de secuencias (~200 líneas)
+- `adjust` (en `acciones/audio.ts`) sube o baja brillo/volumen **desde donde estén**, en vez
+  de fijar un número. Para eso hay que leer primero: el núcleo nativo ya declaraba
+  `getBrightness`/`getVolume` pero solo había camino para escribir. Un monitor externo no
+  suele exponer el brillo, así que la lectura puede devolver `null` y se avisa.
+- `src/utils/acciones/` — una familia por archivo: `lanzar`, `audio`, `media`, `entrada`, `datos`, `rgb`.
+  `index.ts` arma el mapa `MANEJADORES` y declara `RESUELTAS_POR_EL_LLAMADOR` (los tipos que
+  resuelve `runActionSequence`: script, folder, branch, countdown). **No hay `default: return OK`**:
+  un tipo sin manejador devuelve error, y `scripts/check-acciones.mjs` lo detecta antes de ejecutar. El mismo script comprueba que **cada tipo tenga formulario** en el editor: `media-shuffle`, `media-repeat` y `rgb-preset` estaban en el selector sin entrada en `FORMULARIOS`, y el paso 2 salía en blanco aunque el botón funcionase al pulsarlo.
+- `src/screens/main/PanelMusica.tsx` — el panel de música (300 px) al lado de la
+  rejilla, con carátula grande y botones de 64/78 px. Sale **solo cuando hay algo
+  sonando** y viene apagado. La franja de la barra lateral se queda: cabe en cualquier
+  sitio, pero sus botones miden ~25 px de alto y con el dedo se fallan.
+- **La carátula solo existe con el núcleo nativo.** `crates/vd-core` la lee bien; el
+  camino de respaldo en PowerShell **no puede**: `OpenReadAsync()` devuelve un
+  `IAsyncOperationWithProgress` que PowerShell 5.1 **no proyecta** —llega como
+  `System.__ComObject` y `AsTask` lo rechaza—. Medido con seis estrategias distintas
+  (reflexión con y sin `$progressType`, casteo al genérico cerrado,
+  `GetTypedObjectForIUnknown`, `GetResults()` a pelo, y C# con `Add-Type`, que no
+  puede referenciar un `.winmd`): todas fallan. La de un solo genérico completa la
+  tarea pero devuelve otro `__ComObject` sin `.Size`. **No es un fallo del código de
+  la aplicación**; si no hay núcleo, no hay carátula.
+  **Y sí hay núcleo en esta máquina.** La nota anterior decía que Smart App Control
+  bloqueaba el `.node` sin firmar y que por eso no había carátulas; se midió el
+  2026-09-05 y no se sostiene. Con `VerifiedAndReputablePolicyState = 1` —o sea, SAC
+  encendido— el `require('./native/vd-core.node')` **carga** y expone sus funciones,
+  `media.nowPlaying()` contesta en 0–5 ms (un `powershell.exe` tarda 405 ms solo en
+  arrancar) y devuelve `thumbnail` como `data:image/png`, que es lo que el camino de
+  PowerShell no puede hacer de ninguna manera. La carátula se ve en pantalla, 43×43
+  en la franja lateral. Lo que SAC sí bloquea es **compilar**: los proc-macro recién
+  generados (`darling_macro-*.dll`, os error 4551) no tienen reputación. Son dos
+  cosas distintas que estaban dichas como una. **Las carátulas no dependen del
+  certificado.**
+- `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
+- `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
+- `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC
+- `electron/main/macro.ts` — grabación de macros (uiohook-napi) + reproducción via PowerShell
+- `electron/main/rgb.ts` — control RGB vía OpenRGB SDK. `SMART_PRESETS` son 18 presets que
+  se apoyan **solo en modos que el dispositivo ya sabe hacer**: no hay motor de animación,
+  VirtualDeck no manda fotogramas. Cada uno lleva color, una lista de modos a intentar (de
+  lo específico a lo genérico, acabando siempre en `static`/`direct`) y opcionalmente
+  brillo y velocidad. `scripts/check-acciones.mjs` cruza esa lista con
+  `src/data/rgbPresets.ts`: si se separan, el botón no haría nada y no habría error.
+  **Y las cuatro acciones RGB decían que sí sin haber hecho nada**: `setDeviceColor(-1)` y
+  `setMode(-1)` recorrían `devicesCache` tirando el resultado de cada uno, con la lista vacía
+  —OpenRGB sin administrador no detecta casi nada— el bucle no daba ni una vuelta;
+  `applyProfile` guarda los dispositivos **por nombre**, así que renombrar una placa o
+  importar el perfil de otro equipo hacía que se saltara todo. Cierto solo si algún
+  dispositivo lo aceptó; que a uno de cinco le falte el modo sigue sin ser error
+- `electron/main/superficies/` + `src/utils/superficies/` — **controladores físicos** (Stream Dock N3
+  de Mirabox/Ajazz). Cada dispositivo es **una página del deck** marcada con `PageConfig.superficie`, y
+  cada control es un hueco por posición (`disposicion.ts`: 0–5 teclas LCD, 6–8 botones, 9–17 las tres
+  perillas como izq/pulsar/der). Así el editor, deshacer e importar/exportar sirven sin cambios. Lo medido
+  con el N3 real (`0x5548:0x1001`) y que no se deduce del código: la interfaz HID de control es la
+  `interface 0` (la 1 es un teclado y no se abre); la imagen va **rotada 90°** —Bitfocus dice 270 y con
+  eso sale al revés—; el giro de una perilla manda un evento por clic sin `up`. El LCD se pinta siempre
+  con la paleta OLED (`COLORES_LCD`), sea cual sea el tema. Driver adaptado del módulo **MIT** de
+  Bitfocus (`THIRD_PARTY_NOTICES.md`); OpenDeck es GPL y **no se copia** de él.
+  La **tabla de modelos** (12, de Bitfocus; solo el N3 `verificado`) vive en
+  `electron/main/superficies/modelos/` y llega al renderer por IPC: `electron/main` no puede importar
+  datos de `src/`. Los huecos salen del orden de `controles` (`disposicion.ts`); **cambiar ese orden en
+  un modelo desordena las páginas guardadas**. El icono de la tecla lo dibuja
+  `components/celda/iconoSvg.tsx` y `App` lo inyecta al hook, porque `src/utils` no puede importar
+  componentes: no duplicar los SVG. El brillo en vivo va directo al hardware (fusionado en el driver) y
+  solo se guarda al soltar el deslizador.
+  **Un dispositivo puede tener varias páginas** (todas las de su serial). La que enseña el aparato
+  es la **activa**, guardada en `useSuperficies` por id y solo en memoria; cambia sola con la app en
+  primer plano (`superficies/paginaSegunApp.ts`) o al elegir su pestaña en `Dispositivos`.
+  `useAutoProfile` **salta las páginas con `superficie`**: si no, la pantalla principal se iría a la
+  página de un dock en cuanto su app vinculada pasara al primer plano.
+  **La página elegida a mano es la base** (deck y cada dock): una app con página vinculada la sustituye
+  mientras está delante y al irse se vuelve a la base, no a la primera. Sin esto, una acción que cambia
+  el primer plano (`Win+Tab`) devolvía el dock a su primera página al pulsar un botón de la segunda.
+  `page-nav` (`utils/acciones/pageNav.ts`) navega las páginas del dock que lo pulsó o las del deck.
+  **Widgets y mantener pulsado en la tecla:** el dato vivo sale de `useWidgetsSuperficie` (mismo
+  `datosDeWidget` de `src/comun/`) y manda sobre imagen y GIF; el sondeo de música se activa **por
+  consumidor** (`useNowPlayingActivation(clave)`), no con un booleano que el último apagaba. Un botón con
+  `longPressAction` espera a la subida o a 500 ms (`despachoTecla.ts`); los demás disparan en la bajada.
+  **Botones fijos** (`ButtonConfig.fijo`, `utils/botonesFijos.ts`): se ven y se disparan en el mismo
+  hueco de todas las páginas de su grupo; todo lo que **pinta o dispara** usa `botonesResueltos`, lo
+  que **edita o guarda** trabaja con `config.buttons` tal cual.
+- `src/comun/` — **lógica pura que comparten el deck y el proceso principal** (interpolar `{var}`,
+  visibilidad condicional, los datos de cada widget). El mando móvil (`electron/main/mandoVivo.ts`) los
+  tenía copiados a mano y ya se habían separado (la divisa). `main-no-renderer` deja importar de aquí, y
+  la regla `comun-es-puro` impide que `src/comun` importe nada que no sea `src/types` o ella misma: sin
+  React, DOM, electron ni Node. Lo nuevo que tengan que calcular igual los dos procesos va aquí.
+  También vive aquí el **catálogo de marcas** (`brandIcons.ts`; `src/data/brandIcons.ts` solo reexporta)
+  y `marcaSvg.ts`, la única resolución de una marca (bitmap/color/paleta propios). **Los colores de una
+  marca se validan** (`#rgb`/`#rrggbb`/`#rrggbbaa`): vienen de perfiles de la galería y acaban dentro de un
+  SVG. Al móvil va como SVG autónomo en un `<img>`: su CSP solo admite `style` con nonce, así que el halo
+  y la animación viajan dentro del propio SVG. Ni el renderer ni la tecla importan el catálogo en estático:
+  sigue en su chunk diferido.
+- `electron/main/launcher.ts` — ejecutar apps/scripts
+- `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
+- `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
+- `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
+- `electron/main/ipc/` — handlers IPC organizados por dominio (audio, media, macro, config, etc.)
+- `electron/main/galeria.ts` — traerse el deck de otra persona. `resumirRiesgo` es lo
+  **único** que separa «importar un perfil» de «ejecutar código de un desconocido», y hay
+  que mirarlo entero: no basta con recorrer `action`, porque un script escondido en un
+  `countdown`, una rama, una carpeta o el «mantener pulsado» no salía en la lista. Y
+  **teclear es ejecutar**: `hotkey`, `type-text` y los pasos de una macro no se contaban,
+  así que un perfil cuyo botón hace `Win+R` → `powershell -c "irm … | iex"` → `Enter`
+  daba el resumen entero vacío y la pantalla decía «no lanza programas ni ejecuta
+  scripts». Medido con ese perfil exacto. Un tipo de acción nuevo que toque el sistema
+  hay que añadirlo aquí, o el aviso miente por omisión.
+- `electron/main/divisas.ts` — las tasas de cambio del widget de divisas. Va en el proceso
+  principal por lo mismo que la descarga de perfiles: la CSP del renderer solo deja
+  conectar con `self` y los dos servicios del clima. Fuente `open.er-api.com` (gratis, sin
+  clave, 166 monedas incluido el lempira, una actualización al día). La respuesta dice
+  cuándo toca la siguiente, así que no hay intervalo inventado; se cachea en `userData` y
+  con eso se sigue enseñando la tasa de ayer sin conexión.
+- `electron/main/idioma.ts` — el puñado de textos que enseña el **proceso principal**
+  (menú de la bandeja, títulos de los diálogos de archivo, los errores que devuelve al
+  renderer). No puede usar el i18n de `src/`: son dos procesos. Estaba todo fijo en
+  español y la auditoría no lo veía, porque solo miraba `src/`. `fijarIdioma()` se llama
+  al arrancar y al guardar la configuración, antes de reconstruir la bandeja.
+- `electron/main/index.ts` — slim bootstrap (~95 líneas); importa los módulos anteriores
+- `src/components/settings/` — `PanelAjustes` (el desplegable entero de la rueda dentada)
+  y sus secciones: `RGBSection`, `SensorsSection`, `settingHelpers`. `TitleBar` se queda con
+  la barra en sí (~250 líneas).
+
+## Notas técnicas
+- **Codificacion de PowerShell — dos problemas distintos, y el aviso viejo era falso.**
+  El prefijo `chcp 65001` + `$OutputEncoding` + `[Console]::OutputEncoding` arregla la
+  **salida**. La **entrada** —el texto no ASCII dentro del propio script— es otra cosa:
+  PowerShell 5.1 lee un `.ps1` sin BOM en la pagina de codigos ANSI, no en UTF-8. Medido:
+  `Hola, ¿qué hora es?` salia `Hola, Â¿quÃ© hora es?`. Por eso `runPS` escribe el temporal
+  **con BOM**. La nota que decia «no usar BOM — rompe el parsing de PS» se comprobo y no se
+  sostiene: un `param(...)` con BOM delante se sigue reconociendo, y los scripts de audio y
+  SMTC dan el mismo resultado con y sin el.
+  Ademas, el camino **nativo** (`vd-core`, `powershell -Command`) no inyectaba el prefijo y
+  leia la salida con `from_utf8_lossy`: cada acento volvia como caracter de reemplazo, y eso
+  afectaba a la accion «script» que guarda la salida en una variable. El arreglo de raiz ya
+  esta en `crates/vd-core` (`run_script` mete el prefijo); `conUtf8()` en `launcher.ts` lo
+  inyecta igualmente **antes** de elegir camino, por si carga un `.node` anterior.
+  `injectUtf8Prefix` es idempotente para que no se aplique dos veces.
+- **Notificaciones y AppUserModelId**: `app.setAppUserModelId('com.virtualdeck.app')` se llama
+  al arrancar y **tiene que coincidir con `build.appId` de `package.json`**, que es el que el
+  instalador NSIS graba en el acceso directo del menu de inicio; Windows solo muestra el nombre
+  y el icono de la aplicacion si los dos cuadran. Electron lo pone solo con Squirrel, no con
+  NSIS: sin la llamada las notificaciones quedaban registradas como `electron.app.Electron`
+  (visible en `HKCU\...\CurrentVersion\Notifications\Settings`, que es el sitio donde se puede
+  comprobar si Windows acepto una notificacion — buscar el toast en pantalla no sirve, un toast
+  de control nativo tampoco aparece si hay un video a pantalla completa). `scripts/check-ipc.mjs`
+  cruza las dos cadenas.
+- `IPolicyConfig` COM: IID correcto es `F8679F50-850A-41CF-9C72-430F290290C8` (no confundir con CLSID `870AF99C-...`). El orden de métodos en la interfaz debe coincidir con la vtable real.
+- Widget `now-playing` no se aplica a botones de tipo `audio-device`: el editor deshabilita
+  esa combinación (`BloqueWidgetApariencia`) y `useDatosWidget` la descarta también.
+- `media.ts` re-consulta ventanas activas en cada ciclo cuando SMTC falla, para reflejar cambios de pestaña/video.
+- **SMTC await (NO tocar)**: el `Await-Op` del PREAMBLE de `media.ts` convierte el `IAsyncOperation` de WinRT a un `Task` de .NET vía `System.Runtime.WindowsRuntime` + reflection (`AsTask`), pasando el tipo de resultado explícito. **NO** volver al polling de `$op.Status`: en PowerShell 5.1 stock esa propiedad no se proyecta (queda vacía), el await devuelve siempre `$null`, el manager sale `null` y el widget de música deja de mostrar nada. Verificado en vivo (polling → manager null, AsTask → OK). Los alias de tipo (`$TMgr`, `$TProps`, `$TStream`) usan el loader WinRT completo `,Namespace,ContentType=WindowsRuntime` para resolver sin depender del orden de carga del winmd. El thumbnail (`OpenReadAsync`) devuelve `IAsyncOperationWithProgress`, por eso se le pasa también `$progressType` (`[UInt64]`).
+- **2026-10-04: aunque el núcleo ya compila y su `diagnose` tiene límite de 5 s, se queda en PowerShell a propósito** (roadmap 71): 20 ms contra ~500 ms no compensa que una sesión colgada bloquee el proceso principal 5 s; PowerShell corre aparte.
+- **`media.diagnose` va por PowerShell a propósito (NO tocar sin leer esto).** El diagnóstico
+  recorre *todas* las sesiones SMTC, no solo la activa. Basta con que una aplicación haya dejado
+  una sesión a medio cerrar —Windows la sigue listando pero ya no contesta— para que su
+  `TryGetMediaPropertiesAsync` no termine nunca. Como la llamada nativa es síncrona vista desde
+  fuera, eso **congela el proceso principal de Electron entero**: ni un `Promise.race` con
+  temporizador llega a dispararse, porque el bucle de eventos está parado. PowerShell tarda
+  ~500 ms pero corre en otro proceso.
+  El núcleo ya compila y su `diagnose` tiene límite de 5 s (`en_hilo_mta_con_limite`), pero
+  se queda en PowerShell a propósito: ver la nota de arriba (roadmap 71).
+- **Núcleo asíncrono (2026-10-06).** `runScript`, `playMacro` y `speakText` del `.node` son
+  `AsyncTask` (devuelven Promise): un script de 30 s o una macro con pausas ya no paran IPC, bandeja
+  ni el HID del dock. `run_script` mata al hijo a los 30 s (como el respaldo). La voz vive en un hilo
+  propio (`vd-voz`) con **una sola** `ISpVoice`: soltarla al volver cortaba la frase. `getNowPlaying`
+  trae `controls`, `isShuffleActive` y `autoRepeatMode`, así que el `CAPS_SCRIPT` de PowerShell solo
+  corre sin núcleo. LHM se lee **solo desde JS**: a Rust va `enabled: false` (su WinHTTP es síncrona).
+- **Audio cache**: `audioIpc.ts` cachea la lista de dispositivos 1 s con núcleo nativo y 30 s por PowerShell. Invalida automáticamente al cambiar dispositivo default. Pasar `force=true` para forzar refresco.
+- **Multi-select**: Ctrl+clic en celdas para seleccionar múltiples botones. La barra de bulk-ops flota sobre la grilla. `selectedIds` se limpia al cambiar de página.
+- **Shuffle/repeat SMTC**: usan `TryChangeShuffleActiveAsync` / `TryChangeAutoRepeatModeAsync` de Windows.Media.Control. Requieren que haya una sesión SMTC activa.
+- **Macro**: grabación global via `uiohook-napi` (N-API — no requiere rebuild para Electron 33).
+  Reproducción por `vd-core` (SendInput), con un script PowerShell de respaldo. El `.node` va
+  fuera del asar (`asarUnpack`). **El mapa de teclas se deriva de `UiohookKey`, no se escribe**:
+  uiohook entrega *scancodes* (`A` = 0x1E), no los códigos virtuales de Windows (`A` = 0x41), y
+  el mapa escrito a mano suponía lo segundo — grabar `abc1 Ctrl+C Alt+Tab F5 Enter` daba
+  `0 {DELETE} {DELETE} 8`. Los modificadores salen de `e.ctrlKey/altKey/shiftKey/metaKey` del
+  propio evento; sin ellos `Ctrl+C` se grababa como `c`. El formato en disco es `Ctrl+C` /
+  `{ENTER}`, que es lo que parsea `crates/vd-core/src/macros/keys.rs` y lo que se escribe a mano
+  en el editor. Y lo escapado para SendKeys todavía tiene que entrar en una **cadena de
+  PowerShell entre comillas dobles**, donde mandan otros tres caracteres: sin `paraPS`,
+  `precio $100` salía «precio  USD», un `"` reventaba el script entero y **`$env:USERNAME`
+  se evaluaba** — o sea que un paso de texto, que son datos, ejecutaba código, y una macro
+  importada de la galería dejaba de ser «teclea esto». El camino nativo no tiene nada de
+  esto: los pasos viajan como JSON. `escapeSendKeys` (solo el respaldo) **no toca los tramos ya entre llaves**: al
+  aplicarse sobre la cadena entera convertía `{ENTER}` en `{{ENTER}}`. Y los clics sobre la
+  propia ventana no se graban (`esNuestro` en `startRecording`): si no, toda macro acaba con un
+  clic en el botón de detener.
+- **Atajos con signos (`Ctrl+-`, `Ctrl+=`, `[`).** El núcleo los resuelve con el idioma de
+  teclado actual (`VkKeyScanW` en `crates/vd-core/src/macros/keys.rs`). Si un `.node` anterior
+  devuelve `false` con un signo, `sendHotkey` (`launcher.ts`) cae a PowerShell (`teclaSigno`).
+  El teclado numérico (`Add`, `Subtract`...) va por `uiohook-napi` (`keyTap`, en el propio proceso,
+  ~1 ms): no depende del idioma del teclado, que es por lo que el zoom usa `Ctrl+Add` y no `Ctrl+=`
+  (en el teclado latinoamericano `=` es `Shift+0`).
+- **Ventanas: `cycle_window` y `open_apps` (`crates/vd-core/src/launcher/ventanas.rs`).** Recorren las
+  ventanas que saldrían en Alt+Tab (visibles, sin dueño, con título, ni de herramientas, ni tapadas por
+  DWM, ni `Progman`, ni del propio proceso). El orden es **estable** (proceso y luego hwnd), no el de uso
+  reciente de Alt+Tab. «La actual» es la de primer plano si es de aplicación, y si no (VirtualDeck
+  delante) la de arriba de la pila; solo la pila no basta, tarda milisegundos en reordenarse y girando
+  rápido el segundo clic no avanzaba (medido). Las apps de la Tienda salen todas como
+  `applicationframehost`: en un registro parecen la misma ventana aunque sean dos. Windows solo deja traer una ventana al frente al
+  proceso con foco: se intenta `AttachThreadInput` y, si no, el desbloqueo por `Alt` con la tecla `0xE8` en
+  medio para que soltar `Alt` no abra menús. `open_apps` quita `applicationframehost` (aloja todas las apps
+  de la Tienda). Sin el `.node` nuevo las dos devuelven error claro / lista vacía.
+- **Accent presets**: `ACCENT_PRESETS` en `design.ts` — 10 colores predefinidos. El color libre via `<input type="color">` sigue disponible.
+- **Tema claro/oscuro/sistema**: `ThemeProvider` en `src/utils/theme.tsx`. Selector en TitleBar → ⚙ → TEMA. **El color siempre sale de `useTheme()`**; importar la paleta `VD` de `design` la congela en oscuro y el fallo no se ve ni en `tsc` ni en el build — solo en pantalla, y solo si alguien prueba el tema claro en esa pantalla. Por eso hay una regla `no-restricted-imports` en `eslint.config.mjs` que lo prohíbe en todo `src/` salvo `theme.tsx`.
+  Los estilos que antes eran constantes de módulo (`inputStyle`, `btnPrimary`, `inputStyleSettings`…) son ahora funciones `estilo*(VD)`, y cada componente se hace un alias local con el mismo nombre — así los ~100 usos siguen escritos igual.
+  `App` *renderiza* el proveedor, así que su propio cuerpo queda fuera del contexto: cualquier JSX a nivel de `App` que necesite color va en un componente hijo (`PantallaCargando`, `AvisoDeshacer`, `AvisoError`, `UpdateBanner`).
+- **i18n (ES/EN)**: `src/utils/i18n.tsx` (75 líneas: proveedor, `makeT` y los hooks) + `src/utils/idiomas/` (`es.ts`, `en.ts` —solo fusionan con spreads los fragmentos por dominio `esComun/esEditor/esAcciones/esAjustes` y sus espejos `en*`, todos <600 líneas— y `campos.ts` — los diccionarios son datos y llegaban a hacer de `i18n.tsx` un archivo de 1135 líneas). `scripts/check-i18n.mjs` lee los fragmentos vía `FRAGMENTOS`, no el merge. `LanguageProvider` (envuelve todo en `App`, es el provider más externo) + `useT()` + diccionarios `es`/`en` con claves planas estables (no el texto). `t(key, vars?)` interpola `{var}` y cae a `es` y luego a la clave. `config.language` ('system'|'es'|'en'); 'system' detecta `navigator.language`. **Importante**: como `App` *renderiza* el provider, su propio cuerpo queda fuera del contexto — cualquier JSX a nivel de `App` que necesite `t()` debe extraerse a un componente hijo (ej. `UpdateBanner`). Cobertura: al día de hoy no queda texto que la auditoría detecte, que no es lo mismo que "todo traducido" — la cuarta comprobación es heurística. Hay dos mecanismos: `t('clave')` con claves estables para textos de la app, y `tf('Texto en español')` (`useFieldText`) para las etiquetas del editor, que usa el propio español como clave contra `FIELDS_EN`. **Los dos fallan en silencio**: `t` cae a la clave literal y `tf` cae al español, así que un texto sin traducir se ve igual que uno traducido a medias. Por eso `npm run check` corre `scripts/check-i18n.mjs`, con cinco comprobaciones: claves duplicadas, ES↔EN desparejadas, todo `t()`/`tf()` literal sin entrada, y —la cuarta, la que faltaba— **texto visible en español que nunca se envolvió**. Las tres primeras solo miran lo que ya pasó por `t()`: con ellas en verde quedaban ~55 textos sin traducir (los errores de `utils/actions.ts`, los ajustes, los menús de página), y los encontró el usuario, no el build. La cuarta es heurística y mira tres sitios: atributos (`title`, `placeholder`…), texto entre etiquetas en la misma línea, y **texto que ocupa su propia línea** — este último se añadió después, porque sin él se colaron otros 20 (los avisos del editor, el grabador de macros, el editor de iconos) con la auditoría en verde. Marca lo que tenga acentos españoles, dos palabras funcionales, o una palabra inequívoca en frases cortas. Lo que no sea idioma va a `PERMITIDOS`, que debe seguir siendo corta. Los literales que no son idioma (rutas, atajos, hex, URLs) van **sin** `tf()`. **La quinta** mira los literales de cadena dentro de expresiones: los ternarios (`x ? 'CUADRADAS' : 'LLENAR ÁREA'`), los `??` y los mapas de objeto. Ninguna de las cuatro anteriores los veía —no son atributos ni texto entre etiquetas— y por ahí quedaban 45 textos visibles con la auditoría en verde: los avisos y botones de sensores y RGB, los modos de casilla, el PIN de kiosko, los controles de música, el grabador de macros y los errores de acción. Al principio se saltaba **todos** los `.ts`, y por ahí se colaron 14 textos vivos más (los rótulos de deshacer de `useDeck`, los errores de importación de `configMigration`, los perfiles de sonido, la plantilla del reporte de fallos). Ahora se salta solo `actionData.ts` y `brandIcons.ts` por nombre: eso son datos sembrados que se **copian dentro** del botón que crea el usuario, y traducirlos en caliente le cambiaría etiquetas ya guardadas. Los dos módulos puros que ahora traducen (`configMigration`, `bugReport`) **reciben `t` como parámetro**: no son componentes y no pueden llamar a `useT()`.
+  Aun con las cinco en verde, la app en inglés todavía enseñó cuatro textos más (`Rango: 75%…`, `PROBAR`, el aviso de LHM, el pie del editor): sin acentos y sin dos palabras funcionales, la heurística los daba por buenos. **Mirar la aplicación en inglés sigue encontrando lo que el script no.**
+  Y otros seis después de eso, que descubrieron **dos huecos de forma**, no de vocabulario: (a) de una **plantilla** se evaluaba la cadena entera, así que un operador dentro de un `${}` la descalificaba por la regla de «esto es código» — por ahí pasaron `No se pudo lanzar OpenRGB: ${e ?? 'x'}` y los rótulos de deshacer `editar "${…}"` y `cambiar grilla a ${gs}×${…}`; ahora se mira **solo el texto**, quitando las interpolaciones. Y (b) el texto **entre** dos expresiones (`{n} ZONA{n === 1 ? '' : 'S'}`) no lo veía ningún patrón: el de arriba solo mira lo que precede a un `{` y el de abajo lo que sigue a un `}` hasta el final de línea. Al taparlos aparecieron dos leaks más que llevaban meses vivos (el título del editor de iconos y el selector de perfil RGB) y **las 23 condiciones del widget de clima**, que estaban escritas en español dentro del componente.
+  **La sexta comprobación** es otra cosa: mira que lo que se dibuja con la fuente de puntos **exista en la fuente**. `GLYPHS_5x7` no es un alfabeto completo y `DotText` cae a un espacio en blanco cuando no encuentra la letra, así que la palabra se reescribe sola sin ningún aviso: faltaban `B`, `J`, `Q`, `Z` y `&`, y el título del paso 4 del tutorial se leía «SUS OTONES» (en inglés, «BACKUP & HELP» → «ACKUP  HELP»). No es un texto sin traducir sino un carácter que no está en un mapa de datos, y por eso ninguna de las cinco anteriores podía verlo. `CLAVES_EN_PUNTOS` dice qué claves pasan por `DotText`; `DOTTEXT_DECLARADOS`, qué archivos lo usan — si aparece uno nuevo, el guardián lo exige declarado, porque si no la lista se queda corta en silencio.
+- **Onboarding + hints**: `Onboarding.tsx` (la carcasa: título, cuerpo, puntos y navegación) +
+  `src/components/onboarding/pasos.tsx` (los tres pasos con controles: idioma, tema+acento y
+  exportar/importar). Siete pasos; `CONTROLES` es un mapa por número de paso, así que añadir
+  uno interactivo es añadir una entrada. Se dispara si `config.onboardingCompleted !== true`;
+  repetible vía Ayuda → Acerca de. **Ojo con la migración**: `loadConfig` devuelve `{}` cuando
+  no hay archivo, y eso entra en la cadena de migración como si fuera un config de v1 — con
+  `onboardingCompleted: c.onboardingCompleted ?? true` el paso v3→v4 marcaba el tutorial como
+  visto **antes de enseñarlo**, y no salió nunca desde que existe. La condición correcta es
+  «tiene botones guardados». `Hint.tsx` (mensaje flotante contextual descartable; usa `config.hintsDismissed` para no repetirse). Ambos i18n.
+- **PowerShell `param()`**: `runPS` (en `ps-helpers.ts`) detecta si el script empieza con `param(...)` y, en ese caso, inserta el prefix UTF-8 DESPUÉS del bloque param. PowerShell exige que `param()` sea la primera sentencia del script — meterle `chcp 65001` arriba lo rompe silenciosamente. Si modificás `runPS`, mantené ese parser.
+- **Barra de tareas y bandeja (NO volver a tocar sin leer esto)**: la ventana lleva
+  `skipTaskbar: true` **siempre**. VirtualDeck vive en la bandeja y su icono en la barra de
+  tareas es un duplicado. Una vez se cambió a «solo mientras se ve» por miedo a que una
+  ventana sin marco no se pudiera recuperar; no es cierto — Alt+Tab la lista, el clic en el
+  icono de la bandeja la trae y el menú tiene «Mostrar». Se midió enumerando los botones
+  reales de la barra por UI Automation, que es la única forma: en Windows `skipTaskbar` no
+  se refleja en los bits de estilo de la ventana (`WS_EX_APPWINDOW`/`TOOLWINDOW`), Electron
+  usa `ITaskbarList::DeleteTab`. El arranque con la sesión se registra con `--oculto`
+  (`fijarArranqueAutomatico` en `ipc/appIpc.ts`) y con esa marca la ventana se crea con
+  `show: false`: el renderer carga igual —de eso dependen los disparadores programados— pero
+  no se enseña. Quien ya tenía el inicio automático puesto lo tiene registrado sin la marca,
+  así que se reescribe en cada arranque.
+- **LibreHardwareMonitor NO se empaqueta.** Lo hacía (`extraResources` → `resources/lhm/`,
+  19 MB) y se quitó: LHM **escribe su configuración junto a su propio `.exe`**, lo que en un
+  paquete MSIX es imposible —el directorio de instalación es de solo lectura— y habría dejado
+  los sensores muertos en la versión de la Store. Además la carpeta estaba en `.gitignore`, así
+  que quien clonara y compilara obtenía un instalador sin LHM sin enterarse. Ahora lo instala
+  el usuario, como OpenRGB. `rutaLHMConocida()` lo busca en las rutas habituales; si no está,
+  la sección de sensores enlaza la descarga y **explica que hay que activar Options → Remote
+  Web Server → Run**, que es lo que la copia empaquetada traía hecho y nadie adivinaría.
+- **`app:tabletSettings`** abre «Configuración de la tableta» de Windows, que es donde se dice
+  **cuál de los monitores responde al tacto**. Con varias pantallas, sin ese mapeo el tacto
+  mueve el cursor en el monitor equivocado y el deck no responde donde se toca; no es algo que
+  VirtualDeck pueda arreglar, el mapeo lo guarda Windows. Va en los ajustes y no como acción de
+  un botón: hace falta **antes** de poder pulsar nada. `control /name Microsoft.TabletPCSettings`
+  con `rundll32 ... tabletpc.cpl @1` de respaldo — comprobado en el registro que el nombre
+  canónico resuelve a ese comando.
+- **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
+
+## 🦀 El núcleo Rust vuelve a compilar (2026-10-04)
+
+Las notas que dicen «el `.node` no se puede recompilar» (Smart App Control, os error 4551) **ya no
+valen**: SAC está apagado en esta máquina (`HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy`,
+`VerifiedAndReputablePolicyState = 0`) y `cargo build --release -p vd-node` compila los proc-macro sin
+problema. Lo que fallaba al probarlo era **el propio código**: el commit de la 0.13 (`4b1479b`) añadió
+516 líneas a 7 archivos de `crates/` **sin borrar ninguna** — quedaron la versión vieja y la nueva de
+cada trozo juntas (imports repetidos, una cabecera de `snap_window` sin cuerpo, dos ramas
+`Shell::PowerShell` donde la vieja ganaba y la del prefijo UTF-8 no corría). Nadie lo vio porque no se
+podía compilar. Reparado; `cargo test -p vd-core`: 165 en verde. El `native/vd-core.node` actual se
+compiló del árbol bueno, antes de ese commit, y expone las mismas 39 funciones que el nuevo: la app
+nunca corrió el código roto. Para compilar: `npm run build:native`.
+
+## 🔌 `VD_PLUGIN_PROTO` — prototipo de plugins de Stream Deck (roadmap 83, fase 0)
+
+`electron/main/plugins/` es un anfitrión **de prueba**: sin la variable no se crea nada. Con ella
+(`node scripts/probar-app.mjs abrir <quien> --plugin=<carpeta .sdPlugin> [--modo=utility|node] [--pulsar] [--pi]`)
+lanza el plugin, le manda `willAppear` y pulsaciones, y abre su PI; todo queda en el registro con `[plugins]`.
+Lo medido y lo que falta para el MVP está en `_referencias/informes/plugins-streamdeck.md` §9. Tres cosas
+que no se deducen: el `UUID` puede faltar en el manifiesto (sale de la carpeta); para el CORS del PI hay que
+**quitar** las cabeceras `access-control-allow-*` que traiga la respuesta antes de poner las propias (si no,
+Chromium ve dos valores); y `asegurarWebContents` se aplica también a estas ventanas, que llevan su propia
+política encima (`aplicarPoliticaVentanaPlugin`).
+
+## 🧪 `VD_SIN_NUCLEO=1` — probar los caminos de respaldo
+
+Con el `.node` cargado, **el código de respaldo no se ejecuta nunca**, y por eso
+se pudre sin que nadie lo note. Ahí vivió un `spawn(..., { shell: true })` en
+`launchApp` que impedía abrir cualquier programa instalado en una ruta con
+espacios —o sea, casi todos— **diciendo además que había ido bien**. Quien no
+tiene núcleo es justamente quien no puede diagnosticarlo.
+
+```bash
+VD_SIN_NUCLEO=1 ./dist/win-unpacked/VirtualDeck.exe
+```
+
+La primera línea del registro lo confirma. Conviene pasar por aquí antes de dar
+por buena cualquier función que tenga las dos vías.
+
+---
+
+## 🔬 Sondas en el proceso principal: `require` no sirve
+
+electron-vite empaqueta todo el proceso principal en **un solo `out/main/index.js`**,
+así que dentro de una sonda temporal `require('./rgb')` o `require('./floatingBar')`
+falla: en tiempo de ejecución esos módulos no existen como archivos. La sonda no
+imprime nada y parece que el código no se ejecuta — dos veces se dio por «no medible»
+un arreglo que sí lo era.
+
+Lo que funciona es usar el módulo **ya importado arriba** (`import * as rgb`), o añadir
+el import que haga falta en el propio `index.ts` mientras dure la sonda. `require('electron')`
+sí funciona, porque es un módulo externo de verdad.
+
+## ⏱️ Arranque: desarrollo y producción no se parecen
+
+Medido con `VD_DIAG=1` (la línea `[arranque] ventana visible a los N ms`):
+
+| Cómo se ejecuta | Tiempo hasta ver algo |
+|---|---|
+| `npx electron .` sobre `out/` — lo mismo que instala el usuario | **~240 ms** |
+| `npm run dev` (electron-vite) | **~49 s** |
+
+Los 49 s son **solo de desarrollo**, y son reproducibles. Ya se descartaron, con
+medición y no por deducción: la resolución de `localhost` (127.0.0.1 tarda igual),
+el plugin de CSP de desarrollo, las DevTools, el proxy de Chromium
+(`no-proxy-server`), la velocidad de disco (3000 archivos de `node_modules` en
+483 ms) y esbuild (empaqueta `src` + React entero en 55 ms). El servidor sirve
+cada módulo en menos de 1 ms: el tiempo se va en huecos de 10–20 s **entre
+oleadas de peticiones**, o sea del lado del renderer. Causa no encontrada.
+
+Antes de "optimizar el arranque", mirá cuál de los dos se está midiendo: si el
+reporte sale de `npm run dev`, la aplicación empaquetada no tiene ese problema.

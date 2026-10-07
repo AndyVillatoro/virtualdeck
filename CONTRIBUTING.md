@@ -14,7 +14,7 @@ Este documento explica el flujo de desarrollo y release. Está pensado para que 
 - **Branch principal**: `main` (producción) — todo cambio entra vía PR
 
 Antes de tocar código:
-1. Leé `CLAUDE.md` (notas técnicas y arquitectura).
+1. Leé `CLAUDE.md` (reglas, protocolo, mapa y trampas) y, antes de tocar una zona, su sección en `docs/NOTAS-TECNICAS.md`.
 2. Mirá `CHANGELOG.md` para entender qué se hizo recientemente.
 3. Este documento (`CONTRIBUTING.md`) explica el flujo de cambio.
 
@@ -58,7 +58,7 @@ virtualdeck/
 ├── out/                       # Output de electron-vite (gitignored)
 ├── package.json               # Versión, deps, config de electron-builder
 ├── CHANGELOG.md               # Historial cronológico de versiones
-├── CLAUDE.md                  # Guía técnica del codebase (notas profundas)
+├── CLAUDE.md                  # Reglas, protocolo, mapa rápido y trampas (se carga en cada sesión)
 └── CONTRIBUTING.md            # ← este archivo
 ```
 
