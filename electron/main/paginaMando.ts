@@ -266,6 +266,43 @@ function svgGlifo57(filas, color) {
   return svg;
 }
 
+// Contraste automático sobre un fondo propio (roadmap 102), la misma regla
+// que la celda (src/comun/contraste.ts, del que el servidor ya trae el
+// fgColor resuelto): aquí es el respaldo por si llega un botón con bgColor y
+// sin fgColor. Sin backticks ni interpolaciones: va dentro del literal.
+// Con alfa (#rrggbbaa, rgba()), se usa el color tal cual.
+function textoSobreMovil(c) {
+  var OSCURO = '#070809';
+  var CLARO = '#e6e8eb';
+  if (typeof c !== 'string') return OSCURO;
+  var s = c.trim();
+  var r = -1;
+  var g = -1;
+  var b = -1;
+  var m = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(s);
+  if (m) {
+    var h = m[1];
+    if (h.length === 3) h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2);
+    r = parseInt(h.slice(0, 2), 16);
+    g = parseInt(h.slice(2, 4), 16);
+    b = parseInt(h.slice(4, 6), 16);
+  } else {
+    var low = s.toLowerCase();
+    var esRgb = low.indexOf('rgb(') === 0 || low.indexOf('rgba(') === 0;
+    if (!esRgb || s.charAt(s.length - 1) !== ')') return OSCURO;
+    var partes = s.slice(s.indexOf('(') + 1, -1).split(',');
+    if (partes.length < 3 || partes.length > 4) return OSCURO;
+    r = parseFloat(partes[0]);
+    g = parseFloat(partes[1]);
+    b = parseFloat(partes[2]);
+    if (!isFinite(r) || !isFinite(g) || !isFinite(b)) return OSCURO;
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) return OSCURO;
+  }
+  var lin = function (v) { return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  var lum = 0.2126 * lin(r / 255) + 0.7152 * lin(g / 255) + 0.0722 * lin(b / 255);
+  return lum > 0.22 ? OSCURO : CLARO;
+}
+
 // El centro de un botón del móvil, en el mismo orden que la celda: dibujo
 // 5x7 propio (lo decide quien llama), texto si el icono no era glifo, y si
 // no los puntos que resolvió el servidor (catálogo 16x16, glifo por nombre
@@ -369,7 +406,7 @@ async function pantallaDeck() {
     const celda = nodo('div', { className: 'celda' });
     // Para pintar los widgets en su sitio sin redibujar la rejilla.
     celda.setAttribute('data-boton', b.id);
-    let colorFrente = b.fgColor;
+    let colorFrente = b.fgColor || (b.bgColor ? textoSobreMovil(b.bgColor) : null);
     if (esClaro && colorFrente && colorFrente.toLowerCase() === '#ffffff') colorFrente = '#111418';
     if (b.bgColor) celda.style.backgroundColor = b.bgColor;
     if (colorFrente) celda.style.color = colorFrente;
@@ -383,7 +420,7 @@ async function pantallaDeck() {
       const m2x2 = nodo('div', { className: 'mosaico-2x2' });
       for (const sub of b.subButtons) {
         const sc = nodo('div', { className: 'sub-celda' });
-        let subFrente = sub.fgColor;
+        let subFrente = sub.fgColor || (sub.bgColor ? textoSobreMovil(sub.bgColor) : null);
         if (esClaro && subFrente && subFrente.toLowerCase() === '#ffffff') subFrente = '#111418';
         if (sub.bgColor) sc.style.backgroundColor = sub.bgColor;
         if (subFrente) sc.style.color = subFrente;
@@ -505,8 +542,23 @@ async function pantallaDeck() {
 
     if (b.label || b.sublabel) {
       const rotulo = nodo('div', { className: 'rotulo' });
+      // Con fondo propio la franja va clara u oscura según el fondo, como en
+      // la celda: el velo del tema no sirve sobre un fondo del otro tono.
+      if (b.bgColor) {
+        const fondoClaro = textoSobreMovil(b.bgColor) === '#070809';
+        rotulo.style.background = fondoClaro ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+        rotulo.style.borderTop = fondoClaro ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(255,255,255,0.08)';
+      }
       if (b.label) rotulo.append(nodo('span', { className: 'label-txt', textContent: b.label }));
-      if (b.sublabel) rotulo.append(nodo('span', { className: 'sublabel-txt', textContent: b.sublabel }));
+      if (b.sublabel) {
+        const subEl = nodo('span', { className: 'sublabel-txt', textContent: b.sublabel });
+        // La subetiqueta lleva el mismo color con transparencia, como en la celda.
+        if (b.fgColor || b.bgColor) {
+          if (colorFrente) subEl.style.color = colorFrente;
+          subEl.style.opacity = '0.65';
+        }
+        rotulo.append(subEl);
+      }
       celda.append(rotulo);
     }
 

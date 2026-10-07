@@ -1,4 +1,5 @@
 import { GLIFO_POR_TIPO_ACCION } from '../dot480/glifosPorTipoAccion';
+import { textoSobre } from '../../comun/contraste';
 import type { VDTokens } from '../../design';
 import type { ButtonConfig } from '../../types';
 
@@ -48,7 +49,7 @@ export function derivarCelda(
     displayLabel,
     titulo: isEmpty ? t('cell.tipEmpty') : t('cell.tipFilled', { etiqueta: displayLabel }),
     actionGlyph: ICONOS[button.action.type] ?? 'DOTS',
-    iconColor: isEmpty ? VD.textMuted : (button.fgColor || (toggled ? accent : VD.text)),
+    iconColor: isEmpty ? VD.textMuted : (button.fgColor || (button.bgColor ? textoSobre(button.bgColor) : (toggled ? accent : VD.text))),
     multiCount: button.actions && button.actions.length > 1 ? button.actions.length : 0,
   };
 }

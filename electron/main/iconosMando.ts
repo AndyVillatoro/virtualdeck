@@ -2,6 +2,7 @@ import { DOT_GLYPHS_8X8, resolveDotGlyph } from '../../src/components/dot480/dot
 import { GLIFO_POR_TIPO_ACCION } from '../../src/components/dot480/glifosPorTipoAccion';
 import { matrizDePuntos16 } from '../../src/components/dot480/puntos16';
 import { dataUriDeMarca, resolverMarca } from '../../src/comun/marcaSvg';
+import { textoSobre } from '../../src/comun/contraste';
 import type { EfectoPulsar, SliderWidgetConfig } from '../../src/types';
 
 /**
@@ -272,13 +273,17 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
     actionType: fuente.action?.type,
   });
   const tieneLargo = Boolean(b.longPressAction && b.longPressAction.type !== 'none');
+  // Sin color de texto propio y con fondo propio, contraste automático
+  // (roadmap 102), la misma regla que la celda: si no, un fondo claro propio
+  // deja el texto del tema ilegible. La página lo usa tal cual.
+  const frente = fuente.fgColor || (fuente.bgColor ? textoSobre(fuente.bgColor) : undefined);
   return {
     id: b.id,
     label: b.label ?? '',
     sublabel: b.sublabel,
     page: b.page ?? 0,
     bgColor: fuente.bgColor,
-    fgColor: fuente.fgColor,
+    fgColor: frente,
     icon: b.icon,
     puntos: resuelto.puntos,
     ...(resuelto.iconTexto ? { iconTexto: resuelto.iconTexto } : {}),
@@ -308,7 +313,7 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
         puntos: sub.puntos,
         ...(sub.iconTexto ? { iconTexto: sub.iconTexto } : {}),
         bgColor: s.bgColor,
-        fgColor: s.fgColor,
+        fgColor: s.fgColor || (s.bgColor ? textoSobre(s.bgColor) : undefined),
       };
     }),
   };

@@ -1,5 +1,6 @@
 import type { ButtonConfig, LcdControl } from '../../types';
 import type { DatosWidget } from '../../comun/widgets';
+import { esFondoClaro, textoSobre } from '../../comun/contraste';
 import { textoDeAviso, type AvisoPerilla } from './avisoPerilla';
 import { dibujarSubdivisionLcd, type UtilesSubdivision } from './subdivisionLcd';
 import { pintarWidgetLcd } from './widgetLcd';
@@ -213,13 +214,18 @@ function estaVacio(boton: ButtonConfig): boolean {
  * Color del icono y del texto. Un botón vacío va apagado, como en la celda
  * (`VD.textMuted` de la paleta OLED): en el aparato, el círculo de «sin
  * acción» en blanco brillante llenaba de ruido las teclas sin configurar.
+ * Con fondo propio y sin color de texto, contraste automático (roadmap 102),
+ * la misma regla que la celda: la paleta LCD es OLED fija, pero un fondo
+ * claro propio con texto claro no se leería.
  */
 const TEXTO_APAGADO = '#555a64';
 
 function colorTexto(boton: ButtonConfig | null, colores: ColoresSuperficie): string {
   if (!boton) return colores.texto;
   if (estaVacio(boton)) return TEXTO_APAGADO;
-  return boton.fgColor || colores.texto;
+  if (boton.fgColor) return boton.fgColor;
+  if (boton.bgColor) return textoSobre(boton.bgColor);
+  return colores.texto;
 }
 
 /** Carga una imagen sin manchar el canvas (si no admite CORS, se descarta). */
@@ -488,7 +494,7 @@ function altoFranjaRotulo(conSub: boolean, alto: number): number {
  */
 function dibujarEtiqueta(
   ctx: CanvasRenderingContext2D, texto: string, subtexto: string, ancho: number, alto: number,
-  color: string, sobreFondo: boolean,
+  color: string, sobreFondo: boolean, fondoPropio?: string,
 ): void {
   const limpio = texto.trim().toUpperCase();
   const sub = subtexto.trim().toUpperCase();
@@ -502,6 +508,8 @@ function dibujarEtiqueta(
     degradado.addColorStop(0.6, `rgba(0, 0, 0, ${ETIQUETA_DEGRADADO})`);
     degradado.addColorStop(1, `rgba(0, 0, 0, ${ETIQUETA_DEGRADADO})`);
     ctx.fillStyle = degradado;
+  } else if (fondoPropio && esFondoClaro(fondoPropio)) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${ETIQUETA_VELO})`;
   } else {
     ctx.fillStyle = `rgba(0, 0, 0, ${ETIQUETA_VELO})`;
   }
@@ -578,7 +586,7 @@ async function pintarCuerpoCelda(
     await pintarWidgetLcd(ctx, boton, datos, ancho, zona,
       { texto: color, aviso: colores.aviso, critico: colores.critico, tenue: colores.texto },
       { fuenteMono, dim: DIM_GLIFO, iconoSvg: opciones.iconoSvg, dibujarSvg });
-    dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, false);
+    dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, false, boton.bgColor);
     dibujarDestello(ctx, ancho, alto, extras);
     return;
   }
@@ -594,7 +602,7 @@ async function pintarCuerpoCelda(
   } else {
     await dibujarCentro(ctx, boton, ancho, alto, color, centroY, opciones);
   }
-  dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, sobreFondo);
+  dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, sobreFondo, boton.bgColor);
   dibujarDestello(ctx, ancho, alto, extras);
 }
 
