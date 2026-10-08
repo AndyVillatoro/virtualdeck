@@ -4,7 +4,7 @@ Dos cosas distintas, hechas por dos caminos distintos:
 
 | | Qué es | Se regenera con |
 |---|---|---|
-| **[Capturas](#capturas-e-icono)** | Siete PNG de 1920×1080 y el icono de 300×300 | `node scripts/prensa/capturar.mjs` |
+| **[Capturas](#capturas-e-icono)** | Once PNG (las nueve de la ficha de la Store, la 05b vertical y la 06b de la ficha) y el icono de 300×300 | `node scripts/prensa/capturar.mjs` |
 | **[Animación](#animación-de-cabecera)** | `hero.svg`, y el `hero.mp4` para el tráiler | `npm run build:hero` · `bash docs/prensa/render.sh` |
 
 **Nada de esto se edita a mano.** Las capturas salen de la aplicación corriendo y
@@ -19,71 +19,88 @@ montado en un editor de imágenes. Se regenera con:
 
 ```bash
 npm run build                       # las capturas salen de out/, no de dev
-node scripts/prensa/caratula.mjs    # la carátula de la pista (una vez)
-node scripts/prensa/capturar.mjs    # las siete capturas + el icono
+node scripts/prensa/capturar.mjs    # las once capturas + el icono
 node scripts/prensa/capturar.mjs 03 05   # o solo algunas, por su número
 ```
 
 El guion imprime las medidas de cada archivo y marca con `✗` cualquiera que no
 salga a 1920×1080, así que si la Store rechaza una imagen no es por el tamaño.
+También escribe `fuentes/reproduccion.json` (la pista inventada) y las artes de
+la tienda si no existen, así que en una máquina limpia basta con el comando.
 
 ### Los archivos
 
 | Archivo | Qué es | Medidas |
 |---|---|---|
-| `01-deck.png` | La pantalla principal: panel de música a la izquierda, rejilla de 4×4 con icono y color por botón, barra lateral con reloj, clima, sensores y RGB. La primera que conviene subir. | 1920×1080 PNG |
-| `02-editor.png` | El editor en el paso 1: los presets rápidos por categoría y la retícula de tipos de acción. | 1920×1080 PNG |
-| `03-kiosko.png` | Modo kiosko: sin barra de título, casillas grandes en modo «llenar área», sensores y selector de página a la izquierda y la franja de reproducción abajo. | 1920×1080 PNG |
-| `04-barra-lateral.png` | Una página de 5×4 hecha de widgets en vivo, con la barra lateral leyendo reloj, clima, cinco piezas de hardware y el estado del RGB. | 1920×1080 PNG |
-| `05-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
-| `06-galeria.png` | La galería de perfiles con el aviso de riesgo desplegado: lo que un perfil descargado va a ejecutar, antes de importarlo. | 1920×1080 PNG |
-| `07-barra-flotante.png` | Columna de tiles flotante HUD superpuesta en el escritorio/aplicaciones con mosaico 2×2, pin, slider de volumen y atajos. | 1920×1080 PNG |
+| `01-deck.png` | La pantalla principal: panel de música a la izquierda, rejilla de 4×4 con iconos del catálogo 16×16, barra lateral con reloj, clima, sensores y RGB. La primera que conviene subir. | 1920×1080 PNG |
+| `02-editor.png` | El editor por secciones sobre un botón ya configurado (Spotify): vista previa llena, PRESETS desplegados con las fichas de apps y APARIENCIA con el icono del catálogo (`marcas:spotify`). | 1920×1080 PNG |
+| `03-catalogo.png` | El catálogo de iconos con sus grupos y buscador: «speaker» devuelve el glifo 8×8 SPEAKER, las acciones de sonido y la marca Speaker Deck, todo en la misma pantalla. | 1920×1080 PNG |
+| `04-dock.png` | La pantalla Dispositivos con la página del N3 pintada entera: 6 teclas LCD, 3 botones y las 3 perillas con el perfil «multimedia». El serial y la lista de apps en ejecución se sustituyen antes de disparar (ver «Repaso de privacidad»). | 1920×1080 PNG |
+| `05-movil.png` | La página del mando móvil, capturada en vista de teléfono (390×844 @2) y pegada centrada en un lienzo OLED 1920×1080. | 1920×1080 PNG |
+| `05b-movil-marco.png` | La misma vista de teléfono, pero el PNG final es vertical 1080×1920: el teléfono llena el alto y solo quedan dos franjas finas de fondo OLED. Para meterla en un marco en el vídeo. | 1080×1920 PNG |
+| `06-tienda.png` | La tienda con la rejilla de tarjetas de la galería, con el scroll arriba: varias entradas con portada e icono a la vista. | 1920×1080 PNG |
+| `06b-tienda-ficha.png` | La misma tienda con la ficha abierta: portada, capturas y el aviso de riesgo completo, con el scroll arriba (vista más alta que 16:9 para que todo entre sin desplazarse). | 1920×1080 PNG |
+| `07-barra-flotante.png` | Columna de tiles flotante sobre un escritorio abstracto generado (`fuentes/fondo-neutro.png`): sin interfaz ni marca de terceros. | 1920×1080 PNG |
+| `08-kiosko-barra.png` | Modo kiosko en formato barra (1280×480 de verdad) centrado en un lienzo OLED 1920×1080: rejilla 6×2, panel lateral de 132 px y franja de reproducción. | 1920×1080 PNG |
+| `09-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
 | `icono-mosaico-300.png` | El icono de mosaico. No es una captura: es `build/icon.svg` centrado sobre el fondo del tema. | 300×300 PNG exactos |
-| `fuentes/` | Las entradas de las que tiran dos capturas: la pista y la carátula de la franja de música, y la captura de escritorio sobre la que va la barra flotante. Ver más abajo. | — |
+| `fuentes/` | Las entradas que usan las escenas: la pista y la carátula de la franja de música, el fondo neutro de la barra y las artes de la tienda (manifiesto, portadas y capturas generadas). | — |
 
-### La ficha en inglés, y la que no va a la Store
+### La ficha en inglés, y el borrador
 
-**`fuera-de-la-store/barra-flotante.png`** era la 07. Salió de la secuencia
-numerada a propósito: la ventana de debajo es Autodesk Fusion, o sea interfaz y
-marca de un tercero. La política 11.2 exige que el contenido sea propio o
-licenciado y la 10.1.1 prohíbe inducir a error sobre la relación con otros
-productos — con Fusion ocupando el 90% de la imagen eso no es teórico. Como
-captura de tienda rinde poco de todos modos: el producto es una tira estrecha a
-la derecha. **Para la web sí vale**: es la única prueba de que la barra flota
-por encima de otra aplicación de verdad.
+**La tanda en inglés** se saca con `VD_PRENSA_IDIOMA=en` y va a
+`docs/prensa/en/` — la Store pide las imágenes una vez por idioma, y con una
+sola carpeta la segunda tanda pisaba la primera. Cambiar `language` **no
+basta**: las etiquetas de los botones son datos que siembra `escenas.mjs`, así
+que hay una tabla `EN` que las traduce, **revienta si falta una** y cubre
+también los rótulos de la interfaz en los que hacen clic los pasos y el
+contenido de la tienda (`artes.mjs`).
 
-**La tanda en inglés** se saca con `VD_PRENSA_IDIOMA=en` y va a `docs/prensa/en/`
-— la Store pide las imágenes una vez por idioma, y con una sola carpeta la
-segunda tanda pisaba la primera. Cambiar `language` **no basta**: las etiquetas
-de los botones son datos que siembra `escenas.mjs`, así que hay una tabla `EN`
-que las traduce, y **revienta si falta una** en vez de dejar la captura con los
-dos idiomas mezclados.
+**A un borrador**, sin tocar las definitivas, con dos variables de entorno:
 
-**Este guion corre en Linux.** Se porto lo que se pudo a Windows — los nombres
-por `--host-resolver-rules` en vez de `/etc/hosts` (que ahi pide
-administrador), sin `xvfb`, `taskkill /T` para cerrar el arbol de procesos, y el
-borrado del temporal ya no puede tumbar la tanda. Lo que **no** funciona todavia
-en Windows es el espejo de `fonts.googleapis.com`: la aplicacion arranca y se
-queja de que no cargaron las fuentes. Las capturas en ingles hay que sacarlas en
-Linux hasta que eso se resuelva.
+```bash
+VD_PRENSA_SALIDA=_referencias/informes/prensa-borrador/es \
+VD_PRENSA_FUENTES=_referencias/informes/prensa-borrador/fuentes \
+node scripts/prensa/capturar.mjs
+```
+
+Sale **una sola copia a la vez**: si `probar-app.mjs` tiene la suya abierta
+(comparten el puerto 9333), el guion espera a que se cierre. El candado es el
+mismo archivo (`%TEMP%\vd-prueba.lock`).
+
+**El guion corre en Windows.** Lo que en Linux se resolvía con `xvfb-run` y una
+entrada en `/etc/hosts`, aquí se hace con los nombres redirigidos solo para esa
+copia (`--host-resolver-rules`), `taskkill /T` para cerrar el árbol de procesos
+y reintentos al borrar el temporal. La única pieza que no es de la app es el
+espejo de `fonts.googleapis.com`, que también funciona (la corrida de la 0.14
+comprobó las tres fuentes antes de cada escena).
 
 ### Lo que pide la Store, y cómo queda
 
 - **PNG a 1920×1080.** El mínimo son 1366×768; se usa 1080p porque se ve mejor
-  en la ficha y porque permite recortar después sin perder nitidez.
+  en la ficha y porque permite recortar después sin perder nitidez. La única
+  que no es 16:9 es `05b-movil-marco.png`, que es vertical a propósito
+  (1080×1920) para el marco del vídeo.
 - **Lo importante, en los dos tercios de arriba.** La Store superpone su propio
-  texto en el tercio inferior. En las siete, el asunto de la captura cae por
-  encima de la línea de los 720 px. Con dos salvedades que hay que saber, y que
-  no se pueden arreglar sin falsear la pantalla:
-
-  - En `03-kiosko.png` la **franja de reproducción está abajo**, porque es donde
-    la dibuja la aplicación. El mensaje principal —las casillas grandes— se lee
-    entero por arriba.
-  - En `07-barra-flotante.png` la columna **va de arriba abajo**: el proceso
-    principal la centra en el monitor. Los tres primeros tiles quedan por
-    encima de la línea, y con eso ya se entiende qué es.
-- **Sin logotipos, sin marcos, sin texto de marketing.** Son capturas limpias
-  de la ventana, sin nada añadido encima.
+  texto en el tercio inferior. En las nueve, el asunto de la captura cae por
+  encima de la línea de los 720 px. Con cuatro salvedades que hay que saber:
+  - En `05-movil.png` el contenido es un teléfono vertical: el lienzo OLED
+    ocupa los lados y el asunto queda centrado, entero en el tercio medio.
+  - En `08-kiosko-barra.png` la franja de reproducción va abajo **como en la
+    app**; lo que la Store tape cae sobre el lienzo, no sobre la rejilla. La
+    captura se hace a 1280×480 (el modo barra real, que por sí solo no llega
+    al mínimo de la Store) y se centra en el lienzo de 1920×1080.
+  - En `07-barra-flotante.png` la columna va de arriba abajo: el proceso
+    principal la centra en el monitor. Los primeros tiles quedan por encima de
+    la línea, y con eso ya se entiende qué es.
+  - En `06b-tienda-ficha.png` la vista se pide más alta que 16:9 (1792×1008
+    con escala 15/14, que da 1920×1080 exactos) para que la ficha y su aviso
+    de riesgo entren enteros con el scroll arriba.
+- **Sin logotipos de terceros, sin marcos, sin texto de marketing.** Son
+  capturas limpias de la ventana, sin nada añadido encima. La barra flotante va
+  sobre un escritorio abstracto generado; la tienda enseña un manifiesto local
+  inventado; y los iconos de marcas (OBS, Discord, Spotify) son los del propio
+  catálogo de la app, no logotipos pegados en el editor.
 - **Sin contrastes extremos.** Fondo `dotgrid` en todas: es la trama de puntos
   del proyecto y deja un gris uniforme y oscuro, sin blancos que estropeen el
   texto que la Store pone delante.
@@ -94,125 +111,144 @@ Esto se revisó mirando cada imagen a tamaño completo, no por deducción.
 
 | | Nombre de usuario | Ruta con un nombre | Carátula con derechos | Nombre de red |
 |---|---|---|---|---|
-| `01-deck.png` | no aparece | no hay ninguna ruta a la vista | carátula generada, ver abajo | no aparece |
-| `02-editor.png` | no aparece | ninguna: los presets no traen ruta escrita | no sale carátula | no aparece |
-| `03-kiosko.png` | no aparece | ninguna | carátula generada | no aparece |
-| `04-barra-lateral.png` | no aparece | ninguna | carátula generada | no aparece |
-| `05-rgb.png` | no aparece | los dispositivos salen sin número de serie (el emulador lo manda vacío) | no sale carátula | no aparece; la ubicación de cada dispositivo es un bus `I2C`/`HID`, no una dirección de red |
-| `06-galeria.png` | no aparece | ninguna: el perfil «Streaming» de la galería no abre programas, solo manda atajos | carátula generada | no aparece; la única dirección visible es la de la galería del proyecto |
-| `07-barra-flotante.png` | no aparece: el recorte por la derecha se lleva las iniciales del avatar de Fusion, y la captura es de un diseño abierto, no de la pantalla de inicio que saluda por el nombre | ninguna; el único texto propio es `MagsafeCaraJimny`, el nombre de una pieza | no sale carátula (la barra no dibuja widgets) | no aparece |
+| `01-deck.png` | no aparece | no hay ninguna ruta a la vista | carátula generada | no aparece |
+| `02-editor.png` | no aparece | no aparece: el botón es Spotify pero la ruta no se enseña | no sale carátula | no aparece |
+| `03-catalogo.png` | no aparece | ninguna | no sale carátula | no aparece |
+| `04-dock.png` | no aparece | ninguna | no sale carátula | no aparece; el serial y las apps en ejecución se sustituyen antes de disparar (ver abajo) |
+| `05-movil.png` | no aparece | ninguna: los botones no enseñan rutas | carátula generada | no aparece; la página la sirve la propia app en `127.0.0.1` |
+| `05b-movil-marco.png` | igual que la 05 | igual | igual | igual |
+| `06-tienda.png` | no aparece | las rutas que lista el aviso de riesgo son inventadas (`C:\Programas\...`) | portada y capturas generadas | las direcciones del aviso son `ejemplo.invalid`, que no existe |
+| `06b-tienda-ficha.png` | igual que la 06 | igual | igual | igual |
+| `07-barra-flotante.png` | no aparece | ninguna; el escritorio de debajo es abstracto, sin ventanas de nadie | no sale carátula (la barra no dibuja widgets) | no aparece |
+| `08-kiosko-barra.png` | no aparece | ninguna | carátula generada | no aparece |
+| `09-rgb.png` | no aparece | los dispositivos salen sin número de serie (el emulador lo manda vacío) | no sale carátula | no aparece; la ubicación de cada dispositivo es un bus `I2C`/`HID`, no una dirección de red |
 
-Dos cosas más que no estaban en la lista y conviene decidir a conciencia:
+Cuatro cosas que conviene decidir a conciencia:
 
+- **El serial y las apps del dock (04).** El aparato real reporta su propio
+  número de serie y el núcleo nativo enumera las ventanas abiertas de la
+  máquina; ninguno de los dos se puede apagar sin que la pantalla deje de
+  enseñar lo que enseña (el dock «CONECTADO» con su lista de apps). Así que,
+  justo antes de disparar, `capturar.mjs` sustituye lo que se ve: el serial por
+  `PRENSA-N3-0001` y las fichas de la lista por apps inventadas (sin sus
+  iconos, que salían del ejecutable real). El aparato sigue «CONECTADO» y la
+  sustitución se busca por la *forma* del rótulo (`…Serie: …`), no por el
+  valor: el serial real no está escrito en ningún archivo del repositorio.
+  `VD_PRENSA_N3_SERIAL=sin-n3` fuerza el modo sin aparato, y
+  `VD_PRENSA_N3_SERIAL=<serial>` ata la página a uno concreto.
+- **El núcleo nativo, apagado.** Todos los procesos de las capturas corren con
+  `VD_SIN_NUCLEO=1` (documentado en `CLAUDE.md` para probar los caminos de
+  respaldo), porque sus sensores nativos son los de la máquina de quien
+  captura: CPU, GPU y discos reales. Con él apagado, los únicos sensores que
+  se ven son los del LibreHardwareMonitor de mentira de `servicios.mjs`. La
+  escena 04 es la única que lo enciende (necesita la lista de apps para poder
+  sustituirla).
 - **La ciudad del clima.** El widget enseña `Tegucigalpa, 25°`. No se saca de
   la IP: está escrita a mano en `CLIMA`, dentro de
-  `scripts/prensa/servicios.mjs`. Se eligió porque es coherente con el proyecto,
-  pero una ciudad es un dato de ubicación en una ficha pública: si preferís otra,
-  se cambia esa línea y se vuelven a sacar la 01, la 03 y la 04.
-- **Iconos de marcas.** Las casillas usan los iconos de puntos del propio
-  paquete de la aplicación (OBS, Discord, VS Code, Obsidian). Es lo que un deck
-  real tiene encima y no hay logotipo ajeno pegado sobre la captura, pero son
-  marcas de terceros dentro de la imagen. Si querés evitarlo del todo, cambiá
-  `brandIcon` por `icon` con un emoji en `scripts/prensa/escenas.mjs`.
-- **La interfaz de Autodesk en la 07.** Es lo mismo pero más grande: media
-  captura es la ventana de otra empresa. Enseñar una utilidad que se superpone
-  encima de la aplicación sobre la que se usa es corriente, y no hay nada
-  añadido ni retocado, pero es material comercial tuyo con marca ajena dentro.
-  Si preferís no depender de eso, sirve cualquier otra captura de escritorio con
-  `--fondo` —un explorador de archivos, el navegador, el editor de código— y la
-  imagen se rehace en un comando.
+  `scripts/prensa/servicios.mjs`, y `capturar.mjs` la mete en
+  `scripts/prensa/climaFijo.cjs`, que se precarga en el proceso principal con
+  `NODE_OPTIONS=--require` y contesta a los tres proveedores de geo y al de
+  pronóstico. Así funciona también en Windows, donde el `fetch` de Node no lee
+  el archivo `hosts` ni `--host-resolver-rules` y la petición salía a internet
+  de verdad —la corrida del 2026-10-07 salió con la ciudad real de la
+  máquina—. Se eligió Tegucigalpa porque es coherente con el proyecto, pero
+  una ciudad es un dato de ubicación en una ficha pública: si preferís otra,
+  se cambia esa línea y se vuelven a sacar las capturas.
+- **Iconos de marcas.** Las casillas usan iconos del catálogo de la propia
+  aplicación (OBS, Discord, Spotify, Chrome...). Es lo que un deck real tiene
+  encima y no hay logotipo ajeno pegado sobre la captura, pero son marcas de
+  terceros dentro de la imagen. Si querés evitarlo del todo, cambiá
+  `iconoCat('marcas:…')` por `iconoCat('acciones:…')` en
+  `scripts/prensa/escenas.mjs`.
 
 ### De dónde sale cada dato que se ve
 
 Esto es lo que hace que las capturas sean de la aplicación y no un montaje. La
 regla fue: **poner algo al otro extremo del cable y dejar el código de
-VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`, salvo el
-último punto.
+VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`.
 
 - **Sensores.** `scripts/prensa/servicios.mjs` levanta un servidor en
-  `127.0.0.1:8085` que contesta un `/data.json` con la forma exacta del de
-  LibreHardwareMonitor. La aplicación lo lee con su `net.fetch` de siempre y lo
-  interpreta con su propio parser. Los valores llevan un pequeño temblor para
-  que no salgan clavados entre escena y escena.
+  `127.0.0.1` (puerto `18085` en Windows, `8085` en Linux) que contesta un
+  `/data.json` con la forma exacta del de LibreHardwareMonitor. La aplicación
+  lo lee con su `net.fetch` de siempre y lo interpreta con su propio parser.
+  Los valores llevan un pequeño temblor para que no salgan clavados entre
+  escena y escena. Las capturas corren con `VD_SIN_NUCLEO=1`: con el núcleo
+  encendido, encima de estos salían los sensores nativos de la máquina real.
 - **RGB.** `scripts/prensa/openrgb-falso.mjs` habla el protocolo binario del
   SDK de OpenRGB en el puerto 6742: tres dispositivos con sus zonas, modos y
   LEDs. VirtualDeck se conecta con su `openrgb-sdk` y no sabe que no hay luces
   detrás. El formato se sacó del **lector** del SDK
   (`node_modules/openrgb-sdk/src/device.ts`).
 - **Clima.** Sus dos proveedores (`ipapi.co` y `api.open-meteo.com`) llevan la
-  dirección escrita dentro de `weather.ts` y no se alcanzan desde donde se
-  sacaron estas capturas. Se les da un servidor local con certificado y una
-  entrada temporal en `/etc/hosts`, que se quita al terminar.
+  dirección escrita dentro de `weather.ts`. En Linux bastaba con el servidor
+  local con certificado y los nombres redirigidos; en Windows el `fetch` de
+  Node del proceso principal no pasa por ahí y la petición salía a internet,
+  así que además `capturar.mjs` precarga `scripts/prensa/climaFijo.cjs` con
+  `NODE_OPTIONS=--require`: ese archivo contesta a los tres proveedores de geo
+  (también `ip-api.com` e `ipwho.is`, que `weather.ts` prueba de respaldo) y al
+  de pronóstico con la misma ciudad de `CLIMA`.
 - **Fuentes.** `index.html` pide Inter, JetBrains Mono y DotGothic16 a Google
   Fonts, y **sin bloquear el pintado**: si no llegan, la aplicación se dibuja
-  con la tipografía del sistema y no avisa. Las primeras seis capturas salieron
-  así y solo se notaba comparándolas. Ahora las fuentes se **reflejan** desde el
+  con la tipografía del sistema y no avisa. Las fuentes se **reflejan** desde el
   sitio de verdad y el guion se para si alguna de las tres no llegó a cargar.
-- **Galería.** Es la del proyecto, la de verdad: se pulsa «GALERÍA DEL
-  PROYECTO» y se abre uno de los perfiles publicados. La dirección que sale en
-  la captura es la real y los perfiles son los que hay.
-- **La barra flotante — dos ventanas en una imagen.** La barra **es otra ventana
+- **Tienda.** La ventana carga un manifiesto **local** de mentira (`artes.mjs`
+  lo genera en `fuentes/tienda/`) que `servicios.mjs` sirve en el sitio del
+  manifiesto de la galería cuando `VD_PRENSA_TIENDA` está puesta. Son cinco
+  entradas inventadas, con `icono`, portada y capturas generadas por el propio
+  guion, y el perfil de la primera lleva una acción de cada clase (script,
+  programa, atajo, texto, webhook, URL, temporizador, audio) para que el aviso
+  de riesgo enseñe de verdad lo que resume. El código de la tienda es el de
+  siempre: solo cambia de dónde viene el manifiesto.
+- **Mando móvil.** La página la sirve la propia app en
+  `http://127.0.0.1:<puerto>/` (`servidorLocal.ts`) desde que la config siembra
+  `remote.enabled`. El guion navega la ventana principal a esa dirección —el
+  proxy CDP de Electron 33 no deja abrir pestañas— y siembra el token en
+  `localStorage` antes de recargar, que es de donde la página lo lee. Se
+  captura con vista de teléfono y el texto sale en el idioma de la tanda; la
+  05b es la misma captura compuesta en un lienzo vertical 1080×1920.
+- **Dock N3.** La página se siembra con `superficie: { serial, modelo: 'n3' }`
+  y los 18 huecos del perfil «multimedia» (`perfilesDock.ts`), con los iconos
+  del catálogo. `DispositivosB` fusiona el hardware vivo con las páginas de la
+  config: sin aparato, el serial inventado sale «Desconectado» y el chasis se
+  pinta igual; con aparato, la página se ata a su serial para que salga
+  «CONECTADO», y lo que se ve se enmascara antes de disparar (ver «Repaso de
+  privacidad»).
+- **Barra flotante — dos ventanas en una imagen.** La barra **es otra ventana
   de Electron**, así que no sale en la captura de la de debajo:
   `Page.captureScreenshot` fotografía un documento, no la pantalla. Y en la
   máquina donde se generan estas imágenes no hay con qué fotografiar la pantalla
-  entera —ni `import`, ni `xwd`, ni `ffmpeg` con `x11grab`—, así que el guion
-  junta las dos capas **por sus coordenadas reales**: pide a la barra su propia
-  captura y la superpone en el `screenX`/`screenY` que la propia ventana declara.
-
-  No es un montaje libre, es lo que hace el compositor del sistema: la ventana de
-  la barra es transparente y lo único opaco son los tiles, así que se captura con
-  fondo transparente y se pega con su canal alfa. Por eso en la imagen **se ve
-  Fusion a través de los huecos** entre tiles, que es la prueba de que es una
-  ventana por delante de otra y no un panel.
-
-  Lo de debajo es `fuentes/escritorio-fusion.png`, una captura de escritorio de
-  verdad —Autodesk Fusion en Windows, 3823×2053 porque es una pantalla 4K al
-  200 %—. Se pasa con `--fondo`:
+  entera, así que el guion junta las dos capas **por sus coordenadas reales**:
+  pide a la barra su propia captura (con fondo transparente, como la ventana) y
+  la pega en el margen derecho del fondo. Lo de debajo es
+  `fuentes/fondo-neutro.png`, un escritorio abstracto generado —dos ventanas y
+  una trama, sin marca de nadie—. Con `--fondo=<ruta>` se rehace sobre una
+  captura de escritorio de verdad:
 
   ```bash
-  node scripts/prensa/capturar.mjs 07 --fondo=docs/prensa/fuentes/escritorio-fusion.png
+  node scripts/prensa/capturar.mjs 07 --fondo=docs/prensa/fuentes/escritorio.png
   ```
 
-  Con `--fondo` la escena cambia de geometría a propósito: la pantalla pasa a
-  1920×1080 y la escala a **1**. Una captura de escritorio viene de una pantalla
-  de verdad, así que la columna tiene que salir **al tamaño que ocupa en ella**
-  —104 px de ancho, el 5,4 % del ancho de la pantalla—; con la vista de 1280×720
-  a 1,5 que usan las otras seis saldría un 50 % más ancha, y ese tamaño real es
-  justo lo que esta captura tiene que dejar claro.
-
-  El fondo se escala a 1920×1080 recortando **por la derecha**. Una pantalla de
-  Windows sin la barra de tareas no da 16:9 exacto (aquí 1,862), así que sobran
-  91 px de ancho. Recortando por el centro se come el borde del panel izquierdo
-  de Fusion y deja el cubo de navegación partido por la mitad, que parece un
-  dibujado roto. Recortando solo por la derecha, el panel izquierdo queda entero
-  y lo que se va es la franja del borde —donde va la columna— y, de paso, las
-  iniciales del avatar de la cuenta.
-
-  **Si se cambia la captura de escritorio**, dos cosas que el guion no puede
-  comprobar: que no lleve nombre ni usuario a la vista —la pantalla de inicio de
-  Fusion dice «Hola, <nombre>» y trae el nombre del equipo en el panel
-  izquierdo, así que hay que sacarla con un diseño abierto, no en el inicio— y
-  que la interfaz de la otra aplicación se pueda publicar, porque es marca de un
-  tercero dentro de una imagen de la ficha. Sobre esto último, ver la nota de más
-  abajo.
-
+  Si se cambia la captura de escritorio, hay que revisar a mano que no lleve
+  nombre de usuario ni marcas de terceros a la vista.
 - **Reproducción — la única excepción.** La franja de música necesita una sesión
   de medios de Windows (SMTC), que es una API del sistema y no tiene cable que
-  enchufar. Así que hay un módulo nuevo, `electron/main/mediosFijos.ts`, que
-  lee la pista de un archivo **solo si `VD_MEDIOS_FIJOS` está puesta**; sin esa
-  variable devuelve `null` en la primera línea y no cambia nada de la aplicación
-  instalada. El archivo es `fuentes/reproduccion.json`, y la pista es inventada
-  a propósito: **una carátula real tendría derechos de autor**, así que la de
-  las capturas se genera con la trama de puntos del proyecto
-  (`scripts/prensa/caratula.mjs`).
+  enchufar. Así que `electron/main/mediosFijos.ts` lee la pista de un archivo
+  **solo si `VD_MEDIOS_FIJOS` está puesta**; sin esa variable devuelve `null` en
+  la primera línea y no cambia nada de la aplicación instalada. El archivo es
+  `fuentes/reproduccion.json`, y la pista es inventada a propósito: **una
+  carátula real tendría derechos de autor**, así que la de las capturas se
+  genera con la trama de puntos del proyecto (`scripts/prensa/caratula.mjs`,
+  que el capturador ejecuta solo si falta el archivo).
+  **La barra de progreso no sale**: `PistaFija` (el camino de `VD_MEDIOS_FIJOS`)
+  no lleva `positionMs`/`durationMs`/`timelineUpdatedAt`, y `getNowPlaying`
+  devuelve el objeto fijo tal cual. Para verla haría falta tocar
+  `electron/main/mediosFijos.ts` y `media.ts`, que este encargo no permite.
 
-### Dos detalles del producto que salieron al hacer esto
+### Un detalle del producto que salió al hacer esto
 
 - El aviso de calibración del gestor RGB dice «1 **zonas** ARGB sin tamaño
   guardado». En las capturas no se ve porque se siembra `zoneSizes`, pero el
   plural sin concordancia está en `rgb.uncalibrated`.
-- El botón «IMPORTAR COMO PERFIL» de la galería parte la línea en dos dentro de
-  su caja de 260 px. Se ve en `06-galeria.png`.
 
 ---
 

@@ -6,8 +6,9 @@
  * `/data.json` para los sensores, `openrgb-sdk` para el RGB, `fetch` a los
  * dos servicios del clima— y lo que contesta al otro lado es esto.
  *
- * La galería **no** está aquí: la del proyecto se lee de su sitio de verdad,
- * porque desde este contenedor sí se llega a ella. Ver `capturar.mjs`.
+ * La galería **sí** está aquí desde la 0.14: la ventana de la tienda carga un
+ * manifiesto de mentira —con portadas y capturas generadas por `artes.mjs`—
+ * que se sirve en el sitio del de verdad. Ver `VD_PRENSA_TIENDA`.
  *
  * Se hace así, y no con dispositivos y pistas falsas metidos en
  * `electron/main`, porque una captura tiene que enseñar la pantalla que el
@@ -24,7 +25,6 @@ import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { arrancar as arrancarOpenRGB } from './openrgb-falso.mjs';
-
 // ── Sensores: el `/data.json` de LibreHardwareMonitor ─────────────────────
 // El árbol es el de LHM de verdad: raíz → equipo → pieza de hardware →
 // tipo de sensor → hoja. `electron/main/sensors.ts` busca el nombre de la
@@ -213,16 +213,55 @@ export function certificado() {
  * real de quien la sacó es un dato personal en la ficha de la Store, y aquí la
  * IP sería la del contenedor donde corre esto, que tampoco dice nada útil.
  * Código 2 de la WMO = parcialmente nublado.
+ *
+ * Lo usan dos caminos a la vez: este servidor https (para cuando la resolución
+ * de nombres sí pasa por aquí, p. ej. en Linux) y `climaFijo.cjs`, que se
+ * carga con `NODE_OPTIONS=--require` y contesta lo mismo al `fetch` de Node del
+ * proceso principal (el único que funciona en Windows; ver el encabezado de
+ * `climaFijo.cjs`). `capturar.mjs` pasa este objeto por `VD_PRENSA_CLIMA`.
  */
-const CLIMA = { ciudad: 'Tegucigalpa', pais: 'Honduras', lat: 14.0723, lon: -87.1921, temp: 24.6, codigo: 2 };
+export const CLIMA = { ciudad: 'Tegucigalpa', pais: 'Honduras', lat: 14.0723, lon: -87.1921, temp: 24.6, codigo: 2 };
+
+// ── La tienda de las capturas ─────────────────────────────────────────────
+//
+// `VD_PRENSA_TIENDA` (lo pone `capturar.mjs`) apunta al directorio con el
+// manifiesto, los perfiles y las imágenes que genera `artes.mjs`. El
+// manifiesto de la galería y sus artes de prensa se contestan **con eso** en
+// vez de con el sitio real: la ventana de la tienda corre su código de
+// siempre, pero enseña entradas inventadas —con `icono`, portada y capturas—
+// y un perfil con acciones de mentira para que el aviso de riesgo tenga qué
+// resumir. Todo lo demás de `raw.githubusercontent.com` se refleja igual.
+const RUTA_MANIFIESTO = '/AndyVillatoro/virtualdeck-gallery/main/manifest.json';
+const RUTA_ARTES = '/AndyVillatoro/virtualdeck-gallery/main/prensa/';
+const TIPOS_LOCALES = { '.json': 'application/json; charset=utf-8', '.png': 'image/png' };
+
+function archivoDeTienda(pedido) {
+  const dir = process.env.VD_PRENSA_TIENDA;
+  if (!dir) return null;
+  const relativo = pedido === RUTA_MANIFIESTO
+    ? 'manifest.json'
+    : pedido.startsWith(RUTA_ARTES) ? pedido.slice(RUTA_ARTES.length) : null;
+  if (!relativo || relativo.includes('..') || relativo.includes('/')) return null;
+  const ruta = join(dir, relativo);
+  if (!existsSync(ruta)) return null;
+  return { ruta, tipo: TIPOS_LOCALES[relativo.slice(relativo.lastIndexOf('.'))] ?? 'application/octet-stream' };
+}
 
 export function arrancarHttps({ clave, cert }, puerto = 443) {
   const s = servidorHttps({ key: clave, cert }, async (req, res) => {
     const host = (req.headers.host ?? '').split(':')[0];
+    const pedido = new URL(req.url ?? '/', 'https://local').pathname;
     const responder = (obj) => {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify(obj));
     };
+    if (host === 'raw.githubusercontent.com') {
+      const local = archivoDeTienda(pedido);
+      if (local) {
+        res.writeHead(200, { 'content-type': local.tipo, 'cache-control': 'no-store' });
+        return res.end(readFileSync(local.ruta));
+      }
+    }
     if (ESPEJOS.has(host)) {
       try {
         const r = await reflejar(host, req.url, req.headers);
@@ -248,21 +287,6 @@ export function arrancarHttps({ clave, cert }, puerto = 443) {
     s.on('error', mal);
     s.listen(puerto, '0.0.0.0', () => ok(s));
   });
-}
-
-/**
- * Deja en caché lo que el espejo va a servir, antes de la primera escena.
- *
- * El manifiesto de la galería y sus perfiles son un viaje a internet que la
- * aplicación hace con diez segundos de plazo; si el primero coincide con la
- * escena que los pide, llega tarde y la lista sale vacía. Falló así una vez de
- * cada dos. Pidiéndolos aquí, la escena los encuentra ya guardados.
- */
-export async function precalentar(urls) {
-  for (const u of urls) {
-    const { host, pathname, search } = new URL(u);
-    try { await reflejar(host, `${pathname}${search}`, {}); } catch {}
-  }
 }
 
 export async function arrancarTodo(tls) {

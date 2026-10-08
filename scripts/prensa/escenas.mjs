@@ -1,5 +1,5 @@
 /**
- * Las seis escenas de las capturas: qué configuración se siembra en cada una.
+ * Las escenas de las capturas: qué configuración se siembra en cada una.
  *
  * Todo lo que sale en pantalla viene de aquí o de `servicios.mjs`. Nada se
  * dibuja a mano encima: la aplicación arranca con este `deck-config.json`,
@@ -11,14 +11,39 @@
  * las imágenes de la Store se suben una vez por idioma de todos modos.
  */
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PRIMERA_ENTRADA } from './artes.mjs';
 import { PUERTO_LHM, PUERTO_RGB } from './servicios.mjs';
+
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/**
+ * Los bits de un icono del catálogo, en el formato que un botón copia en
+ * `iconoPuntos` (16×16, ver `puntos16.ts`). Se lee el mismo JSON que usa la
+ * app: sembrar el icono a mano sería una copia que se queda vieja sola.
+ * **Revienta si el origen no existe**, igual que `L()`.
+ */
+const CATALOGOS = {};
+function iconoCat(origen) {
+  const [catalogo, id] = origen.split(':');
+  CATALOGOS[catalogo] ??= JSON.parse(
+    readFileSync(join(RAIZ, 'src', 'data', 'iconosDot', `${catalogo}.json`), 'utf-8'),
+  ).iconos;
+  const hallado = CATALOGOS[catalogo].find(([nombre]) => nombre === id);
+  if (!hallado) throw new Error(`el catalogo no tiene «${origen}» (escenas.mjs)`);
+  return { bits: hallado[1], origen };
+}
 
 const ACENTO = '#4a8ef0';
 
 /** Lo que comparten todas: sensores y RGB apuntando a los servicios locales. */
 function base(extra = {}) {
   return {
-    configVersion: 4,
+    // La versión al día: sin migraciones de por medio, la captura sale de la
+    // misma forma que la configuración que guarda la app.
+    configVersion: 8,
     onboardingCompleted: true,
     // Sin esto salen los globos de ayuda flotando sobre la rejilla y sobre la
     // rueda de ajustes, que en una captura se leen como un error.
@@ -77,24 +102,38 @@ const C = {
  *
  * La clave es la etiqueta española. También traduce los sufijos de los widgets
  * de sensor y los nombres de los botones dentro de una carpeta, que son
- * etiquetas igual aunque no lo parezcan.
+ * etiquetas igual aunque no lo parezcan, y los rótulos de la interfaz en los
+ * que hacen clic los pasos (que en inglés dicen otra cosa).
  */
 const EN = {
-  'EN VIVO': 'LIVE', 'CÁMARA 2': 'CAM 2', 'SILENCIAR': 'MUTE MIC', 'HORA': 'CLOCK',
-  'ANTERIOR': 'PREV', 'PAUSA': 'PAUSE', 'SIGUIENTE': 'NEXT', 'SONANDO': 'NOW PLAYING',
-  'VOL −': 'VOL −', 'VOL +': 'VOL +', 'MUDO': 'MUTE', 'CASCOS': 'HEADSET',
-  'LUZ JUEGO': 'GAME LIGHT', 'LUZ CINE': 'MOVIE LIGHT', 'CPU': 'CPU', 'MÁS': 'MORE',
-  'CÓDIGO': 'CODE', 'NOTAS': 'NOTES',
+  'EN VIVO': 'LIVE', 'CÁMARA 1': 'CAM 1', 'CÁMARA 2': 'CAM 2', 'SILENCIAR': 'MUTE MIC',
+  'HORA': 'CLOCK', 'ANTERIOR': 'PREV', 'PAUSA': 'PAUSE', 'SIGUIENTE': 'NEXT',
+  'NEXT': 'NEXT', 'MUTE': 'MUTE',
+  'SONANDO': 'NOW PLAYING', 'VOL −': 'VOL −', 'VOL +': 'VOL +', 'MUDO': 'MUTE',
+  'CASCOS': 'HEADSET', 'LUZ JUEGO': 'GAME LIGHT', 'LUZ CINE': 'MOVIE LIGHT', 'CPU': 'CPU',
+  'MÁS': 'MORE', 'CÓDIGO': 'CODE', 'NOTAS': 'NOTES', 'STREAM': 'STREAM',
   'CLIMA': 'WEATHER', 'GPU': 'GPU', 'PLACA': 'BOARD', 'CARGA': 'LOAD', 'RAM': 'RAM',
   'SSD': 'SSD', 'VENT': 'FAN', 'VATIOS': 'WATTS', 'TOMAS': 'TAKES', 'LUCES': 'LIGHTS',
-  'STREAM': 'STREAM', 'RPM': 'RPM', 'CPU W': 'CPU W',
+  'RPM': 'RPM', 'CPU W': 'CPU W',
+  // Botones y huecos del dock N3 y de la página 6×2 del kiosko.
+  'GRABAR': 'RECORD', 'MICRÓFONO': 'MIC', 'ESCENA': 'SCENE', 'LUZ': 'LIGHT',
+  'VOL': 'VOL', 'ZOOM': 'ZOOM', 'SCROLL': 'SCROLL',
+  'ZOOM −': 'ZOOM −', 'ZOOM +': 'ZOOM +', 'SCROLL −': 'SCROLL −', 'SCROLL +': 'SCROLL +',
+  // Etiquetas del perfil «multimedia» del N3 (`perfilesDock.ts`), con el guion
+  // recto que usan los presets.
+  'VOL -': 'VOL -', 'VOL +': 'VOL +', 'PLAY/PAUSA': 'PLAY/PAUSE', 'APP MUTE': 'APP MUTE',
+  'RECORTE': 'SNIP', 'ESCRITORIO': 'DESKTOP', 'CAMBIAR PÁGINA': 'CYCLE PAGE',
+  'VENTANA SIG.': 'NEXT WINDOW',
+  'BRILLO -': 'BRIGHT -', 'BRILLO 70': 'BRIGHT 70', 'BRILLO +': 'BRIGHT +',
+  'SPOTIFY': 'SPOTIFY',
   // Nombres de página y de perfil RGB: también son datos sembrados.
-  'MESA': 'DESK', 'LUCES': 'LIGHTS', 'En directo': 'Live', 'Noche': 'Night',
+  'MESA': 'DESK', 'N3': 'N3', 'En directo': 'Live', 'Noche': 'Night',
   // Textos de la **interfaz** en los que los pasos hacen clic. En inglés el
   // botón dice otra cosa y el paso no encontraría nada: se vio con «KIOSKO»,
   // que en inglés es «KIOSK», y la captura habría salido sin entrar en kiosko.
-  'KIOSKO': 'KIOSK', 'MOSTRAR': 'SHOW',
-  'MEDIOS': 'MEDIA', 'BRILLO': 'BRIGHT', 'VOL': 'VOL', 'PIN': 'PIN',
+  'KIOSKO': 'KIOSK', 'MOSTRAR': 'SHOW', 'PRESETS': 'PRESETS', 'APARIENCIA': 'APPEARANCE',
+  'ACCIÓN': 'ACTION', 'EDITAR': 'EDIT',
+  'CATÁLOGO': 'CATALOG', 'MEDIOS': 'MEDIA', 'BRILLO': 'BRIGHT', 'PIN': 'PIN',
   'PREV': 'PREV', 'PLAY': 'PLAY',
 };
 
@@ -113,8 +152,11 @@ function L(texto) {
   return t;
 }
 
-const b = (slot, o) => {
-  const x = { id: `0-${slot}`, page: 0, label: '', icon: '', action: { type: 'none' }, ...o };
+const b = (slot, o = {}) => {
+  const x = {
+    id: `${o.page ?? 0}-${slot}`, page: o.page ?? 0, label: '', icon: '',
+    action: { type: 'none' }, ...o,
+  };
   if (x.label) x.label = L(x.label);
   if (x.sensorWidget?.suffix) x.sensorWidget = { ...x.sensorWidget, suffix: L(x.sensorWidget.suffix) };
   if (x.varWidget?.suffix) x.varWidget = { ...x.varWidget, suffix: L(x.varWidget.suffix) };
@@ -128,75 +170,121 @@ const b = (slot, o) => {
   return x;
 };
 
-// ── Escena 1: el deck lleno ───────────────────────────────────────────────
+// ── Escena 01: el deck lleno ──────────────────────────────────────────────
+// Los iconos son del catálogo grande (16×16) copiados en `iconoPuntos`, como
+// los deja el selector de iconos: marcas donde hay marca (OBS, Discord,
+// Spotify) y acciones donde no (cámara, play, volumen). El glifo 8×8 de
+// antes ya no es la identidad de la 0.14.
 const DECK = [
-  b(0,  { label: 'EN VIVO',   brandIcon: 'obs',      bgColor: C.rojo,    isToggle: true, action: { type: 'app', appPath: 'C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe' } }),
-  b(1,  { label: 'CÁMARA 2',  dotGlyph: 'MONITOR',   bgColor: C.gris,    action: { type: 'hotkey', hotkey: 'Ctrl+Shift+F2' } }),
-  b(2,  { label: 'SILENCIAR', brandIcon: 'discord',  bgColor: C.violeta, isToggle: true, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+M' } }),
+  b(0,  { label: 'EN VIVO',   iconoPuntos: iconoCat('marcas:obsstudio'), bgColor: C.rojo, isToggle: true, efectoPulsar: 'onda', action: { type: 'app', appPath: 'C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe' } }),
+  b(1,  { label: 'CÁMARA 2',  iconoPuntos: iconoCat('acciones:camera'),  bgColor: C.gris,    action: { type: 'hotkey', hotkey: 'Ctrl+Shift+F2' } }),
+  b(2,  { label: 'SILENCIAR', iconoPuntos: iconoCat('marcas:discord'),   bgColor: C.violeta, isToggle: true, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+M' } }),
   b(3,  { label: 'HORA',      widget: 'clock',       bgColor: C.azul,    action: { type: 'none' } }),
 
-  b(4,  { label: 'PIN',       dotGlyph: 'PIN',       pinned: true, bgColor: C.gris, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+P' } }),
+  b(4,  { label: 'PIN',       iconoPuntos: iconoCat('acciones:pin'), pinned: true, bgColor: C.gris, action: { type: 'hotkey', hotkey: 'Ctrl+Shift+P' } }),
   b(5,  { label: 'MEDIOS',    bgColor: C.gris,       action: { type: 'none' }, subButtons: [
-    { id: '0-5-0', label: 'PREV', dotGlyph: 'PREV', action: { type: 'media-prev' } },
-    { id: '0-5-1', label: 'PLAY', dotGlyph: 'PLAY', action: { type: 'media-play-pause' } },
-    { id: '0-5-2', label: 'NEXT', dotGlyph: 'NEXT', action: { type: 'media-next' } },
-    { id: '0-5-3', label: 'MUTE', dotGlyph: 'MUTE', action: { type: 'mute' } },
+    { id: '0-5-0', label: 'PREV', iconoPuntos: iconoCat('acciones:player-skip-back'), action: { type: 'media-prev' } },
+    { id: '0-5-1', label: 'PLAY', iconoPuntos: iconoCat('acciones:player-play'), action: { type: 'media-play-pause' } },
+    { id: '0-5-2', label: 'NEXT', iconoPuntos: iconoCat('acciones:player-skip-forward'), action: { type: 'media-next' } },
+    { id: '0-5-3', label: 'MUTE', iconoPuntos: iconoCat('acciones:volume-off'), action: { type: 'mute' } },
   ] }),
   b(6,  { label: 'SONANDO',   widget: 'now-playing', bgColor: C.verde,   action: { type: 'media-play-pause' } }),
   b(7,  { label: 'VOL',       widget: 'slider',   sliderWidget: { target: 'volume', orientation: 'horizontal', label: 'VOL' }, bgColor: C.gris, action: { type: 'none' } }),
   b(8,  { label: 'BRILLO',    widget: 'slider',   sliderWidget: { target: 'brightness', orientation: 'horizontal', label: 'BRILLO' }, bgColor: C.gris, action: { type: 'none' } }),
-  b(9,  { label: 'CASCOS',    dotGlyph: 'SPEAKER',   bgColor: C.teal,    action: { type: 'audio-device', deviceName: 'Auriculares' } }),
-  b(10, { label: 'MUDO',      dotGlyph: 'MUTE',      bgColor: C.ambar,   isToggle: true, action: { type: 'mute' } }),
-  b(11, { label: 'NOTAS',     brandIcon: 'obsidian', bgColor: C.violeta, action: { type: 'app', appPath: 'C:\\Program Files\\Obsidian\\Obsidian.exe' } }),
+  b(9,  { label: 'CASCOS',    iconoPuntos: iconoCat('acciones:headphones'), bgColor: C.teal, action: { type: 'audio-device', deviceName: 'Auriculares' } }),
+  b(10, { label: 'MUDO',      iconoPuntos: iconoCat('acciones:volume-off'), bgColor: C.ambar, isToggle: true, action: { type: 'mute' } }),
+  // La de Spotify es la que abre el editor de la escena 02: marca, color
+  // propio, etiqueta y acción de música, con el icono animado.
+  b(11, { label: 'SPOTIFY',   iconoPuntos: iconoCat('marcas:spotify'),   bgColor: C.verde, animacion: { efecto: 'pulso', cuando: 'siempre' }, action: { type: 'media-play-pause' } }),
 
-  b(12, { label: 'LUZ JUEGO', dotGlyph: 'SPARKLE',   bgColor: C.rojo,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'gaming' } }),
-  b(13, { label: 'LUZ CINE',  dotGlyph: 'SPARKLE',   bgColor: C.azul,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'cinema' } }),
+  b(12, { label: 'LUZ JUEGO', iconoPuntos: iconoCat('acciones:flame'),   bgColor: C.rojo,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'gaming' } }),
+  b(13, { label: 'LUZ CINE',  iconoPuntos: iconoCat('acciones:movie'),   bgColor: C.azul,    radioGroup: 'luces', isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'cinema' } }),
   b(14, { label: 'CPU',       widget: 'sensor',      bgColor: C.gris,    sensorWidget: { sensorId: '/amdcpu/0/temperature/0', suffix: 'CPU', warnAt: 70, critAt: 85 }, action: { type: 'none' } }),
-  b(15, { label: 'MÁS',       brandIcon: 'vscode',   bgColor: C.azul,    action: { type: 'folder', folderButtons: [
-    { label: 'CÓDIGO', action: { type: 'app', appPath: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' } },
-    { label: 'NOTAS',  action: { type: 'app', appPath: 'C:\\Windows\\System32\\notepad.exe' } },
+  b(15, { label: 'MÁS',       iconoPuntos: iconoCat('acciones:folder'),  bgColor: C.azul,    action: { type: 'folder', folderButtons: [
+    { label: 'CÓDIGO', iconoPuntos: iconoCat('acciones:brand-vscode'), action: { type: 'app', appPath: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' } },
+    { label: 'NOTAS',  iconoPuntos: iconoCat('acciones:notebook'), action: { type: 'app', appPath: 'C:\\Windows\\System32\\notepad.exe' } },
   ] } }),
 ];
 
-// ── Escena 4: la barra lateral ────────────────────────────────────────────
-// Rejilla de 5×4: llena el hueco de una pantalla 16:9 con casillas cuadradas,
-// y a ese tamaño los widgets se leen sin que el deck se coma la captura. Con
-// 3×3 las casillas salían enormes y medio vacías.
-const sensor = (id, sufijo, warnAt, critAt) => ({
-  widget: 'sensor', sensorWidget: { sensorId: id, suffix: sufijo, warnAt, critAt }, action: { type: 'none' },
-});
+const paginaDeck = { id: 'main', name: L('STREAM'), gridSize: 4, gridRows: 4 };
 
-const MESA = [
-  b(0,  { label: 'HORA',   bgColor: C.azul,  widget: 'clock', action: { type: 'none' } }),
-  b(1,  { label: 'CLIMA',  bgColor: C.teal,  widget: 'weather', action: { type: 'none' } }),
-  b(2,  { label: 'CPU',    bgColor: C.gris,  ...sensor('/amdcpu/0/temperature/0', 'CPU', 70, 85) }),
-  b(3,  { label: 'GPU',    bgColor: C.gris,  ...sensor('/gpu-nvidia/0/temperature/0', 'GPU', 75, 88) }),
-  b(4,  { label: 'PLACA',  bgColor: C.gris,  ...sensor('/lpc/nct6798d/0/temperature/0', 'PLACA', 50, 60) }),
+// ── Escena 02/03: el editor (casilla 13 vacía) ────────────────────────────
+// Con doce botones sembrados, el hueco 12 queda vacío y su casilla se titula
+// «Clic para configurar»: un clic de verdad abre el editor, que es lo que un
+// usuario hace. La 02 se queda en ACCIÓN (buscador y fichas por familia) y la
+// 03 despliega APARIENCIA y abre el catálogo de iconos.
+const EDITOR = { pages: [paginaDeck], buttons: DECK.slice(0, 12), toggledIds: ['0-0'] };
 
-  b(5,  { label: 'CARGA',  bgColor: C.gris,  ...sensor('/amdcpu/0/load/0', 'CARGA', 85, 95) }),
-  b(6,  { label: 'RAM',    bgColor: C.gris,  ...sensor('/ram/load/0', 'RAM', 80, 92) }),
-  b(7,  { label: 'SSD',    bgColor: C.gris,  ...sensor('/nvme/0/temperature/0', 'SSD', 60, 70) }),
-  b(8,  { label: 'VENT',   bgColor: C.gris,  ...sensor('/gpu-nvidia/0/fan/0', 'RPM', 2000, 2300) }),
-  b(9,  { label: 'VATIOS', bgColor: C.gris,  ...sensor('/amdcpu/0/power/0', 'CPU W', 90, 110) }),
+// ── Escena 04: el dock N3, sin el aparato ─────────────────────────────────
+// `DispositivosB` fusiona el hardware vivo con las páginas de la config: una
+// página con `superficie` de un serial que no está en el bus sale como
+// dispositivo «Desconectado» y pinta el chasis con sus botones. Es la única
+// forma de enseñar el dock sin el N3 enchufado, y no toca código de la app.
+// Los 18 huecos salen en el orden de los controles del modelo (`n3.ts`):
+// 6 teclas LCD, 3 botones, 3 perillas de tres huecos (izq, pulsar, der).
+const paginaN3 = {
+  id: 'n3', name: L('N3'), gridSize: 3, gridRows: 6,
+  superficie: { serial: 'PRENSA-N3-0001', modelo: 'n3' },
+};
 
-  b(10, { label: 'SONANDO', bgColor: C.verde,   widget: 'now-playing', action: { type: 'media-play-pause' } }),
-  b(11, { label: 'TOMAS',   bgColor: C.violeta, widget: 'variable', varWidget: { varName: 'tomas', suffix: 'TOMAS' }, action: { type: 'incr-var', varName: 'tomas', varDelta: 1 } }),
-  b(12, { label: 'ANTERIOR', bgColor: C.gris,   action: { type: 'media-prev' } }),
-  b(13, { label: 'PAUSA',    bgColor: C.gris,   action: { type: 'media-play-pause' } }),
-  b(14, { label: 'SIGUIENTE', bgColor: C.gris,  action: { type: 'media-next' } }),
+// El perfil «multimedia» de `perfilesDock.ts` (T-DOCK-01) sembrado en los 18
+// huecos, con sus iconos del catálogo. El orden es el de los controles del
+// modelo: 6 teclas LCD, 3 botones, 3 perillas de tres huecos (izq, pulsar,
+// der). Así la página sale pintada entera —ningún hueco vacío— y la captura
+// enseña lo mismo que cuando alguien pulsa «MULTIMEDIA» en la pantalla.
+const N3 = [
+  // las 6 teclas LCD
+  b(0,  { label: 'MUTE',    dotGlyph: 'MUTE',   iconoPuntos: iconoCat('acciones:volume-off'), action: { type: 'mute' } }),
+  b(1,  { label: 'PLAY/PAUSA', dotGlyph: 'PLAY', iconoPuntos: iconoCat('acciones:player-play'), fgColor: '#1db954', action: { type: 'media-play-pause' } }),
+  b(2,  { label: 'SIGUIENTE', dotGlyph: 'NEXT',  iconoPuntos: iconoCat('acciones:player-skip-forward'), fgColor: '#1db954', action: { type: 'media-next' } }),
+  b(3,  { label: 'ANTERIOR', dotGlyph: 'PREV',  iconoPuntos: iconoCat('acciones:player-skip-back'), fgColor: '#1db954', action: { type: 'media-prev' } }),
+  b(4,  { label: 'APP MUTE', dotGlyph: 'MUTE',  iconoPuntos: iconoCat('acciones:volume-off'), fgColor: '#38bdf8', action: { type: 'app-volume', appVolumeMode: 'mute' } }),
+  b(5,  { label: 'RECORTE', dotGlyph: 'SCISSORS', iconoPuntos: iconoCat('acciones:screenshot'), action: { type: 'hotkey', hotkey: 'Win+Shift+S' } }),
+  // los 3 botones sin pantalla
+  b(6,  { label: 'CAMBIAR PÁGINA', dotGlyph: 'NEXT', iconoPuntos: iconoCat('acciones:repeat'), action: { type: 'page-nav', pageNav: 'cycle' }, fijo: true }),
+  b(7,  { label: 'ESCRITORIO', dotGlyph: 'MINIMIZE', iconoPuntos: iconoCat('acciones:minimize'), action: { type: 'hotkey', hotkey: 'Win+D' } }),
+  b(8,  { label: 'VENTANA SIG.', dotGlyph: 'NEXT', iconoPuntos: iconoCat('acciones:arrow-right'), action: { type: 'window-cycle', windowCycle: 'next' } }),
+  // perilla 1: volumen maestro
+  b(9,  { label: 'VOL -', dotGlyph: 'SPEAKER', iconoPuntos: iconoCat('acciones:volume-2'), fgColor: '#38bdf8', action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: -5 } }),
+  b(10, { label: 'MUTE',  dotGlyph: 'MUTE',    iconoPuntos: iconoCat('acciones:volume-off'), fgColor: '#38bdf8', action: { type: 'mute' } }),
+  b(11, { label: 'VOL +', dotGlyph: 'SPEAKER', iconoPuntos: iconoCat('acciones:volume'), fgColor: '#38bdf8', action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 5 } }),
+  // perilla 2: reproducción
+  b(12, { label: 'ANTERIOR',  dotGlyph: 'PREV', iconoPuntos: iconoCat('acciones:player-skip-back'), fgColor: '#1db954', action: { type: 'media-prev' } }),
+  b(13, { label: 'PLAY/PAUSA', dotGlyph: 'PLAY', iconoPuntos: iconoCat('acciones:player-play'), fgColor: '#1db954', action: { type: 'media-play-pause' } }),
+  b(14, { label: 'SIGUIENTE',  dotGlyph: 'NEXT', iconoPuntos: iconoCat('acciones:player-skip-forward'), fgColor: '#1db954', action: { type: 'media-next' } }),
+  // perilla 3: brillo
+  b(15, { label: 'BRILLO -',  dotGlyph: 'BRIGHTNESS', iconoPuntos: iconoCat('acciones:brightness-down'), fgColor: '#facc15', action: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: -10 } }),
+  b(16, { label: 'BRILLO 70', dotGlyph: 'BRIGHTNESS', iconoPuntos: iconoCat('acciones:brightness'), fgColor: '#facc15', action: { type: 'brightness', brightnessLevel: 70 } }),
+  b(17, { label: 'BRILLO +',  dotGlyph: 'BRIGHTNESS', iconoPuntos: iconoCat('acciones:brightness-up'), fgColor: '#facc15', action: { type: 'adjust', adjustTarget: 'brightness', adjustDelta: 10 } }),
+].map((x, i) => ({ ...x, page: 1, id: `1-${i}` }));
 
-  b(15, { label: 'CÓDIGO',  brandIcon: 'vscode',   bgColor: C.azul,  action: { type: 'app', appPath: 'C:\\Program Files\\Microsoft VS Code\\Code.exe' } }),
-  b(16, { label: 'NOTAS',   brandIcon: 'obsidian', bgColor: C.violeta, action: { type: 'app', appPath: 'C:\\Program Files\\Obsidian\\Obsidian.exe' } }),
-  b(17, { label: 'CASCOS',  dotGlyph: 'SPEAKER',   bgColor: C.teal,  action: { type: 'audio-device', deviceName: 'Auriculares' } }),
-  b(18, { label: 'MUDO',    dotGlyph: 'MUTE',      bgColor: C.ambar, isToggle: true, action: { type: 'mute' } }),
-  b(19, { label: 'LUCES',   dotGlyph: 'SPARKLE',   bgColor: C.gris,  isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'work' } }),
+// ── Escena 08: el kiosko en formato barra (1280×480, página 6×2) ──────────
+// Seis columnas es el máximo de la rejilla (`PageConfig.gridSize`), así que la
+// página de barra es 6×2, no la 8×2 que llegó a proponerse en el informe.
+const paginaBarra = { id: 'main', name: L('STREAM'), gridSize: 6, gridRows: 2 };
+const paginaLuces = { id: 'p2', name: L('LUCES'), gridSize: 6, gridRows: 2 };
+
+const BARRA = [
+  b(0,  { label: 'EN VIVO',   iconoPuntos: iconoCat('marcas:obsstudio'), bgColor: C.rojo,    isToggle: true }),
+  b(1,  { label: 'GRABAR',    iconoPuntos: iconoCat('acciones:player-record'), bgColor: C.violeta }),
+  b(2,  { label: 'MICRÓFONO', iconoPuntos: iconoCat('acciones:microphone'), bgColor: C.violeta, isToggle: true }),
+  b(3,  { label: 'HORA',      widget: 'clock',     bgColor: C.azul }),
+  b(4,  { label: 'SONANDO',   widget: 'now-playing', bgColor: C.verde, action: { type: 'media-play-pause' } }),
+  b(5,  { label: 'VOL',       widget: 'slider', sliderWidget: { target: 'volume', orientation: 'horizontal', label: 'VOL' }, bgColor: C.gris, action: { type: 'none' } }),
+  b(6,  { label: 'BRILLO',    widget: 'slider', sliderWidget: { target: 'brightness', orientation: 'horizontal', label: 'BRILLO' }, bgColor: C.gris, action: { type: 'none' } }),
+  b(7,  { label: 'MUDO',      iconoPuntos: iconoCat('acciones:volume-off'), bgColor: C.ambar,   isToggle: true, action: { type: 'mute' } }),
+  b(8,  { label: 'LUZ JUEGO', iconoPuntos: iconoCat('acciones:flame'), bgColor: C.rojo,    isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'gaming' } }),
+  b(9,  { label: 'LUZ CINE',  iconoPuntos: iconoCat('acciones:movie'), bgColor: C.azul,    isToggle: true, action: { type: 'rgb-preset', rgbPresetId: 'cinema' } }),
+  b(10, { label: 'CPU',       widget: 'sensor',    bgColor: C.gris,    sensorWidget: { sensorId: '/amdcpu/0/temperature/0', suffix: 'CPU', warnAt: 70, critAt: 85 }, action: { type: 'none' } }),
+  b(11, { label: 'CÁMARA 2',  iconoPuntos: iconoCat('acciones:camera'), bgColor: C.gris }),
 ];
 
-const paginaDeck = { id: 'main', name: L('STREAM'), gridSize: 4, gridRows: 4 };
-const paginaMesa = { id: 'main', name: L('MESA'), gridSize: 5, gridRows: 4 };
+/** La misma página en otro índice: las fichas de abajo del kiosko necesitan más de una. */
+const enPagina = (lista, page) => lista.map((x, i) => ({ ...x, id: `${page}-${i}`, page }));
 
 /**
- * Las seis escenas.
+ * Las once escenas (la 05b en vertical y la 06b de la ficha, además de las
+ * nueve de la ficha de la Store).
  *
  * `pasos` es lo que hay que hacer con el ratón después de arrancar; los
  * ejecuta `capturar.mjs` con `Input.dispatchMouseEvent`, que son eventos de
@@ -205,11 +293,12 @@ const paginaMesa = { id: 'main', name: L('MESA'), gridSize: 5, gridRows: 4 };
 export const ESCENAS = [
   {
     archivo: '01-deck.png',
-    titulo: 'La rejilla del deck, 4×4',
+    titulo: 'La rejilla del deck, 4×4, con el panel de música',
     ancho: 1280, alto: 720, escala: 1.5,
     // El panel de música va encendido en esta y solo en esta: una rejilla de
     // 4×4 con casillas cuadradas deja franjas vacías a los lados de una
-    // pantalla 16:9, y el panel las ocupa enseñando algo en vez de nada.
+    // pantalla 16:9, y el panel las ocupa enseñando algo en vez de nada. La
+    // pista y la carátula salen de `VD_MEDIOS_FIJOS` (`fuentes/`), inventadas.
     config: base({
       pages: [paginaDeck], buttons: DECK, toggledIds: ['0-0', '0-12'],
       musicPanel: { enabled: true, side: 'left' },
@@ -218,27 +307,173 @@ export const ESCENAS = [
   },
   {
     archivo: '02-editor.png',
-    titulo: 'El editor, paso 1: qué hace el botón',
+    titulo: 'El editor por secciones sobre un botón ya configurado (Spotify)',
     ancho: 1280, alto: 720, escala: 1.5,
-    config: base({ pages: [paginaDeck], buttons: DECK.slice(0, 12), toggledIds: ['0-0'] }),
-    // La casilla 13 está vacía, y un clic en una casilla vacía abre el editor.
-    // El diálogo tal y como se abre, sin desplazarlo. Se probó subirlo para
-    // meter más filas de tipos de acción en los dos tercios de arriba y sale
-    // peor: los presets quedan cortados a media casilla y la captura parece
-    // mal encuadrada. Así se ven los presets enteros, el rótulo «TIPO DE
-    // ACCIÓN» y sus dos primeras filas por encima de la franja que tapa la
-    // Store.
-    pasos: [{ hacer: 'clicEnCasillaVacia' }, { hacer: 'esperar', ms: 1500 }],
+    config: base(EDITOR),
+    // El editor se abre con clic derecho → «Editar» sobre la casilla de
+    // Spotify: así la vista previa sale llena (marca, color, etiqueta) en vez
+    // del «Ninguno» de una casilla vacía. En un botón configurado PRESETS
+    // viene plegada; se despliega, y ACCIÓN se pliega para que la apariencia
+    // —el icono del catálogo, el color— entre entera en la captura.
+    pasos: [
+      { hacer: 'clicDerechoEnCasilla', titulo: L('SPOTIFY') },
+      { hacer: 'esperarTexto', texto: L('EDITAR') },
+      { hacer: 'clicEnTextoLibre', texto: L('EDITAR') },
+      { hacer: 'esperar', ms: 1500 },
+      { hacer: 'clicEnTexto', texto: L('PRESETS') },
+      { hacer: 'esperar', ms: 400 },
+      { hacer: 'clicEnTexto', texto: L('ACCIÓN') },
+      { hacer: 'esperar', ms: 400 },
+    ],
   },
   {
-    archivo: '03-kiosko.png',
-    titulo: 'Modo kiosko: sin barra, casillas grandes',
+    archivo: '03-catalogo.png',
+    titulo: 'El catálogo de iconos, con grupos y buscador',
     ancho: 1280, alto: 720, escala: 1.5,
-    // Dos páginas para que el selector de la columna izquierda enseñe para
-    // qué está: con una sola salía una barra suelta con un «1» dentro.
+    config: base(EDITOR),
+    // Mismo editor, pero por el camino de la apariencia: APARIENCIA → ICONO →
+    // la ficha CATÁLOGO abre el modal. Dentro se busca «speaker», que cabe en
+    // una página (14) y devuelve a la vez el glifo 8×8 SPEAKER, las acciones
+    // de sonido y la marca Speaker Deck. Con «play» salían 147 resultados y
+    // las marcas caían fuera de la primera pantalla.
+    pasos: [
+      { hacer: 'clicEnCasillaVacia' },
+      { hacer: 'esperar', ms: 1500 },
+      { hacer: 'clicEnTexto', texto: L('APARIENCIA') },
+      { hacer: 'esperar', ms: 400 },
+      { hacer: 'clicEnTexto', texto: L('CATÁLOGO') },
+      { hacer: 'esperar', ms: 1200 },
+      { hacer: 'escribir', texto: 'speaker', en: IDIOMA === 'en' ? 'Search by name or tag' : 'Buscar por nombre o etiqueta' },
+      { hacer: 'esperar', ms: 900 },
+    ],
+  },
+  {
+    archivo: '04-dock.png',
+    titulo: 'El dock N3 pintado, conectado y con datos inventados',
+    ancho: 1280, alto: 720, escala: 1.5,
     config: base({
-      pages: [paginaDeck, { id: 'p2', name: L('LUCES'), gridSize: 4, gridRows: 4 }],
-      buttons: DECK, toggledIds: ['0-0', '0-13'],
+      pages: [paginaDeck, paginaN3],
+      buttons: [...DECK, ...N3],
+      toggledIds: ['0-0', '1-0', '1-4'],
+    }),
+    // La única escena que enciende el núcleo nativo: la lista de aplicaciones
+    // en ejecución sale de él, y aquí no se puede apagar porque sin ella la
+    // sección sale vacía. Sus datos se sustituyen antes de disparar por los de
+    // `privacidad` (el serial del aparato y apps inventadas): nada de la
+    // máquina del dueño llega a la imagen, y el dock sigue «CONECTADO».
+    entorno: { VD_SIN_NUCLEO: '0' },
+    privacidad: {
+      serial: 'PRENSA-N3-0001',
+      apps: ['pixelart-studio', 'notas-rapidas', 'sintetizador', 'mi-editor', 'visor-3d'],
+    },
+    pasos: [
+      { hacer: 'clicEnTitulo', titulo: IDIOMA === 'en' ? 'Devices' : 'Dispositivos' },
+      { hacer: 'esperar', ms: 1200 },
+    ],
+  },
+  {
+    archivo: '05-movil.png',
+    titulo: 'El mando móvil, servido por la app y visto en una pantalla de teléfono',
+    // La vista principal solo abre el servidor remoto; lo que se fotografía es
+    // la página del mando (390×844 @2) que se pega centrada en el lienzo OLED.
+    ancho: 1280, alto: 720, escala: 1.5,
+    mando: { puerto: 8099, token: 'prensa-borrador', ancho: 390, alto: 844, escala: 2 },
+    lienzo: { ancho: 1920, alto: 1080, fondo: '#070809' },
+    config: base({
+      pages: [paginaDeck], buttons: DECK, toggledIds: ['0-0', '0-12'],
+      remote: { enabled: true, port: 8099, token: 'prensa-borrador', allowLan: false },
+    }),
+    pasos: [],
+  },
+  {
+    archivo: '05b-movil-marco.png',
+    titulo: 'El mando móvil en vertical (1080×1920), para el marco del vídeo',
+    // La misma vista de teléfono que la 05, pero el PNG final es 9:16: el
+    // teléfono llena el alto entero y solo quedan dos franjas finas del fondo
+    // OLED a los lados, en vez de las dos franjas enormes de la 05.
+    ancho: 1280, alto: 720, escala: 1.5,
+    mando: { puerto: 8099, token: 'prensa-borrador', ancho: 390, alto: 844, escala: 2 },
+    lienzo: { ancho: 1080, alto: 1920, fondo: '#070809' },
+    config: base({
+      pages: [paginaDeck], buttons: DECK, toggledIds: ['0-0', '0-12'],
+      remote: { enabled: true, port: 8099, token: 'prensa-borrador', allowLan: false },
+    }),
+    pasos: [],
+  },
+  {
+    archivo: '06-tienda.png',
+    titulo: 'La tienda con la rejilla de tarjetas de la galería',
+    ancho: 1280, alto: 720, escala: 1.5,
+    config: base({ pages: [paginaDeck], buttons: DECK }),
+    // `abrirTienda` abre la ventana `#tienda` por IPC y pasa el testigo: los
+    // pasos siguientes (galería del proyecto, tarjetas) van contra ella. El
+    // manifiesto que carga es el local de `servicios.mjs`, con portadas y
+    // capturas generadas. `scrollArriba` deshace el desplazamiento que deja
+    // `rectangulo` al traer la primera tarjeta a la vista: sin él la captura
+    // salía empezando por la mitad de la lista.
+    pasos: [
+      { hacer: 'abrirTienda' },
+      { hacer: 'esperarTexto', texto: IDIOMA === 'en' ? 'STORE' : 'TIENDA' },
+      { hacer: 'clicEnTexto', texto: IDIOMA === 'en' ? 'PROJECT GALLERY' : 'GALERIA DEL PROYECTO' },
+      { hacer: 'esperarTexto', texto: PRIMERA_ENTRADA.label[IDIOMA] ?? PRIMERA_ENTRADA.label.es },
+      { hacer: 'esperar', ms: 1200 },
+      { hacer: 'scrollArriba' },
+    ],
+  },
+  {
+    archivo: '06b-tienda-ficha.png',
+    titulo: 'La ficha abierta con el aviso de riesgo, con el scroll arriba',
+    // Vista más alta que 16:9 (1792×1008, que con escala 15/14 da 1920×1080
+    // exactos): a 1280×720 la ficha no cabe y el aviso de riesgo queda por
+    // debajo del pliegue — solo se puede enseñar desplazando, que es lo que
+    // salió mal en la corrida anterior. Con esta altura entran la portada, el
+    // aviso y el scroll arriba de verdad.
+    ancho: 1792, alto: 1008, escala: 15 / 14,
+    config: base({ pages: [paginaDeck], buttons: DECK }),
+    pasos: [
+      { hacer: 'abrirTienda' },
+      { hacer: 'esperarTexto', texto: IDIOMA === 'en' ? 'STORE' : 'TIENDA' },
+      { hacer: 'clicEnTexto', texto: IDIOMA === 'en' ? 'PROJECT GALLERY' : 'GALERIA DEL PROYECTO' },
+      { hacer: 'esperarTexto', texto: PRIMERA_ENTRADA.label[IDIOMA] ?? PRIMERA_ENTRADA.label.es },
+      { hacer: 'clicEnTarjeta', texto: PRIMERA_ENTRADA.label[IDIOMA] ?? PRIMERA_ENTRADA.label.es },
+      { hacer: 'esperarTexto', texto: IDIOMA === 'en' ? 'A profile is not just data' : 'Un perfil no son solo datos' },
+      { hacer: 'esperar', ms: 900 },
+      { hacer: 'scrollArriba' },
+    ],
+  },
+  {
+    archivo: '07-barra-flotante.png',
+    titulo: 'La barra flotante sobre un escritorio neutro',
+    // Ya no va sobre la ventana de Autodesk Fusion: el fondo es un escritorio
+    // abstracto generado (`artes.mjs`), sin interfaz ni marca de terceros, así
+    // que esta captura sí puede ir a la Store.
+    ancho: 1920, alto: 1080, escala: 1,
+    pantalla: { ancho: 1920, alto: 1080 },
+    ventana: { x: 0, y: 0, width: 1920, height: 1080 },
+    compuesta: true,
+    config: base({
+      pages: [paginaDeck], buttons: DECK, toggledIds: ['0-0', '0-12'],
+      tileMode: 'fill',
+      floatingBar: {
+        enabled: true,
+        slots: ['0-0', '0-4', '0-5', '0-7', '0-10', '0-12'],
+        side: 'right', tileSize: 80, y: null, opacity: 0.9,
+      },
+    }),
+    pasos: [],
+  },
+  {
+    archivo: '08-kiosko-barra.png',
+    titulo: 'Modo kiosko en formato barra (1280×480), centrado en un lienzo 1920×1080',
+    // La Store pide 1366×768 o más: el kiosko de barra es 1280×480 de verdad,
+    // así que se fotografía a su medida y se pega centrado en el lienzo OLED.
+    // El asunto (rejilla 6×2, panel y franja) queda entero en el tercio central.
+    ancho: 1280, alto: 480, escala: 2,
+    lienzo: { ancho: 1920, alto: 1080, fondo: '#070809' },
+    config: base({
+      pages: [paginaBarra, paginaLuces],
+      buttons: [...BARRA, ...enPagina(BARRA, 1)],
+      toggledIds: ['0-0', '0-7'],
       tileMode: 'fill',
     }),
     pasos: [
@@ -249,14 +484,7 @@ export const ESCENAS = [
     ],
   },
   {
-    archivo: '04-barra-lateral.png',
-    titulo: 'Reloj, clima y sensores en la barra lateral',
-    ancho: 1280, alto: 720, escala: 1.5,
-    config: base({ pages: [paginaMesa], buttons: MESA, toggledIds: ['0-19'] }),
-    pasos: [],
-  },
-  {
-    archivo: '05-rgb.png',
+    archivo: '09-rgb.png',
     titulo: 'El gestor RGB',
     // Más aumento que las demás: el contenido de esta pantalla mide lo que
     // mide y con una vista de 1280 se quedaba media captura en negro.
@@ -270,40 +498,5 @@ export const ESCENAS = [
       { hacer: 'clicEnTexto', texto: L('MOSTRAR') },
       { hacer: 'esperar', ms: 900 },
     ],
-  },
-  {
-    archivo: '06-galeria.png',
-    titulo: 'La galería de perfiles, con el aviso de riesgo desplegado',
-    ancho: 1120, alto: 630, escala: 1.7142857142857142,
-    config: base({ pages: [paginaDeck], buttons: DECK }),
-    pasos: [{ hacer: 'abrirGaleriaConRiesgo' }],
-  },
-  {
-    // **Esta no va a la Store**, y por eso sale de la secuencia numerada: la
-    // ventana de debajo es Autodesk Fusion, o sea interfaz y marca de un
-    // tercero. La politica 11.2 exige que el contenido sea propio o
-    // licenciado, y la 10.1.1 prohibe inducir a error sobre la relacion con
-    // otros productos — con Fusion ocupando el 90% de la imagen, eso no es
-    // teorico. Como captura de tienda rinde poco de todos modos: el producto
-    // es una tira estrecha a la derecha.
-    //
-    // Se conserva porque para la web **si** vale: es la unica prueba de que la
-    // barra flota de verdad por encima de otra aplicacion.
-    archivo: '07-barra-flotante.png',
-    titulo: 'La barra flotante sobre el escritorio o aplicaciones',
-    ancho: 1280, alto: 720, escala: 1.5,
-    pantalla: { ancho: 1280, alto: 720 },
-    ventana: { x: 0, y: 0, width: 1280, height: 720 },
-    compuesta: true,
-    config: base({
-      pages: [paginaDeck], buttons: DECK, toggledIds: ['0-0', '0-12'],
-      tileMode: 'fill',
-      floatingBar: {
-        enabled: true,
-        slots: ['0-0', '0-4', '0-5', '0-7', '0-10', '0-12'],
-        side: 'right', tileSize: 80, y: null, opacity: 0.9,
-      },
-    }),
-    pasos: [{ hacer: 'clicEnTitulo', titulo: IDIOMA === 'en' ? 'Hide sidebar' : 'Ocultar panel lateral' }, { hacer: 'esperar', ms: 900 }],
   },
 ];
