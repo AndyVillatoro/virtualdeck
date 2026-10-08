@@ -6,6 +6,8 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-10-07
+
 ### Added
 
 - **Tipos de acción por familias**: la sección ACCIÓN del editor tiene buscador (sin acentos ni
@@ -93,6 +95,9 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ### Changed
 
+- **La Microsoft Store es el único canal de descarga**: el instalador `.exe` no está firmado y ya no se
+  publica; el README, la wiki y la página de GitHub llevan a la Store. Quien lo tenga instalado por el
+  `.exe` no recibirá más actualizaciones automáticas y debe pasarse a la Store.
 - **El tema oscuro es la paleta OLED** de la estética DOT/480 (`#070809` / `#111315` / `#26292e`);
   el tema DOT/480 se funde en él y quien lo tenía conserva su acento rojo (migración v7→v8).
 - Primitivas comunes (`Chip`, `Segmentado`, `BotonIcono`, `Modal`) y tokens nuevos (`onAccent`,
