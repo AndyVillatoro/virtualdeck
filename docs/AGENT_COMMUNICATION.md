@@ -63,6 +63,11 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-MUS-04** | P2 | Barra de progreso en pantalla (109) | opencode wN (Claude Haiku 5.5, Go) | `progresoCancion.ts`, `BarraProgreso.tsx`, paneles de música | `DONE` (f260ad5) | 2026-10-07 |
 | **T-MUS-05** | P2 | Panel de música plegable en formato barra (111) | opencode wN (Claude Haiku 5.5, Go) | `src/screens/main/**`, `MainB.tsx`, `config.ts` (musicPanel), idiomas `*Comun` | `DONE` (2a4f021) | 2026-10-07 |
 | **T-DOC-04** | P2 | Documentar la tanda de la tarde: CHANGELOG, ROADMAP, tablero y este HANDOFF | opencode wV (Space Bunny, gratis) | `CHANGELOG.md`, `docs/ROADMAP.md`, `docs/AGENT_COMMUNICATION.md`, `docs/HANDOFF.md` | `DONE` (sin commit: lo pide el encargo) | 2026-10-07 |
+| **T-PIP-01** | P1 | Prototipo: vídeo de lo que suena en el panel de música (113) | opencode wN (Claude Haiku 5.5, Go) | `electron/main/capturaVentana.ts`, IPC, preload, `src/types/ipc.ts`, `config.ts` (musicPanel), `src/screens/main/**`, idiomas `*Comun` | `CLAIMED` | 2026-10-07 |
+| **T-TND-03** | P1 | La tienda anuncia plugins en desarrollo (105c) | agy wK (Gemini Flash) | `src/screens/tienda/**`, idiomas `*Ajustes` | `CLAIMED` | 2026-10-07 |
+| **T-ART-01** | P1 | Capturas de prensa de la 0.14 con datos inventados | opencode wR (DeepSeek V4.1 Flash, Go) | `scripts/prensa/**` | `DONE` (4fac5a6) | 2026-10-07 |
+| **T-VID-03** | P1 | Montar el tráiler con HyperFrames (107) | agy wK (Gemini Flash) | `_referencias/trailer/**` | `CLAIMED` | 2026-10-07 |
+| **T-ART-00** | P1 | Inventario de artes para Store y Pages (106/107) | opencode wT (Fledge, gratis) | solo `_referencias/informes/` | `DONE` (informe revisado) | 2026-10-07 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

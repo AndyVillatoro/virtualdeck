@@ -4,8 +4,8 @@
 
 ## Install
 
-1. Download the installer from [Releases](https://github.com/AndyVillatoro/virtualdeck/releases) (`VirtualDeck-Setup-X.Y.Z.exe`).
-2. Run it. If Windows shows SmartScreen, choose "More info → Run anyway".
+1. Install VirtualDeck from the [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP) (Windows 10 and 11). The package is signed by the Store, so there is no separate installer and no SmartScreen warning.
+2. Open it from the Start menu. Updates arrive through the Store.
 3. On first launch you'll see a 7-step **tutorial**. You can replay it from Settings (gear) → Help & About → Replay tutorial.
 
 ## Create your first button

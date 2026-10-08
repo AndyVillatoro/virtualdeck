@@ -4,8 +4,8 @@
 
 ## Instalar
 
-1. Descargá el instalador desde [Releases](https://github.com/AndyVillatoro/virtualdeck/releases) (`VirtualDeck-Setup-X.Y.Z.exe`).
-2. Ejecutalo. Si Windows muestra SmartScreen, elegí "Más información → Ejecutar de todos modos".
+1. Instalá VirtualDeck desde la [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP) (Windows 10 y 11). El paquete va firmado por la Store: no hay instalador aparte ni aviso de SmartScreen.
+2. Abrilo desde el menú Inicio. Las actualizaciones llegan por la Store.
 3. Al abrir por primera vez verás un **tutorial** de 7 pasos. Podés repetirlo desde Ajustes (rueda) → Ayuda y Acerca de → Repetir tutorial.
 
 ## Crear tu primer botón

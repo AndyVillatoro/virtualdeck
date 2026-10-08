@@ -21,9 +21,10 @@ visual retro de matriz de puntos. 100% local, gratis y sin cuentas.
 
 ## Instalación
 
-Descargá el instalador desde [Releases](https://github.com/AndyVillatoro/virtualdeck/releases)
-(`VirtualDeck-Setup-X.Y.Z.exe`). Si Windows muestra SmartScreen: "Más información →
-Ejecutar de todas formas" (el binario aún no está firmado).
+Instalalo desde la [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP)
+(Windows 10 y 11). El paquete va firmado por la Store: no hay que buscar un
+instalador aparte ni saltarse el aviso del SmartScreen. Si lo querés en la mano,
+el código está aquí mismo y se compila con `npm install && npm run dev`.
 
 ## Documentación
 

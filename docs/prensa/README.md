@@ -1,21 +1,22 @@
 # Prensa — el material para la ficha de la Store y la web
 
-Dos cosas distintas, hechas por dos caminos distintos:
+Tres cosas distintas, hechas por tres caminos distintos:
 
 | | Qué es | Se regenera con |
 |---|---|---|
-| **[Capturas](#capturas-e-icono)** | Once PNG (las nueve de la ficha de la Store, la 05b vertical y la 06b de la ficha) y el icono de 300×300 | `node scripts/prensa/capturar.mjs` |
-| **[Animación](#animación-de-cabecera)** | `hero.svg`, y el `hero.mp4` para el tráiler | `npm run build:hero` · `bash docs/prensa/render.sh` |
+| **[Capturas](#capturas-e-icono)** | Once PNG (las nueve de la ficha de la Store, la 05b vertical y la 06b de la ficha) y el icono de 300×300, en español, y las mismas doce en `en/` | `node scripts/prensa/capturar.mjs` |
+| **[Artes](#artes-de-la-ficha-y-de-la-web)** | Los cuatro PNG que no son capturas: dos recursos de la ficha (tráiler y superhéroe) y dos de la web (`og-image` y banner) | HyperFrames, en `_referencias/trailer/` (fuera del repo) |
+| **[Animación](#animación-de-cabecera)** | `hero.svg`, y el `hero.mp4` del héroe | `npm run build:hero` · `bash docs/prensa/render.sh` |
 
-**Nada de esto se edita a mano.** Las capturas salen de la aplicación corriendo y
-la animación de un generador; si hay que cambiar algo, se cambia el guion y se
-vuelve a correr.
+**Nada de esto se edita a mano.** Las capturas salen de la aplicación corriendo, las
+artes y la animación de sendos generadores; si hay que cambiar algo, se cambia el
+guion y se vuelve a correr.
 
 ---
 
 ## Capturas e icono
-Todo lo que hay en esta carpeta está sacado de la aplicación **corriendo**, no
-montado en un editor de imágenes. Se regenera con:
+Las capturas de esta sección y las de `en/` están sacadas de la aplicación
+**corriendo**, no montadas en un editor de imágenes. Se regeneran con:
 
 ```bash
 npm run build                       # las capturas salen de out/, no de dev
@@ -45,6 +46,7 @@ la tienda si no existen, así que en una máquina limpia basta con el comando.
 | `09-rgb.png` | El gestor RGB: tres dispositivos, selector de color, modos, zonas, el pintor LED a LED y los 18 presets. | 1920×1080 PNG |
 | `icono-mosaico-300.png` | El icono de mosaico. No es una captura: es `build/icon.svg` centrado sobre el fondo del tema. | 300×300 PNG exactos |
 | `fuentes/` | Las entradas que usan las escenas: la pista y la carátula de la franja de música, el fondo neutro de la barra y las artes de la tienda (manifiesto, portadas y capturas generadas). | — |
+| `en/` | Las mismas doce imágenes de la tanda **en inglés**, con los nombres idénticos: la Store pide las capturas una vez por idioma. No hay carpeta `en/` para las cuatro artes ([más abajo](#artes-de-la-ficha-y-de-la-web)): son la misma imagen para los dos idiomas. | — |
 
 ### La ficha en inglés, y el borrador
 
@@ -117,8 +119,8 @@ Esto se revisó mirando cada imagen a tamaño completo, no por deducción.
 | `04-dock.png` | no aparece | ninguna | no sale carátula | no aparece; el serial y las apps en ejecución se sustituyen antes de disparar (ver abajo) |
 | `05-movil.png` | no aparece | ninguna: los botones no enseñan rutas | carátula generada | no aparece; la página la sirve la propia app en `127.0.0.1` |
 | `05b-movil-marco.png` | igual que la 05 | igual | igual | igual |
-| `06-tienda.png` | no aparece | las rutas que lista el aviso de riesgo son inventadas (`C:\Programas\...`) | portada y capturas generadas | las direcciones del aviso son `ejemplo.invalid`, que no existe |
-| `06b-tienda-ficha.png` | igual que la 06 | igual | igual | igual |
+| `06-tienda.png` | no aparece | las rutas que lista el aviso de riesgo son inventadas (`C:\Programas\...`); el campo del manifiesto enseña la URL del repositorio de la galería, con el usuario de GitHub del proyecto | portada y capturas generadas | las direcciones del aviso son `ejemplo.invalid`, que no existe; la del manifiesto es la del repo de la galería, que es pública |
+| `06b-tienda-ficha.png` | igual que la 06 (más `C:\Programa\...\estudio.exe` y `ultimo_acceso.txt`, también inventados) | igual | igual | igual |
 | `07-barra-flotante.png` | no aparece | ninguna; el escritorio de debajo es abstracto, sin ventanas de nadie | no sale carátula (la barra no dibuja widgets) | no aparece |
 | `08-kiosko-barra.png` | no aparece | ninguna | carátula generada | no aparece |
 | `09-rgb.png` | no aparece | los dispositivos salen sin número de serie (el emulador lo manda vacío) | no sale carátula | no aparece; la ubicación de cada dispositivo es un bus `I2C`/`HID`, no una dirección de red |
@@ -258,7 +260,7 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`.
 |---|---|
 | `hero.svg` | La animación. Un solo archivo, sin librerías, **sin JavaScript**, 65 KB. Bucle de 12 s. |
 | `vista.html` | Lo enseña sobre fondo oscuro y claro a la vez. Se abre a doble clic, no hace falta servidor. |
-| `render.sh` | Convierte `hero.svg` en `hero.mp4` + `miniatura.png` para la ficha de la Store. |
+| `render.sh` | Convierte `hero.svg` en `hero.mp4` y saca de él un fotograma a `miniatura.png`. **Ese `miniatura.png` es el mismo nombre que la miniatura del tráiler**: ver «[Dos nombres que chocan](#dos-nombres-que-chocan)». |
 
 Los tres los genera `scripts/generate-hero.mjs` (`npm run build:hero`) — **no se editan a mano**.
 La retícula sale de `GLYPHS_5x7` (`src/design.ts`), así que el generador **falla** si la
@@ -295,7 +297,10 @@ Por defecto sigue a `prefers-color-scheme`, y `data-theme="light"` / `data-theme
 Un `<img src="hero.svg">` es **otro documento**: solo obedece al tema del sistema, no al de la
 página. Para forzar el tema hay que incrustar el SVG en línea.
 
-### El vídeo de la ficha de la Store
+### El vídeo del héroe (ya no es el de la Store)
+
+La ficha 0.14.0 lleva el **tráiler de HyperFrames** ([más abajo](#artes-de-la-ficha-y-de-la-web)),
+no este. `hero.mp4` se sigue generando para el héroe de la web y como plan B.
 
 `ffmpeg` **no sabe rasterizar un SVG animado**: solo ve un archivo de texto, y no tiene motor
 de CSS. Hacen falta dos pasos — un navegador dibuja los fotogramas y ffmpeg los junta:
@@ -343,5 +348,57 @@ borde inferior de la rejilla. Lo que hay que leer —el nombre y el botón pulsa
 medio, así que no se pierde nada; pero si en algún momento se añade texto a la animación, no va
 abajo.
 
-`hero.mp4` y `miniatura.png` **no están en el repositorio**: son salida, se regeneran con el
-script y pesan de más para versionarlos.
+`hero.mp4` **no está en el repositorio**: es salida, se regenera con el script y pesa de más
+para versionarlo. `miniatura.png` sí está, pero es la miniatura del tráiler, no la de este
+vídeo (ver «[Dos nombres que chocan](#dos-nombres-que-chocan)»).
+
+---
+
+## Artes de la ficha y de la web
+
+Los cuatro PNG de la tanda 0.14.0 que **no** son capturas: dos son recursos que pide el
+formulario de la Store, dos los usa la web. No se sacan de la aplicación: salen del
+proyecto de **HyperFrames** (el del tráiler), que vive en `_referencias/trailer/` y **no
+se versiona**. Aquí solo queda la salida.
+
+| Archivo | Qué es | Para qué sirve | Medidas |
+|---|---|---|---|
+| `miniatura.png` | Un fotograma legible del tráiler: el logotipo con el lema arriba y, debajo, el deck y el Stream Dock N3 sobre la trama de puntos. | Recurso **«miniatura del tráiler»** de la ficha: el formulario lo pide **si** se sube el MP4. | 1920×1080 PNG |
+| `superheroe.png` | El deck y el Stream Dock N3 sobre la trama de puntos, **sin una sola línea de texto encima**. | Recurso **«superhéroe»** 16:9 de la ficha. Opcional. | 1920×1080 PNG |
+| `og-image.png` | El logotipo, el lema y los dos botones (Store y código abierto) sobre la trama de puntos. | `og:image` y `twitter:image` de `docs/index.html`: lo que se ve al compartir el enlace. | 1200×630 PNG |
+| `banner.png` | El lema con los cuatro rótulos de recursos (STREAM DOCK N3 · KIOSKO 1280×480 · MANDO MÓVIL WI-FI · MICROSOFT STORE) y, a la derecha, el deck y el dock. | Cabecera ancha para el README o la página de las releases. La Store **no** pide banner: no es un recurso suyo. | 1280×640 PNG |
+
+**El tráiler no está en el repositorio.** El MP4 de 1920×1080 y ≤60 s **se genera con
+HyperFrames y se sube a la ficha de la Store**; pesa demasiado para versionarlo y desde el
+repo no se reproduce. Lo único que queda de él es la miniatura.
+
+Las cuatro no llevan carpeta `en/`: la Store no pide artes por idioma. Dos cosas que
+conviene tener presentes: el lema de `banner.png` y `og-image.png` está en castellano a
+propósito (es la marca, no una traducción pendiente), y `miniatura.png` y
+`superheroe.png` salen del deck de demostración, así que en ellas se lee «Retícula en
+azul», el título de la pista inventada, aunque la ficha esté en inglés.
+
+### Lo que se revisó en las cuatro, una por una
+
+Miradas a tamaño completo, igual que las capturas:
+
+| | Ruta con un nombre | Serial | Música real | Marca de tercero pegada |
+|---|---|---|---|---|
+| `miniatura.png` | no | no | no: la pista es la inventada | no: los rótulos son glifos DOT |
+| `superheroe.png` | no | no | no: la pista es la inventada | no: «Stream Dock N3» es el nombre del modelo que la propia app reconoce, escrito en texto |
+| `og-image.png` | no | no | no sale música | no |
+| `banner.png` | no | no | no sale música | no |
+
+Lo que sí aparece, en las cuatro, son **nombres de apps y de hardware escritos como
+texto** (Spotify, Discord, OBS Studio, «NVIDIA GEFORCE RTX 4070», «ASUS ROG STRIX B650-E»):
+son los rótulos de los botones y los widgets de la propia aplicación, con los iconos de su
+catálogo, igual que en las capturas (ver «Repaso de privacidad»). No hay ningún logotipo
+ajeno pegado encima de la imagen, ni rutas, ni seriales.
+
+### Dos nombres que chocan
+
+`miniatura.png` está en las dos listas de golpe: es la salida de `render.sh` (el fotograma
+del héroe) **y** la miniatura del tráiler que sí se quiere en el repo. `.gitignore` la
+sigue ignorando —por lo que hoy la miniatura del tráiler es el único PNG de esta carpeta
+que git no ve— y `render.sh` la sigue sobreescribiendo con el fotograma del héroe. Si se
+vuelve a correr el guion, hay que reponer la del tráiler detrás.

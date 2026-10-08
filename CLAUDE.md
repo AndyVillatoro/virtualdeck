@@ -130,9 +130,11 @@ archivo de instrucciones aparte — ver la corrección más abajo sobre por qué
 
 ## Release (detalle en CONTRIBUTING.md)
 1. Bump en `package.json` + `npm install --package-lock-only`. 2. Entrada en `CHANGELOG.md`.
-3. Commit `chore(release): bump X -> Y`, tag `vX.Y.Z`, push. 4. `npm run build:installer`.
-5. `gh release create vX.Y.Z dist/VirtualDeck-Setup-X.Y.Z.exe dist/latest.yml dist/VirtualDeck-Setup-X.Y.Z.exe.blockmap`
-   — **`latest.yml` es obligatorio** (sin él la actualización automática falla en silencio).
+3. Commit `chore(release): bump X -> Y`, tag `vX.Y.Z`, push. 4. `npm run build:store` (el `.appx`/MSIX
+   que se sube a Partner Center; ver `docs/MICROSOFT-STORE.md` por el rodeo de `makeappx`).
+5. `gh release create vX.Y.Z --notes-file <notas>` **sin adjuntos**: decisión del dueño (2026-10-07), el `.exe`
+   NSIS no está firmado y no se publica; todo enlace de descarga va a la Store
+   (`https://apps.microsoft.com/detail/9N92JRF820JP`). Sin `latest.yml` no hay autoactualización del `.exe`.
    Publicar solo con el visto bueno del dueño.
 
 ## Si algo se rompe en runtime
