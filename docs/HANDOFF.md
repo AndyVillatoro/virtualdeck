@@ -176,6 +176,46 @@ con los campos `icono`/`portada`/`capturas` y el ejemplo v2, y el CHANGELOG/ROAD
   instalada, CPU en reposo A/B (2,8 % de un núcleo con música, no comparable con el 78), capturas nuevas.
 * **Próximo (orden acordado):** fusionar `task/p1-revision-ui` y publicar 0.14.0; luego tienda (105) y vídeo (107).
 
+## Turno 2026-10-07 (noche) — pruebas del dueño en orden, 0.14.0 publicada
+
+* **Decisiones del dueño:** el `.exe` NSIS no se publica (no está firmado): el release de GitHub va sin adjuntos y
+  todo enlace de descarga va a la Store; música libre de derechos (sintetizada por código, CC0); plegable para el
+  panel de música; vídeo de lo que suena en el panel como prototipo, con recorte.
+* **Publicado:** `main` en `e1154b4` (0.14.0), tag `v0.14.0`, release de GitHub sin adjuntos, rama
+  `task/p1-revision-ui` empujada. Paquete de la Store `VirtualDeck-0.14.0.appx` (MSIX, 120 MB, `0.14.0.0`) hecho
+  con el `makeappx` del SDK (el de electron-builder rechaza `uap10:Parameters`). Kit de subida en
+  `_referencias/store-0.14.0/` (paquete, capturas ES/EN, tráiler, miniatura, superhéroe, icono, fichas ES/EN,
+  novedades ES/EN, subtítulos `.vtt`). El dueño ya lo subió a Partner Center.
+* **Reparto:** wN Claude Haiku 5.5 (Go): perfiles N3, barra de progreso, plegable, vídeo en el panel; wK agy:
+  tienda y tráiler; wR Muse Spark (se agotó) y DeepSeek V4.1 Flash (Go): capturas de prensa; wS, wT, wV (gratis):
+  slider, núcleo, docs, artes. Nemotron por `opencode run` cuando Exo no respondía.
+* **Verificación:** `npm run check` 0 errores, 7 guardianes. Corregido el guardián `check-i18n` (una línea que
+  empieza por palabra clave de JS ya no es un rótulo). Capturas de prensa revisadas una a una por privacidad
+  (serial, apps, ciudad, hardware, rutas).
+* **Pendientes:** ver la lista de abajo.
+
+### Pendientes tras la 0.14.0 (2026-10-07)
+
+1. **Certificación de la Store:** esperar el veredicto; si rechaza algo (notas para el revisor en
+   `docs/MICROSOFT-STORE.md`), corregir y subir otra presentación.
+2. **Vídeo en el panel de música (113):** que el dueño lo pruebe con un vídeo real, y repetir la medida de
+   CPU/GPU con el equipo en reposo y una ventana visible (la primera no fue concluyente).
+3. **Tráiler en inglés** (mismos planos, rótulos en inglés) y, si se quiere, una pista de música mejor.
+4. **Barra de progreso en las capturas de prensa:** hace falta que `electron/main/mediosFijos.ts` admita
+   `positionMs`/`durationMs`/`timelineUpdatedAt`.
+5. **Tienda (105c) y plugins (83):** MVP de plugins de Stream Deck (semanas, decisión del dueño por tamaño); hoy
+   la tienda solo dice «en desarrollo». Elgato (59) sin fecha.
+6. **Limpieza de documentación:** `CONTRIBUTING.md` sigue describiendo `build:installer`, el `.exe` en el release
+   y la firma; pasarlo a «solo Store». `docs/MICROSOFT-STORE.md` §5.4 y la wiki ya apuntan a la Store, revisar el resto.
+7. **Detalles de arte:** portadas generadas de la tienda con el glifo recortado; `08-kiosko-barra` con bandas negras;
+   `05-movil` estrecha sobre lienzo negro; rótulo «Tienda de perfiles e integraciones» del tráiler.
+8. **Usuarios del `.exe` 0.13:** no tienen autoactualización; valorar un aviso en la página y el README (ya dicen
+   que se pasen a la Store).
+9. **Sin fecha:** T-SEC-06 (sandbox del renderer, bloqueado por el canvas).
+10. **Higiene:** `_referencias/` aparece como no versionado; confirmar que debe quedar fuera de git.
+11. **Cuota:** al cerrar el 2026-10-07 la cuenta de Claude iba al 93 % semanal (se renueva el 10-oct); el trabajo
+    de montaje y capturas corrió con la cuota de los trabajadores.
+
 ## Apéndice A - Referencias Rápidas
 
 ### Guardianes Verificables (para `npm run check`)
