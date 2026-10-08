@@ -1,0 +1,116 @@
+========================================
+PRODUCT NAME
+========================================
+VirtualDeck
+
+========================================
+DESCRIPTION
+========================================
+VirtualDeck turns any touch screen, tablet or secondary monitor into a button panel for your PC. No hardware to buy.
+
+Every button does something: open a program, switch the audio device, type some text, run a macro, light up your RGB, run a script. You organize them in pages and folders, give them an icon and a color, and they are one tap away.
+
+And it does not live only on the PC screen. With the mobile remote you press the same buttons from your phone's browser, with your theme and your accent color. And if you own a physical Stream Dock, VirtualDeck drives it: its LCD keys are painted with your icons and its buttons and knobs trigger actions, with several pages per device.
+
+WHAT YOU CAN PUT ON A BUTTON
+
+Programs, files and web pages. Keyboard shortcuts and automatic typing. Media control: play, pause, next, volume, mute, shuffle and repeat. Switching the default audio device, which in Windows takes four clicks and here takes one. Monitor brightness. Shut down, restart, sleep and lock. Keyboard and mouse macros that you record once and replay. RGB control through OpenRGB, with 18 presets. PowerShell scripts, with the output saved in a variable if you need it. Counters, timers and buttons that branch depending on the value of a variable.
+
+One icon catalog with search: about 2,900 brands and 5,100 action icons, ready to copy to any button. Animated dot icons: sweep, pulse, blink and scan over any icon.
+
+MORE THAN BUTTONS
+
+A button can show information instead of an icon: the clock, the weather, what is playing with its cover art, the CPU or GPU temperature, the exchange rate of a currency, or the value of your own variables.
+
+And not every button needs a finger. You can make one fire by itself at a given time (choosing the days of the week), or when a sensor crosses a threshold: have the fans speed up when the GPU reaches 80 degrees, or switch to night mode at eleven.
+
+KIOSK MODE
+
+Borderless full screen, so you can leave the tablet on all day acting only as a deck. With an optional PIN so nobody leaves without permission.
+
+FLOATING BAR
+
+A thin strip always visible over your other windows, with the buttons you use most. It takes little space and stays out of the way.
+
+FROM YOUR PHONE AND FROM ANOTHER PC
+
+VirtualDeck starts a local server, only on your network and protected by a token that you generate. With it you can press buttons from your phone's browser or from another computer that also runs VirtualDeck.
+
+YOURS AND PORTABLE
+
+The configuration is a JSON file that you can export, import and take with you. There is a store of ready-made profiles and pages to get started, and before importing any of them you are shown exactly what it does: whether it launches programs, runs scripts or types things.
+
+OLED dark theme and cement light theme, ten accent colors, and the whole app in Spanish and English.
+
+OPEN SOURCE
+
+VirtualDeck is free software under the MIT license. The full code, the change history and the bug tracker are on GitHub.
+
+NOTES
+
+RGB lighting requires installing OpenRGB. Temperature sensors require LibreHardwareMonitor with its web server enabled. Both are free and the app links to their download.
+
+========================================
+WHAT'S NEW IN THIS VERSION
+========================================
+- Physical Stream Dock support: detected on connection, with its own page, LCD keys, knobs and buttons. Three complete profiles (media, streaming and productivity) and per-control presets.
+- One icon catalog with search and thousands of brands and icons. The editor is now organized in sections, with search and action families.
+- A more compact music panel: it folds into a side tab, lies down on short screens, and shows the song progress bar and the shuffle and repeat state.
+- Bar layout for wide, short monitors (such as 1280x480): the main screen, kiosk and Devices adapt to it.
+- Mobile remote with brand icons, live widgets and long press.
+- Profile and page store in its own window, with icons, covers and screenshots.
+- Native text to speech and weekdays on time triggers.
+- Widgets and sliders stay readable on any background color in light and dark themes.
+- The window remembers which monitor it was on and returns to it.
+
+========================================
+PRODUCT FEATURES  (one per field, "Add more")
+========================================
+42 action types grouped by family: programs, shortcuts, media, audio, RGB and scripts
+Turn any touch screen or extra monitor into a button panel
+Works with physical Stream Dock devices: LCD keys, buttons and knobs
+Mobile remote from the browser, with the deck's theme and accent
+One icon catalog with search
+Animated dot icons: sweep, pulse, blink and scan
+Switch the default audio device with a single tap
+Record keyboard and mouse macros and replay them whenever you want
+Buttons that show the clock, weather, music, sensors or currencies
+Automatic triggers by time, with weekdays, or by a sensor threshold
+Full-screen kiosk mode with optional PIN
+Floating bar always visible over your other windows
+RGB lighting control with 18 presets, via OpenRGB
+Press it from your phone's browser or from another PC on your network
+Pages, folders and profiles you can export and import
+OLED dark and cement light themes, in Spanish and English
+Open source under the MIT license
+
+========================================
+SEARCH KEYWORDS  (maximum 7)
+========================================
+stream deck
+button panel
+macros
+keyboard shortcuts
+touch screen
+rgb control
+productivity
+
+========================================
+SHORT DESCRIPTION
+========================================
+Turn any touch screen or extra monitor into a button panel for your PC: programs, shortcuts, macros, audio, media and RGB lighting, one tap away.
+
+========================================
+COPYRIGHT AND TRADEMARK
+========================================
+© 2026 Andy Villatoro. MIT license.
+
+========================================
+DEVELOPED BY
+========================================
+Andy Villatoro
+
+========================================
+ADDITIONAL SYSTEM INFORMATION
+========================================
+RGB lighting requires OpenRGB installed. Temperature sensors require LibreHardwareMonitor with Options → Remote Web Server → Run enabled. Both are free and VirtualDeck links to their download.
