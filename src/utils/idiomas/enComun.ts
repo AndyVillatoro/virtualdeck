@@ -243,6 +243,7 @@ export const EN_COMUN: Dict = {
   'music.videoLoading': 'Looking for windows...',
   'music.videoNone': 'No open windows to show',
   'music.videoError': 'This window could not be captured',
+  'music.videoCongelado': 'The video pauses when another window covers the browser',
   'music.collapse': 'Collapse the music panel',
   'media.unsupported': '{que} — the source does not support it',
   'media.noSkip': '{fuente} does not support skipping tracks for this playback. That is a limit of the app that is playing, not of the deck.',

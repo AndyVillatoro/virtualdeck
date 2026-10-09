@@ -68,6 +68,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-ART-01** | P1 | Capturas de prensa de la 0.14 con datos inventados | opencode wR (DeepSeek V4.1 Flash, Go) | `scripts/prensa/**` | `DONE` (4fac5a6) | 2026-10-07 |
 | **T-VID-03** | P1 | Montar el tráiler con HyperFrames (107) | agy wK (Gemini Flash) | `_referencias/trailer/**` | `CLAIMED` | 2026-10-07 |
 | **T-ART-00** | P1 | Inventario de artes para Store y Pages (106/107) | opencode wT (Fledge, gratis) | solo `_referencias/informes/` | `DONE` (informe revisado) | 2026-10-07 |
+| **T-VID-01** | P1 | Arreglar el vídeo del panel de música: mala resolución y congelado si otra ventana tapa el navegador (roadmap 113), encargo `_referencias/encargos/T-VID-01-video-panel.md` | opencode wK (orquesta; hace el trabajo de wR, que no estaba disponible) | `electron/main/capturaVentana.ts`, `electron/main/ipc/capturaIpc.ts`, `electron/main/ipc/index.ts` (solo captura), `src/screens/main/musica/**` (solo vídeo), `src/screens/main/musica/PanelMusicaBarra.tsx` (solo botón VÍDEO), `src/types/ipc.ts` (solo `captura`), idiomas `esComun`/`enComun` (solo `music.video*`) | `VERIFYING` (check en verde; el panel de vídeo no se ha podido ver en la app: en desarrollo ignora el tamaño guardado y nace en 1100×720, y el vídeo solo existe en formato barra ≤ 600) | 2026-10-08 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.

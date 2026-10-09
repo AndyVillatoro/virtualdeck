@@ -251,6 +251,7 @@ export const ES_COMUN: Dict = {
   'music.videoLoading': 'Buscando ventanas...',
   'music.videoNone': 'No hay ventanas abiertas que mostrar',
   'music.videoError': 'No se pudo capturar esta ventana',
+  'music.videoCongelado': 'El vídeo se pausa si otra ventana tapa el navegador',
   'music.collapse': 'Plegar el panel de música',
   'media.unsupported': '{que} — la fuente no lo admite',
   'media.noSkip': '{fuente} no admite pasar de pista en esta reproduccion. Es una limitacion de la aplicacion que suena, no del deck.',

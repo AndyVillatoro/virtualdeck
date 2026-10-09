@@ -4,6 +4,7 @@ import { useT } from '../../../utils/i18n';
 import { DotLabel } from '../../../components/DotLabel';
 import type { ElectronAPI, PistaCaptura } from '../../../types';
 import { useStreamVentana } from './useStreamVentana';
+import { useTamanoPedido } from './useTamanoPedido';
 import { useVentanasCaptura } from './useVentanasCaptura';
 import { SelectorVentanas } from './SelectorVentanas';
 import { BarraVideo } from './BarraVideo';
@@ -92,7 +93,8 @@ export function VideoVentana({ api, pista, accent, ajustes }: {
   const nombreVentana = ventanas.find((v) => v.id === sourceId)?.nombre ?? '';
   const clave = claveRecorte(pista.fuente, nombreVentana);
   const recorte = ajustes.recortes[clave];
-  const estado = useStreamVentana(sourceId, videoRef);
+  const pedido = useTamanoPedido(tamano.ancho, tamano.alto, recorte);
+  const estado = useStreamVentana(sourceId, videoRef, pedido);
   const mostrarSelector = !sourceId || selectorAbierto;
   const cuadro = cajaContenida(tamano.ancho, tamano.alto, aspecto);
   const rectangulo = marca ? rectanguloEntre(marca.a, marca.b) : null;
@@ -218,6 +220,16 @@ export function VideoVentana({ api, pista, accent, ajustes }: {
         {!mostrarSelector && estado === 'error' && (
           <div style={{ position: 'absolute', left: 8, right: 8, bottom: 8 }}>
             <DotLabel size={8} color={VD.textDim} spacing={1}>{t('music.videoError')}</DotLabel>
+          </div>
+        )}
+
+        {/* El navegador tapado no pinta: el cuadro se queda parado y se dice por qué. */}
+        {!mostrarSelector && estado === 'congelado' && (
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0, padding: '4px 8px',
+            background: VD.overlay, borderTop: `1px solid ${VD.border}`,
+          }}>
+            <DotLabel size={8} color={VD.textMuted} spacing={1}>{t('music.videoCongelado')}</DotLabel>
           </div>
         )}
       </div>

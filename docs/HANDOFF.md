@@ -4,6 +4,37 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
+## Turno 2026-10-08 — T-VID-01: el vídeo del panel de música (resolución y congelado, 113)
+
+* **Quién:** wK (orquesta), haciendo el trabajo que era de wR. Archivos del mismo reparto que T-PIP-01: solo `capturaVentana`/
+  `capturaIpc`/IPC, `src/screens/main/musica/**` (vídeo) y `music.video*` de `esComun`/`enComun`.
+* **Informe:** `_referencias/informes/video-panel-113.md`, capturas antes/después en `_referencias/informes/capturas-video/`.
+
+### Qué entró
+
+* **Resolución.** No había pérdida en la captura: sin restricciones Chromium entrega el cuadro nativo (1902×1160 para una ventana
+  de 1920×1170). Lo borroso era escala: la caja del panel mide 284 px CSS (426 de pantalla) y el compositor encogía el cuadro
+  6,7 veces; con el recorte, la zona se agrandaba. Ahora se pide la captura **a la medida que se pinta** (`tamanoCaptura.ts` +
+  `useTamanoPedido.ts`, con rebote de 300 ms): `caja × escala` sin recorte, `caja / recorte` con recorte, tope 1920×1080 y
+  `minWidth/minHeight` a 1 para que el navegador no amplíe una ventana pequeña. Medido con el arnés: mismo aspecto (nitidez 2003
+  frente a 2015) y **1,78 % → 0,64 % de CPU** de la máquina con los mismos fotogramas.
+* **Congelado.** Medido por contraste: con el navegador normal la pista entrega **0 fotogramas** con la ventana tapada y su
+  `mediaTime` no avanza; con `--disable-features=CalculateNativeWinOcclusion` (o con `--disable-backgrounding-occluded-windows
+  --disable-renderer-backgrounding`) entrega **58–59 fotogramas por 2 s** con la ventana tapada. La bandera es del navegador que se
+  captura, así que no hay arreglo limpio desde aquí (descartados: captura de pestaña, PiP, monitor recortado, ventana espejo,
+  relanzar el navegador). Lo que sí: `useStreamVentana` tiene estado `congelado` (evento `mute` de la pista + reloj de fotogramas) y
+  el panel enseña `music.videoCongelado` (ES/EN).
+
+### Verificación
+
+* `npm run check`: **0 errores, 28 warnings** (deuda previa, ninguno en estos archivos) y los **7 guardianes en verde**.
+* **Lo que no se ha visto en pantalla:** el panel de vídeo. En desarrollo la copia de prueba ignora el tamaño guardado y nace
+  en 1100×720 (`windowManager.ts:43`, `isDev`), y el vídeo solo existe en formato barra (alto ≤ 600): en este equipo (2560×1440 +
+  1280×480) no hay forma de abrirlo, y desde el renderer no se puede redimensionar la ventana. Falta que el dueño lo mire en su
+  1280×480 con su navegador real.
+* Arnés de medición en `%TEMP%\vd-vid113` (fuera del repo): ventana de 284×150, `MediaStreamTrackProcessor` para contar
+  fotogramas sin depender de que la ventana propia esté tapada, ocultador para tapar la del navegador y cliente de CDP propio.
+
 ## Turno 2026-10-07 (tarde) — tanda de tiendas, perfiles del N3, panel de música y widgets (DONE)
 
 * **Reparto:** opencode `wN` Claude Haiku 5.5 por Go (partes 2 de 109 y 111); agy `wK` Gemini Flash (105b, con 105a revisado);
