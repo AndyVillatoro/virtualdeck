@@ -20,7 +20,6 @@
     "build:iconos": "node scripts/generar-iconos-dot.mjs",
     "build:hero": "node scripts/generate-hero.mjs",
     "build:native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native.ps1",
-    "build:installer": "npm run build:native && npm run build:icon && electron-vite build && electron-builder --win nsis",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:arch": "depcruise src electron",
@@ -99,27 +98,7 @@
       }
     ],
     "win": {
-      "icon": "build/icon.ico",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "artifactName": "VirtualDeck-Setup-${version}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "allowElevation": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "VirtualDeck",
-      "uninstallDisplayName": "VirtualDeck ${version}",
-      "deleteAppDataOnUninstall": false
+      "icon": "build/icon.ico"
     },
     "appx": {
       "applicationId": "VirtualDeck",

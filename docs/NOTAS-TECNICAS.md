@@ -256,10 +256,8 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   inyecta igualmente **antes** de elegir camino, por si carga un `.node` anterior.
   `injectUtf8Prefix` es idempotente para que no se aplique dos veces.
 - **Notificaciones y AppUserModelId**: `app.setAppUserModelId('com.virtualdeck.app')` se llama
-  al arrancar y **tiene que coincidir con `build.appId` de `package.json`**, que es el que el
-  instalador NSIS graba en el acceso directo del menu de inicio; Windows solo muestra el nombre
-  y el icono de la aplicacion si los dos cuadran. Electron lo pone solo con Squirrel, no con
-  NSIS: sin la llamada las notificaciones quedaban registradas como `electron.app.Electron`
+  al arrancar y **tiene que coincidir con `build.appId` de `package.json`**: Windows solo
+  muestra el nombre y el icono de la aplicacion si los dos cuadran. Electron lo pone solo con Squirrel: sin la llamada las notificaciones quedaban registradas como `electron.app.Electron`
   (visible en `HKCU\...\CurrentVersion\Notifications\Settings`, que es el sitio donde se puede
   comprobar si Windows acepto una notificacion — buscar el toast en pantalla no sirve, un toast
   de control nativo tampoco aparece si hay un video a pantalla completa). `scripts/check-ipc.mjs`

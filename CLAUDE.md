@@ -118,7 +118,7 @@ archivo de instrucciones aparte — ver la corrección más abajo sobre por qué
 
 ## Scripts
 - `npm run dev` · `npm run build` · `npm run build:native` · `npm run package:store` · `npm run build:iconos`
-- `build:installer` existe pero **no es un canal de publicación** (el `.exe` no se publica; solo Store).
+- El `.exe` NSIS no existe como canal (sin `build:installer`, sin config `nsis`): solo Store.
 - Copia de prueba: `node scripts/probar-app.mjs abrir <quien> | estado | cerrar` (CDP en 9333).
 
 ## Convenciones

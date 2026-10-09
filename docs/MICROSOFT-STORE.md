@@ -5,9 +5,9 @@ MSIX con `runFullTrust`**. Incluye el texto literal de las notas para el
 revisor, que es lo que decide si esto sale a la primera.
 
 > Decisión del dueño (2026-10-07): **la única forma de instalar VirtualDeck es
-> la Microsoft Store**. El `.exe` NSIS no está firmado y no se publica; el
-> release de GitHub va sin adjuntos. Todo este documento asume MSIX, donde
-> **Microsoft firma el paquete**.
+> la Microsoft Store**. El `.exe` NSIS no existe como canal (sin `build:installer`,
+> sin config `nsis` en `package.json`, desde 2026-10-09); el release de GitHub va
+> sin adjuntos. Todo este documento asume MSIX, donde **Microsoft firma el paquete**.
 
 ---
 

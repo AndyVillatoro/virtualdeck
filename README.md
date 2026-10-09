@@ -41,7 +41,7 @@ npm install
 npm run dev              # desarrollo con hot reload
 npx tsc --noEmit         # typecheck
 npm run build            # compila renderer + main + preload
-npm run build:installer  # genera dist/VirtualDeck-Setup-{version}.exe
+npm run build:store      # paquete de la Microsoft Store (ver docs/MICROSOFT-STORE.md)
 ```
 
 Ver [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo completo.

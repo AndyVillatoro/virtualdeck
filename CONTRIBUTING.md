@@ -440,9 +440,9 @@ Decisión del dueño (2026-10-07): **la única forma de instalar VirtualDeck es 
 [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP)**. El `.exe`
 NSIS no está firmado y **no se publica ni se distribuye**: el release de GitHub
 va **sin adjuntos**, no hay `latest.yml`/`.blockmap` y por tanto no hay
-autoactualización del `.exe` (la Store actualiza ella). `npm run build:installer`
-sigue existiendo en `package.json` como resto histórico, pero **no es un canal
-de publicación**: no se usa, no se prueba contra él y no se documenta como vía.
+autoactualización del `.exe` (la Store actualiza ella). El script
+`build:installer` y la config `nsis` de electron-builder **se retiraron** de
+`package.json` (2026-10-09): el `.exe` NSIS no existe como canal.
 
 Consecuencias:
 
