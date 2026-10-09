@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>05-movil Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 100px 80px 120px;
+    }
+    .col-text {
+      width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-phone {
+      width: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .phone-chassis {
+      width: 480px;
+      height: 940px;
+      background: var(--surface);
+      border: 3px solid var(--border);
+      border-radius: 48px;
+      padding: 14px;
+      box-shadow: 0 45px 110px rgba(0, 0, 0, 0.98);
+      position: relative;
+    }
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 36px;
+      overflow: hidden;
+      background: #070809;
+      position: relative;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96px;
+      height: 20px;
+      background: #070809;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      z-index: 20;
+    }
+    .phone-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 680px;
+    }
+    .feature-card-accent {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      flex-shrink: 0;
+    }
+    .feature-card-text {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .feature-card-text strong {
+      color: var(--text);
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="top: 25%; right: 25%;"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">MANDO REMOTO</span>
+          <span class="t-en">REMOTE CONTROLLER</span>
+        </div>
+
+        <h1 class="banner-title t-es">Mando móvil desde cualquier navegador</h1>
+        <h1 class="banner-title t-en">Wireless control from any browser</h1>
+
+        <p class="banner-sub t-es">
+          Convierte tu teléfono o tableta en una botonera táctil inalámbrica sin instalar aplicaciones adicionales en el dispositivo.
+        </p>
+        <p class="banner-sub t-en">
+          Turn your phone or tablet into a wireless touch controller without installing any extra apps on your device.
+        </p>
+
+        <div class="feature-card">
+          <div class="feature-card-accent"></div>
+          <div class="feature-card-text">
+            <span class="t-es"><strong>Servidor local seguro:</strong> sincronización por WebSocket en tu red local con token de acceso automático.</span>
+            <span class="t-en"><strong>Secure local server:</strong> real-time WebSocket sync over local Wi-Fi with automatic session token.</span>
+          </div>
+        </div>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span class="t-es">WI-FI LOCAL</span>
+            <span class="t-en">LOCAL WI-FI</span>
+          </div>
+          <div class="tag-item">
+            <span>WEBSOCKETS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">PWA RESPONSIVE</span>
+            <span class="t-en">RESPONSIVE PWA</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">SIN LATENCIA</span>
+            <span class="t-en">ZERO LATENCY</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-phone">
+        <div class="phone-chassis">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <img class="phone-img" src="../05b-movil-marco.png" data-en="../en/05b-movil-marco.png" alt="Mando Móvil">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

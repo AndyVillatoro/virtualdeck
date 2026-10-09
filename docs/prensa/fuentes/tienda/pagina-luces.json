@@ -1,0 +1,50 @@
+{
+  "page": {
+    "id": "p1",
+    "name": "PAGE",
+    "gridSize": 2,
+    "gridRows": 2
+  },
+  "buttons": [
+    {
+      "id": 0,
+      "page": 0,
+      "label": "BOTON 1",
+      "icon": "",
+      "bgColor": "#4a8ef0",
+      "action": {
+        "type": "none"
+      }
+    },
+    {
+      "id": 1,
+      "page": 0,
+      "label": "BOTON 2",
+      "icon": "",
+      "bgColor": "#2dd4bf",
+      "action": {
+        "type": "none"
+      }
+    },
+    {
+      "id": 2,
+      "page": 0,
+      "label": "BOTON 3",
+      "icon": "",
+      "bgColor": "#a78bfa",
+      "action": {
+        "type": "none"
+      }
+    },
+    {
+      "id": 3,
+      "page": 0,
+      "label": "BOTON 4",
+      "icon": "",
+      "bgColor": "#f0a04a",
+      "action": {
+        "type": "none"
+      }
+    }
+  ]
+}

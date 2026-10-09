@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Superheroe VirtualDeck (Sin Texto)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #070809;
+      font-family: "JetBrains Mono", Consolas, monospace;
+    }
+    #root {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      background: #070809;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #070809;
+      background-image: radial-gradient(#26292e 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+    }
+    .hero-stage {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+      width: 1660px;
+      height: 540px;
+    }
+    .deck-frame {
+      width: 960px;
+      height: 540px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.95);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .deck-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .dock-n3-chassis {
+      width: 640px;
+      height: 540px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 20px;
+      padding: 24px 28px;
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.95);
+      display: flex;
+      gap: 24px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .bolt {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1c1e22;
+      border: 1px solid #26292e;
+    }
+    .bolt-tl { top: 12px; left: 12px; }
+    .bolt-tr { top: 12px; right: 12px; }
+    .bolt-bl { bottom: 12px; left: 12px; }
+    .bolt-br { bottom: 12px; right: 12px; }
+    .dock-left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .lcd-keys-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 12px;
+      flex: 1;
+    }
+    .lcd-key-frame {
+      background: #070809;
+      border: 1.5px solid #26292e;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9);
+    }
+    .lcd-key-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .dock-buttons-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      height: 48px;
+    }
+    .dock-phys-btn {
+      background: #181a1d;
+      border: 1px solid #26292e;
+      border-radius: 6px;
+    }
+    .dock-knobs-column {
+      width: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 1px solid #1c1e22;
+      padding-left: 20px;
+    }
+    .knob-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .knob-outer-ring {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      background: #111315;
+      border: 2px solid rgba(255, 59, 48, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(255, 59, 48, 0.1);
+    }
+    .knob-dial {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #20242a 0%, #15181b 100%);
+      border: 2px solid #26292e;
+      position: relative;
+    }
+    .knob-notch {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 3.5px;
+      height: 13px;
+      background: #FF3B30;
+      transform: translateX(-50%);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="superheroe" data-width="1920" data-height="1080">
+    <div class="bg"></div>
+    <div class="hero-stage">
+      <div class="deck-frame">
+        <img class="deck-img" src="../01-deck.png" data-en="../en/01-deck.png" alt="" />
+      </div>
+      <div class="dock-n3-chassis">
+        <div class="bolt bolt-tl"></div>
+        <div class="bolt bolt-tr"></div>
+        <div class="bolt bolt-bl"></div>
+        <div class="bolt bolt-br"></div>
+        <div class="dock-left-panel">
+          <div class="lcd-keys-grid">
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-1-mute.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-2-play.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-3-next.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-4-prev.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-5-appmute.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-6-recorte.png" alt="" /></div>
+          </div>
+          <div class="dock-buttons-row">
+            <div class="dock-phys-btn"></div>
+            <div class="dock-phys-btn"></div>
+            <div class="dock-phys-btn"></div>
+          </div>
+        </div>
+        <div class="dock-knobs-column">
+          <div class="knob-unit">
+            <div class="knob-outer-ring"><div class="knob-dial"><div class="knob-notch"></div></div></div>
+          </div>
+          <div class="knob-unit">
+            <div class="knob-outer-ring"><div class="knob-dial"><div class="knob-notch" style="background:#8a8f98;"></div></div></div>
+          </div>
+          <div class="knob-unit">
+            <div class="knob-outer-ring"><div class="knob-dial"><div class="knob-notch" style="background:#8a8f98;"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

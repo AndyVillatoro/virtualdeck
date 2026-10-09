@@ -1,0 +1,104 @@
+{
+  "version": 2,
+  "profiles": [
+    {
+      "id": "estudio-en-vivo",
+      "label": "Live Studio",
+      "author": "VirtualDeck",
+      "description": "Recording, microphone and scene buttons, plus the live clock.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/estudio-en-vivo.json",
+      "tags": [
+        "studio",
+        "live"
+      ],
+      "version": "1.2.0",
+      "minAppVersion": "0.12.0",
+      "targetApp": "mi_estudio",
+      "icono": "broadcast",
+      "portada": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/portada-estudio-en-vivo.png",
+      "capturas": [
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-estudio-en-vivo-1.png",
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-estudio-en-vivo-2.png"
+      ]
+    },
+    {
+      "id": "mesa-de-edicion",
+      "label": "Editing Desk",
+      "author": "VirtualDeck",
+      "description": "Cut, play and mark clips without leaving the timeline.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/mesa-de-edicion.json",
+      "tags": [
+        "editing",
+        "video"
+      ],
+      "version": "0.9.1",
+      "minAppVersion": "0.12.0",
+      "targetApp": "mi_editor",
+      "icono": "movie",
+      "portada": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/portada-mesa-de-edicion.png",
+      "capturas": [
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-mesa-de-edicion-1.png",
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-mesa-de-edicion-2.png"
+      ]
+    },
+    {
+      "id": "pagina-luces",
+      "kind": "page",
+      "label": "Lights Page",
+      "author": "VirtualDeck",
+      "description": "A standalone page with light scenes and brightness, to add without wiping your deck.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/pagina-luces.json",
+      "tags": [
+        "rgb",
+        "lights"
+      ],
+      "version": "1.0.0",
+      "minAppVersion": "0.12.0",
+      "icono": "bulb",
+      "portada": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/portada-pagina-luces.png",
+      "capturas": [
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-pagina-luces-1.png",
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-pagina-luces-2.png"
+      ]
+    },
+    {
+      "id": "panel-multimedia",
+      "label": "Media Panel",
+      "author": "VirtualDeck",
+      "description": "Transport, volume and audio devices on a single page.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/panel-multimedia.json",
+      "tags": [
+        "media",
+        "music"
+      ],
+      "version": "1.1.0",
+      "minAppVersion": "0.12.0",
+      "icono": "player-play",
+      "portada": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/portada-panel-multimedia.png",
+      "capturas": [
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-panel-multimedia-1.png",
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-panel-multimedia-2.png"
+      ]
+    },
+    {
+      "id": "accesos-rapidos",
+      "kind": "page",
+      "label": "Quick Access",
+      "author": "VirtualDeck",
+      "description": "Nine tiles with the tools of the day, no folders in between.",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/accesos-rapidos.json",
+      "tags": [
+        "shortcuts",
+        "productivity"
+      ],
+      "version": "0.4.2",
+      "minAppVersion": "0.12.0",
+      "icono": "layout-grid",
+      "portada": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/portada-accesos-rapidos.png",
+      "capturas": [
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-accesos-rapidos-1.png",
+        "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/prensa/captura-accesos-rapidos-2.png"
+      ]
+    }
+  ]
+}

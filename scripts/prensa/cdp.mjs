@@ -33,6 +33,14 @@ export async function conectar(puerto = 9222, elegir = (t) => !t.url.includes('#
     }
     (oyentes.get(m.method) ?? []).forEach((f) => f(m.params));
   };
+  ws.onerror = (err) => {
+    for (const { mal } of pendientes.values()) mal(new Error(`WebSocket error: ${err.message ?? err}`));
+    pendientes.clear();
+  };
+  ws.onclose = () => {
+    for (const { mal } of pendientes.values()) mal(new Error('WebSocket cerrado'));
+    pendientes.clear();
+  };
 
   const enviar = (method, params = {}) => new Promise((ok, mal) => {
     const n = ++id;

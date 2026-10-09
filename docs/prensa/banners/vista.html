@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VirtualDeck — Contacto de Banners y Artes de Prensa</title>
+  <style>
+    :root {
+      --bg: #070809;
+      --surface: #111315;
+      --surface-raised: #181a1d;
+      --border: #26292e;
+      --accent: #FF3B30;
+      --text: #e6e8eb;
+      --text-muted: #8a8f98;
+      --font-mono: "JetBrains Mono", Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 20px 20px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      padding: 40px;
+      line-height: 1.5;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 11px;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      box-shadow: 0 0 12px rgba(255, 59, 48, 0.2);
+    }
+    .btn:hover {
+      background: var(--surface-raised);
+    }
+    h2 {
+      font-size: 18px;
+      margin: 32px 0 16px 0;
+      color: var(--text);
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h2::before {
+      content: "";
+      width: 4px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .card-img-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+    .card-img-wrap.ratio-banner { aspect-ratio: 2 / 1; }
+    .card-img-wrap.ratio-og { aspect-ratio: 1200 / 630; }
+    .card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-info {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      background: var(--surface-raised);
+    }
+    .card-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .card-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .card-link {
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      margin-left: 8px;
+    }
+    .card-link:hover { text-decoration: underline; }
+    /* Modal de zoom */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      cursor: zoom-out;
+    }
+    .modal.open { display: flex; }
+    .modal-img {
+      max-width: 95vw;
+      max-height: 90vh;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-title">
+      <span>VIRTUALDECK</span>
+      <span class="badge">BANNERS & ARTES EDITADAS (0.14.0)</span>
+    </div>
+    <div class="controls">
+      <span style="font-size: 12px; color: var(--text-muted);">IDIOMA:</span>
+      <button class="btn active" id="btn-es" onclick="cambiarIdioma('es')">ESPAÑOL (ES)</button>
+      <button class="btn" id="btn-en" onclick="cambiarIdioma('en')">ENGLISH (EN)</button>
+    </div>
+  </header>
+
+  <h2>BANNERS DE LA STORE (1920×1080)</h2>
+  <div class="grid" id="grid-banners">
+    <!-- Renderizado dinámico vía JS -->
+  </div>
+
+  <h2>ARTES DE LA FICHA Y DE LA WEB</h2>
+  <div class="grid" id="grid-artes">
+    <!-- Renderizado dinámico vía JS -->
+  </div>
+
+  <div class="modal" id="modal" onclick="cerrarModal()">
+    <img class="modal-img" id="modal-img" src="" alt="Vista previa">
+  </div>
+
+  <script>
+    const BANNERS = [
+      { id: '01-deck', nombre: '01-deck — Panel Principal (Hero)', ratio: '16/9', dim: '1920×1080' },
+      { id: '02-editor', nombre: '02-editor — Editor por Secciones', ratio: '16/9', dim: '1920×1080' },
+      { id: '03-catalogo', nombre: '03-catalogo — Biblioteca de Iconos y Glifos', ratio: '16/9', dim: '1920×1080' },
+      { id: '04-dock', nombre: '04-dock — Stream Dock N3 Hardware', ratio: '16/9', dim: '1920×1080' },
+      { id: '05-movil', nombre: '05-movil — Mando Móvil Wi-Fi', ratio: '16/9', dim: '1920×1080' },
+      { id: '05b-movil-marco', nombre: '05b-movil-marco — Experiencia Táctil Teléfono', ratio: '16/9', dim: '1920×1080' },
+      { id: '06-tienda', nombre: '06-tienda — Tienda de Perfiles Comunitarios', ratio: '16/9', dim: '1920×1080' },
+      { id: '06b-tienda-ficha', nombre: '06b-tienda-ficha — Auditoría de Seguridad', ratio: '16/9', dim: '1920×1080' },
+      { id: '07-barra-flotante', nombre: '07-barra-flotante — Barra Superpuesta', ratio: '16/9', dim: '1920×1080' },
+      { id: '08-kiosko-barra', nombre: '08-kiosko-barra — Kiosko Ultrapanorámico', ratio: '16/9', dim: '1920×1080' },
+      { id: '09-rgb', nombre: '09-rgb — Gestor Iluminación Hardware', ratio: '16/9', dim: '1920×1080' }
+    ];
+
+    const ARTES = [
+      { id: 'miniatura', nombre: 'Miniatura del Tráiler', file: (lang) => lang === 'es' ? '../miniatura.png' : '../en/miniatura.png', html: 'miniatura.html', dim: '1920×1080', ratioClass: '' },
+      { id: 'superheroe', nombre: 'Superhéroe (Sin texto)', file: () => '../superheroe.png', html: 'superheroe.html', dim: '1920×1080', ratioClass: '' },
+      { id: 'banner', nombre: 'Banner Cabecera / Releases', file: (lang) => lang === 'es' ? '../banner.png' : '../en/banner.png', html: 'banner.html', dim: '1280×640', ratioClass: 'ratio-banner' },
+      { id: 'og-image', nombre: 'OpenGraph Web Share', file: (lang) => lang === 'es' ? '../og-image.png' : '../en/og-image.png', html: 'og-image.html', dim: '1200×630', ratioClass: 'ratio-og' }
+    ];
+
+    let idiomaActual = 'es';
+
+    function renderizar() {
+      const gb = document.getElementById('grid-banners');
+      gb.innerHTML = '';
+      BANNERS.forEach(b => {
+        const src = `${idiomaActual}/${b.id}.png`;
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-img-wrap" onclick="abrirModal('${src}')">
+            <img class="card-img" src="${src}" alt="${b.nombre}">
+          </div>
+          <div class="card-info">
+            <div>
+              <div class="card-name">${b.nombre}</div>
+              <div class="card-meta">${b.dim} · PNG</div>
+            </div>
+            <div>
+              <a class="card-link" href="${b.id}.html?lang=${idiomaActual}" target="_blank">HTML ↗</a>
+            </div>
+          </div>
+        `;
+        gb.appendChild(card);
+      });
+
+      const ga = document.getElementById('grid-artes');
+      ga.innerHTML = '';
+      ARTES.forEach(a => {
+        const src = a.file(idiomaActual);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-img-wrap ${a.ratioClass}" onclick="abrirModal('${src}')">
+            <img class="card-img" src="${src}" alt="${a.nombre}">
+          </div>
+          <div class="card-info">
+            <div>
+              <div class="card-name">${a.nombre}</div>
+              <div class="card-meta">${a.dim} · PNG</div>
+            </div>
+            <div>
+              <a class="card-link" href="${a.html}?lang=${idiomaActual}" target="_blank">HTML ↗</a>
+            </div>
+          </div>
+        `;
+        ga.appendChild(card);
+      });
+    }
+
+    function cambiarIdioma(lang) {
+      idiomaActual = lang;
+      document.getElementById('btn-es').className = lang === 'es' ? 'btn active' : 'btn';
+      document.getElementById('btn-en').className = lang === 'en' ? 'btn active' : 'btn';
+      renderizar();
+    }
+
+    function abrirModal(src) {
+      document.getElementById('modal-img').src = src;
+      document.getElementById('modal').className = 'modal open';
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal').className = 'modal';
+    }
+
+    renderizar();
+  </script>
+</body>
+</html>

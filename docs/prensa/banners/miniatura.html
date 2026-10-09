@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>Miniatura VirtualDeck</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #070809;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      color: #e6e8eb;
+    }
+    #root {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      background: #070809;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #070809;
+      background-image: radial-gradient(#26292e 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+    }
+    .header-group {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+    }
+    .brand-title {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      color: #e6e8eb;
+      text-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+    }
+    .tagline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #111315;
+      border: 1.5px solid #26292e;
+      border-left: 4px solid #FF3B30;
+      padding: 8px 24px;
+      border-radius: 6px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #e6e8eb;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    }
+    .product-stage {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      width: 1560px;
+      height: 520px;
+    }
+    .deck-frame {
+      width: 900px;
+      height: 506px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.95);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .deck-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 28% 46%;
+      transform: scale(1.36);
+      transform-origin: 28% 46%;
+      display: block;
+    }
+    .dock-chassis {
+      width: 600px;
+      height: 506px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 20px;
+      padding: 24px 26px;
+      box-shadow: 0 35px 80px rgba(0, 0, 0, 0.95);
+      display: flex;
+      gap: 22px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .bolt {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1c1e22;
+      border: 1px solid #26292e;
+    }
+    .bolt-tl { top: 12px; left: 12px; }
+    .bolt-tr { top: 12px; right: 12px; }
+    .bolt-bl { bottom: 12px; left: 12px; }
+    .bolt-br { bottom: 12px; right: 12px; }
+    .dock-left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .lcd-keys-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 12px;
+      flex: 1;
+    }
+    .lcd-key-frame {
+      background: #070809;
+      border: 1.5px solid #26292e;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.9);
+    }
+    .lcd-key-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .dock-buttons-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      height: 44px;
+    }
+    .dock-phys-btn {
+      background: #181a1d;
+      border: 1px solid #26292e;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #8a8f98;
+      letter-spacing: 0.04em;
+    }
+    .dock-knobs-column {
+      width: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 1px solid #1c1e22;
+      padding-left: 18px;
+    }
+    .knob-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .knob-outer-ring {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: #111315;
+      border: 2px solid rgba(255, 59, 48, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(255, 59, 48, 0.1);
+    }
+    .knob-dial {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #20242a 0%, #15181b 100%);
+      border: 2px solid #26292e;
+      position: relative;
+    }
+    .knob-notch {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      width: 3.5px;
+      height: 12px;
+      background: #FF3B30;
+      transform: translateX(-50%);
+      border-radius: 2px;
+    }
+    .knob-label {
+      font-size: 10px;
+      color: #8a8f98;
+      letter-spacing: 0.06em;
+    }
+    body.lang-en .t-es { display: none !important; }
+    body.lang-es .t-en { display: none !important; }
+  </style>
+</head>
+<body class="lang-es">
+  <div id="root" data-composition-id="miniatura" data-width="1920" data-height="1080">
+    <div class="bg"></div>
+
+    <div class="header-group">
+      <h1 class="brand-title">VIRTUALDECK</h1>
+      <div class="tagline-badge">
+        <span class="t-es">TU STREAM DECK EN CUALQUIER PANTALLA</span>
+        <span class="t-en">YOUR STREAM DECK ON ANY SCREEN</span>
+      </div>
+    </div>
+
+    <div class="product-stage">
+      <div class="deck-frame">
+        <img class="deck-img" src="../01-deck.png" data-en="../en/01-deck.png" alt="VirtualDeck" />
+      </div>
+      <div class="dock-chassis">
+        <div class="bolt bolt-tl"></div>
+        <div class="bolt bolt-tr"></div>
+        <div class="bolt bolt-bl"></div>
+        <div class="bolt bolt-br"></div>
+        <div class="dock-left-panel">
+          <div class="lcd-keys-grid">
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-1-mute.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-2-play.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-3-next.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-4-prev.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-5-appmute.png" alt="" /></div>
+            <div class="lcd-key-frame"><img class="lcd-key-img" src="assets/crop-lcd-6-recorte.png" alt="" /></div>
+          </div>
+          <div class="dock-buttons-row">
+            <div class="dock-phys-btn">
+              <span class="t-es">PÁGINA</span>
+              <span class="t-en">PAGE</span>
+            </div>
+            <div class="dock-phys-btn">
+              <span class="t-es">ESCRITORIO</span>
+              <span class="t-en">DESKTOP</span>
+            </div>
+            <div class="dock-phys-btn">
+              <span class="t-es">VENTANA</span>
+              <span class="t-en">WINDOW</span>
+            </div>
+          </div>
+        </div>
+        <div class="dock-knobs-column">
+          <div class="knob-unit">
+            <div class="knob-outer-ring"><div class="knob-dial"><div class="knob-notch"></div></div></div>
+            <span class="knob-label">VOL</span>
+          </div>
+          <div class="knob-unit">
+            <div class="knob-outer-ring"><div class="knob-dial"><div class="knob-notch" style="background:#8a8f98;"></div></div></div>
+            <span class="knob-label t-es">PISTA</span>
+            <span class="knob-label t-en">TRACK</span>
+          </div>
+          <div class="knob-unit">
+            <div class="knob-outer-ring"><div class="knob-dial"><div class="knob-notch" style="background:#8a8f98;"></div></div></div>
+            <span class="knob-label t-es">BRILLO</span>
+            <span class="knob-label t-en">BRIGHT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

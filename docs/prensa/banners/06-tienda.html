@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>06-tienda Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 100px 90px;
+    }
+    .col-text {
+      width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-preview {
+      width: 1140px;
+      height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-right: -40px;
+    }
+    .preview-window {
+      width: 1120px;
+      height: 670px;
+    }
+    .zoom-tienda {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 38% 36%;
+      transform: scale(1.34);
+      transform-origin: 38% 36%;
+      display: block;
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="top: 15%; right: 15%;"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">TIENDA Y GALERÍA</span>
+          <span class="t-en">STORE & GALLERY</span>
+        </div>
+
+        <h1 class="banner-title t-es">Perfiles comunitarios listos para usar</h1>
+        <h1 class="banner-title t-en">Community profiles ready to use</h1>
+
+        <p class="banner-sub t-es">
+          Explora e instala configuraciones compartidas para streaming, producción musical, diseño y control de sistema.
+        </p>
+        <p class="banner-sub t-en">
+          Explore and install shared setups for streaming, music production, design, and system workflows.
+        </p>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span class="t-es">GALERÍA INTEGRADA</span>
+            <span class="t-en">INTEGRATED GALLERY</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">UN SOLO CLIC</span>
+            <span class="t-en">ONE CLICK</span>
+          </div>
+          <div class="tag-item">
+            <span>STREAMING & OBS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">CÓDIGO ABIERTO</span>
+            <span class="t-en">OPEN SOURCE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-preview">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — TIENDA DE PERFILES COMUNITARIOS</span>
+            <span class="header-title t-en">VIRTUALDECK — COMMUNITY PROFILES STORE</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-tienda" src="../06-tienda.png" data-en="../en/06-tienda.png" alt="Tienda de Perfiles">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

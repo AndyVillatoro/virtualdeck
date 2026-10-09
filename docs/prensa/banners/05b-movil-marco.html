@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>05b-movil-marco Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 100px 80px 120px;
+    }
+    .col-text {
+      width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-phone {
+      width: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .phone-chassis {
+      width: 480px;
+      height: 940px;
+      background: var(--surface);
+      border: 3px solid var(--border);
+      border-radius: 48px;
+      padding: 14px;
+      box-shadow: 0 45px 110px rgba(0, 0, 0, 0.98);
+      position: relative;
+    }
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 36px;
+      overflow: hidden;
+      background: #070809;
+      position: relative;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96px;
+      height: 20px;
+      background: #070809;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      z-index: 20;
+    }
+    .phone-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+    .touch-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 620px;
+    }
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-val {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .stat-val.accent {
+      color: var(--accent);
+    }
+    .stat-lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="bottom: 25%; right: 20%;"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">EXPERIENCIA MÓVIL</span>
+          <span class="t-en">MOBILE EXPERIENCE</span>
+        </div>
+
+        <h1 class="banner-title t-es">Control táctil en tu teléfono</h1>
+        <h1 class="banner-title t-en">Touch control on your phone</h1>
+
+        <p class="banner-sub t-es">
+          Lleva tus macros, controles de sonido y widgets a la pantalla táctil de tu dispositivo con respuesta hápica inmediata.
+        </p>
+        <p class="banner-sub t-en">
+          Bring your macros, sound controls, and widgets to your touch screen with immediate haptic response.
+        </p>
+
+        <div class="touch-stats">
+          <div class="stat-box">
+            <span class="stat-val accent">&lt; 5 ms</span>
+            <span class="stat-lbl t-es">LATENCIA LOCAL</span>
+            <span class="stat-lbl t-en">LOCAL LATENCY</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-val">100%</span>
+            <span class="stat-lbl t-es">COMPATIBILIDAD WEB</span>
+            <span class="stat-lbl t-en">WEB COMPATIBILITY</span>
+          </div>
+        </div>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span class="t-es">PANTALLA COMPLETA</span>
+            <span class="t-en">FULL SCREEN</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">CERO LATENCIA</span>
+            <span class="t-en">ZERO LATENCY</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">MULTI-DISPOSITIVO</span>
+            <span class="t-en">MULTI-DEVICE</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">RESPUESTA TÁCTIL</span>
+            <span class="t-en">TOUCH FEEDBACK</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-phone">
+        <div class="phone-chassis">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <img class="phone-img" src="../05b-movil-marco.png" data-en="../en/05b-movil-marco.png" alt="Mando Móvil Detalle">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

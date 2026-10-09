@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>04-dock Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 100px 90px;
+    }
+    .col-text {
+      width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-preview {
+      width: 1140px;
+      height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-right: -40px;
+    }
+    .preview-window {
+      width: 1120px;
+      height: 670px;
+    }
+    .zoom-dock {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 48% 48%;
+      transform: scale(1.36);
+      transform-origin: 48% 48%;
+      display: block;
+    }
+    .hardware-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .hw-val {
+      color: var(--text);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="top: 20%; right: 15%;"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">SOPORTE DE HARDWARE</span>
+          <span class="t-en">HARDWARE SUPPORT</span>
+        </div>
+
+        <h1 class="banner-title t-es">Hardware real sin software pesado</h1>
+        <h1 class="banner-title t-en">Real hardware without heavy bloatware</h1>
+
+        <p class="banner-sub t-es">
+          Soporte nativo para Stream Dock N3 con 6 teclas LCD, 3 botones físicos y 3 perillas sin aplicaciones pesadas en segundo plano.
+        </p>
+        <p class="banner-sub t-en">
+          Native Stream Dock N3 support with 6 LCD keys, 3 physical buttons, and 3 dials with zero background bloatware.
+        </p>
+
+        <div class="hardware-badge">
+          <span class="t-es">DISPOSITIVO: <span class="hw-val">STREAM DOCK N3</span> · CONECTADO</span>
+          <span class="t-en">DEVICE: <span class="hw-val">STREAM DOCK N3</span> · CONNECTED</span>
+        </div>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span class="t-es">6 TECLAS LCD</span>
+            <span class="t-en">6 LCD KEYS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">3 PERILLAS</span>
+            <span class="t-en">3 DIALS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">3 BOTONES</span>
+            <span class="t-en">3 BUTTONS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">HID DIRECTO</span>
+            <span class="t-en">DIRECT HID</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-preview">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — DISPOSITIVOS Y ASIGNACIÓN FÍSICA</span>
+            <span class="header-title t-en">VIRTUALDECK — DEVICES & PHYSICAL MAPPING</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-dock" src="../04-dock.png" data-en="../en/04-dock.png" alt="Soporte Dock N3">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

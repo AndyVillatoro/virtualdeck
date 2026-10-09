@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>02-editor Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 100px 80px;
+    }
+    .col-preview {
+      width: 1140px;
+      height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-left: -40px;
+    }
+    .preview-window {
+      width: 1120px;
+      height: 670px;
+    }
+    .zoom-editor {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 32% 40%;
+      transform: scale(1.36);
+      transform-origin: 32% 40%;
+      display: block;
+    }
+    .col-text {
+      width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+    .feature-bullet {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent);
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="bottom: 20%; left: 10%;"></div>
+
+    <div class="layout-split">
+      <div class="col-preview">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — EDITOR POR SECCIONES</span>
+            <span class="header-title t-en">VIRTUALDECK — SECTIONED EDITOR</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-editor" src="../02-editor.png" data-en="../en/02-editor.png" alt="Editor de Botones">
+          </div>
+        </div>
+      </div>
+
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">EDITOR DE ACCIONES</span>
+          <span class="t-en">ACTION EDITOR</span>
+        </div>
+
+        <h1 class="banner-title t-es">Configuración total para cada botón</h1>
+        <h1 class="banner-title t-en">Total control for every button</h1>
+
+        <p class="banner-sub t-es">
+          Personaliza apariencias, acciones multimedia, atajos globales y lanzadores de apps con previsualización en vivo.
+        </p>
+        <p class="banner-sub t-en">
+          Customize appearances, media actions, global shortcuts, and custom app launchers with live preview.
+        </p>
+
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-bullet"></div>
+            <span class="t-es">Presets listos para Spotify, OBS y Discord</span>
+            <span class="t-en">Ready presets for Spotify, OBS, and Discord</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-bullet"></div>
+            <span class="t-es">Iconos dinámicos y glifos dot-matrix 8×8</span>
+            <span class="t-en">Dynamic icons and 8×8 dot-matrix glyphs</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-bullet"></div>
+            <span class="t-es">Disparadores automáticos por hora o evento</span>
+            <span class="t-en">Automated triggers by time or system event</span>
+          </div>
+        </div>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span>PRESETS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">ACCIONES IPC</span>
+            <span class="t-en">IPC ACTIONS</span>
+          </div>
+          <div class="tag-item">
+            <span>WIDGETS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">DISPARADORES</span>
+            <span class="t-en">TRIGGERS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

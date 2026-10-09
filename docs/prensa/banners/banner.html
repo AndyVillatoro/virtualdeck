@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, height=640">
+  <title>VirtualDeck GitHub & Release Banner</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 1280px;
+      height: 640px;
+      overflow: hidden;
+      background: #070809;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      color: #e6e8eb;
+    }
+    #root {
+      width: 1280px;
+      height: 640px;
+      position: relative;
+      overflow: hidden;
+      background: #070809;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 54px;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #070809;
+      background-image: radial-gradient(#26292e 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+    }
+    .left-col {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 530px;
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .emblem {
+      width: 64px;
+      height: 64px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 59, 48, 0.2);
+    }
+    .emblem img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+    }
+    .title {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      color: #e6e8eb;
+    }
+    .desc {
+      font-size: 18px;
+      font-weight: 500;
+      color: #8a8f98;
+      line-height: 1.5;
+    }
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .tag {
+      background: #111315;
+      border: 1px solid #26292e;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #e6e8eb;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tag.accent {
+      border-color: #FF3B30;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #FF3B30;
+    }
+    .right-col {
+      position: relative;
+      z-index: 10;
+      width: 580px;
+      height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-frame {
+      width: 560px;
+      height: 315px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+      position: relative;
+    }
+    .preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 28% 46%;
+      transform: scale(1.36);
+      transform-origin: 28% 46%;
+      display: block;
+    }
+    body.lang-en .t-es { display: none !important; }
+    body.lang-es .t-en { display: none !important; }
+  </style>
+</head>
+<body class="lang-es">
+  <div id="root" data-composition-id="banner" data-width="1280" data-height="640">
+    <div class="bg"></div>
+    <div class="left-col">
+      <div class="brand-row">
+        <div class="emblem">
+          <img src="assets/icono-mosaico-300.png" alt="VirtualDeck" />
+        </div>
+        <h1 class="title">VIRTUALDECK</h1>
+      </div>
+      <p class="desc t-es">Tu Stream Deck, en cualquier pantalla y en tu propio hardware.</p>
+      <p class="desc t-en">Your Stream Deck, on any screen and on your own hardware.</p>
+      <div class="tags-row">
+        <div class="tag accent">
+          <div class="dot"></div>
+          <span>STREAM DOCK N3</span>
+        </div>
+        <div class="tag">
+          <span class="t-es">KIOSKO 1280×480</span>
+          <span class="t-en">KIOSK 1280×480</span>
+        </div>
+        <div class="tag">
+          <span class="t-es">MANDO MÓVIL WI-FI</span>
+          <span class="t-en">WI-FI MOBILE DECK</span>
+        </div>
+        <div class="tag">
+          <span>MICROSOFT STORE</span>
+        </div>
+      </div>
+    </div>
+    <div class="right-col">
+      <div class="preview-frame">
+        <img class="preview-img" src="../01-deck.png" data-en="../en/01-deck.png" alt="VirtualDeck UI" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

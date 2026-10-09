@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>09-rgb Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 100px 90px;
+    }
+    .col-text {
+      width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-preview {
+      width: 1140px;
+      height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-right: -40px;
+    }
+    .preview-window {
+      width: 1120px;
+      height: 670px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.96), 0 0 50px rgba(255, 59, 48, 0.16);
+    }
+    .zoom-rgb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 32% 40%;
+      transform: scale(1.36);
+      transform-origin: 32% 40%;
+      display: block;
+    }
+    .rgb-palette-strip {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 8px;
+      max-width: 500px;
+    }
+    .rgb-chip {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="top: 20%; right: 15%; background: radial-gradient(circle, rgba(255, 59, 48, 0.18) 0%, transparent 70%);"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">ILUMINACIÓN DINÁMICA</span>
+          <span class="t-en">DYNAMIC LIGHTING</span>
+        </div>
+
+        <h1 class="banner-title t-es">Sincronización de luces por hardware</h1>
+        <h1 class="banner-title t-en">Hardware lighting control and sync</h1>
+
+        <p class="banner-sub t-es">
+          Control directo de periféricos, placas base y tiras LED mediante OpenRGB nativo sin suites de software invasivas.
+        </p>
+        <p class="banner-sub t-en">
+          Direct control of peripherals, motherboards, and LED strips via native OpenRGB with zero invasive software suites.
+        </p>
+
+        <div class="rgb-palette-strip">
+          <div class="rgb-chip" style="background: #FF3B30;"></div>
+          <div class="rgb-chip" style="background: #FF9500;"></div>
+          <div class="rgb-chip" style="background: #FFCC00;"></div>
+          <div class="rgb-chip" style="background: #34C759;"></div>
+          <div class="rgb-chip" style="background: #007AFF;"></div>
+          <div class="rgb-chip" style="background: #5856D6;"></div>
+          <div class="rgb-chip" style="background: #AF52DE;"></div>
+          <span style="font-size: 11px; color: var(--text-muted); margin-left: 8px; letter-spacing: 0.06em;">
+            <span class="t-es">18 PRESETS + MODO LED</span>
+            <span class="t-en">18 PRESETS + PER-LED MODE</span>
+          </span>
+        </div>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span>OPENRGB SDK</span>
+          </div>
+          <div class="tag-item">
+            <span>18 PRESETS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">ZONAS Y MODOS</span>
+            <span class="t-en">ZONES & MODES</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">PINTOR LED</span>
+            <span class="t-en">PER-LED PAINTER</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-preview">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — GESTOR DE DISPOSITIVOS RGB</span>
+            <span class="header-title t-en">VIRTUALDECK — RGB DEVICE MANAGER</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-rgb" src="../09-rgb.png" data-en="../en/09-rgb.png" alt="Gestor RGB">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

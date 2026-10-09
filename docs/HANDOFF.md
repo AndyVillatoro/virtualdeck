@@ -4,6 +4,39 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
+## Turno 2026-10-08 (noche) — T-WEB-01 / T-TRL-01 / T-BAN-01: rediseño web, tráilers bilingües y banners limpios
+
+* **Quién:** wK (Antigravity CLI / orquestador) + wW (banners y artes de marca) + wZ (tráilers HyperFrames ES/EN) + wX (implementación y verificación CDP de la web) + wR/wY (análisis y soporte).
+* **Rama:** `main`.
+* **Informes:** `_referencias/informes/web/fase-a.md`, `_referencias/informes/web/fase-b.md`, capturas de verificación en `_referencias/informes/web/b-*.png`.
+
+### Qué entró
+
+1. **Rediseño completo de la portada web (`docs/index.html`, `docs/web/site.css`, `docs/web/site.js`, `docs/web/galeria.js`):**
+   - **Hero con tráiler bilingüe:** reproductor HTML5 con conmutación dinámica de fuente de vídeo (`trailer-es.mp4` / `trailer-en.mp4`) y pistas de subtítulos WebVTT al cambiar el idioma de la página.
+   - **Consola interactiva DOT:** teclado virtual interactivo 12-key con respuesta táctil y adaptabilidad móvil a 2 columnas (390 px).
+   - **Galería interactiva por scroll:** lienzo canvas de puntos (`galeria.js`) con transición dot-matrix dissolve + sutil zoom, sincronizado con índice de titular, contador y puntos de navegación.
+   - **Bilingüismo integral (ES/EN):** conmutación instantánea de todos los textos mediante `data-es` / `data-en`, persistencia en `localStorage`, y conmutación de rutas de imagen de banners (`docs/prensa/banners/es/` ↔ `en/`).
+   - **Descargas exclusivas por Microsoft Store:** eliminación total de enlaces de instaladores sueltos (`.exe`, NSIS) y actualización de la documentación de arquitectura, contribución y READMEs para reflejar la Store como canal único.
+   - **Estética OLED:** grilla estricta de 4px, fondo negro OLED puro (`#070809`), sin blancos puros (`#ffffff`).
+
+2. **Banners limpios de prensa y marca (`docs/prensa/banners/`):**
+   - Renderizados a 1920×1080 (supersampling 2x Lanczos3) para las 11 escenas de la app en carpetas separadas `es/` y `en/`.
+   - Cero datos de usuario real: hardware genérico (CPU 8 núcleos, GPU discreta, SSD 1, etc.), clima neutro inventado (Ciudad Ejemplo), nombres de plugins/perfiles demostrativos sin rutas de usuario ni GitHub personales (`AndyVillatoro`).
+   - Artes de marca generados: miniatura, superhéroe, banner y og-image bilingües.
+
+3. **Tráilers HyperFrames bilingües (`docs/video/`):**
+   - `trailer-es.mp4` y `trailer-en.mp4` (1920×1080 CRF 16, ~41.7 s a 115 BPM) sincronizados con pistas de subtítulos `trailer-es.vtt` y `trailer-en.vtt`.
+
+4. **Automatización de build nativo e higiene de git:**
+   - Cadena `build:native` ejecutada automáticamente antes del empaquetado de la aplicación (`npm run build:store`).
+   - `_referencias/` añadido a `.gitignore` para no contaminar el historial del repositorio.
+
+### Verificación
+
+* **CDP Headless Shell (:9466) / Edge:** Cero errores de consola, cero enlaces rotos (22 banners, vídeos, VTTs, scripts y assets comprobados), layouts verificados en resoluciones 1920×1080 y 390×844 (móvil).
+* **npm run check:** 0 errores, 28 warnings (preexistentes), los 7 guardianes en verde (TypeScript, depcruise, ESLint, i18n con 1386 claves, acciones, IPC, wiki, campos, paridad y perfiles).
+
 ## Turno 2026-10-08 — T-VID-01: el vídeo del panel de música (resolución y congelado, 113)
 
 * **Quién:** wK (orquesta), haciendo el trabajo que era de wR. Archivos del mismo reparto que T-PIP-01: solo `capturaVentana`/

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>06b-tienda-ficha Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 100px 90px;
+    }
+    .col-text {
+      width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-preview {
+      width: 1140px;
+      height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-right: -40px;
+    }
+    .preview-window {
+      width: 1120px;
+      height: 670px;
+    }
+    .zoom-ficha {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 34% 34%;
+      transform: scale(1.34);
+      transform-origin: 34% 34%;
+      display: block;
+    }
+    .audit-badge {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 18px 22px;
+      max-width: 560px;
+    }
+    .audit-header {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+    .audit-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="bottom: 15%; left: 15%;"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">SEGURIDAD Y CONTROL</span>
+          <span class="t-en">SECURITY & AUDIT</span>
+        </div>
+
+        <h1 class="banner-title t-es">Auditoría de seguridad antes de instalar</h1>
+        <h1 class="banner-title t-en">Security audit before you install</h1>
+
+        <p class="banner-sub t-es">
+          Revisa de forma transparente qué teclas, archivos, rutas y permisos utiliza cada perfil de la galería comunitaria.
+        </p>
+        <p class="banner-sub t-en">
+          Review with complete transparency which keys, files, paths, and permissions each community profile uses.
+        </p>
+
+        <div class="audit-badge">
+          <div class="audit-header">
+            <span class="t-es">AVISO DE RIESGO TRANSPARENTE</span>
+            <span class="t-en">TRANSPARENT RISK AUDIT</span>
+          </div>
+          <div class="audit-desc">
+            <span class="t-es">Cada acción de sistema se cataloga y clasifica con antelación para garantizar que no haya código sospechoso ni elevaciones no deseadas.</span>
+            <span class="t-en">Every system action is audited and classified in advance to guarantee zero suspicious code or unwanted privileges.</span>
+          </div>
+        </div>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span class="t-es">AUDITORÍA INTEGRADA</span>
+            <span class="t-en">BUILT-IN AUDIT</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">SANDBOX SEGURO</span>
+            <span class="t-en">SECURE SANDBOX</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">SIN SCRIPTS OCULTOS</span>
+            <span class="t-en">NO HIDDEN SCRIPTS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-preview">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — FICHA DE PERFIL Y RESUMEN DE RIESGO</span>
+            <span class="header-title t-en">VIRTUALDECK — PROFILE SHEET & RISK AUDIT</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-ficha" src="../06b-tienda-ficha.png" data-en="../en/06b-tienda-ficha.png" alt="Ficha de Tienda">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

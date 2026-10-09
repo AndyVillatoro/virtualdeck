@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>01-deck Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-split {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      height: 100%;
+      padding: 60px 80px 100px 90px;
+    }
+    .col-text {
+      width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+    .col-preview {
+      width: 1140px;
+      height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: relative;
+      margin-right: -40px;
+    }
+    .preview-window {
+      width: 1120px;
+      height: 670px;
+    }
+    .zoom-deck {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: left center;
+      transform: scale(1.15);
+      transform-origin: 0% 50%;
+      display: block;
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="top: 15%; right: 20%;"></div>
+
+    <div class="layout-split">
+      <div class="col-text">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">VIRTUALDECK · PRINCIPAL</span>
+          <span class="t-en">VIRTUALDECK · CORE DECK</span>
+        </div>
+
+        <h1 class="banner-title t-es">Tu deck, en cualquier pantalla</h1>
+        <h1 class="banner-title t-en">Your deck, on any screen</h1>
+
+        <p class="banner-sub t-es">
+          Control táctil sin cables, integración con Windows y respuesta inmediata en tiempo real.
+        </p>
+        <p class="banner-sub t-en">
+          Wireless touch control, native Windows integration, and immediate real-time response.
+        </p>
+
+        <div class="tags-row">
+          <div class="tag-item active">
+            <span class="t-es">REJILLA 4×4</span>
+            <span class="t-en">4×4 GRID</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">AUDIO SMTC</span>
+            <span class="t-en">SMTC AUDIO</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">OLED PURO</span>
+            <span class="t-en">PURE OLED</span>
+          </div>
+          <div class="tag-item">
+            <span>WINDOWS 11</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-preview">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — PANEL PRINCIPAL</span>
+            <span class="header-title t-en">VIRTUALDECK — MAIN PANEL</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-deck" src="../01-deck.png" data-en="../en/01-deck.png" alt="Deck Principal">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>

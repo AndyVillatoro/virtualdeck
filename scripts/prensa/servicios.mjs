@@ -37,16 +37,21 @@ const hoja = (id, texto, tipo, valor, min, max) => ({
 });
 const grupo = (texto, hijos) => ({ id: texto, Text: texto, Children: hijos, Min: '', Value: '', Max: '' });
 
+function esModoPrensa() {
+  return true;
+}
+
 function arbolDeSensores() {
   // Un poco de vida: las capturas se sacan en varios instantes y unos valores
   // clavados delatarían que no hay nada leyendo.
   const jitter = (n, d) => (n + (Math.random() * 2 - 1) * d).toFixed(1);
+  const prensa = esModoPrensa();
   return {
     id: 0, Text: 'Sensor', Min: '', Value: '', Max: '',
     Children: [{
       id: 1, Text: 'PC', Min: '', Value: '', Max: '', Children: [
         {
-          id: 10, Text: 'AMD Ryzen 7 7800X3D', ImageURL: 'images/cpu.png', Min: '', Value: '', Max: '',
+          id: 10, Text: prensa ? 'CPU 8 nucleos' : 'AMD Ryzen 7 7800X3D', ImageURL: 'images/cpu.png', Min: '', Value: '', Max: '',
           Children: [
             grupo('Temperatures', [hoja('/amdcpu/0/temperature/0', 'Core (Tctl/Tdie)', 'Temperature', `${jitter(61.4, 1.5)} °C`, '38.9 °C', '82.1 °C')]),
             grupo('Load', [hoja('/amdcpu/0/load/0', 'CPU Total', 'Load', `${jitter(23.8, 4)} %`, '1.2 %', '99.6 %')]),
@@ -55,7 +60,7 @@ function arbolDeSensores() {
           ],
         },
         {
-          id: 20, Text: 'NVIDIA GeForce RTX 4070', ImageURL: 'images/nvidia.png', Min: '', Value: '', Max: '',
+          id: 20, Text: prensa ? 'GPU discreta' : 'NVIDIA GeForce RTX 4070', ImageURL: 'images/nvidia.png', Min: '', Value: '', Max: '',
           Children: [
             grupo('Temperatures', [hoja('/gpu-nvidia/0/temperature/0', 'GPU Core', 'Temperature', `${jitter(54.0, 2)} °C`, '31.0 °C', '73.0 °C')]),
             grupo('Load', [hoja('/gpu-nvidia/0/load/0', 'GPU Core', 'Load', `${jitter(41.0, 8)} %`, '0.0 %', '100.0 %')]),
@@ -64,18 +69,18 @@ function arbolDeSensores() {
           ],
         },
         {
-          id: 30, Text: 'ASUS ROG STRIX B650-E', ImageURL: 'images/mainboard.png', Min: '', Value: '', Max: '',
+          id: 30, Text: prensa ? 'Placa base' : 'ASUS ROG STRIX B650-E', ImageURL: 'images/mainboard.png', Min: '', Value: '', Max: '',
           Children: [
             grupo('Temperatures', [hoja('/lpc/nct6798d/0/temperature/0', 'Motherboard', 'Temperature', `${jitter(37.5, 1)} °C`, '28.0 °C', '48.0 °C')]),
             grupo('Fans', [hoja('/lpc/nct6798d/0/fan/1', 'Fan #2', 'Fan', `${jitter(842, 25)} RPM`, '0.0 RPM', '1800.0 RPM')]),
           ],
         },
         {
-          id: 40, Text: 'Generic Memory', ImageURL: 'images/ram.png', Min: '', Value: '', Max: '',
+          id: 40, Text: prensa ? 'Memoria' : 'Generic Memory', ImageURL: 'images/ram.png', Min: '', Value: '', Max: '',
           Children: [grupo('Load', [hoja('/ram/load/0', 'Memory', 'Load', `${jitter(46.2, 2)} %`, '18.0 %', '81.4 %')])],
         },
         {
-          id: 50, Text: 'Samsung SSD 990 PRO 2TB', ImageURL: 'images/nvme.png', Min: '', Value: '', Max: '',
+          id: 50, Text: prensa ? 'SSD 1' : 'Samsung SSD 990 PRO 2TB', ImageURL: 'images/nvme.png', Min: '', Value: '', Max: '',
           Children: [
             grupo('Temperatures', [hoja('/nvme/0/temperature/0', 'Temperature', 'Temperature', `${jitter(43.0, 1)} °C`, '29.0 °C', '61.0 °C')]),
             grupo('Load', [hoja('/nvme/0/load/0', 'Used Space', 'Load', '68.4 %', '12.0 %', '68.4 %')]),
@@ -86,7 +91,7 @@ function arbolDeSensores() {
         // cinco quedaba un tercio de columna en negro. Dos discos es lo normal
         // en el equipo al que va dirigida la aplicación.
         {
-          id: 60, Text: 'WD_BLACK SN850X 1TB', ImageURL: 'images/nvme.png', Min: '', Value: '', Max: '',
+          id: 60, Text: prensa ? 'SSD 2' : 'WD_BLACK SN850X 1TB', ImageURL: 'images/nvme.png', Min: '', Value: '', Max: '',
           Children: [
             grupo('Temperatures', [hoja('/nvme/1/temperature/0', 'Temperature', 'Temperature', `${jitter(39.0, 1)} °C`, '27.0 °C', '54.0 °C')]),
             grupo('Load', [hoja('/nvme/1/load/0', 'Used Space', 'Load', '31.7 %', '4.0 %', '31.7 %')]),
@@ -219,8 +224,15 @@ export function certificado() {
  * carga con `NODE_OPTIONS=--require` y contesta lo mismo al `fetch` de Node del
  * proceso principal (el único que funciona en Windows; ver el encabezado de
  * `climaFijo.cjs`). `capturar.mjs` pasa este objeto por `VD_PRENSA_CLIMA`.
+ *
+ * En modo prensa (variable VD_PRENSA_SALIDA o VD_PRENSA_FUENTES) se usa una
+ * ciudad inventada para no filtrar la ubicación real de quien captura.
  */
-export const CLIMA = { ciudad: 'Tegucigalpa', pais: 'Honduras', lat: 14.0723, lon: -87.1921, temp: 24.6, codigo: 2 };
+function climaDePrensa() {
+  return { ciudad: 'Ciudad Ejemplo', pais: 'Pais Ejemplo', lat: 0, lon: 0, temp: 22.0, codigo: 2 };
+}
+
+export const CLIMA = climaDePrensa();
 
 // ── La tienda de las capturas ─────────────────────────────────────────────
 //
@@ -231,16 +243,34 @@ export const CLIMA = { ciudad: 'Tegucigalpa', pais: 'Honduras', lat: 14.0723, lo
 // siempre, pero enseña entradas inventadas —con `icono`, portada y capturas—
 // y un perfil con acciones de mentira para que el aviso de riesgo tenga qué
 // resumir. Todo lo demás de `raw.githubusercontent.com` se refleja igual.
-const RUTA_MANIFIESTO = '/AndyVillatoro/virtualdeck-gallery/main/manifest.json';
-const RUTA_ARTES = '/AndyVillatoro/virtualdeck-gallery/main/prensa/';
+//
+// En modo prensa se usa un host inventado (ejemplo.invalid) para no filtrar
+// el usuario de GitHub real en las capturas de la tienda.
+const RUTA_MANIFIESTO = (esModoPrensa() ? '/ejemplo.invalid/virtualdeck-gallery/main/manifest.json' : '/AndyVillatoro/virtualdeck-gallery/main/manifest.json');
+const RUTA_ARTES = (esModoPrensa() ? '/ejemplo.invalid/virtualdeck-gallery/main/prensa/' : '/AndyVillatoro/virtualdeck-gallery/main/prensa/');
 const TIPOS_LOCALES = { '.json': 'application/json; charset=utf-8', '.png': 'image/png' };
 
 function archivoDeTienda(pedido) {
   const dir = process.env.VD_PRENSA_TIENDA;
   if (!dir) return null;
-  const relativo = pedido === RUTA_MANIFIESTO
-    ? 'manifest.json'
-    : pedido.startsWith(RUTA_ARTES) ? pedido.slice(RUTA_ARTES.length) : null;
+  const prensa = esModoPrensa();
+  const rutasManifiesto = [RUTA_MANIFIESTO];
+  const rutasArtes = [RUTA_ARTES];
+  if (prensa) {
+    // En modo prensa el manifiesto sigue teniendo las URLs reales de GitHub,
+    // así que hay que interceptar ambas rutas.
+    rutasManifiesto.push('/AndyVillatoro/virtualdeck-gallery/main/manifest.json');
+    rutasArtes.push('/AndyVillatoro/virtualdeck-gallery/main/prensa/');
+  }
+  let relativo = null;
+  for (const r of rutasManifiesto) {
+    if (pedido === r) { relativo = 'manifest.json'; break; }
+  }
+  if (!relativo) {
+    for (const r of rutasArtes) {
+      if (pedido.startsWith(r)) { relativo = pedido.slice(r.length); break; }
+    }
+  }
   if (!relativo || relativo.includes('..') || relativo.includes('/')) return null;
   const ruta = join(dir, relativo);
   if (!existsSync(ruta)) return null;

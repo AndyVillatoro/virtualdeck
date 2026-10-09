@@ -1,0 +1,108 @@
+{
+  "name": "Live Studio",
+  "accent": "#4a8ef0",
+  "wallpaper": "dotgrid",
+  "pages": [
+    {
+      "id": "main",
+      "name": "LIVE",
+      "gridSize": 4,
+      "gridRows": 2
+    }
+  ],
+  "buttons": [
+    {
+      "id": 0,
+      "page": 0,
+      "label": "RECORD",
+      "icon": "",
+      "bgColor": "#4a8ef0",
+      "action": {
+        "type": "script",
+        "script": "Get-Date | Out-File ultimo_acceso.txt"
+      }
+    },
+    {
+      "id": 1,
+      "page": 0,
+      "label": "STUDIO",
+      "icon": "",
+      "bgColor": "#2dd4bf",
+      "action": {
+        "type": "app",
+        "appPath": "C:\\Programas\\Estudio\\estudio.exe"
+      }
+    },
+    {
+      "id": 2,
+      "page": 0,
+      "label": "SCENE 1",
+      "icon": "",
+      "bgColor": "#a78bfa",
+      "action": {
+        "type": "hotkey",
+        "hotkey": "Ctrl+Alt+1"
+      }
+    },
+    {
+      "id": 3,
+      "page": 0,
+      "label": "TITLE",
+      "icon": "",
+      "bgColor": "#f0a04a",
+      "action": {
+        "type": "type-text",
+        "typeText": "Scene 1"
+      }
+    },
+    {
+      "id": 4,
+      "page": 0,
+      "label": "AVISO",
+      "icon": "",
+      "bgColor": "#e05a5a",
+      "action": {
+        "type": "webhook",
+        "webhookUrl": "https://ejemplo.invalid/aviso"
+      }
+    },
+    {
+      "id": 5,
+      "page": 0,
+      "label": "PANEL",
+      "icon": "",
+      "bgColor": "#4a8ef0",
+      "action": {
+        "type": "web",
+        "url": "https://ejemplo.invalid/panel"
+      }
+    },
+    {
+      "id": 6,
+      "page": 0,
+      "label": "MULETA",
+      "icon": "",
+      "bgColor": "#2dd4bf",
+      "action": {
+        "type": "none"
+      },
+      "timerTriggerAt": "20:00",
+      "timerTriggerDias": [
+        1,
+        3,
+        5
+      ]
+    },
+    {
+      "id": 7,
+      "page": 0,
+      "label": "HEADSET",
+      "icon": "",
+      "bgColor": "#a78bfa",
+      "action": {
+        "type": "audio-device",
+        "deviceName": "USB headset"
+      }
+    }
+  ]
+}

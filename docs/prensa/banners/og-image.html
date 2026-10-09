@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200, height=630">
+  <title>OpenGraph Image — VirtualDeck</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 1200px;
+      height: 630px;
+      overflow: hidden;
+      background: #070809;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      color: #e6e8eb;
+    }
+    #root {
+      width: 1200px;
+      height: 630px;
+      position: relative;
+      overflow: hidden;
+      background: #070809;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #070809;
+      background-image: radial-gradient(#26292e 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+    }
+    .content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 18px;
+    }
+    .emblem {
+      width: 110px;
+      height: 110px;
+      background: #111315;
+      border: 2px solid #26292e;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 59, 48, 0.25);
+    }
+    .emblem img {
+      width: 82px;
+      height: 82px;
+      object-fit: contain;
+    }
+    .title {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      color: #e6e8eb;
+    }
+    .tagline {
+      font-size: 20px;
+      font-weight: 500;
+      color: #8a8f98;
+      max-width: 800px;
+      line-height: 1.4;
+    }
+    .pill-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 6px;
+    }
+    .pill {
+      background: #111315;
+      border: 1px solid #26292e;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #e6e8eb;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill.accent {
+      border-color: #FF3B30;
+      box-shadow: 0 0 16px rgba(255, 59, 48, 0.2);
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #FF3B30;
+    }
+    body.lang-en .t-es { display: none !important; }
+    body.lang-es .t-en { display: none !important; }
+  </style>
+</head>
+<body class="lang-es">
+  <div id="root" data-composition-id="og-image" data-width="1200" data-height="630">
+    <div class="bg"></div>
+    <div class="content">
+      <div class="emblem">
+        <img src="assets/icono-mosaico-300.png" alt="VirtualDeck" />
+      </div>
+      <h1 class="title">VIRTUALDECK</h1>
+      <p class="tagline">
+        <span class="t-es">Tu Stream Deck, en cualquier pantalla y en tu propio hardware.</span>
+        <span class="t-en">Your Stream Deck, on any screen and on your own hardware.</span>
+      </p>
+      <div class="pill-bar">
+        <div class="pill accent">
+          <div class="dot"></div>
+          <span>MICROSOFT STORE</span>
+        </div>
+        <div class="pill">
+          <span class="t-es">CÓDIGO ABIERTO</span>
+          <span class="t-en">OPEN SOURCE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+  </script>
+</body>
+</html>

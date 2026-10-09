@@ -1,0 +1,235 @@
+/* VirtualDeck — Identidad visual DOT para Banners de Prensa y Tienda */
+:root {
+  --bg: #070809;
+  --surface: #111315;
+  --surface-raised: #181a1d;
+  --border: #26292e;
+  --border-subtle: #1c1e22;
+  --border-active: rgba(255, 59, 48, 0.4);
+  --accent: #FF3B30;
+  --text: #e6e8eb;
+  --text-muted: #8a8f98;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background-color: var(--bg);
+  font-family: var(--font-mono);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Lienzo base con trama de puntos industrial */
+.canvas-root {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background-color: var(--bg);
+}
+
+.bg-dotgrid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--border) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  z-index: 1;
+}
+
+.bg-glow-accent {
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 59, 48, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Jerarquía de textos */
+.brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+.brand-pill.accent {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(255, 59, 48, 0.2);
+}
+
+.brand-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.banner-title {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+}
+
+.banner-sub {
+  font-family: var(--font-sans);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.tag-item.active {
+  border-color: var(--border-active);
+  color: var(--text);
+  background: var(--surface-raised);
+}
+
+/* Marcos contenedores para capturas */
+.window-frame {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.96), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.window-header {
+  height: 38px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2a2e35;
+}
+
+.header-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.header-title {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+.window-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000000;
+}
+
+/* Marco de teléfono móvil */
+.phone-chassis {
+  width: 480px;
+  height: 940px;
+  background: var(--surface);
+  border: 3px solid var(--border);
+  border-radius: 48px;
+  padding: 14px;
+  box-shadow: 0 45px 110px rgba(0, 0, 0, 0.98);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 36px;
+  overflow: hidden;
+  background: #070809;
+  border: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 20px;
+  background: #070809;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  z-index: 20;
+}
+
+.phone-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Soporte de idiomas ES / EN */
+body.lang-en .t-es {
+  display: none !important;
+}
+
+body.lang-es .t-en {
+  display: none !important;
+}

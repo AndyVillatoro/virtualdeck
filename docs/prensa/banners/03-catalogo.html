@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <title>03-catalogo Banner — VirtualDeck</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .layout-vertical {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      padding: 40px 60px 80px 60px;
+      gap: 20px;
+    }
+    .header-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      max-width: 960px;
+    }
+    .preview-stage {
+      width: 1520px;
+      height: 700px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin-bottom: -50px;
+    }
+    .preview-window {
+      width: 1480px;
+      height: 690px;
+    }
+    .zoom-catalogo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 36%;
+      transform: scale(1.32);
+      transform-origin: 50% 36%;
+      display: block;
+    }
+  </style>
+</head>
+<body class="lang-es">
+  <div class="canvas-root">
+    <div class="bg-dotgrid"></div>
+    <div class="bg-glow-accent" style="top: 10%; left: 50%; transform: translateX(-50%);"></div>
+
+    <div class="layout-vertical">
+      <div class="header-block">
+        <div class="brand-pill accent">
+          <div class="brand-dot"></div>
+          <span class="t-es">BIBLIOTECA VISUAL</span>
+          <span class="t-en">VISUAL LIBRARY</span>
+        </div>
+
+        <h1 class="banner-title t-es">Catálogo de iconos y acciones</h1>
+        <h1 class="banner-title t-en">Built-in icon and action catalog</h1>
+
+        <p class="banner-sub t-es">
+          Cientos de glifos dot-matrix, marcas populares y comandos del sistema listos para usar sin buscar fuera.
+        </p>
+        <p class="banner-sub t-en">
+          Hundreds of dot-matrix glyphs, popular brands, and system commands ready to use without external downloads.
+        </p>
+
+        <div class="tags-row" style="justify-content: center;">
+          <div class="tag-item active">
+            <span class="t-es">GLIFOS 16×16</span>
+            <span class="t-en">16×16 GLYPHS</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">MATRIZ 8×8</span>
+            <span class="t-en">8×8 MATRIX</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">BÚSQUEDA INSTANTÁNEA</span>
+            <span class="t-en">INSTANT SEARCH</span>
+          </div>
+          <div class="tag-item">
+            <span class="t-es">MARCAS OFICIALES</span>
+            <span class="t-en">OFFICIAL BRANDS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-stage">
+        <div class="window-frame preview-window">
+          <div class="window-header">
+            <div class="header-dot active"></div>
+            <div class="header-dot"></div>
+            <div class="header-dot"></div>
+            <span class="header-title t-es">VIRTUALDECK — CATÁLOGO DE ICONOS Y ACCIONES</span>
+            <span class="header-title t-en">VIRTUALDECK — ICON & ACTION CATALOG</span>
+          </div>
+          <div class="window-body">
+            <img class="zoom-catalogo" src="../03-catalogo.png" data-en="../en/03-catalogo.png" alt="Catálogo de Iconos">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get('lang') || 'es';
+    document.body.classList.remove('lang-es', 'lang-en');
+    document.body.classList.add('lang-' + lang);
+    if (lang === 'en') {
+      document.querySelectorAll('img[data-en]').forEach(img => {
+        img.src = img.getAttribute('data-en');
+      });
+    }
+  </script>
+</body>
+</html>
