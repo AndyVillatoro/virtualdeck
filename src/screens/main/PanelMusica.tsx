@@ -11,7 +11,7 @@ import { BotonTransporte } from './musica/BotonTransporte';
 import { DatosPista } from './musica/DatosPista';
 import { FilaAleatorioRepetir } from './musica/FilaAleatorioRepetir';
 import { PanelMusicaBarra } from './musica/PanelMusicaBarra';
-import type { AjustesVideo } from './musica/VideoVentana';
+import { VideoVentana, type AjustesVideo } from './musica/VideoVentana';
 import type { NowPlaying, ElectronAPI } from '../../types';
 
 /**
@@ -106,6 +106,21 @@ export function PanelMusica({
         <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.music')}</DotLabel>
         <div style={{ flex: 1 }} />
         <button
+          type="button"
+          onClick={() => video.onActivo(!video.activo)}
+          title={video.activo ? t('music.videoOff') : t('music.videoOn')}
+          aria-label={video.activo ? t('music.videoOff') : t('music.videoOn')}
+          aria-pressed={video.activo}
+          style={{
+            background: 'none', border: 'none', color: VD.textMuted,
+            cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          <DotGlyphIcon glyph="APP_WINDOW" size={10} color={video.activo ? accent : VD.textMuted} />
+          <DotLabel size={8} color={video.activo ? accent : VD.textMuted} spacing={1}>{t('music.video')}</DotLabel>
+        </button>
+        <button
+          type="button"
           onClick={onCerrar}
           title={t('music.hide')}
           style={{
@@ -117,80 +132,128 @@ export function PanelMusica({
         </button>
       </div>
 
-      {/* Carátula. El hueco es cuadrado y del ancho del panel; cuando no hay
-          imagen se queda el icono de reproducción en vez de un vacío gris.
-          No se encoge (`flexShrink: 0`): en una ventana baja el panel
-          desplaza, pero la carátula mantiene su tamaño. */}
-      <div style={{
-        width: '100%', aspectRatio: '1', borderRadius: VD.radius.lg,
-        background: VD.overlay, border: `1px solid ${VD.border}`,
-        overflow: 'hidden', position: 'relative', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {/* Un icono neutro, no play/pausa: el estado lo dicen el punto y el
-            texto de abajo, que no se prestan a confusion. El transporte vive
-            en la franja inferior de la carátula. */}
-        <div style={{ opacity: 0.22 }}>
-          <DotGlyphIcon glyph="AUDIO_WAVE" size={48} color={VD.textMuted} showRecessed />
-        </div>
-        {nowPlaying.thumbnail && (
-          <>
-            <img
-              src={nowPlaying.thumbnail}
-              alt=""
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                imageRendering: 'pixelated',
-              }}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+      {video.activo ? (
+        <>
+          <div style={{
+            width: '100%', height: 180, flexShrink: 0,
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <VideoVentana
+              api={api}
+              pista={{ titulo: nowPlaying.title, fuente: nowPlaying.source }}
+              accent={accent}
+              ajustes={video}
             />
-            <DotMatrixImageOverlay pitch={4} />
-          </>
-        )}
-        {/* Transporte sobre la carátula: anterior / reproducir / siguiente con
-            glifos dot-matrix en franja inferior. Es el mismo `BotonTransporte`
-            compartido, solo que vive sobre la imagen: un bloque solo, siempre
-            visible, sin empujar título ni botones. */}
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            padding: '4px 0', flexShrink: 0,
+          }}>
+            <BotonTransporte
+              glyph="PREV"
+              titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
+              lado={LADO_SECUNDARIO}
+              principal={false}
+              enabled={puede?.prev !== false}
+              accent={accent}
+              onPulsar={() => { void api?.media.control('prev').then(refrescarMedios); }}
+            />
+            <BotonTransporte
+              glyph={isPlaying ? 'PAUSE' : 'PLAY'}
+              titulo={t('media.playPause')}
+              lado={LADO_PRINCIPAL}
+              principal
+              enabled
+              accent={accent}
+              onPulsar={() => { void api?.media.control('play-pause').then(refrescarMedios); }}
+            />
+            <BotonTransporte
+              glyph="NEXT"
+              titulo={tituloCon(t('media.next'), puede?.next !== false)}
+              lado={LADO_SECUNDARIO}
+              principal={false}
+              enabled={puede?.next !== false}
+              accent={accent}
+              onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
+            />
+          </div>
+        </>
+      ) : (
+        /* Carátula. El hueco es cuadrado y del ancho del panel; cuando no hay
+           imagen se queda el icono de reproducción en vez de un vacío gris.
+           No se encoge (`flexShrink: 0`): en una ventana baja el panel
+           desplaza, pero la carátula mantiene su tamaño. */
         <div style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          padding: '10px 0 12px',
-          background: 'rgba(7,8,9,0.78)',
-          borderTop: `1px solid ${VD.border}`,
+          width: '100%', aspectRatio: '1', borderRadius: VD.radius.lg,
+          background: VD.overlay, border: `1px solid ${VD.border}`,
+          overflow: 'hidden', position: 'relative', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <BotonTransporte
-            glyph="PREV"
-            titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
-            lado={LADO_SECUNDARIO}
-            principal={false}
-            enabled={puede?.prev !== false}
-            accent={accent}
-            onPulsar={() => { void api?.media.control('prev').then(refrescarMedios); }}
-          />
-          <BotonTransporte
-            glyph={isPlaying ? 'PAUSE' : 'PLAY'}
-            titulo={t('media.playPause')}
-            lado={LADO_PRINCIPAL}
-            principal
-            enabled
-            accent={accent}
-            onPulsar={() => { void api?.media.control('play-pause').then(refrescarMedios); }}
-          />
-          <BotonTransporte
-            glyph="NEXT"
-            titulo={tituloCon(t('media.next'), puede?.next !== false)}
-            lado={LADO_SECUNDARIO}
-            principal={false}
-            enabled={puede?.next !== false}
-            accent={accent}
-            onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
-          />
+          {/* Un icono neutro, no play/pausa: el estado lo dicen el punto y el
+              texto de abajo, que no se prestan a confusion. El transporte vive
+              en la franja inferior de la carátula. */}
+          <div style={{ opacity: 0.22 }}>
+            <DotGlyphIcon glyph="AUDIO_WAVE" size={48} color={VD.textMuted} showRecessed />
+          </div>
+          {nowPlaying.thumbnail && (
+            <>
+              <img
+                src={nowPlaying.thumbnail}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  imageRendering: 'pixelated',
+                }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <DotMatrixImageOverlay pitch={4} />
+            </>
+          )}
+          {/* Transporte sobre la carátula: anterior / reproducir / siguiente con
+              glifos dot-matrix en franja inferior. Es el mismo `BotonTransporte`
+              compartido, solo que vive sobre la imagen: un bloque solo, siempre
+              visible, sin empujar título ni botones. */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            padding: '10px 0 12px',
+            background: 'rgba(7,8,9,0.78)',
+            borderTop: `1px solid ${VD.border}`,
+          }}>
+            <BotonTransporte
+              glyph="PREV"
+              titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
+              lado={LADO_SECUNDARIO}
+              principal={false}
+              enabled={puede?.prev !== false}
+              accent={accent}
+              onPulsar={() => { void api?.media.control('prev').then(refrescarMedios); }}
+            />
+            <BotonTransporte
+              glyph={isPlaying ? 'PAUSE' : 'PLAY'}
+              titulo={t('media.playPause')}
+              lado={LADO_PRINCIPAL}
+              principal
+              enabled
+              accent={accent}
+              onPulsar={() => { void api?.media.control('play-pause').then(refrescarMedios); }}
+            />
+            <BotonTransporte
+              glyph="NEXT"
+              titulo={tituloCon(t('media.next'), puede?.next !== false)}
+              lado={LADO_SECUNDARIO}
+              principal={false}
+              enabled={puede?.next !== false}
+              accent={accent}
+              onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <DatosPista
         titulo={nowPlaying.title}
