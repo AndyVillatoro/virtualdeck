@@ -163,6 +163,14 @@ if (!flag('--skip-assets')) {
 
 // Paso 2: Compilación de producción
 if (!flag('--skip-build')) {
+  // El núcleo nativo se recompila siempre (cargo es incremental): el .appx de la 0.14.0 salió con un
+  // `native/vd-core.node` anterior al código Rust y le faltaba GetTimelineProperties().
+  console.log(`\n[2a/5] Compilando el núcleo nativo (npm run build:native)...`);
+  try {
+    execSync('cmd.exe /c npm run build:native', { stdio: 'inherit', cwd: ROOT });
+  } catch (e) {
+    fallar(`en build:native: ${e.message}`);
+  }
   console.log(`\n[2/5] Compilando bundles de Electron / React (electron-vite build)...`);
   try {
     execSync('cmd.exe /c npx electron-vite build', { stdio: 'inherit', cwd: ROOT });

@@ -41,3 +41,6 @@ opencode-export/
 
 # Auditorias locales con hallazgos de seguridad: NUNCA versionar (repo publico + vulns sin parchear)
 auditorias/
+
+# Material de trabajo y de prensa (no se versiona)
+_referencias/
