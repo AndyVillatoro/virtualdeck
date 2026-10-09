@@ -92,6 +92,15 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   panel de música (normal y de barra) y en el kiosko; el sondeo sigue en 5 s.
 - **Icono, portada y capturas en el manifiesto de la tienda**: campos opcionales por entrada —
   icono del catálogo DOT o glifo 8×8, portada y hasta 6 capturas —, filtrados como URL.
+- **Vídeo adaptado y nítido en el panel de música (113)**: la resolución de captura se ajusta exactamente
+  al tamaño del contenedor en pantalla (`tamanoCaptura.ts` + `useTamanoPedido.ts`), reduciendo el uso de CPU a
+  un tercio (1,78 % → 0,64 %) sin pérdida de nitidez; avisa en pantalla si el vídeo está congelado porque otra
+  ventana ocluye el navegador (`CalculateNativeWinOcclusion`).
+- **Galería interactiva por scroll y tráilers bilingües en la web**: portada pública rediseñada con canvas
+  DOT matrix dissolve, consola táctil adaptativa de 12 teclas, reproductor con tráilers HyperFrames en español e
+  inglés (~41,7 s a 115 BPM) y 11 banners editados a 1080p sin datos reales ni fugas de privacidad.
+- **Compilación automática del núcleo nativo (`vd-core`)**: `npm run build:native` se encadena antes de
+  empaquetar la aplicación para la Microsoft Store (`npm run build:store`).
 
 ### Changed
 
