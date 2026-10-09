@@ -33,7 +33,7 @@ HTML dentro.
 La página no ofrece descargas: el único botón de instalación apunta a la
 Microsoft Store, y la versión que se muestra sale del tag del release de GitHub
 (sin adjuntos). Publicar una versión nueva **no** obliga a tocar la página, salvo
-sumar su bloque al registro `FEATURES` de `site.js` (hoy llega hasta la v0.14.0).
+sumar su bloque al registro `FEATURES` de `site.js` (hoy llega hasta la v0.14.1).
 Lo que sí se queda viejo es el texto, y ya pasó dos veces:
 
 - decía **«LibreHardwareMonitor, que viene incluido»**, y se dejó de empaquetar

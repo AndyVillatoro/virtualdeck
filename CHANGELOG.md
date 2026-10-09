@@ -6,6 +6,29 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.14.1] — 2026-10-09
+
+### Added
+
+- **Vídeo nativo en el panel de música en todos los formatos (113)**: la resolución de captura
+  se adapta dinámicamente al tamaño del contenedor en pantalla (`tamanoCaptura.ts` + `useTamanoPedido.ts`),
+  reduciendo el uso de CPU a un tercio (1,78 % → 0,64 %) sin pérdida de nitidez. Botón `[VÍDEO]`
+  disponible tanto en la barra alargada (1280×480) como en el panel vertical estándar de escritorio
+  (1100×720 / `PanelMusica.tsx`).
+- **Detección de oclusión y aviso de congelado**: aviso visual `music.videoCongelado` (ES/EN)
+  cuando otra ventana oculta el navegador reproductor en Windows (`CalculateNativeWinOcclusion`).
+- **Galería interactiva por scroll y tráilers bilingües en la web**: portada pública rediseñada con canvas
+  DOT matrix dissolve, consola táctil adaptativa de 12 teclas, reproductor con tráilers HyperFrames en español e
+  inglés (~41,7 s a 115 BPM) y 11 banners editados a 1080p sin datos reales ni fugas de privacidad.
+- **Compilación automática del núcleo nativo (`vd-core`)**: `npm run build:native` se encadena antes de
+  empaquetar la aplicación para la Microsoft Store (`npm run build:store`).
+
+### Changed
+
+- **La Microsoft Store es el único canal de descarga**: el instalador `.exe` / NSIS se retira
+  por completo del empaquetado; el README, la wiki y la página de GitHub llevan a la Store. Quien lo tenga
+  instalado por el `.exe` no recibirá más actualizaciones automáticas y debe pasarse a la Store.
+
 ## [0.14.0] — 2026-10-07
 
 ### Added
@@ -92,21 +115,9 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
   panel de música (normal y de barra) y en el kiosko; el sondeo sigue en 5 s.
 - **Icono, portada y capturas en el manifiesto de la tienda**: campos opcionales por entrada —
   icono del catálogo DOT o glifo 8×8, portada y hasta 6 capturas —, filtrados como URL.
-- **Vídeo adaptado y nítido en el panel de música (113)**: la resolución de captura se ajusta exactamente
-  al tamaño del contenedor en pantalla (`tamanoCaptura.ts` + `useTamanoPedido.ts`), reduciendo el uso de CPU a
-  un tercio (1,78 % → 0,64 %) sin pérdida de nitidez; avisa en pantalla si el vídeo está congelado porque otra
-  ventana ocluye el navegador (`CalculateNativeWinOcclusion`).
-- **Galería interactiva por scroll y tráilers bilingües en la web**: portada pública rediseñada con canvas
-  DOT matrix dissolve, consola táctil adaptativa de 12 teclas, reproductor con tráilers HyperFrames en español e
-  inglés (~41,7 s a 115 BPM) y 11 banners editados a 1080p sin datos reales ni fugas de privacidad.
-- **Compilación automática del núcleo nativo (`vd-core`)**: `npm run build:native` se encadena antes de
-  empaquetar la aplicación para la Microsoft Store (`npm run build:store`).
 
 ### Changed
 
-- **La Microsoft Store es el único canal de descarga**: el instalador `.exe` no está firmado y ya no se
-  publica; el README, la wiki y la página de GitHub llevan a la Store. Quien lo tenga instalado por el
-  `.exe` no recibirá más actualizaciones automáticas y debe pasarse a la Store.
 - **El tema oscuro es la paleta OLED** de la estética DOT/480 (`#070809` / `#111315` / `#26292e`);
   el tema DOT/480 se funde en él y quien lo tenía conserva su acento rojo (migración v7→v8).
 - Primitivas comunes (`Chip`, `Segmentado`, `BotonIcono`, `Modal`) y tokens nuevos (`onAccent`,

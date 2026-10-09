@@ -4,6 +4,12 @@
 
   /* ============ Registro de novedades (editar aquí) ============ */
   var FEATURES = [
+    { version: "v0.14.1", date: "2026-10-09", items: [
+      { code: "F-14-11", t: { es: "Vídeo en vivo en panel de música", en: "Live video in music panel" }, d: { es: "Resolución nativa adaptada (CPU a 0,64%) en modo escritorio y formato barra con recorte ajustable.", en: "Adaptive native scaling (0.64% CPU) across desktop and bar layouts with custom cropping." } },
+      { code: "F-14-12", t: { es: "Detección de oclusión y congelado", en: "Occlusion & freeze detection" }, d: { es: "Aviso en pantalla si otra ventana oculta el navegador en Windows.", en: "On-screen notice when another window occludes the browser in Windows." } },
+      { code: "F-14-13", t: { es: "Galería DOT por scroll + tráilers", en: "Scroll-driven DOT gallery + trailers" }, d: { es: "Nueva web con transición de puntos, consola táctil y tráiler bilingüe HyperFrames a 115 BPM.", en: "New showcase with dot-matrix dissolve, touch console and 115 BPM bilingual HyperFrames trailer." } },
+      { code: "F-14-14", t: { es: "Instalación exclusiva por Store", en: "Exclusive Store distribution" }, d: { es: "Empaquetado limpio y compilación nativa automatizada para la Microsoft Store.", en: "Clean packaging and automated native build pipeline for the Microsoft Store." } }
+    ] },
     { version: "v0.14.0", date: "2026-10-07", items: [
       { code: "F-14-01", t: { es: "Docks físicos Stream Dock", en: "Physical Stream Docks" }, d: { es: "El N3 se detecta al conectarlo: teclas LCD pintadas, botones y perillas que disparan, paginas propias y 3 perfiles completos.", en: "The N3 is detected on plug-in: painted LCD keys, buttons and dials that fire, own pages and 3 full profiles." } },
       { code: "F-14-02", t: { es: "Doce modelos + page-nav", en: "Twelve models + page-nav" }, d: { es: "Cada aparato sale de su modelo; varias páginas por dock y acción page-nav para moverse entre ellas.", en: "Each device follows its model; several pages per dock and a page-nav action to move between them." } },
@@ -130,7 +136,7 @@
   function setTrailer(l) {
     var v = document.getElementById("trailer");
     if (!v) return;
-    var src = l === "es" ? "video/trailer-es.mp4?v=0.14.0" : "video/trailer-en.mp4?v=0.14.0";
+    var src = l === "es" ? "video/trailer-es.mp4?v=0.14.1" : "video/trailer-en.mp4?v=0.14.1";
     if (v.getAttribute("src") !== src) {
       var t = v.currentTime || 0;
       v.setAttribute("src", src);

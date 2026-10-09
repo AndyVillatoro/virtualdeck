@@ -3,7 +3,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "?v=0.14.0";
+  var VERSION = "?v=0.14.1";
   var ITEMS = [
     { img: "01-deck", n: "01", t: { es: "Deck principal", en: "Main deck" }, d: { es: "Panel de música con visualizador de puntos, rejilla de 4x4 con iconos del catálogo y barra lateral con reloj, clima, sensores y RGB.", en: "Music panel with dot visualizer, 4x4 grid of catalog icons, and a sidebar with clock, weather, sensors and RGB." }, alt: { es: "Pantalla principal de VirtualDeck", en: "VirtualDeck main screen" } },
     { img: "02-editor", n: "02", t: { es: "Editor de acciones", en: "Action editor" }, d: { es: "Vista previa del botón, PRESETS con fichas de apps y APARIENCIA con el icono del catálogo, todo por secciones.", en: "Button preview, PRESETS with app cards and APPEARANCE with the catalog icon, all in sections." }, alt: { es: "Editor de botones por secciones", en: "Section-based button editor" } },
