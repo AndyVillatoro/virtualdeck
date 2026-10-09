@@ -15,6 +15,9 @@ export interface PistaFija {
   source: string;
   thumbnail?: string;
   controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
+  positionMs?: number;
+  durationMs?: number;
+  timelineUpdatedAt?: number;
 }
 
 /**
@@ -60,6 +63,9 @@ export function medioFijo(): PistaFija | null {
       source: String(j.source ?? ''),
       thumbnail: j.thumbnail ? String(j.thumbnail) : undefined,
       controls: j.controls,
+      positionMs: j.positionMs ?? 86000,
+      durationMs: j.durationMs ?? 222000,
+      timelineUpdatedAt: j.timelineUpdatedAt ?? Date.now(),
     };
   } catch (e) {
     console.error('[prensa] VD_MEDIOS_FIJOS ilegible:', (e as Error).message);
