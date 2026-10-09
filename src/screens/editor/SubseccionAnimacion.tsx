@@ -5,7 +5,7 @@ import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { IconoPuntos } from '../../components/dot480/IconoPuntos';
 import { BrandIconDisplay } from '../../components/BrandIconDisplay';
-import { Glyph57View } from '../../components/Glyph57Editor';
+import { Glyph57View } from '../../components/Glyph57View';
 import { GLIFO_POR_TIPO_ACCION } from '../../components/dot480/glifosPorTipoAccion';
 import { Field } from './comunes';
 import type { TipoIcono } from './tiposIcono';

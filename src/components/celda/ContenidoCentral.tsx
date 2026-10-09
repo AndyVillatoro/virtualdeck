@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
-import { Glyph57View } from '../Glyph57Editor';
+import { Glyph57View } from '../Glyph57View';
 import { DotGlyphIcon, resolveDotGlyph } from '../dot480/DotGlyphIcon';
 import { IconoPuntos } from '../dot480/IconoPuntos';
 import { botonEfectivo, matrizDeBoton } from '../dot480/animacionPuntos';

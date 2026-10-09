@@ -4,7 +4,7 @@ import { useFieldText } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
 import { BrandIconDisplay } from '../../components/BrandIconDisplay';
-import { Glyph57View as Glyph57Inline } from '../../components/Glyph57Editor';
+import { Glyph57View as Glyph57Inline } from '../../components/Glyph57View';
 import { GLIFO_POR_TIPO_ACCION } from '../../components/dot480/glifosPorTipoAccion';
 import { Field, Btn } from './comunes';
 import { PanelCatalogoIcono } from './catalogo/PanelCatalogoIcono';

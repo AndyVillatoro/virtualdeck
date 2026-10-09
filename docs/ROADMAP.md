@@ -296,7 +296,7 @@ como registro:
 ### 2. UX y editor
 
 - **2.1 Editor de matriz 5×7 para íconos propios ★★ · M** — ✅ HECHO (2026-09-14).
-  Diseñador interactivo en `Glyph57Editor.tsx` con arrastre continuo (paint/erase),
+  Diseñador interactivo en `dot480/PestanaGlifo` + `EditorPuntos` (y visualizador inline `Glyph57View.tsx`) con arrastre continuo (paint/erase),
   herramientas de transformación (Shift ▲▼◀▶, Invertir, Espejo H/V, Limpiar, Llenar, Deshacer Ctrl+Z),
   paleta de 16 símbolos pre-calculados y celda simulada OLED de vista previa.
 - **2.2 Búsqueda global Ctrl+K ★★ · S** — ✅ HECHO (`SearchOverlay`).
