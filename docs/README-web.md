@@ -19,9 +19,11 @@ HTML dentro.
 
 ## Qué se queda viejo aquí
 
-Los enlaces de descarga apuntan a `/releases/latest`, así que publicar una
-versión nueva **no** obliga a tocar la página. Lo que sí se queda viejo es el
-texto, y ya pasó dos veces:
+La página no ofrece descargas: el único botón de instalación apunta a la
+Microsoft Store, y la versión que se muestra sale del tag del release de GitHub
+(sin adjuntos). Publicar una versión nueva **no** obliga a tocar la página, salvo
+sumar su bloque al registro `FEATURES` del script (hoy llega hasta la v0.13.0).
+Lo que sí se queda viejo es el texto, y ya pasó dos veces:
 
 - decía **«LibreHardwareMonitor, que viene incluido»**, y se dejó de empaquetar
   hace tiempo (ver CLAUDE.md);

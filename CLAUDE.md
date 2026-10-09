@@ -117,7 +117,8 @@ archivo de instrucciones aparte — ver la corrección más abajo sobre por qué
 - `VD_SIN_NUCLEO=1` prueba los caminos de respaldo; `VD_PLUGIN_PROTO` enciende el prototipo de plugins (83).
 
 ## Scripts
-- `npm run dev` · `npm run build` · `npm run build:native` · `npm run build:installer` · `npm run build:iconos`
+- `npm run dev` · `npm run build` · `npm run build:native` · `npm run package:store` · `npm run build:iconos`
+- `build:installer` existe pero **no es un canal de publicación** (el `.exe` no se publica; solo Store).
 - Copia de prueba: `node scripts/probar-app.mjs abrir <quien> | estado | cerrar` (CDP en 9333).
 
 ## Convenciones

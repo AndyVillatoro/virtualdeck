@@ -51,8 +51,8 @@ virtualdeck/
 │   └── utils/                 # actions, theme, sound, sensors hook, etc.
 ├── scripts/
 │   ├── dev.js                 # arranca electron-vite dev
+│   ├── build-store.mjs        # flujo completo de Store (`npm run package:store`)
 │   └── generate-icon.js       # genera build/icon.{ico,png,svg}
-├── resources/lhm/             # Bundle de LibreHardwareMonitor (gitignored, 19MB)
 ├── build/                     # Iconos generados (gitignored)
 ├── dist/                      # Output de electron-builder (gitignored)
 ├── out/                       # Output de electron-vite (gitignored)
@@ -96,7 +96,7 @@ git checkout -b chore/refactor-x
 Reglas básicas:
 - **TypeScript estricto**: corré `npx tsc --noEmit` antes de commitear; cero errores.
 - **Estilos**: inline con tokens de `useTheme()` desde `src/utils/theme.tsx`. No CSS files nuevos sin justificación.
-- **Iconos**: `lucide-react` via `src/components/VDIcon.tsx`.
+- **Iconos**: glifos dot-matrix (`DotGlyphIcon`) y catálogo 16×16 (`src/data/iconosDot/`, campo `iconoPuntos`); 0 emojis.
 - **Persistencia**: cambios al schema de `DeckConfig` requieren migración en `src/utils/configMigration.ts` y bump de `CURRENT_CONFIG_VERSION`.
 - **PowerShell**: si tu script usa `param(...)`, va al inicio (sin nada arriba). El parser de `ps-helpers.ts` se encarga del prefix UTF-8.
 
@@ -109,11 +109,8 @@ npm run dev
 # Verificar que TypeScript compila
 npx tsc --noEmit
 
-# Build local de prueba (sin instalador)
+# Build local de prueba (sin empaquetar)
 npm run build
-
-# Build completo del instalador (probarlo en máquina limpia)
-npm run build:installer
 ```
 
 ### 4. Commitear
@@ -240,16 +237,21 @@ git push
 git tag -a v0.4.0 -m "VirtualDeck v0.4.0"
 git push origin v0.4.0
 
-# 6. Build del instalador (genera dist/VirtualDeck-Setup-0.4.0.exe)
-npm run build:installer
+# 6. Empaquetar para la Store (genera dist/VirtualDeck-X.Y.Z.appx)
+npm run package:store
 
-# 7. Crear release en GitHub con el .exe adjunto
+# 7. Crear release en GitHub SIN adjuntos (decisión del dueño 2026-10-07:
+#    el .exe NSIS no está firmado y no se publica; la única instalación es
+#    la Microsoft Store). Sin latest.yml no hay autoactualización del .exe.
 gh release create v0.4.0 \
-  "dist/VirtualDeck-Setup-0.4.0.exe" \
   --title "VirtualDeck v0.4.0" \
   --notes-file <(sed -n '/## \[0.4.0\]/,/## \[/p' CHANGELOG.md | sed '$d')
 # ↑ extrae solo la sección 0.4.0 del CHANGELOG como notas del release
 ```
+
+> El `.appx` que sale de `package:store` se sube a Partner Center a mano
+> (ver [docs/MICROSOFT-STORE.md](docs/MICROSOFT-STORE.md): `makeappx` del SDK,
+> manifiesto, notas para el revisor y kit de subida).
 
 ---
 
@@ -331,9 +333,10 @@ Todos los cambios notables...
 |---|---|
 | `npm run dev` | Modo desarrollo con hot reload (renderer) y restart automático (main) |
 | `npm run build` | Compila renderer + main + preload a `out/` |
-| `npm run build:win` | Empaqueta como `.exe` sin instalador (`dist/win-unpacked/`) |
+| `npm run build:win` | Empaqueta como `.exe` sin instalador (`dist/win-unpacked/`, solo prueba local, no se distribuye) |
 | `npm run build:icon` | Regenera `build/icon.{ico,png,svg}` desde `scripts/generate-icon.js` |
-| `npm run build:installer` | Build completo + NSIS installer en `dist/VirtualDeck-Setup-{version}.exe` |
+| `npm run build:store` | Monta el `appx` con electron-builder (lo empaqueta `package:store`) |
+| `npm run package:store` | Flujo completo de Store: iconos, montaje, `makeappx` del SDK y validaciones (genera `dist/VirtualDeck-{version}.appx`) |
 | `npx tsc --noEmit` | TypeScript check sin generar archivos (rápido, ideal pre-commit) |
 
 ---
@@ -431,40 +434,42 @@ El gate único es **`npm run check`** (`tsc --noEmit` + `dependency-cruiser` + `
 
 ---
 
-## ✍️ Firma y distribución
+## ✍️ Firma y distribución (solo Store)
 
-Hoy el instalador NSIS (`npm run build:installer`) **no está firmado** → Windows muestra SmartScreen.
+Decisión del dueño (2026-10-07): **la única forma de instalar VirtualDeck es la
+[Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP)**. El `.exe`
+NSIS no está firmado y **no se publica ni se distribuye**: el release de GitHub
+va **sin adjuntos**, no hay `latest.yml`/`.blockmap` y por tanto no hay
+autoactualización del `.exe` (la Store actualiza ella). `npm run build:installer`
+sigue existiendo en `package.json` como resto histórico, pero **no es un canal
+de publicación**: no se usa, no se prueba contra él y no se documenta como vía.
 
-### Self-signed (equipo/amigos)
-```powershell
-$cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=VirtualDeck Dev" -CertStoreLocation Cert:\CurrentUser\My
-$pwd = ConvertTo-SecureString -String "tupasswd" -Force -AsPlainText
-Export-PfxCertificate -Cert $cert -FilePath .\virtualdeck-codesign.pfx -Password $pwd
-```
-En `package.json → build.win`: `"certificateFile": "./virtualdeck-codesign.pfx"`, `"certificatePassword": "tupasswd"`. Cada usuario debe importar el `.cer` en *Trusted Publishers* la primera vez.
+Consecuencias:
 
-### Certificado real (producción)
-Comprar un cert EV/estándar (DigiCert, Sectigo) y apuntar `certificateFile` al `.pfx` real. EV → SmartScreen confía de inmediato; estándar → requiere reputación acumulada.
+- El paquete MSIX **lo firma Microsoft** al aceptarlo: no hay certificado propio
+  que comprar, ni aviso de SmartScreen que documentar, ni «Más información →
+  Ejecutar de todas formas».
+- En la variante de la Store el actualizador está desactivado en ejecución
+  (`process.windowsStore`; `update.check()` devuelve `status: 'store'`) — **sin
+  rama de compilación**, para no publicar nunca la build equivocada.
+- LibreHardwareMonitor **no se empaqueta** (escribe junto a su `.exe`, imposible
+  en MSIX): lo instala el usuario, como OpenRGB (ver `docs/MICROSOFT-STORE.md`
+  §2.3 y la sección de sensores de la app).
 
-### Distribución sin firma
-Documentar el "Más información → Ejecutar de todas formas" del SmartScreen. WinGet/Scoop reducen fricción aunque no eliminan el warning.
+El flujo de empaquetado y subida está entero en
+[docs/MICROSOFT-STORE.md](docs/MICROSOFT-STORE.md) (`npm run package:store` +
+`makeappx` del SDK + notas para el revisor).
 
-> **Auto-update**: el código está desde la v0.4.0, pero **no funcionó hasta la
-> v0.9.2**. Ninguna publicación subía el `latest.yml` que `electron-updater` pide
-> de la última release: la comprobación daba 404 y no pasaba nada, sin avisar.
-> Toda release tiene que subir `latest.yml` y el `.blockmap` junto al `.exe`.
->
-> **La firma no tiene nada que ver con esto**, ni con poder publicar: la v0.9.2
-> está distribuida sin firmar y se instala. Lo único que compra un certificado es
-> quitar el aviso de SmartScreen. Y para la Microsoft Store no hace falta: el
-> paquete MSIX lo firma Microsoft al aceptarlo.
+> **Usuarios del `.exe` 0.13:** no tienen autoactualización; el README y la página
+> ya dicen que se pasen a la Store. No se mantiene ningún aviso dentro de la app
+> para ellos.
 
 ---
 
 ## 🔁 Release — pre-flight, hotfix y rollback
 
 **Pre-flight checklist** (antes de un release):
-- [ ] En `main` con `git pull` reciente · `npx tsc --noEmit` sin errores · `npm run build:installer` limpio.
+- [ ] En `main` con `git pull` reciente · `npx tsc --noEmit` sin errores · `npm run build` limpio.
 - [ ] Build probado en perfil/máquina limpia (al menos lo tocado). Sin PRs pendientes que deban entrar.
 
 **Hotfix** (bug crítico post-release):
@@ -473,7 +478,7 @@ git checkout -b fix/desc v0.X.Y      # branch desde el tag
 # fix mínimo + commit; bump PATCH en package.json + CHANGELOG
 git checkout main && git merge --no-ff fix/desc && git push
 git tag -a v0.X.(Y+1) -m "VirtualDeck v0.X.(Y+1) hotfix" && git push origin v0.X.(Y+1)
-npm run build:installer   # luego gh release create
+npm run package:store   # luego gh release create (sin adjuntos) y subida a Partner Center
 ```
 
 **Rollback** (release roto):
@@ -484,8 +489,9 @@ git revert <SHA-del-bump> && git push   # y quitar la sección del CHANGELOG
 ```
 
 **Troubleshooting build:**
-- `build:installer` falla con "rebuilding native deps" → confirmá `uiohook-napi` en `dependencies` y en `build.asarUnpack`.
-- `.exe` > 100MB → revisá `build.files` (que no meta `node_modules` entero) y `dist/builder-debug.yml`.
+- `package:store` falla con "rebuilding native deps" → confirmá `uiohook-napi` en `dependencies` y en `build.asarUnpack`.
+- `dist/` > 100MB → revisá `build.files` (que no meta `node_modules` entero).
+- `package:store` falla al empaquetar con `spawn UNKNOWN` → es el `makeappx` de 2018 de electron-builder; el script ya usa el del SDK de Windows (ver `docs/MICROSOFT-STORE.md` §3).
 
 ---
 

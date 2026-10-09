@@ -25,12 +25,12 @@ Node.js con acceso al SO. No conoce React. Expone todo vía IPC.
 
 | Módulo | Responsabilidad única | SRP |
 |--------|----------------------|-----|
-| `index.ts` | Bootstrap: crear app, ventana y registrar IPC. ~95 líneas. | ✅ |
+| `index.ts` | Bootstrap: crear app, ventanas y registrar IPC. ~280 líneas. | ✅ |
 | `configManager.ts` | Cargar / guardar / respaldar la configuración en `userData`. | ✅ |
 | `windowManager.ts` | Crear `BrowserWindow` y persistir su tamaño/posición. | ✅ |
 | `trayManager.ts` | Ícono de bandeja, menú contextual y atajos globales. | ✅ |
 | `logger.ts` | Log rotativo en `userData/logs` (512KB, 1 backup). | ✅ |
-| `audio.ts` | Cambiar dispositivo de audio por defecto (PowerShell + C# IPolicyConfig). | ✅ |
+| `audio.ts` | Cambiar dispositivo de audio por defecto (núcleo nativo + respaldo PowerShell/C# IPolicyConfig). | ✅ |
 | `media.ts` | Leer/controlar la reproducción actual vía SMTC (WinRT). | ✅ |
 | `macro.ts` | Grabar macros (uiohook-napi) y reproducirlas (PowerShell). | ✅ |
 | `rgb.ts` | Control RGB vía OpenRGB SDK. | ✅ |
@@ -45,7 +45,8 @@ mensajes IPC ↔ módulo correspondiente. Sin lógica de negocio propia.
 
 `audioIpc` · `mediaIpc` · `macroIpc` · `configIpc` · `windowIpc` · `appIpc` ·
 `pageIpc` · `dialogIpc` · `launcherIpc` · `rgbIpc` · `sensorsIpc` · `logIpc` · `updateIpc` ·
-`floatingBarIpc` · `tiendaIpc` (puentes tienda→principal: `tienda:import`/`resultado`; eventos `tienda:apply`/`hecho`)
+`floatingBarIpc` · `tiendaIpc` (puentes tienda→principal: `tienda:import`/`resultado`; eventos `tienda:apply`/`hecho`) ·
+`capturaIpc` (vídeo del panel de música) · `discordIpc` · `spotifyIpc` · `superficiesIpc` (docks)
 
 ---
 
@@ -66,6 +67,8 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `MainB.tsx` | Grilla principal: compone barra, rejilla, paneles y overlays; la ejecución, los atajos y cada pieza viven en `main/`. | ✅ |
 | `EditorB.tsx` | Editor de un botón: posee el estado y arma cabecera, pasos y formulario con piezas de `editor/`. | ✅ |
 | `FullscreenB.tsx` | Modo panel a pantalla completa (tablet/monitor dedicado). | ✅ |
+| `DispositivosB.tsx` | Docks físicos: dibujo del aparato, inspector y páginas por dispositivo (piezas en `dispositivos/`). | ✅ |
+| `FloatingBarB.tsx` / `BarConfigB.tsx` | Barra flotante siempre encima y su configuración. | ✅ |
 | `WallpaperB.tsx` | Elegir el fondo del deck. | ✅ |
 | `RGBManagerB.tsx` | Configurar perfiles y dispositivos RGB (piezas en `rgb/`). | ✅ |
 | `editor/actionData.ts` | Datos puros del editor (tipos de acción, presets). | ✅ |
@@ -133,7 +136,6 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `src/data/links.ts` | Enlaces externos (repo, docs, donaciones). | ✅ |
 | `src/components/settings/SoporteSection.tsx` | El apartado «Apoyar el proyecto» de los ajustes. | ✅ |
 | `src/data/brandIcons.ts` | Catálogo de íconos de marca. | ✅ |
-| `src/data/brandIconTypes.ts` | Tipos y geometría liviana del pack (sin los bitmaps). | ✅ |
 | `src/utils/catalogoMarcas.ts` | Carga diferida del catálogo (`import()` + hook reactivo). | ✅ |
 
 ---

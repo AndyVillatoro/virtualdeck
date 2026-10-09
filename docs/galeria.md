@@ -117,7 +117,7 @@ Cualquier perfil descargado pasa por `validateConfig`. Los errores se muestran c
 ## Convenciones para autores
 
 - Mantener `accent` y `wallpaper` neutros para no chocar con la preferencia del usuario.
-- No incluir `imageData` con base64 grande — usar `brandIcon` o `customGlyph57` en su lugar (más livianos y coherentes con la firma).
+- No incluir `imageData` con base64 grande — usar `iconoPuntos` (catálogo 16×16), `brandIcon` o `customGlyph57` en su lugar (más livianos y coherentes con la estética DOT).
 - Documentar en `description` qué prerequisitos asume el perfil (ej. "requiere OBS instalado en `C:\Program Files\obs-studio\`").
 - Para acciones con `globalHotkey`, sugerir sin imponer — el usuario debe revisar conflictos.
 

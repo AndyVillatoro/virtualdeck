@@ -4,11 +4,10 @@ Guía de trabajo para llevar VirtualDeck a la Store como **Win32 empaquetada en
 MSIX con `runFullTrust`**. Incluye el texto literal de las notas para el
 revisor, que es lo que decide si esto sale a la primera.
 
-> **Antes de nada, confirmá una cosa en Partner Center**: la Store también
-> acepta instaladores **`.exe`/`.msi` sin empaquetar**. Si esa vía no exige
-> certificado de firma propio, es preferible — no se pierde nada y no hay
-> conversión. Todo este documento asume que sí lo exige y que por eso se va a
-> MSIX, donde **Microsoft firma el paquete**.
+> Decisión del dueño (2026-10-07): **la única forma de instalar VirtualDeck es
+> la Microsoft Store**. El `.exe` NSIS no está firmado y no se publica; el
+> release de GitHub va sin adjuntos. Todo este documento asume MSIX, donde
+> **Microsoft firma el paquete**.
 
 ---
 
@@ -19,7 +18,7 @@ revisor, que es lo que decide si esto sale a la primera.
 | Cambiar dispositivo de audio (`IPolicyConfig`) | **Se mantiene.** Se defiende en la revisión; ver §4. |
 | Grabador de macros | **Se mantiene.** Cumple los requisitos de divulgación; si lo rechazan, se quita entonces. |
 | Migrar la configuración de instalaciones anteriores | **No se hace.** Solo hay instalaciones del propio autor. |
-| Distribución | **Doble**: NSIS en GitHub (completa) + MSIX en la Store. |
+| Distribución | **Solo Store**: MSIX en la Store + release de GitHub sin adjuntos. |
 
 ---
 
@@ -92,7 +91,15 @@ Se ha decidido **no migrar**. Es una instalación nueva y se reconfigura.
 
 ## 3. Cómo se compila
 
-`electron-builder` trae el target `appx`. En `package.json`, dentro de `build`:
+El flujo completo está automatizado en `npm run package:store`
+(`scripts/build-store.mjs`): genera los iconos de `build/appx/`, monta el
+`appx` con electron-builder, limpia el `mapping.txt`, empaqueta con el
+`makeappx.exe` del **SDK de Windows** y valida manifiesto, extensiones y
+CHANGELOG. La 0.14.0 salió de ahí: `VirtualDeck-0.14.0.appx` (120,5 MB), con su
+kit de subida en `_referencias/store-0.14.0/` (paquete, capturas ES/EN, tráiler,
+fichas y novedades ES/EN).
+
+Lo que sigue es el porqué de cada paso, para cuando el script falle.
 
 ```json
 "appx": {
@@ -177,7 +184,13 @@ la Store lo firma Microsoft.
 
 Este texto va en Partner Center, en **«Notes for certification»**. En inglés,
 que es lo que lee el equipo de revisión. Está escrito para adelantarse a las tres
-preguntas que este tipo de aplicación provoca.
+preguntas que este tipo de aplicación provoca. **Revisado para la 0.14.0**
+(2026-10-08): sigue vigente — grabador solo manual, `IPolicyConfig` solo al
+pulsar, scripts solo los que el usuario escribió, servidor local apagado de
+fábrica, LHM no empaquetado, donaciones sin contraprestación, cero telemetría.
+Lo nuevo de la 0.14.0 (docks por HID, panel de música, tienda, mando con tema)
+no añade ejecución remota: todo sigue siendo local y a pulso del usuario
+(la tienda descarga perfiles solo al pedirlos, con su aviso de riesgo).
 
 ```text
 VirtualDeck is an open-source desktop automation utility ("software Stream
@@ -351,13 +364,11 @@ que se pone y no se discute:
 | Superhéroe 16:9 | 1920×1080 o 3840×2160 PNG | Opcional. Sin texto encima |
 | Tráiler | MP4/MOV **1920×1080**, ≤2 GB, ≤60 s | Opcional, y pide miniatura PNG 1920×1080 aparte |
 
-El tráiler y su miniatura salen de `docs/prensa/hero.svg` (la animación de la
-retícula de puntos, 12 s en bucle): `bash docs/prensa/render.sh` deja
-`hero.mp4` a 1920×1080 H.264 y `miniatura.png` a 1920×1080. Ver
-`docs/prensa/README.md`. La composición va **centrada**, así que en la
-miniatura el borde inferior de la rejilla queda dentro del tercio de abajo que
-la Store puede tapar; el nombre y el botón pulsado, que es lo que hay que leer,
-quedan en el medio.
+El tráiler de la 0.14.0 está en `_referencias/store-0.14.0/video/`
+(`trailer-es.mp4` + subtítulos ES/EN): montado con HyperFrames desde la app
+corriendo, no de un editor de imágenes. El tráiler en inglés (mismos planos,
+rótulos en inglés) queda pendiente. La miniatura va al lado (`miniatura.png`
+a 1920×1080).
 
 Reglas que afectan al diseño de las capturas:
 
@@ -369,12 +380,13 @@ Reglas que afectan al diseño de las capturas:
 - **Las imágenes se suben por idioma, aunque sean las mismas.** Con ficha en
   español e inglés, hay que subirlas dos veces.
 
-Las imágenes ya están hechas y **se vuelven a generar solas**: siete capturas a
-1920×1080 y el mosaico de 300×300, en [`docs/prensa/`](prensa/README.md). Salen
-de la aplicación corriendo (`node scripts/prensa/capturar.mjs`), no de un editor
-de imágenes, así que después de cambiar la interfaz se rehacen en un comando en
-vez de a mano. Ese README dice de dónde sale cada dato que se ve y lleva el
-repaso de privacidad captura por captura.
+Las imágenes de la 0.14.0 están en `_referencias/store-0.14.0/`: seis capturas
+a 1920×1080 por idioma (`capturas-es/`, `capturas-en/`: deck, editor, catálogo,
+dock, tienda, RGB), el mosaico de 300×300 (`icono-mosaico-300.png`) y el
+superhéroe (`superheroe.png`). Salen de la aplicación corriendo
+(`node scripts/prensa/capturar.mjs`; ver `docs/prensa/README.md` por el origen
+de cada dato y el repaso de privacidad), así que después de cambiar la interfaz
+se rehacen en vez de a mano.
 
 ### 5.4.1. Lo que se aprendio rellenando el formulario de verdad (2026-09-07)
 
@@ -423,9 +435,9 @@ en **Notas para la certificacion**, que en esa pagina es un enlace a
 | Política de privacidad | `https://andyvillatoro.github.io/virtualdeck/privacidad.html` — **obligatoria**, no se puede enviar sin ella |
 | Clasificación por edad | Cuestionario IARC. No hay contenido sensible; sí hay que declarar que la app **accede a internet** (clima, divisas) |
 | Idiomas | es-ES, en-US — la app está traducida a los dos |
-| Capturas | Mínimo 1, recomendable 4-6: la rejilla, el editor, pantalla completa, el gestor RGB |
+| Capturas | Mínimo 1, recomendable 4-6: las 6 del kit (rejilla, editor, catálogo, dock N3, tienda, RGB) |
 | Declaración de datos | «No recoge datos» — es cierto y hay que sostenerlo |
-| Tráiler + miniatura | `bash docs/prensa/render.sh` (ver `docs/prensa/README.md`) |
+| Tráiler + miniatura | `trailer-es.mp4` + `miniatura.png` del kit (tráiler en inglés pendiente) |
 
 ---
 
@@ -478,23 +490,23 @@ puesto, es que el país no está.
 
 ## 6. Orden de trabajo recomendado
 
-1. **Confirmar si la vía `.exe` sin empaquetar exige firma.** Decide si el resto
-   hace falta.
-2. Crear la cuenta (19 USD, individual) y reservar el nombre **VirtualDeck**.
-   Reservar el nombre es gratis y bloquea que otro lo tome.
-3. Sacar `identityName` y `publisher` de Partner Center.
-4. Compilar un `appx` de prueba, firmarlo con certificado autofirmado e
-   instalarlo.
-5. Probar el resto con el paquete instalado. El riesgo de los sensores ya no
+1. Crear la cuenta (19 USD, individual) y reservar el nombre **VirtualDeck**.
+   Reservar el nombre es gratis y bloquea que otro lo tome. (Hecho.)
+2. Sacar `identityName` y `publisher` de Partner Center. (Hecho: §3.)
+3. Compilar con `npm run package:store` y subir el `.appx` del kit
+   (`_referencias/store-0.14.0/`).
+4. Probar el resto con el paquete instalado. El riesgo de los sensores ya no
    existe: LHM se dejó fuera del paquete (§2.3).
-6. Probar el arranque automático (§2.2) y que no aparezca el actualizador (§2.1).
-7. Enviar, con las notas de §4 pegadas literalmente.
+5. Probar el arranque automático (§2.2) y que no aparezca el actualizador (§2.1).
+6. Enviar, con las notas de §4 pegadas literalmente.
 
 ---
 
-## 6.5. Lo que se comprobó con el paquete instalado (0.9.3)
+## 6.5. Lo que se comprobó con el paquete instalado (0.9.3; la 0.14.0 salió del mismo flujo)
 
-Instalado de verdad, firmado con un certificado de prueba, y medido:
+Instalado de verdad, firmado con un certificado de prueba, y medido
+(la 0.14.0 se empaquetó con `npm run package:store`: `VirtualDeck-0.14.0.appx`,
+120,5 MB, kit en `_referencias/store-0.14.0/`):
 
 | Qué | Resultado |
 |---|---|
