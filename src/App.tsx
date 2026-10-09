@@ -1,21 +1,10 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MainB } from './screens/MainB';
-import { FullscreenB } from './screens/FullscreenB';
 import { EsperaVista } from './screens/EsperaVista';
-import { SearchOverlay } from './components/SearchOverlay';
-// Lo que no se ve al arrancar va en carga diferida: cada pantalla es un trozo
-// aparte y el JS principal baja. El tutorial (Onboarding) también, que solo
-// sale en la primera ejecución. La principal, kiosko y la búsqueda se quedan.
-const EditorB = React.lazy(() => import('./screens/EditorB').then((m) => ({ default: m.EditorB })));
-const WallpaperB = React.lazy(() => import('./screens/WallpaperB').then((m) => ({ default: m.WallpaperB })));
-const RGBManagerB = React.lazy(() => import('./screens/RGBManagerB').then((m) => ({ default: m.RGBManagerB })));
-const BarConfigB = React.lazy(() => import('./screens/BarConfigB').then((m) => ({ default: m.BarConfigB })));
-const DispositivosB = React.lazy(() => import('./screens/DispositivosB').then((m) => ({ default: m.DispositivosB })));
-const Onboarding = React.lazy(() => import('./components/Onboarding').then((m) => ({ default: m.Onboarding })));
-import { DotGlyphIcon } from './components/dot480/DotGlyphIcon';
-import { BotonIcono } from './components/ui/BotonIcono';
+import { VistasSecundarias } from './screens/VistasSecundarias';
+import { OverlaysApp } from './screens/OverlaysApp';
 import { NowPlayingProvider } from './utils/nowPlaying';
-import { LanguageProvider, useT } from './utils/i18n';
+import { LanguageProvider } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, sanearConfig, sanearPagina, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
@@ -29,9 +18,10 @@ import { botonesResueltos } from './utils/botonesFijos';
 import { botonPorId } from './utils/botonPorId';
 import { useDeck } from './utils/useDeck';
 import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from './utils/pulsarBoton';
-import { navegarDesdeApp, indiceRealPorNumero } from './utils/acciones/pageNav';
+import { navegarDesdeApp } from './utils/acciones/pageNav';
 import { useAutoProfile } from './utils/useAutoProfile';
 import { useConfigExterna } from './utils/useConfigExterna';
+import { useAppShortcuts } from './utils/useAppShortcuts';
 import { installGlobalErrorHandlers, logError } from './utils/logger';
 import { aplicarPedidoTienda } from './utils/tiendaAplicar';
 import type { ButtonConfig, PageConfig } from './types';
@@ -46,94 +36,6 @@ function PantallaCargando() {
   return (
     <div style={{ width: '100vw', height: '100vh', background: VD.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: VD.textMuted, fontFamily: VD.mono, fontSize: 12, letterSpacing: 2 }}>
       CARGANDO...
-    </div>
-  );
-}
-
-function AvisoDeshacer({ texto, onUndo }: { texto: string; onUndo?: () => void }) {
-  const VD = useTheme();
-  const t = useT();
-  const esDeshecho = texto.toLowerCase().includes('deshecho') || texto.toLowerCase().includes('undone');
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 300,
-      background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-      borderRadius: VD.radius.md, padding: '8px 14px',
-      fontFamily: VD.mono, fontSize: 10, color: VD.text, letterSpacing: 0.5,
-      boxShadow: VD.shadow.menu,
-      display: 'inline-flex', alignItems: 'center', gap: 12,
-    }}>
-      <span>{texto}</span>
-      {onUndo && !esDeshecho && (
-        <button
-          onClick={onUndo}
-          style={{
-            background: `${VD.accent}22`,
-            border: `1px solid ${VD.accent}`,
-            borderRadius: VD.radius.sm,
-            padding: '3px 8px',
-            color: VD.accent,
-            fontFamily: VD.mono,
-            fontSize: 9,
-            letterSpacing: 1,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-          }}
-        >
-          <DotGlyphIcon glyph="UNDO" size={8} color={VD.accent} />
-          <span>{t('undo.action')}</span>
-        </button>
-      )}
-    </div>
-  );
-}
-
-function AvisoError({ texto, onCerrar }: { texto: string; onCerrar: () => void }) {
-  const VD = useTheme();
-  const t = useT();
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 310,
-      background: VD.surface, border: `1px solid ${VD.danger}`,
-      borderRadius: VD.radius.md, padding: '10px 16px',
-      fontFamily: VD.mono, fontSize: 11, color: VD.text,
-      maxWidth: 'min(560px, 80%)', boxShadow: VD.shadow.menu,
-      display: 'flex', gap: 10, alignItems: 'flex-start',
-    }}>
-      <div style={{ flexShrink: 0, marginTop: 2 }}>
-        <DotGlyphIcon glyph="WARN" size={9} color={VD.danger} />
-      </div>
-      <span style={{ flex: 1, lineHeight: 1.5 }}>{texto}</span>
-      <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={onCerrar} tamano={16} tamanoGlifo={8} color={VD.textMuted} />
-    </div>
-  );
-}
-
-function UpdateBanner({ version, onRestart, onLater }: { version: string; onRestart: () => void; onLater: () => void }) {
-  const VD = useTheme();
-  const t = useT();
-  return (
-    <div style={{
-      position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 320,
-      background: VD.surface, border: `1px solid ${VD.accent}`,
-      borderRadius: VD.radius.md, padding: '10px 16px',
-      fontFamily: VD.mono, fontSize: 11, color: VD.text,
-      boxShadow: VD.shadow.menu, display: 'flex', gap: 12, alignItems: 'center',
-    }}>
-      <span>{t('update.ready', { version })}</span>
-      <button
-        onClick={onRestart}
-        style={{ padding: '5px 12px', background: VD.accent, border: 'none', color: VD.onAccent, fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm, letterSpacing: 1 }}
-      >{t('update.restart')}</button>
-      <button
-        onClick={onLater}
-        style={{ padding: '5px 8px', background: 'none', border: `1px solid ${VD.border}`, color: VD.textMuted, fontFamily: VD.mono, fontSize: 10, cursor: 'pointer', borderRadius: VD.radius.sm }}
-      >{t('update.later')}</button>
     </div>
   );
 }
@@ -190,17 +92,17 @@ export default function App() {
   useEffect(() => {
     if (!api || config.uiScale === undefined) return;
     api.app.setZoom(config.uiScale).catch(() => {});
-  }, [config.uiScale]);
+  }, [api, config.uiScale]);
 
   // Primer plano. El proceso principal ya lo aplica al crear la ventana leyendo
   // la config del disco; esto es para cuando el usuario lo cambia en caliente.
   useEffect(() => {
     api?.window.setAlwaysOnTop(!!config.alwaysOnTop);
-  }, [config.alwaysOnTop]);
+  }, [api, config.alwaysOnTop]);
 
   // Clamp activePage when pages change
   useEffect(() => {
-    if (activePage >= config.pages.length) setActivePage(config.pages.length - 1);
+    setActivePage((curr) => (curr >= config.pages.length ? Math.max(0, config.pages.length - 1) : curr));
   }, [config.pages.length]);
 
   // Install global error handlers once (forwards to main-process log file).
@@ -247,7 +149,7 @@ export default function App() {
         if (ruta) setImportError(t('config.damaged', { ruta }));
       }).catch(() => {});
     });
-  }, []);
+  }, [api, setConfig, setLoaded, t]);
 
   useConfigExterna(api, setConfig);
 
@@ -259,7 +161,7 @@ export default function App() {
       api?.config.save(next).catch(() => {});
       return next;
     });
-  }, [api]);
+  }, [api, setConfig]);
 
 
 
@@ -505,7 +407,7 @@ export default function App() {
     api?.config.save(final).catch(() => {});
     setImportError(null);
     return true;
-  }, [api, t]);
+  }, [api, setConfig, t]);
 
   const handleConfigImport = useCallback(async () => {
     const data = await api?.config.import();
@@ -526,45 +428,17 @@ export default function App() {
     setView('main');
   }, [api]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      const inField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
-
-      // Ctrl+K: búsqueda global (funciona incluso en inputs)
-      if (e.ctrlKey && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        if (view === 'main' && editingId === null) setSearchOpen((v) => !v);
-        return;
-      }
-      // Ctrl+Z: undo
-      if (e.ctrlKey && e.key === 'z' && editingId === null && !searchOpen) {
-        if (!inField) {
-          undo();
-          return;
-        }
-      }
-      // Escape
-      if (e.key === 'Escape') {
-        if (searchOpen) { setSearchOpen(false); return; }
-        if (editingId !== null) { setEditingId(null); return; }
-        if (view === 'fullscreen') { setView('main'); return; }
-        if (view === 'wallpaper') { setView('main'); return; }
-        if (view === 'rgb') { setView('main'); return; }
-        if (view === 'barra') { setView('main'); return; }
-        if (view === 'devices') { setView('main'); return; }
-        return;
-      }
-      // 1-9: solo páginas del deck (las de dock no tienen número aquí).
-      if (editingId !== null || searchOpen) return;
-      if (inField) return;
-      const destino = indiceRealPorNumero(config.pages, e.key);
-      if (destino !== null) setActivePage(destino);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [editingId, view, config.pages, undo, searchOpen]);
+  useAppShortcuts({
+    view,
+    setView,
+    editingId,
+    setEditingId,
+    searchOpen,
+    setSearchOpen,
+    undo,
+    pages: config.pages,
+    setActivePage,
+  });
 
   if (!loaded) {
     // Envuelta en el proveedor de tema porque `App` renderiza el proveedor: su
@@ -646,124 +520,59 @@ export default function App() {
         />
       )}
 
-      {view === 'fullscreen' && (
-        <FullscreenB
+      {view !== 'main' && (
+        <VistasSecundarias
+          view={view}
           config={config}
           soundOnPress={sonidoActivo(config)}
           soundProfile={perfilSonido(config)}
-          onExit={handleExitFullscreen}
+          onExitFullscreen={handleExitFullscreen}
           onSetKioskPin={setKioskPin}
           onStateUpdate={updateState}
           onToggle={handleToggle}
-        />
-      )}
-
-      {view === 'wallpaper' && (
-        <WallpaperB
-          config={config}
           onBack={() => setView('main')}
-          onSave={(wallpaper) => saveConfig({ ...config, wallpaper })}
-        />
-      )}
-
-      {view === 'rgb' && (
-        <RGBManagerB
-          config={config}
-          onConfigChange={saveConfig}
-          onBack={() => setView('main')}
-        />
-      )}
-
-      {view === 'devices' && (
-        <DispositivosB
-          config={config}
-          superficies={superficies.dispositivos}
-          modelos={superficies.modelos}
-          imagenes={superficies.imagenes}
-          paginasActivas={superficies.paginasActivas}
-          modosActivos={superficies.modosActivos}
-          onFijarModosPerilla={fijarModosPerilla}
+          onSaveConfig={saveConfig}
+          superficies={superficies}
+          fijarModosPerilla={fijarModosPerilla}
           onEditarBoton={(id) => setEditingId(id)}
-          onBrilloVivo={(serial, valor) => { void api?.superficies.brillo(serial, valor); }}
-          onBrillo={fijarBrilloSuperficie}
-          onRotacion={fijarRotacionSuperficie}
-          onActivarPagina={superficies.activarPagina}
-          onAgregarPagina={agregarPaginaSuperficie}
-          onFijarTargetApp={fijarTargetAppPagina}
-          onRenombrarPagina={renamePage}
-          onBorrarPagina={deletePage}
-          onRellenarHuecos={rellenarBotones}
-          onCrearDesdePlantilla={crearPaginaDesdePlantilla}
-          onVolver={() => setView('main')}
-        />
-      )}
-
-      {view === 'barra' && (
-        <BarConfigB
-          config={config}
-          onConfigChange={saveConfig}
-          onBack={() => setView('main')}
-        />
-      )}
-
-      {editingButton && (
-        <EditorB
-          button={editingButton}
-          rgbProfiles={config.rgb?.profiles ?? []}
-          deckState={config.state ?? {}}
-          pages={config.pages}
-          onClose={() => setEditingId(null)}
-          onSave={(updated) => { updateButton(updated); setEditingId(null); }}
-          onClear={(id) => { clearButton(id); setEditingId(null); }}
-        />
-      )}
-
-      {showOnboarding && (
-        <Onboarding
-          accent={config.accent}
-          language={config.language ?? 'system'}
-          theme={config.theme ?? 'dark'}
-          onLanguageChange={setLanguage}
-          onThemeChange={setTheme}
-          onAccentChange={(accent) => saveConfig({ ...config, accent })}
-          onExport={handleConfigExport}
-          onImport={handleConfigImport}
-          onClose={finishOnboarding}
+          api={api}
+          fijarBrilloSuperficie={fijarBrilloSuperficie}
+          fijarRotacionSuperficie={fijarRotacionSuperficie}
+          agregarPaginaSuperficie={agregarPaginaSuperficie}
+          fijarTargetAppPagina={fijarTargetAppPagina}
+          renamePage={renamePage}
+          deletePage={deletePage}
+          rellenarBotones={rellenarBotones}
+          crearPaginaDesdePlantilla={crearPaginaDesdePlantilla}
         />
       )}
       </Suspense>
 
-      {searchOpen && view === 'main' && (
-        <SearchOverlay
-          config={config}
-          accent={config.accent}
-          onClose={() => setSearchOpen(false)}
-          onPick={(btn) => {
-            setActivePage(btn.page);
-            setSearchOpen(false);
-            setEditingId(btn.id);
-          }}
-        />
-      )}
-
-      {/* Undo toast — bottom-center, no-blocking */}
-      {undoToast && (
-        <AvisoDeshacer texto={undoToast} onUndo={undo} />
-      )}
-
-      {/* Update ready — bottom-center, offers restart */}
-      {updateReady !== null && (
-        <UpdateBanner
-          version={updateReady}
-          onRestart={() => api?.update.quitAndInstall()}
-          onLater={() => setUpdateReady(null)}
-        />
-      )}
-
-      {/* Import error — bottom-center, dismissible */}
-      {importError && (
-        <AvisoError texto={importError} onCerrar={() => setImportError(null)} />
-      )}
+      <OverlaysApp
+        editingButton={editingButton}
+        config={config}
+        setEditingId={setEditingId}
+        updateButton={updateButton}
+        clearButton={clearButton}
+        showOnboarding={showOnboarding}
+        setLanguage={setLanguage}
+        setTheme={setTheme}
+        saveConfig={saveConfig}
+        handleConfigExport={handleConfigExport}
+        handleConfigImport={handleConfigImport}
+        finishOnboarding={finishOnboarding}
+        searchOpen={searchOpen}
+        setSearchOpen={setSearchOpen}
+        view={view}
+        setActivePage={setActivePage}
+        undoToast={undoToast}
+        undo={undo}
+        updateReady={updateReady}
+        setUpdateReady={setUpdateReady}
+        api={api}
+        importError={importError}
+        setImportError={setImportError}
+      />
 
     </div>
     </NowPlayingProvider>
