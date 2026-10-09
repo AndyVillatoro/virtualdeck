@@ -99,6 +99,17 @@ Todo lo de aquí está **verificado por inspección o por prueba automatizada**,
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
 
+* **2026-10-09 (madrugada / cierre de sesión)** — *Antigravity (orquestador)*:
+  - **Estado**: Todo limpio y comiteado en `main` (`origin/main` al día).
+  - **Deuda técnica completada**:
+    - `src/App.tsx`: complejidad reducida de 29 a <18 extrayendo `VistasSecundarias.tsx`, `OverlaysApp.tsx` (en `src/screens/` para respetar `components-no-screens`), `useAppShortcuts.ts`. 0 advertencias ESLint en el repo.
+    - `src/utils/superficies/pintarTecla.ts` (835 → 316 líneas): extraído `pintarTeclaDibujo.ts` (413 líneas).
+    - `electron/main/sensors.ts` (596 → 240 líneas): extraído `sensors-parser.ts` (216 líneas).
+    - `Glyph57Editor.tsx` renombrado a `Glyph57View.tsx` (41 líneas); actualizadas sus 3 importaciones y `ROADMAP.md:299`.
+    - Eliminadas 10 claves i18n huérfanas `glyph.*` en `esEditor.ts` y `enEditor.ts`.
+  - **Guardianes**: 7/7 en verde con `npm run check`, 0 exports huérfanos en `knip`, build 1.68 s.
+  - **Siguiente versión (v0.15.0)**: Iniciar Browser Companion Extension (Ítem 114) y compatibilidad física OpenDeck / Elgato Plus/Neo (Ítem 115).
+
 ---
 
 ## 3. Checklist de Entrega de Turno (Handoff Checklist)

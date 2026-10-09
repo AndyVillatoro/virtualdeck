@@ -4,46 +4,49 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
-## Turno 2026-10-09 (madrugada) — Saneamiento completo de deuda técnica, auditoría OpenDeck y especificación de extensión compañera
+## Turno 2026-10-09 (madrugada / cierre) — Modularización integral, deuda técnica erradicada y entrega v0.14.1
 
-* **Quién:** wK (Antigravity CLI / orquestador) + delegación masiva en Herdr (`wR`, `wW`, `wX`, `wZ`, `wY`).
-* **Rama:** `main`.
-* **Paquete Store:** `dist/VirtualDeck-0.14.1.msix` (120.5 MB, manifest `0.14.1.0`), enviado a certificación por el dueño en Partner Center.
-* **Novedades y guías:** `docs/store/novedades-0.14.1-es.txt`, `docs/store/novedades-0.14.1-en.txt`, `docs/store/submission-0.14.1.md`.
-* **Investigaciones técnicas:** `docs/investigacion/auditoria-opendeck.md`, `docs/investigacion/extension-companion.md`.
+* **Quién:** Antigravity (orquestador) + agentes Herdr (`wR`, `wW`, `wX`, `wZ`, `wY`, `space bunny`).
+* **Rama:** `main` (al día con `origin/main` en commit `60d029d`).
+* **Paquete Store:** `dist/VirtualDeck-0.14.1.msix` (120.5 MB, manifest `0.14.1.0`), **enviado a certificación** por el dueño en Partner Center (en espera de aprobación).
+* **Novedades Store:** `docs/store/novedades-0.14.1-es.txt`, `docs/store/novedades-0.14.1-en.txt`, `docs/store/submission-0.14.1.md`.
+* **Investigaciones para v0.15:** `docs/investigacion/auditoria-opendeck.md` (Ítem 115), `docs/investigacion/extension-companion.md` (Ítem 114).
 
-### Qué entró
+### Qué entró en esta sesión
 
-1. **Purga total de código muerto y exports huérfanos (knip a 0 exports / 0 tipos):**
-   - Backend (`electron/main/`, T-DEUDA-06 por wR): 12 archivos saneados, 20 símbolos convertidos a locales privados, 6 funciones muertas eliminadas sin alterar IPC.
-   - Frontend (`src/`, T-DEUDA-08 por wZ): 18 archivos saneados, des-exportación completa de tipos huérfanos, eliminación del editor modal huérfano de `Glyph57Editor.tsx` (-447 líneas). `npm run lint:dead` reporta 0 exports y 0 tipos sin usar.
-2. **Modularización y erradicación de advertencias ESLint (T-DEUDA-07 por wW y wK):**
-   - `electron/main/index.ts`: complejidad de `setupWindow` reducida de 28 a 4 mediante funciones auxiliares de inicialización.
-   - `electron/main/macro.ts`: eliminación de `require()` sustituido por importación ESM TypeScript nativa.
-   - `electron/main/media.ts`: corrección de advertencia `no-misleading-character-class`.
-   - `electron/main/ps-helpers.ts`: complejidad de `injectUtf8Prefix` reducida de 20 a 4 extrayendo analizadores sintácticos.
-   - `src/components/TitleBar.tsx`: complejidad reducida de 29 a < 10 extrayendo el subcomponente `FranjaSuperior.tsx`.
-   - `src/components/Onboarding.tsx`: dependencias de hooks resueltas con `useCallback`.
-   - Todo el directorio `electron/main/` queda con 0 errores y 0 warnings.
-3. **Auditoría profunda de OpenDeck (`docs/investigacion/auditoria-opendeck.md`, T-AUD-01 por wX):**
-   - Análisis del repositorio OpenDeck v2.14.0 (commit `ca78774`).
-   - Confirmación de hardware: únicamente 16 modelos de Elgato nativos; Loupedeck/Razer/AVerMedia no tienen soporte nativo en OpenDeck.
-   - Recomendaciones estratégicas para VirtualDeck: Elgato Plus/Neo, dial stacks para el N3, deep-links y protocolo de plugins.
-4. **Especificación técnica de la Extensión Compañera (`docs/investigacion/extension-companion.md`, Ítem 114):**
-   - Arquitectura en Manifest V3 con Offscreen Document y `tabCapture` para streaming fluido de pestaña sin congelamiento por oclusión de ventana ni suspensión en pestañas inactivas.
-   - Transporte local seguro por WebSocket (`ws://127.0.0.1:48201`) con autenticación por token y cero telemetría externa.
-   - Protocolo binario de frames y JSON de metadatos de reproducción.
+1. **Modularización completa de archivos gigantes (>600 líneas) y complejidad ciclomática:**
+   - `src/App.tsx` (650 → 475 líneas, complejidad 29 → <18): se extrajeron `src/screens/VistasSecundarias.tsx` (137 líneas), `src/screens/OverlaysApp.tsx` (245 líneas, colocado en `screens/` para cumplir la regla arquitectónica `components-no-screens` de dependency-cruiser) y `src/utils/useAppShortcuts.ts` (82 líneas). **0 advertencias ESLint en todo el proyecto**.
+   - `src/utils/superficies/pintarTecla.ts` (835 → 316 líneas): se extrajo `src/utils/superficies/pintarTeclaDibujo.ts` (413 líneas) con las rutinas puras de canvas (`dibujarConTrama`, `dibujarSvg`, `dibujarMarca`, `dibujarGlifo57`, `dibujarMatrizAnimada`, fuentes LCD, rotación y compresión JPEG).
+   - `electron/main/sensors.ts` (596 → 240 líneas): se extrajo `electron/main/sensors-parser.ts` (216 líneas) desacoplando el árbol y categorización de LibreHardwareMonitor del ciclo HTTP de Electron.
+2. **Saneamiento de Glyph57 y claves i18n huérfanas:**
+   - `src/components/Glyph57Editor.tsx` renombrado a `src/components/Glyph57View.tsx` (41 líneas), reflejando con exactitud que es un visualizador inline de glifos 5×7 y no un editor modal. Se actualizaron sus 3 importaciones (`ContenidoCentral`, `CampoIconoUnificado`, `SubseccionAnimacion`) y la referencia del ítem 2.1 en `docs/ROADMAP.md`.
+   - Se erradicaron de raíz las 10 claves i18n huérfanas (`glyph.*`) en `src/utils/idiomas/esEditor.ts` y `enEditor.ts`. Simetría perfecta en 1,376 claves.
+3. **Purga de exports huérfanos y código muerto (knip a 0 exports / 0 tipos):**
+   - Backend (`electron/main/`): 20+ símbolos convertidos a locales privados, 0 exports huérfanos.
+   - Frontend (`src/`): eliminados modales obsoletos (-447 líneas), 0 exports huérfanos, 0 tipos sin usar.
+4. **Investigaciones completadas y documentadas:**
+   - `docs/investigacion/extension-companion.md`: Arquitectura de extensión de navegador Manifest V3 Offscreen Document para streaming de video sin pausa en pestañas en segundo plano (Ítem 114).
+   - `docs/investigacion/auditoria-opendeck.md`: Análisis técnico de OpenDeck v2.14.0 confirmando soporte nativo Elgato y 4 recomendaciones prioritarias para VirtualDeck (Ítem 115).
+5. **Portal Web GitHub Pages 100% terminado:**
+   - `docs/index.html` cuenta con hero con tráilers bilingües (`trailer-es.mp4`/`trailer-en.mp4`), galería interactiva canvas con disolvencia por scroll dot-matrix, deck interactivo de 12 teclas, 11 banners en 1080p y redirección a Microsoft Store.
 
-### Verificación
+### Estado de guardianes y verificación
 
-* `npm run check`: **0 errores**, 8 warnings restantes (únicamente en `App.tsx`), 7 guardianes en verde.
-* `npx tsc --noEmit`: **0 errores**.
-* `npm run lint:dead`: **0 exports huérfanos, 0 tipos huérfanos**.
+* `npm run check`: **7/7 guardianes en verde** (0 errores, 0 warnings).
+  - `tsc --noEmit`: limpio (0 errores).
+  - `depcruise src electron` (416 módulos): 0 violaciones.
+  - `eslint .`: 0 errores, 0 warnings.
+  - `check-i18n`, `check-acciones`, `check-ipc`, `check-wiki`, `check-campos`, `check-paridad`, `check-perfiles`: OK.
+* `npm run lint:dead` (`knip`): **0 exports huérfanos, 0 tipos huérfanos**.
+* `npm run build`: Compilación en 1.68 s limpia.
+* Git: Rama `main` limpia y sincronizada con `origin/main`.
 
-### Verificación
+### Próximos pasos inmediatos para el siguiente turno
 
-* `npm run check`: **0 errores**, todos los guardianes en verde.
-* Paquete Store `dist/VirtualDeck-0.14.1.msix` validado y firmado listo para envío en Partner Center.
+1. **Seguimiento Store (v0.14.1):** Verificar la publicación en Partner Center una vez que Microsoft complete la certificación.
+2. **Inicio del ciclo v0.15.0:**
+   - Prototipar la Browser Companion Extension (`docs/investigacion/extension-companion.md`) para streaming continuo de pestañas multimedia (YouTube, Netflix, Twitch) vía WebSocket local.
+   - Implementar las recomendaciones de OpenDeck (`docs/investigacion/auditoria-opendeck.md`), priorizando el driver Elgato Plus/Neo y los Dial Stacks para perillas de 3 pulsaciones.
 
 ## Turno 2026-10-08 (noche) — T-WEB-01 / T-TRL-01 / T-BAN-01: rediseño web, tráilers bilingües y banners limpios
 
