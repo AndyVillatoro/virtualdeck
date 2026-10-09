@@ -1,0 +1,5 @@
+- Vídeo nativo en el panel de música en todos los formatos: resolución adaptativa según el tamaño en pantalla, reduciendo el consumo de CPU a un tercio sin pérdida de nitidez. Disponible en formato vertical estándar y en barra alargada (1280×480).
+- Detección de oclusión de ventana: aviso visual automático cuando otra aplicación cubre el reproductor de vídeo en segundo plano.
+- Portada web y galería renovadas: visualización interactiva con transición de puntos al scrollear, consola táctil interactiva, tráiler bilingüe (ES/EN) y banners en alta resolución.
+- Compilación automatizada de vd-core: el núcleo nativo de bajo nivel se compila e integra automáticamente en el empaquetado.
+- Soporte oficial y exclusivo en Microsoft Store: actualizaciones fluidas y seguras garantizadas mediante paquete MSIX con firma de confianza y certificación oficial de Windows.

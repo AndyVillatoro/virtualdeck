@@ -53,15 +53,11 @@ Las luces RGB requieren instalar OpenRGB. Los sensores de temperatura requieren 
 ========================================
 QUÉ HAY DE NUEVO EN ESTA VERSIÓN
 ========================================
-- Docks físicos Stream Dock: se detectan al conectarlos, con página propia, teclas LCD, perillas y botones. Tres perfiles completos (multimedia, streaming y productividad) y presets por control.
-- Catálogo de iconos único, con buscador y miles de marcas e iconos. El editor ahora va por secciones, con buscador y familias de acciones.
-- Panel de música más compacto: se pliega a una lengüeta, en pantallas bajas se tumba, y muestra la barra de progreso de la canción y el estado de aleatorio y repetir.
-- Formato barra para monitores anchos y bajos (como 1280×480): pantalla principal, kiosko y Dispositivos se adaptan.
-- Mando móvil con marcas, widgets en vivo y pulsación larga.
-- Tienda de perfiles y páginas en ventana propia, con iconos, portadas y capturas.
-- Texto a voz nativo y días de la semana en los disparadores por hora.
-- Los widgets y deslizadores se leen bien sobre cualquier color de fondo en tema claro y oscuro.
-- La ventana recuerda en qué monitor estaba y vuelve a él.
+- Vídeo nativo en el panel de música en todos los formatos: resolución adaptativa según el tamaño en pantalla, reduciendo el consumo de CPU a un tercio sin pérdida de nitidez. Disponible en formato vertical estándar y en barra alargada (1280×480).
+- Detección de oclusión de ventana: aviso visual automático cuando otra aplicación cubre el reproductor de vídeo en segundo plano.
+- Portada web y galería renovadas: visualización interactiva con transición de puntos al scrollear, consola táctil interactiva, tráiler bilingüe (ES/EN) y banners en alta resolución.
+- Compilación automatizada de vd-core: el núcleo nativo de bajo nivel se compila e integra automáticamente en el empaquetado.
+- Soporte oficial y exclusivo en Microsoft Store: actualizaciones fluidas y seguras garantizadas mediante paquete MSIX con firma de confianza y certificación oficial de Windows.
 
 ========================================
 CARACTERÍSTICAS DEL PRODUCTO  (una por campo, «Añadir más»)

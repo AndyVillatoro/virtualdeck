@@ -53,15 +53,11 @@ RGB lighting requires installing OpenRGB. Temperature sensors require LibreHardw
 ========================================
 WHAT'S NEW IN THIS VERSION
 ========================================
-- Physical Stream Dock support: detected on connection, with its own page, LCD keys, knobs and buttons. Three complete profiles (media, streaming and productivity) and per-control presets.
-- One icon catalog with search and thousands of brands and icons. The editor is now organized in sections, with search and action families.
-- A more compact music panel: it folds into a side tab, lies down on short screens, and shows the song progress bar and the shuffle and repeat state.
-- Bar layout for wide, short monitors (such as 1280x480): the main screen, kiosk and Devices adapt to it.
-- Mobile remote with brand icons, live widgets and long press.
-- Profile and page store in its own window, with icons, covers and screenshots.
-- Native text to speech and weekdays on time triggers.
-- Widgets and sliders stay readable on any background color in light and dark themes.
-- The window remembers which monitor it was on and returns to it.
+- Native video in the music panel across all layouts: adaptive capture resolution matching on-screen dimensions, reducing CPU usage to one-third without losing crispness. Available in both standard vertical panel and ultrawide bar layout (1280x480).
+- Window occlusion detection: automatic visual notification when another window covers the video player in the background.
+- Redesigned web showcase and gallery: scroll-driven dot matrix dissolve transition, interactive touch console, bilingual trailer (ES/EN), and high-resolution banner captures.
+- Automated vd-core build: low-level native core is automatically compiled and bundled during the store build pipeline.
+- Official and exclusive Microsoft Store distribution: seamless and secure updates backed by trusted MSIX packaging and official Windows certification.
 
 ========================================
 PRODUCT FEATURES  (one per field, "Add more")
