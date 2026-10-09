@@ -12,9 +12,6 @@ import { useEffect, useReducer } from 'react';
 
 type Catalogo = typeof import('../data/brandIcons');
 
-/** Tipo del catálogo para anotar helpers sin arrastrar los datos. */
-export type CatalogoMarcas = Catalogo;
-
 let mod: Catalogo | null = null;
 let prom: Promise<Catalogo> | null = null;
 const oyentes = new Set<() => void>();

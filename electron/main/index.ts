@@ -122,9 +122,7 @@ function onQuit() {
   app.quit();
 }
 
-function setupWindow() {
-  const win = createMainWindow();
-
+function setupWindowCloseHandler(win: BrowserWindow): void {
   win.on('close', (e) => {
     if (!isQuitting) {
       e.preventDefault();
@@ -132,6 +130,83 @@ function setupWindow() {
       win.hide();
     }
   });
+}
+
+// Barra flotante: si quedó activada, sale sola al arrancar. Es una ventana
+// aparte, así que no depende de que la principal esté visible.
+function setupFloatingBar(initialCfg: any): void {
+  const barraCfg = initialCfg?.floatingBar;
+  if (!barraCfg?.enabled || !Array.isArray(barraCfg.slots) || barraCfg.slots.length === 0) return;
+  abrirBarra({
+    huecos: barraCfg.slots.length,
+    lado: barraCfg.side === 'left' ? 'left' : BARRA_POR_DEFECTO.side,
+    tile: typeof barraCfg.tileSize === 'number' ? barraCfg.tileSize : BARRA_POR_DEFECTO.tileSize,
+    y: typeof barraCfg.y === 'number' ? barraCfg.y : null,
+  });
+}
+
+// Servidor local, si el usuario lo dejo activado. Viene apagado de fabrica.
+function setupRemoteServer(initialCfg: any, win: BrowserWindow): void {
+  const remotoCfg = initialCfg?.remote;
+  if (!remotoCfg?.enabled) return;
+  const r = remoto.aplicar(remotoCfg, win);
+  if (!r.ok) console.error('[remoto] no arranco:', r.error);
+}
+
+// Apply sensors config from disk so first poll uses the user's host/port.
+function setupSensors(initialCfg: any): void {
+  const sensorsCfg = initialCfg?.sensors;
+  if (sensorsCfg) {
+    sensors.configure({
+      host: sensorsCfg.host, port: sensorsCfg.port,
+      enabled: sensorsCfg.enabled, categories: sensorsCfg.categories,
+    });
+    if (sensorsCfg.spawnOnStart) {
+      sensors.spawnLHM(sensorsCfg.lhmPath, !!sensorsCfg.spawnElevated).catch(() => {});
+    }
+  }
+  // Asegurar siempre la configuración del servidor web si se detecta LHM en el equipo
+  const rutaLhm = sensorsCfg?.lhmPath || sensors.rutaLHMConocida();
+  if (rutaLhm) {
+    sensors.asegurarConfigLHM(rutaLhm, sensorsCfg?.port || SENSORES_POR_DEFECTO.port);
+  }
+}
+
+async function setupRgbStartupProfile(rgbCfg: any): Promise<void> {
+  // Devolver las luces a como las dejó el usuario. Tras reiniciar el
+  // equipo nadie las ha vuelto a poner: el color de un modo Direct no se
+  // guarda en ninguna parte, y hasta un Static puede perderse al cortar
+  // la corriente. Sin esto hay que abrir el gestor RGB a mano cada vez.
+  if (!rgbCfg?.startupProfileId) return;
+  const perfil = (rgbCfg.profiles ?? []).find(
+    (p: { id: string }) => p.id === rgbCfg.startupProfileId,
+  );
+  if (perfil) {
+    const ok = await rgb.applyProfile(perfil);
+    if (!ok) console.error(`[rgb] el perfil de arranque "${perfil.name}" no se aplicó del todo`);
+  } else {
+    console.error(`[rgb] perfil de arranque ${rgbCfg.startupProfileId} ya no existe`);
+  }
+}
+
+// RGB autostart — non-blocking so the rest of the app stays functional if OpenRGB fails.
+function setupRgbAutostart(initialCfg: any): void {
+  const rgbCfg = initialCfg?.rgb;
+  if (!rgbCfg || rgbCfg.enabled === false) return;
+  (async () => {
+    try {
+      if (rgbCfg.spawnOnStart && rgbCfg.openrgbPath) await rgb.spawnServer(rgbCfg.openrgbPath);
+      if (rgbCfg.autoConnect) await rgb.connect(rgbCfg.host, rgbCfg.port);
+      await setupRgbStartupProfile(rgbCfg);
+    } catch (e) {
+      console.error('[rgb] fallo en el arranque:', (e as Error).message);
+    }
+  })();
+}
+
+function setupWindow() {
+  const win = createMainWindow();
+  setupWindowCloseHandler(win);
 
   const initialCfg = loadConfig();
   // El idioma de lo poco que enseña el proceso principal: la bandeja y los
@@ -157,70 +232,10 @@ function setupWindow() {
   // la ventana aparecería detrás y saltaría al frente un instante después.
   if ((initialCfg as any)?.alwaysOnTop) win.setAlwaysOnTop(true, 'screen-saver');
 
-  // Barra flotante: si quedó activada, sale sola al arrancar. Es una ventana
-  // aparte, así que no depende de que la principal esté visible.
-  const barraCfg = (initialCfg as any)?.floatingBar;
-  if (barraCfg?.enabled && Array.isArray(barraCfg.slots) && barraCfg.slots.length > 0) {
-    abrirBarra({
-      huecos: barraCfg.slots.length,
-      lado: barraCfg.side === 'left' ? 'left' : BARRA_POR_DEFECTO.side,
-      tile: typeof barraCfg.tileSize === 'number' ? barraCfg.tileSize : BARRA_POR_DEFECTO.tileSize,
-      y: typeof barraCfg.y === 'number' ? barraCfg.y : null,
-    });
-  }
-
-  // Servidor local, si el usuario lo dejo activado. Viene apagado de fabrica.
-  const remotoCfg = (initialCfg as any)?.remote;
-  if (remotoCfg?.enabled) {
-    const r = remoto.aplicar(remotoCfg, win);
-    if (!r.ok) console.error('[remoto] no arranco:', r.error);
-  }
-
-  // Apply sensors config from disk so first poll uses the user's host/port.
-  const sensorsCfg = (initialCfg as any)?.sensors;
-  if (sensorsCfg) {
-    sensors.configure({
-      host: sensorsCfg.host, port: sensorsCfg.port,
-      enabled: sensorsCfg.enabled, categories: sensorsCfg.categories,
-    });
-    if (sensorsCfg.spawnOnStart) {
-      sensors.spawnLHM(sensorsCfg.lhmPath, !!sensorsCfg.spawnElevated).catch(() => {});
-    }
-  }
-  // Asegurar siempre la configuración del servidor web si se detecta LHM en el equipo
-  const rutaLhm = sensorsCfg?.lhmPath || sensors.rutaLHMConocida();
-  if (rutaLhm) {
-    sensors.asegurarConfigLHM(rutaLhm, sensorsCfg?.port || SENSORES_POR_DEFECTO.port);
-  }
-
-  // RGB autostart — non-blocking so the rest of the app stays functional if OpenRGB fails.
-  const rgbCfg = (initialCfg as any)?.rgb;
-  if (rgbCfg && rgbCfg.enabled !== false) {
-    (async () => {
-      try {
-        if (rgbCfg.spawnOnStart && rgbCfg.openrgbPath) await rgb.spawnServer(rgbCfg.openrgbPath);
-        if (rgbCfg.autoConnect) await rgb.connect(rgbCfg.host, rgbCfg.port);
-
-        // Devolver las luces a como las dejó el usuario. Tras reiniciar el
-        // equipo nadie las ha vuelto a poner: el color de un modo Direct no se
-        // guarda en ninguna parte, y hasta un Static puede perderse al cortar
-        // la corriente. Sin esto hay que abrir el gestor RGB a mano cada vez.
-        if (rgbCfg.startupProfileId) {
-          const perfil = (rgbCfg.profiles ?? []).find(
-            (p: { id: string }) => p.id === rgbCfg.startupProfileId,
-          );
-          if (perfil) {
-            const ok = await rgb.applyProfile(perfil);
-            if (!ok) console.error(`[rgb] el perfil de arranque "${perfil.name}" no se aplicó del todo`);
-          } else {
-            console.error(`[rgb] perfil de arranque ${rgbCfg.startupProfileId} ya no existe`);
-          }
-        }
-      } catch (e) {
-        console.error('[rgb] fallo en el arranque:', (e as Error).message);
-      }
-    })();
-  }
+  setupFloatingBar(initialCfg);
+  setupRemoteServer(initialCfg, win);
+  setupSensors(initialCfg);
+  setupRgbAutostart(initialCfg);
 
   return win;
 }

@@ -196,7 +196,7 @@ export interface Profile {
  * `utils/superficies/ajustesSuperficie.ts`). Antes vivían copiados en cada
  * página del mismo serial; la migración v4→v5 los trae aquí.
  */
-export interface AjustesSuperficie {
+interface AjustesSuperficie {
   /** Brillo de las teclas LCD, 0–100. Ausente = el por defecto. */
   brillo?: number;
   /**

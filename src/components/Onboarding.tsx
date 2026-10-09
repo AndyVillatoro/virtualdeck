@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { textoSobre } from '../design';
 import { DotText } from './DotText';
@@ -61,8 +61,8 @@ export function Onboarding({
     9: <PasoRespaldo accent={accent} onExport={onExport} onImport={onImport} />,
   };
 
-  const next = () => (isLast ? onClose() : setStep((i) => i + 1));
-  const prev = () => setStep((i) => Math.max(0, i - 1));
+  const next = useCallback(() => (isLast ? onClose() : setStep((i) => i + 1)), [isLast, onClose]);
+  const prev = useCallback(() => setStep((i) => Math.max(0, i - 1)), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -76,7 +76,7 @@ export function Onboarding({
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [step]);
+  }, [next, onClose, prev]);
 
   const primaryBtn: React.CSSProperties = {
     padding: '9px 20px', background: accent, border: 'none', color: textoSobre(accent),

@@ -54,7 +54,7 @@ const TIPOS: Record<string, string> = {
  *
  * Pura a propósito, para poder probarla con `npx tsx` sin levantar servidor.
  */
-export function rutaServida(pedida: string, carpeta: string): string | null {
+function rutaServida(pedida: string, carpeta: string): string | null {
   let relativa: string;
   try {
     relativa = decodeURIComponent(pedida.split(/[?#]/)[0]);

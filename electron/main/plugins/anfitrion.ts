@@ -25,11 +25,11 @@ import { urlAbrible } from '../abrirExterno';
  * un plugin Node conecta sin `Origin`.
  */
 
-export const VERSION_APP = '7.1.0';
+const VERSION_APP = '7.1.0';
 const DISPOSITIVO = 'vd-proto';
 const TAMANO = { columns: 5, rows: 3 };
 
-export type Mensaje = Record<string, any>;
+type Mensaje = Record<string, any>;
 
 export interface OpcionesAnfitrion {
   puertoArchivos: number;

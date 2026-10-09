@@ -9,7 +9,7 @@ export interface DiscordVoiceSettings {
   deaf: boolean;
 }
 
-export interface DiscordUser {
+interface DiscordUser {
   id: string;
   username: string;
   globalName?: string;
@@ -204,7 +204,7 @@ async function scanAndConnectPipes(): Promise<net.Socket | null> {
   return null;
 }
 
-export function disconnect() {
+function disconnect() {
   if (socket) {
     try { socket.destroy(); } catch { /* noop */ }
     socket = null;
@@ -219,7 +219,7 @@ export function disconnect() {
   pendingRequests.clear();
 }
 
-export async function ensureConnected(clientId = DEFAULT_CLIENT_ID): Promise<boolean> {
+async function ensureConnected(clientId = DEFAULT_CLIENT_ID): Promise<boolean> {
   if (connected && socket && !socket.destroyed) return true;
   if (connectingPromise) return connectingPromise;
 
@@ -303,7 +303,7 @@ function sendCommand(cmd: string, args: Record<string, unknown> = {}): Promise<u
   });
 }
 
-export async function refreshVoiceSettings(): Promise<DiscordVoiceSettings | null> {
+async function refreshVoiceSettings(): Promise<DiscordVoiceSettings | null> {
   try {
     const data = (await sendCommand('GET_VOICE_SETTINGS')) as { mute?: boolean; deaf?: boolean };
     if (data && typeof data.mute === 'boolean') {

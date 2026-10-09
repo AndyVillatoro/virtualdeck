@@ -22,7 +22,7 @@ const TOPE_README = 64 * 1024;
 /** Capturas por entrada: la ficha no muestra más y así un manifiesto no fuerza cien descargas. */
 const MAX_CAPTURAS = 6;
 
-export type TipoEntradaGaleria = 'profile' | 'page';
+type TipoEntradaGaleria = 'profile' | 'page';
 
 export interface EntradaGaleria {
   id: string;

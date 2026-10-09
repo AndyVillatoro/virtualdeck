@@ -8,10 +8,7 @@ import { ACTION_TYPES } from './actionData';
 import type { ActionType, ButtonAction, Sensor } from '../../types';
 
 export { FolderButtonSlot } from './filas/HuecoCarpeta';
-export type { PropsHuecoCarpeta } from './filas/HuecoCarpeta';
 export { BranchActionRow } from './filas/FilaRama';
-export type { PropsFilaRama } from './filas/FilaRama';
-export type { PropsFilaAccionExtra } from './filas/FilaAccionExtra';
 
 /**
  * Piezas que comparten los tres pasos del editor: los estilos de los campos,

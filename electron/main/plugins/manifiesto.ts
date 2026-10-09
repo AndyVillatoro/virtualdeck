@@ -16,7 +16,7 @@ import { extname, join } from 'path';
  * `electron/main`— no tiene que decidir si una frase es interfaz o no.
  */
 
-export type TipoPlugin = 'node' | 'html' | 'exe';
+type TipoPlugin = 'node' | 'html' | 'exe';
 
 export type CodigoManifiesto =
   | 'leer'
@@ -154,7 +154,7 @@ function leerAcciones(brutos: unknown): AccionManifiesto[] | null {
  * @param texto El contenido de `manifest.json`, tal cual se leyó.
  * @param carpeta La carpeta `.sdPlugin` (se devuelve dentro del resultado).
  */
-export function interpretarManifiesto(texto: string, carpeta: string): LecturaManifiesto {
+function interpretarManifiesto(texto: string, carpeta: string): LecturaManifiesto {
   let datos: Record<string, unknown>;
   try {
     datos = JSON.parse(texto.replace(/^\uFEFF/, ''));

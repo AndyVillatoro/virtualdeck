@@ -11,7 +11,7 @@ import { Field } from './comunes';
 import type { TipoIcono } from './tiposIcono';
 import type { ButtonAction, EfectoPuntos, EfectoPulsar } from '../../types';
 
-export interface IconoActualData {
+interface IconoActualData {
   tipoIcono: TipoIcono;
   icon?: string;
   iconoPuntos?: { bits: string; origen: string };

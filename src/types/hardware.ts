@@ -22,7 +22,7 @@ export interface RGBDeviceState {
   zones: Array<{ zoneId: number; zoneName: string; colors: string[] }>;
 }
 
-export interface RGBZoneInfo {
+interface RGBZoneInfo {
   id: number;
   name: string;
   type: number;
@@ -32,7 +32,7 @@ export interface RGBZoneInfo {
   resizable: boolean;
 }
 
-export interface RGBModeInfo {
+interface RGBModeInfo {
   id: number;
   name: string;
   flags: number;
@@ -151,7 +151,7 @@ export interface NowPlaying {
   timelineUpdatedAt?: number;
 }
 
-export type SensorKind =
+type SensorKind =
   | 'Temperature' | 'Fan' | 'Voltage' | 'Load' | 'Clock' | 'Power'
   | 'Data' | 'Throughput' | 'Level' | 'SmallData' | 'Other';
 

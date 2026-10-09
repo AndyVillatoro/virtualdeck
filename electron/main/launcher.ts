@@ -4,7 +4,7 @@ import { exec, spawn } from 'child_process';
 import { shell, BrowserWindow } from 'electron';
 import { runPS, runPSBool, runCmd, injectUtf8Prefix } from './ps-helpers';
 
-export function emitirCambioVolumen(vol: number): void {
+function emitirCambioVolumen(vol: number): void {
   for (const w of BrowserWindow.getAllWindows()) {
     if (!w.isDestroyed()) {
       w.webContents.send('audio:volumeChanged', vol);
@@ -12,7 +12,7 @@ export function emitirCambioVolumen(vol: number): void {
   }
 }
 
-export function emitirCambioBrillo(bri: number): void {
+function emitirCambioBrillo(bri: number): void {
   for (const w of BrowserWindow.getAllWindows()) {
     if (!w.isDestroyed()) {
       w.webContents.send('window:brightnessChanged', bri);
@@ -523,15 +523,6 @@ export async function isProcessRunning(name: string): Promise<boolean> {
   return names.includes(name.replace(/\.exe$/i, '').toLowerCase().trim());
 }
 
-export async function killProcessByPid(pid: number): Promise<boolean> {
-  const r = intentarNativo('killProcessByPid', (n) => n.killProcessByPid(pid));
-  if (r !== undefined) return r;
-
-  return new Promise((resolve) => {
-    exec(`taskkill /PID ${pid} /F`, { timeout: 10000 }, (err) => resolve(!err));
-  });
-}
-
 export async function setVolume(percent: number): Promise<boolean> {
   const p = Math.min(100, Math.max(0, Math.round(percent)));
   const r = intentarNativo('setVolume', (n) => n.setVolume(p));
@@ -669,24 +660,6 @@ export async function iconoApp(proceso: string): Promise<string | null> {
 
 export async function focusWindow(processName: string): Promise<boolean> {
   const r = intentarNativo('focusWindow', (n) => n.focusWindow(processName));
-  if (r !== undefined) return r;
-  return snapWindow('restore', processName);
-}
-
-export async function minimizeWindow(processName?: string): Promise<boolean> {
-  const r = intentarNativo('minimizeWindow', (n) => n.minimizeWindow(processName));
-  if (r !== undefined) return r;
-  return snapWindow('minimize', processName);
-}
-
-export async function maximizeWindow(processName?: string): Promise<boolean> {
-  const r = intentarNativo('maximizeWindow', (n) => n.maximizeWindow(processName));
-  if (r !== undefined) return r;
-  return snapWindow('maximize', processName);
-}
-
-export async function restoreWindow(processName?: string): Promise<boolean> {
-  const r = intentarNativo('restoreWindow', (n) => n.restoreWindow(processName));
   if (r !== undefined) return r;
   return snapWindow('restore', processName);
 }

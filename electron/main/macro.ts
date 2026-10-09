@@ -16,24 +16,14 @@ import { buildPlaybackScript, entero, pasoSeguro, MAX_REPETICIONES } from './mac
 import type { MacroStep } from '../../src/types';
 import { tm } from './idioma';
 
+import * as uiohook from 'uiohook-napi';
+
 // ---------------------------------------------------------------------------
 // Recording
 // ---------------------------------------------------------------------------
 
-// uiohook-napi is loaded lazily (dynamic require) so a missing binary doesn't
-// crash the whole main process on startup; it only errors when the user tries
-// to record a macro.
-let _uio: any | null = null;
-
 export function getUio() {
-  if (_uio) return _uio;
-  try {
-    _uio = require('uiohook-napi');
-    return _uio;
-  } catch (e) {
-    console.error('[macro] uiohook-napi unavailable:', e);
-    return null;
-  }
+  return uiohook;
 }
 
 let _recording = false;

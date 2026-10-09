@@ -20,7 +20,7 @@ import { PRESETS_BOTON, PRESETS_PERILLA, type PresetHueco } from './presetsDock'
  * - `string`: id de `PRESETS_BOTON` (su único hueco);
  * - `{ perilla, indice }`: un hueco de `PRESETS_PERILLA` (0 izq, 1 pulsar, 2 der).
  */
-export type FuenteHueco = string | { perilla: string; indice: 0 | 1 | 2 };
+type FuenteHueco = string | { perilla: string; indice: 0 | 1 | 2 };
 
 export interface PerfilDock {
   id: string;

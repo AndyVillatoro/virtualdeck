@@ -21,7 +21,7 @@ import type { ButtonConfig, Sensor, TasasDivisa } from '../../types';
  * la tecla física del dock.
  */
 
-export type { DatosClima, DatosWidget };
+export type { DatosWidget };
 export { useClimaWidget, useDivisas } from '../../utils/fuentesWidget';
 
 interface Entradas {

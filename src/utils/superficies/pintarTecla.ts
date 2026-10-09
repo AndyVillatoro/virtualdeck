@@ -229,7 +229,7 @@ function colorTexto(boton: ButtonConfig | null, colores: ColoresSuperficie): str
 }
 
 /** Carga una imagen sin manchar el canvas (si no admite CORS, se descarta). */
-export function cargarImagen(src: string): Promise<HTMLImageElement | null> {
+function cargarImagen(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const imagen = new Image();
     imagen.crossOrigin = 'anonymous';

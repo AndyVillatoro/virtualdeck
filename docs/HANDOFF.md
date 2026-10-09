@@ -4,24 +4,41 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
-## Turno 2026-10-09 — Publicación v0.14.1, validación física N3 aprobada y plan de deuda técnica
+## Turno 2026-10-09 (madrugada) — Saneamiento completo de deuda técnica, auditoría OpenDeck y especificación de extensión compañera
 
-* **Quién:** wK (Antigravity CLI / orquestador) + delegación a agentes en Herdr (`wR`, `wW`, `wX`, `wY`, `wZ`).
+* **Quién:** wK (Antigravity CLI / orquestador) + delegación masiva en Herdr (`wR`, `wW`, `wX`, `wZ`, `wY`).
 * **Rama:** `main`.
-* **Paquete Store:** `dist/VirtualDeck-0.14.1.msix` (120.5 MB, manifest `0.14.1.0`).
-* **Notas de versión:** `dist/store-submission-0.14.1.md` (ES/EN).
+* **Paquete Store:** `dist/VirtualDeck-0.14.1.msix` (120.5 MB, manifest `0.14.1.0`), enviado a certificación por el dueño en Partner Center.
+* **Novedades y guías:** `docs/store/novedades-0.14.1-es.txt`, `docs/store/novedades-0.14.1-en.txt`, `docs/store/submission-0.14.1.md`.
+* **Investigaciones técnicas:** `docs/investigacion/auditoria-opendeck.md`, `docs/investigacion/extension-companion.md`.
 
 ### Qué entró
 
-1. **Validación física Stream Dock N3 aprobada por el dueño:**
-   - Pruebas físicas en hardware real completadas con éxito: detección de dock, distribución de 12 modelos, perfiles completos de 18 huecos, perillas multimodo, dial stacks, sonidos táctiles de perillas y botones fijos entre páginas. Ítems 58, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80 y 82 marcados como verificados en hardware físico.
-2. **Empaquetado oficial MSIX v0.14.1 para Microsoft Store:**
-   - Paquete `VirtualDeck-0.14.1.msix` compilado con encadenamiento automático de `vd-core` nativo (`npm run build:native`).
-   - Textos de novedades («What's new») generados en formato bilingüe (español e inglés) en `dist/store-submission-0.14.1.md` listos para Partner Center.
-3. **Actualización de hoja de ruta (`docs/ROADMAP.md`):**
-   - **Ítem 114**: Extensión de navegador compañera (`virtualdeck-companion`) para captura de streams vía `chrome.tabCapture` / WebRTC local a nivel de pestaña directa sin pausado al cambiar de pestaña ni congelado por oclusión HWND.
-   - **Ítem 115**: Compatibilidad multi-dock y revisión profunda de OpenDeck (`opendeck`) para incorporar teclados macro con LCD, Loupedeck Live / Razer Stream Controller, Stream Deck Studio/Pedal, Stream Dock N4/N6 y encoders con pantalla.
-   - **Ítem 116**: Auditoría profunda de deuda técnica, modularización de archivos gigantes (>400 líneas o complejidad ciclomática >18), eliminación de duplicados, limpieza de archivos obsoletos y centralización de documentación Markdown.
+1. **Purga total de código muerto y exports huérfanos (knip a 0 exports / 0 tipos):**
+   - Backend (`electron/main/`, T-DEUDA-06 por wR): 12 archivos saneados, 20 símbolos convertidos a locales privados, 6 funciones muertas eliminadas sin alterar IPC.
+   - Frontend (`src/`, T-DEUDA-08 por wZ): 18 archivos saneados, des-exportación completa de tipos huérfanos, eliminación del editor modal huérfano de `Glyph57Editor.tsx` (-447 líneas). `npm run lint:dead` reporta 0 exports y 0 tipos sin usar.
+2. **Modularización y erradicación de advertencias ESLint (T-DEUDA-07 por wW y wK):**
+   - `electron/main/index.ts`: complejidad de `setupWindow` reducida de 28 a 4 mediante funciones auxiliares de inicialización.
+   - `electron/main/macro.ts`: eliminación de `require()` sustituido por importación ESM TypeScript nativa.
+   - `electron/main/media.ts`: corrección de advertencia `no-misleading-character-class`.
+   - `electron/main/ps-helpers.ts`: complejidad de `injectUtf8Prefix` reducida de 20 a 4 extrayendo analizadores sintácticos.
+   - `src/components/TitleBar.tsx`: complejidad reducida de 29 a < 10 extrayendo el subcomponente `FranjaSuperior.tsx`.
+   - `src/components/Onboarding.tsx`: dependencias de hooks resueltas con `useCallback`.
+   - Todo el directorio `electron/main/` queda con 0 errores y 0 warnings.
+3. **Auditoría profunda de OpenDeck (`docs/investigacion/auditoria-opendeck.md`, T-AUD-01 por wX):**
+   - Análisis del repositorio OpenDeck v2.14.0 (commit `ca78774`).
+   - Confirmación de hardware: únicamente 16 modelos de Elgato nativos; Loupedeck/Razer/AVerMedia no tienen soporte nativo en OpenDeck.
+   - Recomendaciones estratégicas para VirtualDeck: Elgato Plus/Neo, dial stacks para el N3, deep-links y protocolo de plugins.
+4. **Especificación técnica de la Extensión Compañera (`docs/investigacion/extension-companion.md`, Ítem 114):**
+   - Arquitectura en Manifest V3 con Offscreen Document y `tabCapture` para streaming fluido de pestaña sin congelamiento por oclusión de ventana ni suspensión en pestañas inactivas.
+   - Transporte local seguro por WebSocket (`ws://127.0.0.1:48201`) con autenticación por token y cero telemetría externa.
+   - Protocolo binario de frames y JSON de metadatos de reproducción.
+
+### Verificación
+
+* `npm run check`: **0 errores**, 8 warnings restantes (únicamente en `App.tsx`), 7 guardianes en verde.
+* `npx tsc --noEmit`: **0 errores**.
+* `npm run lint:dead`: **0 exports huérfanos, 0 tipos huérfanos**.
 
 ### Verificación
 

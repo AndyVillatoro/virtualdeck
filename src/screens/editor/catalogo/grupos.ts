@@ -7,7 +7,7 @@ import { ALL_DOT_GLYPHS } from '../../../components/dot480/dotGlyphs8x8';
 import type { EntradaIndice, IndiceDot } from '../../../data/iconosDot/tipos';
 import type { SeccionCatalogo } from '../constantesCatalogo';
 
-export type ClaseIcono = 'glifo8' | 'tabler' | 'simple';
+type ClaseIcono = 'glifo8' | 'tabler' | 'simple';
 
 export interface ItemCatalogo {
   /** Única en todo el catálogo: `glifo:PLAY`, `catálogo:id`. */

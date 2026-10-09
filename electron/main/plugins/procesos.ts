@@ -108,7 +108,7 @@ function volcarSalida(uuid: string, dato: Buffer): void {
 }
 
 /** `true` si el plugin se lanzó por `spawn` en vez de por `utilityProcess`. */
-export function modoNodeEsSpawn(): boolean {
+function modoNodeEsSpawn(): boolean {
   return process.env.VD_PLUGIN_PROTO_MODO === 'node';
 }
 

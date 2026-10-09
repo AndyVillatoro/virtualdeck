@@ -20,7 +20,7 @@ const ALIAS_FUENTE: Record<string, string> = {
   chrome: 'chrome',
 };
 
-export function normalizarTexto(texto: string): string {
+function normalizarTexto(texto: string): string {
   return texto
     .toLowerCase()
     .normalize('NFD')
@@ -36,7 +36,7 @@ function fuenteComoBusqueda(fuente: string): string {
 }
 
 /** Cuántas pistas apuntan a esta ventana. 0 = no tiene nada que ver. */
-export function puntuarVentana(nombre: string, pista: PistaCaptura): number {
+function puntuarVentana(nombre: string, pista: PistaCaptura): number {
   const ventana = normalizarTexto(nombre);
   if (!ventana) return 0;
   let puntos = 0;
@@ -48,7 +48,7 @@ export function puntuarVentana(nombre: string, pista: PistaCaptura): number {
 }
 
 /** La de más puntos; a igualdad, la primera de la lista. `null` si nada encaja. */
-export function elegirCandidata(ventanas: VentanaCaptura[], pista: PistaCaptura): string | null {
+function elegirCandidata(ventanas: VentanaCaptura[], pista: PistaCaptura): string | null {
   let mejor: { id: string; puntos: number } | null = null;
   for (const v of ventanas) {
     const puntos = puntuarVentana(v.nombre, pista);

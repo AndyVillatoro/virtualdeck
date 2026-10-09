@@ -353,7 +353,7 @@ function parseWindowTitle(proc: string, raw: string): Parsed | null {
   const procLower = proc.toLowerCase();
   // Normalize unicode whitespace variants (NBSP, ZWSP, etc.) that Edge/Chrome
   // sometimes inject between "Microsoft" and "Edge".
-  let title = raw.replace(/[ ​‌‍﻿]/g, ' ');
+  let title = raw.replace(/[\u00a0\u200b\ufeff]|\u200c|\u200d/g, ' ');
   // Browser suffixes — handle multilingual variants:
   //   English: "and N more page(s)"   Spanish: "y N página(s) más"
   //   Portuguese: "e mais N página(s)"   plus optional "Profile: Browser" tail.

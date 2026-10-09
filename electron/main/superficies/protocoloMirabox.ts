@@ -28,11 +28,6 @@ export const LATIDO = [0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54]; // "CONNECT"
 export const LIMPIAR_TODO = [0x43, 0x4c, 0x45, 0x00, 0x00, 0x00, 0xff]; // "CLE" + 0xff
 export const APAGAR = [0x43, 0x4c, 0x45, 0x00, 0x00, 0x44, 0x43]; // "CLE" + "DC"
 
-/** "CLE" de una sola tecla (keyId 1–6). */
-export function limpiarTecla(keyId: number): number[] {
-  return [0x43, 0x4c, 0x45, 0x00, 0x00, 0x00, keyId];
-}
-
 /**
  * "LIG" + brillo. Bitfocus aplica una curva gamma 0.75 antes de mandar el
  * byte; se conserva porque es la que el hardware del N3 espera.

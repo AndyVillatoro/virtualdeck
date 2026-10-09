@@ -55,7 +55,7 @@ export function estadoDeEntrada(
   return { estado: 'instalado', instalado };
 }
 
-export type TipoFiltroTienda = 'all' | 'profile' | 'page' | 'plugin';
+type TipoFiltroTienda = 'all' | 'profile' | 'page' | 'plugin';
 
 export interface FiltrosTienda {
   texto: string;

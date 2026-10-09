@@ -6,7 +6,7 @@ import { useCapturaHotkey } from '../useCapturaHotkey';
 import { normalizarHotkey } from './useConfiguracionExistente';
 import type { PageConfig } from '../../../types';
 
-export interface ComboSugerido {
+interface ComboSugerido {
   atajo: string;
   nombreKey: string;
   paraQueKey: string;

@@ -14,7 +14,7 @@
  * para los iconos animados del roadmap 78, sin interfaz todavía.
  */
 
-export type CeldaPunto = string;
+type CeldaPunto = string;
 export type MatrizPuntos = CeldaPunto[][];
 export type FotogramaPuntos = MatrizPuntos;
 

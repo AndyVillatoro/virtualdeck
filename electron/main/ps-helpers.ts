@@ -111,6 +111,50 @@ export async function runPSBool(script: string, opts: PSOptions = {}): Promise<b
   return r.ok;
 }
 
+function skipLeadingWhitespaceAndComments(script: string): number {
+  let i = 0;
+  while (i < script.length) {
+    const ch = script[i];
+    if (ch === ' ' || ch === '\t' || ch === '\r' || ch === '\n') {
+      i++;
+      continue;
+    }
+    if (ch === '#') {
+      // line comment — skip to end of line
+      while (i < script.length && script[i] !== '\n') i++;
+      continue;
+    }
+    if (ch === '<' && script[i + 1] === '#') {
+      // block comment — skip to '#>'
+      const end = script.indexOf('#>', i + 2);
+      if (end < 0) return -1; // malformed, give up safely
+      i = end + 2;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+function findParamClosingIndex(script: string, paramStart: number): number | null {
+  // Is it `param`? (case-insensitive in PS, but conventionally lowercase)
+  if (script.slice(paramStart, paramStart + 5).toLowerCase() !== 'param') {
+    return null;
+  }
+  // Find the matching closing paren accounting for nested parens.
+  let j = script.indexOf('(', paramStart + 5);
+  if (j < 0) return null;
+  let depth = 1;
+  j++;
+  while (j < script.length && depth > 0) {
+    const ch = script[j];
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    j++;
+  }
+  return depth === 0 ? j : null;
+}
+
 /**
  * Insert PS_UTF8_PREFIX into a script. If the script declares `param(...)`
  * (which MUST be the first non-comment statement in PowerShell), inject the
@@ -121,43 +165,15 @@ export function injectUtf8Prefix(script: string): string {
   // nucleo nativo o por aqui, y sin esta guarda el `chcp` se ejecutaria dos
   // veces en el camino de respaldo.
   if (script.includes('[Console]::OutputEncoding = [System.Text.Encoding]::UTF8')) return script;
-  // Skip leading whitespace + line comments to find the first real token.
-  let i = 0;
-  while (i < script.length) {
-    const ch = script[i];
-    if (ch === ' ' || ch === '\t' || ch === '\r' || ch === '\n') { i++; continue; }
-    if (ch === '#') {
-      // line comment — skip to end of line
-      while (i < script.length && script[i] !== '\n') i++;
-      continue;
-    }
-    if (ch === '<' && script[i + 1] === '#') {
-      // block comment — skip to '#>'
-      const end = script.indexOf('#>', i + 2);
-      if (end < 0) return PS_UTF8_PREFIX + script; // malformed, give up safely
-      i = end + 2;
-      continue;
-    }
-    break;
-  }
-  // Is it `param`? (case-insensitive in PS, but conventionally lowercase)
-  if (script.slice(i, i + 5).toLowerCase() !== 'param') {
-    return PS_UTF8_PREFIX + script;
-  }
-  // Find the matching closing paren accounting for nested parens.
-  let j = script.indexOf('(', i + 5);
-  if (j < 0) return PS_UTF8_PREFIX + script;
-  let depth = 1;
-  j++;
-  while (j < script.length && depth > 0) {
-    const ch = script[j];
-    if (ch === '(') depth++;
-    else if (ch === ')') depth--;
-    j++;
-  }
-  if (depth !== 0) return PS_UTF8_PREFIX + script; // unbalanced — fall back
+
+  const firstTokenIdx = skipLeadingWhitespaceAndComments(script);
+  if (firstTokenIdx < 0) return PS_UTF8_PREFIX + script;
+
+  const paramEnd = findParamClosingIndex(script, firstTokenIdx);
+  if (paramEnd === null) return PS_UTF8_PREFIX + script;
+
   // Insert the prefix on its own line right after the param() closing paren.
-  return script.slice(0, j) + '\r\n' + PS_UTF8_PREFIX + script.slice(j);
+  return script.slice(0, paramEnd) + '\r\n' + PS_UTF8_PREFIX + script.slice(paramEnd);
 }
 
 /**

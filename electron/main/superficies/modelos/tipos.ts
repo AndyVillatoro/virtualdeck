@@ -15,7 +15,7 @@ import type {
 } from '../../../../src/types';
 
 /** Una entrada del protocolo: a qué control e índice corresponde un código. */
-export interface EntradaFisica {
+interface EntradaFisica {
   control: ControlSuperficie;
   indice: number;
   /** Gesto fijo (giros, tiras y protocolos sin `up`). Si falta, lo decide el byte 10. */
@@ -23,7 +23,7 @@ export interface EntradaFisica {
 }
 
 /** Una entrada declarada por el modelo, antes de volcarla al mapa del driver. */
-export interface EntradaModelo {
+interface EntradaModelo {
   codigo: number;
   gesto: GestoSuperficie;
   /** `true` = gesto fijo (el byte 10 no importa): protocolo viejo o `push`. */

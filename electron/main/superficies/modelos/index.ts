@@ -17,7 +17,7 @@ import { M18V3, MIRABOX_XL, V293 } from './grandes';
 import { N4_1234, N4_1245 } from './n4';
 import { disposicionDe, type ModeloMirabox } from './tipos';
 
-export type { ControlModelo, EntradaFisica, EntradaModelo, ModeloMirabox } from './tipos';
+export type { ModeloMirabox } from './tipos';
 export { disposicionDe } from './tipos';
 
 export const MODELOS: ModeloMirabox[] = [
@@ -43,11 +43,6 @@ export function modeloPorVidPid(vendorId: number, productId: number): ModeloMira
     }
   }
   return null;
-}
-
-/** El modelo por su id estable (`PageConfig.superficie.modelo`). */
-export function modeloPorId(id: ModeloSuperficie): ModeloMirabox | null {
-  return MODELOS.find((m) => m.id === id) ?? null;
 }
 
 /** Todas las disposiciones por id: lo que ve la pantalla, también sin dispositivo. */

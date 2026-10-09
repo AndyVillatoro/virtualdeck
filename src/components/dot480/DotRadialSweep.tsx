@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 
 /** Qué se pulsó: `destello` (brillo de confirmación) u `onda` (anillos). */
-export type EfectoSweep = 'destello' | 'onda';
+type EfectoSweep = 'destello' | 'onda';
 
 export interface DotRadialSweepProps {
   /** Color de acento del botón para iluminar los puntos del barrido */

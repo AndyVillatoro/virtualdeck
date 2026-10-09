@@ -27,7 +27,7 @@ export interface IconoPuntosMando {
 }
 
 /** Lo que el servidor manda por botón: puntos siempre, texto solo si `icon` no es glifo. */
-export interface IconoResueltoMando {
+interface IconoResueltoMando {
   puntos: IconoPuntosMando;
   /**
    * `icon` cuando no resuelve a ningún glifo (texto corto tipo «AB» o texto
@@ -37,7 +37,7 @@ export interface IconoResueltoMando {
   iconTexto?: string;
 }
 
-export interface SubBotonMandoMovil {
+interface SubBotonMandoMovil {
   id: string;
   label: string;
   sublabel?: string;
@@ -198,7 +198,7 @@ function filasDeAccion(tipo: string | undefined): number[] {
  * El fondo (imagen/marca) y el 5×7 los sigue decidiendo la página, que ya
  * los recibe aparte.
  */
-export function resolverIconoMando(fuente: {
+function resolverIconoMando(fuente: {
   iconoPuntos?: { bits: string; origen: string };
   icon?: string;
   dotGlyph?: string;

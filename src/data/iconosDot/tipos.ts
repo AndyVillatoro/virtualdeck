@@ -48,9 +48,9 @@ export interface IndiceDot {
 }
 
 /** Formato compacto de `indice.json`: etiquetas por índice y acciones sin nombre. */
-export type CrudoMarca = [string, string] | [string, string, number[]];
+type CrudoMarca = [string, string] | [string, string, number[]];
 /** [id, etiquetas(indices), categoria(indice; -1 = sin categoria)] */
-export type CrudoAccion = [string, number[], number];
+type CrudoAccion = [string, number[], number];
 
 export interface IndiceCrudo {
   formato: string;

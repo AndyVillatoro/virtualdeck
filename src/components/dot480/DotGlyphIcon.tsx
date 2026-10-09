@@ -2,7 +2,7 @@ import React from 'react';
 import { DOT_GLYPHS_8X8, resolveDotGlyph } from './dotGlyphsCatalog';
 import { useTheme } from '../../utils/theme';
 
-export { DOT_GLYPHS_8X8, ALL_DOT_GLYPHS, resolveDotGlyph } from './dotGlyphsCatalog';
+export { ALL_DOT_GLYPHS, resolveDotGlyph } from './dotGlyphsCatalog';
 
 export interface DotGlyphIconProps {
   glyph: string;

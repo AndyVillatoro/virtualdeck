@@ -25,7 +25,7 @@ export interface DatosClima {
 }
 
 /** Lo mínimo que se lee de la reproducción actual. */
-export interface SonandoWidget {
+interface SonandoWidget {
   title?: string;
   artist?: string;
   status?: string;

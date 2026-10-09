@@ -7,13 +7,13 @@ import { PestanaGlifo } from './PestanaGlifo';
 import { PestanaMarca } from './PestanaMarca';
 import type { ManejadorPestanaPuntos } from './useEditorPuntos';
 
-export interface MarcaCustomPuntos {
+interface MarcaCustomPuntos {
   bitmap?: string[];
   color?: string;
   palette?: Record<string, string>;
 }
 
-export interface MarcaBasePuntos {
+interface MarcaBasePuntos {
   bitmap: string[];
   color: string;
   palette?: Record<string, string>;
