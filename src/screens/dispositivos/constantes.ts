@@ -12,16 +12,16 @@ export const PUNTO_CORTE_INSPECTOR = 860;
 export const PUNTO_CORTE_LISTA = 580;
 
 /** Ancho mínimo legible de la lista de dispositivos hardware. */
-export const ANCHO_MIN_LISTA = 170;
+const ANCHO_MIN_LISTA = 170;
 
 /** Ancho máximo de la lista de dispositivos hardware en escritorios anchos. */
-export const ANCHO_MAX_LISTA = 240;
+const ANCHO_MAX_LISTA = 240;
 
 /** Ancho mínimo legible del panel inspector de control. */
-export const ANCHO_MIN_INSPECTOR = 200;
+const ANCHO_MIN_INSPECTOR = 200;
 
 /** Ancho máximo del panel inspector de control. */
-export const ANCHO_MAX_INSPECTOR = 280;
+const ANCHO_MAX_INSPECTOR = 280;
 
 /**
  * Calcula el ancho dinámico proporcional de la lista izquierda (entre 170px y 240px).

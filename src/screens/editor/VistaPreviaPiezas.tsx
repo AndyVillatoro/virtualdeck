@@ -410,7 +410,7 @@ export function useConfigVivo(api: ElectronAPI | undefined) {
   return deckConfig;
 }
 
-export function useLcdPreview(
+function useLcdPreview(
   esDock: boolean,
   conPantalla: boolean,
   boton: ButtonConfig,
@@ -443,7 +443,7 @@ export function useLcdPreview(
   return lcdDataUrl;
 }
 
-export function conmutarCuadrante(
+function conmutarCuadrante(
   targetId: string | undefined,
   subButtons: SubButtonConfig[] | undefined,
   setSubToggled: React.Dispatch<React.SetStateAction<boolean[]>>,

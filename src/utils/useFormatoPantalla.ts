@@ -11,7 +11,7 @@ import { useTamanoVentana } from './useTamanoVentana';
  */
 export type FormatoPantalla = 'normal' | 'barra' | 'estrecha';
 
-export function formatoDe(ancho: number, alto: number): FormatoPantalla {
+function formatoDe(ancho: number, alto: number): FormatoPantalla {
   if (alto > 0 && alto <= 600 && ancho / alto >= 2) return 'barra';
   if (ancho < 900) return 'estrecha';
   return 'normal';

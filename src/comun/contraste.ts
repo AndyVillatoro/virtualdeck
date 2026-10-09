@@ -9,9 +9,9 @@
  */
 
 /** Texto sobre un fondo claro. Casi negro OLED, nunca blanco (regla del proyecto). */
-export const TEXTO_EN_FONDO_CLARO = '#070809';
+const TEXTO_EN_FONDO_CLARO = '#070809';
 /** Texto sobre un fondo oscuro. Gris claro OLED, nunca `#ffffff`. */
-export const TEXTO_EN_FONDO_OSCURO = '#e6e8eb';
+const TEXTO_EN_FONDO_OSCURO = '#e6e8eb';
 
 /** Umbral de luminancia WCAG a partir del cual el fondo cuenta como claro. */
 const UMBRAL_LUMINANCIA = 0.22;

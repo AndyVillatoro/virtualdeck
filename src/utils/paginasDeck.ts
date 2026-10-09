@@ -10,11 +10,6 @@ import type { PageConfig } from '../types';
  * `config.pages`**: no se renumera, se filtra al enseñar y al navegar.
  */
 
-/** Una página del deck es la que no es de ningún dock. */
-export function esPaginaDeck(p: PageConfig): boolean {
-  return !p.superficie;
-}
-
 /** Índices reales (en `config.pages`) de las páginas del deck, en orden. */
 export function indicesPaginasDeck(paginas: readonly PageConfig[]): number[] {
   const salida: number[] = [];

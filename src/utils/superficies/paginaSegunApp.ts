@@ -22,7 +22,7 @@ import { normalizarApp } from '../apps';
  */
 
 /** Las páginas del deck que son de un dispositivo, en el orden de la config. */
-export function paginasDeSerial(paginas: readonly PageConfig[], serial: string): PageConfig[] {
+function paginasDeSerial(paginas: readonly PageConfig[], serial: string): PageConfig[] {
   return paginas.filter((p) => p.superficie?.serial === serial);
 }
 

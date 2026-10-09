@@ -11,15 +11,14 @@ export { FolderButtonSlot } from './filas/HuecoCarpeta';
 export type { PropsHuecoCarpeta } from './filas/HuecoCarpeta';
 export { BranchActionRow } from './filas/FilaRama';
 export type { PropsFilaRama } from './filas/FilaRama';
-export { ExtraActionRow } from './filas/FilaAccionExtra';
 export type { PropsFilaAccionExtra } from './filas/FilaAccionExtra';
 
 /**
  * Piezas que comparten los tres pasos del editor: los estilos de los campos,
  * las envolturas `Field` y `Btn`, y los sub-selectores de acción.
  *
- * Las filas con lógica propia (carpeta, rama y acción extra) viven en
- * `filas/` y aquí solo se reexportan, para no tocar a los llamadores.
+ * Las filas con lógica propia (carpeta y rama) viven en `filas/` y aquí solo
+ * se reexportan, para no tocar a los llamadores.
  *
  * Los estilos son funciones de la paleta y no constantes porque el modo claro
  * depende del contexto — ver la nota de tema en CLAUDE.md.

@@ -44,7 +44,7 @@ export interface PaginaDispositivo {
  * sistema a mano), pero la interpolación sí se aplica siempre: solo necesita
  * `config.state`.
  */
-export function resolverBotonPagina(
+function resolverBotonPagina(
   boton: ButtonConfig | undefined,
   state: Record<string, string> | undefined,
   vivo?: VivoPagina,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TitleBar } from '../../components/TitleBar';
-import { REMOTO_POR_DEFECTO, SENSORES_POR_DEFECTO, type DeckConfig, type Profile } from '../../types';
+import { REMOTO_POR_DEFECTO, SENSORES_POR_DEFECTO, type DeckConfig } from '../../types';
 import { normalizarApp } from '../../utils/apps';
 
 type PropsTitleBar = React.ComponentProps<typeof TitleBar>;

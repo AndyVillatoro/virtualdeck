@@ -35,7 +35,7 @@ interface RestriccionEscritorio {
 
 export type EstadoStream = 'inactivo' | 'cargando' | 'ok' | 'error' | 'congelado';
 
-export function capturarVentana(id: string, pedido: PedidoCaptura | null): Promise<MediaStream> {
+function capturarVentana(id: string, pedido: PedidoCaptura | null): Promise<MediaStream> {
   const mandatory: RestriccionEscritorio['mandatory'] = {
     chromeMediaSource: 'desktop',
     chromeMediaSourceId: id,

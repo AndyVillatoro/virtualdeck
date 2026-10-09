@@ -1,4 +1,4 @@
-import type { ButtonConfig, DeckConfig, OrigenInstalacion, PageConfig, ThemeMode, SoundProfileId, Profile } from '../../types';
+import type { ButtonConfig, DeckConfig, ThemeMode, SoundProfileId } from '../../types';
 
 export interface MainBProps {
   config: DeckConfig;

@@ -48,7 +48,7 @@ export interface DockControlInfo {
 }
 
 /** Extrae el número de hueco/slot de un botón según su ID. */
-export function extraerSlotDeBoton(buttonId: string): number | null {
+function extraerSlotDeBoton(buttonId: string): number | null {
   const mUnderscore = buttonId.match(/_(\d+)(?:-\d+)?$/);
   if (mUnderscore) return parseInt(mUnderscore[1], 10);
   const mDash = buttonId.match(/^[^-]+-(\d+)(?:-\d+)?$/);

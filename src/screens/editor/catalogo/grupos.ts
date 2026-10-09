@@ -120,7 +120,7 @@ export function slugCategoria(titulo: string): string {
 }
 
 /** Minúsculas sin tildes, para comparar lo que se escribe con lo traducido. */
-export function normalizarBusqueda(s: string): string {
+function normalizarBusqueda(s: string): string {
   return s
     .toLowerCase()
     .normalize('NFD')

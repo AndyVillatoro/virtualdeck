@@ -4,7 +4,7 @@ import { useT } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 
 /** Ancho de la lengüeta plegada. Toda ella es el objetivo táctil. */
-export const ANCHO_LENGUETA = 28;
+const ANCHO_LENGUETA = 28;
 
 /**
  * El panel de música plegado en formato barra: una lengüeta vertical a todo el

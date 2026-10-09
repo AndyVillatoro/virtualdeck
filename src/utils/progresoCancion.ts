@@ -26,7 +26,7 @@ export interface ProgresoCancion {
 const MAX_EDAD_INTERPOLAR_MS = 60 * 60 * 1000;
 
 /** Frecuencia del reloj mientras la barra suena: la barra avanza al segundo. */
-export const PERIODO_RELOJ_MS = 1000;
+const PERIODO_RELOJ_MS = 1000;
 
 /**
  * Posición y duración para pintar la barra en el instante `ahora` (epoch ms).
@@ -37,7 +37,7 @@ export const PERIODO_RELOJ_MS = 1000;
  *   hace 1 h y ahora. Si está en el futuro o es más antiguo, usa `positionMs`.
  * - El resultado se acota a `[0, durationMs]`.
  */
-export function calcularProgreso(
+function calcularProgreso(
   entrada: EntradaProgreso | null | undefined,
   ahora: number,
 ): ProgresoCancion | null {

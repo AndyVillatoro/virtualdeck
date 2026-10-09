@@ -3,11 +3,11 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { useNowPlayingRefresh } from '../../utils/nowPlaying';
 import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
-import { DotLabel } from '../../components/DotLabel';
 import { BarraProgreso } from '../../components/BarraProgreso';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../components/dot480/DotMatrixImageOverlay';
-import { BotonTransporte } from './musica/BotonTransporte';
+import { ControlesTransporte } from './musica/ControlesTransporte';
+import { CabeceraPanelMusica } from './musica/CabeceraPanelMusica';
 import { DatosPista } from './musica/DatosPista';
 import { FilaAleatorioRepetir } from './musica/FilaAleatorioRepetir';
 import { PanelMusicaBarra } from './musica/PanelMusicaBarra';
@@ -38,10 +38,6 @@ import type { NowPlaying, ElectronAPI } from '../../types';
  * Lo que sí hace es traer la aplicación al frente, que es lo que uno quiere
  * cuando busca algo concreto.
  */
-
-/** Botón principal sobre la carátula. Los otros dos son algo menores. */
-const LADO_PRINCIPAL = 64;
-const LADO_SECUNDARIO = 52;
 
 export function PanelMusica({
   nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar, video,
@@ -102,35 +98,7 @@ export function PanelMusica({
       display: 'flex', flexDirection: 'column', gap: 14,
       padding: 16, overflowY: 'auto',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.music')}</DotLabel>
-        <div style={{ flex: 1 }} />
-        <button
-          type="button"
-          onClick={() => video.onActivo(!video.activo)}
-          title={video.activo ? t('music.videoOff') : t('music.videoOn')}
-          aria-label={video.activo ? t('music.videoOff') : t('music.videoOn')}
-          aria-pressed={video.activo}
-          style={{
-            background: 'none', border: 'none', color: VD.textMuted,
-            cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center', gap: 4,
-          }}
-        >
-          <DotGlyphIcon glyph="APP_WINDOW" size={10} color={video.activo ? accent : VD.textMuted} />
-          <DotLabel size={8} color={video.activo ? accent : VD.textMuted} spacing={1}>{t('music.video')}</DotLabel>
-        </button>
-        <button
-          type="button"
-          onClick={onCerrar}
-          title={t('music.hide')}
-          style={{
-            background: 'none', border: 'none', color: VD.textMuted,
-            cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center',
-          }}
-        >
-          <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
-        </button>
-      </div>
+      <CabeceraPanelMusica video={video} accent={accent} onCerrar={onCerrar} />
 
       {video.activo ? (
         <>
@@ -145,36 +113,18 @@ export function PanelMusica({
               ajustes={video}
             />
           </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '4px 0', flexShrink: 0,
-          }}>
-            <BotonTransporte
-              glyph="PREV"
-              titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
-              lado={LADO_SECUNDARIO}
-              principal={false}
-              enabled={puede?.prev !== false}
+          <div style={{ padding: '4px 0', flexShrink: 0 }}>
+            <ControlesTransporte
+              puede={puede}
+              isPlaying={isPlaying}
+              textos={{
+                anterior: tituloCon(t('media.prev'), puede?.prev !== false),
+                reproducir: t('media.playPause'),
+                siguiente: tituloCon(t('media.next'), puede?.next !== false),
+              }}
               accent={accent}
-              onPulsar={() => { void api?.media.control('prev').then(refrescarMedios); }}
-            />
-            <BotonTransporte
-              glyph={isPlaying ? 'PAUSE' : 'PLAY'}
-              titulo={t('media.playPause')}
-              lado={LADO_PRINCIPAL}
-              principal
-              enabled
-              accent={accent}
-              onPulsar={() => { void api?.media.control('play-pause').then(refrescarMedios); }}
-            />
-            <BotonTransporte
-              glyph="NEXT"
-              titulo={tituloCon(t('media.next'), puede?.next !== false)}
-              lado={LADO_SECUNDARIO}
-              principal={false}
-              enabled={puede?.next !== false}
-              accent={accent}
-              onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
+              api={api}
+              alRefrescar={refrescarMedios}
             />
           </div>
         </>
@@ -224,32 +174,17 @@ export function PanelMusica({
             background: 'rgba(7,8,9,0.78)',
             borderTop: `1px solid ${VD.border}`,
           }}>
-            <BotonTransporte
-              glyph="PREV"
-              titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
-              lado={LADO_SECUNDARIO}
-              principal={false}
-              enabled={puede?.prev !== false}
+            <ControlesTransporte
+              puede={puede}
+              isPlaying={isPlaying}
+              textos={{
+                anterior: tituloCon(t('media.prev'), puede?.prev !== false),
+                reproducir: t('media.playPause'),
+                siguiente: tituloCon(t('media.next'), puede?.next !== false),
+              }}
               accent={accent}
-              onPulsar={() => { void api?.media.control('prev').then(refrescarMedios); }}
-            />
-            <BotonTransporte
-              glyph={isPlaying ? 'PAUSE' : 'PLAY'}
-              titulo={t('media.playPause')}
-              lado={LADO_PRINCIPAL}
-              principal
-              enabled
-              accent={accent}
-              onPulsar={() => { void api?.media.control('play-pause').then(refrescarMedios); }}
-            />
-            <BotonTransporte
-              glyph="NEXT"
-              titulo={tituloCon(t('media.next'), puede?.next !== false)}
-              lado={LADO_SECUNDARIO}
-              principal={false}
-              enabled={puede?.next !== false}
-              accent={accent}
-              onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
+              api={api}
+              alRefrescar={refrescarMedios}
             />
           </div>
         </div>

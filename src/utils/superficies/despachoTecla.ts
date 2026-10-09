@@ -16,7 +16,7 @@ import type { ButtonConfig, EntradaSuperficie } from '../../types';
  */
 
 /** Lo mismo que en la celda (`MS_LARGA` de `usePulsacionTactil`). */
-export const MS_LARGA_DOCK = 500;
+const MS_LARGA_DOCK = 500;
 
 type Disparar = (boton: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string }) => unknown;
 
@@ -24,7 +24,7 @@ type Disparar = (boton: ButtonConfig, opts?: { sonido?: 'giro'; serial?: string 
  * Dispara la entrada ya resuelta a un hueco: un giro de perilla pasa por el
  * aviso de la tecla (T-HW-21), el resto va directo.
  */
-export function dispararEntrada(
+function dispararEntrada(
   entrada: EntradaSuperficie,
   boton: ButtonConfig,
   disparar: Disparar,
@@ -39,14 +39,14 @@ export function dispararEntrada(
 }
 
 /** ¿Esta bajada tiene que esperar a ver si es larga? */
-export function esperaLarga(entrada: EntradaSuperficie, boton: ButtonConfig): boolean {
+function esperaLarga(entrada: EntradaSuperficie, boton: ButtonConfig): boolean {
   if (entrada.gesto !== 'down') return false;
   if (entrada.control !== 'key' && entrada.control !== 'button') return false;
   return !!boton.longPressAction && boton.longPressAction.type !== 'none';
 }
 
 /** El control físico, sin el gesto: la bajada y la subida comparten clave. */
-export function claveControl(e: Pick<EntradaSuperficie, 'serial' | 'control' | 'indice'>): string {
+function claveControl(e: Pick<EntradaSuperficie, 'serial' | 'control' | 'indice'>): string {
   return `${e.serial}:${e.control}:${e.indice}`;
 }
 

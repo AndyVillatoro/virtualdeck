@@ -16,7 +16,7 @@ export interface Glyph57EditorProps {
 const EMPTY: number[] = [0, 0, 0, 0, 0, 0, 0];
 
 /** Presets de símbolos icónicos pre-calculados en matriz 5×7 */
-export const SYMBOL_PRESETS_5X7: Record<string, number[]> = {
+const SYMBOL_PRESETS_5X7: Record<string, number[]> = {
   'PLAY': [16, 24, 28, 30, 28, 24, 16],
   'PAUSE': [27, 27, 27, 27, 27, 27, 27],
   'STOP': [0, 31, 31, 31, 31, 31, 0],

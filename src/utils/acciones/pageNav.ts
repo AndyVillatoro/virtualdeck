@@ -4,7 +4,7 @@ import { idPaginaPredeterminada } from '../superficies/paginaSegunApp';
 // Las páginas del deck (sin las de dock) también se filtran al enseñar y al
 // navegar con pestañas, gestos y atajos: se reexportan aquí para que cada
 // pantalla no importe dos módulos de navegación.
-export { esPaginaDeck, indicesPaginasDeck, posicionEnDeck, indiceRealPorNumero } from '../paginasDeck';
+export { indicesPaginasDeck, posicionEnDeck, indiceRealPorNumero } from '../paginasDeck';
 
 /**
  * Navegación entre páginas (`page-nav`), en un solo sitio.
@@ -43,7 +43,7 @@ export function paginasNavegables(paginas: PageConfig[], serial: string | null):
  * parte —quien llama lo deja como OK, igual que `folder` cuando no hay nada
  * que abrir—.
  */
-export function destinoPageNav(
+function destinoPageNav(
   ids: string[],
   actualId: string | undefined,
   modo: ButtonAction['pageNav'],
@@ -83,7 +83,7 @@ export function destinoPageNav(
  * con `alIr`, que recibe el **id**. Cada llamador mapea el id a lo suyo —el
  * deck a su índice con `onPageChange`, el dock a `activarPagina`—.
  */
-export function resolverPageNav(
+function resolverPageNav(
   accion: ButtonAction,
   paginas: PageConfig[],
   actualId: string | undefined,
@@ -142,7 +142,7 @@ export function destinoDock(
  * Callback `navegar` para un dock físico: navega entre sus páginas con
  * `activarPagina`, que además la marca como base.
  */
-export function navegarDock(
+function navegarDock(
   accion: ButtonAction,
   paginas: PageConfig[],
   serial: string,

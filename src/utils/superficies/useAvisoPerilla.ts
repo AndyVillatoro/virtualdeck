@@ -28,7 +28,7 @@ import { avisoDeCuadrantes, avisoDeGiro, avisoDeModo, avisoDePagina, type AvisoP
  */
 
 /** Lo que dura el aviso en la tecla desde el último giro. */
-export const MS_AVISO_TECLA = 1200;
+const MS_AVISO_TECLA = 1200;
 
 interface AvisoActivo {
   hueco: number;

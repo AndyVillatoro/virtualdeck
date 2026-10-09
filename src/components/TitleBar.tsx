@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
-import type { Profile, PageConfig, ButtonConfig, OrigenInstalacion, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../types';
+import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../types';
 import { PanelAjustes } from './settings/PanelAjustes';
 import { BotonesNavegacion } from './titlebar/BotonesNavegacion';
 import { BotonAjustesConHint } from './titlebar/BotonAjustesConHint';

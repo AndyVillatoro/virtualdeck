@@ -22,7 +22,7 @@ export function generarResumenControles(
   return partes.join(' · ');
 }
 
-export function InsigniaNoVerificado({
+function InsigniaNoVerificado({
   vd,
   titulo,
   descripcion,

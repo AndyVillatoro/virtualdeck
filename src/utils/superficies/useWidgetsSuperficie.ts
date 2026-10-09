@@ -40,7 +40,7 @@ const CLAVE_REPRODUCCION_DOCK = 'dock';
  * Lo que falta para el próximo cambio de minuto, con un margen para no quedar
  * justo en el borde y disparar dos veces. Función pura: el temporizador la usa.
  */
-export function retardoProximoMinuto(ahora: Date): number {
+function retardoProximoMinuto(ahora: Date): number {
   return (60 - ahora.getSeconds()) * 1000 - ahora.getMilliseconds() + 50;
 }
 

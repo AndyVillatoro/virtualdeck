@@ -24,7 +24,7 @@ import type { ButtonConfig, DeckConfig, PageConfig } from '../types';
  */
 
 /** Grupo de visibilidad de una página: `'deck'` o `'dock:<serial>'`. */
-export function grupoDePagina(pages: PageConfig[], indice: number): string {
+function grupoDePagina(pages: PageConfig[], indice: number): string {
   const serial = pages[indice]?.superficie?.serial;
   return serial ? `dock:${serial}` : 'deck';
 }
@@ -83,11 +83,4 @@ export function resolverFijos(
  */
 export function botonesResueltos(config: DeckConfig, indicePagina: number): ButtonConfig[] {
   return resolverFijos(config.pages, config.buttons, indicePagina);
-}
-
-/** El botón que hay en un hueco ya resuelto, o `undefined` si no cabe. */
-export function botonEnHueco(
-  config: DeckConfig, indicePagina: number, hueco: number,
-): ButtonConfig | undefined {
-  return botonesResueltos(config, indicePagina)[hueco];
 }

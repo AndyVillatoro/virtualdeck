@@ -1,6 +1,6 @@
 import { app, dialog, shell } from 'electron';
 import { join } from 'path';
-import { appendFileSync, existsSync, mkdirSync, renameSync, statSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { appendFileSync, existsSync, mkdirSync, statSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
 import { tm } from './idioma';
 
 // Logger rotativo a archivo en userData/logs/virtualdeck.log.

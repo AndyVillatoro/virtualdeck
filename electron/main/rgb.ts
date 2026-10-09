@@ -309,6 +309,110 @@ export async function rescanDevices(): Promise<{ count: number; error?: string }
  * ofrece Direct se aplica igual (mejor encender que no hacer nada) pero se
  * apunta en `lastError` que ese no se va a quedar.
  */
+function applyLedsToDevice(dev: RGBDeviceInfo, rgb: RGBColor): boolean {
+  if (!client) return false;
+  const totalLeds = dev.colors.length || dev.zones.reduce((s, z) => s + z.ledCount, 0);
+  if (totalLeds <= 0) return false;
+  const arr = new Array(totalLeds).fill(null).map(() => ({ ...rgb }));
+  client.updateLeds(dev.id, arr);
+  dev.colors = arr.map(rgbToHex);
+  return true;
+}
+
+async function applyModeColor(dev: RGBDeviceInfo, mode: Mode, color: string): Promise<boolean> {
+  if (!client) return false;
+  const arr = buildModeColors(mode, color);
+  await client.updateMode(dev.id, { id: mode.id, colors: arr });
+  dev.activeMode = mode.id;
+  dev.colors = arr.map(rgbToHex);
+  return true;
+}
+
+async function applyInActiveMode(
+  dev: RGBDeviceInfo,
+  rawDev: Device,
+  rgb: RGBColor,
+  color: string,
+  duradero: boolean,
+): Promise<boolean | null> {
+  const rawActiveMode = rawDev.modes.find((m) => m.id === dev.activeMode);
+  if (!rawActiveMode) return null;
+
+  const isPerLed = rawActiveMode.colorMode === CM_PER_LED || /^(direct|custom)$/i.test(rawActiveMode.name);
+  const isPerMode = rawActiveMode.colorMode === CM_PER_MODE;
+  // Con `duradero`, seguir en Direct es exactamente el fallo que se quiere
+  // evitar: hay que salir de ahí aunque ya estemos dentro.
+  const seQueda = !duradero || !/^direct$/i.test(rawActiveMode.name);
+
+  // Direct/Custom mode: set LEDs directly without switching modes (preserves mode)
+  if (isPerLed && seQueda) {
+    if (applyLedsToDevice(dev, rgb)) return true;
+  }
+
+  // Static/Breathing/any per-mode effect: update color through the mode (GPU path, preserves effect)
+  if (isPerMode) {
+    return applyModeColor(dev, rawActiveMode, color);
+  }
+
+  return null;
+}
+
+async function applyCustomFallbackMode(dev: RGBDeviceInfo, rgb: RGBColor): Promise<boolean> {
+  if (!client) return false;
+  client.setCustomMode(dev.id);
+  await new Promise((r) => setTimeout(r, 60));
+  applyLedsToDevice(dev, rgb);
+  return true;
+}
+
+async function switchAndApplyColor(
+  dev: RGBDeviceInfo,
+  rawDev: Device,
+  rgb: RGBColor,
+  color: string,
+  duradero: boolean,
+): Promise<boolean> {
+  if (!client) return false;
+  // Need to switch to a color-capable mode.
+  // Orden normal: Direct (per-LED, instantáneo) > Static > Custom > setCustomMode.
+  // Con `duradero` se invierte: primero los que el dispositivo se queda.
+  const directMode  = rawDev.modes.find((m) => /^direct$/i.test(m.name));
+  const staticMode  = rawDev.modes.find((m) => /^static$/i.test(m.name));
+  const customMode  = rawDev.modes.find((m) => /^custom$/i.test(m.name));
+
+  if (duradero && (staticMode || customMode)) {
+    const modo = (staticMode ?? customMode)!;
+    return applyModeColor(dev, modo, color);
+  }
+  if (duradero && directMode) {
+    lastError = `${dev.name}: ${tm('rgb.onlyDirect')}`;
+  }
+
+  if (directMode) {
+    if (dev.activeMode !== directMode.id) {
+      await client.updateMode(dev.id, { id: directMode.id });
+      dev.activeMode = directMode.id;
+    }
+    return applyLedsToDevice(dev, rgb);
+  }
+  if (staticMode) {
+    return applyModeColor(dev, staticMode, color);
+  }
+  if (customMode) {
+    return applyModeColor(dev, customMode, color);
+  }
+
+  return applyCustomFallbackMode(dev, rgb);
+}
+
+async function setAllDevicesColor(color: string, duradero: boolean): Promise<boolean> {
+  let alguno = false;
+  for (const d of devicesCache) {
+    if (await setDeviceColor(d.id, color, duradero)) alguno = true;
+  }
+  return alguno;
+}
+
 export async function setDeviceColor(
   deviceId: number, color: string, duradero = false,
 ): Promise<boolean> {
@@ -319,103 +423,17 @@ export async function setDeviceColor(
       // ningun dispositivo detectado —OpenRGB sin administrador no ve casi
       // nada— el boton decia que habia pintado. Basta con que uno lo acepte;
       // que a otro le falte el modo no es un error que valga la pena enseñar.
-      let alguno = false;
-      for (const d of devicesCache) if (await setDeviceColor(d.id, color, duradero)) alguno = true;
-      return alguno;
+      return setAllDevicesColor(color, duradero);
     }
     const dev = devicesCache.find((d) => d.id === deviceId);
     const rawDev = devicesRaw.find((d) => d.deviceId === deviceId);
     if (!dev || !rawDev) return false;
 
     const rgb = hexToRgb(color);
-    const rawActiveMode = rawDev.modes.find((m) => m.id === dev.activeMode);
+    const appliedActive = await applyInActiveMode(dev, rawDev, rgb, color, duradero);
+    if (appliedActive !== null) return appliedActive;
 
-    if (rawActiveMode) {
-      const isPerLed = rawActiveMode.colorMode === CM_PER_LED || /^(direct|custom)$/i.test(rawActiveMode.name);
-      const isPerMode = rawActiveMode.colorMode === CM_PER_MODE;
-      // Con `duradero`, seguir en Direct es exactamente el fallo que se quiere
-      // evitar: hay que salir de ahí aunque ya estemos dentro.
-      const seQueda = !duradero || !/^direct$/i.test(rawActiveMode.name);
-
-      // Direct/Custom mode: set LEDs directly without switching modes (preserves mode)
-      if (isPerLed && seQueda) {
-        const totalLeds = dev.colors.length || dev.zones.reduce((s, z) => s + z.ledCount, 0);
-        if (totalLeds > 0) {
-          const arr = new Array(totalLeds).fill(null).map(() => ({ ...rgb }));
-          client.updateLeds(deviceId, arr);
-          dev.colors = arr.map(rgbToHex);
-          return true;
-        }
-      }
-
-      // Static/Breathing/any per-mode effect: update color through the mode (GPU path, preserves effect)
-      if (isPerMode) {
-        const arr = buildModeColors(rawActiveMode, color);
-        await client.updateMode(deviceId, { id: rawActiveMode.id, colors: arr });
-        dev.colors = arr.map(rgbToHex);
-        return true;
-      }
-
-      // colorMode NONE or RANDOM — can't set color in current mode, fall through to mode switch
-    }
-
-    // Need to switch to a color-capable mode.
-    // Orden normal: Direct (per-LED, instantáneo) > Static > Custom > setCustomMode.
-    // Con `duradero` se invierte: primero los que el dispositivo se queda.
-    const directMode  = rawDev.modes.find((m) => /^direct$/i.test(m.name));
-    const staticMode  = rawDev.modes.find((m) => /^static$/i.test(m.name));
-    const customMode  = rawDev.modes.find((m) => /^custom$/i.test(m.name));
-
-    if (duradero && (staticMode || customMode)) {
-      const modo = staticMode ?? customMode!;
-      const arr = buildModeColors(modo, color);
-      await client.updateMode(deviceId, { id: modo.id, colors: arr });
-      dev.activeMode = modo.id;
-      dev.colors = arr.map(rgbToHex);
-      return true;
-    }
-    if (duradero && directMode) {
-      lastError = `${dev.name}: ${tm('rgb.onlyDirect')}`;
-    }
-
-    if (directMode) {
-      if (dev.activeMode !== directMode.id) {
-        await client.updateMode(deviceId, { id: directMode.id });
-        dev.activeMode = directMode.id;
-      }
-      const totalLeds = dev.colors.length || dev.zones.reduce((s, z) => s + z.ledCount, 0);
-      if (totalLeds > 0) {
-        const arr = new Array(totalLeds).fill(null).map(() => ({ ...rgb }));
-        client.updateLeds(deviceId, arr);
-        dev.colors = arr.map(rgbToHex);
-        return true;
-      }
-    } else if (staticMode) {
-      // GPU-style (Zotac, ASUS, etc.): color passed inside updateMode, not via updateLeds
-      const arr = buildModeColors(staticMode, color);
-      await client.updateMode(deviceId, { id: staticMode.id, colors: arr });
-      dev.activeMode = staticMode.id;
-      dev.colors = arr.map(rgbToHex);
-      return true;
-    } else if (customMode) {
-      const arr = buildModeColors(customMode, color);
-      await client.updateMode(deviceId, { id: customMode.id, colors: arr });
-      dev.activeMode = customMode.id;
-      dev.colors = arr.map(rgbToHex);
-      return true;
-    } else {
-      client.setCustomMode(deviceId);
-      await new Promise((r) => setTimeout(r, 60));
-      const totalLeds = dev.colors.length || dev.zones.reduce((s, z) => s + z.ledCount, 0);
-      if (totalLeds > 0) {
-        const arr = new Array(totalLeds).fill(null).map(() => ({ ...rgb }));
-        client.updateLeds(deviceId, arr);
-        dev.colors = arr.map(rgbToHex);
-      }
-      return true;
-    }
-
-    return false;
+    return await switchAndApplyColor(dev, rawDev, rgb, color, duradero);
   } catch (e) {
     lastError = (e as Error).message;
     return false;
@@ -504,6 +522,46 @@ export function listaPresets(): Array<{ id: string; color: string }> {
   return Object.entries(SMART_PRESETS).map(([id, p]) => ({ id, color: p.color }));
 }
 
+async function applyDeviceProfileMode(
+  rawDev: Device,
+  devInfo: RGBDeviceInfo,
+  state: { mode: string; brightness?: number },
+): Promise<boolean> {
+  if (!client) return false;
+  const rawMode = rawDev.modes.find((x) => x.name.toLowerCase() === state.mode.toLowerCase());
+  if (!rawMode) return true;
+
+  const update: any = { id: rawMode.id };
+  if (state.brightness !== undefined && rawMode.brightnessMin !== undefined && rawMode.brightnessMax !== undefined) {
+    const range = rawMode.brightnessMax - rawMode.brightnessMin;
+    update.brightness = Math.round(rawMode.brightnessMin + (range * Math.max(0, Math.min(100, state.brightness)) / 100));
+  }
+  try {
+    await client.updateMode(rawDev.deviceId, update);
+    devInfo.activeMode = rawMode.id;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function applyDeviceProfileZones(
+  deviceId: number,
+  zones: Array<{ zoneId: number; colors: string[] }>,
+): boolean {
+  if (!client) return false;
+  let ok = true;
+  for (const z of zones) {
+    try {
+      const arr = z.colors.map(hexToRgb);
+      if (arr.length > 0) client.updateZoneLeds(deviceId, z.zoneId, arr);
+    } catch {
+      ok = false;
+    }
+  }
+  return ok;
+}
+
 export async function applyProfile(profile: RGBProfile): Promise<boolean> {
   if (!client?.isConnected) return false;
   try {
@@ -518,26 +576,11 @@ export async function applyProfile(profile: RGBProfile): Promise<boolean> {
       if (!state || !devInfo) continue;
       alguno = true;
 
-      const rawMode = rawDev.modes.find((x) => x.name.toLowerCase() === state.mode.toLowerCase());
-      if (rawMode) {
-        const update: any = { id: rawMode.id };
-        if (state.brightness !== undefined && rawMode.brightnessMin !== undefined && rawMode.brightnessMax !== undefined) {
-          const range = rawMode.brightnessMax - rawMode.brightnessMin;
-          update.brightness = Math.round(rawMode.brightnessMin + (range * Math.max(0, Math.min(100, state.brightness)) / 100));
-        }
-        try {
-          await client.updateMode(rawDev.deviceId, update);
-          devInfo.activeMode = rawMode.id;
-        } catch { okAll = false; }
-      }
+      const modeOk = await applyDeviceProfileMode(rawDev, devInfo, state);
+      if (!modeOk) okAll = false;
 
-      // Apply zone colors (only meaningful for per-LED modes)
-      for (const z of state.zones) {
-        try {
-          const arr = z.colors.map(hexToRgb);
-          if (arr.length > 0) client.updateZoneLeds(rawDev.deviceId, z.zoneId, arr);
-        } catch { okAll = false; }
-      }
+      const zonesOk = applyDeviceProfileZones(rawDev.deviceId, state.zones);
+      if (!zonesOk) okAll = false;
     }
     return okAll && alguno;
   } catch (e) {

@@ -26,7 +26,6 @@ import { BARRA_POR_DEFECTO } from '../types';
  * `BARRA_POR_DEFECTO` vive en `src/types` para que el proceso principal use la
  * misma (ver `electron/main/index.ts`).
  */
-export { BARRA_POR_DEFECTO };
 
 const SEPARACION = 8;
 const MARGEN = 12;

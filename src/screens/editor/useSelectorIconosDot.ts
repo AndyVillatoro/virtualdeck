@@ -21,8 +21,8 @@ import {
 } from './catalogo/grupos';
 import { guardarReciente, leerRecientes } from './catalogo/recientes';
 
-export const ITEMS_POR_PAGINA = 72;
-export const MAX_RESULTADOS_BUSQUEDA = 300;
+const ITEMS_POR_PAGINA = 72;
+const MAX_RESULTADOS_BUSQUEDA = 300;
 
 export type { ItemCatalogo } from './catalogo/grupos';
 

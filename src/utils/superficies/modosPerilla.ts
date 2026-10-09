@@ -35,11 +35,6 @@ export function claveModoPerilla(serial: string, perilla: number): string {
   return `${serial}:${perilla}`;
 }
 
-/** Cuántos modos tiene la perilla (0 = normal, sin `modosPerilla`). */
-export function totalModos(botonPulsar?: ButtonConfig): number {
-  const n = botonPulsar?.modosPerilla?.length ?? 0;
-  return n === 0 ? 0 : n + 1;
-}
 
 function botonDeHueco(e: EntradaModoPerilla): ButtonConfig | undefined {
   if (e.gesto === 'izq') return e.botonIzq;

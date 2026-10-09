@@ -10,6 +10,7 @@ export default tseslint.config(
     ignores: [
       'out/**', 'dist/**', 'build/**', 'node_modules/**',
       'resources/**', 'scripts/**', '**/*.config.*',
+      'opencode-export/**', '_referencias/**', 'auditorias/**',
     ],
   },
   js.configs.recommended,

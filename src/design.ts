@@ -91,7 +91,7 @@ export const VD_LIGHT: VDTokens = {
 };
 
 /** Acento de la firma DOT / 480 (el rojo de los presets). */
-export const ACENTO_DOT480 = '#ff3b30';
+const ACENTO_DOT480 = '#ff3b30';
 
 /**
  * Qué color de texto se lee sobre un fondo de `color`: casi negro sobre

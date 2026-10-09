@@ -111,7 +111,7 @@ function datosDeSensor(
  * Un euro son 0,86 dólares y se lee bien con dos; pero un yen son 0,0063 y con
  * dos decimales saldría «0.01», que no dice nada.
  */
-export function formatearImporte(v: number, lang: string): string {
+function formatearImporte(v: number, lang: string): string {
   if (v >= 1000) return Math.round(v).toLocaleString(lang);
   if (v >= 1) return v.toFixed(2);
   return v.toFixed(4);
@@ -146,7 +146,7 @@ function datosDeDivisa(
  * Es un mapa y no una cadena de condiciones para que añadir un widget sea una
  * entrada, y el `Record<TipoWidget, ...>` obligue a que no falte ninguna.
  */
-export const CONSTRUCTORES: Record<TipoWidget, (b: BotonWidget, f: FuentesWidget) => DatosWidget | null> = {
+const CONSTRUCTORES: Record<TipoWidget, (b: BotonWidget, f: FuentesWidget) => DatosWidget | null> = {
   'clock': (_b, f) => ({
     line1: f.hora.format(f.reloj),
     line2: f.fecha.format(f.reloj).toUpperCase(),

@@ -29,7 +29,7 @@
     "lint:acciones": "node scripts/check-acciones.mjs",
     "analizar": "set ANALIZAR=1&& electron-vite build",
     "lint:wiki": "node scripts/check-wiki.mjs",
-    "build:store": "npm run build:native && electron-vite build && electron-builder --win appx",
+    "build:store": "npm run build:native && node scripts/build-store.mjs",
     "package:store": "node scripts/build-store.mjs",
     "build:appx-icons": "node scripts/generate-appx-assets.js",
     "check:galeria": "node scripts/check-perfiles.mjs https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/manifest.json"

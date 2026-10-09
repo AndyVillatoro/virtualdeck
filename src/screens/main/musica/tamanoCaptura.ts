@@ -11,7 +11,7 @@ import type { Recorte } from './recorteVideo';
  */
 
 /** Tope: por encima de esto el panel no gana nada y la captura se paga sola. */
-export const TOPE_CAPTURA = { ancho: 1920, alto: 1080 } as const;
+const TOPE_CAPTURA = { ancho: 1920, alto: 1080 } as const;
 
 /** Por debajo de esto no hay nada que enseñar. */
 const MINIMO = 64;

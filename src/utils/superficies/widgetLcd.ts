@@ -66,7 +66,7 @@ function maximoCaracteres(anchoDisponible: number, tamano: number): number {
 }
 
 /** Recorta con puntos suspensivos hasta el máximo de caracteres. */
-export function recortarLinea(texto: string, maximo: number): string {
+function recortarLinea(texto: string, maximo: number): string {
   const limpio = texto.trim();
   if (limpio.length <= maximo) return limpio;
   if (maximo <= 1) return '…';

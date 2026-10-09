@@ -47,7 +47,7 @@ const FORMATO_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const COLOR_RESPALDO = '#e6e8eb';
 
 /** Un color seguro para el SVG, ya recortado, o `null` si no lo es. */
-export function colorSeguro(valor: unknown): string | null {
+function colorSeguro(valor: unknown): string | null {
   if (typeof valor !== 'string') return null;
   const limpio = valor.trim();
   return FORMATO_COLOR.test(limpio) ? limpio : null;
@@ -188,7 +188,7 @@ function guardar(cache: Map<string, string>, clave: string, valor: string): void
 }
 
 /** SVG completo con su `<style>` dentro: halo y, si `animado`, la animación. */
-export function svgAutonomoDeMarca(marca: MarcaResuelta, animado: boolean): string {
+function svgAutonomoDeMarca(marca: MarcaResuelta, animado: boolean): string {
   const clave = claveDeCache(marca, animado);
   let svg = cacheSvg.get(clave);
   if (svg === undefined) {

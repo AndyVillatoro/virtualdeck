@@ -4,6 +4,30 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
+## Turno 2026-10-09 — Publicación v0.14.1, validación física N3 aprobada y plan de deuda técnica
+
+* **Quién:** wK (Antigravity CLI / orquestador) + delegación a agentes en Herdr (`wR`, `wW`, `wX`, `wY`, `wZ`).
+* **Rama:** `main`.
+* **Paquete Store:** `dist/VirtualDeck-0.14.1.msix` (120.5 MB, manifest `0.14.1.0`).
+* **Notas de versión:** `dist/store-submission-0.14.1.md` (ES/EN).
+
+### Qué entró
+
+1. **Validación física Stream Dock N3 aprobada por el dueño:**
+   - Pruebas físicas en hardware real completadas con éxito: detección de dock, distribución de 12 modelos, perfiles completos de 18 huecos, perillas multimodo, dial stacks, sonidos táctiles de perillas y botones fijos entre páginas. Ítems 58, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80 y 82 marcados como verificados en hardware físico.
+2. **Empaquetado oficial MSIX v0.14.1 para Microsoft Store:**
+   - Paquete `VirtualDeck-0.14.1.msix` compilado con encadenamiento automático de `vd-core` nativo (`npm run build:native`).
+   - Textos de novedades («What's new») generados en formato bilingüe (español e inglés) en `dist/store-submission-0.14.1.md` listos para Partner Center.
+3. **Actualización de hoja de ruta (`docs/ROADMAP.md`):**
+   - **Ítem 114**: Extensión de navegador compañera (`virtualdeck-companion`) para captura de streams vía `chrome.tabCapture` / WebRTC local a nivel de pestaña directa sin pausado al cambiar de pestaña ni congelado por oclusión HWND.
+   - **Ítem 115**: Compatibilidad multi-dock y revisión profunda de OpenDeck (`opendeck`) para incorporar teclados macro con LCD, Loupedeck Live / Razer Stream Controller, Stream Deck Studio/Pedal, Stream Dock N4/N6 y encoders con pantalla.
+   - **Ítem 116**: Auditoría profunda de deuda técnica, modularización de archivos gigantes (>400 líneas o complejidad ciclomática >18), eliminación de duplicados, limpieza de archivos obsoletos y centralización de documentación Markdown.
+
+### Verificación
+
+* `npm run check`: **0 errores**, todos los guardianes en verde.
+* Paquete Store `dist/VirtualDeck-0.14.1.msix` validado y firmado listo para envío en Partner Center.
+
 ## Turno 2026-10-08 (noche) — T-WEB-01 / T-TRL-01 / T-BAN-01: rediseño web, tráilers bilingües y banners limpios
 
 * **Quién:** wK (Antigravity CLI / orquestador) + wW (banners y artes de marca) + wZ (tráilers HyperFrames ES/EN) + wX (implementación y verificación CDP de la web) + wR/wY (análisis y soporte).

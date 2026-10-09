@@ -42,19 +42,6 @@ export function clonarMatriz(m: MatrizPuntos): MatrizPuntos {
   return m.map((fila) => [...fila]);
 }
 
-/**
- * Recorta o rellena a w×h conservando lo de arriba a la izquierda.
- * Sirve para adoptar el icono base del catálogo y para cambiar de tamaño.
- */
-export function normalizarMatriz(m: MatrizPuntos, w: number, h: number): MatrizPuntos {
-  const out = matrizVacia(w, h);
-  for (let y = 0; y < Math.min(h, m.length); y++) {
-    const fila = m[y] ?? [];
-    for (let x = 0; x < Math.min(w, fila.length); x++) out[y][x] = fila[x];
-  }
-  return out;
-}
-
 /** ¿Hay algo dibujado? */
 export function estaVacia(m: MatrizPuntos): boolean {
   return m.every((fila) => fila.every((c) => !c));

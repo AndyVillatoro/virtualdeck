@@ -146,82 +146,120 @@ function categoryFromSensorId(id: string): SensorCategory | null {
 // Nombres típicos de nodos contenedores de LHM (categorías de sensor, NO hardware)
 const NOMBRES_CONTENEDORES = /^(temperatures?|voltages?|fans?|clocks?|controls?|powers?|data|levels?|load|throughput|factors?|currents?)$/i;
 
+const TIPOS_VALIDOS: Record<string, SensorKind> = {
+  temperature: 'Temperature', fan: 'Fan', voltage: 'Voltage',
+  load: 'Load', clock: 'Clock', power: 'Power',
+  data: 'Data', throughput: 'Throughput', level: 'Level',
+};
+
+const PATRONES_ID_KIND: [string, SensorKind][] = [
+  ['/temperature/', 'Temperature'], ['/load/', 'Load'], ['/fan/', 'Fan'],
+  ['/voltage/', 'Voltage'], ['/clock/', 'Clock'], ['/power/', 'Power'],
+];
+
+function kindFromRawType(raw: unknown): SensorKind | null {
+  if (!raw || raw === 'undefined') return null;
+  return TIPOS_VALIDOS[String(raw).toLowerCase()] ?? null;
+}
+
+function kindFromSensorId(id: unknown): SensorKind | null {
+  const idLower = String(id ?? '').toLowerCase();
+  for (const [pattern, kind] of PATRONES_ID_KIND) {
+    if (idLower.includes(pattern)) return kind;
+  }
+  return null;
+}
+
+function kindFromValueOrText(value: unknown, text: unknown): SensorKind {
+  const valStr = String(value ?? '');
+  if (/[°℃℉]/.test(valStr)) return 'Temperature';
+  if (valStr.includes('%')) return 'Load';
+  if (valStr.includes('RPM')) return 'Fan';
+  if (valStr.includes(' V')) return 'Voltage';
+  if (/mhz|ghz/i.test(valStr)) return 'Clock';
+  if (valStr.includes(' W')) return 'Power';
+
+  const textLower = String(text ?? '').toLowerCase();
+  if (textLower.includes('temp')) return 'Temperature';
+
+  return 'Other';
+}
+
 /**
  * Deduce el tipo de sensor a partir de node.Type, del SensorId o del valor/nombre.
  * Garantiza que cualquier lectura de temperatura siempre se reconozca como Temperature.
  */
 function kindFromNode(node: any): SensorKind {
-  const raw = String(node?.Type || '');
-  if (raw && raw !== 'undefined') {
-    const norm = raw.charAt(0).toUpperCase() + raw.slice(1);
-    if (norm === 'Temperature' || norm === 'Fan' || norm === 'Voltage' ||
-        norm === 'Load' || norm === 'Clock' || norm === 'Power' ||
-        norm === 'Data' || norm === 'Throughput' || norm === 'Level') {
-      return norm as SensorKind;
-    }
+  return (
+    kindFromRawType(node?.Type) ??
+    kindFromSensorId(node?.SensorId) ??
+    kindFromValueOrText(node?.Value, node?.Text)
+  );
+}
+
+const HARDWARE_FALLBACK_NAMES: Partial<Record<SensorCategory, string>> = {
+  cpu: 'CPU',
+  gpu: 'GPU',
+  mainboard: 'Mainboard',
+};
+
+function defaultHardwareName(cat: SensorCategory): string {
+  return HARDWARE_FALLBACK_NAMES[cat] ?? 'Hardware';
+}
+
+function resolveHardwareContext(
+  node: any,
+  depth: number,
+  currentHw: string,
+  currentCat: SensorCategory,
+): { hw: string; cat: SensorCategory } {
+  const textStr = node?.Text ? String(node.Text).trim() : '';
+  const esContenedor = NOMBRES_CONTENEDORES.test(textStr);
+  const esCandidato = Boolean(textStr && !node?.SensorId && !esContenedor && (node?.ImageURL || depth === 2 || !currentHw));
+
+  if (!esCandidato) {
+    return { hw: currentHw, cat: currentCat };
   }
-  const idLower = String(node?.SensorId || '').toLowerCase();
-  if (idLower.includes('/temperature/')) return 'Temperature';
-  if (idLower.includes('/load/')) return 'Load';
-  if (idLower.includes('/fan/')) return 'Fan';
-  if (idLower.includes('/voltage/')) return 'Voltage';
-  if (idLower.includes('/clock/')) return 'Clock';
-  if (idLower.includes('/power/')) return 'Power';
 
-  // Fallback heurístico por unidad o texto del valor
-  const valStr = String(node?.Value || '');
-  if (valStr.includes('°C') || valStr.includes('°F') || valStr.includes('°')) return 'Temperature';
-  if (valStr.includes('%')) return 'Load';
-  if (valStr.includes('RPM')) return 'Fan';
-  if (valStr.includes(' V')) return 'Voltage';
-  if (valStr.includes('MHz') || valStr.includes('GHz')) return 'Clock';
-  if (valStr.includes(' W')) return 'Power';
+  const fromImg = categoryFromImage(node.ImageURL);
+  const cat = fromImg !== 'other' ? fromImg : categoryFromName(textStr);
+  return { hw: textStr, cat };
+}
 
-  const textLower = String(node?.Text || '').toLowerCase();
-  if (textLower.includes('temp') || textLower.includes('temperat')) return 'Temperature';
+function buildSensorFromNode(node: any, hw: string, cat: SensorCategory): Sensor | null {
+  if (!node?.SensorId) return null;
+  const v = parseValue(node.Value);
+  if (!isFinite(v.value)) return null;
 
-  return 'Other';
+  const id = String(node.SensorId);
+  const finalCat = categoryFromSensorId(id) ?? cat;
+  const mn = parseValue(node.Min);
+  const mx = parseValue(node.Max);
+
+  return {
+    id,
+    name: String(node.Text ?? id),
+    hardware: hw || defaultHardwareName(finalCat),
+    category: finalCat,
+    kind: kindFromNode(node),
+    value: v.value,
+    unit: v.unit,
+    min: isFinite(mn.value) ? mn.value : undefined,
+    max: isFinite(mx.value) ? mx.value : undefined,
+  };
 }
 
 // Walks the LHM tree. Hardware label sits at depth 2 (or on nodes with ImageURL)
 function flatten(node: any, depth: number, hardware: string, category: SensorCategory, out: Sensor[]): void {
   if (!node) return;
-  let hw = hardware;
-  let cat = category;
-  const textStr = node.Text ? String(node.Text).trim() : '';
-  const esContenedor = NOMBRES_CONTENEDORES.test(textStr);
-
-  // Solo actualizar hw y cat si este nodo NO es un contenedor de agrupación ("Temperatures", "Load", etc.)
-  if (textStr && !node.SensorId && !esContenedor && (node.ImageURL || depth === 2 || !hw)) {
-    hw = textStr;
-    const fromImg = categoryFromImage(node.ImageURL);
-    const fromName = categoryFromName(hw);
-    cat = fromImg !== 'other' ? fromImg : fromName;
+  const ctx = resolveHardwareContext(node, depth, hardware, category);
+  const sensor = buildSensorFromNode(node, ctx.hw, ctx.cat);
+  if (sensor) {
+    out.push(sensor);
   }
-
-  if (node.SensorId) {
-    const id = String(node.SensorId);
-    const fromIdCat = categoryFromSensorId(id);
-    const finalCat = fromIdCat ?? cat;
-    const kind = kindFromNode(node);
-    const v = parseValue(node.Value);
-    const mn = parseValue(node.Min);
-    const mx = parseValue(node.Max);
-    if (isFinite(v.value)) {
-      out.push({
-        id,
-        name: String(node.Text ?? id),
-        hardware: hw || (finalCat === 'cpu' ? 'CPU' : finalCat === 'gpu' ? 'GPU' : finalCat === 'mainboard' ? 'Mainboard' : 'Hardware'),
-        category: finalCat,
-        kind,
-        value: v.value,
-        unit: v.unit,
-        min: isFinite(mn.value) ? mn.value : undefined,
-        max: isFinite(mx.value) ? mx.value : undefined,
-      });
-    }
+  for (const c of node.Children ?? []) {
+    flatten(c, depth + 1, ctx.hw, ctx.cat, out);
   }
-  for (const c of node.Children ?? []) flatten(c, depth + 1, hw, cat, out);
 }
 
 async function fetchTree(): Promise<any> {
@@ -238,23 +276,20 @@ async function fetchTree(): Promise<any> {
   }
 }
 
+function isAllowedTemperature(s: Sensor): boolean {
+  if (s.kind !== 'Temperature') return false;
+  if (allowedCategories.has(s.category)) return true;
+  if (s.category === 'mainboard' && allowedCategories.has('cpu')) return true;
+
+  const idOrName = (s.id + ' ' + s.name).toLowerCase();
+  if (allowedCategories.has('cpu') && /cpu|core|package/.test(idOrName)) return true;
+  if (allowedCategories.has('gpu') && /gpu|hot spot|vram/.test(idOrName)) return true;
+
+  return false;
+}
+
 function applyCategoryFilter(all: Sensor[]): Sensor[] {
-  return all.filter((s) => {
-    if (allowedCategories.has(s.category)) return true;
-    // Si es un sensor de temperatura de CPU reportado por chip de placa base (LPC/SuperIO)
-    // o cualquier temperatura relevante para componentes activos, conservarlo para no perder temperatura.
-    if (s.kind === 'Temperature') {
-      if (s.category === 'cpu' && allowedCategories.has('cpu')) return true;
-      if (s.category === 'gpu' && allowedCategories.has('gpu')) return true;
-      if (s.category === 'mainboard' && (allowedCategories.has('mainboard') || allowedCategories.has('cpu'))) return true;
-      if (s.category === 'memory' && allowedCategories.has('memory')) return true;
-      if (s.category === 'storage' && allowedCategories.has('storage')) return true;
-      const idOrName = (s.id + ' ' + s.name).toLowerCase();
-      if ((idOrName.includes('cpu') || idOrName.includes('core') || idOrName.includes('package')) && allowedCategories.has('cpu')) return true;
-      if ((idOrName.includes('gpu') || idOrName.includes('hot spot') || idOrName.includes('vram')) && allowedCategories.has('gpu')) return true;
-    }
-    return false;
-  });
+  return all.filter((s) => allowedCategories.has(s.category) || isAllowedTemperature(s));
 }
 
 /**

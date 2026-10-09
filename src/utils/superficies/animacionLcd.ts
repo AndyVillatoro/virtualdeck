@@ -27,7 +27,7 @@
  */
 
 /** Lado del lienzo de cada fotograma; cubre el LCD más grande (112). */
-export const LADO_GIF = 112;
+const LADO_GIF = 112;
 const MAX_CUADROS = 120;
 const MAX_BYTES = 6 * 1024 * 1024;
 
