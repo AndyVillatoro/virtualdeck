@@ -32,6 +32,11 @@ Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`
    - Cadena `build:native` ejecutada automáticamente antes del empaquetado de la aplicación (`npm run build:store`).
    - `_referencias/` añadido a `.gitignore` para no contaminar el historial del repositorio.
 
+5. **Vídeo del panel de música en modo estándar (`PanelMusica.tsx`, commit `6a62854`):**
+   - El botón `[VÍDEO]` y el renderizado en vivo de `VideoVentana` se habilitaron también en la vista de escritorio vertical estándar (`PanelMusica.tsx`), ya que previamente solo estaban colocados en `PanelMusicaBarra.tsx`.
+   - **Observación del dueño tras pruebas (2026-10-08):** El vídeo ya se muestra activo en pantalla, pero si el usuario navega a otra pestaña dentro de la misma ventana del navegador (ej. cambiar de pestaña de YouTube a Gmail), la captura refleja Gmail porque la API de Windows (`desktopCapturer`) captura la ventana HWND completa y no la pestaña individual aislada.
+   - **Vías a investigar para futura iteración:** (a) desacoplar a Picture-in-Picture (PiP) nativo del navegador, que crea un HWND secundario exclusivo para el reproductor; (b) extensión ligera de captura de pestaña específica vía WebRTC; (c) sugerir en UI separar la pestaña en ventana propia para multitarea.
+
 ### Verificación
 
 * **CDP Headless Shell (:9466) / Edge:** Cero errores de consola, cero enlaces rotos (22 banners, vídeos, VTTs, scripts y assets comprobados), layouts verificados en resoluciones 1920×1080 y 390×844 (móvil).
