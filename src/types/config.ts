@@ -1,6 +1,7 @@
 import type { ButtonAction, TipoWidget } from './actions';
 import type { RGBSettings, SensorsSettings } from './hardware';
 import type { PaginaSuperficie } from './superficies';
+import type { CompanionSettings } from './companion';
 
 export interface SliderWidgetConfig {
   /** Qué controla el slider: 'volume' | 'brightness' | 'variable' */
@@ -228,10 +229,13 @@ export interface DeckConfig {
   theme?: ThemeMode;
   sensors?: SensorsSettings;
   remote?: RemoteSettings;
+  companion?: CompanionSettings;
   musicPanel?: {
     enabled: boolean;
     side: 'left' | 'right';
     plegado?: boolean;
+    /** Ancho en píxeles del panel redimensionable (mínimo 180, por defecto 300). */
+    ancho?: number;
     /** Vídeo de la ventana que suena dentro del panel (formato barra). */
     video?: boolean;
     /** Recorte del vídeo por app (clave = fuente de la pista o nombre de la ventana). Fracciones 0..1. */

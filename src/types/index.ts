@@ -3,4 +3,5 @@ export * from './config';
 export * from './hardware';
 export * from './ipc';
 export * from './superficies';
+export * from './companion';
 

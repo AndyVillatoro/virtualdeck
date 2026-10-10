@@ -268,6 +268,14 @@ export const DOT_GLYPHS_8X8: Record<string, number[]> = {
     0b00000000, 0b00100100, 0b01000010, 0b11111111,
     0b11111111, 0b01000010, 0b00100100, 0b00000000,
   ],
+  SHUFFLE: [
+    0b00000000, 0b00000010, 0b11000111, 0b00111010,
+    0b00111010, 0b11000111, 0b00000010, 0b00000000,
+  ],
+  REPEAT: [
+    0b00000100, 0b01111111, 0b01000110, 0b01000010,
+    0b01100010, 0b11111110, 0b00100000, 0b00000000,
+  ],
   KEYBOARD: [
     0b11111111, 0b10000001, 0b10111101, 0b10000001,
     0b10111101, 0b10000001, 0b10011001, 0b11111111,
@@ -279,6 +287,20 @@ export const DOT_GLYPHS_8X8: Record<string, number[]> = {
   CHAT: [
     0b01111110, 0b11111111, 0b10000001, 0b10111101,
     0b10000001, 0b11111111, 0b01111110, 0b00011000,
+  ],
+  /** Ojo abierto: almendra de 6 puntos con la pupila de 2 en el centro. */
+  EYE: [
+    0b00000000, 0b00011000, 0b00100100, 0b01011010,
+    0b00100100, 0b00011000, 0b00000000, 0b00000000,
+  ],
+  /**
+   * Ojo tachado. La diagonal va de arriba a la derecha a abajo a la izquierda,
+   * como la de `MUTE`, y sobresale del almendra por las dos esquinas: si no,
+   * la línea cae justo encima de la pupila y no se ve.
+   */
+  EYE_OFF: [
+    0b00000000, 0b00011001, 0b00100100, 0b01011010,
+    0b00101110, 0b00111000, 0b01000000, 0b00000000,
   ],
 };
 

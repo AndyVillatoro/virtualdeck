@@ -42,14 +42,17 @@ export function claveRecorte(fuente: string, nombreVentana: string): string {
  * deformación aunque el contenedor cambie de forma al redimensionar.
  */
 export function cajaRecorte(r: Recorte, ancho: number, alto: number, aspecto: number): Caja {
-  const k = Math.max(ancho / (r.w * aspecto), alto / r.h);
+  const escalaW = ancho / (r.w * aspecto);
+  const escalaH = alto / r.h;
+  // contain: garantiza que toda la zona seleccionada por el usuario quepa visible en pantalla
+  const k = Math.min(escalaW, escalaH);
   const width = k * aspecto;
   const height = k;
   return {
     width,
     height,
-    left: -r.x * width - (r.w * width - ancho) / 2,
-    top: -r.y * height - (r.h * height - alto) / 2,
+    left: -r.x * width + (ancho - r.w * width) / 2,
+    top: -r.y * height + (alto - r.h * height) / 2,
   };
 }
 
@@ -69,18 +72,11 @@ export function cajaContenida(ancho: number, alto: number, aspecto: number): Caj
 }
 
 /**
- * Ajusta un rectángulo arrastrado para que su proporción en píxeles coincida
- * con la del contenedor: así lo que se ve al guardar es lo que se seleccionó.
- *
- * `relacion` = (ancho del contenedor / alto del contenedor) / aspecto del cuadro.
- * Se conserva la esquina de partida y se mete dentro del cuadro.
+ * Normaliza y acota el rectángulo seleccionado respetando la selección exacta del usuario.
  */
-export function ajustarAlAspecto(r: Recorte, relacion: number): Recorte {
-  let { w, h } = r;
-  if (w / h > relacion) w = h * relacion;
-  else h = w / relacion;
-  if (w > 1) { w = 1; h = w / relacion; }
-  if (h > 1) { h = 1; w = h * relacion; }
+export function ajustarAlAspecto(r: Recorte): Recorte {
+  const w = acotar(r.w, MINIMO, 1);
+  const h = acotar(r.h, MINIMO, 1);
   return {
     x: acotar(r.x, 0, 1 - w),
     y: acotar(r.y, 0, 1 - h),

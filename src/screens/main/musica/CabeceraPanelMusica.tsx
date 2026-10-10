@@ -39,6 +39,7 @@ export function CabeceraPanelMusica({ video, accent, onCerrar }: {
         type="button"
         onClick={onCerrar}
         title={t('music.hide')}
+        aria-label={t('music.hide')}
         style={{
           background: 'none', border: 'none', color: VD.textMuted,
           cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center',

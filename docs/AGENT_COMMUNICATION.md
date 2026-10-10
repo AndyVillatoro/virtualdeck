@@ -68,7 +68,19 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-ART-01** | P1 | Capturas de prensa de la 0.14 con datos inventados | opencode wR (DeepSeek V4.1 Flash, Go) | `scripts/prensa/**` | `DONE` (4fac5a6) | 2026-10-07 |
 | **T-VID-03** | P1 | Montar el tráiler con HyperFrames (107) | agy wK (Gemini Flash) | `_referencias/trailer/**` | `CLAIMED` | 2026-10-07 |
 | **T-ART-00** | P1 | Inventario de artes para Store y Pages (106/107) | opencode wT (Fledge, gratis) | solo `_referencias/informes/` | `DONE` (informe revisado) | 2026-10-07 |
-| **T-VID-01** | P1 | Arreglar el vídeo del panel de música: mala resolución y congelado si otra ventana tapa el navegador (roadmap 113), encargo `_referencias/encargos/T-VID-01-video-panel.md` | opencode wK (orquesta; hace el trabajo de wR, que no estaba disponible) | `electron/main/capturaVentana.ts`, `electron/main/ipc/capturaIpc.ts`, `electron/main/ipc/index.ts` (solo captura), `src/screens/main/musica/**` (solo vídeo), `src/screens/main/musica/PanelMusicaBarra.tsx` (solo botón VÍDEO), `src/types/ipc.ts` (solo `captura`), idiomas `esComun`/`enComun` (solo `music.video*`) | `VERIFYING` (check en verde; el panel de vídeo no se ha podido ver en la app: en desarrollo ignora el tamaño guardado y nace en 1100×720, y el vídeo solo existe en formato barra ≤ 600) | 2026-10-08 |
+| **T-VID-01** | P1 | Arreglar el vídeo del panel de música: mala resolución y congelado si otra ventana tapa el navegador (roadmap 113), encargo `_referencias/encargos/T-VID-01-video-panel.md` | opencode wK (orquesta; hace el trabajo de wR, que no estaba disponible) | `electron/main/capturaVentana.ts`, `electron/main/ipc/capturaIpc.ts`, `electron/main/ipc/index.ts` (solo captura), `src/screens/main/musica/**` (solo vídeo), `src/screens/main/musica/PanelMusicaBarra.tsx` (solo botón VÍDEO), `src/types/ipc.ts` (solo `captura`), idiomas `esComun`/`enComun` (solo `music.video*`) | `DONE` (f669a9e y 6a62854) | 2026-10-08 |
+| **T-EXT-01** | P1 | Extensión compañera de navegador (`virtualdeck-companion`) y servidor local (ítem 114) | agy wK + wW (revisión y hardening) | `companion-extension/**`, `electron/main/companion/**`, `companionIpc.ts`, `CompanionSection.tsx`, `useCompanionStream.ts`, `VideoVentana.tsx`, idiomas | `DONE` | 2026-10-09 |
+| **T-DOC-05** | P2 | Guía de instalación y protocolo de la extensión compañera | agy wW | `companion-extension/README.md` | `DONE` | 2026-10-09 |
+| **T-DOC-06** | P2 | Novedades 0.14.1 visibles y sincronización de ROADMAP (ítems 114 y 115) | opencode w11 | `docs/WHATS_NEW_0.14.1.md`, `docs/ROADMAP.md` | `DONE` | 2026-10-09 |
+| **T-DEB-01** | P2 | Auditoría integral de deuda técnica, código duplicado y markdown dispersos para v0.15 | opencode w0 | `docs/deuda-tecnica-v015.md` | `DONE` | 2026-10-09 |
+| **T-HW-18** | P1 | Plan de arquitectura y especificación técnica: Stream Deck Plus, Neo y reposo de docks (ítem 115) | agy wW | `docs/investigacion/plan-docks-v015.md` | `DONE` | 2026-10-09 |
+| **T-NAV-01** | P2 | Presets ampliados de navegación web (ítem 1.6 de ROADMAP) | opencode w11 | `src/screens/editor/actionData.ts`, `src/screens/editor/formularios/basicos.tsx`, `docs/ROADMAP.md` (apéndice 1.6) | `DONE` (ya implementado en ítems 54/98 — 0 cambios de código; solo marcado ✅ en apéndice 1.6; check 7/7 verde, build 1.71 s) | 2026-10-10 |
+| **T-DOCK-02** | P1 | Fase 0 de Docks: interfaces DriverSuperficie y FamiliaSuperficie (ítem 115) | agy wW | `electron/main/superficies/driver.ts`, `dispositivoMirabox.ts` | `DONE` (driver.ts creado, DispositivoMirabox implementa DriverSuperficie, compatibilidad N3 intacta; check 7/7 verde, build 1.54 s) | 2026-10-10 |
+| **T-PERF-01** | P2 | Bundle diferido del catálogo de marcas (ítem 4.1 de ROADMAP) | opencode w12 | `docs/ROADMAP.md`, `docs/AGENT_COMMUNICATION.md` | `DONE` — **el encargo partía de una premisa caducada**: `src/components/BrandIconPicker.tsx` no existe (borrado en `3b1a12d`) y el diferido ya estaba hecho desde `9bbe70d`. Sin cambios de código; verificado en el build | 2026-10-10 |
+| **T-WID-02** | P1 | Widget música redimensionable con 3 modos adaptativos (16:9 amplio, estándar, vertical en pila) | Antigravity (orquestador) | `PanelMusica.tsx`, `PanelMusicaBarra.tsx`, `PanelesMusica.tsx`, `ManejadorRedimension.tsx`, `CuerpoVideo.tsx`, `CuerpoCaratula.tsx`, `ControlesTransporte.tsx`, `config.ts` | `DONE` | 2026-10-10 |
+| **T-VID-02** | P1 | Geometría y centrado de recorte de vídeo (contain scaling sin corte lateral) | Antigravity (orquestador) | `src/screens/main/musica/recorteVideo.ts` | `DONE` | 2026-10-10 |
+| **T-DOCK-03** | P1 | Animación de encendido VirtualDeck y borrado de VRAM / splash Mirabox | Antigravity (orquestador) | `electron/main/superficies/dispositivoMirabox.ts`, `animacionInicioDock.ts`, `useSuperficies.ts` | `DONE` | 2026-10-10 |
+| **T-EXT-01-fix** | P1 | La extensión no se enfoca en el vídeo: sale la pantalla completa del navegador (encargo `_referencias/encargos/T-EXT-01-enfoque-video.md`) | Antigravity (orquestador) | `companion-extension/**`, `electron/main/companion/**`, `electron/main/ipc/companionIpc.ts`, `src/types/companion.ts`, `src/screens/main/musica/{useCompanionStream,VideoVentana,recorteVideo,useStreamVentana,tamanoCaptura}` | `DONE` (recorte por fracciones y sincronización del rect; check 7/7 verde; **sin verificar en navegador real**) | 2026-10-10 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
@@ -99,6 +111,13 @@ Todo lo de aquí está **verificado por inspección o por prueba automatizada**,
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
 
+* **2026-10-10** — *opencode w12 (T-PERF-01)*:
+  - **Aviso de premisa caducada**: T-PERF-01 pedía diferir `src/components/BrandIconPicker.tsx`, archivo que **no existe** (borrado en `3b1a12d`; lo absorbió el selector unificado `SelectorIconosDot`/`PanelCatalogoIcono`). El diferido ya estaba hecho desde `9bbe70d`.
+  - **Verificado en el build**, no supuesto: `brandIcons` sale como chunk aparte de 29,40 kB y en el index solo aparece como `import()` dinámico; `index.html` no lo carga. El disparador real es «el botón tiene `brandIcon`» (`celda/CapasDeFondo.tsx:38` monta `BrandIconDisplay` solo si lo hay).
+  - **Sin cambios de código.** Solo se corrigió la incoherencia del ROADMAP (el ítem 4.1 estaba sin marcar pese a que la fila P5 ya lo daba por hecho).
+  - **Para quien siga con rendimiento**: el peso real está en `indice-*.js` (424 kB) y `acciones-*.js` (332 kB), no en el catálogo de marcas.
+  - `npm run check` 7/7 verde, build 1,86 s, `knip` sin huérfanos en `src/`.
+
 * **2026-10-09 (madrugada / cierre de sesión)** — *Antigravity (orquestador)*:
   - **Estado**: Todo limpio y comiteado en `main` (`origin/main` al día).
   - **Deuda técnica completada**:
@@ -109,6 +128,70 @@ Utiliza este apartado para dejar mensajes, advertencias técnicas o instruccione
     - Eliminadas 10 claves i18n huérfanas `glyph.*` en `esEditor.ts` y `enEditor.ts`.
   - **Guardianes**: 7/7 en verde con `npm run check`, 0 exports huérfanos en `knip`, build 1.68 s.
   - **Siguiente versión (v0.15.0)**: Iniciar Browser Companion Extension (Ítem 114) y compatibilidad física OpenDeck / Elgato Plus/Neo (Ítem 115).
+
+* **2026-10-09 (tarde / delegación multi-agente Herdr)** — *Antigravity wK (orquestador)*:
+  - **Coordinación Herdr**: Trabajo distribuido en paralelo entre paneles Herdr (`wK:p1` orquestador agy, `wW:p1` agy, `w0:p1` opencode, `w11:p1` opencode, `wX:p1` opencode).
+  - **Ítem 114 (VirtualDeck Companion Extension)**: Extensión Manifest V3 (`companion-extension/`) completada y conectada a Electron (`electron/main/companion/`). Hardening de seguridad aplicado por `wW`: sockets autenticados obligatorios, CORS restrictivo sin `*`, Origin estricto a extensiones y endpoints locales protegidos.
+  - **Documentación de Novedades**: Creado `docs/WHATS_NEW_0.14.1.md` (por `w11`) bilingüe en raíz de `docs/` con las 5 novedades oficiales para visibilidad inmediata del usuario.
+  - **Ítem 115 (Compatibilidad Docks Físicos)**: Actualizado `docs/ROADMAP.md` y redactado plan técnico en `docs/investigacion/plan-docks-v015.md` (por `wW`) con arquitectura para Elgato Plus (8 teclas + 4 diales + LCD 800×100), Neo (8 teclas + 2 touchpoints + infobar 248×58) y reposo de docks por inactividad.
+  - **Deuda Técnica v0.15**: Auditoría exhaustiva en `docs/deuda-tecnica-v015.md` (por `w0`) con mapa de limpieza segura (archivos >500 líneas, stashes redundantes y poda de `_referencias/` cerradas).
+  - **Guardianes**: `npm run check` 7/7 en verde, `knip` con 0 exports huérfanos y 0 tipos huérfanos, `npm run build` en 1.67 s.
+
+* **2026-10-10** — *Antigravity (orquestador / Companion HD isolation)*:
+  - **Diagnóstico del problema**: El usuario reportó que la captura mostraba la interfaz completa del navegador a baja resolución y cambiaba al cambiar de pestaña activa. Esto ocurría porque al fallar el enlace con el offscreen de la extensión, `VideoVentana.tsx` recurría a `useStreamVentana` (captura HWND de Windows mediante `desktopCapturer`), la cual captura la ventana completa de Chrome en primer plano.
+  - **Soluciones aplicadas**:
+    1. **Recorte adaptativo en offscreen**: `companion-extension/offscreen.js` implementa `dibujarRecorte()` que lee las coordenadas reales de `media.getBoundingClientRect()` emitidas por `content.js` y recorta canvas exclusivamente al elemento `<video>`, escalando en HD nítido (hasta 1280px con JPEG 0.85).
+    2. **Aislamiento de sockets en backend**: En `servidorCompanion.ts`, los sockets con `rol=stream` se autentican pero no suplantan `clienteWs`. Al desconectar el stream, se resetea el último frame a vacío para retornar elegantemente a reposo sin fugas.
+    3. **Handshake fiable con reintentos**: En `background.js`, `enviarMensajeOffscreen` realiza reintentos con espera hasta confirmar que `offscreen.js` ha recibido `start_capture`.
+    4. **Auto-streaming al reproducir**: `background.js` inicia automáticamente la captura de la pestaña correspondiente cuando detecta reproducción de vídeo activa (`autoStreaming: true`).
+    5. **Optimización en VideoVentana**: Se desactiva la captura HWND nativa (`desktopCapturer`) mientras `usandoCompanion` esté activo para ahorrar CPU/GPU, y se añade listener `onLoadImg` para calcular la relación de aspecto exacta de los fotogramas recibidos.
+  - **Verificación**: `npm run check` 7/7 guardianes verdes (0 errores, 0 advertencias), `npm run lint:dead` 0 huérfanos en src, `npm run build` 1.65 s.
+
+* **2026-10-10** — *opencode w11 (T-NAV-01, ítem 1.6)*:
+  - **Hallazgo**: el objetivo ya estaba implementado (ítems 54 y 98). `src/screens/editor/actionData.ts:108-122` trae los 14 presets WEB con las 11 URLs pedidas (Gemini, Claude, ChatGPT, GitHub, YouTube, Twitch, Reddit, Discord Web, WhatsApp Web, Notion, Spotify Web + Netflix, X, Gmail), cada uno con `label`, `url` e `iconoCatalogo`. `FormWeb` en `src/screens/editor/formularios/basicos.tsx:44-78` expone los 11 chips vía `Segmentado`.
+  - **Verificación de iconos**: los 18 `iconoCatalogo` usados (`marcas:*`, `acciones:brand-openai`, `acciones:brand-vscode`) resuelven en `src/data/iconosDot/` (2.866 marcas, 5.150 acciones). Sin cambios de código.
+  - **Correcciones al encargo**: las rutas del reclamo no existían (`src/data/actionData.ts`, `src/screens/editor/pasos/PasoAccion.tsx`); las reales son `src/screens/editor/actionData.ts` y `src/screens/editor/formularios/basicos.tsx`. Apéndice 1.6 del ROADMAP marcado ✅.
+  - **Verificación**: `npm run check` 7/7 verde (tsc 0 errores), `npm run build` 1.71 s. Estado → `DONE`.
+
+* **2026-10-10** — *agy wW (T-DOCK-02, Fase 0 de Docks, ítem 115)*:
+  - **Objetivo**: Fase 0 del plan de docks (`docs/investigacion/plan-docks-v015.md` §3.1 y §6).
+  - **Cambios realizados**:
+    1. Creado `electron/main/superficies/driver.ts` con los contratos `DriverSuperficie`, `FamiliaSuperficie`, `ControlRef`, `ControlId` y `CallbacksDispositivo`.
+    2. Modificado `electron/main/superficies/dispositivoMirabox.ts` para implementar `DriverSuperficie`.
+    3. Su método `imagen(control: ControlId, jpeg: Buffer)` admite tanto el índice numérico simple (`tecla0: number`) como la referencia estructurada `ControlRef` (`tipo === 'key'`), preservando intacto el comportamiento, rendimiento y latencia del Mirabox N3 actual.
+  - **Verificación**:
+    - `npm run check`: 7/7 guardianes verdes (tsc 0 errores, depcruise 0 violaciones, eslint 0 advertencias, check-i18n, check-acciones, check-ipc, check-wiki, check-campos, check-paridad, check-perfiles).
+    - `npm run build`: 1.54 s sin errores.
+    - Estado → `DONE`.
+
+* **2026-10-10** — *Antigravity (T-EXT-01-fix, la extensión no se enfoca en el vídeo)*:
+  - **Causa raíz**: el recorte al `<video>` vivía en un canal lateral frágil. `background.js` solo reenviaba el rect de la pestaña **igual a `tabCapturada`**, que se asigna al final de `iniciarCapturaTab` (tras dos `await`); mientras tanto, y **para siempre tras cualquier reinicio del service worker de MV3** (la variable era solo de módulo), ese rect se descartaba. `offscreen.js` arrancaba con `rectVideo = null` y `dibujarRecorte()` dibujaba entonces el fotograma entero: la pantalla completa del navegador.
+  - **Cinco arreglos** (solo en `companion-extension/`, sin tocar el protocolo VDCM ni el lado app):
+    1. `content.js`: el rect se mide en **fracciones 0..1 del viewport visible**, no en píxeles CSS — el cuadro capturado no es `viewport × devicePixelRatio` (zoom, escalado, scrollbar), así que la fracción es lo único exacto. `dpr` y `vw/vh` viajan solo como diagnóstico.
+    2. `content.js`: elige el `<video>` que se ve (suena + más área visible), descartando anuncios, vistas previas y reproductores ocultos. Metadatos y transporte siguen usando el criterio laxo, para no romper Spotify (su `<audio>` no se ve nunca).
+    3. `content.js`: el rect se refresca con `ResizeObserver`, `fullscreenchange`, `resize` y `scroll` (con 80 ms de retardo), no solo con el sondeo de 250 ms; y si no hay vídeo a la vista se manda rectángulo «página entera» en vez de dejar uno viejo clavado.
+    4. `background.js`: rectángulos **por `tabId`**; se reenvían todos y el offscreen elige el de la pestaña capturada. La pestaña capturada se guarda en `chrome.storage.local` y se restaura al despertar el service worker. Al arrancar la captura se le pasa el rect conocido y se pide uno fresco (`pedir_rect`).
+    5. `offscreen.js`: si no tiene el rect de la pestaña capturada, **lo pide** (`video_rect_pedido`, cada 3 s) y reutiliza el último bueno, en vez de rendirse a la pestaña entera.
+  - **Extra**: `registrarEventosMedia` acumulaba miles de escuchadores duplicados sobre el mismo `<video>` (la llamaba el `MutationObserver` en cada mutación); ahora hay guarda con `WeakSet`.
+  - **Descartado**: `captureStream()` del `<video>` desde el content script. En YouTube el vídeo va por Widevine y `captureStream()` lanza `NotSupportedError` sobre contenido protegido por EME; solo daría el vídeo sin los controles del reproductor, y obligaría a recodificar en el content script. Sigue siendo el camino a explorar si algún día hay que capturar sin pantalla.
+  - **Verificación**: `npm run check` 7/7 verde (tsc, depcruise, eslint, 7 guardianes), `knip` sin huérfanos nuevos. **Sin verificar en navegador real**: no se puede cargar la extensión aquí. Pruebas sugeridas al dueño en `youtube.com/watch?v=…` en modo normal, teatro y pantalla completa.
+
+* **2026-10-10** — *Antigravity (T-WID-02, T-VID-02, T-DOCK-03)*:
+  - **Widget música redimensionable (T-WID-02)**:
+    - Implementado `ManejadorRedimension.tsx` con arrastre continuo y persistencia en `musicPanel.ancho`.
+    - 3 modos de disposición adaptativos:
+      1. Amplio (>= 440px): Escenario 16:9 grande para vídeo o carátula musical expansiva.
+      2. Estándar (240px - 439px): Balance clásico cuadrado con controles integrados.
+      3. Vertical en pila (< 240px): Carátula compacta con transporte en pila vertical (botones hacia abajo) para paneles ultradelgados.
+    - Componentes desacoplados en `CuerpoVideo.tsx` y `CuerpoCaratula.tsx`, manteniendo complejidad ESLint < 18.
+  - **Geometría de recorte de vídeo (T-VID-02)**:
+    - Resuelto el corte del 50-60% del vídeo en contenedores cuadrados o reducidos: `recorteVideo.ts` ahora aplica escala uniforme `contain` centrando los ejes X e Y, garantizando que el 100% del área recortada sea visible.
+  - **Inicio Dock sin colisiones de firmware (T-DOCK-03)**:
+    - Borrado de VRAM física inmediato (`CLE \xff` + `REFRESCO`) en `dispositivoMirabox.ts` al inicializar conexión, limpiando el logo de arranque quemado por el firmware.
+    - Animación de encendido VirtualDeck dot-matrix (`animacionInicioDock.ts`) con barrido radial de luz y glifo "VD" centrado antes de montar los botones reales.
+  - **Verificación**: `npm run check` 7/7 guardianes verdes (0 errores, 0 advertencias), `npm run lint:dead` 0 tipos/exports huérfanos, `npm run build` 1.72 s.
+
+
 
 ---
 

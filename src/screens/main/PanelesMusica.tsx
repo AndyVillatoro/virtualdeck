@@ -35,6 +35,8 @@ export function PanelMusicaLateral({ config, panelMusica, lado, onConfigChange, 
         onActivo: (video) => onConfigChange({ ...config, musicPanel: { ...panelMusica, video } }),
         onRecortes: (recortes) => onConfigChange({ ...config, musicPanel: { ...panelMusica, recortes } }),
       }}
+      ancho={panelMusica.ancho}
+      onAncho={(ancho) => onConfigChange({ ...config, musicPanel: { ...panelMusica, ancho } })}
       {...musica}
     />
   );

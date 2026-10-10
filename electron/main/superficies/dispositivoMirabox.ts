@@ -17,22 +17,18 @@
  */
 
 import { HIDAsync } from 'node-hid';
+import type { DriverSuperficie, CallbacksDispositivo, ControlId } from './driver';
 import type { ModeloMirabox } from './modelos';
 import * as proto from './protocoloMirabox';
 
-export interface CallbacksDispositivo {
-  /** Un reporte de entrada crudo (lo interpreta el gestor). */
-  alEntrada: (buf: Buffer) => void;
-  /** El dispositivo dejó de responder o se desenchufó. */
-  alDesconectar: (error: Error) => void;
-}
+export type { CallbacksDispositivo } from './driver';
 
 const MS_LATIDO = 8000;
 const MS_DESPERTAR = 300;
 
 const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-export class DispositivoMirabox {
+export class DispositivoMirabox implements DriverSuperficie {
   private cola: Promise<void> = Promise.resolve();
   private latido: NodeJS.Timeout | null = null;
   private cerrando = false;
@@ -66,10 +62,14 @@ export class DispositivoMirabox {
     return dispositivo;
   }
 
-  /** Despierta la pantalla (`DIS`) y arranca el latido cada 8 s. */
+  /** Despierta la pantalla (`DIS`), borra el logo del firmware (`CLE`) y arranca el latido. */
   private async iniciar(brillo: number): Promise<void> {
     await this.enCola(() => this.escribir(proto.paqueteComando(proto.DESPERTAR, this.modelo.packetSize)));
     await esperar(MS_DESPERTAR);
+    await this.enCola(async () => {
+      await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO, this.modelo.packetSize));
+      await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
+    });
     await this.brillo(brillo);
     this.latido = setInterval(() => {
       void this.enCola(() => this.escribir(proto.paqueteComando(proto.LATIDO, this.modelo.packetSize)));
@@ -80,11 +80,13 @@ export class DispositivoMirabox {
     return !this.cerrando && !this.cerrado && !this.desconectado;
   }
 
-  /** Pinta una tecla LCD. `tecla0` es el índice de la tecla (0-based). */
-  async imagen(tecla0: number, jpeg: Buffer): Promise<void> {
+  /** Pinta una tecla LCD. `control` puede ser el índice de tecla (0-based) o un `ControlRef`. */
+  async imagen(control: ControlId, jpeg: Buffer): Promise<void> {
     if (!this.estaVivo) return;
-    const control = this.modelo.controles.find((c) => c.tipo === 'key' && c.indice === tecla0);
-    const lcdId = control?.lcdId;
+    const indiceTecla = typeof control === 'number' ? control : (control.tipo === 'key' ? control.indice : -1);
+    if (indiceTecla < 0) return;
+    const ctrl = this.modelo.controles.find((c) => c.tipo === 'key' && c.indice === indiceTecla);
+    const lcdId = ctrl?.lcdId;
     if (lcdId === undefined) return;
     await this.enCola(async () => {
       await this.escribir(proto.paqueteComando(proto.cabeceraImagen(jpeg.byteLength, lcdId), this.modelo.packetSize));

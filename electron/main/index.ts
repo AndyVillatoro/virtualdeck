@@ -23,6 +23,9 @@ import { iniciarPrototipoPlugins, detenerPrototipoPlugins } from './plugins/prot
 // (único `src/` que el proceso principal puede importar, ver `lint:arch`):
 // repetirlos aquí los desincroniza en silencio.
 import { BARRA_POR_DEFECTO, SENSORES_POR_DEFECTO } from '../../src/types';
+import { inicializarEstadoCompanion, obtenerAjustesCompanion } from './companion/estadoCompanion';
+import { iniciarServidorCompanion, detenerServidorCompanion } from './companion/servidorCompanion';
+import { leerAjustesCompanion, guardarAjustesCompanion } from './companion/ajustes';
 
 // DeskIn virtual display adapter and similar virtual/remote display drivers don't support
 // Chromium's GPU compositor — disabling hardware acceleration forces software rendering
@@ -153,6 +156,20 @@ function setupRemoteServer(initialCfg: any, win: BrowserWindow): void {
   if (!r.ok) console.error('[remoto] no arranco:', r.error);
 }
 
+// Extensión compañera: token, puerto y «encendido» salen de la configuración,
+// como el servidor local. Antes se generaba un token nuevo en cada arranque
+// —la extensión tenía que emparejarse otra vez cada vez que se abría la app—,
+// y el interruptor de los ajustes no tenía a qué apagar nada.
+function setupCompanion(_initialCfg: any, win: BrowserWindow): void {
+  inicializarEstadoCompanion(leerAjustesCompanion());
+  // Se escribe lo que hay **en memoria** después de inicializar, no lo que se
+  // leyó: si hubo que inventar un token, el inventado es el que se guarda.
+  guardarAjustesCompanion(obtenerAjustesCompanion());
+  iniciarServidorCompanion(win).catch((e) => {
+    console.error('[companion] no arranco:', (e as Error).message);
+  });
+}
+
 // Apply sensors config from disk so first poll uses the user's host/port.
 function setupSensors(initialCfg: any): void {
   const sensorsCfg = initialCfg?.sensors;
@@ -234,6 +251,7 @@ function setupWindow() {
 
   setupFloatingBar(initialCfg);
   setupRemoteServer(initialCfg, win);
+  setupCompanion(initialCfg, win);
   setupSensors(initialCfg);
   setupRgbAutostart(initialCfg);
 
@@ -302,6 +320,7 @@ app.on('before-quit', () => {
   stopActiveWindowTracker();
   pararSondeo();
   remoto.parar();
+  try { detenerServidorCompanion(); } catch {}
   try { cerrarBarra(); } catch {}
   try { rgb.killServer(); } catch {}
   try { sensors.killLHM(); } catch {}

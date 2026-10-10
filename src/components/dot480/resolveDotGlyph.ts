@@ -206,6 +206,12 @@ const MAP: Record<string, string> = {
   'SCREEN': 'MONITOR',
   'DISPLAY': 'MONITOR',
   'PANTALLA': 'MONITOR',
+  'EYE': 'EYE',
+  'VER': 'EYE',
+  'SHOW': 'EYE',
+  'EYE_OFF': 'EYE_OFF',
+  'OCULTO': 'EYE_OFF',
+  'HIDE': 'EYE_OFF',
 };
 
 /**

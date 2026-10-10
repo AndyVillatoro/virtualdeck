@@ -30,6 +30,7 @@ import type {
   SensorCategory,
 } from './hardware';
 import type { ApiSuperficies } from './superficies';
+import type { ApiCompanion } from './companion';
 
 /** Una ventana que se puede mostrar en el panel de música (vídeo de lo que suena). */
 export interface VentanaCaptura {
@@ -232,6 +233,7 @@ export interface ElectronAPI {
     pickFile: () => Promise<string | null>;
   };
   superficies: ApiSuperficies;
+  companion: ApiCompanion;
   sensors: {
     list: (force?: boolean) => Promise<Sensor[]>;
     get: (id: string) => Promise<Sensor | null>;

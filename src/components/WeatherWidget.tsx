@@ -58,36 +58,34 @@ export function WeatherWidget() {
       title={weather ? `${weather.city}, ${weather.country} — ${desc}` : t('weather.loading')}
       style={{
         background: VD.elevated, border: `1px solid ${VD.border}`,
-        borderRadius: VD.radius.md, padding: '8px 10px',
-        display: 'flex', alignItems: 'center', gap: 8,
-        cursor: 'default',
+        borderRadius: VD.radius.md, padding: '4px 8px',
+        display: 'flex', alignItems: 'center', gap: 6,
+        cursor: 'default', minHeight: 26, boxSizing: 'border-box',
       }}
     >
-      <div style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {loading ? (
-          <DotGlyphIcon glyph="DOTS" size={14} color={VD.textMuted} />
+          <DotGlyphIcon glyph="DOTS" size={10} color={VD.textMuted} />
         ) : error ? (
-          <DotGlyphIcon glyph="MINIMIZE" size={12} color={VD.textMuted} />
+          <DotGlyphIcon glyph="MINIMIZE" size={10} color={VD.textMuted} />
         ) : (
-          <DotGlyphIcon glyph={wxDotGlyph(weather.code)} size={18} color={VD.accent} showRecessed />
+          <DotGlyphIcon glyph={wxDotGlyph(weather.code)} size={14} color={VD.accent} showRecessed />
         )}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 4, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{t('weather.loading')}</div>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{t('weather.loading')}</div>
         ) : error ? (
-          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted }}>{t('weather.none')}</div>
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted }}>{t('weather.none')}</div>
         ) : weather ? (
           <>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              <span style={{ fontFamily: VD.mono, fontSize: 16, color: VD.text, lineHeight: 1 }}>
-                {weather.temp}°
-              </span>
-              <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, letterSpacing: 0.5 }}>C</span>
-            </div>
-            <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 1, letterSpacing: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ fontFamily: VD.mono, fontSize: 13, color: VD.text, lineHeight: 1, fontWeight: 600 }}>
+              {weather.temp}°
+            </span>
+            <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textDim, letterSpacing: 0.5 }}>C</span>
+            <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: 2 }}>
               {weather.city}
-            </div>
+            </span>
           </>
         ) : null}
       </div>
@@ -97,7 +95,7 @@ export function WeatherWidget() {
           title="Actualizar"
           style={{ cursor: 'pointer', flexShrink: 0, padding: 2, display: 'flex', alignItems: 'center' }}
         >
-          <DotGlyphIcon glyph="DOTS" size={9} color={VD.textMuted} />
+          <DotGlyphIcon glyph="DOTS" size={8} color={VD.textMuted} />
         </div>
       )}
     </div>

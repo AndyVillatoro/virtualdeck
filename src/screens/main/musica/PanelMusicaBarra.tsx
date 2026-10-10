@@ -7,8 +7,8 @@ import { BarraProgreso } from '../../../components/BarraProgreso';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { DotMatrixImageOverlay } from '../../../components/dot480/DotMatrixImageOverlay';
 import { BotonTransporte } from './BotonTransporte';
+import { BotonAleatorioRepetir } from './FilaAleatorioRepetir';
 import { DatosPista } from './DatosPista';
-import { FilaAleatorioRepetir } from './FilaAleatorioRepetir';
 import { LenguetaMusica } from './LenguetaMusica';
 import { VideoVentana, type AjustesVideo } from './VideoVentana';
 import type { NowPlaying, ElectronAPI } from '../../../types';
@@ -17,8 +17,9 @@ import type { NowPlaying, ElectronAPI } from '../../../types';
  * El panel de música en formato barra (alto <= 600, como 1280×480).
  *
  * Columna de 300 px a todo el alto, anclada arriba: la carátula cuadrada con
- * el 52 % del alto como mucho, y debajo el título, el transporte, la barra de
- * progreso y aleatorio/repetir, todo pegado arriba. Sin centrado vertical, así
+ * el 52 % del alto como mucho, y debajo el título, el transporte de cinco
+ * (`[aleatorio] [anterior] [play] [siguiente] [repetir]`) y la barra de
+ * progreso, todo pegado arriba. Sin centrado vertical, así
  * no quedan bandas vacías por encima y por debajo.
  *
  * Se puede plegar a una lengüeta de 28 px en el borde (`LenguetaMusica`). El
@@ -33,15 +34,18 @@ import type { NowPlaying, ElectronAPI } from '../../../types';
  * deshabilitados ya lo dicen con su atenuado.
  */
 
-/** Ancho del panel desplegado. Antes 440 px: era un tercio de la pantalla. */
+import { ManejadorRedimension } from './ManejadorRedimension';
+
+/** Ancho del panel desplegado por defecto. */
 const ANCHO_PANEL = 300;
 
 /** Transporte algo menor que en vertical, pero sin bajar de 32 px. */
 const LADO_PRINCIPAL_BARRA = 44;
 const LADO_SECUNDARIO_BARRA = 36;
+const LADO_MINI_BARRA = 32;
 
 export function PanelMusicaBarra({
-  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar, video,
+  nowPlaying, isPlaying, sourceName, accent, api, lado, plegado, onPlegar, onCerrar, video, ancho, onAncho,
 }: {
   nowPlaying: NowPlaying;
   isPlaying: boolean;
@@ -53,10 +57,17 @@ export function PanelMusicaBarra({
   onPlegar: (plegado: boolean) => void;
   onCerrar: () => void;
   video: AjustesVideo;
+  ancho?: number;
+  onAncho?: (ancho: number) => void;
 }) {
   const VD = useTheme();
   const t = useT();
   const refrescarMedios = useNowPlayingRefresh();
+
+  const [anchoLocal, setAnchoLocal] = React.useState<number>(ancho ?? ANCHO_PANEL);
+  React.useEffect(() => {
+    if (ancho !== undefined) setAnchoLocal(ancho);
+  }, [ancho]);
 
   if (plegado) {
     return (
@@ -88,10 +99,27 @@ export function PanelMusicaBarra({
 
   return (
     <div style={{
-      height: '100%', width: ANCHO_PANEL, flexShrink: 0, background: VD.surface, ...borde,
-      display: 'flex', flexDirection: 'column', gap: 8,
-      padding: 8, overflow: 'hidden',
+      height: '100%',
+      width: anchoLocal,
+      position: 'relative',
+      flexShrink: 0,
+      background: VD.surface,
+      ...borde,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      padding: 8,
+      overflow: 'hidden',
     }}>
+      <div title={t('music.resize')} aria-label={t('music.resize')}>
+        <ManejadorRedimension
+          lado={lado}
+          accent={accent}
+          anchoActual={anchoLocal}
+          onCambiarAncho={setAnchoLocal}
+          onFinalizar={onAncho}
+        />
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.music')}</DotLabel>
         <div style={{ flex: 1 }} />
@@ -119,6 +147,7 @@ export function PanelMusicaBarra({
           type="button"
           onClick={onCerrar}
           title={t('music.hide')}
+          aria-label={t('music.hide')}
           style={estiloBoton}
         >
           <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
@@ -179,6 +208,15 @@ export function PanelMusicaBarra({
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <BotonAleatorioRepetir
+            modo="shuffle"
+            puede={puede}
+            shuffleActive={nowPlaying.isShuffleActive}
+            repeatMode={nowPlaying.autoRepeatMode}
+            api={api}
+            accent={accent}
+            lado={LADO_MINI_BARRA}
+          />
           <BotonTransporte
             glyph="PREV"
             titulo={tituloCon(t('media.prev'), puede?.prev !== false)}
@@ -206,18 +244,19 @@ export function PanelMusicaBarra({
             accent={accent}
             onPulsar={() => { void api?.media.control('next').then(refrescarMedios); }}
           />
+          <BotonAleatorioRepetir
+            modo="repeat"
+            puede={puede}
+            shuffleActive={nowPlaying.isShuffleActive}
+            repeatMode={nowPlaying.autoRepeatMode}
+            api={api}
+            accent={accent}
+            lado={LADO_MINI_BARRA}
+          />
         </div>
 
         {/* Con 284 px de columna caben los tiempos: la barra va con ellos. */}
         <BarraProgreso datos={nowPlaying} />
-
-        <FilaAleatorioRepetir
-          puede={puede}
-          shuffleActive={nowPlaying.isShuffleActive}
-          repeatMode={nowPlaying.autoRepeatMode}
-          api={api}
-          altura={32}
-        />
       </div>
     </div>
   );

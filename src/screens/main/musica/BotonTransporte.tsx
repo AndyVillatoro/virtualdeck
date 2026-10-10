@@ -13,8 +13,12 @@ import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
  * Si la fuente dice que no admite la orden (`activo === false`), el botón se
  * atenúa y no dispara: un vídeo suelto de YouTube declara anterior/siguiente
  * como no admitidos y pulsarlos no hacía nada ni lo decía.
+ *
+ * Los botones laterales de aleatorio/repetir lo reusan con `activo` (resaltado
+ * con acento sin ser el principal), `insignia` («1» de repetir-una) y
+ * `ariaPressed`: el mismo gesto y tamaño mínimo que el resto del transporte.
  */
-export function BotonTransporte({ glyph, titulo, lado, principal, enabled, accent, onPulsar }: {
+export function BotonTransporte({ glyph, titulo, lado, principal, enabled, accent, onPulsar, activo, insignia, ariaPressed }: {
   glyph: string;
   titulo: string;
   /** Lado del área pulsable en px. Nunca por debajo de 32. */
@@ -23,22 +27,30 @@ export function BotonTransporte({ glyph, titulo, lado, principal, enabled, accen
   enabled: boolean;
   accent: string;
   onPulsar: () => void;
+  /** Resaltado con acento sin ser el botón principal. */
+  activo?: boolean;
+  /** Insignia pequeña en la esquina del botón. */
+  insignia?: string;
+  ariaPressed?: boolean;
 }) {
   const VD = useTheme();
   const ladoSeguro = Math.max(32, lado);
+  const resaltado = principal || activo === true;
   return (
     <button
       type="button"
       title={titulo}
       aria-label={titulo}
+      aria-pressed={ariaPressed}
       disabled={!enabled}
       onClick={() => { if (enabled) onPulsar(); }}
       style={{
         width: ladoSeguro, height: ladoSeguro, flexShrink: 0,
+        position: 'relative',
         opacity: enabled ? 1 : 0.35,
         cursor: enabled ? 'pointer' : 'not-allowed',
-        background: principal ? VD.accentBg : VD.elevated,
-        border: `1px solid ${principal ? accent : VD.border}`,
+        background: resaltado ? VD.accentBg : VD.elevated,
+        border: `1px solid ${resaltado ? accent : VD.border}`,
         borderRadius: VD.radius.lg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         // Sin esto, mantener el dedo sobre el botón selecciona el icono y
@@ -53,9 +65,17 @@ export function BotonTransporte({ glyph, titulo, lado, principal, enabled, accen
       <DotGlyphIcon
         glyph={glyph}
         size={ladoSeguro >= 52 ? (principal ? 28 : 20) : (principal ? 22 : 16)}
-        color={principal ? accent : VD.textDim}
+        color={resaltado ? accent : VD.textDim}
         showRecessed
       />
+      {insignia !== undefined && insignia !== '' && (
+        <span style={{
+          position: 'absolute', top: 2, right: 2,
+          minWidth: 12, height: 12, borderRadius: 6,
+          border: `1px solid ${accent}`, color: accent,
+          fontFamily: VD.mono, fontSize: 8, lineHeight: '10px', padding: '0 2px',
+        }}>{insignia}</span>
+      )}
     </button>
   );
 }

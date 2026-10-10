@@ -41,7 +41,9 @@ export function groupSensorsByHardware(list: Sensor[]): HardwareGroup[] {
       hardware: g.hardware,
       category: g.category,
       temp: g.temps.find((s) => /package|tctl|tdie|hot ?spot|gpu core|cpu/i.test(s.name)) ?? g.temps[0],
-      load: g.loads.find((s) => /^cpu total$|gpu core|^total|carga total/i.test(s.name)) ?? g.loads[0],
+      load: g.loads.find((s) => /^cpu total$|gpu core|^total|carga total|memoria usada|^memory$|^memory used$/i.test(s.name))
+        ?? g.loads.find((s) => !/module|virtual/i.test(s.name))
+        ?? g.loads[0],
       power: g.powers.find((s) => /package|^total|gpu power|cpu/i.test(s.name)) ?? g.powers[0],
       fan: g.fans.find((s) => s.value > 0) ?? g.fans[0],
     }))
@@ -133,4 +135,127 @@ export function SensorCard({ group, compact = false }: SensorCardProps) {
   );
 }
 
+export interface SensorTileProps {
+  category: Sensor['category'];
+  metric: 'LOAD' | 'TEMP';
+  value: number;
+  hardware?: string;
+  onClick?: () => void;
+}
+
+export function SensorTile({ category, metric, value, hardware, onClick }: SensorTileProps) {
+  const VD = useTheme();
+  const rounded = Math.round(value);
+  const displayVal = metric === 'TEMP' ? `${rounded}°` : `${rounded}%`;
+  const valColor = metric === 'TEMP'
+    ? (value >= 85 ? VD.danger : value >= 70 ? VD.warning : VD.text)
+    : VD.text;
+  const glyph = CAT_GLYPHS[category] ?? 'DOTS';
+
+  return (
+    <div
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      title={hardware ? `${shortHardwareLabel(hardware)}: ${metric} ${displayVal}` : `${metric} ${displayVal}`}
+      style={{
+        background: VD.elevated,
+        border: `1px solid ${VD.border}`,
+        borderRadius: VD.radius.md,
+        padding: '6px 4px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: onClick ? 'pointer' : 'default',
+        userSelect: 'none',
+        boxSizing: 'border-box',
+        minWidth: 0,
+      }}
+    >
+      <DotGlyphIcon
+        glyph={glyph}
+        size={11}
+        color={VD.accent}
+        showRecessed
+      />
+      <div
+        style={{
+          fontFamily: VD.mono,
+          fontSize: 13,
+          fontWeight: 600,
+          color: valColor,
+          lineHeight: 1,
+          marginTop: 4,
+        }}
+      >
+        {displayVal}
+      </div>
+      <div
+        style={{
+          fontFamily: VD.mono,
+          fontSize: 7,
+          color: VD.textMuted,
+          letterSpacing: 1,
+          lineHeight: 1,
+          marginTop: 3,
+        }}
+      >
+        {metric}
+      </div>
+    </div>
+  );
+}
+
+export interface RepresentativeTile {
+  id: string;
+  category: Sensor['category'];
+  metric: 'LOAD' | 'TEMP';
+  value: number;
+  hardware: string;
+}
+
+/**
+ * Extrae los sensores representativos para el panel de cuadros:
+ * uso total CPU, temp CPU, uso GPU, temp GPU, uso de RAM total (%)
+ * y temperatura de almacenamiento/placa si existe.
+ */
+export function getRepresentativeTiles(list: Sensor[]): RepresentativeTile[] {
+  const groups = groupSensorsByHardware(list);
+  const tiles: RepresentativeTile[] = [];
+
+  const cpu = groups.find((g) => g.category === 'cpu');
+  if (cpu?.load) {
+    tiles.push({ id: 'cpu_load', category: 'cpu', metric: 'LOAD', value: cpu.load.value, hardware: cpu.hardware });
+  }
+  if (cpu?.temp) {
+    tiles.push({ id: 'cpu_temp', category: 'cpu', metric: 'TEMP', value: cpu.temp.value, hardware: cpu.hardware });
+  }
+
+  const gpu = groups.find((g) => g.category === 'gpu');
+  if (gpu?.load) {
+    tiles.push({ id: 'gpu_load', category: 'gpu', metric: 'LOAD', value: gpu.load.value, hardware: gpu.hardware });
+  }
+  if (gpu?.temp) {
+    tiles.push({ id: 'gpu_temp', category: 'gpu', metric: 'TEMP', value: gpu.temp.value, hardware: gpu.hardware });
+  }
+
+  const mem = groups.find((g) => g.category === 'memory');
+  if (mem?.load) {
+    tiles.push({ id: 'mem_load', category: 'memory', metric: 'LOAD', value: mem.load.value, hardware: mem.hardware });
+  }
+
+  const storage = groups.find((g) => g.category === 'storage' && g.temp);
+  if (storage?.temp) {
+    tiles.push({ id: 'storage_temp', category: 'storage', metric: 'TEMP', value: storage.temp.value, hardware: storage.hardware });
+  } else {
+    const mb = groups.find((g) => g.category === 'mainboard' && g.temp);
+    if (mb?.temp) {
+      tiles.push({ id: 'mb_temp', category: 'mainboard', metric: 'TEMP', value: mb.temp.value, hardware: mb.hardware });
+    }
+  }
+
+  return tiles;
+}
+
 export type { HardwareGroup };
+

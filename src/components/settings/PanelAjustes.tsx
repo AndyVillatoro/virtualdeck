@@ -10,6 +10,7 @@ import { SeccionPerfiles } from './SeccionPerfiles';
 import { RGBSection } from './RGBSection';
 import { SensorsSection } from './SensorsSection';
 import { RemoteSection } from './RemoteSection';
+import { CompanionSection } from './CompanionSection';
 import { DisplaysSection } from './DisplaysSection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
@@ -343,6 +344,11 @@ export function PanelAjustes({
           <RemoteSection accent={effectiveAccent} config={remoteConfig} onChange={onRemoteConfigChange} />
         </SeccionAjustes>
       )}
+
+      {/* 8.1 Extensión Compañera del Navegador */}
+      <SeccionAjustes titulo={t('set.companion')} glyph="APP_WINDOW" accent={effectiveAccent}>
+        <CompanionSection accent={effectiveAccent} />
+      </SeccionAjustes>
 
       {/* 9. Tienda (ventana propia) */}
       <SeccionAjustes titulo={t('tienda.title')} glyph="IMPORT" accent={effectiveAccent}>

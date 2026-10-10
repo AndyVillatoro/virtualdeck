@@ -18,6 +18,7 @@ import { registerDiscordIpc } from './discordIpc';
 import { registerSpotifyIpc } from './spotifyIpc';
 import { registerSuperficiesIpc } from './superficiesIpc';
 import { registerCapturaIpc } from './capturaIpc';
+import { registerCompanionIpc } from './companionIpc';
 
 export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerWindowIpc(win);
@@ -39,5 +40,6 @@ export function registerAllIpc(win: BrowserWindow, onQuit: () => void) {
   registerSpotifyIpc();
   registerSuperficiesIpc(win);
   registerCapturaIpc(win);
+  registerCompanionIpc();
 }
 

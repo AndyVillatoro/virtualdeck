@@ -3,7 +3,7 @@ import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
   PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie, SesionAudioApp,
-  PistaCaptura, ResultadoVentanas } from '../../src/types';
+  PistaCaptura, ResultadoVentanas, CompanionStatus, CompanionCommand, CompanionMetadata, CompanionFrame } from '../../src/types';
 
 
 /**
@@ -259,6 +259,35 @@ const api = {
       const listener = (_e: unknown, lista: InfoSuperficie[]) => handler(lista);
       ipcRenderer.on('surfaces:changed', listener);
       return () => ipcRenderer.removeListener('surfaces:changed', listener);
+    },
+  },
+  companion: {
+    getStatus: (): Promise<CompanionStatus> =>
+      ipcRenderer.invoke('companion:status'),
+    getPairingCode: (): Promise<string> =>
+      ipcRenderer.invoke('companion:pairingCode'),
+    sendCommand: (cmd: CompanionCommand): Promise<boolean> =>
+      ipcRenderer.invoke('companion:command', cmd),
+    regenerateToken: (): Promise<string> =>
+      ipcRenderer.invoke('companion:regenerateToken'),
+    setPort: (puerto: number): Promise<boolean> =>
+      ipcRenderer.invoke('companion:setPort', puerto),
+    setEnabled: (enabled: boolean): Promise<boolean> =>
+      ipcRenderer.invoke('companion:setEnabled', enabled),
+    onStatus: (handler: (status: CompanionStatus) => void): (() => void) => {
+      const listener = (_e: unknown, s: CompanionStatus) => handler(s);
+      ipcRenderer.on('companion:status', listener);
+      return () => ipcRenderer.removeListener('companion:status', listener);
+    },
+    onFrame: (handler: (frame: CompanionFrame) => void): (() => void) => {
+      const listener = (_e: unknown, f: CompanionFrame) => handler(f);
+      ipcRenderer.on('companion:frame', listener);
+      return () => ipcRenderer.removeListener('companion:frame', listener);
+    },
+    onMetadata: (handler: (meta: CompanionMetadata) => void): (() => void) => {
+      const listener = (_e: unknown, m: CompanionMetadata) => handler(m);
+      ipcRenderer.on('companion:metadata', listener);
+      return () => ipcRenderer.removeListener('companion:metadata', listener);
     },
   },
   sensors: {

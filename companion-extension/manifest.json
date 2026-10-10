@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "VirtualDeck Companion",
+  "version": "1.0.0",
+  "description": "Transmite vídeo de pestañas y metadatos en tiempo real a VirtualDeck sin oclusión de pantalla ni interrupción en segundo plano.",
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://*.youtube.com/*",
+    "https://*.twitch.tv/*",
+    "https://*.spotify.com/*",
+    "https://*.soundcloud.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.youtube.com/*",
+        "https://*.twitch.tv/*",
+        "https://*.spotify.com/*",
+        "https://*.soundcloud.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

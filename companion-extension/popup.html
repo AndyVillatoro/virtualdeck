@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>VirtualDeck Companion</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="contenedor">
+    <header class="cabecera">
+      <div class="marca">
+        <span class="logo-punto"></span>
+        <span class="marca-texto">VIRTUALDECK</span>
+        <span class="insignia">COMPANION</span>
+      </div>
+      <div id="estado-conexion" class="estado desconectado">
+        <span class="indicador-punto"></span>
+        <span id="texto-conexion">DESCONECTADO</span>
+      </div>
+    </header>
+
+    <main class="cuerpo">
+      <section class="tarjeta seccion-captura">
+        <div class="fila-titulo">
+          <span class="etiqueta-seccion">TRANSMISIÓN DE PESTAÑA</span>
+        </div>
+        <p class="descripcion-seccion">
+          Captura el vídeo directo sin interrupciones por oclusión ni pestañas en segundo plano.
+        </p>
+        <button id="btn-captura" class="boton boton-primario">
+          CAPTURAR PESTAÑA ACTUAL
+        </button>
+        <div id="info-captura" class="info-captura oculta">
+          <span class="punto-grabando"></span>
+          <span id="texto-info-captura">Transmitiendo fotogramas</span>
+        </div>
+      </section>
+
+      <section class="tarjeta seccion-emparejar">
+        <div class="fila-titulo">
+          <span class="etiqueta-seccion">EMPAREJAMIENTO RÁPIDO</span>
+        </div>
+        <p class="descripcion-seccion">
+          Introduce el código de 6 dígitos mostrado en el panel de VirtualDeck:
+        </p>
+        <div class="fila-codigo">
+          <input type="text" id="input-codigo" maxlength="6" placeholder="000000" autocomplete="off" spellcheck="false">
+          <button id="btn-emparejar" class="boton boton-secundario">EMPAREJAR</button>
+        </div>
+        <div id="mensaje-emparejar" class="mensaje-aviso oculta"></div>
+      </section>
+
+      <section class="tarjeta seccion-ajustes">
+        <div class="fila-titulo">
+          <span class="etiqueta-seccion">CONFIGURACIÓN LOCAL</span>
+        </div>
+        <div class="campo">
+          <label for="input-puerto">Puerto Local (Bucle 127.0.0.1):</label>
+          <input type="number" id="input-puerto" min="1024" max="65535" value="48201">
+        </div>
+        <div class="campo">
+          <label for="input-token">Token de Sesión:</label>
+          <input type="password" id="input-token" placeholder="Token efímero de autenticación">
+        </div>
+        <div class="fila-acciones">
+          <button id="btn-guardar" class="boton boton-pequeno">GUARDAR Y RECONECTAR</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pie">
+      <span>VirtualDeck Protocol v1.0 &middot; Loopback Seguro</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import { useT, useLang } from '../../utils/i18n';
 import { formatoHora, formatoFecha } from '../../utils/formatos';
 import { DotLabel } from '../../components/DotLabel';
 import { DotText } from '../../components/DotText';
-import { SensorCard, groupSensorsByHardware } from '../../components/SensorPanel';
+import { SensorTile, getRepresentativeTiles } from '../../components/SensorPanel';
 import { WeatherWidget } from '../../components/WeatherWidget';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { EstadoRGB, RegistroEjecucion, FranjaMusica, type EntradaRegistro } from './apartadosBarraLateral';
@@ -60,24 +60,28 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
   // referencia estable los harian recalcular en cada render.
   const TIME_FMT = useMemo(() => formatoHora(lang), [lang]);
   const DATE_FMT = useMemo(() => formatoFecha(lang), [lang]);
+  const sensorTiles = useMemo(() => getRepresentativeTiles(sensorList), [sensorList]);
+  const sensorCols = sensorTiles.length <= 2 ? sensorTiles.length : sensorTiles.length === 4 ? 2 : 3;
 
   return (
         <div className="vd-scroll" style={{
           width: 220, borderLeft: `1px solid ${VD.border}`,
-          padding: '10px 14px 10px', background: VD.surface,
-          display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0,
-          // Lo que crece es la lista de sensores, y es la que se desplaza (va
-          // con `flex: 1` y su propio scroll), así la franja de música anclada
-          // abajo no se va del borde. Pero en una ventana baja ni sin sensores
-          // cabe el resto (reloj, clima, RGB, registro, música), y con
-          // `overflow: hidden` se recortaba la música: la columna entera se
-          // desplaza **solo** en ese caso.
-          overflowX: 'hidden', overflowY: 'auto',
+          background: VD.surface,
+          display: 'flex', flexDirection: 'column', flexShrink: 0,
+          alignSelf: 'stretch', minHeight: 0, maxHeight: '100%',
+          overflowX: 'hidden', overflowY: 'hidden',
         }}>
+          {/* Zona que se desplaza: reloj, clima, sensores, RGB, registro */}
+          <div style={{
+            flex: 1, minHeight: 0,
+            padding: '8px 10px 8px',
+            display: 'flex', flexDirection: 'column', gap: 8,
+            overflowX: 'hidden', overflowY: 'auto',
+          }}>
           {/* Clock — DotText es la firma del reloj */}
           <div style={{
-            paddingBottom: 10, borderBottom: `1px solid ${VD.border}`,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+            paddingBottom: 8, borderBottom: `1px solid ${VD.border}`,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
           }}>
             <DotText
               text={TIME_FMT.format(clock)}
@@ -90,23 +94,30 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
 
           {/* Weather */}
           <div>
-            <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('panel.weather')}</DotLabel>
+            <DotLabel size={8} color={VD.textMuted} spacing={1} style={{ display: 'block', marginBottom: 4 }}>{t('panel.weather')}</DotLabel>
             <WeatherWidget />
           </div>
 
-          {/* Sensor cards — compact, below weather. Only shows when LHM has data. */}
-          {sensorList.length > 0 && (config.sensors?.showWidget ?? true) && (
-            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('panel.sensors')}</DotLabel>
+          {/* Sensor tiles — grid de cuadros representativos */}
+          {sensorList.length > 0 && (config.sensors?.showWidget ?? true) && sensorTiles.length > 0 && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <DotLabel size={8} color={VD.textMuted} spacing={1}>{t('panel.sensors')}</DotLabel>
                 <DotGlyphIcon glyph="DOTS" size={6} color={sensorStatus?.connected ? VD.success : VD.textMuted} />
               </div>
-              <div className="vd-scroll" style={{
-                display: 'flex', flexDirection: 'column', gap: 6,
-                flex: 1, minHeight: 0, overflowY: 'auto',
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${sensorCols}, 1fr)`,
+                gap: 4,
               }}>
-                {groupSensorsByHardware(sensorList).map((g) => (
-                  <SensorCard key={g.hardware} group={g} compact />
+                {sensorTiles.map((tile) => (
+                  <SensorTile
+                    key={tile.id}
+                    category={tile.category}
+                    metric={tile.metric}
+                    value={tile.value}
+                    hardware={tile.hardware}
+                  />
                 ))}
               </div>
             </div>
@@ -116,9 +127,14 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
           <EstadoRGB rgbStatus={rgbStatus} onRGB={onRGB} accent={config.accent} />
 
           <RegistroEjecucion execLog={execLog} setExecLog={setExecLog} showLog={showLog} setShowLog={setShowLog} />
+          </div>
 
+          {/* Franja de música: anclada abajo y fija, fuera de la zona con scroll.
+              No se encoge y no se sale del borde en ventanas bajas. */}
           {!ocultarMusica && (
+            <div style={{ flexShrink: 0, padding: '0 10px 8px', background: VD.surface }}>
             <FranjaMusica nowPlaying={nowPlaying} isPlaying={isPlaying} sourceName={sourceName} api={api} accent={config.accent} showToast={showToast} panelAbierto={panelMusicaAbierto} onAlternarPanel={onAlternarPanelMusica} />
+            </div>
           )}
         </div>
   );

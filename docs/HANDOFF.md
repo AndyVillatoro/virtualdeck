@@ -4,6 +4,100 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
+## Turno 2026-10-10 (T-EXT-01-fix) — La extensión se enfoca en el vídeo, no en la pantalla del navegador
+
+* **Quién:** Antigravity (orquestador). **Rama:** `main`, sin commit (lo pide el encargo).
+* **Archivos tocados:** `companion-extension/content.js`, `companion-extension/background.js`, `companion-extension/offscreen.js`, `companion-extension/README.md`. Nada del lado Electron ni del renderer: el recorte se aplica aguas arriba y el protocolo VDCM no ha cambiado, así que `src/types/companion.ts` y `VideoVentana.tsx` se quedan como estaban.
+* **Causa raíz:** el rectángulo del `<video>` llegaba por un canal lateral atado a `tabCapturada`, que se asigna al final de `iniciarCapturaTab` y vivía solo en memoria del service worker. Sin rect, `offscreen.js` dibujaba el fotograma entero.
+* **Arreglos:** rect en fracciones del viewport (no px CSS), elección del `<video>` visible, refresco por `ResizeObserver`/`fullscreenchange`/`resize`/`scroll`, rectángulos por `tabId` con reenvío al offscreen y petición explícita si falta, y `tabCapturada` persistido en `chrome.storage.local` para sobrevivir al reinicio del service worker. De paso, la fuga de escuchadores duplicados en `registrarEventosMedia`.
+* **Verificación:** `npm run check` 7/7 verde, `npm run lint:dead` sin huérfanos nuevos. **Sin verificar en navegador real** (aquí no se puede cargar la extensión).
+* **Siguiente paso para el dueño:** recargar la extensión en `chrome://extensions`, recargar la pestaña de YouTube y comprobar el vídeo del panel en modo normal, teatro y pantalla completa.
+
+## Turno 2026-10-10 (T-WID-02, T-VID-02, T-DOCK-03) — Widget de música responsivo, recorte de vídeo nítido y arranque limpio de Dock
+
+* **Quién:** Antigravity (orquestador) + agentes Herdr (`wW`, `w11`, `w12`).
+* **Rama:** `main`.
+* **Encargos resueltos:**
+  1. Redimensionamiento adaptativo del panel/widget de música (formato 16:9 amplio para vídeo/música, formato estándar equilibrado, y formato vertical en pila).
+  2. Corrección geométrica del recorte de vídeo (contain centrado para evitar recortes excesivos).
+  3. Eliminación de colisión del logotipo Mirabox de fábrica e introducción de animación de arranque VirtualDeck estilo dot-matrix.
+  4. Delegación a subagentes Herdr (`wW` completó Fase 0 de drivers `T-DOCK-02`, `w11` verificó `T-NAV-01`, `w12` verificó `T-PERF-01`).
+
+### Cambios realizados
+- `src/screens/main/musica/ManejadorRedimension.tsx`: Tirador visual de borde con captura de puntero y acento activo.
+- `src/types/config.ts`: Soporte de `ancho` persistente en `musicPanel`.
+- `src/screens/main/PanelMusica.tsx`, `CuerpoVideo.tsx`, `CuerpoCaratula.tsx`: Desacoplamiento modular, complejidad < 18, soporte completo de las tres vistas adaptativas.
+- `src/screens/main/musica/recorteVideo.ts`: Escala matemática uniforme `contain` con márgenes centrados.
+- `electron/main/superficies/dispositivoMirabox.ts` & `animacionInicioDock.ts`: Comando de limpieza VRAM y animación de barrido radial con glifo VD.
+
+### Verificación
+- `npm run check` → 7/7 guardianes verdes (0 errores, 0 advertencias).
+- `npm run lint:dead` → 0 tipos/exportaciones huérfanas en código fuente.
+- `npm run build` → 1.72 s sin errores.
+
+## Turno 2026-10-10 (T-PERF-01) — Verificación del diferido del catálogo de marcas: ya estaba hecho
+
+* **Quién:** opencode `w12`.
+* **Rama:** `main`. **Sin cambios de código** (solo `docs/ROADMAP.md`, este archivo y el tablero).
+* **Encargo:** diferir `BrandIconPicker` con `React.lazy`/`dynamic import` (ítem 4.1 de ROADMAP).
+
+### Lo que encontré
+
+El encargo partía de una premisa caducada por dos hechos:
+
+1. **`src/components/BrandIconPicker.tsx` no existe.** Se borró en `3b1a12d`
+   (*«borrar el editor viejo por pasos»*); su función la/absorbió el selector unificado
+   (`SelectorIconosDot` → `PanelCatalogoIcono`).
+2. **El diferido ya estaba implementado** desde `9bbe70d` (*«lazy loading de marcas»*) y nunca se
+   documentó como tal en el catálogo de ideas, que es lo que dejaba el ítem 4.1 sin marcar.
+
+### Estado real (medido, no supuesto)
+
+- La única ruta al catálogo es `src/utils/catalogoMarcas.ts`: `import('../data/brandIcons')` dentro
+  de `precargarCatalogoMarcas()`, con `useCatalogoMarcas()` (reactivo, re-renderiza al llegar) e
+  `iconoDeCatalogo()`. Un solo vuelo compartido aunque lo pidan varios a la vez.
+- **En el build:** `assets/brandIcons-uzeqAVWS.js` = **29,40 kB**, chunk aparte. En
+  `index-BUI5uMsp.js` la única mención es `import("./brandIcons-uzeqAVWS.js")` (dinámico) dentro del
+  helper de preload; `index.html` solo carga el entry. **Nada lo arrastra al bundle inicial.**
+- `src/comun/marcaSvg.ts` importa el catálogo de forma estática, pero solo lo usa `electron/main`
+  (mando móvil) y `utils/superficies/pintarTeclaDibujo.ts`, que lo baja con `await import()`.
+- El disparador real ya no es «abrir el selector» sino **«el botón tiene `brandIcon`»**:
+  `celda/CapasDeFondo.tsx:38` hace `if (!button.brandIcon) return null;` **antes** de montar
+  `BrandIconDisplay`, así que un deck sin marcas nunca baja el chunk.
+
+### Verificación
+
+- `npm run check` → **7/7 en verde**, 0 errores tsc, 0 violaciones depcruise.
+- `npm run build` → correcto (1,86 s).
+- `npm run lint:dead` (knip) → 0 archivos/exportes huérfanos en `src/`. Los 3 `devDependencies`
+  sin usar (`@tabler/icons`, `simple-icons`, `rollup-plugin-visualizer`) son deuda previa, ajena a este turno.
+
+### Cambio hecho
+
+`docs/ROADMAP.md`: el ítem 4.1 del catálogo de ideas pasa a ✅ HECHO con la evidencia de arriba y
+corrige la referencia al archivo borrado. El resto del catálogo ya lo tenía marcado en la fila P5
+(«✅ 2026-09-15 (chunk `brandIcons` + `build-store.mjs`)»); era una incoherencia interna del
+documento, no trabajo pendiente.
+
+### Si alguien retoma esta línea
+
+No hay nada que diferir. Lo único abierto y con retorno real es el **peso del resto**: el chunk
+`indice-*.js` (424 kB) y `acciones-*.js` (332 kB) son los que empujan el aviso de chunks >500 kB
+del build. Afecta a `utils/usoSelectorIconosDot.ts` y al mapa `MANEJADORES`, no al catálogo de marcas.
+
+## Turno 2026-10-09 (tarde / sesión v0.15) — Companion Extension implementada, Docks v0.15 planeados y auditoría de deuda técnica
+
+* **Quién:** Antigravity wK (orquestador) + agentes Herdr (`wW:p1` agy, `w0:p1` opencode, `w11:p1` opencode, `wX:p1` opencode).
+* **Rama:** `main`.
+* **Estado:** 7/7 guardianes en verde (`npm run check`), 0 exports huérfanos (`knip`), build 1.67 s.
+* **Archivos clave entregados:**
+  1. `companion-extension/`: Extensión Manifest V3 (Chrome/Edge/Firefox) con captura de pestaña (`tabCapture` + Offscreen Document), WebSocket local (`127.0.0.1:48201`), empaquetado binario `VDCM` a ~20 FPS y metadatos continuos. Documentada en `companion-extension/README.md`.
+  2. `electron/main/companion/`: Servidor HTTP/WS local con token de 24 bytes, código de emparejamiento de 6 dígitos, FPS rodante, y hardening de seguridad (sin wildcard CORS, rechazo de conexiones web no extension, y endpoints protegidos).
+  3. `docs/WHATS_NEW_0.14.1.md`: Resumen bilingüe (ES/EN) de novedades 0.14.1 visible en la raíz de documentación.
+  4. `docs/ROADMAP.md`: Actualización de ítems 114 (marcado implementado) y 115 (desglose Elgato Plus/Neo, dial stacks y reposo de docks).
+  5. `docs/investigacion/plan-docks-v015.md`: Especificación técnica completa de soporte de hardware para Stream Deck Plus (8 teclas + 4 diales + tira LCD 800×100) y Neo (8 teclas + 2 touchpoints + infobar 248×58).
+  6. `docs/deuda-tecnica-v015.md`: Auditoría minuciosa de deuda técnica, inventario de archivos >500 líneas y roadmap de limpieza segura.
+
 ## Turno 2026-10-09 (madrugada / cierre) — Modularización integral, deuda técnica erradicada y entrega v0.14.1
 
 * **Quién:** Antigravity (orquestador) + agentes Herdr (`wR`, `wW`, `wX`, `wZ`, `wY`, `space bunny`).
@@ -354,3 +448,9 @@ Las cifras las imprime cada script; no se copian aquí porque se quedan viejas.
 npm run check
 npm run build
 ```
+
+## Turno 2026-10-10 (cierre) — Correcciones tras prueba del dueño
+
+* **Animación de inicio del dock: eliminada.** Se pintaba encima de los botones configurables (su último cuadro pisaba la página y la firma impedía repintar) y no puede sustituir el logo del firmware, que sale antes de que la app conecte. Se borró `animacionInicioDock.ts` y su llamada en `useSuperficies.ts`. Se conserva el comando `CLE` + refresco de `dispositivoMirabox.ts` al despertar la pantalla (limpia el logo de fábrica sin pintar nada propio).
+* **Extensión, estado que alternaba «transmitiendo» / «capturar pestaña»:** `iniciarCapturaTab` ponía `tabCapturada` tras varios `await`, y cada metadato nuevo (autoStreaming) lanzaba otra captura que reiniciaba la anterior en el offscreen. Ahora hay `capturaEnCurso`, no se reinicia si ya se captura esa pestaña y la captura automática espera 5 s tras una parada. El popup refresca su estado cada segundo. **Sin verificar en navegador real: recargar la extensión y mirar si el botón deja de alternar.**
+* T-MUS-01/02, T-SEN-01/02, T-EXT-01/02 hechos (ver ROADMAP 117–119).

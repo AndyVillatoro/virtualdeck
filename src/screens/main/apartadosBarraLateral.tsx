@@ -34,26 +34,25 @@ export function EstadoRGB({ rgbStatus, onRGB, accent }: { rgbStatus: RGBStatus |
     ? `${rgbStatus.deviceCount} ${t(rgbStatus.deviceCount === 1 ? 'rgb.deviceOne' : 'rgb.deviceMany')}`
     : t(rgbStatus?.serverRunning ? 'rgb.serverUp' : 'rgb.disconnected');
   return (
-    <div>
-      <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>RGB</DotLabel>
-      <button
-        type="button"
-        onClick={onRGB}
-        title={t('panel.openRgb')}
-        style={{
-          width: '100%', textAlign: 'left',
-          background: VD.elevated, border: `1px solid ${VD.border}`,
-          borderRadius: VD.radius.md, padding: '8px 10px',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
-        }}
-      >
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: punto, flexShrink: 0 }} />
-        <div style={{ flex: 1, minWidth: 0, fontFamily: VD.mono, fontSize: 9, color: VD.textDim, letterSpacing: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {texto}
-        </div>
-        <DotGlyphIcon glyph="ARROW_RIGHT" size={9} color={accent} />
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onRGB}
+      title={t('panel.openRgb')}
+      style={{
+        width: '100%', textAlign: 'left',
+        background: VD.elevated, border: `1px solid ${VD.border}`,
+        borderRadius: VD.radius.md, padding: '4px 8px',
+        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ width: 6, height: 6, borderRadius: '50%', background: punto, flexShrink: 0 }} />
+      <span style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, letterSpacing: 1, flexShrink: 0 }}>RGB</span>
+      <div style={{ flex: 1, minWidth: 0, fontFamily: VD.mono, fontSize: 8, color: VD.textDim, letterSpacing: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {texto}
+      </div>
+      <DotGlyphIcon glyph="ARROW_RIGHT" size={8} color={accent} />
+    </button>
   );
 }
 
