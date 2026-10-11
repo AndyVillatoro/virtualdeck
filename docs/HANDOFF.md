@@ -506,3 +506,10 @@ npm run build
 * **T-DEU-01/02:** `launcher.ts`, `media.ts`, `rgb.ts`, `useEstadoEditor.ts` y `PanelInspectorControl.tsx` partidos por responsabilidad, sin cambios de comportamiento (fachadas con reexport). Ya solo superan 600 líneas los archivos de datos exentos (`brandIcons.ts`, `presetsDock.ts`). `check` y `build` en verde.
 * **T-DOC-01:** ARQUITECTURA, NOTAS-TECNICAS (zona Extensión compañera), CONTRIBUTING (solo Store), CHANGELOG `[Unreleased]`, ROADMAP «Estado general».
 * Pendiente: partes en Rust >600 (`actions/mod.rs`, `config/model.rs`, `vd-node/lib.rs`, `openrgb.rs`, `ventanas.rs`), mando móvil, `sensors.ts`, plugins (60/83), Elgato (59), limpieza local de `_referencias/` y stashes.
+
+## Turno 2026-10-10 (noche) — Rust partido (T-DEU-03/04)
+
+* `vd-core`: `actions/mod.rs`, `config/model.rs`, `rgb/openrgb.rs`, `launcher/ventanas.rs`, `media/mod.rs` y `launcher/mod.rs` partidos en submódulos (máx. 367 líneas), API pública intacta con `pub use`. `cargo test -p vd-core` 178 verdes (igual que antes), clippy con los 3 warnings que ya había.
+* `vd-node/src/lib.rs` (910) → `lib.rs` (83) + `audio`, `launcher`, `media`, `macros`, `voz`, `sensores`. Los 47 exports del `.node` y los 54 `#[napi]` coinciden con antes.
+* Ya no queda ningún archivo de código (TS ni Rust) >600 líneas salvo datos exentos (`brandIcons.ts`, `presetsDock.ts`). `knip`: quitado el reexport huérfano `NowPlaying`; quedan 3 devDependencies que knip da por sin uso pero usan `scripts/generar-iconos-dot.mjs` y `electron.vite.config.ts` (falso positivo).
+* Sin probar en la app real tras partir el núcleo Rust: abrir con `node scripts/probar-app.mjs abrir <quien>` y probar audio, música, macros y ventanas.

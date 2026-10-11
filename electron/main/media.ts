@@ -13,7 +13,7 @@ import type { MediaCommand, MediaDiagnostic } from './mediaTipos';
  * SMTC y `getNowPlaying`). Aquí quedan solo las órdenes y el diagnóstico, sin
  * cambios de comportamiento.
  */
-export type { NowPlaying, MediaCommand, MediaDiagnostic } from './mediaTipos';
+export type { MediaCommand, MediaDiagnostic } from './mediaTipos';
 export { getNowPlaying } from './mediaEstado';
 
 // Control de medios — usa SMTC nativo cuando hay sesión, sino cae a SendKeys.
