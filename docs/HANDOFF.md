@@ -528,3 +528,10 @@ npm run build
 * **Decisiones tomadas por defecto** (el dueño puede revertirlas): la imagen del plugin se muestra tal cual, en color (no se pasa a DOT); solo plugins Node/HTML (los `.exe` se rechazan con código `exe`); docks y mando móvil sin imagen de plugin todavía.
 * `gestor.ts` está en 595 líneas: el siguiente cambio ahí obliga a partirlo.
 * Verificado: `npm run check`, `npm run build` y un humo con plugin falso (instalar → running → appear → press → visuales → uninstall). **Sin probar con un plugin real**: instalar Stopwatch / Home Assistant / Multi OBS desde Ajustes → Plugins y poner la acción en un botón.
+
+## Cierre 2026-10-10 — para la próxima sesión
+
+* **Estado:** `main` limpio, 5 commits locales sin push (`a52cdc0` … `5541b5e`+este). Paneles de herdr limpios. `check` y `build` en verde.
+* **El dueño debe probar primero:** (1) recargar la extensión en `chrome://extensions` y ver si ya no cae a «desconectado»; (2) núcleo Rust partido en la app real (audio, música, macros, ventanas); (3) un `.streamDeckPlugin` real (Stopwatch, Home Assistant, Multi OBS): Ajustes → Plugins → instalar, acción `plugin` en un botón, pulsar y abrir «Configurar».
+* **Decisiones pendientes del dueño:** imagen de plugin en color vs DOT (hoy color); licencias del catálogo curado; borrar los 2 `git stash` (no se tocaron); borrar carpetas locales ignoradas (`_referencias/store-0.14.0` 143M, `trailer` 59M, `informes`).
+* **Siguiente iteración de plugins (83):** imagen en docks y mando móvil, perillas (Mirabox/dock), catálogo curado, actualizaciones; partir `gestor.ts` (595 líneas) antes de tocarlo. Faltan también 59 (Elgato), pruebas de hardware T-HW-05..17 con el N3 y la release (certificación 0.14.1; decidir 0.14.2 vs 0.15).
