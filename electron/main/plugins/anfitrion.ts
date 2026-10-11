@@ -26,8 +26,24 @@ import { urlAbrible } from '../abrirExterno';
  */
 
 const VERSION_APP = '7.1.0';
-const DISPOSITIVO = 'vd-proto';
-const TAMANO = { columns: 5, rows: 3 };
+
+/** El dispositivo virtual que se anuncia si el gestor no dice otro. */
+const DISPOSITIVO_POR_DEFECTO = { id: 'vd-proto', nombre: 'VirtualDeck prototipo', columnas: 5, filas: 3 };
+
+interface DispositivoVirtual {
+  id: string;
+  nombre: string;
+  columnas: number;
+  filas: number;
+}
+
+/** Lo que un plugin pinta en un botón (`setImage`/`setTitle`/`setState`). */
+interface AvisoVisual {
+  contexto: string;
+  imagen?: string;
+  titulo?: string;
+  estado?: number;
+}
 
 type Mensaje = Record<string, any>;
 
@@ -37,6 +53,16 @@ export interface OpcionesAnfitrion {
   version: string;
   idioma: string;
   carpeta: string;
+  /** Si no se dice, el del prototipo (`vd-proto`, 5×3). */
+  dispositivo?: DispositivoVirtual;
+  /** Con qué responder `getGlobalSettings` antes del primer `setGlobalSettings`. */
+  globalesIniciales?: unknown;
+  /** Lo que el plugin pinta: el gestor lo reemite a las ventanas. */
+  alVisual?: (visual: AvisoVisual) => void;
+  /** Lo que el plugin o el PI guarda en un botón: el gestor lo persiste. */
+  alSettings?: (contexto: string, settings: Record<string, unknown>) => void;
+  /** Lo que el plugin guarda como global: el gestor lo guarda en disco. */
+  alGlobales?: (globales: unknown) => void;
 }
 
 export interface Anfitrion {
@@ -44,6 +70,12 @@ export interface Anfitrion {
   infoJSON: string;
   enviar(mensaje: Mensaje): void;
   pulsar(contexto: string): void;
+  /** Registra el contexto y le manda `willAppear` con sus ajustes. */
+  aparecer(contexto: string, datos: { accion: string; settings: unknown; columna?: number; fila?: number }): void;
+  /** Le manda `willDisappear` y suelta el contexto. */
+  desaparecer(contexto: string): void;
+  /** Le manda `keyDown` o `keyUp` con los ajustes y coordenadas guardados. */
+  tecla(contexto: string, abajo: boolean): void;
   cerrar(): void;
 }
 
@@ -67,6 +99,7 @@ export function crearAnfitrion(
   opciones: OpcionesAnfitrion,
   alRegistrar: () => void,
 ): Promise<Anfitrion> {
+  const dispositivo = opciones.dispositivo ?? DISPOSITIVO_POR_DEFECTO;
   let plugin: WebSocket | null = null;
   const pis = new Map<string, WebSocket>();
   const contextos = new Map<string, Contexto>();
@@ -74,7 +107,7 @@ export function crearAnfitrion(
   const ultimo = new Map<string, OrdenGuardada>();
   const colaPlugin: Mensaje[] = [];
   const colaPI = new Map<string, Mensaje[]>();
-  let globales: unknown = {};
+  let globales: unknown = opciones.globalesIniciales ?? {};
 
   function enviarA(destino: WebSocket, msg: Mensaje): void {
     try {
@@ -101,7 +134,7 @@ export function crearAnfitrion(
       const payload = msg.payload ?? {};
       contextos.set(contexto, {
         accion: String(msg.action ?? ''),
-        device: String(msg.device ?? DISPOSITIVO),
+        device: String(msg.device ?? dispositivo.id),
         coordinates: payload.coordinates ?? { column: 0, row: 0 },
       });
     }
@@ -147,16 +180,26 @@ export function crearAnfitrion(
   function guardarSettings(msg: Mensaje, origen: 'plugin' | 'pi'): void {
     const registro = contextoRegistrado(msg);
     if (!registro) return;
-    ajustes.set(registro.contexto, msg.payload ?? {});
+    const settings = msg.payload ?? {};
+    ajustes.set(registro.contexto, settings);
     const notificacion = {
       event: 'didReceiveSettings',
       action: registro.ctx.accion,
       context: registro.contexto,
       device: registro.ctx.device,
-      payload: { settings: msg.payload ?? {} },
+      payload: { settings },
     };
     if (origen === 'plugin') enviarAlPI(registro.contexto, notificacion);
     else enviarAlPlugin(notificacion);
+    if (settings !== null && typeof settings === 'object' && !Array.isArray(settings)) {
+      opciones.alSettings?.(registro.contexto, settings as Record<string, unknown>);
+    }
+  }
+
+  function guardarGlobales(nuevas: unknown, origen: 'plugin' | 'pi'): void {
+    globales = nuevas ?? {};
+    reenviarGlobales(origen);
+    opciones.alGlobales?.(globales);
   }
 
   function reenviarGlobales(origen: 'plugin' | 'pi'): void {
@@ -185,6 +228,14 @@ export function crearAnfitrion(
     const contexto = String(msg.context ?? '');
     const previo = ultimo.get(contexto) ?? {};
     const evento = String(msg.event ?? '');
+    anotarOrden(msg, contexto, evento, previo);
+    ultimo.set(contexto, previo);
+    const aviso = avisoVisualDe(msg);
+    if (aviso) opciones.alVisual?.(aviso);
+  }
+
+  /** La línea de registro de cada orden visual (el aviso va aparte). */
+  function anotarOrden(msg: Mensaje, contexto: string, evento: string, previo: OrdenGuardada): void {
     if (evento === 'setImage') {
       const imagen = String(msg.payload?.image ?? '');
       previo.imagen = imagen;
@@ -202,7 +253,22 @@ export function crearAnfitrion(
     } else {
       console.log(`[plugins] setFeedback ${contexto}: ${recortar(JSON.stringify(msg.payload ?? {}), 80)}`);
     }
-    ultimo.set(contexto, previo);
+  }
+
+  /**
+   * Lo que el plugin pintó en el botón, o `null` si el evento no pinta nada
+   * (`showAlert`/`showOk`/desconocidos se ignoran, como pide el MVP).
+   */
+  function avisoVisualDe(msg: Mensaje): AvisoVisual | null {
+    const contexto = String(msg.context ?? '');
+    const evento = String(msg.event ?? '');
+    if (evento === 'setImage') return { contexto, imagen: String(msg.payload?.image ?? '') };
+    if (evento === 'setTitle') return { contexto, titulo: String(msg.payload?.title ?? '') };
+    if (evento === 'setState') {
+      const estado = Number(msg.payload?.state ?? 0);
+      return { contexto, estado: Number.isFinite(estado) ? estado : 0 };
+    }
+    return null;
   }
 
   /**
@@ -244,8 +310,7 @@ export function crearAnfitrion(
       case 'getResources': devolverRecursos(ws); break;
       case 'setSettings': guardarSettings(msg, 'plugin'); break;
       case 'setGlobalSettings':
-        globales = msg.payload ?? {};
-        reenviarGlobales('plugin');
+        guardarGlobales(msg.payload, 'plugin');
         break;
       case 'sendToPropertyInspector': reenviarAlPI(msg); break;
       case 'openUrl': abrirUrl(msg); break;
@@ -271,8 +336,7 @@ export function crearAnfitrion(
       case 'getResources': devolverRecursos(ws); break;
       case 'setSettings': guardarSettings(msg, 'pi'); break;
       case 'setGlobalSettings':
-        globales = msg.payload ?? {};
-        reenviarGlobales('pi');
+        guardarGlobales(msg.payload, 'pi');
         break;
       case 'sendToPlugin': reenviarAlPluginDesdePI(msg); break;
       case 'openUrl': abrirUrl(msg); break;
@@ -367,7 +431,7 @@ export function crearAnfitrion(
         highlightColor: '#FF3B30',
         mouseOverColor: '#1A1A1A',
       },
-      devices: [{ id: DISPOSITIVO, name: 'VirtualDeck prototipo', size: TAMANO, type: 0 }],
+      devices: [{ id: dispositivo.id, name: dispositivo.nombre, size: { columns: dispositivo.columnas, rows: dispositivo.filas }, type: 0 }],
     });
   }
 
@@ -395,6 +459,9 @@ export function crearAnfitrion(
         infoJSON: crearInfo(),
         enviar: enviarAlPlugin,
         pulsar,
+        aparecer,
+        desaparecer,
+        tecla,
         cerrar: () => {
           for (const cliente of wss.clients) {
             try {
@@ -419,15 +486,42 @@ export function crearAnfitrion(
   });
 
   function pulsar(contexto: string): void {
+    tecla(contexto, true);
+    setTimeout(() => tecla(contexto, false), 100);
+  }
+
+  /**
+   * Un botón apareció en pantalla: se registra su contexto y se le manda
+   * `willAppear` al plugin con sus ajustes. Las coordenadas son ficticias (el
+   * deck no es una rejilla de Stream Deck): donde cae el botón.
+   */
+  function aparecer(contexto: string, datos: { accion: string; settings: unknown; columna?: number; fila?: number }): void {
+    const coordinates = { column: datos.columna ?? 0, row: datos.fila ?? 0 };
+    contextos.set(contexto, { accion: datos.accion, device: dispositivo.id, coordinates });
+    ajustes.set(contexto, datos.settings ?? {});
+    enviarAlPlugin({
+      event: 'willAppear',
+      action: datos.accion,
+      context: contexto,
+      device: dispositivo.id,
+      payload: { settings: datos.settings ?? {}, coordinates, controller: 'Keypad', isInMultiAction: false },
+    });
+  }
+
+  function desaparecer(contexto: string): void {
+    const ctx = contextos.get(contexto);
+    if (!ctx) return;
+    enviarAlPlugin({ event: 'willDisappear', action: ctx.accion, context: contexto, device: ctx.device });
+  }
+
+  function tecla(contexto: string, abajo: boolean): void {
     const ctx = contextos.get(contexto);
     if (!ctx) {
       console.log(`[plugins] no puedo pulsar ${contexto}: contexto desconocido`);
       return;
     }
     const payload = { settings: ajustes.get(contexto) ?? {}, coordinates: ctx.coordinates, isInMultiAction: false };
-    const base = { action: ctx.accion, context: contexto, device: ctx.device };
-    enviarAlPlugin({ event: 'keyDown', ...base, payload });
-    setTimeout(() => enviarAlPlugin({ event: 'keyUp', ...base, payload }), 100);
+    enviarAlPlugin({ event: abajo ? 'keyDown' : 'keyUp', action: ctx.accion, context: contexto, device: ctx.device, payload });
   }
 }
 

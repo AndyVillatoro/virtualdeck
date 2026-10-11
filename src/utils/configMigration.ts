@@ -36,6 +36,8 @@ const ACTION_TYPES = new Set([
   'spotify',
   // Volumen de una app (roadmap 63).
   'app-volume',
+  // 83 — Acción de un plugin del SDK de Stream Deck.
+  'plugin',
 ]);
 
 

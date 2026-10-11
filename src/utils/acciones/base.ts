@@ -108,6 +108,7 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     case 'macro':          return `${t('act.lbl.macro', { n: a.macroSteps?.length ?? 0 })}`;
     case 'discord':        return `Discord: ${a.discordAction ?? 'toggle-mute'}`;
     case 'spotify':        return a.spotifyUri ? `Spotify: ${a.spotifyUri.split(':').pop()}` : 'Spotify';
+    case 'plugin':         return `${t('act.lbl.plugin')}: ${a.plugin?.accionUuid ?? ''}`.trim();
     default:               return a.type;
   }
 }

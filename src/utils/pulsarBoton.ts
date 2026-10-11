@@ -1,4 +1,6 @@
 import { executeAction, runActionSequence } from './actions';
+import { anotarContextos } from './acciones/plugins';
+import { contextoDe } from './plugins/ref';
 import type { DetalleAccion } from './acciones/base';
 import type { ButtonAction, ButtonConfig, DeckConfig, ElectronAPI } from '../types';
 
@@ -206,6 +208,7 @@ export async function pulsarBoton(
   // se ejecuta normal. Con la lista vacía la secuencia es OK sin hacer nada,
   // igual que `folder` cuando abre su overlay.
   const { resto, sinNavegar } = apartarNavegacion(acciones, e);
+  anotarContextos(resto, contextoDe(btn, e.config));
   const fallo = noDisponible(btn, sinNavegar, e);
   // Una carpeta no tiene nada más que ejecutar; una secuencia con un paso de
   // página y otros pasos ejecuta los demás (el aviso ya salió).
@@ -227,11 +230,12 @@ export async function pulsarBoton(
  */
 async function ejecutarApagado(btn: ButtonConfig, e: EntornoPulsacion): Promise<ResultadoPulsacion> {
   const off = btn.actionToggleOff!;
-  // El apagado también puede ser navegar: no hay nada que ejecutar.
+  // El apagado también puede navegar: no hay nada que ejecutar.
   if (off.type === 'page-nav') {
     e.navegar?.(off);
     return { ok: true, tipo: 'page-nav' };
   }
+  anotarContextos([off], contextoDe(btn, e.config));
   const r = await conPlazo(
     executeAction(off, e.api, e.config.state, e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout') },
@@ -252,6 +256,12 @@ async function ejecutarApagado(btn: ButtonConfig, e: EntornoPulsacion): Promise<
  * sonaba, la carpeta se cerraba y el script no corría. Medido con el mismo
  * script en un botón normal y en un sub-botón: el normal escribía su archivo y
  * el sub-botón no.
+ *
+ * Los botones de una carpeta no tienen id, así que no hay contexto de plugin
+ * que anotar (`PluginRef.contexto` tiene que ser único por botón y
+ * superficie): una acción `plugin` dentro de una carpeta avisa de que no sabe
+ * desde qué botón se pulsó, en vez de mandarle al plugin una referencia
+ * ambigua.
  */
 export async function ejecutarUna(
   accion: ButtonConfig['action'], e: EntornoPulsacion,
@@ -280,6 +290,7 @@ export async function pulsacionLarga(
     e.navegar?.(btn.longPressAction);
     return { ok: true, tipo: 'page-nav' };
   }
+  anotarContextos([btn.longPressAction], contextoDe(btn, e.config));
   const r = await conPlazo(
     executeAction(btn.longPressAction, e.api, e.config.state, e.config.rgb?.profiles, e.t),
     { ok: false, error: e.t('act.err.timeout') },

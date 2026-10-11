@@ -32,6 +32,13 @@ export interface CuerpoCeldaProps {
   encendido: boolean;
   /** Crece en cada pulsación (destello de `usePulsacionRaton`). */
   pulsoId: number;
+  /**
+   * Lo que el plugin de este botón está pintando (roadmap 83). Su imagen va a
+   * sangre en `CapasDeFondo` y su título sustituye al nombre del botón: es lo
+   * que el plugin quiere que se lea en la tecla, no lo que escribió el autor
+   * del perfil hace seis meses.
+   */
+  plugin?: { imagen?: string; titulo?: string };
 }
 
 /**
@@ -65,6 +72,7 @@ export function CuerpoCelda({
   hovered,
   encendido,
   pulsoId,
+  plugin,
 }: CuerpoCeldaProps) {
   if (hasSubButtons && button.subButtons) {
     return (
@@ -107,6 +115,7 @@ export function CuerpoCelda({
       widgetData={widgetData}
       encendido={encendido}
       pulsoId={pulsoId}
+      imagenAjena={!!plugin?.imagen}
     />
   );
 
@@ -140,8 +149,14 @@ export function CuerpoCelda({
         )}
       </div>
 
-      {displayLabel && (
-        <RotuloCelda texto={displayLabel} button={button} accent={accent} toggled={toggled} />
+      {(plugin?.titulo || displayLabel) && (
+        <RotuloCelda
+          texto={plugin?.titulo || displayLabel}
+          button={button}
+          accent={accent}
+          toggled={toggled}
+          sobreImagenPropia={plugin?.imagen ? true : undefined}
+        />
       )}
     </>
   );

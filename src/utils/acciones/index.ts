@@ -6,6 +6,7 @@ import { ENTRADA } from './entrada';
 import { DATOS } from './datos';
 import { RGB } from './rgb';
 import { TERCEROS } from './terceros';
+import { PLUGINS } from './plugins';
 
 /**
  * Qué hace cada tipo de acción, por familia.
@@ -17,7 +18,7 @@ import { TERCEROS } from './terceros';
  * manejador" se puede detectar — y `scripts/check-acciones.mjs` lo detecta.
  */
 export const MANEJADORES: Record<string, Manejador> = {
-  ...LANZAR, ...AUDIO, ...MEDIA, ...ENTRADA, ...DATOS, ...RGB, ...TERCEROS,
+  ...LANZAR, ...AUDIO, ...MEDIA, ...ENTRADA, ...DATOS, ...RGB, ...TERCEROS, ...PLUGINS,
 };
 
 

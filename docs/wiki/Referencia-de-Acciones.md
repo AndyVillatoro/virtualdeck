@@ -155,3 +155,13 @@ Un botón puede ejecutar una secuencia de acciones (hasta 8 pasos adicionales). 
 | `discord` | `discordAction` (`toggle-mute`, `toggle-deaf`, `mute`, `unmute`, `deaf`, `undeaf`) | Control nativo de voz en Discord de escritorio mediante conexión Named Pipe local (`\\.\pipe\discord-ipc-0..9`). Permite silenciar el micrófono o ensordecer con latencia de 0 ms. |
 | `spotify` | `spotifyAction` (`play-uri`, `transfer-playback`, `toggle-shuffle`, `toggle-repeat`), `spotifyUri?`, `spotifyDeviceId?` | Abre y reproduce playlists, canciones o álbumes directamente en Spotify (acepta `spotify:...` y enlaces `open.spotify.com`), o transfiere reproducción activa al dispositivo indicado vía Spotify Web API. |
 
+
+## Plugins de Stream Deck
+
+| Tipo | Campos | Descripción |
+|------|--------|-------------|
+| `plugin` | `plugin.pluginUuid`, `plugin.accionUuid`, `plugin.settings?` | Ejecuta una acción de un plugin del SDK de Stream Deck instalado en el equipo. Al mostrarse el botón se le manda un aviso de aparición y al pulsarlo recibe el ciclo completo de la tecla (bajada y subida, 60 ms después). Si la acción trae Property Inspector, el editor abre su ventana con el botón CONFIGURAR y lo que se guarde allí queda en `plugin.settings` del botón. La imagen y el título que mande el plugin sustituyen a los del botón en la celda. |
+
+Los plugins se instalan y se habilitan en **Ajustes → Plugins**; un plugin instalado pero deshabilitado no se puede elegir. Si no hay ninguno, el paso de configuración lo dice y dice dónde instalarlos.
+
+En esta primera versión la celda es la única superficie que muestra la imagen y el título del plugin: las teclas de los docks y el mando móvil ejecutan su acción, pero no la pintan.

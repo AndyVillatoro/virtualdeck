@@ -173,4 +173,11 @@ export const EN_ACCIONES: Dict = {
   'fam.integraciones': 'INTEGRATIONS',
   'act.search.placeholder': 'Search action...',
   'act.search.empty': 'NO RESULTS',
+  // 83 — `plugin` action (Stream Deck SDK).
+  'act.plugin.label': 'Plugin',
+  'act.plugin.desc': 'Runs an action of an installed Stream Deck plugin: it is told when the button appears and when it is pressed',
+  'act.lbl.plugin': 'Plugin',
+  'act.err.plugin': 'Plugin "{plugin}" is not installed, is disabled, or failed to start.',
+  'act.err.pluginSinRef': 'Pick a plugin and an action in the button editor first.',
+  'act.err.pluginSinContexto': 'It is unknown which button this ran from (it is not a deck button).',
 };

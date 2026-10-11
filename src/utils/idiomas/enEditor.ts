@@ -228,4 +228,17 @@ export const EN_EDITOR: Dict = {
   'cat.marcasAz': 'BRANDS A-Z',
   'cat.grupos': 'GROUPS',
   'cat.sinIcono': 'NO ICON',
+  // "¿?" `plugin` action (83): pick a plugin, pick an action, open its PI.
+  'ed.plugin.plugin': 'PLUGIN',
+  'ed.plugin.elegirPlugin': 'Pick a plugin',
+  'ed.plugin.accion': 'PLUGIN ACTION',
+  'ed.plugin.elegirAccion': 'Pick an action',
+  'ed.plugin.configurar': 'CONFIGURE',
+  'ed.plugin.noInstalados': 'No plugins installed.',
+  'ed.plugin.ningunoHabilitado': 'No plugins enabled.',
+  'ed.plugin.dondeInstalar': 'Install or enable them in Settings → Plugins.',
+  'ed.plugin.sinAcciones': 'This plugin declares no actions that fit on a button.',
+  'ed.plugin.sinInspector': 'This action has no property inspector.',
+  'ed.plugin.enError': 'PLUGIN FAILED TO START:',
+  'ed.plugin.help': 'The plugin is told when the button appears and when it is pressed. Its image and title replace the button ones in the cell; the settings its inspector saves stay on this button.',
 };

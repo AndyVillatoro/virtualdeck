@@ -5,6 +5,7 @@ import { FormSetVar, FormIncrVar, FormWebhook, FormRemote, FormMobileRemote, For
 import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb';
 import { FormFolder, FormMacro, FormPageNav } from './compuestos';
 import { FormDiscord, FormSpotify } from './terceros';
+import { FormPlugin } from './plugins';
 import type { PropsFormulario } from './base';
 
 /**
@@ -61,6 +62,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'macro': FormMacro,
   'discord': FormDiscord,
   'spotify': FormSpotify,
+  'plugin': FormPlugin,
 };
 
 

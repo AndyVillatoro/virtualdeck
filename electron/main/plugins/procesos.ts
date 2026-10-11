@@ -33,6 +33,8 @@ export interface DatosLanzamiento {
   puerto: number;
   puertoArchivos: number;
   infoJSON: string;
+  /** El gestor lo usa para marcar `error` y reintentar (máx. 3). */
+  alSalir?: (codigo: number | null) => void;
 }
 
 export interface PluginLanzado {
@@ -139,6 +141,7 @@ export function lanzarPluginNode(datos: DatosLanzamiento): PluginLanzado {
       if (codigo !== 0 && /\.mjs$/i.test(datos.codePath)) {
         console.log('[plugins] si es un plugin ESM, probá VD_PLUGIN_PROTO_MODO=node');
       }
+      datos.alSalir?.(codigo);
     });
     return {
       cerrar: () => {
@@ -163,8 +166,14 @@ export function lanzarPluginNode(datos: DatosLanzamiento): PluginLanzado {
   );
   hijo.stdout?.on('data', (dato: Buffer) => volcarSalida(datos.uuid, dato));
   hijo.stderr?.on('data', (dato: Buffer) => volcarSalida(datos.uuid, dato));
-  hijo.on('exit', (codigo) => console.log(`[plugin:${datos.uuid}] termino con codigo ${codigo}`));
-  hijo.on('error', (e) => console.log(`[plugin:${datos.uuid}] no arranco: ${e.message}`));
+  hijo.on('exit', (codigo) => {
+    console.log(`[plugin:${datos.uuid}] termino con codigo ${codigo}`);
+    datos.alSalir?.(codigo);
+  });
+  hijo.on('error', (e) => {
+    console.log(`[plugin:${datos.uuid}] no arranco: ${e.message}`);
+    datos.alSalir?.(null);
+  });
   return {
     cerrar: () => {
       try {
@@ -196,6 +205,7 @@ export function lanzarPluginHTML(datos: DatosLanzamiento): PluginLanzado {
   win.webContents.on('console-message', (_evento, _nivel, mensaje) => {
     if (mensaje) console.log(`[plugin:${datos.uuid}] consola: ${String(mensaje).slice(0, 200)}`);
   });
+  win.on('closed', () => datos.alSalir?.(null));
   win.webContents.on('did-finish-load', () => {
     const llamada = `connectElgatoStreamDeckSocket(${JSON.stringify(datos.puerto)}, ${JSON.stringify(datos.uuid)}, ${JSON.stringify('registerPlugin')}, ${JSON.stringify(datos.infoJSON)})`;
     win.webContents.executeJavaScript(llamada).catch((e: Error) => {

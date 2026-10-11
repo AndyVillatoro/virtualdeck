@@ -11,6 +11,7 @@ import { RGBSection } from './RGBSection';
 import { SensorsSection } from './SensorsSection';
 import { RemoteSection } from './RemoteSection';
 import { CompanionSection } from './CompanionSection';
+import { PluginsSection } from './PluginsSection';
 import { DisplaysSection } from './DisplaysSection';
 import { ToggleRow, SettingLabel } from './settingHelpers';
 import { HelpAboutPanel } from '../help/HelpAboutPanel';
@@ -348,6 +349,11 @@ export function PanelAjustes({
       {/* 8.1 Extensión Compañera del Navegador */}
       <SeccionAjustes titulo={t('set.companion')} glyph="APP_WINDOW" accent={effectiveAccent}>
         <CompanionSection accent={effectiveAccent} />
+      </SeccionAjustes>
+
+      {/* 8.2 Plugins de Stream Deck (roadmap 83) */}
+      <SeccionAjustes titulo={t('plugins.title')} glyph="USB_PLUG" accent={effectiveAccent}>
+        <PluginsSection accent={effectiveAccent} />
       </SeccionAjustes>
 
       {/* 9. Tienda (ventana propia) */}

@@ -32,9 +32,15 @@ interface Props {
   encendido?: boolean;
   /** Crece en cada pulsación (destello de `usePulsacionRaton`). */
   pulsoId?: number;
+  /**
+   * La celda tiene una imagen de fondo que **no** viene del botón: la de un
+   * plugin (roadmap 83). Entonces el centro se queda vacío, igual que con
+   * `imageData` sin marca encima — la imagen ya lo llena todo.
+   */
+  imagenAjena?: boolean;
 }
 
-export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widgetData, encendido, pulsoId }: Props) {
+export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widgetData, encendido, pulsoId, imagenAjena }: Props) {
   const VD = useTheme();
   // Tal como se pinta (con el aspecto de encendido si toca) y su matriz
   // animable. Los hooks van antes de las salidas: con widget no se anima.
@@ -57,6 +63,9 @@ export function ContenidoCentral({ button, isEmpty, iconColor, actionGlyph, widg
   if (widgetData) return <Widget datos={widgetData} colorPropio={button.bgColor ? iconColor : undefined} />;
 
   const tamano = isEmpty ? 20 : 24;
+  // Un widget gana a la imagen del plugin: es una elección del autor del perfil
+  // (un reloj, un volumen), y el plugin solo pone el fondo.
+  if (imagenAjena) return null;
   const ocupadoPorFondo = !!boton.imageData || !!boton.brandIcon;
 
   if (ocupadoPorFondo) return <CentroSobreFondo button={boton} tamano={tamano} />;

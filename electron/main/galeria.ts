@@ -243,15 +243,25 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     for (const paso of x.macroSteps) mirarPasoMacro(paso, c);
   };
 
-  /** Efectos al pulsar que no son scripts, programas, red ni teclas. */
-  const mirarIntegraciones = (x: Record<string, any>, c: Colector): void => {
+  /** Efectos al pulsar sobre el equipo: voz, procesos, portapapeles, audio y capturas. */
+  const mirarEfectos = (x: Record<string, any>, c: Colector): void => {
     if (x.type === 'tts' && x.ttsText) c.integraciones.push(tm('gal.risk.voice', { texto: String(x.ttsText) }));
     if (x.type === 'kill-process' && x.processName) c.integraciones.push(tm('gal.risk.kill', { nombre: String(x.processName) }));
     if (x.type === 'clipboard' && x.clipboardText != null) c.integraciones.push(tm('gal.risk.clipboard', { n: String(String(x.clipboardText).length) }));
     if (x.type === 'audio-device' && (x.deviceId || x.deviceName)) c.integraciones.push(tm('gal.risk.audio', { nombre: String(x.deviceName ?? x.deviceId) }));
     if (x.type === 'region-capture') c.integraciones.push(tm('gal.risk.capture'));
+  };
+
+  /** Integraciones de terceros y plugins: lo que se enchufa al botón. */
+  const mirarIntegraciones = (x: Record<string, any>, c: Colector): void => {
     if (x.type === 'discord' && x.discordAction) c.integraciones.push(tm('gal.risk.discord', { accion: String(x.discordAction) }));
     if (x.type === 'spotify') c.integraciones.push(tm('gal.risk.spotify', { accion: String(x.spotifyAction ?? x.spotifyUri ?? tm('gal.risk.play')) }));
+    // Un plugin **es** código de un desconocido, y lo que hace al pulsarlo no
+    // está en el perfil: no se puede ni resumir ni leer antes de aceptarlo. Va
+    // con los scripts —la lista que se enseña en rojo, la de «esto ejecuta
+    // cosas»— y no con las integraciones, porque aquí la diferencia entre una
+    // macro y un plugin es de grado, no de letra.
+    if (x.type === 'plugin' && x.plugin) c.scripts.push(tm('gal.risk.plugin', { plugin: String(x.plugin.pluginUuid ?? '?') }));
   };
 
   /** Acciones dentro de acciones: ramas, temporizador, carpetas y cuadrantes. */
@@ -276,6 +286,7 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     const x = a as Record<string, any>;
     mirarDirectas(x, c);
     mirarMacro(x, c);
+    mirarEfectos(x, c);
     mirarIntegraciones(x, c);
     mirarHijas(x, hondura);
   };

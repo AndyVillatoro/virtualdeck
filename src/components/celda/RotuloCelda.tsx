@@ -53,15 +53,17 @@ function fondoFranja(sobreImagen: boolean, bgColor: string | undefined, VD: VDTo
 }
 
 export function RotuloCelda({
-  texto, button, accent, toggled,
+  texto, button, accent, toggled, sobreImagenPropia,
 }: {
   texto: string;
   button: ButtonConfig;
   accent: string;
   toggled: boolean;
+  /** La imagen no viene del botón (la de un plugin): el rótulo va igual sobre fondo. */
+  sobreImagenPropia?: boolean;
 }) {
   const VD = useTheme();
-  const sobreImagen = !!(button.imageData || button.brandIcon);
+  const sobreImagen = sobreImagenPropia ?? !!(button.imageData || button.brandIcon);
   const sublabel = button.sublabel?.trim();
   const fg = frenteCelda(button, toggled, accent, VD);
   const sub = subCelda(button, fg, toggled, accent, VD, sobreImagen);

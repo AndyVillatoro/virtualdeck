@@ -253,6 +253,7 @@ export function EditorB({
                 deckState={deckState}
                 pages={pages}
                 indicePaginaBoton={button.page}
+                botonId={button.id}
                 fijo={e.fijo}
                 setFijo={e.setFijo}
                 widget={e.widget}

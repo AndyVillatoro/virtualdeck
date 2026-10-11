@@ -50,6 +50,8 @@ export interface PropsFormulario {
   pages?: PageConfig[];
   /** Índice de la página del botón que se edita: define el contexto (dock o deck). */
   indicePaginaBoton?: number;
+  /** Id del botón que se edita: con la página da el `contexto` de un plugin. */
+  botonId?: string;
   /** T-HW-12 — fijo en su grupo, con su setter. */
   fijo: boolean;
   setFijo: (v: boolean) => void;

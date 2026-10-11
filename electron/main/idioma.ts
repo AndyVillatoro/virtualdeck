@@ -20,7 +20,8 @@ type Clave =
   | 'tray.show' | 'tray.quick' | 'tray.quit' | 'tray.button' | 'tray.moveToPrimary'
   | 'dlg.exportLog' | 'dlg.exportConfig' | 'dlg.importConfig'
   | 'dlg.pickImage' | 'dlg.exportPage' | 'dlg.importPage' | 'dlg.pickOpenRGB'
-  | 'filter.images' | 'filter.text'
+  | 'dlg.installPlugin'
+  | 'filter.images' | 'filter.text' | 'filter.plugins'
   // Errores que el proceso principal devuelve al renderer y acaban en un
   // aviso en pantalla. No son logs: los lee el usuario.
   | 'macro.noUiohook' | 'macro.noSteps' | 'macro.playFailed' | 'media.untitled' | 'media.noArtist' | 'rgb.onlyDirect' | 'rgb.sinRuta' | 'rgb.sinConexion' | 'enlace.noReconocido' | 'enlace.sinVentana' | 'enlace.sinPagina' | 'enlace.sinBoton' | 'sensors.disabled' | 'sensors.uacCancelled' | 'sensors.netshCode'
@@ -33,7 +34,7 @@ type Clave =
   | 'gal.risk.click' | 'gal.risk.move' | 'gal.risk.scroll' | 'gal.risk.voice'
   | 'gal.risk.kill' | 'gal.risk.clipboard' | 'gal.risk.audio' | 'gal.risk.capture'
   | 'gal.risk.discord' | 'gal.risk.spotify' | 'gal.risk.timer' | 'gal.risk.timerDias' | 'gal.risk.sensor'
-  | 'gal.risk.play' | 'gal.risk.macroNumerico'
+  | 'gal.risk.play' | 'gal.risk.macroNumerico' | 'gal.risk.plugin'
   | 'discord.notRunning' | 'discord.disconnected' | 'discord.timeout' | 'discord.notAuthenticated' | 'discord.error'
   | 'spotify.tokenRequired' | 'spotify.noUri';
 
@@ -51,8 +52,10 @@ const ES: Record<Clave, string> = {
   'dlg.exportPage': 'Exportar página',
   'dlg.importPage': 'Importar página',
   'dlg.pickOpenRGB': 'Seleccione OpenRGB.exe',
+  'dlg.installPlugin': 'Instalar plugin de Stream Deck',
   'filter.images': 'Imágenes',
   'filter.text': 'Texto',
+  'filter.plugins': 'Plugins de Stream Deck',
   'macro.noUiohook': 'uiohook-napi no está disponible en este sistema.',
   'macro.noSteps': 'Sin pasos en la macro.',
   'macro.playFailed': 'La reproducción nativa falló; consulte el registro del proceso principal.',
@@ -92,6 +95,7 @@ const ES: Record<Clave, string> = {
   'gal.risk.timerDias': 'temporizador {hora} (días: {dias})',
   'gal.risk.sensor': 'sensor {id} {op} {valor}',
   'gal.risk.play': 'reproducir',
+  'gal.risk.plugin': 'plugin «{plugin}» (ejecuta código de un tercero)',
   'gal.risk.macroNumerico': 'paso de macro con un número que no es número (intento de código en una pausa o una coordenada)',
   'discord.notRunning': 'Discord no está abierto o no responde en el pipe local',
   'discord.disconnected': 'Discord desconectado',
@@ -116,8 +120,10 @@ const EN: Record<Clave, string> = {
   'dlg.exportPage': 'Export page',
   'dlg.importPage': 'Import page',
   'dlg.pickOpenRGB': 'Select OpenRGB.exe',
+  'dlg.installPlugin': 'Install Stream Deck plugin',
   'filter.images': 'Images',
   'filter.text': 'Text',
+  'filter.plugins': 'Stream Deck plugins',
   'macro.noUiohook': 'uiohook-napi is not available on this system.',
   'macro.noSteps': 'The macro has no steps.',
   'macro.playFailed': 'Native playback failed; check the main-process log.',
@@ -157,6 +163,7 @@ const EN: Record<Clave, string> = {
   'gal.risk.timerDias': 'timer {hora} (days: {dias})',
   'gal.risk.sensor': 'sensor {id} {op} {valor}',
   'gal.risk.play': 'play',
+  'gal.risk.plugin': 'plugin "{plugin}" (runs third-party code)',
   'gal.risk.macroNumerico': 'macro step with a non-numeric number (attempt to inject code through a delay or a coordinate)',
   'discord.notRunning': 'Discord is not open or not responding on local pipe',
   'discord.disconnected': 'Discord disconnected',

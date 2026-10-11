@@ -12,6 +12,7 @@ import { DotRadialSweep } from './dot480/DotRadialSweep';
 import { botonEfectivo } from './dot480/animacionPuntos';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
 import { CuerpoCelda } from './celda/CuerpoCelda';
+import { useVisualCelda } from './celda/useVisualCelda';
 import type { ButtonConfig, SoundProfileId } from '../types';
 
 interface ButtonCellProps {
@@ -138,6 +139,12 @@ function ButtonCellInner(props: ButtonCellProps) {
   const isAdjust = button.action.type === 'adjust';
   const hasLongPress = quierePulsacionLarga(isEmpty, hasSubButtons, onLongPress);
 
+  // Lo que el plugin de este botón está pintando (roadmap 83): su imagen va a
+  // sangre y su título sustituye al nombre. Va por el store, no por props,
+  // porque la celda está memoizada y el `setImage` del plugin no cambia
+  // ninguna — ver `celda/useVisualCelda`.
+  const plugin = useVisualCelda(button);
+
   const { rotaryStep, lastRotaryDir, lastRotaryTime, handleWheel, handleAdjustClick } =
     useRotaryHandler(button, onAdjustWheelRef);
 
@@ -242,7 +249,7 @@ function ButtonCellInner(props: ButtonCellProps) {
           height: '100%',
         }}
       >
-        <CapasDeFondo button={vis} toggled={toggled} />
+        <CapasDeFondo button={vis} toggled={toggled} plugin={plugin} />
 
         <CuerpoCelda
           button={vis}
@@ -268,6 +275,7 @@ function ButtonCellInner(props: ButtonCellProps) {
           hovered={hovered}
           encendido={vis.isToggle === true && toggled}
           pulsoId={pulsoId}
+          plugin={plugin}
         />
 
         <Insignias

@@ -161,3 +161,13 @@ A button can execute a sequence of actions (up to 8 additional steps). Each step
 | `discord` | `discordAction` (`toggle-mute`, `toggle-deaf`, `mute`, `unmute`, `deaf`, `undeaf`) | Native voice control for Discord desktop via local Named Pipe (`\\.\pipe\discord-ipc-0..9`). Mute microphone or deafen audio with 0ms latency. |
 | `spotify` | `spotifyAction` (`play-uri`, `transfer-playback`, `toggle-shuffle`, `toggle-repeat`), `spotifyUri?`, `spotifyDeviceId?` | Opens and plays playlists, tracks or albums directly in Spotify (supports `spotify:...` and `open.spotify.com` links), or transfers active playback via Spotify Web API. |
 
+
+## Stream Deck plugins
+
+| Type | Fields | Description |
+|---|---|---|
+| `plugin` | `plugin.pluginUuid`, `plugin.accionUuid`, `plugin.settings?` | Runs an action of a Stream Deck SDK plugin installed on this computer. When the button appears the plugin is told so, and pressing it gets the full key cycle (down, then up 60ms later). If the action ships a Property Inspector, the editor opens its window with the CONFIGURE button and whatever it saves there is kept in the `plugin.settings` of the button. The image and title the plugin sends replace the button ones in the cell. |
+
+Plugins are installed and enabled in **Settings → Plugins**; an installed but disabled plugin cannot be picked. With none installed, the configuration step says so and says where to install them.
+
+In this first version the cell is the only surface that shows the plugin image and title: dock keys and the mobile remote run its action but do not paint it.

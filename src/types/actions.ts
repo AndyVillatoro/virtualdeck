@@ -51,7 +51,9 @@ export type ActionType =
   | 'discord'
   | 'spotify'
   // Volumen de una app concreta (roadmap 63): subir/bajar, fijar o silenciar.
-  | 'app-volume';
+  | 'app-volume'
+  // 83 — Acción de un plugin del SDK de Stream Deck.
+  | 'plugin';
 
 export interface FolderButton {
   label: string;
@@ -185,6 +187,18 @@ export interface ButtonAction {
   appVolumeDelta?: number;
   /** Para `set`: nivel 0-100. */
   appVolumeLevel?: number;
+  // 83 — Acción de un plugin del SDK de Stream Deck (ver `types/plugins.ts`).
+  /**
+   * Qué plugin y qué acción suya ejecuta el botón. Los **ajustes** que el
+   * plugin guardó desde su Property Inspector viven aquí, en el botón: es lo
+   * único que sobrevive a que el plugin se reinicie, y lo que se le vuelve a
+   * mandar en cada aparición y en cada pulsación.
+   */
+  plugin?: {
+    pluginUuid: string;
+    accionUuid: string;
+    settings?: Record<string, unknown>;
+  };
 }
 
 export type MacroStepType = 'key' | 'hotkey' | 'text' | 'click' | 'move' | 'delay' | 'scroll';

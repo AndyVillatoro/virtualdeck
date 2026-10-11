@@ -90,6 +90,7 @@ export const ACTION_TYPES: ActionTypeInfo[] = [
   { type: 'mobile-remote',     label: 'act.mobile-remote.label',    glyph: GLIFO_POR_TIPO_ACCION['mobile-remote'], desc: 'act.mobile-remote.desc',   familia: 'sistema' },
   { type: 'discord',           label: 'act.discord.label',          glyph: GLIFO_POR_TIPO_ACCION.discord,          desc: 'act.discord.desc',          familia: 'integraciones' },
   { type: 'spotify',           label: 'act.spotify.label',          glyph: GLIFO_POR_TIPO_ACCION.spotify,          desc: 'act.spotify.desc',          familia: 'integraciones' },
+  { type: 'plugin',             label: 'act.plugin.label',           glyph: GLIFO_POR_TIPO_ACCION.plugin,            desc: 'act.plugin.desc',           familia: 'integraciones' },
 ];
 
 

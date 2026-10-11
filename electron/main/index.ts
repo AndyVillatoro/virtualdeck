@@ -19,6 +19,7 @@ import { rutaImagenDesdeUrl } from './protocoloVd';
 import * as remoto from './servidorLocal';
 import { detener as detenerSuperficies } from './superficies/gestor';
 import { iniciarPrototipoPlugins, detenerPrototipoPlugins } from './plugins/prototipo';
+import { iniciarGestorPlugins, detenerGestorPlugins } from './plugins/gestor';
 // Los valores por defecto de la barra y los sensores viven en `src/types`
 // (único `src/` que el proceso principal puede importar, ver `lint:arch`):
 // repetirlos aquí los desincroniza en silencio.
@@ -283,6 +284,8 @@ app.whenReady().then(() => {
   // Prototipo de anfitrión de plugins (roadmap 83, fase 0): sin
   // `VD_PLUGIN_PROTO` no monta nada (ni servidor, ni ventana, ni proceso).
   iniciarPrototipoPlugins();
+  // Gestor de plugins instalados (roadmap 83, MVP): lanza los habilitados.
+  iniciarGestorPlugins();
   setTimeout(() => autoCheckOnStartup(win), 8000);
 
   // 1.4 — enlaces `virtualdeck://`. La segunda copia no llega hasta aquí: se
@@ -326,6 +329,7 @@ app.on('before-quit', () => {
   try { sensors.killLHM(); } catch {}
   try { detenerSuperficies(); } catch {}
   try { detenerPrototipoPlugins(); } catch {}
+  try { detenerGestorPlugins(); } catch {}
 });
 
 app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch {} });

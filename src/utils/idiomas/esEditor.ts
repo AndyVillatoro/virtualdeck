@@ -229,4 +229,17 @@ export const ES_EDITOR: Dict = {
   'cat.marcasAz': 'MARCAS A-Z',
   'cat.grupos': 'GRUPOS',
   'cat.sinIcono': 'SIN ICONO',
+  // ¿?" Acción `plugin` (83): elegir plugin, elegir acción y abrir su PI.
+  'ed.plugin.plugin': 'PLUGIN',
+  'ed.plugin.elegirPlugin': 'Elegir plugin',
+  'ed.plugin.accion': 'ACCIÓN DEL PLUGIN',
+  'ed.plugin.elegirAccion': 'Elegir acción',
+  'ed.plugin.configurar': 'CONFIGURAR',
+  'ed.plugin.noInstalados': 'No hay plugins instalados.',
+  'ed.plugin.ningunoHabilitado': 'No hay plugins habilitados.',
+  'ed.plugin.dondeInstalar': 'Instálalos o actívalos en Ajustes → Plugins.',
+  'ed.plugin.sinAcciones': 'Este plugin no declara acciones que quepan en un botón.',
+  'ed.plugin.sinInspector': 'Esta acción no tiene property inspector.',
+  'ed.plugin.enError': 'EL PLUGIN NO ARRANCA:',
+  'ed.plugin.help': 'El plugin recibe un aviso al mostrar el botón y otro al pulsarlo. Su imagen y su título sustituyen a los del botón en la celda; los ajustes que guarde su inspector se quedan en este botón.',
 };

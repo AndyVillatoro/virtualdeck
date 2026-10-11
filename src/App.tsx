@@ -8,6 +8,8 @@ import { LanguageProvider } from './utils/i18n';
 import { ThemeProvider, useTheme } from './utils/theme';
 import { migrateConfig, validateConfig, sanearConfig, sanearPagina, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
+import { usePluginAjustes } from './utils/plugins/usePluginAjustes';
+import { usePluginsVisibles } from './utils/plugins/usePluginsVisibles';
 import { useSuperficies } from './utils/superficies/useSuperficies';
 import { COLORES_LCD } from './utils/superficies/pintarTecla';
 import { esGlifoDot, svgDeBoton } from './components/celda/iconoSvg';
@@ -364,6 +366,11 @@ export default function App() {
 
   const { sensors: sensorList } = useSensors();
   useDisparadores({ botones: config.buttons, sensores: sensorList, disparar: dispararBoton });
+  // Plugins (83): lo que pintan en cada botón y los ajustes que guardan desde
+  // su Property Inspector. Como los disparadores, en `App`, que está montada
+  // siempre — en kiosko o con la ventana oculta también hay que poder guardar.
+  usePluginAjustes({ api, botones: config.buttons, updateButton });
+  usePluginsVisibles({ api, config, pagina: activePage, visible: view === 'main' || view === 'fullscreen' });
   // Controladores físicos (Stream Dock N3...). Como los disparadores, vive en
   // `App`, que está montada siempre: el hardware tiene que responder también
   // en kiosko y con la ventana oculta en la bandeja.
