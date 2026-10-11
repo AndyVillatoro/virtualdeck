@@ -3,7 +3,8 @@ import type {
   ElectronAPI, DisplayInfo, TasasDivisa, NowPlaying, PlatformInfo, Sensor, SensorsStatus, SensorCategory, OrdenRemota,
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
   PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie, SesionAudioApp,
-  PistaCaptura, ResultadoVentanas, CompanionStatus, CompanionCommand, CompanionMetadata, CompanionFrame } from '../../src/types';
+  PistaCaptura, ResultadoVentanas, CompanionStatus, CompanionCommand, CompanionMetadata, CompanionFrame,
+  PluginInfo, PluginRef, PluginVisual, ResultadoInstalacion } from '../../src/types';
 
 
 /**
@@ -288,6 +289,31 @@ const api = {
       const listener = (_e: unknown, m: CompanionMetadata) => handler(m);
       ipcRenderer.on('companion:metadata', listener);
       return () => ipcRenderer.removeListener('companion:metadata', listener);
+    },
+  },
+  plugins: {
+    list: (): Promise<PluginInfo[]> => ipcRenderer.invoke('plugins:list'),
+    install: (ruta?: string): Promise<ResultadoInstalacion> => ipcRenderer.invoke('plugins:install', ruta),
+    uninstall: (uuid: string): Promise<boolean> => ipcRenderer.invoke('plugins:uninstall', uuid),
+    setEnabled: (uuid: string, habilitado: boolean): Promise<PluginInfo | null> =>
+      ipcRenderer.invoke('plugins:setEnabled', uuid, habilitado),
+    appear: (ref: PluginRef, visible: boolean): Promise<boolean> => ipcRenderer.invoke('plugins:appear', ref, visible),
+    press: (ref: PluginRef, abajo: boolean): Promise<boolean> => ipcRenderer.invoke('plugins:press', ref, abajo),
+    openPI: (ref: PluginRef): Promise<boolean> => ipcRenderer.invoke('plugins:openPI', ref),
+    onChanged: (handler: (lista: PluginInfo[]) => void): (() => void) => {
+      const listener = (_e: unknown, l: PluginInfo[]) => handler(l);
+      ipcRenderer.on('plugins:changed', listener);
+      return () => ipcRenderer.removeListener('plugins:changed', listener);
+    },
+    onVisual: (handler: (visual: PluginVisual) => void): (() => void) => {
+      const listener = (_e: unknown, v: PluginVisual) => handler(v);
+      ipcRenderer.on('plugins:visual', listener);
+      return () => ipcRenderer.removeListener('plugins:visual', listener);
+    },
+    onSettings: (handler: (contexto: string, settings: Record<string, unknown>) => void): (() => void) => {
+      const listener = (_e: unknown, c: string, s: Record<string, unknown>) => handler(c, s);
+      ipcRenderer.on('plugins:settings', listener);
+      return () => ipcRenderer.removeListener('plugins:settings', listener);
     },
   },
   sensors: {
