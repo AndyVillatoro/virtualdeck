@@ -23,9 +23,9 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
 - `src/screens/rgb/piezas.tsx` — las piezas del gestor RGB: insignia de estado, detalle de
   dispositivo, pintor LED a LED, guardar perfil, calibrador de zonas y estilos compartidos.
   `RGBManagerB` se queda con el estado y la conexión.
-- `src/screens/main/` — piezas de la principal: `BarraLateral` (reloj, clima, sensores, RGB,
-  registro y música), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
-  arrastrados), `OverlayCarpeta` y `PanelMusica` (panel de música plegable)
+- `src/screens/main/` — piezas de la principal: `BarraLateral` (reloj, clima, cuadros de sensores `SensorTile`, RGB,
+  registro y franja de música fija anclada al pie), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
+  arrastrados), `OverlayCarpeta` y `PanelMusica` (panel de música plegable: transporte con aleatorio/repetir a los lados, `CuerpoVideo`, `CuerpoCaratula`, `ManejadorRedimension` y `useCompanionStream`)
 - `src/screens/editor/` — el editor en secciones plegables (`SeccionPresets`, `SeccionAccion`,
   `SeccionApariencia`, `SeccionComportamiento`, `SeccionAvanzado`) con la vista previa al lado;
   el estado vive en `useEstadoEditor.ts`. `valoresIniciales.ts` (de qué botón guardado salen los
@@ -450,3 +450,41 @@ oleadas de peticiones**, o sea del lado del renderer. Causa no encontrada.
 
 Antes de "optimizar el arranque", mirá cuál de los dos se está midiendo: si el
 reporte sale de `npm run dev`, la aplicación empaquetada no tiene ese problema.
+
+## 🧩 Extensión compañera (`companion-extension/` y `electron/main/companion/`)
+
+Captura de vídeo de pestañas del navegador y metadatos sin oclusión del sistema operativo (Ítem 114 del Roadmap):
+
+- **Protocolo de comunicación y endpoints**:
+  - Escucha estrictamente en el bucle local `127.0.0.1:<puerto>` (puerto por defecto `48201`, configurable en Ajustes).
+  - WebSocket bidireccional sobre `/companion`:
+    - Canal de control y metadatos: la extensión se conecta a `ws://127.0.0.1:<puerto>/companion?token=...`. Envía metadatos de reproducción (`tipo: 'meta'`, duración, posición, pista, artista, volumen, estado) y recibe comandos de transporte (`play`, `pause`, `next`, `prev`, etc.).
+    - Canal de stream de vídeo (`rol=stream`): el documento offscreen de la extensión abre un socket dedicado con `ws://127.0.0.1:<puerto>/companion?rol=stream&token=...` por el que transmite fotogramas binarios en JPEG con cabecera de 8 bytes (ancho uint16, alto uint16, timestamp uint32).
+  - Endpoints HTTP:
+    - `GET /companion/status`: JSON con estado del servidor (conectado, puerto, FPS, metadatos, activo).
+    - `GET /companion/frame.jpg`: último fotograma capturado en JPEG.
+    - `GET /companion/stream`: stream MJPEG continuo (`multipart/x-mixed-replace`) para previsualizaciones directas.
+- **Token y emparejamiento con PIN de 6 dígitos**:
+  - Al solicitar emparejamiento desde la UI de VirtualDeck (`Ajustes → Extensión Compañera`), se genera un código PIN numérico de 6 dígitos que caduca en 5 minutos y se bloquea tras 5 intentos fallidos (`CADUCIDAD_CODIGO_MS` y `MAX_INTENTOS_CODIGO`).
+  - La extensión envía `{ tipo: 'pair', code: '...' }` desde su ventana emergente. Si el código coincide, el proceso principal genera un token criptográfico de 32 bytes hex (`randomBytes(32)`).
+  - Las conexiones autentican comparando hashes mediante `timingSafeEqual` para prevenir ataques de temporización.
+- **Persistencia en `companion.json` en `userData` (y por qué no en `deck-config.json`)**:
+  - La ventana principal de VirtualDeck mantiene en memoria el objeto completo de configuración y lo reescribe entero en disco ante cualquier cambio (`api.config.save`) desde el estado de React.
+  - Cualquier campo actualizado exclusivamente por el proceso principal dentro de `deck-config.json` resulta sobreescrito por el renderer en su siguiente guardado. Por este motivo el token efímero se regeneraba en cada inicio antes de aislarlo.
+  - El token persistente, el puerto y el interruptor activo viven en `userData/companion.json`, gestionado en exclusiva por `electron/main/companion/ajustes.ts`. Al arrancar, si existe configuración histórica en `deck-config.json`, se migra hacia `companion.json`.
+- **Topes de seguridad (`limites.ts`)**:
+  - Al escuchar en `127.0.0.1`, cualquier proceso local puede alcanzar el puerto. Para evitar consumo descontrolado de memoria o bloqueos en el hilo principal:
+    - `MAX_PAYLOAD_FRAME = 4 * 1024 * 1024` (4 MB por frame).
+    - `MAX_META_POR_SEGUNDO = 20` mensajes/s por socket.
+    - `MAX_CLIENTES_MJPEG = 4` clientes simultáneos.
+    - `LADO_MAX_FRAME = 4096` px máx.
+    - `MAX_TEXTO_META = 400` caracteres por campo textual en metadatos y saneamiento estricto campo a campo.
+- **Recorte del vídeo por fracciones del viewport**:
+  - `content.js` localiza el elemento `<video>` visible en primer plano y calcula su posición con `getBoundingClientRect()`.
+  - Las coordenadas se normalizan respecto al viewport (`window.innerWidth`, `window.innerHeight`) como fracciones adimensionales `[0, 1]` (`x, y, w, h`). Así no se ven afectadas por el `devicePixelRatio`, el zoom de página o las barras de desplazamiento.
+  - El documento `offscreen.html` captura el stream entero de la pestaña (`chrome.tabCapture.getMediaStreamId`) y recorta proporcionalmente el canvas al área del vídeo antes de codificar a JPEG a 15-30 FPS, eliminando marcos de la web y distorsiones.
+- **Trampas del Service Worker de MV3 (Manifest V3)**:
+  - **Suspensión por inactividad**: El service worker de Chrome MV3 se duerme tras unos segundos de inactividad, cerrando sockets y perdiendo el estado en memoria.
+  - **`tabCapturada` persistida**: El ID de la pestaña capturada se guarda en `chrome.storage.local`. Si solo viviera en memoria, tras apagarse y despertar el worker el documento offscreen seguiría capturando a pantalla completa sin saber a qué pestaña aplicar el recorte (quedaba en estado zombi).
+  - **Captura única `capturaEnCurso`**: Bandera booleana que previene carreras de activación. Ráfagas de eventos multimedia causaban múltiples llamadas concurrentes a `iniciarCapturaTab`, colisionando en la creación del stream y del documento offscreen.
+  - **Alarma `vd-keepalive`**: Alarma de Chrome (`chrome.alarms.create('vd-keepalive', { periodInMinutes: 0.5 })`) que despierta periódicamente el service worker para restaurar la pestaña en captura y reconectar el WebSocket de control si se cerró.

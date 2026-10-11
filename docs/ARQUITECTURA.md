@@ -38,6 +38,11 @@ Node.js con acceso al SO. No conoce React. Expone todo vía IPC.
 | `tienda.ts` | Ventana `#tienda`: abrir/enfocar/cerrar + reavisar config a la tienda. | ✅ |
 | `sensors.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL. | ✅ |
 | `ps-helpers.ts` | Ejecutar PowerShell con prefijo UTF-8 (parser de `param()`). | ✅ |
+| `superficies/driver.ts` | Contrato común (`DriverSuperficie`, `ControlId`, callbacks) para controladores físicos y docks HID. | ✅ |
+| `companion/ajustes.ts` | Persistir y sanear ajustes y token de la extensión compañera en `userData/companion.json` (aislado de `deck-config.json`). | ✅ |
+| `companion/estadoCompanion.ts` | Administrar en memoria el cliente WebSocket, fotogramas, FPS, metadatos y código de emparejamiento. | ✅ |
+| `companion/limites.ts` | Topes de seguridad (tamaño de frame, FPS, metadatos, clientes MJPEG) y saneamiento de entradas no confiables del WebSocket. | ✅ |
+| `companion/servidorCompanion.ts` | Servidor HTTP y WebSocket local (127.0.0.1) para emparejamiento, streaming de frames, comandos y metadatos con la extensión. | ✅ |
 
 ### IPC por dominio (`electron/main/ipc/`)
 Cada archivo registra los handlers de **un** dominio. Responsabilidad: traducir
@@ -46,7 +51,8 @@ mensajes IPC ↔ módulo correspondiente. Sin lógica de negocio propia.
 `audioIpc` · `mediaIpc` · `macroIpc` · `configIpc` · `windowIpc` · `appIpc` ·
 `pageIpc` · `dialogIpc` · `launcherIpc` · `rgbIpc` · `sensorsIpc` · `logIpc` · `updateIpc` ·
 `floatingBarIpc` · `tiendaIpc` (puentes tienda→principal: `tienda:import`/`resultado`; eventos `tienda:apply`/`hecho`) ·
-`capturaIpc` (vídeo del panel de música) · `discordIpc` · `spotifyIpc` · `superficiesIpc` (docks)
+`capturaIpc` (vídeo del panel de música) · `companionIpc` (extensión compañera: estado, pairing, comandos, token y puerto) ·
+`discordIpc` · `spotifyIpc` · `superficiesIpc` (docks)
 
 ---
 
@@ -79,6 +85,12 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `main/BarraSuperiorMain.tsx` | `TitleBar` de la principal con su cableado de config. | ✅ |
 | `main/AvisosContextuales.tsx` | Hints contextuales (uno a la vez, descartables). | ✅ |
 | `main/PanelesMusica.tsx` | Panel de música lateral (una instancia por lado). | ✅ |
+| `main/BarraLateral.tsx` | Barra lateral derecha con reloj, clima, cuadros de sensores y franja de música anclada fija al pie. | ✅ |
+| `main/musica/ControlesTransporte.tsx` | Fila unificada de transporte con aleatorio y repetir a los lados (`[aleatorio] [prev] [play] [next] [repetir]`). | ✅ |
+| `main/musica/CuerpoVideo.tsx` | Contenedor de visualización de vídeo o stream de pestaña con controles de transporte integrados. | ✅ |
+| `main/musica/CuerpoCaratula.tsx` | Vista de carátula musical e información de reproducción con controles de transporte integrados. | ✅ |
+| `main/musica/ManejadorRedimension.tsx` | Tirador interactivo de arrastre para redimensionar en vivo el ancho del panel lateral de música. | ✅ |
+| `main/musica/useCompanionStream.ts` | Hook React para suscribirse a los fotogramas, metadatos, FPS y estado de la extensión compañera. | ✅ |
 | `main/CeldaPrincipal.tsx` | Una celda de la rejilla principal con su cableado. | ✅ |
 | `TiendaB.tsx` | Raíz de la ventana `#tienda`: carga config y delega en `tienda/`. | ✅ |
 | `tienda/ContenidoTienda.tsx` | Manifiesto, selección, ficha e instalación (pide, no aplica). | ✅ |
@@ -101,10 +113,10 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `DotText.tsx` / `DotLabel.tsx` | Tipografía dot-matrix de identidad. | ✅ |
 | `Wallpaper.tsx` | Render del fondo elegido. | ✅ |
 | `WeatherWidget.tsx` | Widget de clima (Open-Meteo). | ✅ |
-| `SensorPanel.tsx` | Tarjetas/agrupación de sensores. | ✅ |
+| `SensorPanel.tsx` | Tarjetas/agrupación de sensores y `SensorTile` (cuadro compacto con métrica, glifo DOT y umbral de color). | ✅ |
 | `ui/` | Primitivas compartidas: `Chip`/`Segmentado`, `BotonIcono` (title obligatorio), `Modal` y `estilos.ts` (campos y botones de texto). | ✅ |
 | `BrandIconDisplay` | Ícono de marca 17×17 (legado): mostrar. Elegir va por el catálogo (`editor/SelectorIconosDot`). | ✅ |
-| `settings/RGBSection` · `settings/SensorsSection` | Secciones extraídas de TitleBar. | ✅ |
+| `settings/RGBSection` · `settings/SensorsSection` · `settings/CompanionSection` | Secciones extraídas de Ajustes (RGB, sensores y extensión compañera). | ✅ |
 | `help/HelpAboutPanel.tsx` | Panel Ayuda y Acerca de. | ✅ |
 
 ---
@@ -133,10 +145,21 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 |--------|----------------------|-----|
 | `src/design.ts` | Tokens (color, radius, shadow, glifos). Fuente de verdad visual. | ✅ |
 | `src/types.ts` | Tipos compartidos renderer↔main. | ✅ |
+| `src/types/companion.ts` | Tipos e interfaces del protocolo de la extensión compañera (metadatos, frames, estado, fallos y comandos). | ✅ |
 | `src/data/links.ts` | Enlaces externos (repo, docs, donaciones). | ✅ |
 | `src/components/settings/SoporteSection.tsx` | El apartado «Apoyar el proyecto» de los ajustes. | ✅ |
 | `src/data/brandIcons.ts` | Catálogo de íconos de marca. | ✅ |
 | `src/utils/catalogoMarcas.ts` | Carga diferida del catálogo (`import()` + hook reactivo). | ✅ |
+
+---
+
+## 7. Extensión de navegador (`companion-extension/`)
+
+Extensión MV3 para navegadores Chromium (Chrome, Edge, Brave...) que captura vídeo de pestañas y metadatos sin oclusión del sistema operativo.
+
+| Módulo | Responsabilidad única | SRP |
+|--------|----------------------|-----|
+| `companion-extension/` | Extensión MV3: service worker (`background.js`), captura offscreen (`offscreen.js`), inyección en páginas multimedia (`content.js`) y ventana emergente (`popup.html`). | ✅ |
 
 ---
 

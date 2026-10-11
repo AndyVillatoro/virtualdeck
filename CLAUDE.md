@@ -115,6 +115,7 @@ archivo de instrucciones aparte — ver la corrección más abajo sobre por qué
 - Sondas temporales en el main: `require('./x')` no sirve (todo va en un bundle); usar el import de arriba.
 - Arranque: `npm run dev` tarda ~49 s y es solo de desarrollo; empaquetado ~240 ms.
 - `VD_SIN_NUCLEO=1` prueba los caminos de respaldo; `VD_PLUGIN_PROTO` enciende el prototipo de plugins (83).
+- Extensión compañera: WS `/companion` con PIN 6 dígitos y token en `companion.json` (no `deck-config`); MV3 duerme su worker (alarma `vd-keepalive`, `tabCapturada` persistida y `capturaEnCurso`; detalle en NOTAS-TECNICAS).
 
 ## Scripts
 - `npm run dev` · `npm run build` · `npm run build:native` · `npm run package:store` · `npm run build:iconos`

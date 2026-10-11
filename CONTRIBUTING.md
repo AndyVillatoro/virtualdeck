@@ -241,8 +241,7 @@ git push origin v0.4.0
 npm run package:store
 
 # 7. Crear release en GitHub SIN adjuntos (decisión del dueño 2026-10-07:
-#    el .exe NSIS no está firmado y no se publica; la única instalación es
-#    la Microsoft Store). Sin latest.yml no hay autoactualización del .exe.
+#    el canal oficial y exclusivo es la Microsoft Store; ver CLAUDE.md «Release»).
 gh release create v0.4.0 \
   --title "VirtualDeck v0.4.0" \
   --notes-file <(sed -n '/## \[0.4.0\]/,/## \[/p' CHANGELOG.md | sed '$d')
@@ -333,7 +332,7 @@ Todos los cambios notables...
 |---|---|
 | `npm run dev` | Modo desarrollo con hot reload (renderer) y restart automático (main) |
 | `npm run build` | Compila renderer + main + preload a `out/` |
-| `npm run build:win` | Empaqueta como `.exe` sin instalador (`dist/win-unpacked/`, solo prueba local, no se distribuye) |
+| `npm run build:win` | Empaqueta desempaquetado en directorio (`dist/win-unpacked/`, solo prueba local de desarrollo, no se distribuye) |
 | `npm run build:icon` | Regenera `build/icon.{ico,png,svg}` desde `scripts/generate-icon.js` |
 | `npm run build:store` | Monta el `appx` con electron-builder (lo empaqueta `package:store`) |
 | `npm run package:store` | Flujo completo de Store: iconos, montaje, `makeappx` del SDK y validaciones (genera `dist/VirtualDeck-{version}.appx`) |
@@ -437,12 +436,12 @@ El gate único es **`npm run check`** (`tsc --noEmit` + `dependency-cruiser` + `
 ## ✍️ Firma y distribución (solo Store)
 
 Decisión del dueño (2026-10-07): **la única forma de instalar VirtualDeck es la
-[Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP)**. El `.exe`
-NSIS no está firmado y **no se publica ni se distribuye**: el release de GitHub
-va **sin adjuntos**, no hay `latest.yml`/`.blockmap` y por tanto no hay
-autoactualización del `.exe` (la Store actualiza ella). El script
-`build:installer` y la config `nsis` de electron-builder **se retiraron** de
-`package.json` (2026-10-09): el `.exe` NSIS no existe como canal.
+[Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP)**.
+Los releases de GitHub se publican **sin adjuntos** ni instaladores:
+la Microsoft Store gestiona en exclusiva la firma, distribución
+y autoactualizaciones mediante paquetes MSIX/Appx.
+El paquete MSIX es el único formato oficial de entrega.
+
 
 Consecuencias:
 
@@ -460,9 +459,9 @@ El flujo de empaquetado y subida está entero en
 [docs/MICROSOFT-STORE.md](docs/MICROSOFT-STORE.md) (`npm run package:store` +
 `makeappx` del SDK + notas para el revisor).
 
-> **Usuarios del `.exe` 0.13:** no tienen autoactualización; el README y la página
-> ya dicen que se pasen a la Store. No se mantiene ningún aviso dentro de la app
-> para ellos.
+> **Distribución:** todo enlace de descarga y documentación pública
+> apunta exclusivamente a la ficha oficial de la Microsoft Store.
+
 
 ---
 

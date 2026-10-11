@@ -22,7 +22,7 @@
 
 ---
 
-## Estado general (2026-09-14)
+## Estado general (2026-10-10)
 
 Auditoría sobre el código (no solo el doc):
 
@@ -39,11 +39,11 @@ Auditoría sobre el código (no solo el doc):
   ver [galeria.md](galeria.md)). El **repo público existe** (4 perfiles v1, validados
   con `npm run check:galeria`); diferido a otra versión dejarlo bien completo
   (versionado v2, más perfiles).
-- **Publicado / Versión actual:** **v0.12.0** en GitHub Releases, con `latest.yml` y `.blockmap`
-  —sin esos dos la actualización automática no funciona y no avisa—. La Store va por
-  separado (ítem 30). Incluye Bloque 7 completo (DOT/480, multi-monitor, auto-perfiles,
-  botones anclados, mosaico 2×2, sliders continuos táctiles, mando web móvil interactivo
-  y refactor modular SRP).
+- **Publicado / Versión actual:** **v0.14.1** en Microsoft Store (MSIX firmado). Canal único oficial.
+  En desarrollo activo hacia v0.15 (extensión compañera MV3, soporte de docks y modularidad).
+  Incluye vídeo adaptativo, detección de oclusión, tráilers web bilingües y automatización del núcleo.
+
+
 - **Deuda Técnica y Modularidad (Bloque B): ✅ completado** — modularización de `DotGlyphIcon.tsx`
   (887 → 72 líneas), descomposición de `src/types/` en módulos semánticos, desacople SRP de
   `FullscreenB.tsx` (complejidad 36 → <18) y `ButtonCell.tsx` (complejidad 34 → <18 con `CuerpoCelda`).
@@ -53,8 +53,8 @@ Auditoría sobre el código (no solo el doc):
   heurística, y esta sesión encontró textos con ella en verde **abriendo la app en
   inglés**. «Auditoría limpia» no es «todo traducido».
 - **Código muerto: ✅** knip en cero (eran ~97 exports y 17 tipos).
-- **Guardianes de `npm run check`: seis.** i18n, tipos de acción, canales IPC, wiki,
-  campos del editor y perfiles de la galería. Cada uno nació de un fallo que llegó a
+- **Guardianes de `npm run check`: siete.** i18n, tipos de acción, canales IPC, wiki,
+  campos del editor, paridad por superficie y perfiles de la galería. Cada uno nació de un fallo que llegó a
   la máquina del usuario con la compilación en verde.
 - **Lecciones de la ronda de auditoría (0.9.4 y 0.10.0):** *un camino que no se ejecuta nunca
   se pudre sin que nadie lo note, y a quien le toca es justo quien no puede

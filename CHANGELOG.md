@@ -6,6 +6,15 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Added
+
+- **Extensión compañera del navegador (`companion-extension/`)**: captura directa de vídeo y metadatos desde pestañas Chromium (YouTube, Spotify Web, Twitch) sin oclusión de ventanas ni caídas de fotogramas, mediante WebSocket local `/companion`, documento offscreen MV3 y emparejamiento con código de 6 dígitos.
+- **Topes de seguridad y token persistente en `companion.json`**: control estricto de tasas, tamaño de fotogramas (4 MB), clientes simultáneos y aislamiento de credenciales en `userData/companion.json` para evitar sobreescrituras desde el estado React del deck.
+- **Controles de aleatorio y repetir en el transporte**: fila unificada de cinco botones (`[aleatorio] [anterior] [play/pause] [siguiente] [repetir]`), compartida entre el modo vertical y la sobreimpresión sobre el vídeo en el panel de música.
+- **Sensores en cuadros representativos (`SensorTile`)**: cuadros compactos con icono dot-matrix, valor numérico redondeado y color según umbrales de advertencia y peligro para CPU, GPU, memoria y almacenamiento.
+- **Indicaciones contextuales en reproducción de vídeo**: avisos sobre estado de la pestaña y ventana en captura.
+- **Franja de música fija en barra lateral**: bloque de reproducción anclado al pie de la barra lateral, fijo fuera del área con desplazamiento para permanecer siempre visible.
+
 ## [0.14.1] — 2026-10-09
 
 ### Added

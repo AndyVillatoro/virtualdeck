@@ -95,34 +95,37 @@ function conectarVirtualDeck() {
   const url = `ws://127.0.0.1:${ajustes.puerto}/companion?token=${encodeURIComponent(ajustes.token || '')}`;
 
   try {
-    wsControl = new WebSocket(url);
+    const socket = new WebSocket(url);
+    wsControl = socket;
 
-    wsControl.onopen = () => {
+    socket.onopen = () => {
       conectado = true;
       if (reintentoTimer) clearTimeout(reintentoTimer);
 
       // Si no tenemos token pero conectamos, enviar solicitud de autenticación
       if (ajustes.token) {
-        wsControl.send(JSON.stringify({ tipo: 'auth', token: ajustes.token }));
+        socket.send(JSON.stringify({ tipo: 'auth', token: ajustes.token }));
       }
 
       iniciarHeartbeat();
       actualizarBadge();
     };
 
-    wsControl.onmessage = (event) => {
+    socket.onmessage = (event) => {
       try {
         const datos = JSON.parse(event.data);
         manejarMensajeServidor(datos);
       } catch {}
     };
 
-    wsControl.onclose = () => {
-      desconectarVirtualDeck();
+    // Un socket viejo que se cierra tarde (el servidor cierra el anterior al llegar
+    // uno nuevo) no debe tumbar al nuevo: solo cuenta el que sigue siendo el actual.
+    socket.onclose = () => {
+      if (wsControl === socket) desconectarVirtualDeck();
     };
 
-    wsControl.onerror = () => {
-      desconectarVirtualDeck();
+    socket.onerror = () => {
+      if (wsControl === socket) desconectarVirtualDeck();
     };
   } catch {
     desconectarVirtualDeck();
@@ -436,4 +439,13 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   if (tabCapturada === tabId) {
     detenerCapturaTab();
   }
+});
+
+// El service worker de MV3 se duerme y se lleva el socket de control: una alarma
+// lo despierta cada medio minuto y reconecta si hace falta.
+chrome.alarms.create('vd-keepalive', { periodInMinutes: 0.5 });
+chrome.alarms.onAlarm.addListener((alarma) => {
+  if (alarma.name !== 'vd-keepalive') return;
+  restaurarTabCapturada();
+  if (!wsControl || wsControl.readyState === WebSocket.CLOSED) conectarVirtualDeck();
 });

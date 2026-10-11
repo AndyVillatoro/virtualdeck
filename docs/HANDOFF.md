@@ -4,7 +4,52 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos hasta 2026-10-05 archivados en `docs/archivo/HANDOFF-hasta-2026-10-05.md`.
 
-## Turno 2026-10-10 (T-EXT-01-fix) — La extensión se enfoca en el vídeo, no en la pantalla del navegador
+## Turno 2026-10-10 (T-DEU-02) — Partir `rgb.ts`, `useEstadoEditor.ts` y `PanelInspectorControl.tsx` por responsabilidad
+
+* **Quién:** opencode `space-bunny-free`. **Rama:** `main`, sin commit (lo pide el encargo).
+* **Encargo:** `_referencias/encargos/T-DEU-02-partir-rgb-editor.md`. Tres archivos de más de 600 líneas partidos **sin cambiar comportamiento**: código movido tal cual, verificado línea por línea contra el original.
+
+### 1. `electron/main/rgb.ts` (724) → `electron/main/rgb/` (fichero borrado, fachada en `rgb/index.ts`)
+
+| Módulo | Qué lleva | Líneas |
+|---|---|---|
+| `estado.ts` | **Único** dueño del estado (cliente, proceso del servidor, host/puerto, caché, temporizador de reconexión) | 28 |
+| `conexion.ts` | ciclo de vida, reconexión, `refreshDevices`, `status`/`connect`/`disconnect` | 112 |
+| `servidor.ts` | `spawnServer`/`killServer` | 28 |
+| `dispositivos.ts` | `listDevices`, `rescanDevices`, `resizeZone` | 52 |
+| `aplicar.ts` | colores, modos y LEDs (`setDeviceColor`, `setMode`…) | 219 |
+| `perfil.ts` | perfiles guardados | 71 |
+| `presets.ts` | `SMART_PRESETS`, `listaPresets`, `applySmartPreset` | 117 |
+| `color.ts` | puros: hex↔rgb, `deviceToInfo`, `aplicarBrilloYVelocidad` | 105 |
+| `tipos.ts` | tipos espejo de `src/types.ts` | 31 |
+
+* **Los imports externos no cambian:** `import * as rgb from './rgb'` (y `'../rgb'`) resuelven al `index.ts` de la carpeta, igual que ya hacían con `./ipc`. La API pública es la misma función por función; los tipos (`RGBStatus`, `RGBDeviceInfo`, `RGBProfile`) viven ahora en `./tipos`, que es donde los importa cada módulo.
+* `aplicarBrilloYVelocidad` se movió a `color.ts` (no a `presets.ts`) para no crear el ciclo `presets → aplicar → presets`: `applySmartPreset` necesita `setDeviceColor`, y `setMode` necesita el traductor de brillo/velocidad.
+* `scripts/check-acciones.mjs`: una línea, `PRESETS_MAIN` pasa a `electron/main/rgb/presets.ts` (el guardián leía la ruta del fichero para cruzar los presets con `src/data/rgbPresets.ts`).
+
+### 2. `useEstadoEditor.ts` (635) → seis hooks por tema + cableado (306)
+
+`useEstadoIcono` (242, con `iconoRef`, el catálogo, `pickImage` y el pegado), `useEstadoApariencia`, `useEstadoAccion`, `useEstadoWidget`, `useEstadoVisibilidad`, `useEstadoDisparadores`; en `useEstadoEditor.ts` quedan los modos 2×2, el acordeón, los presets y `handleSave`. `subButtonsIniciales` se extrajo a su propio fichero porque lo usan el hook del icono y el principal.
+
+* **El objeto que devuelve el hook tiene las mismas 146 claves**, comprobado a nivel de tipos contra el original (y que no sobren ninguna).
+* Los `useEffect` conservan sus arrays de dependencias. El de «audio-device no puede llevar *lo que suena*» vive ahora en `useEstadoWidget`, que recibe `tipoAccion`: sigue con `[tipoAccion, widget]` y el `setWidget` local evita el aviso de `exhaustive-deps` sin tocar las dependencias.
+* Orden de hooks: todos sin condiciones; cambia entre bloques, no entre renders.
+
+### 3. `PanelInspectorControl.tsx` (611) → componente (199) + subcomponentes
+
+`tiposPanelInspector.ts` (los tipos, para no cerrar un ciclo con los helpers de texto), `textoPanelInspector.ts` (los cuatro helpers puros y `iconoFallback`), `PanelInspectorVacio.tsx`, `PreviaInspector.tsx` (`MiniPreview`), `PiezasInspector.tsx` (`FilaAccion`, `BotonEditar`, `SeccionModos`), `ListaHermanosPerilla.tsx` (el bloque de gestos hermanos). `PanelInspectorControl.tsx` reexporta `HermanoPerilla` y `PanelInspectorControlProps`, así que `PanelesLaterales.tsx` no cambia.
+
+### Verificación
+
+* `npm run check`: **0 errores**, 7/7 guardianes en verde (depcruise 459 módulos, eslint sin avisos).
+* `npm run lint:dead`: sin huérfanos de estos archivos. Queda **un aviso ajeno**: el tipo `NowPlaying` sin usar en `electron/main/media.ts`, del agente que está partiendo `media.ts` ahora mismo.
+* `npm run build`: correcto en 1,75 s.
+* **Sin probar en la app**: no se ha abierto (el RGB necesitaría un servidor OpenRGB y el resto es puro reordenación). Todo lo demás está verificado por inspección y por el compilador.
+
+### Avisos para quien siga
+
+* El mapa de `CLAUDE.md` sigue diciendo `rgb.ts` en la lista del proceso principal: ahora es `rgb/`. No lo he tocado porque otro agente lo estaba editando a la vez.
+* Durante este turno el sistema de ficheros dio varios `ENOENT` falsos y `PanelInspectorControl.tsx` volvió a HEAD una vez; la versión final está escrita y verificada (`npm run check` y `build` en verde **con** ella en disco). Conviene un `git diff --stat` antes de dar por buena la rama.
 
 * **Quién:** Antigravity (orquestador). **Rama:** `main`, sin commit (lo pide el encargo).
 * **Archivos tocados:** `companion-extension/content.js`, `companion-extension/background.js`, `companion-extension/offscreen.js`, `companion-extension/README.md`. Nada del lado Electron ni del renderer: el recorte se aplica aguas arriba y el protocolo VDCM no ha cambiado, así que `src/types/companion.ts` y `VideoVentana.tsx` se quedan como estaban.
@@ -454,3 +499,10 @@ npm run build
 * **Animación de inicio del dock: eliminada.** Se pintaba encima de los botones configurables (su último cuadro pisaba la página y la firma impedía repintar) y no puede sustituir el logo del firmware, que sale antes de que la app conecte. Se borró `animacionInicioDock.ts` y su llamada en `useSuperficies.ts`. Se conserva el comando `CLE` + refresco de `dispositivoMirabox.ts` al despertar la pantalla (limpia el logo de fábrica sin pintar nada propio).
 * **Extensión, estado que alternaba «transmitiendo» / «capturar pestaña»:** `iniciarCapturaTab` ponía `tabCapturada` tras varios `await`, y cada metadato nuevo (autoStreaming) lanzaba otra captura que reiniciaba la anterior en el offscreen. Ahora hay `capturaEnCurso`, no se reinicia si ya se captura esa pestaña y la captura automática espera 5 s tras una parada. El popup refresca su estado cada segundo. **Sin verificar en navegador real: recargar la extensión y mirar si el botón deja de alternar.**
 * T-MUS-01/02, T-SEN-01/02, T-EXT-01/02 hechos (ver ROADMAP 117–119).
+
+## Turno 2026-10-10 (tarde) — Extensión estable, deuda técnica de tamaño y docs al día
+
+* **Extensión «se desconecta»:** los manejadores `onclose`/`onerror` del socket de control no comprobaban cuál era el socket actual; el servidor cierra el anterior al llegar uno nuevo y ese cierre tardío tumbaba al nuevo (bucle). Ahora solo cuenta el socket vigente, y una alarma `vd-keepalive` (permiso `alarms`) despierta el worker MV3 y reconecta. **Recargar la extensión** (cambió el manifest). Sin verificar en navegador real.
+* **T-DEU-01/02:** `launcher.ts`, `media.ts`, `rgb.ts`, `useEstadoEditor.ts` y `PanelInspectorControl.tsx` partidos por responsabilidad, sin cambios de comportamiento (fachadas con reexport). Ya solo superan 600 líneas los archivos de datos exentos (`brandIcons.ts`, `presetsDock.ts`). `check` y `build` en verde.
+* **T-DOC-01:** ARQUITECTURA, NOTAS-TECNICAS (zona Extensión compañera), CONTRIBUTING (solo Store), CHANGELOG `[Unreleased]`, ROADMAP «Estado general».
+* Pendiente: partes en Rust >600 (`actions/mod.rs`, `config/model.rs`, `vd-node/lib.rs`, `openrgb.rs`, `ventanas.rs`), mando móvil, `sensors.ts`, plugins (60/83), Elgato (59), limpieza local de `_referencias/` y stashes.

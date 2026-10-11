@@ -81,6 +81,7 @@ Antes de que un modelo empiece a editar archivos, debe registrar su asignación 
 | **T-VID-02** | P1 | Geometría y centrado de recorte de vídeo (contain scaling sin corte lateral) | Antigravity (orquestador) | `src/screens/main/musica/recorteVideo.ts` | `DONE` | 2026-10-10 |
 | **T-DOCK-03** | P1 | Animación de encendido VirtualDeck y borrado de VRAM / splash Mirabox | Antigravity (orquestador) | `electron/main/superficies/dispositivoMirabox.ts`, `animacionInicioDock.ts`, `useSuperficies.ts` | `DONE` | 2026-10-10 |
 | **T-EXT-01-fix** | P1 | La extensión no se enfoca en el vídeo: sale la pantalla completa del navegador (encargo `_referencias/encargos/T-EXT-01-enfoque-video.md`) | Antigravity (orquestador) | `companion-extension/**`, `electron/main/companion/**`, `electron/main/ipc/companionIpc.ts`, `src/types/companion.ts`, `src/screens/main/musica/{useCompanionStream,VideoVentana,recorteVideo,useStreamVentana,tamanoCaptura}` | `DONE` (recorte por fracciones y sincronización del rect; check 7/7 verde; **sin verificar en navegador real**) | 2026-10-10 |
+| **T-DEU-02** | P2 | Partir `rgb.ts` (724), `useEstadoEditor.ts` (635) y `PanelInspectorControl.tsx` (611) por responsabilidad, sin cambiar comportamiento (encargo `_referencias/encargos/T-DEU-02-partir-rgb-editor.md`) | opencode (space-bunny-free) | `electron/main/rgb.ts` → `electron/main/rgb/*.ts` (nuevos, `rgb.ts` borrado; `scripts/check-acciones.mjs` con `PRESETS_MAIN` a `rgb/presets.ts`), `src/screens/editor/useEstadoEditor.ts` + 6 hooks `use*.ts` y `subButtonsIniciales.ts` (nuevos), `src/screens/dispositivos/PanelInspectorControl.tsx` + 6 subcomponentes (nuevos), imports de quien los use | `DONE` (los tres por debajo de 306 líneas; return del hook con las mismas 146 claves, comprobado por tipos; check 7/7 verde, build 1,75 s; **sin probar en la app**) | 2026-10-10 |
 
 > **Estados posibles**:
 > - `READY`: Disponible para ser tomada por cualquier modelo.
@@ -110,6 +111,14 @@ Todo lo de aquí está **verificado por inspección o por prueba automatizada**,
 ## 2. Buzón de Mensajes Inter-Agente (Message Log)
 
 Utiliza este apartado para dejar mensajes, advertencias técnicas o instrucciones específicas para el siguiente modelo que continúe el trabajo:
+
+* **2026-10-10** — *opencode (T-DEU-02, partir rgb/editor/inspector)*:
+  - **Los tres archivos ya están partidos**, sin cambio de comportamiento: `electron/main/rgb.ts` (724) → `electron/main/rgb/` con `estado.ts` como **único** dueño del estado y `index.ts` de fachada (los `import * as rgb from './rgb'` siguen igual); `useEstadoEditor.ts` (635) → seis hooks por tema + cableado, con el **mismo objeto de retorno de 146 claves** (comprobado con un tipo que las enumera y otro que exige que no sobren); `PanelInspectorControl.tsx` (611) → componente + `tiposPanelInspector.ts` (los tipos, para no cerrar ciclo), `textoPanelInspector.ts`, `PanelInspectorVacio`, `PreviaInspector`, `PiezasInspector` y `ListaHermanosPerilla`.
+  - **Un cambio fuera de los tres**: `scripts/check-acciones.mjs`, una línea (`PRESETS_MAIN` a `electron/main/rgb/presets.ts`). Sin eso el guardián no encuentra la lista de presets y `npm run check` se para.
+  - **`aplicarBrilloYVelocidad` está en `color.ts`, no en `presets.ts`**: `applySmartPreset` llama a `setDeviceColor` y `setMode` al traductor; dejarlo en `presets.ts` cerraba el círculo y depcruise lo veta.
+  - `npm run check` 7/7 verde, `npm run build` 1,75 s. `knip` limpio en lo mío; queda el tipo `NowPlaying` sin usar de `electron/main/media.ts`, que es del agente que está partiendo `media.ts` ahora mismo.
+  - **Lo que nadie ha comprobado: la app en pantalla.** No se ha abierto (el RGB necesitaría un OpenRGB de verdad).
+  - **Para el mapa:** `CLAUDE.md` sigue listando `rgb.ts`; ahora es `rgb/`. No lo toqué porque otro agente lo editaba a la vez.
 
 * **2026-10-10** — *opencode w12 (T-PERF-01)*:
   - **Aviso de premisa caducada**: T-PERF-01 pedía diferir `src/components/BrandIconPicker.tsx`, archivo que **no existe** (borrado en `3b1a12d`; lo absorbió el selector unificado `SelectorIconosDot`/`PanelCatalogoIcono`). El diferido ya estaba hecho desde `9bbe70d`.
