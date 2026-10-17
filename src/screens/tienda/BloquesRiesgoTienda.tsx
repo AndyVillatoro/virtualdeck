@@ -21,7 +21,9 @@ export function BloquesRiesgoTienda({ riesgo }: { riesgo: ResumenRiesgo }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={menudo}>{t('gal.counts', { n: riesgo.botones })}</div>
+      <div style={menudo}>
+        {riesgo.botones > 0 ? t('gal.counts', { n: riesgo.botones }) : t('tienda.pluginRiskIntro')}
+      </div>
       {riesgo.programas.length > 0 && (
         <div style={menudo}>
           {t('gal.launches')}

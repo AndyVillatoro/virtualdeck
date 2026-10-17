@@ -484,15 +484,6 @@ export function PluginsSection({ accent }: { accent: string }) {
         </div>
       )}
 
-      <div style={{
-        background: VD.elevated, border: `1px solid ${VD.border}`,
-        borderRadius: VD.radius.md, padding: '8px 10px',
-      }}>
-        <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.4 }}>
-          {t('plugins.marketplaceWarning')}
-        </div>
-      </div>
-
       {modalInstalar && (
         <ModalAvisoRiesgo
           datos={modalInstalar}

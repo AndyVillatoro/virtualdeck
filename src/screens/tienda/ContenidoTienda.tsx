@@ -1,35 +1,49 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import type {
-  EntradaGaleria, ResumenRiesgo, InstaladoTienda, OrigenInstalacion, PedidoTienda, ResultadoTienda,
+  EntradaGaleria,
+  InstaladoTienda,
+  OrigenInstalacion,
+  PedidoTienda,
+  PluginInfo,
+  ResumenRiesgo,
+  ResultadoTienda,
 } from '../../types';
 import { BarraTienda } from './BarraTienda';
 import { ListaTienda } from './ListaTienda';
 import { FichaTienda } from './FichaTienda';
 import { EstadoPluginsTienda } from './EstadoPluginsTienda';
 import {
-  FILTROS_VACIOS, estadoDeEntrada, filtrarEntradas,
-  appsDeEntradas, tagsDeEntradas, type FiltrosTienda,
+  FILTROS_VACIOS,
+  appsDeEntradas,
+  construirRiesgoPlugin,
+  contarPorTipo,
+  elegirDestacados,
+  estadoGeneralDeEntrada,
+  filtrarEntradas,
+  tagsDeEntradas,
+  traducirErrorPlugin,
+  type EstadoEntrada,
+  type FiltrosTienda,
 } from './tiendaUtils';
 import { GALERIA_OFICIAL, versionMayor } from '../../utils/galeriaComun';
+import { AvisosTienda, CabeceraTienda } from './CabeceraTienda';
 
 interface Elegido {
   entrada: EntradaGaleria;
   perfil: unknown;
   riesgo: ResumenRiesgo;
-  estado: 'nuevo' | 'instalado' | 'update';
+  estado: EstadoEntrada;
   versionInstalada?: string;
   readme: { texto?: string; error?: string; cargando: boolean } | null;
 }
 
 /**
- * El cuerpo de la tienda: manifiesto, filtros, lista con estados y ficha.
- *
- * La tienda lee y pide, no aplica: el pedido de instalar viaja a la ventana
- * principal (`tienda:importar`), que valida con sus funciones y responde
- * (`tienda:hecho`).
+ * El cuerpo de la tienda: manifiesto, navegación por pestañas (PERFILES /
+ * PÁGINAS / PLUGINS), destacados arriba, rejilla con iconos grandes DOT y ficha
+ * detallada con instalación de plugins en un clic.
  */
 export function ContenidoTienda({ instalados, accent }: {
   instalados: InstaladoTienda[];
@@ -41,10 +55,10 @@ export function ContenidoTienda({ instalados, accent }: {
   const { formato } = useFormatoPantalla();
 
   const esBarra = formato === 'barra';
-  const paddingContenedor = esBarra ? 12 : 16;
-  const maxAncho = esBarra ? 1200 : 960;
+  const paddingContenedor = esBarra ? 12 : 20;
+  const maxAncho = esBarra ? 1240 : 1120;
 
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(GALERIA_OFICIAL);
   const [manifestUrl, setManifestUrl] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,13 +68,27 @@ export function ContenidoTienda({ instalados, accent }: {
   const [filtros, setFiltros] = useState<FiltrosTienda>(FILTROS_VACIOS);
   const [elegido, setElegido] = useState<Elegido | null>(null);
 
+  const [pluginsInstalados, setPluginsInstalados] = useState<PluginInfo[]>([]);
+  const [instalandoPlugin, setInstalandoPlugin] = useState(false);
+  const [errorPlugin, setErrorPlugin] = useState<string | null>(null);
+
   const esperaRef = useRef<((r: ResultadoTienda) => void) | null>(null);
+  const cargandoUrlRef = useRef<string | null>(null);
+  const iniciadoRef = useRef(false);
+
   useEffect(() => {
-    if (!api?.tienda) return;
+    if (!api?.tienda) return undefined;
     return api.tienda.onHecho((r) => {
       esperaRef.current?.(r);
       esperaRef.current = null;
     });
+  }, [api]);
+
+  useEffect(() => {
+    const apiPlugins = api?.plugins;
+    if (!apiPlugins) return undefined;
+    apiPlugins.list().then(setPluginsInstalados).catch(() => {});
+    return apiPlugins.onChanged(setPluginsInstalados);
   }, [api]);
 
   const pedir = (pedido: PedidoTienda): Promise<ResultadoTienda> => new Promise((resolve) => {
@@ -76,22 +104,46 @@ export function ContenidoTienda({ instalados, accent }: {
     }, 10000);
   });
 
-  const cargar = async (dir?: string) => {
+  const cargar = useCallback(async (dir?: string) => {
     const donde = (dir ?? url).trim();
     if (!api?.gallery || !donde) return;
     if (dir) setUrl(dir);
-    setCargando(true); setError(null); setAviso(null); setLista(null); setElegido(null);
-    setFiltros(FILTROS_VACIOS);
+    if (cargandoUrlRef.current === donde) return;
+    cargandoUrlRef.current = donde;
+    setCargando(true);
+    setError(null);
+    setAviso(null);
+    setElegido(null);
+    if (donde !== manifestUrl) setFiltros(FILTROS_VACIOS);
     const [r, v] = await Promise.all([
       api.gallery.manifest(donde),
       versionApp ?? api.app.getVersion().catch(() => ''),
     ]);
+    cargandoUrlRef.current = null;
     if (typeof v === 'string' && v) setVersionApp(v);
     setCargando(false);
     if (!r.ok || !r.profiles) { setError(t('gal.failed', { error: r.error ?? '?' })); return; }
     if (r.profiles.length === 0) { setError(t('gal.empty')); return; }
     setManifestUrl(donde);
     setLista(r.profiles);
+  }, [api, url, manifestUrl, versionApp, t]);
+
+  useEffect(() => {
+    if (iniciadoRef.current) return;
+    iniciadoRef.current = true;
+    cargar(GALERIA_OFICIAL);
+  }, [cargar]);
+
+  const cargarReadmeOpcional = async (e: EntradaGaleria) => {
+    if (e.readme || !e.readmeUrl || !api?.gallery) return;
+    const rr = await api.gallery.readme(e.readmeUrl);
+    setElegido((prev) => {
+      if (!prev || prev.entrada.id !== e.id) return prev;
+      return {
+        ...prev,
+        readme: rr.ok ? { texto: rr.texto ?? '', cargando: false } : { error: rr.error ?? '?', cargando: false },
+      };
+    });
   };
 
   const mirar = async (e: EntradaGaleria) => {
@@ -102,30 +154,48 @@ export function ContenidoTienda({ instalados, accent }: {
       setError(t('gal.needsUpdate', { version: e.minAppVersion }));
       return;
     }
-    setCargando(true); setError(null); setAviso(null);
+    setError(null);
+    setAviso(null);
+    setErrorPlugin(null);
+
+    const estadoInicial = e. readme
+      ? { texto: e.readme, cargando: false }
+      : e.readmeUrl
+        ? { cargando: true }
+        : null;
+
+    if (e.kind === 'plugin') {
+      const { estado, versionInstalada } = estadoGeneralDeEntrada(e, instalados, pluginsInstalados, manifestUrl);
+      setElegido({
+        entrada: e,
+        perfil: null,
+        riesgo: construirRiesgoPlugin(e, t),
+        estado,
+        versionInstalada,
+        readme: estadoInicial,
+      });
+      await cargarReadmeOpcional(e);
+      return;
+    }
+
+    setCargando(true);
     const r = await api.gallery.profile(e.url);
     if (!r.ok || !r.riesgo) {
       setCargando(false);
       setError(t('gal.failed', { error: r.error ?? '?' }));
       return;
     }
-    const { estado, instalado } = estadoDeEntrada(e, instalados, manifestUrl);
+    const { estado, versionInstalada } = estadoGeneralDeEntrada(e, instalados, pluginsInstalados, manifestUrl);
     setElegido({
-      entrada: e, perfil: r.perfil, riesgo: r.riesgo, estado,
-      versionInstalada: instalado?.version,
-      readme: e.readme ? { texto: e.readme, cargando: false } : e.readmeUrl ? { cargando: true } : null,
+      entrada: e,
+      perfil: r.perfil,
+      riesgo: r.riesgo,
+      estado,
+      versionInstalada,
+      readme: estadoInicial,
     });
     setCargando(false);
-    if (!e.readme && e.readmeUrl) {
-      const rr = await api.gallery.readme(e.readmeUrl);
-      setElegido((prev) => {
-        if (!prev || prev.entrada.id !== e.id) return prev;
-        return {
-          ...prev,
-          readme: rr.ok ? { texto: rr.texto ?? '', cargando: false } : { error: rr.error ?? '?', cargando: false },
-        };
-      });
-    }
+    await cargarReadmeOpcional(e);
   };
 
   const origenDe = (e: EntradaGaleria): OrigenInstalacion => ({
@@ -158,148 +228,244 @@ export function ContenidoTienda({ instalados, accent }: {
       : t('tienda.donePage'));
   };
 
+  const instalarPluginElegido = async () => {
+    if (!elegido || elegido.entrada.kind !== 'plugin' || !api?.plugins) return;
+    const { entrada } = elegido;
+    if (!entrada.url || !entrada.sha256 || !entrada.uuid) {
+      setErrorPlugin(t('tienda.errInvalido'));
+      return;
+    }
+    setInstalandoPlugin(true);
+    setErrorPlugin(null);
+    try {
+      const actual = estadoGeneralDeEntrada(entrada, instalados, pluginsInstalados, manifestUrl);
+      if (actual.estadoPlugin === 'actualizable') {
+        await api.plugins.uninstall(entrada.uuid).catch(() => false);
+      }
+      const res = await api.plugins.installFromUrl({
+        url: entrada.url,
+        sha256: entrada.sha256,
+        uuid: entrada.uuid,
+      });
+      if (res.ok === false) {
+        if (res.codigo !== 'cancelado') {
+          setErrorPlugin(traducirErrorPlugin(res.codigo, res.detalle, t));
+        }
+      } else {
+        const nuevos = await api.plugins.list().catch(() => pluginsInstalados);
+        setPluginsInstalados(nuevos);
+        setAviso(t('tienda.donePlugin', { name: entrada.label }));
+      }
+    } catch {
+      setErrorPlugin(t('tienda.errGenerico'));
+    } finally {
+      setInstalandoPlugin(false);
+    }
+  };
+
+  const desinstalarPlugin = async (uuid: string, etiqueta: string) => {
+    if (!api?.plugins || !uuid) return;
+    try {
+      const ok = await api.plugins.uninstall(uuid);
+      if (ok) {
+        const nuevos = await api.plugins.list().catch(() => []);
+        setPluginsInstalados(nuevos);
+        setAviso(t('tienda.donePluginUninstalled', { name: etiqueta }));
+      }
+    } catch {
+      /* fallo silencioso o manejado por main */
+    }
+  };
+
+  const conteos = useMemo(() => contarPorTipo(lista ?? []), [lista]);
   const filtrada = useMemo(
     () => (lista ? filtrarEntradas(lista, filtros) : []),
     [lista, filtros],
   );
-  const updates = useMemo(
-    () => (lista ?? []).filter((e) => estadoDeEntrada(e, instalados, manifestUrl).estado === 'update').length,
-    [lista, instalados, manifestUrl],
+  const destacados = useMemo(
+    () => elegirDestacados(filtrada),
+    [filtrada],
   );
-
-  const menudo: React.CSSProperties = {
-    fontFamily: VD.mono,
-    fontSize: 8,
-    color: VD.textMuted,
-    lineHeight: 1.6,
-  };
-
-  const inputStyle: React.CSSProperties = {
-    background: VD.surface,
-    border: `1px solid ${VD.border}`,
-    borderRadius: VD.radius.sm,
-    color: VD.text,
-    fontFamily: VD.mono,
-    fontSize: 9,
-    padding: '4px 8px',
-    minHeight: 28,
-    boxSizing: 'border-box',
-    outline: 'none',
-  };
-
-  const miniBtn = (c: string, primario = false): React.CSSProperties => ({
-    padding: '4px 12px',
-    minHeight: 28,
-    background: primario ? c : VD.elevated,
-    border: `1px solid ${primario ? c : VD.border}`,
-    borderRadius: VD.radius.sm,
-    color: primario ? VD.onAccent : c,
-    fontFamily: VD.mono,
-    fontSize: 8,
-    letterSpacing: 1,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  });
+  const updates = useMemo(
+    () => (lista ?? []).filter((e) => (
+      estadoGeneralDeEntrada(e, instalados, pluginsInstalados, manifestUrl).estado === 'update'
+    )).length,
+    [lista, instalados, pluginsInstalados, manifestUrl],
+  );
 
   return (
     <div className="vd-scroll" style={{ height: '100%', overflowY: 'auto', background: VD.bg }}>
-      <div style={{
-        maxWidth: maxAncho,
-        margin: '0 auto',
-        padding: paddingContenedor,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontFamily: VD.mono, fontSize: 12, color: VD.text, letterSpacing: 2 }}>
-            {t('tienda.title')}
-          </div>
-          {updates > 0 && (
-            <div style={{
-              ...menudo,
-              color: VD.warning,
-              border: `1px solid ${VD.warning}`,
-              borderRadius: VD.radius.sm,
-              padding: '1px 8px',
-            }}>
-              {t('tienda.updates', { n: updates })}
-            </div>
-          )}
-          <div style={{ flex: 1 }} />
-          <button type="button" onClick={() => api?.tienda.close()} style={miniBtn(VD.textMuted)}>
-            {t('tienda.close')}
-          </button>
-        </div>
+      <div
+        style={{
+          maxWidth: maxAncho,
+          margin: '0 auto',
+          padding: paddingContenedor,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}
+      >
+        <CabeceraTienda
+          url={url}
+          accent={accent}
+          cargando={cargando}
+          updates={updates}
+          onUrlChange={setUrl}
+          onCargar={() => cargar()}
+          onCargarOficial={() => cargar(GALERIA_OFICIAL)}
+          onCerrar={() => api?.tienda.close()}
+        />
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') cargar(); }}
-            placeholder="https://…/manifest.json"
-            style={{ ...inputStyle, flex: 1 }}
-          />
-          <button
-            type="button"
-            onClick={() => cargar()}
-            disabled={cargando || !url.trim()}
-            style={miniBtn(accent, true)}
-          >
-            {t(cargando ? 'gal.loading' : 'gal.load')}
-          </button>
-          <button
-            type="button"
-            onClick={() => cargar(GALERIA_OFICIAL)}
-            disabled={cargando}
-            style={miniBtn(accent)}
-          >
-            {t('gal.official')}
-          </button>
-        </div>
+        <AvisosTienda
+          error={error}
+          aviso={aviso}
+          cargandoInicial={Boolean(cargando && !lista && !elegido)}
+          onReintentar={() => cargar(url || GALERIA_OFICIAL)}
+        />
 
-        <div style={menudo}>{t('tienda.hint')}</div>
-        {error && <div style={{ ...menudo, color: VD.danger }}>{error}</div>}
-        {aviso && <div style={menudo}>{aviso}</div>}
-
-        {lista && !elegido && (
-          <>
-            <BarraTienda
-              filtros={filtros}
-              apps={appsDeEntradas(lista)}
-              tags={tagsDeEntradas(lista)}
-              total={filtrada.length}
-              onFiltros={setFiltros}
-              onLimpiar={() => setFiltros(FILTROS_VACIOS)}
-            />
-            {filtros.kind === 'plugin' ? (
-              <EstadoPluginsTienda onVolver={() => setFiltros((prev) => ({ ...prev, kind: 'all' }))} />
-            ) : (
-              <ListaTienda
-                lista={filtrada}
-                instalados={instalados}
-                manifestUrl={manifestUrl}
-                elegidoId={null}
-                onMirar={mirar}
-              />
-            )}
-          </>
-        )}
-
-        {elegido && (
-          <FichaTienda
-            entrada={elegido.entrada}
-            riesgo={elegido.riesgo}
-            estado={elegido.estado}
-            versionInstalada={elegido.versionInstalada}
-            readme={elegido.readme}
-            puedeAgregarPagina
-            onInstalarPerfil={instalarPerfil}
-            onInstalarPagina={instalarPagina}
-            onCerrar={() => setElegido(null)}
-          />
-        )}
+        <CuerpoPrincipalTienda
+          lista={lista}
+          filtrada={filtrada}
+          destacados={destacados}
+          conteos={conteos}
+          filtros={filtros}
+          instalados={instalados}
+          pluginsInstalados={pluginsInstalados}
+          manifestUrl={manifestUrl}
+          cargando={cargando}
+          hayError={Boolean(error)}
+          elegido={elegido}
+          instalandoPlugin={instalandoPlugin}
+          errorPlugin={errorPlugin}
+          onFiltros={setFiltros}
+          onLimpiarFiltros={() => setFiltros(FILTROS_VACIOS)}
+          onRecargar={() => cargar(url || GALERIA_OFICIAL)}
+          onMirar={mirar}
+          onInstalarPerfil={instalarPerfil}
+          onInstalarPagina={instalarPagina}
+          onInstalarPlugin={instalarPluginElegido}
+          onDesinstalarPlugin={desinstalarPlugin}
+          onCerrarFicha={() => { setElegido(null); setErrorPlugin(null); }}
+        />
       </div>
     </div>
+  );
+}
+
+
+function CuerpoPrincipalTienda({
+  lista,
+  filtrada,
+  destacados,
+  conteos,
+  filtros,
+  instalados,
+  pluginsInstalados,
+  manifestUrl,
+  cargando,
+  hayError,
+  elegido,
+  instalandoPlugin,
+  errorPlugin,
+  onFiltros,
+  onLimpiarFiltros,
+  onRecargar,
+  onMirar,
+  onInstalarPerfil,
+  onInstalarPagina,
+  onInstalarPlugin,
+  onDesinstalarPlugin,
+  onCerrarFicha,
+}: {
+  lista: EntradaGaleria[] | null;
+  filtrada: EntradaGaleria[];
+  destacados: EntradaGaleria[];
+  conteos: Record<'all' | 'profile' | 'page' | 'plugin', number>;
+  filtros: FiltrosTienda;
+  instalados: InstaladoTienda[];
+  pluginsInstalados: PluginInfo[];
+  manifestUrl: string;
+  cargando: boolean;
+  hayError: boolean;
+  elegido: Elegido | null;
+  instalandoPlugin: boolean;
+  errorPlugin: string | null;
+  onFiltros: (f: FiltrosTienda) => void;
+  onLimpiarFiltros: () => void;
+  onRecargar: () => void;
+  onMirar: (e: EntradaGaleria) => void;
+  onInstalarPerfil: (agregarAlDeck: boolean) => void;
+  onInstalarPagina: () => void;
+  onInstalarPlugin: () => void;
+  onDesinstalarPlugin: (uuid: string, etiqueta: string) => void;
+  onCerrarFicha: () => void;
+}) {
+  if (elegido) {
+    const estadoElegido = estadoGeneralDeEntrada(
+      elegido.entrada, instalados, pluginsInstalados, manifestUrl,
+    );
+    const uuidPlugin = elegido.entrada.uuid;
+    return (
+      <FichaTienda
+        entrada={elegido.entrada}
+        riesgo={elegido.riesgo}
+        estado={estadoElegido.estado}
+        estadoPlugin={estadoElegido.estadoPlugin}
+        versionInstalada={estadoElegido.versionInstalada}
+        readme={elegido.readme}
+        puedeAgregarPagina
+        instalandoPlugin={instalandoPlugin}
+        errorPlugin={errorPlugin}
+        onInstalarPerfil={onInstalarPerfil}
+        onInstalarPagina={onInstalarPagina}
+        onInstalarPlugin={onInstalarPlugin}
+        onDesinstalarPlugin={
+          uuidPlugin ? () => onDesinstalarPlugin(uuidPlugin, elegido.entrada.label) : undefined
+        }
+        onCerrar={onCerrarFicha}
+      />
+    );
+  }
+
+  const sinFiltrosSecundarios = filtros.texto.trim() === '' && filtros.app === '' && filtros.tag === '';
+  const mostrarEstadoPlugins = filtros.kind === 'plugin' && conteos.plugin === 0 && !cargando;
+  const mostrarCatalogo = Boolean(lista && (filtros.kind !== 'plugin' || conteos.plugin > 0));
+
+  return (
+    <>
+      <BarraTienda
+        filtros={filtros}
+        conteos={conteos}
+        apps={appsDeEntradas(lista ?? [])}
+        tags={tagsDeEntradas(lista ?? [], filtros.kind)}
+        total={filtrada.length}
+        onFiltros={onFiltros}
+        onLimpiar={onLimpiarFiltros}
+      />
+
+      {mostrarEstadoPlugins && (
+        <EstadoPluginsTienda
+          sinRed={!lista && hayError}
+          pluginsInstalados={pluginsInstalados}
+          onRecargar={onRecargar}
+          onDesinstalarPlugin={(p) => onDesinstalarPlugin(p.uuid, p.nombre)}
+          onVolver={() => onFiltros({ ...filtros, kind: 'all' })}
+        />
+      )}
+
+      {mostrarCatalogo && (
+        <ListaTienda
+          lista={filtrada}
+          destacados={destacados}
+          instalados={instalados}
+          pluginsInstalados={pluginsInstalados}
+          manifestUrl={manifestUrl}
+          elegidoId={null}
+          mostrarDestacados={sinFiltrosSecundarios}
+          onMirar={onMirar}
+          onLimpiarFiltros={onLimpiarFiltros}
+        />
+      )}
+    </>
   );
 }

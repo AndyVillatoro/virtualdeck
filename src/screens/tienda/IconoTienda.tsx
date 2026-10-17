@@ -28,7 +28,7 @@ export function IconoTienda({
 }: IconoTiendaProps) {
   const VD = useTheme();
   const c = color ?? VD.text;
-  const fallbackGlyph = kind === 'page' ? 'DOTS' : 'FOLDER';
+  const fallbackGlyph = kind === 'plugin' ? 'USB_PLUG' : kind === 'page' ? 'APP_WINDOW' : 'FOLDER';
 
   const glyph8x8 = icono ? resolveDotGlyph(icono) : null;
   const [bits16, setBits16] = useState<string | null>(null);
