@@ -3,7 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
 import type { EntradaGaleria, InstaladoTienda, PluginInfo } from '../../types';
-import { estadoGeneralDeEntrada } from './tiendaUtils';
+import { estadoGeneralDeEntrada, partirDestacados } from './tiendaUtils';
 import { TarjetaTienda } from './TarjetaTienda';
 import { IconoTienda } from './IconoTienda';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
@@ -122,23 +122,23 @@ export function ListaTienda({
     );
   }
 
-  const verDestacados = mostrarDestacados && destacados.length > 0 && lista.length > 1;
+  const { vitrina, catalogo } = partirDestacados(lista, destacados, mostrarDestacados);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {verDestacados && (
+      {vitrina.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <CabeceraSeccion glifo="SPARKLE" titulo={t('tienda.featured')} colorGlifo={VD.accent} />
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: destacados.length > 1
+              gridTemplateColumns: vitrina.length > 1
                 ? 'repeat(auto-fit, minmax(320px, 1fr))'
                 : '1fr',
               gap: 12,
             }}
           >
-            {destacados.map((e) => {
+            {vitrina.map((e) => {
               const { estado, versionInstalada } = estadoGeneralDeEntrada(
                 e, instalados, pluginsInstalados, manifestUrl,
               );
@@ -164,7 +164,7 @@ export function ListaTienda({
           colorGlifo={VD.textDim}
           derecha={
             <span style={{ fontFamily: VD.mono, fontSize: VD.tipo.xs, color: VD.textMuted }}>
-              {t('tienda.count', { n: lista.length })}
+              {t('tienda.count', { n: catalogo.length })}
             </span>
           }
         />
@@ -177,7 +177,7 @@ export function ListaTienda({
             gap: 12,
           }}
         >
-          {lista.map((e) => {
+          {catalogo.map((e) => {
             const { estado, versionInstalada } = estadoGeneralDeEntrada(
               e, instalados, pluginsInstalados, manifestUrl,
             );

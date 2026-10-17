@@ -154,6 +154,52 @@ export function elegirDestacados(lista: EntradaGaleria[]): EntradaGaleria[] {
   return segunda ? [primera, segunda] : [primera];
 }
 
+/**
+ * Clave estable de una entrada para comparar: el `uuid` identifica al plugin
+ * de verdad (el `id` nombra la fila del manifiesto); el resto va por tipo e
+ * `id`, para que un perfil y un plugin con el mismo id no se confundan.
+ */
+function claveDeEntrada(e: EntradaGaleria): string {
+  if (e.kind === 'plugin' && e.uuid && e.uuid.trim()) return `plugin:${e.uuid}`;
+  return `${e.kind ?? 'profile'}:${e.id}`;
+}
+
+/**
+ * Sin entradas repetidas: la primera aparición manda y el orden no se toca.
+ * Un manifiesto puede traer la misma fila dos veces (basta con que al
+ * publicarlo se añada la entrada a una lista que ya la tenía); la tienda
+ * enseña una tarjeta por cosa, no una por fila.
+ */
+export function deduplicarEntradas(lista: EntradaGaleria[]): EntradaGaleria[] {
+  const vistas = new Set<string>();
+  const salida: EntradaGaleria[] = [];
+  for (const e of lista) {
+    const clave = claveDeEntrada(e);
+    if (vistas.has(clave)) continue;
+    vistas.add(clave);
+    salida.push(e);
+  }
+  return salida;
+}
+
+/**
+ * Reparto del catálogo entre la vitrina de destacados y la rejilla: lo que ya
+ * sale destacado arriba no vuelve a salir en la lista de abajo. Si al quitarlo
+ * el catálogo se queda sin nada (un manifiesto con solo esas entradas), no hay
+ * vitrina: se enseña la lista entera una vez.
+ */
+export function partirDestacados(
+  lista: EntradaGaleria[],
+  destacados: EntradaGaleria[],
+  mostrar: boolean,
+): { vitrina: EntradaGaleria[]; catalogo: EntradaGaleria[] } {
+  if (!mostrar || destacados.length === 0) return { vitrina: [], catalogo: lista };
+  const yaDestacados = new Set(destacados.map(claveDeEntrada));
+  const catalogo = lista.filter((e) => !yaDestacados.has(claveDeEntrada(e)));
+  if (catalogo.length === 0) return { vitrina: [], catalogo: lista };
+  return { vitrina: destacados, catalogo };
+}
+
 /** Apps destino presentes en el manifiesto, para el desplegable. */
 export function appsDeEntradas(lista: EntradaGaleria[]): string[] {
   const vistas = new Set<string>();

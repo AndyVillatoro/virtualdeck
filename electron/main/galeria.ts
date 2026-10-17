@@ -165,14 +165,31 @@ function sanearEntrada(p: EntradaGaleria): EntradaGaleria | null {
   };
 }
 
+/**
+ * Clave de una fila ya saneada para descartar repetidas: el uuid identifica
+ * al plugin de verdad; el resto va por tipo e id.
+ */
+function claveDeFila(p: EntradaGaleria): string {
+  if (p.kind === 'plugin' && p.uuid) return `plugin:${p.uuid}`;
+  return `${p.kind ?? 'profile'}:${p.id}`;
+}
+
 export async function manifiesto(url: string): Promise<{ ok: true; profiles: EntradaGaleria[] } | { ok: false; error: string }> {
   try {
     const j = await traerJson(url) as { profiles?: unknown };
     if (!Array.isArray(j?.profiles)) return { ok: false, error: tm('gal.badManifest') };
     const profiles: EntradaGaleria[] = [];
+    const vistas = new Set<string>();
     for (const p of (j.profiles as EntradaGaleria[])) {
       const entrada = sanearEntrada(p);
-      if (entrada) profiles.push(entrada);
+      if (!entrada) continue;
+      // Un manifiesto puede traer la misma fila dos veces (basta con que al
+      // publicarla se añada a una lista que ya la tenía). La primera manda y
+      // el orden se respeta: la tienda enseña una tarjeta por cosa.
+      const clave = claveDeFila(entrada);
+      if (vistas.has(clave)) continue;
+      vistas.add(clave);
+      profiles.push(entrada);
     }
     return { ok: true, profiles };
   } catch (e) {

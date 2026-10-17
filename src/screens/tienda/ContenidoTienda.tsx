@@ -20,6 +20,7 @@ import {
   appsDeEntradas,
   construirRiesgoPlugin,
   contarPorTipo,
+  deduplicarEntradas,
   elegirDestacados,
   estadoGeneralDeEntrada,
   filtrarEntradas,
@@ -29,6 +30,7 @@ import {
   type FiltrosTienda,
 } from './tiendaUtils';
 import { GALERIA_OFICIAL, versionMayor } from '../../utils/galeriaComun';
+import { deduplicarPlugins } from '../../utils/plugins/deduplicar';
 import { AvisosTienda, CabeceraTienda } from './CabeceraTienda';
 
 interface Elegido {
@@ -87,8 +89,9 @@ export function ContenidoTienda({ instalados, accent }: {
   useEffect(() => {
     const apiPlugins = api?.plugins;
     if (!apiPlugins) return undefined;
-    apiPlugins.list().then(setPluginsInstalados).catch(() => {});
-    return apiPlugins.onChanged(setPluginsInstalados);
+    const poner = (p: PluginInfo[]) => setPluginsInstalados(deduplicarPlugins(p));
+    apiPlugins.list().then(poner).catch(() => {});
+    return apiPlugins.onChanged(poner);
   }, [api]);
 
   const pedir = (pedido: PedidoTienda): Promise<ResultadoTienda> => new Promise((resolve) => {
@@ -125,7 +128,7 @@ export function ContenidoTienda({ instalados, accent }: {
     if (!r.ok || !r.profiles) { setError(t('gal.failed', { error: r.error ?? '?' })); return; }
     if (r.profiles.length === 0) { setError(t('gal.empty')); return; }
     setManifestUrl(donde);
-    setLista(r.profiles);
+    setLista(deduplicarEntradas(r.profiles));
   }, [api, url, manifestUrl, versionApp, t]);
 
   useEffect(() => {
@@ -253,7 +256,7 @@ export function ContenidoTienda({ instalados, accent }: {
         }
       } else {
         const nuevos = await api.plugins.list().catch(() => pluginsInstalados);
-        setPluginsInstalados(nuevos);
+        setPluginsInstalados(deduplicarPlugins(nuevos));
         setAviso(t('tienda.donePlugin', { name: entrada.label }));
       }
     } catch {
@@ -269,7 +272,7 @@ export function ContenidoTienda({ instalados, accent }: {
       const ok = await api.plugins.uninstall(uuid);
       if (ok) {
         const nuevos = await api.plugins.list().catch(() => []);
-        setPluginsInstalados(nuevos);
+        setPluginsInstalados(deduplicarPlugins(nuevos));
         setAviso(t('tienda.donePluginUninstalled', { name: etiqueta }));
       }
     } catch {
