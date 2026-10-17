@@ -4,6 +4,8 @@ import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
 import { SelectorPresetsControl } from './SelectorPresetsControl';
+import { SelectorPluginControl } from './SelectorPluginControl';
+import { LimiteErrorInspector } from './LimiteErrorInspector';
 import { PanelPerfilesPagina } from './PanelPerfilesPagina';
 import { PanelVacio } from './PanelInspectorVacio';
 import { MiniPreview } from './PreviaInspector';
@@ -11,8 +13,44 @@ import { BotonEditar, FilaAccion, SeccionModos } from './PiezasInspector';
 import { ListaHermanosPerilla } from './ListaHermanosPerilla';
 import { obtenerNombreYTipoControl, textoAccionSeleccionada } from './textoPanelInspector';
 import type { PanelInspectorControlProps } from './tiposPanelInspector';
+import type { ButtonConfig } from '../../types';
 
 export type { HermanoPerilla, PanelInspectorControlProps } from './tiposPanelInspector';
+
+/** Los botones del control en orden de hueco y cuál está elegido, para el plugin. */
+function huecosParaPlugin(
+  props: Pick<PanelInspectorControlProps, 'controlMeta' | 'boton' | 'perilla' | 'hermanosPerilla'>,
+): { botones: (ButtonConfig | undefined)[]; seleccionado: number } | null {
+  const { controlMeta, boton } = props;
+  if (!controlMeta || !boton) return null;
+  if (controlMeta.control === 'knob') return huecosDePerilla(props);
+  if (controlMeta.control === 'swipe') return huecosDeTira(props);
+  return { botones: [boton], seleccionado: 0 };
+}
+
+/** La perilla son tres huecos fijos: izq, pulsar, der. */
+function huecosDePerilla(
+  props: Pick<PanelInspectorControlProps, 'controlMeta' | 'perilla'>,
+): { botones: (ButtonConfig | undefined)[]; seleccionado: number } | null {
+  const { controlMeta, perilla } = props;
+  if (!perilla) return null;
+  const gesto = controlMeta?.gesto ?? 'pulsar';
+  return {
+    botones: [perilla.izq, perilla.pulsar, perilla.der],
+    seleccionado: gesto === 'izq' ? 0 : gesto === 'der' ? 2 : 1,
+  };
+}
+
+/** La tira son dos: el elegido y su hermano. */
+function huecosDeTira(
+  props: Pick<PanelInspectorControlProps, 'controlMeta' | 'boton' | 'hermanosPerilla'>,
+): { botones: (ButtonConfig | undefined)[]; seleccionado: number } | null {
+  const { controlMeta, boton, hermanosPerilla } = props;
+  if (!boton) return null;
+  const hermano = hermanosPerilla?.find((h) => h.gesto !== controlMeta?.gesto)?.boton;
+  if (controlMeta?.gesto === 'der') return { botones: [hermano, boton], seleccionado: 1 };
+  return { botones: [boton, hermano], seleccionado: 0 };
+}
 
 export function PanelInspectorControl({
   controlMeta,
@@ -34,16 +72,26 @@ export function PanelInspectorControl({
 
   if (!controlMeta) {
     if (onAplicarPreset) {
-      return <PanelPerfilesPagina ancho={w} disabled={disabled} onAplicar={onAplicarPreset} onCerrar={onCerrar} />;
+      return (
+        <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
+          <PanelPerfilesPagina ancho={w} disabled={disabled} onAplicar={onAplicarPreset} onCerrar={onCerrar} />
+        </LimiteErrorInspector>
+      );
     }
-    return <PanelVacio vd={VD} texto={t('disp.inspector.ayuda')} ancho={w} onCerrar={onCerrar} t={t} />;
+    return (
+      <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
+        <PanelVacio vd={VD} texto={t('disp.inspector.ayuda')} ancho={w} onCerrar={onCerrar} t={t} />
+      </LimiteErrorInspector>
+    );
   }
 
   const { nombre, tipo } = obtenerNombreYTipoControl(controlMeta, t);
   const glifo = resolveDotGlyph(boton?.icon);
   const textoAccion = textoAccionSeleccionada(controlMeta, boton, t);
+  const pluginHuecos = huecosParaPlugin({ controlMeta, boton, perilla, hermanosPerilla });
 
   return (
+    <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
     <aside
       style={{
         width: w,
@@ -193,7 +241,21 @@ export function PanelInspectorControl({
             />
           </div>
         )}
+
+        {/* Plugins instalados: la misma acción `plugin` del editor */}
+        {onAplicarPreset && pluginHuecos && (
+          <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
+            <SelectorPluginControl
+              key={boton?.id}
+              botones={pluginHuecos.botones}
+              seleccionado={pluginHuecos.seleccionado}
+              onAplicar={onAplicarPreset}
+              disabled={disabled}
+            />
+          </div>
+        )}
       </div>
     </aside>
+    </LimiteErrorInspector>
   );
 }

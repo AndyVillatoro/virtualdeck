@@ -163,6 +163,23 @@ export async function dibujarImagenConTrama(
   return true;
 }
 
+/**
+ * La imagen de un plugin, a sangre y sin trama (decisión del MVP, igual que
+ * en la celda del deck): lo que manda el plugin son sus PNG con sus colores,
+ * y la trama de puntos los ensuciaría. Rellena todo el LCD (`cover`).
+ */
+export async function dibujarImagenPlena(
+  ctx: CanvasRenderingContext2D, src: string, ancho: number, alto: number,
+): Promise<boolean> {
+  const imagen = await cargarImagen(src);
+  if (!imagen || !imagen.width || !imagen.height) return false;
+  const escala = Math.max(ancho / imagen.width, alto / imagen.height);
+  const w = imagen.width * escala;
+  const h = imagen.height * escala;
+  ctx.drawImage(imagen, (ancho - w) / 2, (alto - h) / 2, w, h);
+  return true;
+}
+
 export async function dibujarMarca(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number, centroY: number,
 ): Promise<boolean> {

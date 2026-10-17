@@ -11,6 +11,10 @@ import {
   esAppPropia, idPaginaSegunApp, normalizarApp,
 } from './paginaSegunApp';
 import { paginaDe, type PaginaDispositivo, type VivoPagina } from './paginasSuperficie';
+import { usePluginsSuperficie } from './pluginsSuperficie';
+import { contextoDe } from '../plugins/ref';
+import { alCambiarVisual, leerVisual } from '../plugins/visual';
+import type { PluginVisual } from '../../types/plugins';
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
 import { useAvisoPerilla, type AvisoPerillaApi } from './useAvisoPerilla';
 import { useWidgetsSuperficie } from './useWidgetsSuperficie';
@@ -112,12 +116,14 @@ function firmaDe(
   boton: ButtonConfig | undefined, encendido: boolean,
   ancho: number, alto: number, rotacion: number,
   colores: ColoresSuperficie, fuentes: boolean, datos?: DatosWidget | null,
+  visual?: PluginVisual | null,
 ): string {
   if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
   // `label`/`sublabel` llegan ya interpolados desde `paginaDe`: la firma lleva
   // el texto final (`{VOL}` resuelto), así que un cambio de variable repinta.
   // `firmaWidget` es la parte del dato vivo: solo repinta la tecla cuyo
-  // `line1`/`line2`/`tone`/`glyph` cambió.
+  // `line1`/`line2`/`tone`/`glyph` cambió. Lo que el plugin pinta (`setImage`/
+  // `setTitle`) también firma: sin esto la tecla no se repinta al llegar.
   return JSON.stringify([
     boton.label, boton.sublabel, boton.icon, boton.iconoPuntos?.bits, boton.imageData,
     boton.customGlyph57, boton.brandIcon, boton.subButtons,
@@ -125,8 +131,14 @@ function firmaDe(
     boton.bgColor, boton.fgColor, boton.action?.type,
     boton.isToggle, boton.animacion, boton.efectoPulsar, boton.aspectoEncendido, encendido,
     ancho, alto, rotacion, colores.fondo, colores.texto, colores.aviso, colores.critico,
-    fuentes, firmaWidget(datos),
+    fuentes, firmaWidget(datos), visual?.imagen ?? null, visual?.titulo ?? null,
   ]);
+}
+
+/** Lo que el plugin de la tecla está pintando, por su contexto de superficie. */
+function visualDe(boton: ButtonConfig | undefined, config: DeckConfig): PluginVisual | undefined {
+  if (boton?.action.type !== 'plugin') return undefined;
+  return leerVisual(contextoDe(boton, config));
 }
 
 /** Pinta las teclas cuya firma cambió y devuelve las imágenes nuevas por hueco. */
@@ -140,6 +152,7 @@ async function pintarCambiadas(
   fuentes: boolean,
   encendidos: Set<string>,
   widgets: Record<string, DatosWidget>,
+  config: DeckConfig,
   conAviso?: (serial: string, hueco: number) => boolean,
 ): Promise<Record<number, string>> {
   const previas = firmas.get(serial) ?? [];
@@ -150,14 +163,15 @@ async function pintarCambiadas(
     const encendido = !!boton && encendidos.has(boton.id);
     const efectivo = boton ? resolverBotonLcd(boton, encendido) : boton;
     const datos = boton ? widgets[boton.id] : undefined;
+    const visual = visualDe(boton, config);
     const rotacion = pagina.rotacion ?? lcd.rotacion;
-    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes, datos);
+    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes, datos, visual);
     nuevas[hueco] = firma;
     if (previas[hueco] === firma) continue;
     // Una tecla que está enseñando un aviso no se pisa: la firma queda al día
     // y el aviso repinta lo normal al vencer (T-HW-21).
     if (conAviso?.(serial, hueco)) continue;
-    const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion, undefined, datos);
+    const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion, undefined, datos, visual);
     await api.superficies.imagen(serial, indice, imagen.jpegBase64);
     if (imagen.dataUrl) pintadas[hueco] = imagen.dataUrl;
   }
@@ -270,6 +284,12 @@ export function useSuperficies({
   const [bases, setBases] = useState<Record<string, string>>({});
   /** Modo activo de cada perilla multimodo, por `claveModoPerilla`. En memoria. */
   const [modos, setModos] = useState<Record<string, number>>({});
+  /**
+   * Lo último que los plugins pintaron (`setImage`/`setTitle`): no vive en la
+   * config y el efecto de pintado no lo vería cambiar, así que se cuenta para
+   * repintar la tecla al llegar.
+   */
+  const [versionVisuales, setVersionVisuales] = useState(0);
 
   // El traductor de los avisos: el que pase el llamador o el del idioma de la
   // config. `App` no lo pasa (T-HW-21), así que sin él se sigue el idioma.
@@ -288,7 +308,6 @@ export function useSuperficies({
   // Los datos vivos de los widgets en las páginas de dock (roadmap 82). Sin
   // botones con widget en las páginas de superficie no se sondea nada.
   const widgets = useWidgetsSuperficie({ config, api, sensores: sensorList });
-
   const configRef = useRef(config);
   const dispositivosRef = useRef(dispositivos);
   const imagenesRef = useRef(imagenes);
@@ -325,6 +344,14 @@ export function useSuperficies({
     imagenesRef.current = next;
     setImagenes(next);
   }, []);
+
+  // Los plugins instalados, avisados de las teclas de cada dock (su
+  // `willAppear`, sin el cual ni ejecutan ni pintan).
+  usePluginsSuperficie({ api, config, dispositivos, activas });
+
+  // Lo que los plugins pintan llega sin que nadie lo pida: al llegar se
+  // repinta (la firma de cada tecla lleva su imagen y su título).
+  useEffect(() => alCambiarVisual(() => setVersionVisuales((v) => v + 1)), []);
 
   // Aviso de la tecla al girar una perilla (T-HW-21, roadmap 85).
   const avisos = useAvisoPerilla({
@@ -555,7 +582,7 @@ export function useSuperficies({
         const pintadas = await pintarCambiadas(
           api, dispositivo.serial, pagina, { fondo, texto, aviso, critico },
           { iconoSvg: iconoRef.current, esGlifoDot: esGlifoDotRef.current }, firmas.current, fuentesListas,
-          encendidos, widgets, avisosRef.current.conAviso,
+          encendidos, widgets, config, avisosRef.current.conAviso,
         );
         const huecos = Object.keys(pintadas);
         if (huecos.length === 0) continue;
@@ -566,7 +593,7 @@ export function useSuperficies({
       }
       if (cambio) setImagenes(nuevasImagenes);
     })();
-  }, [api, config, dispositivos, activas, fondo, texto, aviso, critico, fuentesListas, vivo, widgets]);
+  }, [api, config, dispositivos, activas, fondo, texto, aviso, critico, fuentesListas, vivo, widgets, versionVisuales]);
 
   // Los GIF animados de la tecla física. Va después del pintado estático (que
   // deja el primer fotograma) y comparte la resolución de página con él. Las

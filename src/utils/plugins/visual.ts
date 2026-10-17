@@ -47,6 +47,21 @@ function suscribir(oyente: () => void): () => void {
 }
 
 /**
+ * Lo que el plugin pintó en este contexto, sin suscripción.
+ *
+ * Para las teclas del dock (`pintarTecla` no es un componente y no puede usar
+ * el hook): quien pinta se suscribe con `alCambiarVisual` y relee con esto.
+ */
+export function leerVisual(contexto: string): PluginVisual | undefined {
+  return visuales.get(contexto);
+}
+
+/** Avisa cuando cualquier plugin pinta o borra algo (para repintar docks). */
+export function alCambiarVisual(oyente: () => void): () => void {
+  return suscribir(oyente);
+}
+
+/**
  * Lo que el plugin pintó en este botón, o `undefined`.
  *
  * Con `contexto === null` (el botón no es de plugin) no se abre la suscripción:

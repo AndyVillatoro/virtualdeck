@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import type { ButtonConfig, DeckConfig } from '../types';
 import { SearchOverlay } from '../components/SearchOverlay';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
@@ -154,19 +154,22 @@ export function OverlaysApp({
   return (
     <>
       {editingButton && (
-        <EditorB
-          button={editingButton}
-          rgbProfiles={config.rgb?.profiles ?? []}
-          deckState={config.state ?? {}}
-          pages={config.pages}
-          onClose={() => setEditingId(null)}
-          onSave={(updated) => { updateButton(updated); setEditingId(null); }}
-          onClear={(id) => { clearButton(id); setEditingId(null); }}
-        />
+        <Suspense fallback={null}>
+          <EditorB
+            button={editingButton}
+            rgbProfiles={config.rgb?.profiles ?? []}
+            deckState={config.state ?? {}}
+            pages={config.pages}
+            onClose={() => setEditingId(null)}
+            onSave={(updated) => { updateButton(updated); setEditingId(null); }}
+            onClear={(id) => { clearButton(id); setEditingId(null); }}
+          />
+        </Suspense>
       )}
 
       {showOnboarding && (
-        <Onboarding
+        <Suspense fallback={null}>
+          <Onboarding
           accent={config.accent}
           language={config.language ?? 'system'}
           theme={config.theme ?? 'dark'}
@@ -176,7 +179,8 @@ export function OverlaysApp({
           onExport={handleConfigExport}
           onImport={handleConfigImport}
           onClose={finishOnboarding}
-        />
+          />
+        </Suspense>
       )}
 
       {searchOpen && view === 'main' && (

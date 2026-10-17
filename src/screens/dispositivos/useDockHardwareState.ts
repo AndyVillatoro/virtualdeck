@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { controlDeHueco, huecosDeControl, teclasLcd } from '../../utils/superficies/disposicion';
+import { controlDeHueco, huecosDeControl, teclasLcd, type GestoHueco } from '../../utils/superficies/disposicion';
 import { rotacionDeSuperficie } from '../../utils/superficies/ajustesSuperficie';
 import { generarResumenControles } from './BarraHardwareActivo';
 import { botonesResueltos } from '../../utils/botonesFijos';
@@ -10,10 +10,48 @@ import {
   obtenerTodosDispositivos,
   usePaginaDispositivo,
 } from './logicaDispositivos';
-import type { DeckConfig, ModoPerilla } from '../../types';
+import type { DeckConfig, ModoPerilla, ButtonConfig } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
 import { huecosDePerfil, type PerfilDock } from '../../data/perfilesDock';
 import type { DisposicionSuperficie, InfoSuperficie } from '../../types/superficies';
+
+interface HermanoControl {
+  gesto: 'izq' | 'pulsar' | 'der';
+  hueco: number | undefined;
+  boton: ButtonConfig | undefined;
+  esActual: boolean;
+}
+
+/**
+ * Los gestos hermanos de una tira táctil (izq/der), con el actual marcado.
+ *
+ * `hermanosPerilla` nació para la perilla (sus otros dos gestos); la tira
+ * necesita lo mismo para aplicar un plugin conservando al hermano: el tipo ya
+ * admite `izq`/`der` y la lista de hermanos solo se enseña en perillas.
+ */
+function hermanosDeTira(
+  disposicionActiva: DisposicionSuperficie,
+  controlSeleccionado: { indice: number; gesto?: GestoHueco },
+  botonesPagina: ButtonConfig[],
+): HermanoControl[] {
+  const ctrl = disposicionActiva.controles.find(
+    (c) => c.tipo === 'swipe' && c.indice === controlSeleccionado.indice,
+  );
+  if (!ctrl) return [];
+  const huecos = huecosDeControl(disposicionActiva, ctrl);
+  const gestos: Array<'izq' | 'der'> = ['izq', 'der'];
+  return gestos
+    .map((gesto, i) => {
+      const hueco = huecos[i];
+      return {
+        gesto,
+        hueco,
+        boton: hueco !== undefined ? botonesPagina[hueco] : undefined,
+        esActual: controlSeleccionado.gesto === gesto,
+      };
+    })
+    .filter((h) => !h.esActual);
+}
 
 interface UseDockHardwareStateProps {
   config: DeckConfig;
@@ -127,7 +165,13 @@ export function useDockHardwareState({
   const botonSeleccionado = selectedHueco !== null ? botonesPagina[selectedHueco] : undefined;
 
   const hermanosPerilla = useMemo(() => {
-    if (!disposicionActiva || !controlSeleccionado || controlSeleccionado.control !== 'knob') {
+    if (!disposicionActiva || !controlSeleccionado) {
+      return [];
+    }
+    if (controlSeleccionado.control === 'swipe') {
+      return hermanosDeTira(disposicionActiva, controlSeleccionado, botonesPagina);
+    }
+    if (controlSeleccionado.control !== 'knob') {
       return [];
     }
     const ctrl = disposicionActiva.controles.find(

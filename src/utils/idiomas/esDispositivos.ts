@@ -32,6 +32,7 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.inspector.accion': 'Acción asignada',
   'disp.inspector.sinAccion': 'Sin acción asignada',
   'disp.inspector.ayuda': 'Pulsa cualquier tecla, botón o acción de perilla para editar su acción.',
+  'disp.inspector.error': 'El inspector no pudo dibujarse. Cierra el panel y vuelve a elegir el control.',
   'disp.perfiles.titulo': 'PERFILES DE PÁGINA',
   'disp.perfiles.desc': 'Rellena todos los controles de esta página con un perfil listo. Pensados para el Stream Dock N3.',
   'disp.perfiles.aviso': 'Sustituye todos los botones de esta página por el perfil «{nombre}». Se deshace con un solo paso.',
@@ -140,4 +141,8 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.aviso.modo': 'MODO {n}/{total}',
   // Un mosaico 2×2 no se puede pulsar desde la tecla física (roadmap 82)
   'disp.aviso.cuadrantes': 'DECK 2x2',
+  // Plugins en el inspector del dock (misma acción `plugin` del editor)
+  'disp.plugin.titulo': 'PLUGINS INSTALADOS',
+  'disp.plugin.aplicar': 'Aplicar al control',
+  'disp.plugin.aplicaPrimero': 'Aplica para poder abrir su ventana de ajustes.',
 };

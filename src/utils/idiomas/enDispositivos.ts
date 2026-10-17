@@ -32,6 +32,7 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.inspector.accion': 'Assigned action',
   'disp.inspector.sinAccion': 'No action assigned',
   'disp.inspector.ayuda': 'Click any key, button or knob action to edit its action.',
+  'disp.inspector.error': 'The inspector could not render. Close the panel and pick the control again.',
   'disp.perfiles.titulo': 'PAGE PROFILES',
   'disp.perfiles.desc': 'Fill every control on this page with a ready-made profile. Designed for the Stream Dock N3.',
   'disp.perfiles.aviso': 'This replaces all the buttons on this page with the "{nombre}" profile. It can be undone in one step.',
@@ -140,4 +141,8 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.aviso.modo': 'MODE {n}/{total}',
   // A 2×2 mosaic cannot be pressed from the physical key (roadmap 82)
   'disp.aviso.cuadrantes': 'DECK 2x2',
+  // Plugins in the dock inspector (same `plugin` action as the editor)
+  'disp.plugin.titulo': 'INSTALLED PLUGINS',
+  'disp.plugin.aplicar': 'Apply to control',
+  'disp.plugin.aplicaPrimero': 'Apply first to open its settings window.',
 };

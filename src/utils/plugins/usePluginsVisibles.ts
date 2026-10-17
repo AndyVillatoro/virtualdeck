@@ -14,10 +14,11 @@ import type { PluginRef } from '../../types/plugins';
  * desaparición, un plugin de «página 2 de 3» se queda en la 2 para siempre al
  * cambiar de página.
  *
- * Lo que hay en pantalla son los botones **de la página activa** más los fijos
- * que se ven desde ella (`botonesResueltos`, el mismo reparto que la rejilla):
- * los plugins del deck y del kiosco. Los de un dock y los del mando móvil se
- * avisan desde su propio sitio cuando se implementen (ver `docs/NOTAS-TECNICAS`).
+ * Lo que hay en pantalla son los botones **de las páginas activas** más los
+ * fijos que se ven desde ellas (`botonesResueltos`, el mismo reparto que la
+ * rejilla): los plugins del deck y del kiosko van por `usePluginsVisibles`;
+ * los de cada dock, por `usePluginsVisiblesDock` con su página activa (el
+ * contexto lleva el serial, así que no se pisan entre superficies).
  */
 
 interface Opciones {
@@ -42,6 +43,17 @@ function refsDeLaPagina(config: DeckConfig, pagina: number): Enviados {
   return mapa;
 }
 
+/** Lo mismo para varias páginas: el contexto ya distingue superficies. */
+function refsDePaginas(config: DeckConfig, paginas: number[]): Enviados {
+  const mapa: Enviados = new Map();
+  for (const pagina of paginas) {
+    for (const [contexto, ref] of refsDeLaPagina(config, pagina)) {
+      mapa.set(contexto, ref);
+    }
+  }
+  return mapa;
+}
+
 function enviar(api: ElectronAPI, ref: PluginRef, visible: boolean): void {
   api.plugins.appear(ref, visible).catch(() => {});
 }
@@ -53,8 +65,8 @@ export function usePluginsVisibles({ api, config, pagina, visible }: Opciones) {
   const enviados = useRef<Enviados>(new Map());
   // La vista actual por referencia: la conciliación con la marcha (efecto de
   // abajo) la lee sin re-suscribirse en cada repintado.
-  const vista = useRef({ config, pagina, visible });
-  vista.current = { config, pagina, visible };
+  const vista = useRef({ config, paginas: [pagina], visible });
+  vista.current = { config, paginas: [pagina], visible };
 
   useEffect(() => {
     if (!api?.plugins) return;
@@ -88,6 +100,52 @@ export function usePluginsVisibles({ api, config, pagina, visible }: Opciones) {
 }
 
 /**
+ * Los botones de plugin de los docks, con sus páginas activas.
+ *
+ * Sin esto el gestor no acepta sus pulsaciones (`press` exige un `appear`
+ * previo) ni les pinta nada: es el hueco del MVP que dejaba a los docks sin
+ * imagen de plugin. El mando móvil sigue fuera (decisión del encargo).
+ */
+export function usePluginsVisiblesDock({
+  api, config, paginas, visible,
+}: {
+  api: ElectronAPI | undefined;
+  config: DeckConfig;
+  /** Índices de las páginas activas de cada dock conectado. */
+  paginas: number[];
+  /** False cuando no hay dock que avisar. */
+  visible: boolean;
+}) {
+  const enviados = useRef<Enviados>(new Map());
+  const vista = useRef({ config, paginas, visible });
+  vista.current = { config, paginas, visible };
+
+  useEffect(() => {
+    if (!api?.plugins) return;
+    const previos = enviados.current;
+    const ahora: Enviados = visible ? refsDePaginas(config, paginas) : new Map();
+
+    for (const [contexto, ref] of ahora) {
+      const antes = previos.get(contexto);
+      if (antes && mismaRef(antes, ref)) continue;
+      if (antes) enviar(api, antes, false);
+      enviar(api, ref, true);
+    }
+    for (const [contexto, ref] of previos) {
+      if (ahora.has(contexto)) continue;
+      enviar(api, ref, false);
+      borrarVisual(contexto);
+    }
+    enviados.current = ahora;
+  }, [api, config, paginas, visible]);
+
+  useEffect(() => {
+    if (!api?.plugins) return undefined;
+    return api.plugins.onChanged((lista) => conciliarConMarcha(api, lista, enviados.current, vista.current));
+  }, [api]);
+}
+
+/**
  * Lo que la marcha obliga a corregir aunque la página no haya cambiado:
  *
  * - Un plugin parado deja su última imagen clavada en la celda (el botón sigue
@@ -103,7 +161,7 @@ function conciliarConMarcha(
   api: ElectronAPI,
   lista: PluginInfo[],
   enviados: Enviados,
-  vista: { config: DeckConfig; pagina: number; visible: boolean },
+  vista: { config: DeckConfig; paginas: number[]; visible: boolean },
 ): void {
   const presentes = new Set(lista.map((p) => p.uuid));
   const enMarcha = new Set(lista.filter((p) => p.estado === 'running' || p.estado === 'starting').map((p) => p.uuid));
@@ -116,7 +174,7 @@ function conciliarConMarcha(
     }
   }
   if (!vista.visible) return;
-  for (const [contexto, ref] of refsDeLaPagina(vista.config, vista.pagina)) {
+  for (const [contexto, ref] of refsDePaginas(vista.config, vista.paginas)) {
     if (enviados.has(contexto) || !enMarcha.has(ref.pluginUuid)) continue;
     enviados.set(contexto, ref);
     enviar(api, ref, true);

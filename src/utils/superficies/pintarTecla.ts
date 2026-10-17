@@ -19,6 +19,7 @@ import {
   dibujarSvg,
   dibujarConTrama,
   dibujarImagenConTrama,
+  dibujarImagenPlena,
   dibujarMarca,
   dibujarGlifo57,
   dibujarMatrizAnimada,
@@ -68,6 +69,18 @@ export interface OpcionesPintado {
 export interface ImagenTecla {
   jpegBase64: string;
   dataUrl: string;
+}
+
+/**
+ * Lo que el plugin del botón está pintando (`setImage`/`setTitle`), o
+ * `undefined` si no es un botón de plugin. Lo lee quien pinta del store de
+ * `utils/plugins/visual` (el `pintarTecla` no es un componente y no puede usar
+ * el hook): la imagen va a sangre y el título sustituye al rótulo, igual que
+ * en la celda del deck. Un widget sigue ganando a la imagen.
+ */
+export interface VisualTecla {
+  imagen?: string;
+  titulo?: string;
 }
 
 export function resolverBotonLcd(boton: ButtonConfig, encendido: boolean): ButtonConfig {
@@ -178,6 +191,28 @@ function tieneRotulo(boton: ButtonConfig): boolean {
   return !!(boton.label || boton.sublabel);
 }
 
+/** El rótulo de la tecla: el título del plugin manda sobre el del botón. */
+function tituloDe(boton: ButtonConfig, visual?: VisualTecla): string {
+  return visual?.titulo ?? boton.label ?? '';
+}
+
+/**
+ * El fondo que pinta el plugin (`setImage`), a sangre y sin trama.
+ *
+ * `true` si se pintó (ya con rótulo y destello): quien llama no sigue con el
+ * fondo propio del botón.
+ */
+async function pintarFondoPlugin(
+  ctx: CanvasRenderingContext2D, boton: ButtonConfig, visual: VisualTecla | undefined,
+  ancho: number, alto: number, color: string, extras?: ExtrasAnimados,
+): Promise<boolean> {
+  if (!visual?.imagen) return false;
+  if (!await dibujarImagenPlena(ctx, visual.imagen, ancho, alto)) return false;
+  dibujarEtiqueta(ctx, tituloDe(boton, visual), boton.sublabel ?? '', ancho, alto, color, true, boton.bgColor);
+  dibujarDestello(ctx, ancho, alto, extras);
+  return true;
+}
+
 function marcaConIcono(boton: ButtonConfig): boolean {
   return !!boton.brandIcon && !!(boton.iconoPuntos?.bits || boton.icon);
 }
@@ -185,21 +220,25 @@ function marcaConIcono(boton: ButtonConfig): boolean {
 async function pintarCuerpoCelda(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
   colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
-  datos?: DatosWidget | null,
+  datos?: DatosWidget | null, visual?: VisualTecla,
 ): Promise<void> {
   const color = colorTexto(boton, colores);
   const sobreFondo = tieneFondo(boton);
   const centroY = tieneRotulo(boton) ? alto * 0.42 : alto * 0.5;
+  // El título del plugin sustituye al rótulo, como en la celda del deck.
+  const rotulo = tituloDe(boton, visual);
 
   if (datos) {
     const zona = alto - (tieneRotulo(boton) ? altoFranjaRotulo(!!boton.sublabel, alto) : 0);
     await pintarWidgetLcd(ctx, boton, datos, ancho, zona,
       { texto: color, aviso: colores.aviso, critico: colores.critico, tenue: colores.texto },
       { fuenteMono, dim: DIM_GLIFO, iconoSvg: opciones.iconoSvg, dibujarSvg });
-    dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, false, boton.bgColor);
+    dibujarEtiqueta(ctx, rotulo, boton.sublabel ?? '', ancho, alto, color, false, boton.bgColor);
     dibujarDestello(ctx, ancho, alto, extras);
     return;
   }
+
+  if (await pintarFondoPlugin(ctx, boton, visual, ancho, alto, color, extras)) return;
 
   let fondoPintado = false;
   if (boton.imageData) fondoPintado = await dibujarImagenConTrama(ctx, boton.imageData, ancho, alto);
@@ -212,7 +251,7 @@ async function pintarCuerpoCelda(
   } else {
     await dibujarCentro(ctx, boton, ancho, alto, color, centroY, opciones);
   }
-  dibujarEtiqueta(ctx, boton.label ?? '', boton.sublabel ?? '', ancho, alto, color, sobreFondo, boton.bgColor);
+  dibujarEtiqueta(ctx, rotulo, boton.sublabel ?? '', ancho, alto, color, sobreFondo, boton.bgColor);
   dibujarDestello(ctx, ancho, alto, extras);
 }
 
@@ -223,14 +262,14 @@ function utilesSubdivision(opciones: OpcionesPintado): UtilesSubdivision {
 async function pintarContenido(
   ctx: CanvasRenderingContext2D, boton: ButtonConfig, ancho: number, alto: number,
   colores: ColoresSuperficie, opciones: OpcionesPintado, extras?: ExtrasAnimados,
-  datos?: DatosWidget | null,
+  datos?: DatosWidget | null, visual?: VisualTecla,
 ): Promise<void> {
   if (boton.subButtons?.length === 4) {
     await dibujarSubdivisionLcd(ctx, boton, ancho, alto, colorTexto(boton, colores), utilesSubdivision(opciones));
     dibujarDestello(ctx, ancho, alto, extras);
     return;
   }
-  await pintarCuerpoCelda(ctx, boton, ancho, alto, colores, opciones, extras, datos);
+  await pintarCuerpoCelda(ctx, boton, ancho, alto, colores, opciones, extras, datos, visual);
 }
 
 export async function pintarTecla(
@@ -241,6 +280,7 @@ export async function pintarTecla(
   rotacion?: number,
   extras?: ExtrasAnimados,
   datos?: DatosWidget | null,
+  visual?: VisualTecla,
 ): Promise<ImagenTecla> {
   await prepararFuentesLcd();
   const { ancho, alto } = lcd;
@@ -250,7 +290,7 @@ export async function pintarTecla(
 
   ctx.fillStyle = colorFondo(boton, colores);
   ctx.fillRect(0, 0, ancho, alto);
-  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones, extras, datos);
+  if (boton) await pintarContenido(ctx, boton, ancho, alto, colores, opciones, extras, datos, visual);
 
   const dataUrl = aDataUrlPng(lienzo);
   return { jpegBase64: codificar(rotar(lienzo, rotacion ?? lcd.rotacion)), dataUrl };

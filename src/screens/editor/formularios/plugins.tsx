@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT } from '../../../utils/i18n';
 import { estiloDesplegable } from '../../../components/ui/estilos';
 import { Field } from '../comunes';
 import { superficieDe } from '../../../utils/plugins/ref';
+import { useListaPlugins } from '../../../utils/plugins/listaPlugins';
 import type { PropsFormulario } from './base';
 import type { PluginAccionInfo, PluginInfo, PluginRef } from '../../../types';
 
@@ -153,27 +154,112 @@ function BotonConfigurar({ ref, puede }: { ref: PluginRef | null; puede: boolean
 }
 
 /**
- * Los plugins instalados, y aviso de que la lista sigue cargando.
+ * El cuerpo del formulario: los dos desplegables y el botón del inspector.
  *
- * Se recarga sola cuando cambia algo (instalar, desinstalar, habilitar): sin
- * `onChanged`, el desplegable seguiría con lo que había al abrir el editor.
+ * Lo comparten el editor de botones virtuales (`FormPlugin`) y el inspector
+ * del dock (`SelectorPluginControl`): la misma lista, los mismos avisos y el
+ * mismo botón de configurar. Solo cambian quién guarda lo elegido (el editor
+ * escribe la acción en curso; el dock lo aplica a sus huecos).
  */
-function useListaPlugins(): { lista: PluginInfo[]; cargando: boolean } {
-  const [lista, setLista] = useState<PluginInfo[]>([]);
-  const [cargando, setCargando] = useState(true);
-  useEffect(() => {
-    const plugins = window.electronAPI?.plugins;
-    if (!plugins) { setCargando(false); return; }
-    let vivo = true;
-    const cargar = () => {
-      const poner = (l: PluginInfo[]) => { if (vivo) { setLista(l); setCargando(false); } };
-      plugins.list().then(poner).catch(() => poner([]));
-    };
-    cargar();
-    const fuera = plugins.onChanged(cargar);
-    return () => { vivo = false; fuera(); };
-  }, []);
-  return { lista, cargando };
+export interface CuerpoPluginProps {
+  pluginUuid: string;
+  accionUuid: string;
+  settings?: Record<string, unknown>;
+  /** `null` antes de aplicar (un dock aún no tiene botón que configurar). */
+  contexto: string | null;
+  /** Con el uuid elegido viaja su primera acción de tecla, para preseleccionarla. */
+  onCambiarPlugin: (uuid: string, primeraAccionUuid: string) => void;
+  onCambiarAccion: (uuid: string) => void;
+}
+
+export function CuerpoPlugin({
+  pluginUuid, accionUuid, settings, contexto, onCambiarPlugin, onCambiarAccion,
+}: CuerpoPluginProps) {
+  const t = useT();
+  const { lista, cargando } = useListaPlugins();
+
+  // Un plugin deshabilitado no se ofrece: se puede tener instalado y apagado,
+  // y una acción suya no haría nada al pulsar.
+  const habilitados = lista.filter((pl) => pl.habilitado);
+  const info = elegirPlugin(habilitados, pluginUuid);
+  const acciones = accionesDeTecla(info);
+  const elegida: PluginAccionInfo | null =
+    acciones.find((a) => a.uuid === accionUuid) ?? null;
+
+  const ref = refDeEditor(info, elegida, contexto, settings);
+
+  const elegir = (uuid: string) => {
+    const nuevo = elegirPlugin(habilitados, uuid);
+    onCambiarPlugin(uuid, accionesDeTecla(nuevo)[0]?.uuid ?? '');
+  };
+
+  if (habilitados.length === 0) {
+    return <SinPlugins hayInstalados={lista.length > 0} cargando={cargando} />;
+  }
+
+  return (
+    <>
+      <EstadoPlugin info={info ?? habilitados[0]} />
+
+      <SelectorPlugin
+        etiqueta={t('ed.plugin.plugin')}
+        vacio={t('ed.plugin.elegirPlugin')}
+        valor={pluginUuid}
+        opciones={habilitados.map((pl) => ({ valor: pl.uuid, texto: `${pl.nombre} ${pl.version}` }))}
+        onElegir={elegir}
+      />
+
+      <SelectorPlugin
+        etiqueta={t('ed.plugin.accion')}
+        vacio={t('ed.plugin.elegirAccion')}
+        valor={accionUuid}
+        opciones={acciones.map((a) => ({ valor: a.uuid, texto: a.nombre }))}
+        onElegir={onCambiarAccion}
+        deshabilitado={!info}
+      />
+
+      {info && acciones.length === 0 && <Nota>{t('ed.plugin.sinAcciones')}</Nota>}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <BotonConfigurar ref={ref} puede={!!elegida?.tienePI} />
+        {elegida && !elegida.tienePI && <SinInspector />}
+      </div>
+
+      <Nota>{t('ed.plugin.help')}</Nota>
+    </>
+  );
+}
+
+export function FormPlugin(p: PropsFormulario) {
+  const { action, setAction, botonId, pages, indicePaginaBoton } = p;
+
+  const contexto = botonId ? `${superficieDe(pages, indicePaginaBoton)}:${botonId}` : null;
+
+  const cambiarPlugin = (uuid: string, primeraAccionUuid: string) => {
+    setAction((a) => ({
+      ...a,
+      // Los ajustes son de la acción anterior: no sobreviven al cambio.
+      plugin: { pluginUuid: uuid, accionUuid: primeraAccionUuid },
+    }));
+  };
+
+  const cambiarAccion = (uuid: string) => {
+    setAction((a) => ({
+      ...a,
+      plugin: { pluginUuid: a.plugin?.pluginUuid ?? '', accionUuid: uuid },
+    }));
+  };
+
+  return (
+    <CuerpoPlugin
+      pluginUuid={action.plugin?.pluginUuid ?? ''}
+      accionUuid={action.plugin?.accionUuid ?? ''}
+      settings={action.plugin?.settings}
+      contexto={contexto}
+      onCambiarPlugin={cambiarPlugin}
+      onCambiarAccion={cambiarAccion}
+    />
+  );
 }
 
 /** La referencia que se manda a `openPI`, o `null` si aún no se puede. */
@@ -188,74 +274,4 @@ function refDeEditor(
     contexto,
     ...(settings ? { settings } : {}),
   };
-}
-
-export function FormPlugin(p: PropsFormulario) {
-  const t = useT();
-  const { action, setAction, botonId, pages, indicePaginaBoton } = p;
-  const { lista, cargando } = useListaPlugins();
-
-  // Un plugin deshabilitado no se ofrece: se puede tener instalado y apagado,
-  // y una acción suya no haría nada al pulsar.
-  const habilitados = lista.filter((pl) => pl.habilitado);
-  const info = elegirPlugin(habilitados, action.plugin?.pluginUuid);
-  const acciones = accionesDeTecla(info);
-  const elegida: PluginAccionInfo | null =
-    acciones.find((a) => a.uuid === action.plugin?.accionUuid) ?? null;
-
-  const contexto = botonId ? `${superficieDe(pages, indicePaginaBoton)}:${botonId}` : null;
-  const ref = refDeEditor(info, elegida, contexto, action.plugin?.settings);
-
-  const cambiarPlugin = (uuid: string) => {
-    const nuevo = elegirPlugin(habilitados, uuid);
-    const primera = accionesDeTecla(nuevo)[0];
-    setAction((a) => ({
-      ...a,
-      // Los ajustes son de la acción anterior: no sobreviven al cambio.
-      plugin: { pluginUuid: uuid, accionUuid: primera?.uuid ?? '' },
-    }));
-  };
-
-  const cambiarAccion = (uuid: string) => {
-    setAction((a) => ({
-      ...a,
-      plugin: { pluginUuid: a.plugin?.pluginUuid ?? '', accionUuid: uuid },
-    }));
-  };
-
-  if (habilitados.length === 0) {
-    return <SinPlugins hayInstalados={lista.length > 0} cargando={cargando} />;
-  }
-
-  return (
-    <>
-      <EstadoPlugin info={info ?? habilitados[0]} />
-
-      <SelectorPlugin
-        etiqueta={t('ed.plugin.plugin')}
-        vacio={t('ed.plugin.elegirPlugin')}
-        valor={action.plugin?.pluginUuid ?? ''}
-        opciones={habilitados.map((pl) => ({ valor: pl.uuid, texto: `${pl.nombre} ${pl.version}` }))}
-        onElegir={cambiarPlugin}
-      />
-
-      <SelectorPlugin
-        etiqueta={t('ed.plugin.accion')}
-        vacio={t('ed.plugin.elegirAccion')}
-        valor={action.plugin?.accionUuid ?? ''}
-        opciones={acciones.map((a) => ({ valor: a.uuid, texto: a.nombre }))}
-        onElegir={cambiarAccion}
-        deshabilitado={!info}
-      />
-
-      {info && acciones.length === 0 && <Nota>{t('ed.plugin.sinAcciones')}</Nota>}
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <BotonConfigurar ref={ref} puede={!!elegida?.tienePI} />
-        {elegida && !elegida.tienePI && <SinInspector />}
-      </div>
-
-      <Nota>{t('ed.plugin.help')}</Nota>
-    </>
-  );
 }
