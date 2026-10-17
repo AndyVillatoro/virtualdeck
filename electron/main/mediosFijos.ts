@@ -15,9 +15,32 @@ export interface PistaFija {
   source: string;
   thumbnail?: string;
   controls?: { next: boolean; prev: boolean; shuffle: boolean; repeat: boolean };
+  /** Los tres de la barra de progreso; sin `durationMs` no se pinta (`src/utils/progresoCancion.ts`). */
   positionMs?: number;
   durationMs?: number;
+  /** De dónde parte el cronómetro de la barra: el widget lo suma al paso del tiempo. */
   timelineUpdatedAt?: number;
+}
+
+/** 1:26 de 3:42: la posición y la duración de la pista de las capturas. */
+const POSICION_POR_DEFECTO_MS = 86_000;
+const DURACION_POR_DEFECTO_MS = 222_000;
+
+/**
+ * Instante en que se dio por buena `positionMs` cuando el archivo no lo dice.
+ *
+ * Se fija **una vez por proceso**, no en cada lectura. `getNowPlaying` se
+ * pregunta cada pocos segundos y el widget interpola desde
+ * `timelineUpdatedAt` (`src/utils/progresoCancion.ts`): con `Date.now()` en cada
+ * llamada, el reloj de la barra se reiniciaba en cada sondeo —la posición volvía
+ * a 1:26 y la barra retrocedía cada pocos segundos, con el tiempo de la captura
+ * como largo de lo que mide el retroceso.
+ */
+let anclaTimelineMs: number | null = null;
+
+/** Un número del archivo, o el de reserva: el JSON se edita a mano. */
+function numero(valor: unknown, porDefecto: number): number {
+  return typeof valor === 'number' && Number.isFinite(valor) ? valor : porDefecto;
 }
 
 /**
@@ -56,6 +79,7 @@ export function medioFijo(): PistaFija | null {
   try {
     const j = JSON.parse(readFileSync(ruta, 'utf-8')) as Partial<PistaFija>;
     if (!j?.title) return null;
+    if (anclaTimelineMs === null) anclaTimelineMs = Date.now();
     return {
       title: String(j.title),
       artist: String(j.artist ?? ''),
@@ -63,9 +87,9 @@ export function medioFijo(): PistaFija | null {
       source: String(j.source ?? ''),
       thumbnail: j.thumbnail ? String(j.thumbnail) : undefined,
       controls: j.controls,
-      positionMs: j.positionMs ?? 86000,
-      durationMs: j.durationMs ?? 222000,
-      timelineUpdatedAt: j.timelineUpdatedAt ?? Date.now(),
+      positionMs: numero(j.positionMs, POSICION_POR_DEFECTO_MS),
+      durationMs: numero(j.durationMs, DURACION_POR_DEFECTO_MS),
+      timelineUpdatedAt: numero(j.timelineUpdatedAt, anclaTimelineMs),
     };
   } catch (e) {
     console.error('[prensa] VD_MEDIOS_FIJOS ilegible:', (e as Error).message);

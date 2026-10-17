@@ -52,6 +52,12 @@ export async function caratulaEnBase64() {
  * Título, artista y fuente son inventados a propósito: ver
  * `electron/main/mediosFijos.ts`. «Reproductor local» en vez del nombre de un
  * servicio, para no dar a entender que hay una integración que no existe.
+ *
+ * Los tiempos del final también los dice: sin `durationMs` el widget no pinta
+ * la barra de progreso (`src/utils/progresoCancion.ts`), así que la pista
+ * declara de qué punto va. Son 1:26 de 3:42, los mismos que salen en las
+ * capturas publicadas; `mediosFijos.ts` los repite como reserva para un archivo
+ * que se hubiera quedado sin ellos.
  */
 export async function reproduccion() {
   return {
@@ -61,6 +67,8 @@ export async function reproduccion() {
     source: 'Reproductor local',
     thumbnail: await caratulaEnBase64(),
     controls: { next: true, prev: true, shuffle: true, repeat: true },
+    positionMs: 86_000,
+    durationMs: 222_000,
   };
 }
 

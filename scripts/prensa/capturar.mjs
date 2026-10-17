@@ -572,11 +572,41 @@ async function icono300() {
  */
 async function prepararFuentes() {
   mkdirSync(FUENTES, { recursive: true });
-  const pista = join(FUENTES, 'reproduccion.json');
-  if (!existsSync(pista)) writeFileSync(pista, `${JSON.stringify(await reproduccion(), null, 2)}\n`);
+  await sembrarPista();
   process.env.VD_PRENSA_TIENDA = join(FUENTES, 'tienda');
   await generarArtesTienda(process.env.VD_PRENSA_TIENDA, IDIOMA);
   await generarFondoNeutro(join(FUENTES, 'fondo-neutro.png'));
+}
+
+/**
+ * Deja `fuentes/reproduccion.json` con los tiempos de la barra de progreso.
+ *
+ * El archivo se genera aquí, pero se edita a mano (por eso el módulo promise que
+ * se vea qué dice exactamente la pista), así que si ya existe se respeta entero.
+ * Lo único que se le añade son `positionMs`/`durationMs` cuando faltan: son los
+ * que hacen que el widget de música pinte la barra, y con el `if (!existsSync)`
+ * de antes un archivo viejo se quedaba con la pista a medias —sin barra— hasta
+ * que alguien lo borrara de la carpeta de fuentes.
+ */
+async function sembrarPista() {
+  const ruta = join(FUENTES, 'reproduccion.json');
+  const generada = await reproduccion();
+  if (!existsSync(ruta)) {
+    writeFileSync(ruta, `${JSON.stringify(generada, null, 2)}\n`);
+    return;
+  }
+  let actual;
+  try {
+    actual = JSON.parse(readFileSync(ruta, 'utf-8'));
+  } catch {
+    // Ilegible: no se toca. Lo dirá `medioFijo()`, que es quien lo lee.
+    process.stdout.write('  aviso: reproduccion.json no se puede leer; se deja como está\n');
+    return;
+  }
+  if (typeof actual?.positionMs === 'number' && typeof actual?.durationMs === 'number') return;
+  const conTiempos = { ...actual, positionMs: generada.positionMs, durationMs: generada.durationMs };
+  writeFileSync(ruta, `${JSON.stringify(conTiempos, null, 2)}\n`);
+  process.stdout.write('  (a la pista de las capturas le faltaban los tiempos de la barra: añadidos)\n');
 }
 
 // ── El N3 del banco de pruebas ────────────────────────────────────────────
