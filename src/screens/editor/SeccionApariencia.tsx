@@ -1,17 +1,24 @@
 import React from 'react';
 import { useTheme } from '../../utils/theme';
-import { useFieldText } from '../../utils/i18n';
+import { useT, useFieldText } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { Field, Btn, estiloEntrada } from './comunes';
 import { BloqueWidgetApariencia } from './BloqueWidgetApariencia';
 import { CampoIconoUnificado } from './CampoIconoUnificado';
 import { SubseccionAnimacion } from './SubseccionAnimacion';
+import { useVisualPlugin } from '../../utils/plugins/visual';
+import { useListaPlugins } from '../../utils/plugins/listaPlugins';
+import { superficieDe } from '../../utils/plugins/ref';
+import { resolverReglasAparienciaPlugin } from '../../utils/plugins/reglasApariencia';
 import type { TipoIcono } from './tiposIcono';
 import type { ContextoDock } from './useDockPresets';
 import type { NombreCatalogo } from '../../data/iconosDot/tipos';
-import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig, EfectoPuntos, EfectoPulsar } from '../../types';
+import type { ButtonAction, ButtonConfig, Sensor, TipoWidget, SliderWidgetConfig, EfectoPuntos, EfectoPulsar, PageConfig, PluginInfo } from '../../types';
 
 export interface SeccionAparienciaProps {
+  botonId?: string;
+  indicePaginaBoton?: number;
+  pages?: PageConfig[];
   accent: string;
   action: ButtonAction;
   /** El control físico editado; `null` sin dock o sin modelo cargado. */
@@ -83,6 +90,84 @@ export interface SeccionAparienciaProps {
   setEfectoPulsar: (efecto: EfectoPulsar) => void;
 }
 
+function obtenerReglasPlugin(action: ButtonAction, listaPlugins: PluginInfo[], visualImagen?: string) {
+  const pluginInfo = listaPlugins.find((pl) => pl.uuid === action.plugin?.pluginUuid);
+  const accionInfo = pluginInfo?.acciones.find((a) => a.uuid === action.plugin?.accionUuid);
+
+  return resolverReglasAparienciaPlugin({
+    esPlugin: action.type === 'plugin' && Boolean(action.plugin?.pluginUuid),
+    tieneVisualImagen: Boolean(visualImagen),
+    tieneImagenPropia: (accionInfo as { tieneImagenPropia?: boolean } | undefined)?.tieneImagenPropia,
+    userTitleEnabled: (accionInfo as { userTitleEnabled?: boolean } | undefined)?.userTitleEnabled,
+  });
+}
+
+function AvisoBloqueoApariencia({ accent, motivo }: { accent: string; motivo: string }) {
+  const VD = useTheme();
+  const t = useT();
+  return (
+    <div
+      style={{
+        padding: '8px 10px',
+        background: VD.surface,
+        border: `1px solid ${VD.border}`,
+        borderLeft: `2px solid ${accent}`,
+        borderRadius: VD.radius.sm,
+        fontFamily: VD.mono,
+        fontSize: 8.5,
+        lineHeight: 1.6,
+        color: VD.textDim,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+      }}
+    >
+      <DotGlyphIcon glyph="LOCK" size={10} color={accent} />
+      <span>{t(motivo)}</span>
+    </div>
+  );
+}
+
+function AparienciaSinPantalla({
+  label, setLabel, bloquearTitulo, motivoBloqueoTitulo, inputStyle,
+}: {
+  label: string;
+  setLabel: (val: string) => void;
+  bloquearTitulo?: boolean;
+  motivoBloqueoTitulo?: string;
+  inputStyle: React.CSSProperties;
+}) {
+  const VD = useTheme();
+  const t = useT();
+  const tf = useFieldText();
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <Field label={tf("ETIQUETA DEL BOTÓN")}>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder={tf("Mi Botón")}
+          maxLength={20}
+          disabled={bloquearTitulo}
+          style={{
+            ...inputStyle,
+            opacity: bloquearTitulo ? 0.6 : 1,
+            cursor: bloquearTitulo ? 'not-allowed' : 'text',
+          }}
+        />
+        {bloquearTitulo && motivoBloqueoTitulo && (
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+            {t(motivoBloqueoTitulo)}
+          </div>
+        )}
+      </Field>
+      <div style={{ fontFamily: VD.mono, fontSize: 8.5, color: VD.textMuted, lineHeight: 1.6, borderLeft: `2px solid ${VD.border}`, paddingLeft: 8 }}>
+        {tf('Este control no tiene pantalla: solo la etiqueta se ve en la vista del deck.')}
+      </div>
+    </div>
+  );
+}
+
 export function SeccionApariencia(p: SeccionAparienciaProps) {
   const {
     accent, action, contextoDock = null, bgColor, brandIcon, brandIconAlwaysAnimate, brandIconCustomBitmap,
@@ -102,27 +187,26 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
   } = p;
 
   const VD = useTheme();
+  const t = useT();
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
+
+  const { lista: listaPlugins } = useListaPlugins();
+  const contexto = p.botonId ? `${superficieDe(p.pages, p.indicePaginaBoton)}:${p.botonId}` : null;
+  const visual = useVisualPlugin(contexto);
+  const reglas = obtenerReglasPlugin(action, listaPlugins, visual?.imagen);
 
   // Un botón o una perilla del dock no tienen LCD: el aparato no pinta nada,
   // así que solo se ofrece la etiqueta, que es lo que usa la vista del deck.
   if (contextoDock && !contextoDock.conPantalla) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Field label={tf("ETIQUETA DEL BOTÓN")}>
-          <input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder={tf("Mi Botón")}
-            maxLength={20}
-            style={inputStyle}
-          />
-        </Field>
-        <div style={{ fontFamily: VD.mono, fontSize: 8.5, color: VD.textMuted, lineHeight: 1.6, borderLeft: `2px solid ${VD.border}`, paddingLeft: 8 }}>
-          {tf('Este control no tiene pantalla: solo la etiqueta se ve en la vista del deck.')}
-        </div>
-      </div>
+      <AparienciaSinPantalla
+        label={label}
+        setLabel={setLabel}
+        bloquearTitulo={reglas.bloquearTitulo}
+        motivoBloqueoTitulo={reglas.motivoBloqueoTitulo}
+        inputStyle={inputStyle}
+      />
     );
   }
 
@@ -135,9 +219,32 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
           onChange={(e) => setLabel(e.target.value)}
           placeholder={tf("Mi Botón")}
           maxLength={20}
-          style={inputStyle}
+          disabled={reglas.bloquearTitulo}
+          style={{
+            ...inputStyle,
+            opacity: reglas.bloquearTitulo ? 0.6 : 1,
+            cursor: reglas.bloquearTitulo ? 'not-allowed' : 'text',
+          }}
         />
+        {reglas.bloquearTitulo && reglas.motivoBloqueoTitulo && (
+          <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, marginTop: 4 }}>
+            {t(reglas.motivoBloqueoTitulo)}
+          </div>
+        )}
       </Field>
+
+      {reglas.bloquearApariencia && reglas.motivoBloqueoApariencia && (
+        <AvisoBloqueoApariencia accent={accent} motivo={reglas.motivoBloqueoApariencia} />
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+          ...(reglas.bloquearApariencia ? { opacity: 0.45, pointerEvents: 'none', userSelect: 'none' } : {}),
+        }}
+      >
 
       <Field label={tf("SUB-ETIQUETA (OPCIONAL)")}>
         <input
@@ -283,6 +390,7 @@ export function SeccionApariencia(p: SeccionAparienciaProps) {
         varWidgetSuffix={varWidgetSuffix}
         setVarWidgetSuffix={setVarWidgetSuffix}
       />
+      </div>
     </div>
   );
 }

@@ -18,8 +18,13 @@ import type { ButtonConfig } from '../../types';
  * pintan por otro camino (`pintarTecla`) y aún no muestran imagen de plugin
  * (ver `docs/NOTAS-TECNICAS`).
  */
-export function useVisualCelda(button: ButtonConfig): { imagen?: string; titulo?: string } | undefined {
-  const contexto = esAccionPlugin(button.action) ? contextoDeBoton(button.id) : null;
+export function useVisualCelda(
+  button: ButtonConfig,
+  contextoProp?: string | null,
+): { imagen?: string; titulo?: string } | undefined {
+  const contexto = esAccionPlugin(button.action)
+    ? (contextoProp ?? contextoDeBoton(button.id))
+    : null;
   const visual = useVisualPlugin(contexto);
   if (!visual?.imagen && !visual?.titulo) return undefined;
   return { imagen: visual.imagen, titulo: visual.titulo };

@@ -231,11 +231,33 @@ export function CuerpoPlugin({
 }
 
 export function FormPlugin(p: PropsFormulario) {
-  const { action, setAction, botonId, pages, indicePaginaBoton } = p;
+  const { action, setAction, botonId, pages, indicePaginaBoton, sobrescribirConPlugin } = p;
+  const { lista } = useListaPlugins();
 
   const contexto = botonId ? `${superficieDe(pages, indicePaginaBoton)}:${botonId}` : null;
 
+  React.useEffect(() => {
+    if (!action.plugin?.pluginUuid && lista.length > 0) {
+      const habilitados = lista.filter((pl) => pl.habilitado);
+      if (habilitados.length > 0) {
+        const primero = habilitados[0];
+        const teclas = accionesDeTecla(primero);
+        if (teclas.length > 0) {
+          sobrescribirConPlugin?.(teclas[0].nombre);
+          setAction((a) => ({
+            ...a,
+            plugin: { pluginUuid: primero.uuid, accionUuid: teclas[0].uuid },
+          }));
+        }
+      }
+    }
+  }, [action.plugin?.pluginUuid, lista, setAction, sobrescribirConPlugin]);
+
   const cambiarPlugin = (uuid: string, primeraAccionUuid: string) => {
+    const habilitados = lista.filter((pl) => pl.habilitado);
+    const pl = habilitados.find((item) => item.uuid === uuid);
+    const acc = pl?.acciones.find((a) => a.uuid === primeraAccionUuid);
+    sobrescribirConPlugin?.(acc?.nombre);
     setAction((a) => ({
       ...a,
       // Los ajustes son de la acción anterior: no sobreviven al cambio.
@@ -244,6 +266,10 @@ export function FormPlugin(p: PropsFormulario) {
   };
 
   const cambiarAccion = (uuid: string) => {
+    const habilitados = lista.filter((pl) => pl.habilitado);
+    const pl = habilitados.find((item) => item.uuid === (action.plugin?.pluginUuid ?? ''));
+    const acc = pl?.acciones.find((a) => a.uuid === uuid);
+    sobrescribirConPlugin?.(acc?.nombre);
     setAction((a) => ({
       ...a,
       plugin: { pluginUuid: a.plugin?.pluginUuid ?? '', accionUuid: uuid },

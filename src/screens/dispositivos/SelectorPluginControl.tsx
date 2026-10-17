@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { CuerpoPlugin } from '../editor/formularios/plugins';
@@ -15,6 +15,7 @@ export interface SelectorPluginControlProps {
   /** Como un preset: los huecos enteros del control, en orden. */
   onAplicar: (huecos: PresetHueco[]) => void;
   disabled?: boolean;
+  onCambiarPrevia?: (pluginUuid: string, accionUuid: string) => void;
 }
 
 /**
@@ -58,6 +59,21 @@ function huecoDe(boton: ButtonConfig | undefined, action: ButtonAction, label: s
   };
 }
 
+/** El hueco sobrescrito por un plugin: limpia la apariencia previa y asigna el título del manifiesto. */
+function huecoPlugin(boton: ButtonConfig | undefined, action: ButtonAction, label: string): PresetHueco {
+  return {
+    label,
+    icon: '',
+    bgColor: undefined,
+    fgColor: undefined,
+    action,
+    ...(boton?.isToggle ? { isToggle: true } : {}),
+    ...(boton?.actionToggleOff ? { actionToggleOff: boton.actionToggleOff } : {}),
+    ...(boton?.fijo ? { fijo: true } : {}),
+    ...(boton?.modosPerilla ? { modosPerilla: boton.modosPerilla } : {}),
+  };
+}
+
 function accionVacia(): ButtonAction {
   return { type: 'none' };
 }
@@ -67,6 +83,7 @@ export function SelectorPluginControl({
   seleccionado,
   onAplicar,
   disabled = false,
+  onCambiarPrevia,
 }: SelectorPluginControlProps) {
   const VD = useTheme();
   const t = useT();
@@ -76,6 +93,24 @@ export function SelectorPluginControl({
   const [pluginUuid, setPluginUuid] = useState(actual.pluginUuid);
   const [accionUuid, setAccionUuid] = useState(actual.accionUuid);
 
+  useEffect(() => {
+    if (!pluginUuid && lista.length > 0) {
+      const primero = lista.find((p) => p.habilitado && p.acciones.some((a) => a.esTecla));
+      if (primero) {
+        const accion = primero.acciones.find((a) => a.esTecla);
+        if (accion) {
+          setPluginUuid(primero.uuid);
+          setAccionUuid(accion.uuid);
+          onCambiarPrevia?.(primero.uuid, accion.uuid);
+          return;
+        }
+      }
+    }
+    if (pluginUuid && accionUuid) {
+      onCambiarPrevia?.(pluginUuid, accionUuid);
+    }
+  }, [pluginUuid, accionUuid, lista, onCambiarPrevia]);
+
   const elegida = accionElegida(lista, pluginUuid, accionUuid);
   const puedeAplicar = !disabled && pluginUuid !== '' && accionUuid !== '';
 
@@ -84,7 +119,7 @@ export function SelectorPluginControl({
     const accion: ButtonAction = { type: 'plugin', plugin: { pluginUuid, accionUuid } };
     onAplicar(botones.map((b, i) => {
       if (i !== seleccionado) return huecoDe(b, b?.action ?? accionVacia(), b?.label ?? '');
-      return huecoDe(b, accion, b?.label || elegida?.nombre || '');
+      return huecoPlugin(b, accion, elegida?.nombre || '');
     }));
   };
 
@@ -106,8 +141,15 @@ export function SelectorPluginControl({
           pluginUuid={pluginUuid}
           accionUuid={accionUuid}
           contexto={null}
-          onCambiarPlugin={(uuid, primera) => { setPluginUuid(uuid); setAccionUuid(primera); }}
-          onCambiarAccion={setAccionUuid}
+          onCambiarPlugin={(uuid, primera) => {
+            setPluginUuid(uuid);
+            setAccionUuid(primera);
+            onCambiarPrevia?.(uuid, primera);
+          }}
+          onCambiarAccion={(uuid) => {
+            setAccionUuid(uuid);
+            onCambiarPrevia?.(pluginUuid, uuid);
+          }}
         />
       </div>
       {elegida?.tienePI && (

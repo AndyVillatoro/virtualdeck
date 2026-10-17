@@ -16,6 +16,8 @@ import { useCatalogos } from './editor/useCatalogos';
 import { useEstadoEditor } from './editor/useEstadoEditor';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
+import { superficieDe } from '../utils/plugins/ref';
+import { useAppearPluginPreview } from '../utils/plugins/useAppearPluginPreview';
 import type { ActionType, ButtonConfig, PageConfig, RGBProfile } from '../types';
 
 interface EditorBProps {
@@ -93,6 +95,22 @@ export function EditorB({
 
   const filteredPresets = filtrarPresets(e.presetSearch, e.presetCategory, dockInfo.esDock);
   const { actionBadge, dockBadge, appearanceBadge, behaviorBadge, advancedBadge } = calcularInsignias(e, dockInfo, t);
+
+  const refPluginPreview = React.useMemo(() => {
+    if (e.action.type !== 'plugin' || !e.action.plugin?.pluginUuid || !e.action.plugin?.accionUuid) {
+      return null;
+    }
+    const contexto = button.id ? `${superficieDe(pages, button.page)}:${button.id}` : null;
+    if (!contexto) return null;
+    return {
+      pluginUuid: e.action.plugin.pluginUuid,
+      accionUuid: e.action.plugin.accionUuid,
+      contexto,
+      ...(e.action.plugin.settings ? { settings: e.action.plugin.settings } : {}),
+    };
+  }, [e.action, button.id, button.page, pages]);
+
+  useAppearPluginPreview(refPluginPreview, e.action.type === 'plugin');
 
   return (
     <div
@@ -265,6 +283,7 @@ export function EditorB({
                 setExtraActions={e.setExtraActions}
                 showExtraPicker={e.showExtraPicker}
                 setShowExtraPicker={e.setShowExtraPicker}
+                sobrescribirConPlugin={e.sobrescribirConPlugin}
               />
             </SeccionAjustes>
 
@@ -281,6 +300,9 @@ export function EditorB({
                 accent={accent}
                 contextoDock={dockInfo.contexto}
                 action={e.action}
+                botonId={button.id}
+                indicePaginaBoton={button.page}
+                pages={pages}
                 bgColor={e.bgColor}
                 brandIcon={e.brandIcon}
                 brandIconAlwaysAnimate={e.brandIconAlwaysAnimate}

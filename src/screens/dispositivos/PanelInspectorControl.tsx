@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
@@ -12,8 +12,10 @@ import { MiniPreview } from './PreviaInspector';
 import { BotonEditar, FilaAccion, SeccionModos } from './PiezasInspector';
 import { ListaHermanosPerilla } from './ListaHermanosPerilla';
 import { obtenerNombreYTipoControl, textoAccionSeleccionada } from './textoPanelInspector';
+import { contextoDeBoton } from '../../utils/plugins/ref';
+import { useAppearPluginPreview } from '../../utils/plugins/useAppearPluginPreview';
 import type { PanelInspectorControlProps } from './tiposPanelInspector';
-import type { ButtonConfig } from '../../types';
+import type { ButtonAction, ButtonConfig } from '../../types';
 
 export type { HermanoPerilla, PanelInspectorControlProps } from './tiposPanelInspector';
 
@@ -65,10 +67,61 @@ export function PanelInspectorControl({
   perilla,
   modoActivo,
   onFijarModos,
+  serial,
 }: PanelInspectorControlProps) {
   const VD = useTheme();
   const t = useT();
   const w = ancho ?? 290;
+
+  const [pluginPrevia, setPluginPrevia] = useState<{ pluginUuid: string; accionUuid: string } | null>(null);
+
+  useEffect(() => {
+    setPluginPrevia(null);
+  }, [boton?.id]);
+
+  const contexto = useMemo(() => {
+    if (!boton) return null;
+    return serial ? `${serial}:${boton.id}` : contextoDeBoton(boton.id);
+  }, [serial, boton]);
+
+  const accionActiva = useMemo<ButtonAction | undefined>(() => {
+    if (pluginPrevia?.pluginUuid && pluginPrevia?.accionUuid) {
+      return { type: 'plugin', plugin: { pluginUuid: pluginPrevia.pluginUuid, accionUuid: pluginPrevia.accionUuid } };
+    }
+    return boton?.action;
+  }, [pluginPrevia, boton?.action]);
+
+  const refPlugin = useMemo(() => {
+    if (!contexto || !accionActiva || accionActiva.type !== 'plugin' || !accionActiva.plugin) return null;
+    return {
+      pluginUuid: accionActiva.plugin.pluginUuid,
+      accionUuid: accionActiva.plugin.accionUuid,
+      contexto,
+    };
+  }, [contexto, accionActiva]);
+
+  useAppearPluginPreview(refPlugin, Boolean(refPlugin));
+
+  const botonParaVista = useMemo(() => {
+    if (!boton) return undefined;
+    if (!pluginPrevia || (boton.action.type === 'plugin' && boton.action.plugin?.pluginUuid === pluginPrevia.pluginUuid && boton.action.plugin?.accionUuid === pluginPrevia.accionUuid)) {
+      return boton;
+    }
+    return {
+      ...boton,
+      label: '',
+      icon: '',
+      iconoPuntos: undefined,
+      imageData: undefined,
+      brandIcon: undefined,
+      customGlyph57: undefined,
+      bgColor: undefined,
+      fgColor: undefined,
+      action: { type: 'plugin' as const, plugin: pluginPrevia },
+    };
+  }, [boton, pluginPrevia]);
+
+  const glifo = resolveDotGlyph(botonParaVista?.icon);
 
   if (!controlMeta) {
     if (onAplicarPreset) {
@@ -86,7 +139,6 @@ export function PanelInspectorControl({
   }
 
   const { nombre, tipo } = obtenerNombreYTipoControl(controlMeta, t);
-  const glifo = resolveDotGlyph(boton?.icon);
   const textoAccion = textoAccionSeleccionada(controlMeta, boton, t);
   const pluginHuecos = huecosParaPlugin({ controlMeta, boton, perilla, hermanosPerilla });
 
@@ -162,12 +214,13 @@ export function PanelInspectorControl({
         }}
       >
         <MiniPreview
-          boton={boton}
+          boton={botonParaVista}
           glifo={glifo}
           nombreControl={nombre}
           controlTipo={controlMeta.control}
           vd={VD}
           vacioTexto={t('disp.vacio')}
+          contexto={contexto}
         />
 
         {/* Tipo de control */}
@@ -251,6 +304,7 @@ export function PanelInspectorControl({
               seleccionado={pluginHuecos.seleccionado}
               onAplicar={onAplicarPreset}
               disabled={disabled}
+              onCambiarPrevia={(pluginUuid, accionUuid) => setPluginPrevia({ pluginUuid, accionUuid })}
             />
           </div>
         )}

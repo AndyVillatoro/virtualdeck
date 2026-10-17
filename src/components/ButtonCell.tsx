@@ -58,6 +58,8 @@ interface ButtonCellProps {
   onQuitarFijo?: () => void;
   onIrAPagina?: () => void;
   onAvisoFijo?: () => void;
+  /** Contexto explícito de plugin (para docks o vistas previas). */
+  contexto?: string;
 }
 
 /** La celda se arrastra salvo vacía, deslizador o con sub-botones. */
@@ -143,7 +145,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   // sangre y su título sustituye al nombre. Va por el store, no por props,
   // porque la celda está memoizada y el `setImage` del plugin no cambia
   // ninguna — ver `celda/useVisualCelda`.
-  const plugin = useVisualCelda(button);
+  const plugin = useVisualCelda(button, props.contexto);
 
   const { rotaryStep, lastRotaryDir, lastRotaryTime, handleWheel, handleAdjustClick } =
     useRotaryHandler(button, onAdjustWheelRef);
@@ -329,7 +331,7 @@ function ButtonCellInner(props: ButtonCellProps) {
 const REDIBUJAN = [
   'button', 'toggled', 'isActive', 'isHidden', 'isRunning', 'isSelected', 'esFija',
   'accent', 'showContextMenu', 'soundEnabled', 'soundProfile', 'resolvedLabel', 'canPaste',
-  'nombrePaginaOriginal',
+  'nombrePaginaOriginal', 'contexto',
 ] as const;
 
 function arrayIgual(a?: boolean[], b?: boolean[]): boolean {

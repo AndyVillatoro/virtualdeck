@@ -7,6 +7,7 @@ import { useDatosWidget, useClimaWidget, useDivisas } from '../../components/cel
 import { useSensors } from '../../utils/sensors';
 import { useNowPlaying, useNowPlayingActivation } from '../../utils/nowPlaying';
 import { useDockPresets } from './useDockPresets';
+import { alCambiarVisual, leerVisual } from '../../utils/plugins/visual';
 import type { DatosWidget } from '../../comun/widgets';
 import type {
   ButtonConfig,
@@ -416,8 +417,14 @@ function useLcdPreview(
   boton: ButtonConfig,
   isEncendido: boolean,
   widgetData: { line1: string; line2?: string; tone?: 'warn' | 'crit' } | undefined,
+  contexto?: string | null,
 ) {
   const [lcdDataUrl, setLcdDataUrl] = useState<string | null>(null);
+  const [versionVisual, setVersionVisual] = useState(0);
+
+  useEffect(() => {
+    return alCambiarVisual(() => setVersionVisual((v) => v + 1));
+  }, []);
 
   useEffect(() => {
     if (!esDock || !conPantalla) {
@@ -428,8 +435,9 @@ function useLcdPreview(
     const botonLcd = resolverBotonLcd(boton, isEncendido);
     const lcd: LcdControl = { ancho: 64, alto: 64, rotacion: 0 };
     const opciones = { iconoSvg: svgDeBoton, esGlifoDot };
+    const visual = contexto ? leerVisual(contexto) : undefined;
 
-    pintarTecla(botonLcd, lcd, COLORES_LCD, opciones, 0, undefined, widgetData)
+    pintarTecla(botonLcd, lcd, COLORES_LCD, opciones, 0, undefined, widgetData, visual)
       .then((img) => {
         if (activo) setLcdDataUrl(img.dataUrl);
       })
@@ -438,7 +446,7 @@ function useLcdPreview(
     return () => {
       activo = false;
     };
-  }, [esDock, conPantalla, boton, isEncendido, widgetData]);
+  }, [esDock, conPantalla, boton, isEncendido, widgetData, contexto, versionVisual]);
 
   return lcdDataUrl;
 }
@@ -517,10 +525,11 @@ export function useDockInfoVista(
   pages: DeckConfig['pages'] | undefined,
   isEncendido: boolean,
   widgetData: DatosWidget,
+  contexto?: string | null,
 ) {
   const dockInfo = useDockPresets(boton, pages ?? []);
   const conPantalla = Boolean(dockInfo.contexto?.conPantalla ?? (dockInfo.controlMeta?.control === 'key'));
-  const lcdDataUrl = useLcdPreview(dockInfo.esDock, conPantalla, boton, isEncendido, widgetData);
+  const lcdDataUrl = useLcdPreview(dockInfo.esDock, conPantalla, boton, isEncendido, widgetData, contexto);
   const indice = (dockInfo.controlMeta?.indice ?? 0) + 1;
 
   return {

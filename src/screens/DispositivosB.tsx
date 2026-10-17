@@ -247,6 +247,7 @@ export function DispositivosB({
           perilla={perilla}
           modoActivo={modoActivo}
           onFijarModos={handleFijarModos}
+          serial={serialActivo}
         />
       </div>
     </div>

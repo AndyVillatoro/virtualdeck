@@ -1,10 +1,18 @@
 import { useEffect, useRef } from 'react';
-import type { ButtonConfig, DeckConfig, ElectronAPI, InfoSuperficie, LcdControl } from '../../types';
-import type { DatosWidget } from '../../comun/widgets';
+import type { ButtonConfig, LcdControl } from '../../types';
 import { teclasLcd } from './disposicion';
-import { paginaDe, type VivoPagina } from './paginasSuperficie';
+import { paginaDe } from './paginasSuperficie';
 import { decodificarGif, esGifAnimado, type GifAnimado } from './animacionLcd';
-import { pintarTecla, pintarTeclaConCuadro, resolverBotonLcd, type ColoresSuperficie, type ExtrasAnimados, type OpcionesPintado } from './pintarTecla';
+import {
+  pintarTecla, pintarTeclaConCuadro, resolverBotonLcd,
+  type ColoresSuperficie, type ExtrasAnimados,
+} from './pintarTecla';
+import {
+  anotarPulso, avanzarPulsos, hayPulsos, matrizDe, motorPuntos, movimientoReducido, visualDe,
+} from './motorAnimacionLcd';
+import type { OpcionesAnimacionLcd } from './motorAnimacionLcd';
+
+export type { OpcionesAnimacionLcd };
 
 /**
  * Anima la tecla física del dock: GIF y puntos DOT.
@@ -16,24 +24,17 @@ import { pintarTecla, pintarTeclaConCuadro, resolverBotonLcd, type ColoresSuperf
  * ningún temporizador**. Al cambiar de página, al desconectarse el aparato o
  * al quitar la animación, los deseos se recalculan y lo que sobra se retira.
  *
- * El motor DOT (`globalThis.EfectosPuntos`) y su resolvedor de matrices los
- * registra la capa de componentes (`dot480/animacionPuntos`): `src/utils` no
- * puede importarlos (regla `utils-no-ui`), así que se leen del global y si
- * no están no hay animación de puntos, pero tampoco error.
+ * El motor DOT (`globalThis.EfectosPuntos`), su resolvedor de matrices y el
+ * pulso de la pulsación viven en `motorAnimacionLcd`: `src/utils` no puede
+ * importar el motor de la capa de componentes (regla `utils-no-ui`), así que
+ * se lee del global y si no está no hay animación de puntos, pero tampoco
+ * error.
  *
  * La página activa se resuelve con `paginaDe`, la misma función que usa el
  * pintor: lo que se anima es exactamente lo que está en pantalla.
  */
 
 const MS_TIC = 100;
-/**
- * Duración del aviso de pulsación si el motor DOT no está registrado. Con el
- * motor, manda la del efecto (`destello` 400 ms, `onda` 620 ms): la misma que
- * la celda, escalada al tic de 100 ms del LCD.
- */
-const MS_PULSO_FALLBACK = 420;
-/** Con «reducir movimiento» el destello se acorta, pero no se quita. */
-const MS_PULSO_REDUCIDO = 220;
 /** Tope de GIF en memoria. Cada uno puede pesar varios MB. */
 const MAX_GIFS = 4;
 /**
@@ -42,30 +43,6 @@ const MAX_GIFS = 4;
  * falle de forma intermitente (una lectura de red, por ejemplo).
  */
 const MAX_INTENTOS = 100;
-
-export interface OpcionesAnimacionLcd {
-  api: ElectronAPI | undefined;
-  config: DeckConfig;
-  dispositivos: InfoSuperficie[];
-  paginasActivas: Record<string, string>;
-  colores: ColoresSuperficie;
-  iconoSvg?: OpcionesPintado['iconoSvg'];
-  esGlifoDot?: OpcionesPintado['esGlifoDot'];
-  fuentesListas: boolean;
-  /** Estado vivo: la página se resuelve como la pinta el resto (visibleIf). */
-  vivo: VivoPagina;
-  /**
-   * Datos vivos de los widgets (roadmap 82). Una tecla con widget no se anima:
-   * el dato manda sobre GIF y puntos, como en la celda; al pulsarla, el
-   * destello se pinta encima del dato (`pintarTecla` con `datos`).
-   */
-  widgets: Record<string, DatosWidget>;
-  /**
-   * ¿Esa tecla está enseñando el aviso de un giro (T-HW-21)? Mientras dura, el
-   * animador no la pinta: si no, el siguiente fotograma lo borraría en 100 ms.
-   */
-  conAviso?: (serial: string, hueco: number) => boolean;
-}
 
 interface DeseoAnimado {
   serial: string;
@@ -112,16 +89,6 @@ interface AnimacionPuntos {
   enviando: boolean;
 }
 
-/** Una pulsación en una tecla LCD: se pinta su destello/onda hasta terminar. */
-interface PulsoLcd {
-  serial: string;
-  hueco: number;
-  /** Índice de la página activa al pulsar: si cambió, el pulso se descarta. */
-  pagina: number;
-  inicio: number;
-}
-
-const pulsosLcd = new Map<string, PulsoLcd>();
 const motoresVivos = new Set<Motor>();
 
 /**
@@ -129,29 +96,8 @@ const motoresVivos = new Set<Motor>();
  * `useSuperficies` al recibir la entrada del hardware (gesto `down`).
  */
 export function registrarPulsoLcd(serial: string, hueco: number, pagina: number): void {
-  pulsosLcd.set(`${serial}:${hueco}`, { serial, hueco, pagina, inicio: performance.now() });
+  anotarPulso(serial, hueco, pagina);
   for (const motor of motoresVivos) asegurarTic(motor);
-}
-
-/** El motor DOT, si la capa de componentes ya lo registró. */
-function motorPuntos(): typeof globalThis.EfectosPuntos | null {
-  const motor = globalThis.EfectosPuntos;
-  return motor && typeof motor.calcularPuntos === 'function' ? motor : null;
-}
-
-/** Matriz animable del botón, si el resolvedor ya está registrado. */
-function matrizDe(boton: ButtonConfig): boolean[][] | null {
-  try {
-    return motorPuntos()?.matrizDeBoton?.(boton) ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function movimientoReducido(): boolean {
-  return typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 interface Motor {
@@ -214,6 +160,9 @@ function recolectarDeseos(o: OpcionesAnimacionLcd): Map<string, DeseoAnimado> {
     for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
       const boton = pagina.botones[hueco];
       if (!boton?.imageData || !esGifAnimado(boton.imageData)) continue;
+      // La imagen del plugin manda sobre el GIF: la enseña el pintor
+      // estático y el siguiente fotograma la borraría.
+      if (visualDe(boton, o.config)?.imagen) continue;
       // Un mosaico 2×2 manda sobre la imagen: el pintor estático dibuja la
       // rejilla y el GIF no debe repintarse encima.
       if (boton.subButtons?.length === 4) continue;
@@ -234,7 +183,7 @@ function recolectarDeseos(o: OpcionesAnimacionLcd): Map<string, DeseoAnimado> {
 function reconciliar(motor: Motor): void {
   reconciliarGifs(motor);
   reconciliarPuntos(motor);
-  if (motor.activas.size || motor.pendientes.size || motor.puntos.size || pulsosLcd.size) asegurarTic(motor);
+  if (motor.activas.size || motor.pendientes.size || motor.puntos.size || hayPulsos()) asegurarTic(motor);
   else detenerTic(motor);
 }
 
@@ -278,6 +227,15 @@ function firmaPuntos(
   ]);
 }
 
+/**
+ * El centro ya tiene dueño (el dato vivo de un widget o la imagen de un
+ * plugin): la animación continua de puntos no lo pisa.
+ */
+function centroOcupado(boton: ButtonConfig, o: OpcionesAnimacionLcd): boolean {
+  if (o.widgets[boton.id]) return true;
+  return !!visualDe(boton, o.config)?.imagen;
+}
+
 /** Lo que toca animar con puntos: teclas con animación continua de la página activa. */
 function recolectarDeseosPuntos(o: OpcionesAnimacionLcd): Map<string, DeseoPuntos> {
   const salida = new Map<string, DeseoPuntos>();
@@ -293,8 +251,8 @@ function recolectarDeseosPuntos(o: OpcionesAnimacionLcd): Map<string, DeseoPunto
       if (!original?.animacion) continue;
       // El mosaico 2×2 no anima el centro del botón padre (como en la celda).
       if (original.subButtons?.length === 4) continue;
-      // Con widget, el centro es el dato: la animación de puntos no lo pisa.
-      if (o.widgets[original.id]) continue;
+      // Con widget o imagen de plugin, el centro ya tiene dueño.
+      if (centroOcupado(original, o)) continue;
       const encendido = encendidos.has(original.id);
       const cuando = original.animacion.cuando;
       if (cuando !== 'siempre' && !(cuando === 'encendido' && encendido)) continue;
@@ -353,8 +311,8 @@ function tic(motor: Motor): void {
     void enviar(motor, anim);
   }
   avanzarPuntos(motor, ahora);
-  avanzarPulsos(motor, ahora);
-  if (!motor.activas.size && !motor.pendientes.size && !motor.puntos.size && !pulsosLcd.size) detenerTic(motor);
+  avanzarPulsos(motor.opciones, ahora);
+  if (!motor.activas.size && !motor.pendientes.size && !motor.puntos.size && !hayPulsos()) detenerTic(motor);
 }
 
 /** Repinta las teclas con animación continua de puntos (10 fps, como los GIF). */
@@ -392,116 +350,6 @@ async function enviarPuntos(motor: Motor, anim: AnimacionPuntos, extras: ExtrasA
     // El aparato se fue: el próximo efecto lo retira.
   } finally {
     anim.enviando = false;
-  }
-}
-
-/** Cuánto dura el aviso de pulsación: la del motor DOT, o el respaldo corto. */
-function duracionPulso(prensado: string): number {
-  const motor = motorPuntos();
-  const delMotor = motor?.duracionEfecto(prensado) ?? 0;
-  const base = delMotor > 0 ? delMotor : MS_PULSO_FALLBACK;
-  // Con «reducir movimiento» se acorta el aviso, no se quita.
-  return movimientoReducido() ? Math.min(base, MS_PULSO_REDUCIDO) : base;
-}
-
-/** Velo blanco del destello: sube al máximo y vuelve a cero con ease-out. */
-function veloDestello(dt: number): number {
-  const x = Math.max(0, Math.min(1, dt / duracionPulso('destello')));
-  if (x < 0.2) return 0.6 + 2 * x;
-  return Math.pow(1 - (x - 0.2) / 0.8, 0.7);
-}
-
-/** Lo que un pulso aún vigente necesita para pintarse. */
-interface PulsoResuelto {
-  control: { indice: number; lcd: LcdControl };
-  efectivo: ButtonConfig;
-  rotacion: number;
-  datos?: DatosWidget;
-  prensado: string;
-}
-
-/**
- * Resuelve la tecla de un pulso: si el aparato, la página o el botón ya no
- * son los mismos, o el efecto es `ninguno`, devuelve `null` y el pulso se
- * retira. Un destello sobre un aviso del giro también se descarta (T-HW-21).
- */
-function resolverPulso(motor: Motor, pulso: PulsoLcd, encendidos: Set<string>): PulsoResuelto | null {
-  const o = motor.opciones;
-  const dispositivo = o.dispositivos.find((d) => d.serial === pulso.serial);
-  if (!dispositivo?.conectado) return null;
-  const pagina = paginaDe(o.config, pulso.serial, dispositivo.disposicion, o.paginasActivas[pulso.serial], o.vivo);
-  const control = pagina?.indice === pulso.pagina
-    ? teclasLcd(pagina.disposicion).find((c) => c.hueco === pulso.hueco)
-    : undefined;
-  const boton = control ? pagina?.botones[pulso.hueco] : undefined;
-  if (!pagina || !control || !boton) return null;
-  if (o.conAviso?.(pulso.serial, pulso.hueco)) return null;
-  const efectivo = resolverBotonLcd(boton, encendidos.has(boton.id));
-  const prensado = efectivo.efectoPulsar ?? 'destello';
-  // En positivo: el tercer valor del contrato (`ninguno`) se detecta por
-  // descarte, porque ese literal lo marca la auditoría de i18n.
-  if (prensado !== 'destello' && prensado !== 'onda') return null;
-  return {
-    control,
-    efectivo,
-    rotacion: pagina.rotacion ?? control.lcd.rotacion,
-    datos: o.widgets[boton.id],
-    prensado,
-  };
-}
-
-/** Pinta el destello o la onda de las pulsaciones recientes, hasta que acaban. */
-function avanzarPulsos(motor: Motor, ahora: number): void {
-  const o = motor.opciones;
-  if (!o.api || pulsosLcd.size === 0) return;
-  const encendidos = new Set(o.config.toggledIds ?? []);
-  for (const [clave, pulso] of [...pulsosLcd]) {
-    const resuelto = resolverPulso(motor, pulso, encendidos);
-    if (!resuelto) {
-      pulsosLcd.delete(clave);
-      continue;
-    }
-    const duracion = duracionPulso(resuelto.prensado);
-    const dt = ahora - pulso.inicio;
-    // El último fotograma se pinta ya con el tiempo final (el motor vuelve al
-    // color base): la tecla queda limpia y el pulso se retira en el mismo tic.
-    void enviarPulso(
-      motor, pulso, dt > duracion ? duracion : dt, resuelto.control, resuelto.efectivo,
-      resuelto.rotacion, resuelto.datos,
-    );
-    if (dt > duracion) pulsosLcd.delete(clave);
-  }
-}
-
-async function enviarPulso(
-  motor: Motor, pulso: PulsoLcd, dt: number,
-  control: { indice: number; lcd: LcdControl },
-  efectivo: ButtonConfig, rotacion: number,
-  datos?: DatosWidget,
-): Promise<void> {
-  const o = motor.opciones;
-  if (!o.api) return;
-  const puntos = motorPuntos();
-  const prensado = efectivo.efectoPulsar ?? 'destello';
-  let extras: ExtrasAnimados;
-  // La onda se dibuja en los puntos (anillo que sale del centro); el destello
-  // es el velo blanco por encima de todo, que también cubre imagen y marca y
-  // vuelve a cero al acabar.
-  const matriz = prensado === 'onda' ? matrizDe(efectivo) : null;
-  if (puntos && matriz) {
-    extras = { matriz, intensidades: puntos.calcularPuntos(matriz, 'onda', dt).intensidades };
-  } else {
-    extras = { destello: veloDestello(dt) };
-  }
-  try {
-    const imagen = await pintarTecla(
-      efectivo, control.lcd, o.colores,
-      { iconoSvg: o.iconoSvg, esGlifoDot: o.esGlifoDot },
-      rotacion, extras, datos,
-    );
-    await o.api.superficies.imagen(pulso.serial, control.indice, imagen.jpegBase64);
-  } catch {
-    // El aparato se fue: el próximo tic retira el pulso.
   }
 }
 

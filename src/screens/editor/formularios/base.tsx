@@ -55,4 +55,6 @@ export interface PropsFormulario {
   /** T-HW-12 — fijo en su grupo, con su setter. */
   fijo: boolean;
   setFijo: (v: boolean) => void;
+  /** T-FIX-04 — limpia arte/colores y asigna el nombre de la acción del plugin. */
+  sobrescribirConPlugin?: (nombreAccion?: string) => void;
 }

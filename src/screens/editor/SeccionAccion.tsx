@@ -69,7 +69,12 @@ export function SeccionAccion(props: SeccionAccionProps) {
         </DotLabel>
         <SelectorTipoAccion
           seleccionado={action.type}
-          onElegir={(type) => setAction({ type })}
+          onElegir={(type) => {
+            if (type === 'plugin') {
+              props.sobrescribirConPlugin?.();
+            }
+            setAction({ type });
+          }}
           accent={accent}
           excluir={excluir}
         />

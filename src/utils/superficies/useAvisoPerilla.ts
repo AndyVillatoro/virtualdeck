@@ -4,6 +4,8 @@ import type { TFunc } from '../i18n';
 import type { DetalleAccion } from '../acciones/base';
 import { destinoDock } from '../acciones/pageNav';
 import { paginaDe, type VivoPagina } from './paginasSuperficie';
+import { contextoDe, esAccionPlugin } from '../plugins/ref';
+import { leerVisual } from '../plugins/visual';
 import { teclaSobrePerilla, teclasLcd } from './disposicion';
 import {
   pintarAvisoTecla, pintarTecla, resolverBotonLcd,
@@ -94,14 +96,18 @@ export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi
     const encendido = !!boton && (config.toggledIds ?? []).includes(boton.id);
     const efectivo = boton ? resolverBotonLcd(boton, encendido) : boton;
     const rotacion = pagina.rotacion ?? tecla.lcd.rotacion;
+    // La imagen del plugin, si la hay: sin ella el aviso la borraría al
+    // vencer y la tecla se quedaría con el arte guardado del botón.
+    const visual = boton && esAccionPlugin(boton.action) ? leerVisual(contextoDe(boton, config)) : undefined;
     const imagen = await pintarTecla(
       efectivo ?? null, tecla.lcd, colores, { iconoSvg, esGlifoDot }, rotacion,
+      undefined, undefined, visual,
     );
     // Otro giro pudo empezar mientras se pintaba: si es así, manda el suyo.
     if (avisos.current.has(serial)) return;
     await api.superficies.imagen(serial, tecla.indice, imagen.jpegBase64);
     if (imagen.dataUrl) alPintar(serial, hueco, imagen.dataUrl);
-  }, [api, config.toggledIds, paginaDeSerial, colores, iconoSvg, esGlifoDot, alPintar]);
+  }, [api, config, paginaDeSerial, colores, iconoSvg, esGlifoDot, alPintar]);
 
   const mostrar = useCallback((serial: string, hueco: number, aviso: AvisoPerilla) => {
     if (!api) return;

@@ -21,7 +21,11 @@ export interface ExtrasAnimados {
 }
 
 const LIMITE_JPEG = 10240;
-const CALIDAD_MAXIMA = 0.9;
+// Calidad 1.0 de partida: el LCD es de 64 px y aun una tecla ruidosa a máxima
+// calidad cabe en el tope (el dado, puntos rojos sobre negro, sale en ~2 KB).
+// A 0.9 el submuestreo de croma del JPEG se comía los puntos rojos pequeños y
+// la tecla física se veía desdibujada frente a la vista previa PNG.
+const CALIDAD_MAXIMA = 1.0;
 const CALIDAD_MINIMA = 0.1;
 
 const FAMILIA_MONO = 'JetBrains Mono';
@@ -176,7 +180,9 @@ export async function dibujarImagenPlena(
   const escala = Math.max(ancho / imagen.width, alto / imagen.height);
   const w = imagen.width * escala;
   const h = imagen.height * escala;
-  ctx.drawImage(imagen, (ancho - w) / 2, (alto - h) / 2, w, h);
+  // Origen en píxeles enteros: con `cover` recortado un desplazamiento
+  // fraccionario reinterpolaba toda la imagen y la ablandaba.
+  ctx.drawImage(imagen, Math.round((ancho - w) / 2), Math.round((alto - h) / 2), w, h);
   return true;
 }
 
@@ -390,6 +396,9 @@ export function rotar(lienzo: HTMLCanvasElement, grados: number): HTMLCanvasElem
   const salida = cambia ? crearLienzo(lienzo.height, lienzo.width) : crearLienzo(lienzo.width, lienzo.height);
   const ctx = contexto(salida);
   if (!ctx) return lienzo;
+  // Giro exacto de 90°/270°: transposición de píxeles, sin reinterpolar.
+  // Con el suavizado puesto el canvas ablandaba los puntos al rotar.
+  ctx.imageSmoothingEnabled = false;
   ctx.translate(salida.width / 2, salida.height / 2);
   ctx.rotate((limpio * Math.PI) / 180);
   ctx.drawImage(lienzo, -lienzo.width / 2, -lienzo.height / 2);

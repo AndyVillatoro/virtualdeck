@@ -14,6 +14,10 @@ export interface PluginAccionInfo {
   /** Solo se pueden usar en teclas las que declaran `Keypad`. */
   esTecla: boolean;
   tienePI: boolean;
+  /** `UserTitleEnabled` del manifiesto (defecto `true`): con `false` el título lo pinta el plugin. */
+  userTitleEnabled: boolean;
+  /** La acción trae `Icon` o `States[0].Image`: el plugin controla la imagen. */
+  tieneImagenPropia: boolean;
 }
 
 export interface PluginInfo {

@@ -24,6 +24,8 @@ function aAccion(manifiesto: Manifiesto, accion: AccionManifiesto, indice: numbe
     nombre: accion.nombre || accion.uuid || reserva,
     esTecla: accion.controladores.includes('Keypad'),
     tienePI: !!(accion.piPath ?? manifiesto.piPath),
+    userTitleEnabled: accion.userTitleEnabled,
+    tieneImagenPropia: Boolean(accion.icono ?? accion.imagenEstado),
   };
 }
 

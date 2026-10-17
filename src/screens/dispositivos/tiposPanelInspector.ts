@@ -29,6 +29,8 @@ export interface PanelInspectorControlProps {
   /** Modo activo en memoria, para enseñarlo en el inspector. */
   modoActivo?: number | null;
   onFijarModos?: (modos: ModoPerilla[]) => void;
+  /** Serial del dock activo, para resolver contextos de plugins. */
+  serial?: string | null;
 }
 
 export type ControlMeta = NonNullable<PanelInspectorControlProps['controlMeta']>;

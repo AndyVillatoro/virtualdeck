@@ -4,6 +4,7 @@ import { useT, useFieldText } from '../../utils/i18n';
 import { DotLabel } from '../../components/DotLabel';
 import { ButtonCell } from '../../components/ButtonCell';
 import { interpolate } from '../../comun/interpolar';
+import { superficieDe } from '../../utils/plugins/ref';
 import type {
   ButtonAction,
   SubButtonConfig,
@@ -80,7 +81,12 @@ export function VistaPrevia({
 
   const [subToggled, setSubToggled] = useState<boolean[]>([false, false, false, false]);
 
-  const dockInfo = useDockInfoVista(boton, deckConfig?.pages, isEncendido, widgetData);
+  const contextoBoton = useMemo(
+    () => (id ? `${superficieDe(deckConfig?.pages, page)}:${id}` : null),
+    [deckConfig?.pages, page, id],
+  );
+
+  const dockInfo = useDockInfoVista(boton, deckConfig?.pages, isEncendido, widgetData, contextoBoton);
   const tituloHardware = useMemo(() => {
     const num = dockInfo.indice;
     return `${t('disp.paginaEnAparato').toUpperCase()} · ${t('disp.tecla', { n: num }).toUpperCase()}`;
@@ -112,6 +118,7 @@ export function VistaPrevia({
         <ButtonCell
           button={boton}
           accent={accent}
+          contexto={contextoBoton ?? undefined}
           toggled={isEncendido}
           subToggled={subToggled}
           soundEnabled={false}

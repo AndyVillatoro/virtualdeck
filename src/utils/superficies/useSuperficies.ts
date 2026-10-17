@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ButtonConfig, DeckConfig, DisposicionSuperficie, ElectronAPI, EntradaSuperficie, InfoSuperficie,
 } from '../../types';
-import { huecoDeEntrada, huecosDeControl, teclasLcd } from './disposicion';
+import { huecoDeEntrada, huecosDeControl } from './disposicion';
 import {
   claveModoPerilla, podarModosHuerfanos, podarModosPorPagina, resolverEntradaPerilla,
 } from './modosPerilla';
@@ -12,24 +12,18 @@ import {
 } from './paginaSegunApp';
 import { paginaDe, type PaginaDispositivo, type VivoPagina } from './paginasSuperficie';
 import { usePluginsSuperficie } from './pluginsSuperficie';
-import { contextoDe } from '../plugins/ref';
-import { alCambiarVisual, leerVisual } from '../plugins/visual';
-import type { PluginVisual } from '../../types/plugins';
+import { alCambiarVisual } from '../plugins/visual';
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
 import { useAvisoPerilla, type AvisoPerillaApi } from './useAvisoPerilla';
 import { useWidgetsSuperficie } from './useWidgetsSuperficie';
 import { conSubida, crearDetectorLargo, despacharBoton } from './despachoTecla';
-import { firmaWidget } from './widgetLcd';
-import type { DatosWidget } from '../../comun/widgets';
 import type { ResultadoPulsacion } from '../pulsarBoton';
 import { makeT, resolveLang, type TFunc } from '../i18n';
 import type { DetalleAccion } from '../acciones/base';
 import { useEstadoSistema } from '../estadoSistema';
 import { useSensors } from '../sensors';
-import {
-  fuentesLcdListas, pintarTecla, prepararFuentesLcd, resolverBotonLcd,
-  type ColoresSuperficie, type OpcionesPintado,
-} from './pintarTecla';
+import { fuentesLcdListas, prepararFuentesLcd, type ColoresSuperficie, type OpcionesPintado } from './pintarTecla';
+import { aplicarBrillo, pintarCambiadas } from './pintarCambiadas';
 
 /**
  * El pegamento entre el deck y los dispositivos físicos.
@@ -65,6 +59,10 @@ import {
  * soltar). Este hook solo aplica el valor de la página cuando **cambia** o
  * cuando el dispositivo aparece, y recuerda lo último que aplicó para no
  * pisar lo que se acaba de poner en vivo.
+ *
+ * La firma de cada tecla y el repintado incremental viven en
+ * `pintarCambiadas.ts`; el pulso de la pulsación y el motor DOT, en
+ * `motorAnimacionLcd.ts`.
  */
 
 export interface OpcionesSuperficies extends OpcionesPintado {
@@ -111,88 +109,9 @@ export interface Superficies {
   activarPagina: (serial: string, paginaId: string) => void;
 }
 
-/** Lo que se dibuja de una tecla. Si no cambia, no se vuelve a pintar. */
-function firmaDe(
-  boton: ButtonConfig | undefined, encendido: boolean,
-  ancho: number, alto: number, rotacion: number,
-  colores: ColoresSuperficie, fuentes: boolean, datos?: DatosWidget | null,
-  visual?: PluginVisual | null,
-): string {
-  if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
-  // `label`/`sublabel` llegan ya interpolados desde `paginaDe`: la firma lleva
-  // el texto final (`{VOL}` resuelto), así que un cambio de variable repinta.
-  // `firmaWidget` es la parte del dato vivo: solo repinta la tecla cuyo
-  // `line1`/`line2`/`tone`/`glyph` cambió. Lo que el plugin pinta (`setImage`/
-  // `setTitle`) también firma: sin esto la tecla no se repinta al llegar.
-  return JSON.stringify([
-    boton.label, boton.sublabel, boton.icon, boton.iconoPuntos?.bits, boton.imageData,
-    boton.customGlyph57, boton.brandIcon, boton.subButtons,
-    boton.brandIconCustomBitmap, boton.brandIconCustomColor, boton.brandIconCustomPalette,
-    boton.bgColor, boton.fgColor, boton.action?.type,
-    boton.isToggle, boton.animacion, boton.efectoPulsar, boton.aspectoEncendido, encendido,
-    ancho, alto, rotacion, colores.fondo, colores.texto, colores.aviso, colores.critico,
-    fuentes, firmaWidget(datos), visual?.imagen ?? null, visual?.titulo ?? null,
-  ]);
-}
-
-/** Lo que el plugin de la tecla está pintando, por su contexto de superficie. */
-function visualDe(boton: ButtonConfig | undefined, config: DeckConfig): PluginVisual | undefined {
-  if (boton?.action.type !== 'plugin') return undefined;
-  return leerVisual(contextoDe(boton, config));
-}
-
-/** Pinta las teclas cuya firma cambió y devuelve las imágenes nuevas por hueco. */
-async function pintarCambiadas(
-  api: ElectronAPI,
-  serial: string,
-  pagina: PaginaDispositivo,
-  colores: ColoresSuperficie,
-  opciones: OpcionesPintado,
-  firmas: Map<string, string[]>,
-  fuentes: boolean,
-  encendidos: Set<string>,
-  widgets: Record<string, DatosWidget>,
-  config: DeckConfig,
-  conAviso?: (serial: string, hueco: number) => boolean,
-): Promise<Record<number, string>> {
-  const previas = firmas.get(serial) ?? [];
-  const nuevas: string[] = [];
-  const pintadas: Record<number, string> = {};
-  for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
-    const boton = pagina.botones[hueco];
-    const encendido = !!boton && encendidos.has(boton.id);
-    const efectivo = boton ? resolverBotonLcd(boton, encendido) : boton;
-    const datos = boton ? widgets[boton.id] : undefined;
-    const visual = visualDe(boton, config);
-    const rotacion = pagina.rotacion ?? lcd.rotacion;
-    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes, datos, visual);
-    nuevas[hueco] = firma;
-    if (previas[hueco] === firma) continue;
-    // Una tecla que está enseñando un aviso no se pisa: la firma queda al día
-    // y el aviso repinta lo normal al vencer (T-HW-21).
-    if (conAviso?.(serial, hueco)) continue;
-    const imagen = await pintarTecla(efectivo ?? null, lcd, colores, opciones, rotacion, undefined, datos, visual);
-    await api.superficies.imagen(serial, indice, imagen.jpegBase64);
-    if (imagen.dataUrl) pintadas[hueco] = imagen.dataUrl;
-  }
-  firmas.set(serial, nuevas);
-  return pintadas;
-}
-
 /** El detalle de un giro (T-HW-21): el que devuelve la pulsación (el `dispararBoton` de `App`). */
 function detalleDe(resultado: unknown): DetalleAccion | undefined {
   return (resultado as ResultadoPulsacion | undefined)?.detalle;
-}
-
-function aplicarBrillo(
-  api: ElectronAPI,
-  serial: string,
-  brillo: number | undefined,
-  aplicados: Map<string, number>,
-): void {
-  if (brillo === undefined || aplicados.get(serial) === brillo) return;
-  aplicados.set(serial, brillo);
-  void api.superficies.brillo(serial, brillo);
 }
 
 type DecisionPerilla =

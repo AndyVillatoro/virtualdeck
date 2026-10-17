@@ -268,11 +268,31 @@ export function useEstadoEditor({ button, onSave, dockGesto, esDock }: UseEstado
     }
   };
 
+  const sobrescribirConPlugin = (nombreAccion?: string) => {
+    if (nombreAccion !== undefined) {
+      setLabel(nombreAccion);
+    }
+    setSublabel('');
+    setIcon('');
+    icono.setIconoPuntos(undefined);
+    icono.setImageData('');
+    icono.setBrandIcon('');
+    icono.setCustomGlyph57(undefined);
+    setGlifoEncima('');
+    setTipoIcono('glifo');
+    setBgColor('');
+    setFgColor('');
+    setWidget(undefined);
+    setSliderWidget(undefined);
+    apar.setAnimacionEfecto(undefined);
+  };
+
   return {
     isConfigured,
     is2x2Mode,
     setIs2x2Mode,
     subButtons,
+    sobrescribirConPlugin,
     setSubButtons,
     ...accion,
     ...apar,

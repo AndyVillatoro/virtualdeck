@@ -88,6 +88,7 @@ interface LateralInspectorProps {
   /** Modo activo en memoria, para enseñarlo en el inspector. */
   modoActivo?: number | null;
   onFijarModos?: (modos: ModoPerilla[]) => void;
+  serial?: string | null;
 }
 
 export function LateralInspector({
@@ -106,6 +107,7 @@ export function LateralInspector({
   perilla,
   modoActivo,
   onFijarModos,
+  serial,
 }: LateralInspectorProps) {
   const VD = useTheme();
   if (!abierta) return null;
@@ -136,6 +138,7 @@ export function LateralInspector({
           perilla={perilla}
           modoActivo={modoActivo}
           onFijarModos={onFijarModos}
+          serial={serial}
         />
       </div>
     );
@@ -155,6 +158,7 @@ export function LateralInspector({
       perilla={perilla}
       modoActivo={modoActivo}
       onFijarModos={onFijarModos}
+      serial={serial}
     />
   );
 }

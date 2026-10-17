@@ -33,6 +33,12 @@ export interface AccionManifiesto {
   nombre: string;
   controladores: string[];
   piPath?: string;
+  /** `UserTitleEnabled` de la acción; `true` si el manifiesto no lo trae (el título se puede editar). */
+  userTitleEnabled: boolean;
+  /** `Icon` de la acción, si trae una ruta válida. */
+  icono?: string;
+  /** Primera `Image` válida de `States`, si trae alguna. */
+  imagenEstado?: string;
 }
 
 export interface Manifiesto {
@@ -131,6 +137,31 @@ function normalizarControladores(brutos: unknown): string[] {
   return [...vistos];
 }
 
+/**
+ * `UserTitleEnabled` de la acción: solo `false` lo desactiva; ausente o con
+ * cualquier otro valor, el título se puede editar (defecto `true` del SDK).
+ */
+function leerUserTitleEnabled(valor: unknown): boolean {
+  return valor !== false;
+}
+
+/** Una ruta de imagen del manifiesto (`Icon` o `Image` de un estado), o `undefined` si no vale. */
+function leerRutaImagen(valor: unknown): string | undefined {
+  if (!rutaRelativaValida(valor)) return undefined;
+  return (valor as string).trim();
+}
+
+/** La primera `Image` válida de `States`, o `undefined` si ninguna trae ruta. */
+function leerPrimeraImagen(brutos: unknown): string | undefined {
+  if (!Array.isArray(brutos)) return undefined;
+  for (const bruta of brutos) {
+    if (!bruta || typeof bruta !== 'object') continue;
+    const ruta = leerRutaImagen((bruta as Record<string, unknown>).Image);
+    if (ruta) return ruta;
+  }
+  return undefined;
+}
+
 function leerAcciones(brutos: unknown): AccionManifiesto[] | null {
   if (!Array.isArray(brutos)) return [];
   const acciones: AccionManifiesto[] = [];
@@ -139,11 +170,16 @@ function leerAcciones(brutos: unknown): AccionManifiesto[] | null {
     const accion = bruta as Record<string, unknown>;
     const pi = resolverPI(accion.PropertyInspectorPath);
     if (pi.estado === 'error') return null;
+    const icono = leerRutaImagen(accion.Icon);
+    const imagenEstado = leerPrimeraImagen(accion.States);
     acciones.push({
       uuid: typeof accion.UUID === 'string' ? accion.UUID : '',
       nombre: typeof accion.Name === 'string' ? accion.Name : '',
       controladores: normalizarControladores(accion.Controllers),
       ...(pi.piPath ? { piPath: pi.piPath } : {}),
+      userTitleEnabled: leerUserTitleEnabled(accion.UserTitleEnabled),
+      ...(icono ? { icono } : {}),
+      ...(imagenEstado ? { imagenEstado } : {}),
     });
   }
   return acciones;

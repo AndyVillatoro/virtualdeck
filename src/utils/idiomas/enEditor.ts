@@ -241,4 +241,6 @@ export const EN_EDITOR: Dict = {
   'ed.plugin.sinInspector': 'This action has no property inspector.',
   'ed.plugin.enError': 'PLUGIN FAILED TO START:',
   'ed.plugin.help': 'The plugin is told when the button appears and when it is pressed. Its image and title replace the button ones in the cell; the settings its inspector saves stay on this button.',
+  'ed.plugin.aparienciaBloqueada': 'The plugin controls the image and appearance of this button.',
+  'ed.plugin.tituloBloqueado': 'The plugin does not allow changing the title for this action.',
 };
