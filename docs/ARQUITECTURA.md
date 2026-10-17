@@ -31,14 +31,15 @@ Node.js con acceso al SO. No conoce React. Expone todo vía IPC.
 | `trayManager.ts` | Ícono de bandeja, menú contextual y atajos globales. | ✅ |
 | `logger.ts` | Log rotativo en `userData/logs` (512KB, 1 backup). | ✅ |
 | `audio.ts` | Cambiar dispositivo de audio por defecto (núcleo nativo + respaldo PowerShell/C# IPolicyConfig). | ✅ |
-| `media.ts` | Leer/controlar la reproducción actual vía SMTC (WinRT). | ✅ |
+| `media.ts` (+ `mediaEstado`, `mediaScripts`, `mediaAnalisis`, `mediaTipos`) | Leer/controlar la reproducción actual vía SMTC (WinRT); el transporte en `media.ts` y los datos, scripts y diagnóstico por archivo. | ✅ |
 | `macro.ts` | Grabar macros (uiohook-napi) y reproducirlas (PowerShell). | ✅ |
-| `rgb.ts` | Control RGB vía OpenRGB SDK. | ✅ |
-| `launcher.ts` | Ejecutar apps / scripts / abrir URLs y carpetas. | ✅ |
+| `rgb/` | Control RGB vía OpenRGB SDK (fachada `index.ts`; estado, conexión, presets, perfiles y servidor por dentro). | ✅ |
+| `launcher.ts` (+ `launcherApps`, `launcherScripts`, `launcherTeclas`, `launcherVentanas`, `launcherBrilloVolumen`) | Ejecutar apps / scripts / atajos / ventanas / brillo y volumen, y abrir URLs y carpetas. | ✅ |
 | `tienda.ts` | Ventana `#tienda`: abrir/enfocar/cerrar + reavisar config a la tienda. | ✅ |
-| `sensors.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL. | ✅ |
+| `sensors.ts` + `sensors-parser.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL; el parser del árbol de sensores va aparte. | ✅ |
 | `ps-helpers.ts` | Ejecutar PowerShell con prefijo UTF-8 (parser de `param()`). | ✅ |
-| `superficies/driver.ts` | Contrato común (`DriverSuperficie`, `ControlId`, callbacks) para controladores físicos y docks HID. | ✅ |
+| `superficies/` | Controladores físicos (Stream Dock N3): `driver.ts` (contrato `DriverSuperficie`), `dispositivoMirabox.ts`, `protocoloMirabox.ts`, `gestor.ts` y la tabla de `modelos/`. | ✅ |
+| `plugins/` | Anfitrión de plugins de Stream Deck (MVP): manifiesto, instalación, ciclo de vida, eventos, procesos y Property Inspector. | ✅ |
 | `companion/ajustes.ts` | Persistir y sanear ajustes y token de la extensión compañera en `userData/companion.json` (aislado de `deck-config.json`). | ✅ |
 | `companion/estadoCompanion.ts` | Administrar en memoria el cliente WebSocket, fotogramas, FPS, metadatos y código de emparejamiento. | ✅ |
 | `companion/limites.ts` | Topes de seguridad (tamaño de frame, FPS, metadatos, clientes MJPEG) y saneamiento de entradas no confiables del WebSocket. | ✅ |
@@ -52,7 +53,7 @@ mensajes IPC ↔ módulo correspondiente. Sin lógica de negocio propia.
 `pageIpc` · `dialogIpc` · `launcherIpc` · `rgbIpc` · `sensorsIpc` · `logIpc` · `updateIpc` ·
 `floatingBarIpc` · `tiendaIpc` (puentes tienda→principal: `tienda:import`/`resultado`; eventos `tienda:apply`/`hecho`) ·
 `capturaIpc` (vídeo del panel de música) · `companionIpc` (extensión compañera: estado, pairing, comandos, token y puerto) ·
-`discordIpc` · `spotifyIpc` · `superficiesIpc` (docks)
+`discordIpc` · `spotifyIpc` · `superficiesIpc` (docks) · `pluginsIpc`
 
 ---
 

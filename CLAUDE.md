@@ -2,9 +2,9 @@
 
 Stream Deck alternativo para Windows. Electron + React + TypeScript + Vite.
 
-## 📚 Documentos relacionados (leer antes de empezar)
+## Documentos relacionados (leer antes de empezar)
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Workflow de desarrollo: branches, commits, PRs, release, firma/distribución, recetas y notas para LLMs. (Absorbió RELEASE/desarrollo/firma-y-distribución.)
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Workflow de desarrollo: branches, commits, PRs, release y distribución (solo Store), recetas y notas para LLMs. (Absorbió RELEASE/desarrollo/firma-y-distribución.)
 - **[CHANGELOG.md](CHANGELOG.md)** — Historial cronológico de versiones (Keep a Changelog).
 - **[docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)** — Mapa SRP: cada módulo/clase/feature con su responsabilidad única. Índice maestro del trabajo.
 - **[docs/ROADMAP.md](docs/ROADMAP.md)** — Secuencia 1/N (+ catálogo de ideas, ex-SUGERENCIAS): mejoramos **un apartado por sesión**, con ritual de verificar→mejorar→documentar→marcar. Empezar cada sesión eligiendo el próximo ítem ⬜.
@@ -84,10 +84,14 @@ archivo de instrucciones aparte — ver la corrección más abajo sobre por qué
   visibilidad, widgets, catálogo de marcas). Regla `comun-es-puro`.
 - Proceso principal `electron/main/`: `index.ts` (arranque), `windowManager.ts` + `ventanaMonitor.ts`
   (ventana y monitor), `ipc/` (por dominio), `superficies/` (driver del N3, tabla de modelos),
-  `paginaMando.ts`/`servidorLocal.ts` (mando móvil), `galeria.ts` (riesgo de perfiles), `media.ts`,
-  `audio.ts`, `launcher.ts`, `macro.ts`, `rgb.ts`, `sensors.ts`, `idioma.ts` (textos del main).
-- Núcleo Rust: `crates/vd-core` (lógica) + `crates/vd-node` (napi) → `native/vd-core.node`
-  (`npm run build:native`). Lo que tarda (`runScript`, `playMacro`, `speakText`) es `AsyncTask`.
+  `paginaMando.ts`/`servidorLocal.ts` (mando móvil), `galeria.ts` (riesgo de perfiles),
+  `media.ts` + `media*.ts` (SMTC), `audio.ts`, `launcher.ts` + `launcher*.ts`, `macro.ts`,
+  `rgb/` (OpenRGB; fachada `index.ts`), `sensors.ts` + `sensors-parser.ts`, `plugins/` (anfitrión
+  de plugins de Stream Deck), `companion/` (extensión compañera), `idioma.ts` (textos del main).
+- Núcleo Rust: `crates/vd-core` (lógica por dominios: `actions/`, `audio/`, `config/`, `launcher/`,
+  `media/`, `rgb/`, `sensors/`…) + `crates/vd-node` (napi por módulos: `lib.rs` + `audio`,
+  `launcher`, `macros`, `media`, `sensores`, `voz`) → `native/vd-core.node` (`npm run build:native`).
+  Lo que tarda (`runScript`, `playMacro`, `speakText`) es `AsyncTask`.
 
 ## Trampas conocidas (una línea; el porqué en NOTAS-TECNICAS)
 - Botones ↔ huecos **por posición, nunca por id** (`conHuecosCompletos`): borrar una página renumera sin renumerar ids.

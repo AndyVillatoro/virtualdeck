@@ -8,6 +8,10 @@ ejecutar atajos, macros y más. 100% local, gratis y sin cuentas.
 
 ---
 
+> **Aviso:** quien tenga VirtualDeck 0.13 instalado desde el `.exe` ya no recibe
+> actualizaciones automáticas: hay que pasarse a la
+> [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP).
+
 ## 📖 Documentación (Español)
 
 - [Primeros pasos](Primeros-Pasos) — instalar, crear tu primer botón, páginas.

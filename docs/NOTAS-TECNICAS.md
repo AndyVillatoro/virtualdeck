@@ -153,9 +153,9 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   certificado.**
 - `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
 - `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
-- `electron/main/media.ts` — info de reproducción actual + shuffle/repeat via SMTC
+- `electron/main/media.ts` + `mediaEstado`/`mediaScripts`/`mediaAnalisis`/`mediaTipos` — info de reproducción actual + shuffle/repeat via SMTC
 - `electron/main/macro.ts` — grabación de macros (uiohook-napi) + reproducción via PowerShell
-- `electron/main/rgb.ts` — control RGB vía OpenRGB SDK. `SMART_PRESETS` son 18 presets que
+- `electron/main/rgb/` — control RGB vía OpenRGB SDK (fachada `index.ts`; el estado tiene un único dueño en `estado.ts`). `SMART_PRESETS`, en `rgb/presets.ts`, son 18 presets que
   se apoyan **solo en modos que el dispositivo ya sabe hacer**: no hay motor de animación,
   VirtualDeck no manda fotogramas. Cada uno lleva color, una lista de modos a intentar (de
   lo específico a lo genérico, acabando siempre en `static`/`direct`) y opcionalmente
@@ -210,7 +210,7 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   SVG. Al móvil va como SVG autónomo en un `<img>`: su CSP solo admite `style` con nonce, así que el halo
   y la animación viajan dentro del propio SVG. Ni el renderer ni la tecla importan el catálogo en estático:
   sigue en su chunk diferido.
-- `electron/main/launcher.ts` — ejecutar apps/scripts
+- `electron/main/launcher.ts` + `launcherApps`/`launcherScripts`/`launcherTeclas`/`launcherVentanas`/`launcherBrilloVolumen` — ejecutar apps/scripts/atajos/ventanas
 - `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
 - `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
 - `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
@@ -252,7 +252,7 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   Ademas, el camino **nativo** (`vd-core`, `powershell -Command`) no inyectaba el prefijo y
   leia la salida con `from_utf8_lossy`: cada acento volvia como caracter de reemplazo, y eso
   afectaba a la accion «script» que guarda la salida en una variable. El arreglo de raiz ya
-  esta en `crates/vd-core` (`run_script` mete el prefijo); `conUtf8()` en `launcher.ts` lo
+  esta en `crates/vd-core` (`run_script` mete el prefijo); `conUtf8()` en `launcherScripts.ts` lo
   inyecta igualmente **antes** de elegir camino, por si carga un `.node` anterior.
   `injectUtf8Prefix` es idempotente para que no se aplique dos veces.
 - **Notificaciones y AppUserModelId**: `app.setAppUserModelId('com.virtualdeck.app')` se llama
@@ -317,7 +317,7 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   clic en el botón de detener.
 - **Atajos con signos (`Ctrl+-`, `Ctrl+=`, `[`).** El núcleo los resuelve con el idioma de
   teclado actual (`VkKeyScanW` en `crates/vd-core/src/macros/keys.rs`). Si un `.node` anterior
-  devuelve `false` con un signo, `sendHotkey` (`launcher.ts`) cae a PowerShell (`teclaSigno`).
+  devuelve `false` con un signo, `sendHotkey` (`launcherTeclas.ts`, reexportado por `launcher.ts`) cae a PowerShell (`teclaSigno`).
   El teclado numérico (`Add`, `Subtract`...) va por `uiohook-napi` (`keyTap`, en el propio proceso,
   ~1 ms): no depende del idioma del teclado, que es por lo que el zoom usa `Ctrl+Add` y no `Ctrl+=`
   (en el teclado latinoamericano `=` es `Shift+0`).

@@ -203,6 +203,18 @@ Utiliza este apartado para dejar mensajes, advertencias técnicas o instruccione
 
 
 
+* **2026-10-16** — *opencode w12 Space Bunny (T-DEL-B, barra de progreso en `mediosFijos.ts`)*:
+  - **El pendiente 4 de «Pendientes tras la 0.14.0» ya estaba hecho**: el commit `25f1038` (2026-10-08) metió `positionMs`/`durationMs`/`timelineUpdatedAt` en `PistaFija` y en el `return` de `medioFijo()`, y las capturas de ese día ya salen con la barra (**1:26 / 3:42** en `docs/prensa/01-deck.png` y en `08-kiosko-barra.png`). El pendiente no se cerró en el handoff; lo que faltaba era **consistencia y prueba**, no el tipo.
+  - **Lo que sí estaba roto** (encontrado mirando la captura, no el tipo): `timelineUpdatedAt: j.timelineUpdatedAt ?? Date.now()` se recalculaba en **cada** llamada, y `getNowPlaying` se pregunta cada pocos segundos. Como el widget interpola la posición desde ese campo (`src/utils/progresoCancion.ts`), la barra volvía a 1:26 y **retrocedía en cada sondeo**. Ahora el ancla se fija **una vez por proceso** (`anclaTimelineMs`) y la barra avanza sola. Además los tres campos pasan por `numero()`: el JSON se edita a mano y un `"86000"` entre comillas habría dejado la barra en `NaN`.
+  - **`scripts/prensa/caratula.mjs`** declara ya `positionMs: 86_000` / `durationMs: 222_000` en `reproduccion()` —lo que le faltaba al archivo de la pista— y **`capturar.mjs`** (`sembrarPista()`) los **añade** al `reproduccion.json` que ya exista, respetando todo lo demás, porque ese archivo se edita a mano y con el `if (!existsSync)` de antes se quedaba a medias hasta que alguien lo borrara de la carpeta de fuentes.
+  - **Fuera del encargo pero de paso:** regenerado `docs/prensa/fuentes/reproduccion.json` con su propio generador; el diff son **solo esos dos campos** (la carátula en base64 sale idéntica, comprobado).
+  - **Verificación:** `npm run check` 0 errores con los 7 guardianes en verde y `npm run build` OK. Capturas **de verdad** sacadas a borrador (`_referencias/informes/prensa-borrador/t-del-b/`, sin pisar las de `docs/prensa/`): `01-deck.png` y `08-kiosko-barra.png` con la barra a **1:35** de 3:42, avanzando y sin saltos. Los PNG de `docs/prensa/` no se han tocado: ya tenían barra.
+  - **Para quien siga:**
+    - `docs/prensa/README.md:244` sigue diciendo que «la barra de progreso no sale» y que harían falta `mediosFijos.ts` **y `media.ts`**: caducado, `media.ts` no hizo falta. Es de la limpieza de docs (w11).
+    - El pendiente 4 de `docs/HANDOFF.md:456` está caducado por lo mismo.
+    - `node scripts/prensa/caratula.mjs` **no hace nada en Windows**: el guardia `import.meta.url === \`file://${process.argv[1]}\`` nunca cuadra (`file:///C:/...` contra `file://C:\...`). Regeneré el JSON con un `node -e` que importa `reproduccion()`. Es un arreglo de una línea; no lo he tocado por no salirme del encargo.
+    - Nada de esto está en el `[Unreleased]` del `CHANGELOG`.
+
 ---
 
 ## 3. Checklist de Entrega de Turno (Handoff Checklist)
@@ -215,3 +227,8 @@ Antes de liberar tu turno o enviar tu commit, marca que has cumplido:
 - [ ] ¿Se verificó `npm run build` sin errores de bundle?
 - [ ] ¿Se actualizó el estado de la tarea en la tabla a `DONE`?
 - [ ] ¿Se dejó un mensaje en el buzón explicando qué se hizo y qué falta?
+| **T-DEL-A..D** | P2 | A partir `plugins/gestor.ts` (w16 Muse Spark); B barra de progreso en `mediosFijos.ts` (w12 Space Bunny); C limpieza de docs (w11 DeepSeek free); D revision de seguridad de plugins, solo lectura (w14 Gemini 4 Argon) | ver `_referencias/encargos/T-DEL-*.md` | `electron/main/plugins/**`; `electron/main/mediosFijos.ts`; docs/README/wiki | `VERIFYING` (check y build en verde; sin probar con plugin real ni commit) | 2026-10-16 |
+| **T-DEL-E** | P1 | Arreglar hallazgos #3,#4,#5,#6,#8,#9,#10 de la revisión de plugins; NO tocar #1,#2,#7 (encargo `_referencias/encargos/T-DEL-E-arreglos-plugins.md`) | opencode (Muse Spark) | `electron/main/plugins/**`, `src/utils/plugins/**` (+`PluginsSection.tsx`, `src/types/plugins.ts` solo si hace falta) | `DONE` (check 0 errores 0 warnings, build ok, pruebas puras tsx ok; sin commit: lo pide el encargo; no probado en app) | 2026-10-17 |
+| **T-TND-10** | P1 | Instalar plugin desde URL con sha256 (contrato IPC + manifiesto v3) | w16 Muse Spark (Go) | `electron/main/plugins/**`, `ipc/**`, `galeria.ts`, preload, `src/types/**`, `src/utils/plugins/**` | `DONE` (check 0 errores 0 warnings, build ok, helper puro probado con tsx; sin commit: lo pide el encargo) | 2026-10-17 |
+| **T-TND-11** | P1 | 6 plugins propios HTML + empaquetador + manifiesto | w12 Space Bunny (free) | `docs/galeria-ejemplo/**`, `scripts/empaquetar-plugins.mjs`, `package.json` | `VERIFYING` (check y build en verde; sin commit ni probar en la app) | 2026-10-16 |
+| **T-TND-12** | P1 | Rediseño de la tienda con sección Plugins | w14 Gemini 4 Argon | `src/screens/tienda/**`, `TiendaB.tsx`, `esAjustes/enAjustes`, `components/ui/**` | `VERIFYING` (check y build en verde; sin commit ni probar en la app) | 2026-10-16 |

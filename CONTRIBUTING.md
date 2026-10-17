@@ -28,11 +28,11 @@ virtualdeck/
 │   ├── main/                  # Proceso principal Electron (Node)
 │   │   ├── index.ts           # Bootstrap (~95 lns) — solo orquestación
 │   │   ├── audio.ts           # COM IPolicyConfig para cambiar default device
-│   │   ├── media.ts           # SMTC: nowPlaying, control, shuffle, repeat
+│   │   ├── media.ts           # SMTC: nowPlaying, control, shuffle, repeat (+ media*.ts)
 │   │   ├── macro.ts           # uiohook-napi grabador + PS playback
-│   │   ├── rgb.ts             # OpenRGB SDK
-│   │   ├── launcher.ts        # apps/scripts/hotkeys/clipboard/etc.
-│   │   ├── sensors.ts         # LibreHardwareMonitor HTTP polling
+│   │   ├── rgb/               # OpenRGB SDK (fachada index.ts)
+│   │   ├── launcher.ts        # apps/scripts/hotkeys/clipboard/etc. (+ launcher*.ts)
+│   │   ├── sensors.ts         # LibreHardwareMonitor HTTP polling (+ sensors-parser.ts)
 │   │   ├── weather.ts         # Open-Meteo
 │   │   ├── ps-helpers.ts      # runPS — wrapper de PowerShell con UTF-8
 │   │   ├── configManager.ts   # load/save/backup config JSON

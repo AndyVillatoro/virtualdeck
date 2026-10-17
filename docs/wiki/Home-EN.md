@@ -8,6 +8,10 @@ macros and more. 100% local, free, no accounts.
 
 ---
 
+> **Notice:** anyone running VirtualDeck 0.13 installed from the `.exe` no
+> longer receives automatic updates: move to the
+> [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP).
+
 ## 📖 Documentation (English)
 
 - [Getting Started](Getting-Started) — install, create your first button, pages.

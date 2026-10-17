@@ -17,7 +17,7 @@ visual retro de matriz de puntos. 100% local, gratis y sin cuentas.
 - **Variables y plantillas** — contadores e interpolación `{var}` en cualquier acción.
 - **Macros** de teclado/ratón con grabador global.
 - **RGB** (OpenRGB) y **sensores** (LibreHardwareMonitor embebido).
-- **Pantalla completa / kiosko**, multi-idioma (ES/EN), temas claro/oscuro, auto-update.
+- **Pantalla completa / kiosko**, multi-idioma (ES/EN), temas claro/oscuro, actualizaciones vía Store.
 
 ## Instalación
 
@@ -26,10 +26,14 @@ Instalalo desde la [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF82
 instalador aparte ni saltarse el aviso del SmartScreen. Si lo querés en la mano,
 el código está aquí mismo y se compila con `npm install && npm run dev`.
 
+> **Aviso:** quien tenga la versión 0.13 instalada desde el `.exe` ya no recibe
+> actualizaciones automáticas; para seguir al día, pasate a la
+> [Microsoft Store](https://apps.microsoft.com/detail/9N92JRF820JP).
+
 ## Documentación
 
 - **Guía de usuario (wiki, ES/EN):** https://github.com/AndyVillatoro/virtualdeck/wiki
-- **Para desarrollar:** [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, commits, release, firma.
+- **Para desarrollar:** [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, commits, release y distribución (solo Store).
 - **Arquitectura (mapa SRP):** [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
 - **Roadmap (qué sigue, una mejora por sesión):** [docs/ROADMAP.md](docs/ROADMAP.md)
 - **Historial de cambios:** [CHANGELOG.md](CHANGELOG.md)

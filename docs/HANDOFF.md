@@ -535,3 +535,34 @@ npm run build
 * **El dueño debe probar primero:** (1) recargar la extensión en `chrome://extensions` y ver si ya no cae a «desconectado»; (2) núcleo Rust partido en la app real (audio, música, macros, ventanas); (3) un `.streamDeckPlugin` real (Stopwatch, Home Assistant, Multi OBS): Ajustes → Plugins → instalar, acción `plugin` en un botón, pulsar y abrir «Configurar».
 * **Decisiones pendientes del dueño:** imagen de plugin en color vs DOT (hoy color); licencias del catálogo curado; borrar los 2 `git stash` (no se tocaron); borrar carpetas locales ignoradas (`_referencias/store-0.14.0` 143M, `trailer` 59M, `informes`).
 * **Siguiente iteración de plugins (83):** imagen en docks y mando móvil, perillas (Mirabox/dock), catálogo curado, actualizaciones; partir `gestor.ts` (595 líneas) antes de tocarlo. Faltan también 59 (Elgato), pruebas de hardware T-HW-05..17 con el N3 y la release (certificación 0.14.1; decidir 0.14.2 vs 0.15).
+
+## Turno 2026-10-16 — Delegado a los paneles (T-DEL-A..E), sin commit
+
+* **A (Muse Spark, Go):** `plugins/gestor.ts` 595 -> fachada + `estado`, `inventario`, `instalar`, `cicloVida`, `interaccion` (9 exports idénticos, verificado).
+* **B (Space Bunny free):** `mediosFijos.ts` ya tenía `positionMs`/`durationMs`; arreglado `timelineUpdatedAt` que se reiniciaba en cada sondeo.
+* **C (DeepSeek free):** mapa de `CLAUDE.md`/ARQUITECTURA/NOTAS/CONTRIBUTING al día; aviso a usuarios del `.exe` 0.13 en README y wiki Home ES/EN.
+* **D (Gemini 4 Argon, solo lectura):** 12 hallazgos de seguridad/robustez en plugins (`_referencias/encargos/T-DEL-D-hallazgos.txt`).
+* **E (Muse Spark):** arreglados #3 (token de sesión), #4, #5, #6, #8, #9, #10; `anfitrion.ts` 481 con `ordenesVisuales.ts`. **Sin tocar, decisión del dueño:** #1 (will-navigate acumulado), #2 (`no-sandbox` global + CORS `*` en partición de plugin; ligado a T-SEC-06), #7 (nietos huérfanos al cerrar, `taskkill /T`).
+* **Verificación:** `npm run check` 0 errores, `build` ok. Sin probar con un plugin real ni en la app.
+
+## Turno 2026-10-17 — T-TND-10 instalar plugin desde URL (contrato + manifiesto v3)
+
+* **Quién:** opencode w16 Muse Spark (Go). **Sin commit** (lo pide el encargo).
+* **Encargo:** `_referencias/encargos/T-TND-10-contrato-instalar-url.md`. Backend + contrato; la UI la hace otro agente (T-TND-12) en paralelo.
+* **Hecho:**
+  1. `electron/main/plugins/descarga.ts` (nuevo): `instalarDesdeUrl({ url, sha256, uuid })`. Solo `https` y hosts `raw.githubusercontent.com` / `github.com` / `objects.githubusercontent.com` (redirecciones seguidas a mano, máx. 5 saltos, fuera de la lista = `descarga`); tope 100 MB (supera = `tamano`); timeout 120 s; SHA-256 verificado antes de instalar (`hash` si difiere); entrega a `instalarDesdeZip` (misma validación zip-slip/topas/DRM, ahora exportada de `instalar.ts`); temporal borrado siempre (`finally`); si el uuid instalado difiere del pedido se desinstala y es `invalido`. `gestor.ts` lo reexporta.
+  2. Contrato: `CodigoInstalacion` + `descarga`/`hash`, `EntradaInstalacionUrl`, `ApiPlugins.installFromUrl`; canal `plugins:installFromUrl` en `pluginsIpc.ts` + preload (`satisfies ElectronAPI` cuadra; `check-ipc`: 151 canales, 22 eventos, ok).
+  3. Manifiesto v3: `TipoEntradaGaleria` + `plugin` y campos `sha256`/`uuid`/`license` en `src/types/config.ts` y `electron/main/galeria.ts`; `manifiesto()` sanea por helpers (`esFilaValida`, `traeRespaldoPlugin`, `tipoDe`, `respaldoPlugin`, `sanearEntrada`) y **filtra entradas plugin sin sha/uuid válidos**; `resumirRiesgoPlugin(entrada)` exportado (riesgo = `gal.risk.plugin`, sin traer nada por red) + canal `gallery:riesgoPlugin` en `configIpc.ts` + tipos + preload.
+  4. Helper puro `src/utils/plugins/estadoTienda.ts`: `estadoPluginTienda(entrada, instalados)` → `disponible`/`instalado`/`actualizable` (casa por `uuid`, compara con `versionMayor`); probado con `npx tsx` (5 casos ok).
+* **Guardián exigió tocar `scripts/check-i18n.mjs`:** el literal `'descarga'` (código de máquina de `CodigoInstalacion`, nunca texto visible) tripa el barrido de español; añadido a `PERMITIDOS` con comentario (mecanismo propio del script, no evasión). También se partió el `.map` de `manifiesto()` en helpers (complejidad 23 → ≤18).
+* **Verificación:** `npm run check` 0 errores 0 warnings (tsc, depcruise, eslint, 7 guardianes), `npm run build` ok.
+* **Para T-TND-12 (UI):** llamar `api.plugins.installFromUrl({ url, sha256, uuid })`; riesgo con `api.gallery.riesgoPlugin(entrada)`; estado con `estadoPluginTienda`. **Códigos nuevos que necesitan texto** (no toco `src/utils/idiomas/**`): `descarga` (fallo de red/host), `hash` (SHA no coincide), detalles `url`, `red`, `redireccion`, `redirecciones`, `cuerpo`, `http-<n>`, `sha-ausente`, `sha-distinto`, `uuid`, `uuid-distinto`, `temporal`.
+* **Sin probar en app real:** falta instalar un plugin de verdad desde URL (cuando T-TND-11 publique el manifiesto con `sha256`).
+
+## Turno 2026-10-16 (tarde) — Tienda renovada con plugins (T-DEL-F, T-TND-10/11/12), sin commit
+
+* **T-DEL-F (Muse Spark):** hallazgos 1, 2 (solo CORS; `no-sandbox` se queda, T-SEC-06) y 7 (`taskkill /T /F`). **T-DEL-G (DeepSeek free):** mensaje DRM con alternativa.
+* **T-TND-10 (Muse Spark):** `plugins.installFromUrl({url,sha256,uuid})`, `descarga.ts` (https, 3 hosts, redirecciones manuales, 100 MB, sha256 obligatorio), manifiesto v3 con `kind:'plugin'` dentro de `profiles`.
+* **T-TND-11 (Space Bunny free):** 6 plugins HTML propios (`docs/galeria-ejemplo/plugins/`), `npm run build:plugins`, 6 entradas en el manifiesto. Sin probar: Property Inspector y fases del pomodoro en la app real.
+* **T-TND-12 (Gemini 4 Argon):** tienda rediseñada (pestañas Todo/Perfiles/Páginas/Plugins, destacados, tarjetas, ficha con instalar en un clic). Capturas en `~/.gemini/antigravity-cli/brain/*/scratch/tienda-despues*.png`.
+* **Para que se pueda instalar de verdad:** hace falta **push** a `main` (las URL son `raw.githubusercontent.com/.../virtualdeck/main/docs/galeria-ejemplo/plugins/dist/*`) y decidir el manifiesto por defecto: hoy la tienda apunta a `AndyVillatoro/virtualdeck-gallery`, no a `virtualdeck/docs/galeria-ejemplo`.
