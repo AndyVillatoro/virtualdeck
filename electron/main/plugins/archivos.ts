@@ -1,6 +1,6 @@
 import { createServer } from 'http';
 import type { IncomingMessage, Server, ServerResponse } from 'http';
-import { readFileSync, statSync } from 'fs';
+import { lstatSync, readFileSync, realpathSync } from 'fs';
 import { AddressInfo } from 'net';
 import { extname, resolve, sep } from 'path';
 
@@ -68,6 +68,9 @@ function rutaServida(pedida: string, carpeta: string): string | null {
   // ruta es siempre relativa a la carpeta del plugin.
   const limpia = relativa.replace(/^[/\\]+/, '');
   if (!limpia) return null;
+  // Sin dos puntos en ningún tramo: ni unidades (`C:`) ni Alternate Data
+  // Streams de NTFS (`icono.png:stream`), que `readFileSync` sí abriría.
+  if (limpia.split(/[\\/]/).some((tramo) => tramo.includes(':'))) return null;
 
   const base = resolve(carpeta);
   const destino = resolve(base, limpia);
@@ -75,7 +78,7 @@ function rutaServida(pedida: string, carpeta: string): string | null {
   return destino;
 }
 
-function atender(req: IncomingMessage, res: ServerResponse, base: string): void {
+function atender(req: IncomingMessage, res: ServerResponse, base: string, baseReal: string): void {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { Allow: 'GET, HEAD' }).end();
     return;
@@ -87,11 +90,19 @@ function atender(req: IncomingMessage, res: ServerResponse, base: string): void 
   }
   let contenido: Buffer;
   try {
-    if (!statSync(destino).isFile()) {
+    // `lstat` no sigue enlaces: una junction o symlink dentro de la carpeta
+    // hacia fuera se sirve como 404, no como el archivo de fuera (hallazgo #4).
+    const stats = lstatSync(destino);
+    if (stats.isSymbolicLink() || !stats.isFile()) {
       res.writeHead(404).end();
       return;
     }
-    contenido = readFileSync(destino);
+    const real = realpathSync(destino);
+    if (real !== baseReal && !real.startsWith(baseReal + sep)) {
+      res.writeHead(403).end();
+      return;
+    }
+    contenido = readFileSync(real);
   } catch {
     res.writeHead(404).end();
     return;
@@ -116,7 +127,13 @@ export interface ServidorArchivos {
 /** Levanta el servidor en `127.0.0.1` con puerto aleatorio. */
 export function iniciarServidorArchivos(carpeta: string): Promise<ServidorArchivos> {
   const base = resolve(carpeta);
-  const servidor: Server = createServer((req, res) => atender(req, res, base));
+  let baseReal: string;
+  try {
+    baseReal = realpathSync(base);
+  } catch (e) {
+    return Promise.reject(e);
+  }
+  const servidor: Server = createServer((req, res) => atender(req, res, base, baseReal));
   return new Promise((listo, fallo) => {
     servidor.once('error', fallo);
     servidor.listen(0, '127.0.0.1', () => {

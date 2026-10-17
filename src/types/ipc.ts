@@ -96,6 +96,8 @@ export interface ElectronAPI {
     manifest: (url: string) => Promise<{ ok: boolean; profiles?: EntradaGaleria[]; error?: string }>;
     profile: (url: string) => Promise<{ ok: boolean; perfil?: unknown; riesgo?: ResumenRiesgo; error?: string }>;
     readme: (url: string) => Promise<{ ok: boolean; texto?: string; error?: string }>;
+    /** Riesgo de una entrada de plugin: sale de la entrada, no hay perfil que traer. */
+    riesgoPlugin: (entrada: EntradaGaleria) => Promise<{ ok: boolean; riesgo?: ResumenRiesgo; error?: string }>;
   };
   tienda: {
     open: () => Promise<boolean>;

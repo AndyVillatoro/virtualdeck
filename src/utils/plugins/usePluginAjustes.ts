@@ -51,6 +51,10 @@ export function usePluginAjustes({ api, botones, updateButton }: Opciones) {
       // de plugin. Si el botón ya no es de plugin (se cambió de tipo mientras
       // estaba abierta la ventana del inspector) no hay dónde guardarlo.
       if (!btn || btn.action.type !== 'plugin' || !btn.action.plugin) return;
+      // Si no cambió nada no se escribe: cada guardado reescribe la config y
+      // mete un paso en Undo (hallazgo #10).
+      const previos = btn.action.plugin.settings ?? null;
+      if (JSON.stringify(previos) === JSON.stringify(settings ?? null)) return;
       escribir({
         ...btn,
         action: { ...btn.action, plugin: { ...btn.action.plugin, settings } },

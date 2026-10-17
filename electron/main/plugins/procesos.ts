@@ -1,8 +1,9 @@
 import { BrowserWindow, session, shell, utilityProcess } from 'electron';
 import type { Session } from 'electron';
-import { spawn } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { join } from 'path';
 import { urlAbrible } from '../abrirExterno';
+import { retirarPoliticaGeneral } from '../seguridadVentana';
 
 /**
  * Cómo se lanza y cómo se encierra cada tipo de plugin.
@@ -19,11 +20,11 @@ import { urlAbrible } from '../abrirExterno';
  * con `localStorage` separado y permisos denegados.
  *
  * **Ojo con `asegurarWebContents`**: `index.ts` la aplica a toda ventana nueva
- * y solo deja navegar al `index.html` de la aplicación, además de denegar todo
- * `window.open`. A estas ventanas les rompería las dos cosas (un PI que abre un
- * enlace y un plugin que navega dentro de su origen), así que cada una recibe
- * su propia política en `aplicarPoliticaVentanaPlugin`, que **no** toca la de
- * las ventanas de la aplicación.
+ * vía `web-contents-created`, incluidos los `BrowserWindow` de plugin/PI. Sus
+ * `will-navigate`/`will-redirect` son listeners de EventEmitter y se acumulan:
+ * aplicar la política propia después **no** los sustituye (el `setWindowOpenHandler`
+ * sí, ese se sobrescribe). Por eso `aplicarPoliticaVentanaPlugin` retira primero
+ * la general con `retirarPoliticaGeneral` y luego pone la del plugin.
  */
 
 export interface DatosLanzamiento {
@@ -33,6 +34,13 @@ export interface DatosLanzamiento {
   puerto: number;
   puertoArchivos: number;
   infoJSON: string;
+  /**
+   * El `-pluginUUID` que se pasa al proceso (`<uuid>:<token>` del anfitrión):
+   * el SDK lo reenvía opaco en `registerPlugin` y así solo el proceso lanzado
+   * se registra (hallazgo #3). Opcional por el prototipo de fase 0, que lanza
+   * sin anfitrión de gestor y sigue con el UUID a secas.
+   */
+  uuidRegistro?: string;
   /** El gestor lo usa para marcar `error` y reintentar (máx. 3). */
   alSalir?: (codigo: number | null) => void;
 }
@@ -54,13 +62,16 @@ export function prepararSesionPlugin(uuid: string): Session {
 }
 
 /**
- * La política propia de una ventana de plugin o PI, que sustituye a la general
- * de `asegurarWebContents` (se aplica después de crearla, así que la segunda
- * gana): ventana nueva, solo a navegador externo y solo `http(s)`; navegación
- * del marco principal, solo dentro del servidor de archivos del plugin.
+ * La política propia de una ventana de plugin o PI: retira la general de
+ * `asegurarWebContents` (que llegó vía `web-contents-created` y cuyos
+ * `will-navigate`/`will-redirect` se habrían acumulado bloqueando la
+ * navegación interna del plugin) y pone la del plugin. Ventana nueva, solo a
+ * navegador externo y solo `http(s)`; navegación del marco principal, solo
+ * dentro del servidor de archivos del plugin.
  */
 export function aplicarPoliticaVentanaPlugin(win: BrowserWindow, origenPermitido: string): void {
   const contenido = win.webContents;
+  retirarPoliticaGeneral(contenido);
   contenido.setWindowOpenHandler(({ url }) => {
     const abrible = urlAbrible(url);
     if (abrible && (abrible.startsWith('http://') || abrible.startsWith('https://'))) {
@@ -109,6 +120,42 @@ function volcarSalida(uuid: string, dato: Buffer): void {
   }
 }
 
+/**
+ * Mata el proceso del plugin con su árbol en Windows (hallazgo #7).
+ *
+ * `hijo.kill()` solo termina el hijo directo: los nietos que el plugin lanzó
+ * (powershell, ffmpeg, CLIs) quedaban huérfanos y con el `cwd` bloqueado en
+ * `<uuid>.sdPlugin`, haciendo que el borrado al desinstalar fallara. En
+ * Windows se usa `taskkill /PID <pid> /T /F` cuando hay pid (síncrono, para
+ * que `before-quit` y `desinstalar` lo vean muerto antes de seguir); si no hay
+ * pid o `taskkill` falla, respaldo con `hijo.kill()`. Fuera de Windows, kill
+ * directo. Nunca lanza: si todo falla, el proceso sigue, pero el cierre no.
+ */
+function matarArbol(hijo: { pid?: number; kill(): unknown }, uuid: string): void {
+  if (process.platform !== 'win32') {
+    try {
+      hijo.kill();
+    } catch {
+      /* ya estaba muerto */
+    }
+    return;
+  }
+  const pid = typeof hijo.pid === 'number' && Number.isFinite(hijo.pid) ? hijo.pid : 0;
+  if (pid > 0) {
+    try {
+      execSync(`taskkill /PID ${pid} /T /F`, { stdio: 'ignore', timeout: 8000 });
+      return;
+    } catch {
+      console.log(`[plugin:${uuid}] taskkill no pudo con ${pid}; respaldo a kill()`);
+    }
+  }
+  try {
+    hijo.kill();
+  } catch {
+    /* ya estaba muerto */
+  }
+}
+
 /** `true` si el plugin se lanzó por `spawn` en vez de por `utilityProcess`. */
 function modoNodeEsSpawn(): boolean {
   return process.env.VD_PLUGIN_PROTO_MODO === 'node';
@@ -118,7 +165,7 @@ function modoNodeEsSpawn(): boolean {
 export function lanzarPluginNode(datos: DatosLanzamiento): PluginLanzado {
   const args = [
     '-port', String(datos.puerto),
-    '-pluginUUID', datos.uuid,
+    '-pluginUUID', datos.uuidRegistro ?? datos.uuid,
     '-registerEvent', 'registerPlugin',
     '-info', datos.infoJSON,
   ];
@@ -145,11 +192,7 @@ export function lanzarPluginNode(datos: DatosLanzamiento): PluginLanzado {
     });
     return {
       cerrar: () => {
-        try {
-          hijo.kill();
-        } catch {
-          /* ya estaba muerto */
-        }
+        matarArbol(hijo, datos.uuid);
       },
     };
   }
@@ -176,11 +219,7 @@ export function lanzarPluginNode(datos: DatosLanzamiento): PluginLanzado {
   });
   return {
     cerrar: () => {
-      try {
-        hijo.kill();
-      } catch {
-        /* ya estaba muerto */
-      }
+      matarArbol(hijo, datos.uuid);
     },
   };
 }
@@ -207,7 +246,7 @@ export function lanzarPluginHTML(datos: DatosLanzamiento): PluginLanzado {
   });
   win.on('closed', () => datos.alSalir?.(null));
   win.webContents.on('did-finish-load', () => {
-    const llamada = `connectElgatoStreamDeckSocket(${JSON.stringify(datos.puerto)}, ${JSON.stringify(datos.uuid)}, ${JSON.stringify('registerPlugin')}, ${JSON.stringify(datos.infoJSON)})`;
+    const llamada = `connectElgatoStreamDeckSocket(${JSON.stringify(datos.puerto)}, ${JSON.stringify(datos.uuidRegistro ?? datos.uuid)}, ${JSON.stringify('registerPlugin')}, ${JSON.stringify(datos.infoJSON)})`;
     win.webContents.executeJavaScript(llamada).catch((e: Error) => {
       console.log(`[plugin:${datos.uuid}] no pude llamar al registro: ${e.message}`);
     });

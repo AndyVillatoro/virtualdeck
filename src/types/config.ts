@@ -287,7 +287,7 @@ export const BARRA_POR_DEFECTO: Required<FloatingBarSettings> = {
   tileSize: 64,
 };
 
-export type TipoEntradaGaleria = 'profile' | 'page';
+export type TipoEntradaGaleria = 'profile' | 'page' | 'plugin';
 
 export interface EntradaGaleria {
   id: string;
@@ -316,6 +316,12 @@ export interface EntradaGaleria {
   portada?: string;
   /** Capturas de pantalla (solo https, como mucho 6). */
   capturas?: string[];
+  /** SHA-256 del ZIP (hex, 64). Obligatorio si `kind` es 'plugin': sin esto no se instala. */
+  sha256?: string;
+  /** UUID del plugin (el de su `manifest.json`). Obligatorio si `kind` es 'plugin'. */
+  uuid?: string;
+  /** Licencia en texto corto (ej. "MIT", "GPL-3.0"): informativo. */
+  license?: string;
 }
 
 /** De qué entrada de qué manifiesto se instaló un perfil o página. */

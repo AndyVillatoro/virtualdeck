@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { botonesResueltos } from '../botonesFijos';
 import { contextoDe, esAccionPlugin, mismaRef, refDe } from './ref';
 import { borrarVisual } from './visual';
-import type { DeckConfig, ElectronAPI } from '../../types';
+import type { DeckConfig, ElectronAPI, PluginInfo } from '../../types';
 import type { PluginRef } from '../../types/plugins';
 
 /**
@@ -51,6 +51,10 @@ export function usePluginsVisibles({ api, config, pagina, visible }: Opciones) {
   // repintado: solo se vuelve a mandar si el botón **cambió** (otro plugin,
   // otra acción u otros ajustes).
   const enviados = useRef<Enviados>(new Map());
+  // La vista actual por referencia: la conciliación con la marcha (efecto de
+  // abajo) la lee sin re-suscribirse en cada repintado.
+  const vista = useRef({ config, pagina, visible });
+  vista.current = { config, pagina, visible };
 
   useEffect(() => {
     if (!api?.plugins) return;
@@ -74,4 +78,47 @@ export function usePluginsVisibles({ api, config, pagina, visible }: Opciones) {
     }
     enviados.current = ahora;
   }, [api, config, pagina, visible]);
+
+  // La marcha cambió (habilitar, deshabilitar, desinstalar, reinstalar): se
+  // concilia sin esperar a que cambie la página (hallazgo #8).
+  useEffect(() => {
+    if (!api?.plugins) return undefined;
+    return api.plugins.onChanged((lista) => conciliarConMarcha(api, lista, enviados.current, vista.current));
+  }, [api]);
+}
+
+/**
+ * Lo que la marcha obliga a corregir aunque la página no haya cambiado:
+ *
+ * - Un plugin parado deja su última imagen clavada en la celda (el botón sigue
+ *   siendo de tipo `plugin` en la config): se olvida lo que pintó. La entrada
+ *   de `enviados` se conserva para que al rehabilitar no haya que reenviar
+ *   nada —el gestor reaparece solo los contextos que conserva—.
+ * - Un plugin desinstalado ya no vuelve: su entrada sí se saca.
+ * - Un plugin reinstalado que vuelve a `running` no recibiría `willAppear`
+ *   (sus contextos se retiraron al desinstalar y la página no cambió): se le
+ *   aparece lo visible que falte.
+ */
+function conciliarConMarcha(
+  api: ElectronAPI,
+  lista: PluginInfo[],
+  enviados: Enviados,
+  vista: { config: DeckConfig; pagina: number; visible: boolean },
+): void {
+  const presentes = new Set(lista.map((p) => p.uuid));
+  const enMarcha = new Set(lista.filter((p) => p.estado === 'running' || p.estado === 'starting').map((p) => p.uuid));
+  for (const [contexto, ref] of [...enviados]) {
+    if (!presentes.has(ref.pluginUuid)) {
+      enviados.delete(contexto);
+      borrarVisual(contexto);
+    } else if (!enMarcha.has(ref.pluginUuid)) {
+      borrarVisual(contexto);
+    }
+  }
+  if (!vista.visible) return;
+  for (const [contexto, ref] of refsDeLaPagina(vista.config, vista.pagina)) {
+    if (enviados.has(contexto) || !enMarcha.has(ref.pluginUuid)) continue;
+    enviados.set(contexto, ref);
+    enviar(api, ref, true);
+  }
 }

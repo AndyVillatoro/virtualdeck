@@ -21,7 +21,10 @@ const oyentes = new Set<() => void>();
 
 /** Guarda lo pintado por un plugin y avisa a las celdas de ese contexto. */
 export function guardarVisual(visual: PluginVisual): void {
-  visuales.set(visual.contexto, visual);
+  // Fusionado, no reemplazo: un `setTitle` no borra la imagen que puso el
+  // `setImage` anterior ni un `setState` borra el título (hallazgo #9). Las
+  // claves que el aviso no trae se conservan.
+  visuales.set(visual.contexto, { ...visuales.get(visual.contexto), ...visual });
   for (const o of oyentes) o();
 }
 

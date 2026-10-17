@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { validarUuid } from './instalacion';
+import { cabeEnLimite, esObjetoPlano, validarUuid } from './validacion';
 
 /**
  * Lo que el gestor recuerda en disco (roadmap 83, MVP).
@@ -74,7 +74,9 @@ export function leerGlobales(dirPlugins: string, uuid: string): Record<string, u
 }
 
 export function guardarGlobales(dirPlugins: string, uuid: string, globales: unknown): void {
-  if (!validarUuid(uuid) || !globales || typeof globales !== 'object') return;
+  // Solo objetos planos de hasta 64 KB: los arrays se descartarían al leer y
+  // cada guardado reescribe el disco y entra en el historial (hallazgo #10).
+  if (!validarUuid(uuid) || !esObjetoPlano(globales) || !cabeEnLimite(globales)) return;
   try {
     if (!existsSync(dirPlugins)) mkdirSync(dirPlugins, { recursive: true });
     escribirAtomico(rutaGlobales(dirPlugins, uuid), JSON.stringify(globales));

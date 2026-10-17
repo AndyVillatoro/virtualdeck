@@ -36,11 +36,20 @@ export type CodigoInstalacion =
   | 'invalido'
   | 'os'
   | 'exe'
-  | 'duplicado';
+  | 'duplicado'
+  | 'descarga'
+  | 'hash';
 
 export type ResultadoInstalacion =
   | { ok: true; plugin: PluginInfo }
   | { ok: false; codigo: CodigoInstalacion; detalle?: string };
+
+/** Pedido de instalar un plugin desde la tienda: ZIP por HTTPS verificado. */
+export interface EntradaInstalacionUrl {
+  url: string;
+  sha256: string;
+  uuid: string;
+}
 
 /** Lo que un plugin pinta en un botón (`setImage`, `setTitle`, `setState`). */
 export interface PluginVisual {
@@ -64,6 +73,8 @@ export interface ApiPlugins {
   list: () => Promise<PluginInfo[]>;
   /** Sin ruta abre el selector de archivos `.streamDeckPlugin`. */
   install: (ruta?: string) => Promise<ResultadoInstalacion>;
+  /** Baja el ZIP por HTTPS, verifica el SHA-256 y lo instala. */
+  installFromUrl: (entrada: EntradaInstalacionUrl) => Promise<ResultadoInstalacion>;
   uninstall: (uuid: string) => Promise<boolean>;
   setEnabled: (uuid: string, habilitado: boolean) => Promise<PluginInfo | null>;
   /** El botón apareció en pantalla (`willAppear`) o dejó de estarlo (`willDisappear`). */

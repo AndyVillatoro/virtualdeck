@@ -15,9 +15,16 @@ import { aplicarPoliticaVentanaPlugin, particionDePlugin, prepararSesionPlugin, 
  * que hace falta para leerlas desde `http://127.0.0.1:<puerto>`; **no** se
  * apaga `webSecurity`. Las cabeceras de preflight van también para que un POST
  * con JSON no se quede en el `OPTIONS`.
+ *
+ * Límite (hallazgo #2): eso **no** se inyecta hacia `127.0.0.1`/`localhost`
+ * ajenos —solo al propio `puertoArchivos` y a lo no-loopback—. Sin esto, el PI
+ * o el plugin HTML (misma sesión `persist:plugin-<uuid>`) podía hacer `fetch`
+ * a los puertos de otros plugins o a servicios locales y leer sus respuestas
+ * saltándose la Same-Origin Policy. El `no-sandbox` global se queda (T-SEC-06
+ * sigue bloqueado, decisión del dueño): aquí solo se cierra el CORS local.
  */
 
-const CORS_PUESTOS = new Set<string>();
+const CORS_PUESTOS = new Map<string, number>();
 
 export interface DatosPI {
   uuid: string;
@@ -33,11 +40,40 @@ export interface DatosPI {
   coordinates: { column: number; row: number };
 }
 
-function prepararCors(uuid: string): void {
+/**
+ * Si una respuesta puede llevar CORS permisivo (hallazgo #2).
+ *
+ * Pura a propósito, para probarla con `npx tsx` sin levantar Electron.
+ * `false` solo para loopback ajeno (`127.0.0.1`/`localhost`/`::1` con puerto
+ * distinto del propio servidor de archivos del plugin): el servidor de otro
+ * plugin, LibreHardwareMonitor, etc. Todo lo demás —remotos y el propio
+ * puerto— devuelve `true` para no romper los PIs que piden recursos remotos.
+ */
+export function debeInyectarCors(urlRespuesta: string, puertoPropio: number): boolean {
+  let u: URL;
+  try {
+    u = new URL(urlRespuesta);
+  } catch {
+    return true;
+  }
+  const anfitrion = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const esLoopback = anfitrion === '127.0.0.1' || anfitrion === 'localhost' || anfitrion === '::1';
+  if (!esLoopback) return true;
+  return u.port === String(puertoPropio);
+}
+
+function prepararCors(uuid: string, puertoArchivos: number): void {
   const clave = particionDePlugin(uuid);
-  if (CORS_PUESTOS.has(clave)) return;
-  CORS_PUESTOS.add(clave);
+  if (CORS_PUESTOS.get(clave) === puertoArchivos) return;
+  CORS_PUESTOS.set(clave, puertoArchivos);
   session.fromPartition(clave).webRequest.onHeadersReceived((detalles, responder) => {
+    // Loopback ajeno: se devuelve la respuesta tal cual, sin CORS permisivo.
+    // Así el `fetch` cruzado entre plugins o hacia otros servicios locales lo
+    // sigue bloqueando la Same-Origin Policy.
+    if (!debeInyectarCors(detalles.url, puertoArchivos)) {
+      responder({ responseHeaders: detalles.responseHeaders });
+      return;
+    }
     // Las cabeceras llegan con el nombre tal cual lo mandó el servidor: si ya
     // traía `access-control-allow-origin` en minúsculas y se añade la otra
     // grafía, Chromium ve dos valores y lo bloquea igual (medido con el PI de
@@ -59,7 +95,7 @@ function prepararCors(uuid: string): void {
 /** Abre el PI de una acción y devuelve su ventana. */
 export function abrirVentanaPI(datos: DatosPI): BrowserWindow {
   prepararSesionPlugin(datos.uuid);
-  prepararCors(datos.uuid);
+  prepararCors(datos.uuid, datos.puertoArchivos);
 
   const win = new BrowserWindow({
     width: Math.max(200, datos.tamano[0]),

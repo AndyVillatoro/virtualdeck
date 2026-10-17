@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron';
-import type { PluginRef } from '../../../src/types';
+import type { EntradaInstalacionUrl, PluginRef } from '../../../src/types';
 import {
   listarPlugins,
   instalarPlugin,
+  instalarDesdeUrl,
   desinstalarPlugin,
   habilitarPlugin,
   aparecerPlugin,
@@ -13,6 +14,7 @@ import {
 export function registerPluginsIpc(): void {
   ipcMain.handle('plugins:list', () => listarPlugins());
   ipcMain.handle('plugins:install', (_e, ruta?: string) => instalarPlugin(ruta));
+  ipcMain.handle('plugins:installFromUrl', (_e, entrada: EntradaInstalacionUrl) => instalarDesdeUrl(entrada));
   ipcMain.handle('plugins:uninstall', (_e, uuid: string) => desinstalarPlugin(uuid));
   ipcMain.handle('plugins:setEnabled', (_e, uuid: string, habilitado: boolean) => habilitarPlugin(uuid, !!habilitado));
   ipcMain.handle('plugins:appear', (_e, ref: PluginRef, visible: boolean) => aparecerPlugin(ref, !!visible));

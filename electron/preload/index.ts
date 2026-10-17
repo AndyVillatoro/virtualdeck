@@ -4,7 +4,7 @@ import type {
   DiscordVoiceSettings, DiscordStatus, SpotifyDevice, SpotifyPlaybackState, EntradaGaleria, ResumenRiesgo,
   PedidoTienda, ResultadoTienda, InfoSuperficie, EntradaSuperficie, DisposicionSuperficie, SesionAudioApp,
   PistaCaptura, ResultadoVentanas, CompanionStatus, CompanionCommand, CompanionMetadata, CompanionFrame,
-  PluginInfo, PluginRef, PluginVisual, ResultadoInstalacion } from '../../src/types';
+    PluginInfo, PluginRef, PluginVisual, ResultadoInstalacion, EntradaInstalacionUrl } from '../../src/types';
 
 
 /**
@@ -79,6 +79,8 @@ const api = {
     manifest: (url: string): Promise<GalleryManifest> => ipcRenderer.invoke('gallery:manifest', url),
     profile: (url: string): Promise<GalleryProfile> => ipcRenderer.invoke('gallery:profile', url),
     readme: (url: string): Promise<GalleryReadme> => ipcRenderer.invoke('gallery:readme', url),
+    riesgoPlugin: (entrada: EntradaGaleria): Promise<{ ok: boolean; riesgo?: ResumenRiesgo; error?: string }> =>
+      ipcRenderer.invoke('gallery:riesgoPlugin', entrada),
   },
   tienda: {
     open: (): Promise<boolean> => ipcRenderer.invoke('tienda:open'),
@@ -294,6 +296,8 @@ const api = {
   plugins: {
     list: (): Promise<PluginInfo[]> => ipcRenderer.invoke('plugins:list'),
     install: (ruta?: string): Promise<ResultadoInstalacion> => ipcRenderer.invoke('plugins:install', ruta),
+    installFromUrl: (entrada: EntradaInstalacionUrl): Promise<ResultadoInstalacion> =>
+      ipcRenderer.invoke('plugins:installFromUrl', entrada),
     uninstall: (uuid: string): Promise<boolean> => ipcRenderer.invoke('plugins:uninstall', uuid),
     setEnabled: (uuid: string, habilitado: boolean): Promise<PluginInfo | null> =>
       ipcRenderer.invoke('plugins:setEnabled', uuid, habilitado),

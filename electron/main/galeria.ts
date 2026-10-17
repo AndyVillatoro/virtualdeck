@@ -21,8 +21,11 @@ const MS_ESPERA = 10000;
 const TOPE_README = 64 * 1024;
 /** Capturas por entrada: la ficha no muestra más y así un manifiesto no fuerza cien descargas. */
 const MAX_CAPTURAS = 6;
+/** SHA-256 en hex (64) y UUID de plugin (minúsculas, 3–101): sin los dos no hay instalación. */
+const SHA_RE = /^[0-9a-fA-F]{64}$/;
+const UUID_RE = /^[a-z0-9][a-z0-9._-]{2,100}$/;
 
-type TipoEntradaGaleria = 'profile' | 'page';
+type TipoEntradaGaleria = 'profile' | 'page' | 'plugin';
 
 export interface EntradaGaleria {
   id: string;
@@ -50,6 +53,12 @@ export interface EntradaGaleria {
   /** Portada y capturas: solo https y nunca la propia máquina ni la red interna. */
   portada?: string;
   capturas?: string[];
+  /** SHA-256 del ZIP (hex, 64). Obligatorio si `kind` es 'plugin'. */
+  sha256?: string;
+  /** UUID del plugin (el de su `manifest.json`). Obligatorio si `kind` es 'plugin'. */
+  uuid?: string;
+  /** Licencia en texto corto (ej. "MIT"): informativo. */
+  license?: string;
 }
 
 /** Cuántas acciones de cada clase de las que preocupan trae un perfil. */
@@ -101,29 +110,70 @@ async function traerJson(url: string): Promise<unknown> {
   return JSON.parse(texto);
 }
 
+/** Una fila del manifiesto que trae lo mínimo (id + url válida). */
+function esFilaValida(p: EntradaGaleria): boolean {
+  return !!p && typeof p.id === 'string' && typeof p.url === 'string' && direccionAceptable(p.url);
+}
+
+/**
+ * Un plugin ejecuta código ajeno: sin SHA-256 y sin UUID no se instala, así
+ * que ni se lista (ver `instalarDesdeUrl`).
+ */
+function traeRespaldoPlugin(p: EntradaGaleria): boolean {
+  if (p.kind !== 'plugin') return true;
+  return typeof p.sha256 === 'string' && SHA_RE.test(p.sha256)
+    && typeof p.uuid === 'string' && UUID_RE.test(p.uuid);
+}
+
+/** El tipo de la fila: lo desconocido es perfil (formato v1). */
+function tipoDe(p: EntradaGaleria): TipoEntradaGaleria | undefined {
+  if (p.kind === 'page') return 'page';
+  if (p.kind === 'plugin') return 'plugin';
+  return undefined;
+}
+
+/** SHA-256, UUID y licencia de una entrada de plugin, o nada si no es plugin. */
+function respaldoPlugin(p: EntradaGaleria): Pick<EntradaGaleria, 'sha256' | 'uuid' | 'license'> {
+  if (p.kind !== 'plugin') return {};
+  return {
+    sha256: typeof p.sha256 === 'string' && SHA_RE.test(p.sha256) ? p.sha256.toLowerCase() : undefined,
+    uuid: typeof p.uuid === 'string' && UUID_RE.test(p.uuid) ? p.uuid : undefined,
+    license: typeof p.license === 'string' ? p.license.slice(0, 32) : undefined,
+  };
+}
+
+/** La fila del manifiesto saneada, o `null` si no vale. */
+function sanearEntrada(p: EntradaGaleria): EntradaGaleria | null {
+  if (!esFilaValida(p) || !traeRespaldoPlugin(p)) return null;
+  return {
+    id: p.id, label: String(p.label ?? p.id), author: p.author ? String(p.author) : undefined,
+    description: p.description ? String(p.description) : undefined,
+    url: p.url, tags: Array.isArray(p.tags) ? p.tags.map(String) : undefined,
+    kind: tipoDe(p),
+    version: typeof p.version === 'string' ? p.version : undefined,
+    minAppVersion: typeof p.minAppVersion === 'string' ? p.minAppVersion : undefined,
+    targetApp: typeof p.targetApp === 'string' ? p.targetApp : undefined,
+    requires: Array.isArray(p.requires) ? p.requires.map(String) : undefined,
+    readme: typeof p.readme === 'string' ? p.readme.slice(0, TOPE_README) : undefined,
+    readmeUrl: typeof p.readmeUrl === 'string' && direccionAceptable(p.readmeUrl) ? p.readmeUrl : undefined,
+    icono: typeof p.icono === 'string' ? p.icono.slice(0, 64) : undefined,
+    portada: typeof p.portada === 'string' && direccionAceptable(p.portada) ? p.portada : undefined,
+    capturas: Array.isArray(p.capturas)
+      ? p.capturas.filter((c): c is string => typeof c === 'string' && direccionAceptable(c)).slice(0, MAX_CAPTURAS)
+      : undefined,
+    ...respaldoPlugin(p),
+  };
+}
+
 export async function manifiesto(url: string): Promise<{ ok: true; profiles: EntradaGaleria[] } | { ok: false; error: string }> {
   try {
     const j = await traerJson(url) as { profiles?: unknown };
     if (!Array.isArray(j?.profiles)) return { ok: false, error: tm('gal.badManifest') };
-    const profiles = (j.profiles as EntradaGaleria[])
-      .filter((p) => p && typeof p.id === 'string' && typeof p.url === 'string' && direccionAceptable(p.url))
-      .map((p) => ({
-        id: p.id, label: String(p.label ?? p.id), author: p.author ? String(p.author) : undefined,
-        description: p.description ? String(p.description) : undefined,
-        url: p.url, tags: Array.isArray(p.tags) ? p.tags.map(String) : undefined,
-        kind: (p.kind === 'page' ? 'page' : undefined) as TipoEntradaGaleria | undefined,
-        version: typeof p.version === 'string' ? p.version : undefined,
-        minAppVersion: typeof p.minAppVersion === 'string' ? p.minAppVersion : undefined,
-        targetApp: typeof p.targetApp === 'string' ? p.targetApp : undefined,
-        requires: Array.isArray(p.requires) ? p.requires.map(String) : undefined,
-        readme: typeof p.readme === 'string' ? p.readme.slice(0, TOPE_README) : undefined,
-        readmeUrl: typeof p.readmeUrl === 'string' && direccionAceptable(p.readmeUrl) ? p.readmeUrl : undefined,
-        icono: typeof p.icono === 'string' ? p.icono.slice(0, 64) : undefined,
-        portada: typeof p.portada === 'string' && direccionAceptable(p.portada) ? p.portada : undefined,
-        capturas: Array.isArray(p.capturas)
-          ? p.capturas.filter((c): c is string => typeof c === 'string' && direccionAceptable(c)).slice(0, MAX_CAPTURAS)
-          : undefined,
-      }));
+    const profiles: EntradaGaleria[] = [];
+    for (const p of (j.profiles as EntradaGaleria[])) {
+      const entrada = sanearEntrada(p);
+      if (entrada) profiles.push(entrada);
+    }
     return { ok: true, profiles };
   } catch (e) {
     return { ok: false, error: String((e as Error).message ?? e) };
@@ -334,6 +384,28 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
 
   for (const b of botones) mirarBoton(b);
   return { botones: botones.length, scripts, programas, atajosGlobales, webhooks, urls, teclas, automaticos, integraciones };
+}
+
+/**
+ * Riesgo de una entrada de plugin de la tienda (manifiesto v3).
+ *
+ * Un plugin **es** código de un desconocido y lo que hace al pulsar no está
+ * en el manifiesto: no se puede resumir ni leer antes de aceptar. Se enseña
+ * la misma línea que un botón con acción de plugin (`gal.risk.plugin`).
+ */
+export function resumirRiesgoPlugin(entrada: EntradaGaleria): ResumenRiesgo {
+  const quien = typeof entrada.uuid === 'string' && entrada.uuid ? entrada.uuid : entrada.id;
+  return {
+    botones: 0,
+    scripts: [tm('gal.risk.plugin', { plugin: String(quien) })],
+    programas: [],
+    atajosGlobales: [],
+    webhooks: [],
+    urls: [],
+    teclas: [],
+    automaticos: [],
+    integraciones: [],
+  };
 }
 
 /** 32 bytes en base64 (icono 16×16) y origen de uno de los dos catálogos. */

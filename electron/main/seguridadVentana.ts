@@ -80,8 +80,47 @@ function esDestinoPropio(url: string): boolean {
  * Se separa de `asegurarVentana` para poder aplicarla también a cualquier
  * `webContents` que Electron cree sin que nadie se lo pida (ver
  * `app.on('web-contents-created')` en `index.ts`).
+ *
+ * Ojo: `setWindowOpenHandler` se sustituye al llamarlo otra vez, pero
+ * `wc.on('will-navigate' | 'will-redirect' | 'will-attach-webview')` son
+ * listeners de un EventEmitter y **se acumulan**. Las ventanas de plugin/PI
+ * nacen con esta política general (vía `web-contents-created`) y luego reciben
+ * la suya propia en `aplicarPoliticaVentanaPlugin`: sin retirar la general,
+ * la general bloquea la navegación interna del plugin aunque la propia la
+ * permita (hallazgo #1). Por eso los manejadores quedan guardados y
+ * `retirarPoliticaGeneral` los quita con `removeListener`.
  */
+type AlNavegar = (evento: Electron.Event, url: string) => void;
+type AlWebview = (evento: Electron.Event) => void;
+
+const politicaGeneral = new WeakMap<WebContents, { navegar: AlNavegar; redirigir: AlNavegar; vista: AlWebview }>();
+
+/** Quita de un `webContents` los listeners que puso `asegurarWebContents`. */
+export function retirarPoliticaGeneral(wc: WebContents): void {
+  const guardada = politicaGeneral.get(wc);
+  if (!guardada) return;
+  try {
+    wc.removeListener('will-navigate', guardada.navegar as (...args: unknown[]) => void);
+  } catch {
+    /* ya estaba fuera */
+  }
+  try {
+    wc.removeListener('will-redirect', guardada.redirigir as (...args: unknown[]) => void);
+  } catch {
+    /* ya estaba fuera */
+  }
+  try {
+    wc.removeListener('will-attach-webview', guardada.vista as (...args: unknown[]) => void);
+  } catch {
+    /* ya estaba fuera */
+  }
+  politicaGeneral.delete(wc);
+}
+
 export function asegurarWebContents(wc: WebContents): void {
+  // Idempotente: si ya tenía la política general, se retira antes de ponerla
+  // otra vez (si no, los listeners se duplicarían aquí mismo).
+  retirarPoliticaGeneral(wc);
   // 1. Ventanas hijas. `deny` es la respuesta más fuerte: ni se crea, ni
   //    queda registrada, ni hereda el preload. Que se ignoren en silencio es
   //    intencionado — un `console.error` por cada intento sería ruido de un
@@ -94,28 +133,32 @@ export function asegurarWebContents(wc: WebContents): void {
   //    un `target`, un `<base href>` colado en el DOM. Los cambios de hash
   //    tampoco generan evento, y son los que usa el renderer para pintar la
   //    barra o la tienda, así que no se rompen.
-  wc.on('will-navigate', (evento, url) => {
+  const alNavegar: AlNavegar = (evento, url) => {
     if (esDestinoPropio(url)) return;
     evento.preventDefault();
     console.error(`[ventana] navegacion bloqueada a ${url}`);
-  });
+  };
+  wc.on('will-navigate', alNavegar as (...args: unknown[]) => void);
 
   // 3. `will-redirect`: la misma regla para las redirecciones de servidor.
   //    Aquí la aplicación no navega, pero un `vd://` o un recurso remoto
   //    pueden acabar redirigiendo el marco principal.
-  wc.on('will-redirect', (evento, url) => {
+  const alRedirigir: AlNavegar = (evento, url) => {
     if (esDestinoPropio(url)) return;
     evento.preventDefault();
     console.error(`[ventana] redireccion bloqueada a ${url}`);
-  });
+  };
+  wc.on('will-redirect', alRedirigir as (...args: unknown[]) => void);
 
   // 4. `<webview>`: no hay `webviewTag` en ninguna ventana, así que esto no
   //    debería existir. El tag va sin sandbox y con sus propios `webPreferences`
   //    escritos por quien lo crea; se bloquea por si alguien lo deja puesto.
-  wc.on('will-attach-webview', (evento) => {
+  const alWebview: AlWebview = (evento) => {
     evento.preventDefault();
     console.error('[ventana] se intento montar un <webview>');
-  });
+  };
+  wc.on('will-attach-webview', alWebview as (...args: unknown[]) => void);
+  politicaGeneral.set(wc, { navegar: alNavegar, redirigir: alRedirigir, vista: alWebview });
 }
 
 /**

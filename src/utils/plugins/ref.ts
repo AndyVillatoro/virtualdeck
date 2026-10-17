@@ -88,8 +88,15 @@ export function botonDeContexto(
   return botones.find((b) => b.id === id) ?? null;
 }
 
-/** Las dos referencias son la misma si coinciden plugin, acción y ajustes. */
+/**
+ * Las dos referencias son la misma si coinciden plugin y acción.
+ *
+ * Los ajustes **no** se comparan a propósito: el plugin los cambia con
+ * `setSettings` y el cambio ya viaja por `didReceiveSettings`; si bastara un
+ * ajuste para parecer otra tecla, cada `setSettings` mandaría `willDisappear`
+ * + `willAppear`, y un `setSettings` dentro del `willAppear` entraría en un
+ * bucle infinito vaciando Undo y reescribiendo la config (hallazgo #10).
+ */
 export function mismaRef(a: PluginRef, b: PluginRef): boolean {
-  if (a.pluginUuid !== b.pluginUuid || a.accionUuid !== b.accionUuid) return false;
-  return JSON.stringify(a.settings ?? null) === JSON.stringify(b.settings ?? null);
+  return a.pluginUuid === b.pluginUuid && a.accionUuid === b.accionUuid;
 }

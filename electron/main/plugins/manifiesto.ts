@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { extname, join } from 'path';
+import { validarUuid } from './validacion';
 
 /**
  * El manifiesto de un plugin del SDK de Stream Deck, leído y desconfiado.
@@ -167,8 +168,8 @@ function interpretarManifiesto(texto: string, carpeta: string): LecturaManifiest
   // `UUID` en el manifiesto es de las versiones nuevas del SDK; antes el UUID
   // era el nombre de la carpeta sin `.sdPlugin` (medido: Stopwatch y Multi OBS
   // Controller no lo traen), y así lo sigue haciendo Stream Deck.
-  const uuid = uuidDe(datos.UUID, carpeta);
-  if (!uuid) return { estado: 'error', codigo: 'uuid' };
+  const limpio = uuidValido(datos.UUID, carpeta);
+  if (!limpio) return { estado: 'error', codigo: 'uuid' };
   if (!incluyeWindows(datos)) return { estado: 'error', codigo: 'os' };
 
   const code = validarCodePath(datos);
@@ -180,12 +181,12 @@ function interpretarManifiesto(texto: string, carpeta: string): LecturaManifiest
 
   const minimo = String((datos.Software as { MinimumVersion?: unknown })?.MinimumVersion ?? '');
   const esMirabox = Number(datos.SDKVersion) === 1 && /^[23]\./.test(minimo);
-  const nombre = typeof datos.Name === 'string' && datos.Name ? datos.Name : uuid.trim();
+  const nombre = typeof datos.Name === 'string' && datos.Name ? datos.Name : limpio;
 
   return {
     estado: 'ok',
     manifiesto: {
-      uuid: uuid.trim(),
+      uuid: limpio,
       nombre,
       version: typeof datos.Version === 'string' && datos.Version ? datos.Version : '0.0.0',
       tipo: code.tipo,
@@ -202,6 +203,28 @@ function interpretarManifiesto(texto: string, carpeta: string): LecturaManifiest
 /** El `UUID` del manifiesto, o el de la carpeta: `com.x.y.sdPlugin` → `com.x.y`; vacío si no hay ninguno. */
 function uuidDe(declarado: unknown, carpeta: string): string {
   if (typeof declarado === 'string' && declarado.trim()) return declarado;
+  return uuidDeCarpeta(carpeta);
+}
+
+/**
+ * El UUID declarado, validado y coincidiendo con la carpeta, o `null`.
+ *
+ * Sin esto, un `manifest.json` con `"UUID": "../../otra"` haría que
+ * `dirDe(uuid)` apuntara fuera de `plugins/` en el siguiente arranque
+ * (hallazgo #4).
+ */
+function uuidValido(declarado: unknown, carpeta: string): string | null {
+  const uuid = uuidDe(declarado, carpeta);
+  if (!uuid) return null;
+  const limpio = uuid.trim();
+  if (!validarUuid(limpio)) return null;
+  const deCarpeta = uuidDeCarpeta(carpeta);
+  if (deCarpeta && limpio !== deCarpeta) return null;
+  return limpio;
+}
+
+/** Lo que la carpeta dice que es: `.../com.x.y.sdPlugin` → `com.x.y`; vacío si no parece plugin. */
+function uuidDeCarpeta(carpeta: string): string {
   const nombre = carpeta.split(/[\\/]/).filter(Boolean).pop() ?? '';
   const m = /^(.+)\.sdPlugin$/i.exec(nombre);
   return m ? m[1] : '';

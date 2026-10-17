@@ -60,6 +60,14 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('gallery:manifest', (_e: any, url: string) => galeria.manifiesto(url));
   ipcMain.handle('gallery:profile', (_e: any, url: string) => galeria.perfil(url));
   ipcMain.handle('gallery:readme', (_e: any, url: string) => galeria.leerTexto(url));
+  // T-TND-10 — riesgo de una entrada de plugin (manifiesto v3): un plugin
+  // ejecuta código ajeno y no hay perfil que resumir, así que el riesgo sale
+  // de la propia entrada (`resumirRiesgoPlugin`).
+  ipcMain.handle('gallery:riesgoPlugin', (_e: any, entrada: galeria.EntradaGaleria) => (
+    entrada?.kind === 'plugin'
+      ? { ok: true, riesgo: galeria.resumirRiesgoPlugin(entrada) }
+      : { ok: false, error: tm('gal.badManifest') }
+  ));
 
   ipcMain.handle('config:listBackups', () => listBackups());
   ipcMain.handle('config:restoreBackup', (_e: any, filename: string) => restoreBackup(filename));

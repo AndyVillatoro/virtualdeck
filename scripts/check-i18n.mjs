@@ -227,6 +227,10 @@ const PERMITIDOS = new Set([
   // migrar configuraciones. No es texto: nunca se enseña. Antes de esta
   // entrada se escribía `'acc' + 'iones'` para que este script no la viera.
   'acciones', 'acciones:',
+  // Código de máquina de `CodigoInstalacion` (T-TND-10): viaja del main a la
+  // pantalla y la UI lo traduce con su diccionario, nunca se enseña tal cual.
+  // `hash` pasa solo; `descarga` es palabra española y este barrido la marca.
+  'descarga',
 ]);
 
 function pareceEspanol(s) {

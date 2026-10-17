@@ -4,6 +4,9 @@ import { Readable, Transform } from 'stream';
 import { pipeline } from 'stream/promises';
 import { openPromise } from 'yauzl';
 import type { Entry, ZipFile } from 'yauzl';
+import { esSegmentoProhibido, validarUuid } from './validacion';
+
+export { validarUuid };
 
 /**
  * Instalación de un `.streamDeckPlugin` (roadmap 83, MVP).
@@ -13,10 +16,13 @@ import type { Entry, ZipFile } from 'yauzl';
  * la mueve a su sitio solo si vale: nunca queda una instalación a medias.
  *
  * Seguridad (todo aquí, en un solo sitio):
- * - UUID validado con `^[a-z0-9][a-z0-9._-]{2,100}$` (en minúsculas).
+ * - UUID validado con `^[a-z0-9][a-z0-9._-]{2,100}$` (en minúsculas, en
+ *   `validacion.ts` para compartirlo con el manifiesto ya instalado).
  * - Protección zip-slip: cada entrada se descompone en segmentos y el destino
  *   se reconstruye desde ellos; se rechazan rutas absolutas, `..`, unidades
- *   (`C:`) y symlinks. Nada se escribe fuera de la carpeta destino.
+ *   (`C:`), dos puntos dentro (`NTFS Alternate Data Streams`), reservados de
+ *   Windows (`NUL`, `COM1`) y symlinks. Nada se escribe fuera de la carpeta
+ *   destino.
  * - Topes: ZIP <= 100 MB, descomprimido <= 300 MB (contando bytes reales, no
  *   solo los declarados), <= 5000 entradas.
  * - No se extrae con comandos del sistema: solo `yauzl` (MIT).
@@ -37,9 +43,6 @@ import type { Entry, ZipFile } from 'yauzl';
  * `../`, uno con ruta absoluta y uno sin `manifest.json`.
  */
 
-const UUID_RE = /^[a-z0-9][a-z0-9._-]{2,100}$/;
-
-/** ZIP de entrada: más de esto ni se abre. */
 const LIMITE_ZIP_BYTES = 100 * 1024 * 1024;
 /** Total descomprimido, contando bytes reales escritos, no los declarados. */
 const LIMITE_DESCOMPRIMIDO_BYTES = 300 * 1024 * 1024;
@@ -48,11 +51,6 @@ const LIMITE_ENTRADAS = 5000;
 
 const SUFIJO_CARPETA = '.sdPlugin';
 const SUFIJO_MIN = SUFIJO_CARPETA.toLowerCase();
-
-/** El UUID de un plugin: minúsculas, 3–101 caracteres. */
-export function validarUuid(valor: unknown): valor is string {
-  return typeof valor === 'string' && UUID_RE.test(valor);
-}
 
 /** Segmentos de una ruta de ZIP, tratando `/` y `\` como separadores. */
 function segmentosDe(ruta: string): string[] {
@@ -65,10 +63,11 @@ function segmentosDe(ruta: string): string[] {
 /**
  * Una ruta de entrada de ZIP que no puede salirse de la carpeta destino.
  *
- * Se rechazan las absolutas (`/...`, `C:/...`), los bytes nulos, las unidades
- * de Windows como segmento (`C:`) y cualquier `..`. La extracción además
- * reconstruye el destino desde estos segmentos, así que ningún separador
- * original sobrevive al camino al disco.
+ * Se rechazan las absolutas (`/...`, `C:/...`), los bytes nulos y cualquier
+ * tramo prohibido (`..`, `C:`, `:` dentro por los Alternate Data Streams de
+ * NTFS, reservados de Windows como `NUL` o `COM1`: ver `esSegmentoProhibido`).
+ * La extracción además reconstruye el destino desde estos segmentos, así que
+ * ningún separador original sobrevive al camino al disco.
  */
 function esRutaEntradaSegura(nombre: unknown): boolean {
   if (typeof nombre !== 'string' || nombre === '' || nombre.includes('\0')) return false;
@@ -76,7 +75,7 @@ function esRutaEntradaSegura(nombre: unknown): boolean {
   if (/^[/\\]/.test(nombre)) return false;
   const segmentos = segmentosDe(nombre);
   if (segmentos.length === 0) return false;
-  return !segmentos.some((tramo) => tramo === '..' || /^[a-zA-Z]:$/.test(tramo));
+  return !segmentos.some((tramo) => esSegmentoProhibido(tramo));
 }
 
 /** Señal interna: se superó el tope de bytes descomprimidos escribiendo. */
