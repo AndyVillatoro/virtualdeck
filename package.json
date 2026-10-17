@@ -19,6 +19,7 @@
     "build:icon": "node scripts/generate-icon.js",
     "build:iconos": "node scripts/generar-iconos-dot.mjs",
     "build:hero": "node scripts/generate-hero.mjs",
+    "build:plugins": "node scripts/empaquetar-plugins.mjs",
     "build:native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-native.ps1",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

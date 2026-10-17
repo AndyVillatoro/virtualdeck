@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Contador</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Contador de VirtualDeck.
+       *
+       * Pulsacion corta: suma uno. Pulsacion larga (700 ms): vuelve a cero. El
+       * valor viaja en los ajustes del boton (`setSettings`), que es donde el
+       * anfitrion lo persiste: asi el numero sobrevive a reiniciar la
+       * aplicacion y se ve igual en las tres superficies.
+       */
+      (function () {
+        const MAXIMO = 9999;
+        const LARGO_MS = 700;
+        let pulsado = 0;
+
+        function valorDe(ajustes) {
+          const n = Math.round(Number(ajustes && ajustes.valor));
+          return Number.isFinite(n) && n >= 0 ? Math.min(MAXIMO, n) : 0;
+        }
+
+        function pintar(contexto, valor) {
+          StreamDeck.setTitle(contexto, String(valor));
+          StreamDeck.setImage(
+            contexto,
+            Puntos.datos(
+              [
+                { t: String(valor), c: 'punto' },
+                { t: 'TOTAL', c: 'tenue' },
+              ],
+              { led: valor > 0 ? 'acento' : 'tenue' },
+            ),
+          );
+        }
+
+        function guardar(contexto, valor) {
+          pintar(contexto, valor);
+          /* Los ajustes son el payload del `setSettings`, sin envoltura. */
+          StreamDeck.setSettings(contexto, { valor });
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          pintar(mensaje.context, valorDe(ajustes));
+        });
+
+        StreamDeck.addEventListener('keyDown', (mensaje) => {
+          if (!pulsado) pulsado = Date.now();
+          StreamDeck.setState(mensaje.context, 1);
+        });
+
+        StreamDeck.addEventListener('keyUp', (mensaje) => {
+          const largo = Date.now() - pulsado;
+          pulsado = 0;
+          StreamDeck.setState(mensaje.context, 0);
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          const valor = valorDe(ajustes);
+          if (largo >= LARGO_MS) {
+            guardar(mensaje.context, 0);
+            return;
+          }
+          guardar(mensaje.context, valor >= MAXIMO ? 0 : valor + 1);
+        });
+      })();
+    </script>
+  </body>
+</html>

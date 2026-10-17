@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fecha</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Fecha de VirtualDeck: el dia, el mes y la semana del ano.
+       *
+       * No necesita ajustes ni pulsacion: solo pinta y se repinta cuando
+       * cambia el dia. La semana es la ISO 8601 (la 1 es la del primer jueves del
+       * ano), que es la que espera cualquiera que cuente semanas.
+       */
+      (function () {
+        const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+        const DIAS = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
+        const contextos = new Map();
+
+        /** La semana ISO: lunes = 1 y el 4 de enero siempre es de la semana 1. */
+        function semanaIso(fecha) {
+          const jueves = new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()));
+          const dia = (jueves.getUTCDay() + 6) % 7;
+          jueves.setUTCDate(jueves.getUTCDate() - dia + 3);
+          const primero = new Date(Date.UTC(jueves.getUTCFullYear(), 0, 4));
+          const diaPrimero = (primero.getUTCDay() + 6) % 7;
+          primero.setUTCDate(primero.getUTCDate() - diaPrimero + 3);
+          return 1 + Math.round((jueves.getTime() - primero.getTime()) / (7 * 86400000));
+        }
+
+        function dos(n) {
+          return n < 10 ? '0' + n : String(n);
+        }
+
+        function pintar(contexto, forzar) {
+          const ahora = new Date();
+          const clave = ahora.toDateString();
+          if (!forzar && contextos.has(contexto) && contextos.get(contexto) === clave) return;
+          contextos.set(contexto, clave);
+          const dia = dos(ahora.getDate());
+          const mes = MESES[ahora.getMonth()];
+          const semana = 'S' + dos(semanaIso(ahora));
+          const nombre = DIAS[(ahora.getDay() + 6) % 7];
+          StreamDeck.setTitle(contexto, nombre + ' ' + dia + ' ' + mes + ' ' + semana);
+          StreamDeck.setImage(
+            contexto,
+            Puntos.datos(
+              [
+                { t: dia, c: 'punto' },
+                { t: mes + ' ' + semana, c: 'acento' },
+              ],
+              { led: 'acento' },
+            ),
+          );
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          contextos.delete(mensaje.context);
+          pintar(mensaje.context, true);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          contextos.delete(mensaje.context);
+        });
+
+        /* Cada medio minuto solo se repinta si ha cambiado el dia. */
+        setInterval(() => {
+          for (const contexto of contextos.keys()) pintar(contexto, false);
+        }, 30000);
+      })();
+    </script>
+  </body>
+</html>

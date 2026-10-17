@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Reloj mundial</title>
+    <style>
+      /* Property Inspector del reloj mundial.
+       *
+       * Elija la zona horaria del boton (nombre IANA) y la guarda con
+       * `setSettings`. El reloj corre en el plugin: esto solo escribe.
+       */
+      :root {
+        color-scheme: dark;
+        --fondo: #070809;
+        --superficie: #111315;
+        --borde: #26292e;
+        --texto: #d7dade;
+        --tenue: #8a8f96;
+        --acento: #ff3b30;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: var(--fondo);
+        color: var(--texto);
+        font: 12px/20px ui-monospace, Consolas, monospace;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: var(--acento);
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+        color: var(--tenue);
+        letter-spacing: 1px;
+      }
+      select {
+        width: 100%;
+        height: 32px;
+        padding: 0 8px;
+        background: var(--superficie);
+        color: var(--texto);
+        border: 1px solid var(--borde);
+        border-radius: 4px;
+        font: inherit;
+      }
+      select:focus {
+        outline: none;
+        border-color: var(--acento);
+      }
+      .nota {
+        margin-top: 16px;
+        color: var(--tenue);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>RELOJ MUNDIAL</h1>
+    <label for="zona">ZONA HORARIA</label>
+    <select id="zona"></select>
+    <p class="nota">Nombre IANA: el boton pinta la hora de esa zona y su desfase con UTC.</p>
+    <script src="sdk.js"></script>
+    <script>
+      (function () {
+        const ZONAS = [
+          ['Etc/UTC', 'UTC'],
+          ['Europe/Madrid', 'Madrid'],
+          ['Europe/Lisbon', 'Lisboa'],
+          ['Europe/London', 'Londres'],
+          ['Europe/Paris', 'Paris'],
+          ['Europe/Berlin', 'Berlín'],
+          ['Europe/Moscow', 'Moscú'],
+          ['America/New_York', 'Nueva York'],
+          ['America/Chicago', 'Chicago'],
+          ['America/Mexico_City', 'Ciudad de México'],
+          ['America/Bogota', 'Bogotá'],
+          ['America/Lima', 'Lima'],
+          ['America/Santiago', 'Santiago'],
+          ['America/Argentina/Buenos_Aires', 'Buenos Aires'],
+          ['America/Sao_Paulo', 'São Paulo'],
+          ['Africa/Cairo', 'El Cairo'],
+          ['Africa/Johannesburg', 'Johannesburgo'],
+          ['Asia/Dubai', 'Dubái'],
+          ['Asia/Kolkata', 'India'],
+          ['Asia/Shanghai', 'Shanghái'],
+          ['Asia/Tokyo', 'Tokio'],
+          ['Asia/Seoul', 'Seúl'],
+          ['Australia/Sydney', 'Sídney'],
+          ['Pacific/Auckland', 'Auckland'],
+        ];
+        const zona = document.getElementById('zona');
+        for (const [nombre, ciudad] of ZONAS) {
+          const opcion = document.createElement('option');
+          opcion.value = nombre;
+          opcion.textContent = ciudad + ' · ' + nombre;
+          zona.appendChild(opcion);
+        }
+
+        function existe(valor) {
+          return ZONAS.some(([nombre]) => nombre === valor);
+        }
+
+        function guardar() {
+          StreamDeck.setSettings(undefined, { zona: zona.value });
+        }
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          zona.value = existe(ajustes.zona) ? ajustes.zona : 'Etc/UTC';
+        });
+
+        zona.addEventListener('change', guardar);
+        StreamDeck.getSettings(undefined);
+      })();
+    </script>
+  </body>
+</html>

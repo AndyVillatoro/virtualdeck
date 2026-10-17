@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Temporizador pomodoro</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Temporizador pomodoro de VirtualDeck: 25 de foco y 5 de pausa.
+       *
+       * Pulsacion corta: arranca o pausa. Pulsacion larga: vuelve al inicio del
+       * foco. Los minutos de cada fase salen de los ajustes del boton (los
+       * cambia el Property Inspector) y al terminar el foco se encadena la
+       * pausa sola.
+       */
+      (function () {
+        const botones = new Map();
+        const LARGO_MS = 700;
+        let pulsado = 0;
+
+        function minutosDe(valor, defecto) {
+          const n = Math.round(Number(valor));
+          return Number.isFinite(n) && n > 0 && n <= 180 ? n : defecto;
+        }
+
+        function ajustesDe(mensaje) {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          return {
+            foco: minutosDe(ajustes.foco, 25),
+            descanso: minutosDe(ajustes.descanso, 5),
+            encadenar: ajustes.encadenar === undefined ? true : !!ajustes.encadenar,
+          };
+        }
+
+        function estadoDe(contexto, ajustes) {
+          if (!botones.has(contexto)) {
+            botones.set(contexto, { fase: 'foco', restante: ajustes.foco * 60000, fin: 0, ajustes });
+          }
+          return botones.get(contexto);
+        }
+
+        /** Lo que queda: la cifra guardada en pausa, o la cuenta atras si corre. */
+        function restante(estado) {
+          if (!estado.fin) return estado.restante;
+          return Math.max(0, estado.fin - Date.now());
+        }
+
+        function cara(milis) {
+          const total = Math.ceil(milis / 1000);
+          const minutos = Math.floor(total / 60);
+          const segundos = total % 60;
+          const dos = (n) => (n < 10 ? '0' + n : String(n));
+          return dos(minutos) + ':' + dos(segundos);
+        }
+
+        function pintar(contexto) {
+          const estado = botones.get(contexto);
+          if (!estado) return;
+          const foco = estado.fase === 'foco';
+          const texto = cara(restante(estado));
+          StreamDeck.setTitle(contexto, texto);
+          StreamDeck.setImage(
+            contexto,
+            Puntos.datos(
+              [
+                { t: texto, c: foco ? 'punto' : 'tenue' },
+                { t: foco ? 'FOCO' : 'PAUSA', c: foco ? 'acento' : 'tenue' },
+              ],
+              { led: estado.fin ? 'acento' : 'tenue', marca: foco },
+            ),
+          );
+        }
+
+        function arrancar(contexto) {
+          const estado = estadoDe(contexto);
+          estado.fin = Date.now() + restante(estado);
+          pintar(contexto);
+        }
+
+        function pausar(contexto) {
+          const estado = estadoDe(contexto);
+          estado.restante = restante(estado);
+          estado.fin = 0;
+          pintar(contexto);
+        }
+
+        function cambiarFase(contexto) {
+          const estado = estadoDe(contexto);
+          const foco = estado.fase === 'foco';
+          estado.fase = foco ? 'descanso' : 'foco';
+          estado.restante = (foco ? estado.ajustes.descanso : estado.ajustes.foco) * 60000;
+          estado.fin = 0;
+          pintar(contexto);
+        }
+
+        function reiniciar(contexto) {
+          const estado = estadoDe(contexto);
+          estado.fase = 'foco';
+          estado.restante = estado.ajustes.foco * 60000;
+          estado.fin = 0;
+          pintar(contexto);
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          const ajustes = ajustesDe(mensaje);
+          estadoDe(mensaje.context, ajustes);
+          pintar(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          const ajustes = ajustesDe(mensaje);
+          const estado = estadoDe(mensaje.context, ajustes);
+          estado.ajustes = ajustes;
+          pintar(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          botones.delete(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('keyDown', (mensaje) => {
+          if (!pulsado) pulsado = Date.now();
+          StreamDeck.setState(mensaje.context, 1);
+        });
+
+        StreamDeck.addEventListener('keyUp', (mensaje) => {
+          const estado = estadoDe(mensaje.context);
+          estado.ajustes = ajustesDe(mensaje);
+          const largo = Date.now() - pulsado;
+          pulsado = 0;
+          StreamDeck.setState(mensaje.context, 0);
+          if (largo >= LARGO_MS) reiniciar(mensaje.context);
+          else if (estado.fin) pausar(mensaje.context);
+          else arrancar(mensaje.context);
+        });
+
+        /* Un solo reloj: al acabarse la fase se encadena la siguiente si toca. */
+        setInterval(() => {
+          for (const contexto of [...botones.keys()]) {
+            const estado = botones.get(contexto);
+            if (!estado.fin || restante(estado) > 0) {
+              if (estado.fin) pintar(contexto);
+              continue;
+            }
+            if (estado.fase !== 'foco' || estado.ajustes.encadenar) {
+              cambiarFase(contexto);
+              arrancar(contexto);
+              continue;
+            }
+            estado.restante = 0;
+            estado.fin = 0;
+            pintar(contexto);
+          }
+        }, 250);
+      })();
+    </script>
+  </body>
+</html>

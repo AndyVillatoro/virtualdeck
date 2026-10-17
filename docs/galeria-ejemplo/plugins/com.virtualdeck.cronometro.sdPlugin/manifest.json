@@ -1,0 +1,49 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Cronometro",
+      "States": [
+        {
+          "Name": "parado",
+          "FontSize": "12"
+        },
+        {
+          "Name": "corriendo",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.cronometro.cronometro",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACCElEQVR42u3dMarCUBCF4dupaxAsXIG9+19XrCxykTSiycz5igMPxuKpP8mZP5iM0/mySG7G+4/r7b7K/ELznvPxaTi/yLzvHAAA8AEBwAeUDYCSFF4CxRooPEDtQ9zyfKzy7zkPsON8/nLmL+nXc1sAAAAAAAAAgAdQAnkA4QGEB3AK4AGUQFsAAAAAAAAAgAdQAnkA4QGEB3AK4AGUQFsAAAAAAAAAgAdQAnkA4QGEBzj8Ib7rKWYoecefx28BAAAAAAAAgGgPoATyAMIDSFsPUF3F8gA7lrzuJbX9FgAAAAAAAACI9gBKIA8gPIC09QDdD/FV3/9Q8r7//yu/fwAAAAAAAEA2AEpgeAkUa6DwAMc+hHY/RUV7gPSLUfFbAAAAAAAAACDaAyiBPIDwAMIDhKpoHiD4YpQtAAAAAAAAAMADKIE8gPAAwgPEzXmAwjertgUAAAAAAAAAeAAlkAcQHkB4AI9kcX+APj8O7fz+AQAAAAAAANkAKIHhJVCsgcIDOAXwAEqgLQAAAAAAAADAAyiBPIDwAMIDeORK5UfCRDw3cO+bOFUuuQAAAAAAAIBsAJTA8BIo1kDhAbJVa6qqHi62ZF+sAgAAAAAAAGQDoASGl0CxBgoPkH2LltR5ixJoHr4FmAPAHADm0R7AnAcQHkB4AHMewNwWYA4AcwCY8wDmPIBs5AWYWtG8SWroGQAAAABJRU5ErkJggg==",
+  "CodePath": "cronometro.html",
+  "CodePathWin": "cronometro.html",
+  "DefaultWindowSize": [
+    320,
+    200
+  ],
+  "Description": "Cronometro con arranque, pausa y reinicio con pulsacion larga. La hora se pinta en puntos.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Cronometro",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.cronometro",
+  "Version": "1.0.0"
+}

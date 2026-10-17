@@ -1,0 +1,45 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Dado",
+      "States": [
+        {
+          "Name": "normal",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.dado.dado",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACBklEQVR42u3cMQrCQBSE4e3UMwgWnsDe+58rVhYudpq8l8xXDAgjrCQ/ybzJxnE6XxbK1Xh/uN7uH5q/yD+mP76Z85f4x/UBAAAHCAAOUDYAQlJ4CCRjIOkBfrvELM/Hh/jb+qU9wPzj5h/JX9cvnwKcIAA4QQBwgnYLgBAYHgLJGEh6AJf4xFvEEPKyQyIAAAAAAAAgGwAhMDwEkjGQ9ADr3gJsyaqt2kt7AJsyax+2lU8BTjAAnGAAOMFtARACw0MgGQNJD+AWoAcQAk0BAAAAAAAAAD2AEKgHID0A6QF63AKsH9wDWD98CrA+AKwPAOtH9wDW1wOQHoD0AE2rZj1AYQjq/rDGFAAAAAAAAADQAwiBegDSA5AegK8HsOnTFMAHAB8AfD0AXw9AegDSA/D1AHxTAB8AfADw9QB8PQDpAUgPYEuY9wJsCrUrGAAAAAAAAOC9ACFQD0B6ANIDWF8PYH3/EmZ9AFgfANb3P4HW1wOQHoC8F2BLmPcCbAq1KxgAAAAAAADgvQAhUA9AegDSA7gF6AGEQFMAAAAAAAAAQAgUAo2BxkAHAQAbXIL4tX5pD8Cv9cunAD4A+ADgtwVACAwPgWQMJD1AbVXJr6naR4eHFfy6h20AAAAAAACAbACEwPAQSMZA0gPYkpXo/yUE8vfrAwAADhAAHKBsAISk8BBIuXoBk1zoVpmt5FAAAAAASUVORK5CYII=",
+  "CodePath": "dado.html",
+  "CodePathWin": "dado.html",
+  "DefaultWindowSize": [
+    320,
+    200
+  ],
+  "Description": "Tira un dado de 6 o de 20 con cada pulsacion; el ultimo resultado se guarda con el boton.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Dado",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.dado",
+  "Version": "1.0.0"
+}

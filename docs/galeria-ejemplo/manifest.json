@@ -7,7 +7,9 @@
       "author": "@AndyVillatoro",
       "description": "Cuatro botones para ver como se ve un perfil de la galeria. No ejecuta scripts.",
       "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/profiles/ejemplo-basico.json",
-      "tags": ["ejemplo"],
+      "tags": [
+        "ejemplo"
+      ],
       "icono": "layout-grid"
     },
     {
@@ -17,11 +19,128 @@
       "author": "@AndyVillatoro",
       "description": "Una pagina suelta para OBS: grabar, mute de Discord, play y reloj. Se agrega sin tocar el deck.",
       "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/pages/obs-mini.json",
-      "tags": ["ejemplo", "obs"],
+      "tags": [
+        "ejemplo",
+        "obs"
+      ],
       "targetApp": "obs64",
       "version": "1.0.0",
       "minAppVersion": "0.12.0",
       "icono": "obsstudio"
+    },
+    {
+      "kind": "plugin",
+      "id": "com.virtualdeck.cronometro",
+      "label": "Cronometro",
+      "author": "@AndyVillatoro",
+      "description": "Cronometro con arranque, pausa y reinicio con pulsacion larga. La hora se pinta en puntos.",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/plugins/dist/com.virtualdeck.cronometro.streamDeckPlugin",
+      "sha256": "72f88b0f926175c28645d64b52f15dfab6eb9c0c7e9d76e30fafcd6122755caf",
+      "uuid": "com.virtualdeck.cronometro",
+      "license": "MIT",
+      "icono": "stopwatch",
+      "tags": [
+        "plugin",
+        "utilidad",
+        "cronometro"
+      ],
+      "minAppVersion": "0.14.1"
+    },
+    {
+      "kind": "plugin",
+      "id": "com.virtualdeck.temporizador-pomodoro",
+      "label": "Temporizador pomodoro",
+      "author": "@AndyVillatoro",
+      "description": "25 de foco y 5 de pausa, con los minutos de cada fase ajustables desde el inspector del boton.",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/plugins/dist/com.virtualdeck.temporizador-pomodoro.streamDeckPlugin",
+      "sha256": "167a48be52977b6a034dd18a519f36833c7295dcb24c5ac842c32f66c66493da",
+      "uuid": "com.virtualdeck.temporizador-pomodoro",
+      "license": "MIT",
+      "icono": "hourglass-high",
+      "tags": [
+        "plugin",
+        "utilidad",
+        "productividad"
+      ],
+      "minAppVersion": "0.14.1"
+    },
+    {
+      "kind": "plugin",
+      "id": "com.virtualdeck.contador",
+      "label": "Contador",
+      "author": "@AndyVillatoro",
+      "description": "Suma uno con cada pulsacion, se reinicia con la pulsacion larga y guarda el valor con el boton.",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/plugins/dist/com.virtualdeck.contador.streamDeckPlugin",
+      "sha256": "eb3710cbbb8fefa502a04650d3b01605165ec0dde140810d5f0378c7d9d6c74a",
+      "uuid": "com.virtualdeck.contador",
+      "license": "MIT",
+      "icono": "hash",
+      "tags": [
+        "plugin",
+        "utilidad",
+        "contador"
+      ],
+      "minAppVersion": "0.14.1"
+    },
+    {
+      "kind": "plugin",
+      "id": "com.virtualdeck.reloj-mundial",
+      "label": "Reloj mundial",
+      "author": "@AndyVillatoro",
+      "description": "La hora de la zona horaria que elijas en el inspector del boton, con su desfase con UTC.",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/plugins/dist/com.virtualdeck.reloj-mundial.streamDeckPlugin",
+      "sha256": "8ee2604bb442154fb1c8569e9881b744e52888b6e88878e77ab8655b4625f628",
+      "uuid": "com.virtualdeck.reloj-mundial",
+      "license": "MIT",
+      "icono": "world",
+      "tags": [
+        "plugin",
+        "utilidad",
+        "reloj"
+      ],
+      "minAppVersion": "0.14.1"
+    },
+    {
+      "kind": "plugin",
+      "id": "com.virtualdeck.dado",
+      "label": "Dado",
+      "author": "@AndyVillatoro",
+      "description": "Tira un dado de 6 o de 20 con cada pulsacion; el ultimo resultado se guarda con el boton.",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/plugins/dist/com.virtualdeck.dado.streamDeckPlugin",
+      "sha256": "c6a7366c01b9903c67e0e730e4d65a52ed5152dc558f86f4368c2630f58d556d",
+      "uuid": "com.virtualdeck.dado",
+      "license": "MIT",
+      "icono": "dice",
+      "tags": [
+        "plugin",
+        "utilidad",
+        "juego"
+      ],
+      "minAppVersion": "0.14.1"
+    },
+    {
+      "kind": "plugin",
+      "id": "com.virtualdeck.fecha",
+      "label": "Fecha",
+      "author": "@AndyVillatoro",
+      "description": "El dia y el mes con la semana ISO del ano. No necesita ajustes.",
+      "version": "1.0.0",
+      "url": "https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/plugins/dist/com.virtualdeck.fecha.streamDeckPlugin",
+      "sha256": "238047d167ad474116acee73263811e28dd95ab13ac442621476c586e8e0823a",
+      "uuid": "com.virtualdeck.fecha",
+      "license": "MIT",
+      "icono": "calendar-week",
+      "tags": [
+        "plugin",
+        "utilidad",
+        "reloj"
+      ],
+      "minAppVersion": "0.14.1"
     }
   ]
 }

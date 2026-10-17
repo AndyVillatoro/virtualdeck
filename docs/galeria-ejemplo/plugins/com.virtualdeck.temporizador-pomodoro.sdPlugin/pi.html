@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pomodoro</title>
+    <style>
+      /* Property Inspector del temporizador pomodoro.
+       *
+       * Lo abre VirtualDeck (`PropertyInspectorPath` de la accion). Se registra
+       * como PI en el mismo puerto del plugin y guarda con `setSettings`, que el
+       * anfitrion reenvia al plugin como `didReceiveSettings`.
+       *
+       * Estetica DOT: fondo OLED, superficie y bordes de la paleta, grilla de
+       * 4px y sin nada de blanco puro.
+       */
+      :root {
+        color-scheme: dark;
+        --fondo: #070809;
+        --superficie: #111315;
+        --borde: #26292e;
+        --texto: #d7dade;
+        --tenue: #8a8f96;
+        --acento: #ff3b30;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: var(--fondo);
+        color: var(--texto);
+        font: 12px/20px ui-monospace, Consolas, monospace;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: var(--acento);
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+        color: var(--tenue);
+        letter-spacing: 1px;
+      }
+      input[type='number'],
+      select {
+        width: 100%;
+        height: 32px;
+        padding: 0 8px;
+        background: var(--superficie);
+        color: var(--texto);
+        border: 1px solid var(--borde);
+        border-radius: 4px;
+        font: inherit;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--acento);
+      }
+      .fila {
+        display: flex;
+        gap: 12px;
+      }
+      .fila > div {
+        flex: 1;
+      }
+      .encadenar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .nota {
+        margin-top: 16px;
+        color: var(--tenue);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>POMODORO</h1>
+    <div class="fila">
+      <div>
+        <label for="foco">FOCO (MIN)</label>
+        <input id="foco" type="number" min="1" max="180" step="1" value="25" />
+      </div>
+      <div>
+        <label for="descanso">PAUSA (MIN)</label>
+        <input id="descanso" type="number" min="1" max="60" step="1" value="5" />
+      </div>
+    </div>
+    <label class="encadenar" for="encadenar">
+      <input id="encadenar" type="checkbox" checked />
+      Encadenar la pausa al acabar el foco
+    </label>
+    <p class="nota">Guarda solo: el temporizador corre en el boton, no aqui.</p>
+    <script src="sdk.js"></script>
+    <script>
+      (function () {
+        const foco = document.getElementById('foco');
+        const descanso = document.getElementById('descanso');
+        const encadenar = document.getElementById('encadenar');
+
+        function entero(campo, min, max, defecto) {
+          const n = Math.round(Number(campo.value));
+          if (!Number.isFinite(n)) return defecto;
+          return Math.min(max, Math.max(min, n));
+        }
+
+        function guardar() {
+          foco.value = entero(foco, 1, 180, 25);
+          descanso.value = entero(descanso, 1, 60, 5);
+          StreamDeck.setSettings(undefined, {
+            foco: entero(foco, 1, 180, 25),
+            descanso: entero(descanso, 1, 60, 5),
+            encadenar: encadenar.checked,
+          });
+        }
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          foco.value = entero({ value: ajustes.foco }, 1, 180, 25);
+          descanso.value = entero({ value: ajustes.descanso }, 1, 60, 5);
+          encadenar.checked = ajustes.encadenar === undefined ? true : !!ajustes.encadenar;
+        });
+
+        for (const campo of [foco, descanso, encadenar]) campo.addEventListener('change', guardar);
+        /* El anfitrion responde a este `getSettings` con lo que haya guardado. */
+        StreamDeck.getSettings(undefined);
+      })();
+    </script>
+  </body>
+</html>

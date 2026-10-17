@@ -1,0 +1,6 @@
+# Los `.streamDeckPlugin` se versionan a proposito: la tienda los baja de
+# `raw.githubusercontent.com/.../main/docs/galeria-ejemplo/plugins/dist/`.
+# El `dist/` del `.gitignore` de la raiz tambien los alcanzaria, asi que aqui se
+# vuelve a incluir esa carpeta. Si eso deja de funcionar, el arreglo es una
+# regla en el `.gitignore` de la raiz (no se toca desde este encargo).
+!dist/

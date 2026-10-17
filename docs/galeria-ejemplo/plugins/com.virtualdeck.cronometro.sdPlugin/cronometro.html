@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cronometro</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Cronometro de VirtualDeck.
+       *
+       * Pulsacion corta: arranca o pausa. Pulsacion larga (700 ms): reinicia a
+       * cero. El tiempo vive en memoria por boton y lo pinta en el titulo y en
+       * una imagen de puntos 5×7 generada en el momento.
+       *
+       * El anfitrion manda `keyDown`/`keyUp` con los ajustes del boton y solo
+       * acepta ordenes visuales de un contexto que ya recibio `willAppear`.
+       */
+      (function () {
+        const botones = new Map();
+        const LARGO_MS = 700;
+        let pulsado = 0;
+
+        function estadoDe(contexto) {
+          if (!botones.has(contexto)) botones.set(contexto, { corriendo: false, arrancado: 0, acumulado: 0 });
+          return botones.get(contexto);
+        }
+
+        /** Los milisegundos que lleva el cronometro parado o en marcha. */
+        function transcurrido(estado) {
+          return estado.acumulado + (estado.corriendo ? Date.now() - estado.arrancado : 0);
+        }
+
+        /** `5:07` mientras quepa en una hora; `1:02:05` despues. */
+        function cara(milis) {
+          const total = Math.floor(milis / 1000);
+          const segundos = total % 60;
+          const minutos = Math.floor(total / 60) % 60;
+          const horas = Math.floor(total / 3600);
+          if (horas > 0) return horas + ':' + dos(minutos) + ':' + dos(segundos);
+          return minutos + ':' + dos(segundos);
+        }
+
+        function dos(n) {
+          return n < 10 ? '0' + n : String(n);
+        }
+
+        function pintar(contexto) {
+          const estado = botones.get(contexto);
+          if (!estado) return;
+          const texto = cara(transcurrido(estado));
+          StreamDeck.setTitle(contexto, texto);
+          StreamDeck.setImage(
+            contexto,
+            Puntos.datos(
+              [
+                { t: texto, c: estado.corriendo ? 'acento' : 'punto' },
+                { t: estado.corriendo ? 'CORRE' : 'PARADO', c: 'tenue' },
+              ],
+              { led: estado.corriendo ? 'acento' : 'tenue' },
+            ),
+          );
+        }
+
+        function alternar(contexto) {
+          const estado = estadoDe(contexto);
+          if (estado.corriendo) {
+            estado.acumulado += Date.now() - estado.arrancado;
+            estado.corriendo = false;
+          } else {
+            estado.arrancado = Date.now();
+            estado.corriendo = true;
+          }
+          pintar(contexto);
+        }
+
+        function reiniciar(contexto) {
+          const estado = estadoDe(contexto);
+          estado.corriendo = false;
+          estado.arrancado = 0;
+          estado.acumulado = 0;
+          pintar(contexto);
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          estadoDe(mensaje.context);
+          pintar(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          botones.delete(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('keyDown', (mensaje) => {
+          if (!pulsado) pulsado = Date.now();
+          StreamDeck.setState(mensaje.context, 1);
+        });
+
+        StreamDeck.addEventListener('keyUp', (mensaje) => {
+          const largo = Date.now() - pulsado;
+          pulsado = 0;
+          StreamDeck.setState(mensaje.context, 0);
+          if (largo >= LARGO_MS) reiniciar(mensaje.context);
+          else alternar(mensaje.context);
+        });
+
+        /* Un solo reloj para todos los botones: se repinta el que corre. */
+        setInterval(() => {
+          for (const contexto of botones.keys()) {
+            if (botones.get(contexto).corriendo) pintar(contexto);
+          }
+        }, 250);
+      })();
+    </script>
+  </body>
+</html>

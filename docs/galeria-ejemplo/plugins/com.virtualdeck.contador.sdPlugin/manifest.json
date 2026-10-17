@@ -1,0 +1,45 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Contador",
+      "States": [
+        {
+          "Name": "normal",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.contador.contador",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACCUlEQVR42u3dMarDMBREUXVJ1hBIkRW4z/7X5VQpLAIuhJH95hQDH17A4Fzs0UX6abf7Y5XctN8fz9d7k/6D5jXn7d+w/5B53TkAAOAGAcANygZASQovgWIZKDyARyQPoCRZBbhBAHCDAOAG8QBKEg8gPIDwADXm62fZJO360R6gv/n9l1D9+vGrAAAAAAAAAEC0B1ACeQDhAaSsB9h7xB79CJ59/WgPsFeyji5hs68fvwoAAAAAAAAARHsAJZAHEB5AeACvAB5ACbQKAAAAAAAAAPAASiAPIDyATPcAo4/I9PmlPcBoSUqfX34V4AsGgC8YAL7g0wKgBIaXQLEMFB7AK4AHUAKtAgAAAAAAAAA8gBLIAwgPIDyALV9X3vJV4lyATZ/hu4IBAAAAAAAA0ecClEAeQHgA4QG8AngAJdAqAAAAAAAAAMADKIE8gPAA4lyALWHOBdgUalcwAAAAAAAAwLkAJZAHEB5AeACvAB5ACbQKAAAAAAAAAPAASiAPIDyAnO5cgC1fwecCbPoM3xUMAAAAAAAAiD4XoAQ6FyA8gPAAXgE8gBJoFQAAAAAAAADgAZRAHkB4AIn3ANWvzwNMLFmVS16JVQAAAAAAAAAg2gMogTyA8AAS+3sB5sG/F2Ae/t/CzQFgDgDz6N8LMOcBhAcQHsCcBzC3CjAHgDkAzHkAcx5ABvIFwAckmk1bEgUAAAAASUVORK5CYII=",
+  "CodePath": "contador.html",
+  "CodePathWin": "contador.html",
+  "DefaultWindowSize": [
+    320,
+    200
+  ],
+  "Description": "Suma uno con cada pulsacion, se reinicia con la pulsacion larga y guarda el valor en los ajustes del boton.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Contador",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.contador",
+  "Version": "1.0.0"
+}

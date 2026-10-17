@@ -1,0 +1,45 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Fecha",
+      "States": [
+        {
+          "Name": "normal",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.fecha.fecha",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACE0lEQVR42u3dMQrCQBSE4e2iZxAsPIG99z9XrCxcBLvkvZ2vGBAmQlh+ktnJbjK2y3WnXI3Pj9v98aX5QP6a/vhlzgfx1/UBAAADBAADlA2AkBQeAsk0kPQAtS9h++v5JecX1APMgzsPsvNbfBYAAAAAAAAAiO4BhEA9AOkBaNke4N8ltPstoOr5jw4hqnsIrHz+AACAAQSAAcwGQIgKD4FkGkh6gHMvgfxzbiGjQgjinxciAQAAAAAAANkACIHhIZBMA0kPULsKXX1JWHQPkL4oNH4WAAAAAAAAAIjuAYRAPQDpAWjZHsArWmqO79jCN0emb44FAAAAAAAAZAMgBIaHQDINJD1A9tau1K1lLR4GpYe8+KeBAAAAAAAAgOj1AEKgHoD0AOT9AHzvB+DbHcwHAB8AfO8H4OsBSA9A9gVYEmZfgEWhVgUDAAAAAAAA7AsQAvUApAegNj1A+v+je4D0/8fPAgAAAAAAAADRPYAQqAcgPQBZD8C3HoDvaSAfAHwA8K0H4OsBSA9A1gM0r3L1AMEPc8wCAAAAAAAAAHoAIVAPQHoA0gPw9QAe9pgF8AHABwBfD8DXA5AegHwvgO97AXxvC+cDgA8Avu8F8PUApAegBj2AW0TNS/whPYCQWDfkHTILAAAAAAAAALQFQAgMD4FkGkh6AEuyEv1DQiC/rg8AABggABigbACEpPAQSLl6A7MZ3Qldbb/uAAAAAElFTkSuQmCC",
+  "CodePath": "fecha.html",
+  "CodePathWin": "fecha.html",
+  "DefaultWindowSize": [
+    320,
+    200
+  ],
+  "Description": "El dia y el mes con la semana ISO del ano. No necesita ajustes: solo se repinta cuando cambia el dia.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Fecha",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.fecha",
+  "Version": "1.0.0"
+}

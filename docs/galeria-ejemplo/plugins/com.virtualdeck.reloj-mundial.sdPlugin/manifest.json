@@ -1,0 +1,46 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Reloj mundial",
+      "PropertyInspectorPath": "pi.html",
+      "States": [
+        {
+          "Name": "normal",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.reloj-mundial.reloj",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACQUlEQVR42u3dMW7DMBBEUXaJz2AgRU6Q3vc/l1ylsJDKAsNdzisGMLCGBZAf5OyYksbH5+2gXI3fD/ev7xedv6i+Z338VTx/SX3fOgAAYIAAYICyAWCSwk0gaQNJDtB7iTsePy/677ocYGH9PDnnSZpd1wUAAAAAAAAA5ABMoByA5AAkB2i3hKduIYOJyzaRAAAAAAAAgGwAmMBwE0jaQJID1F7iu0fBVbeI0cHkdf8zqLJJBAAAAAAAAGQDwASGm0DSBpIcoPYSf/X63X9/1vVHB5N39frdf3/m9QEAAAAAAADZADCB4SaQtIEkB3CkK/FIWQkTqB7eBagDQB0A6tE5gLocgOQAVDYHsATvuUUMJi/bJAIAAAAAAACyAWACw00gaQNJDtD7yJfrF84Bdj902vn6AACACQCACcgGgAkLN4GkDSQ5gCVYDsCE6QJMAABMAABMgByACZMDkByA5ACOVLkvwKFLp4INMAAMMAAMsPsCmCz3BZAcgDwn0BLrOYFMlqeEmQAAmCAAmCDPCWTSPCeQ5AAkB/DKGO8N9NIobw0DAAAAAAAAeG8gE+i9gSQHoN1zgNVLXPUodvUWOTUHWG1yqv8Zs9okT+8CAAAAAAAAAG0BYALDTSBpA0kOMHcLcKRszRJfIgdwqHSdySvRBQAAAAAAAADKAsAEhptA0gaSHGDtFtB9C+k6fiVMYHcT2Xn8AAAAAAAAANkAMIHhJpC0gSQH6L0FqAfnAOrhXYA6ANQBoB6dA6jLAegNPQG4YgaDu6MPGwAAAABJRU5ErkJggg==",
+  "CodePath": "reloj-mundial.html",
+  "CodePathWin": "reloj-mundial.html",
+  "DefaultWindowSize": [
+    320,
+    260
+  ],
+  "Description": "La hora de la zona horaria que elijas en el inspector del boton, con su desfase con UTC.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Reloj mundial",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.reloj-mundial",
+  "Version": "1.0.0"
+}

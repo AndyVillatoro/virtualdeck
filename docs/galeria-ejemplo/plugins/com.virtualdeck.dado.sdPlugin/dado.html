@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dado</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Dado de VirtualDeck: d6 o d20 segun los ajustes del boton.
+       *
+       * Cada pulsacion tira. El d6 se pinta con sus puntos (uno por cara, en la
+       * retícula de un dado de verdad) y el d20 con su numero; el ultimo
+       * resultado se guarda en los ajustes para que no se pierda al cambiar de
+       * pagina.
+       */
+      (function () {
+        const CARAS = { 6: true, 20: true };
+
+        function carasDe(ajustes) {
+          const n = Math.round(Number(ajustes && ajustes.caras));
+          return CARAS[n] ? n : 6;
+        }
+
+        /** Las caras del d6 como puntos de una cara de dado de 3×3. */
+        const PUNTOS_D6 = {
+          1: [4],
+          2: [0, 8],
+          3: [0, 4, 8],
+          4: [0, 2, 6, 8],
+          5: [0, 2, 4, 6, 8],
+          6: [0, 2, 3, 5, 6, 8],
+        };
+
+        function caraDe6(valor) {
+          const paso = 32;
+          const inicio = (256 - paso * 3) / 2;
+          const puntos = PUNTOS_D6[valor] || [];
+          const circulos = puntos
+            .map((p) => {
+              const x = inicio + (p % 3) * paso + paso / 2;
+              const y = inicio + Math.floor(p / 3) * paso + paso / 2;
+              return `<circle cx="${x}" cy="${y}" r="11"/>`;
+            })
+            .join('');
+          return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">' +
+            `<rect width="256" height="256" fill="${Puntos.COLORES.fondo}"/>` +
+            `<g fill="${Puntos.COLORES.acento}">${circulos}</g></svg>`
+          );
+        }
+
+        function pintar(contexto, valor, caras) {
+          StreamDeck.setTitle(contexto, String(valor));
+          if (caras === 20) {
+            StreamDeck.setImage(
+              contexto,
+              Puntos.datos(
+                [
+                  { t: String(valor), c: 'punto' },
+                  { t: 'D20', c: 'tenue' },
+                ],
+                { led: 'acento' },
+              ),
+            );
+            return;
+          }
+          StreamDeck.setImage(contexto, 'data:image/svg+xml;base64,' + Puntos.base64(caraDe6(valor)));
+        }
+
+        function tirar(contexto, mensaje) {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          const caras = carasDe(ajustes);
+          const valor = 1 + Math.floor(Math.random() * caras);
+          pintar(contexto, valor, caras);
+          StreamDeck.setSettings(contexto, { caras, ultimo: valor });
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          const caras = carasDe(ajustes);
+          const ultimo = Math.round(Number(ajustes.ultimo));
+          pintar(mensaje.context, ultimo >= 1 && ultimo <= caras ? ultimo : caras, caras);
+        });
+
+        StreamDeck.addEventListener('keyDown', (mensaje) => {
+          if (mensaje && mensaje.context) StreamDeck.setState(mensaje.context, 1);
+        });
+
+        StreamDeck.addEventListener('keyUp', (mensaje) => {
+          StreamDeck.setState(mensaje.context, 0);
+          tirar(mensaje.context, mensaje);
+        });
+      })();
+    </script>
+  </body>
+</html>

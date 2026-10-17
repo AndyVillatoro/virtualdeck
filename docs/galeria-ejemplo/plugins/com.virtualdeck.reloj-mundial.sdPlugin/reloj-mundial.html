@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Reloj mundial</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Reloj mundial de VirtualDeck: la hora de la zona que elija el boton.
+       *
+       * La zona viene en los ajustes (`zona`, nombre IANA) y la pinta el Property
+       * Inspector. Solo se repinta cuando cambia el minuto: el reloj del boton
+       * va en segundos, la pantalla de la tecla no.
+       */
+      (function () {
+        const ZONA_POR_DEFECTO = 'UTC';
+        const contextos = new Map();
+
+        /** Las piezas de la hora de esa zona, o `null` si la zona no existe. */
+        function piezas(zona, ahora) {
+          try {
+            const partes = new Intl.DateTimeFormat('en-US', {
+              timeZone: zona,
+              hour12: false,
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }).formatToParts(ahora);
+            const valor = {};
+            for (const parte of partes) valor[parte.type] = parte.value;
+            return valor;
+          } catch {
+            return null;
+          }
+        }
+
+        /** Los minutos de diferencia con UTC, en ese momento. */
+        function offsetMinutos(zona, ahora) {
+          const v = piezas(zona, ahora);
+          if (!v) return null;
+          const comoUtc = Date.UTC(+v.year, +v.month - 1, +v.day, (+v.hour) % 24, +v.minute, +v.second);
+          return Math.round((comoUtc - ahora.getTime()) / 60000);
+        }
+
+        function dos(n) {
+          return n < 10 ? '0' + n : String(n);
+        }
+
+        function dosSigno(minutos) {
+          if (minutos === null) return '';
+          const signo = minutos < 0 ? '-' : '+';
+          const absoluto = Math.abs(minutos);
+          const horas = Math.floor(absoluto / 60);
+          return signo + dos(horas) + (absoluto % 60 ? ':' + dos(absoluto % 60) : '');
+        }
+
+        function pintar(contexto, forzar) {
+          const zona = contextos.get(contexto);
+          if (!zona) return;
+          const ahora = new Date();
+          const v = piezas(zona.zona, ahora);
+          if (!v) return;
+          const hora = dos(+v.hour % 24) + ':' + dos(+v.minute);
+          if (!forzar && hora === zona.pintada) return;
+          contextos.set(contexto, { zona: zona.zona, pintada: hora });
+          const desfase = dosSigno(offsetMinutos(zona.zona, ahora));
+          StreamDeck.setTitle(contexto, hora + ' ' + desfase);
+          StreamDeck.setImage(
+            contexto,
+            Puntos.datos(
+              [
+                { t: hora, c: 'punto' },
+                { t: desfase, c: 'acento' },
+              ],
+              { led: 'acento' },
+            ),
+          );
+        }
+
+        function zonaDe(mensaje) {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          const zona = typeof ajustes.zona === 'string' && ajustes.zona ? ajustes.zona : ZONA_POR_DEFECTO;
+          return piezas(zona, new Date()) ? zona : ZONA_POR_DEFECTO;
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          contextos.set(mensaje.context, { zona: zonaDe(mensaje), pintada: '' });
+          pintar(mensaje.context, true);
+        });
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          contextos.set(mensaje.context, { zona: zonaDe(mensaje), pintada: '' });
+          pintar(mensaje.context, true);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          contextos.delete(mensaje.context);
+        });
+
+        /* Un segundo de reloj para todos los botones; el repintado lo filtra. */
+        setInterval(() => {
+          for (const contexto of contextos.keys()) pintar(contexto, false);
+        }, 1000);
+      })();
+    </script>
+  </body>
+</html>

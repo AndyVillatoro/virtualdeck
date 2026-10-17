@@ -1,0 +1,50 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Temporizador pomodoro",
+      "PropertyInspectorPath": "pi.html",
+      "States": [
+        {
+          "Name": "parado",
+          "FontSize": "12"
+        },
+        {
+          "Name": "corriendo",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.temporizador-pomodoro.temporizador",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAB/0lEQVR42u3dMa6DMBCEYXeBM0RKwQnouf+5SJUCKy3C3vmKkZ60aR76FY+HzW57LetJuWq/P96f7aL+g+o16+1fsf+Qet06AADgAQHAA8oGgEkKN4HkGkhygGe/os5jvyitHp0D9A+nf0jV6/G3AAAAAAAAAEB0DsAEygFIDkBlc4D0r/hRj4jG5GWbRAAAAAAAAEA2AExguAkk10CSA4x9BMzekiUHmPRlSfX/HwAAAAAAAJANABMYbgLJNZDkAKJg/QBeBnkbCAAAAAAAANAPwATqByA5AMkBRMEjHHH6AQq/7HELAAAAAAAAAMgBmEA5AMkByJzA6Y4IcwKDTaIpYQAAAAAAAABzAplAcwJJDkByAC1l9gZqKrU1DAAAAAAAAGBvIBNobyDJAUgO4AiQAzCBbgEAAAAAAAAAOQATKAcgOQDJAbSE+V2AplBdwQAAAAAAAAC/C2AC5QAkByBzAmNWxpTOASyNCr8FAAAAAAAAAKJzACZQDkByAJIDOALsC2ACTQsHAAAAAAAA2BfABNoXQHIAkgM4AuQATKBbAAAAAAAAAEAOwATKAUgOQHIAdTlAej3+FgAAAAAAAACIzgGYQDkAyQHInEBf8eYEMnmmhAEAAAAAAADMCWQC5QAkB6DyewPVg/cGqodvDVMHgDoA1KP3BqrLAegGfQFjtoZ4Xv79LgAAAABJRU5ErkJggg==",
+  "CodePath": "temporizador-pomodoro.html",
+  "CodePathWin": "temporizador-pomodoro.html",
+  "DefaultWindowSize": [
+    320,
+    260
+  ],
+  "Description": "25 minutos de foco y 5 de pausa, con los minutos de cada fase ajustables desde el inspector del boton.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Temporizador pomodoro",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.temporizador-pomodoro",
+  "Version": "1.0.0"
+}
