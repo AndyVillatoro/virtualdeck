@@ -184,7 +184,7 @@ export interface SensorsSettings {
  * Sensores de una instalación nueva.
  *
  * Vive en `src/types` por lo mismo que `BARRA_POR_DEFECTO`: lo necesitan el
- * renderer y `electron/main/sensors.ts`, y el proceso principal solo puede
+ * renderer y `electron/main/sistema/sensors.ts`, y el proceso principal solo puede
  * importar tipos compartidos.
  */
 export const SENSORES_POR_DEFECTO: Pick<SensorsSettings, 'host' | 'port'> = {

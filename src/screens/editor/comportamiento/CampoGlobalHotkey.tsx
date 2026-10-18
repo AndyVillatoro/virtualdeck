@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
-import { useCapturaHotkey } from '../useCapturaHotkey';
+import { useCapturaHotkey } from '../estado/useCapturaHotkey';
 import { normalizarHotkey } from './useConfiguracionExistente';
 import type { PageConfig } from '../../../types';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
-import { SensorPicker, estiloEntrada } from '../comunes';
+import { SensorPicker, estiloEntrada } from '../campos/comunes';
 import type { Sensor } from '../../../types';
 
 type SensorOp = '>' | '<' | '>=' | '<=' | '==';

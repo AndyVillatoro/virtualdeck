@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT, useFieldText, type TFunc } from '../../../utils/i18n';
-import { Field } from '../comunes';
+import { Field } from '../campos/comunes';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { Chip, Segmentado } from '../../../components/ui/Chip';
 import { SelectorApp } from '../../../components/SelectorApp';

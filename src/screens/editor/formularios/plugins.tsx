@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT } from '../../../utils/i18n';
 import { estiloDesplegable } from '../../../components/ui/estilos';
-import { Field } from '../comunes';
+import { Field } from '../campos/comunes';
 import { superficieDe } from '../../../utils/plugins/ref';
 import { useListaPlugins } from '../../../utils/plugins/listaPlugins';
 import type { PropsFormulario } from './base';

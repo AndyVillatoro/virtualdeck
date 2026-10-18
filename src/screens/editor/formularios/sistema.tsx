@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { textoSobre } from '../../../design';
 import { useT, useFieldText } from '../../../utils/i18n';
-import { Field, Btn, estiloEntrada } from '../comunes';
+import { Field, Btn, estiloEntrada } from '../campos/comunes';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { Chip, Segmentado } from '../../../components/ui/Chip';
 import type { PropsFormulario } from './base';

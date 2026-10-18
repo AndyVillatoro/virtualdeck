@@ -5,7 +5,7 @@
 
 import { ALL_DOT_GLYPHS } from '../../../components/dot480/dotGlyphs8x8';
 import type { EntradaIndice, IndiceDot } from '../../../data/iconosDot/tipos';
-import type { SeccionCatalogo } from '../constantesCatalogo';
+import type { SeccionCatalogo } from '../datos/constantesCatalogo';
 
 type ClaseIcono = 'glifo8' | 'tabler' | 'simple';
 

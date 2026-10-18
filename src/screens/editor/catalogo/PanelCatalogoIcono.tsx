@@ -5,11 +5,11 @@ import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { IconoPuntos } from '../../../components/dot480/IconoPuntos';
 import { BrandIconDisplay } from '../../../components/BrandIconDisplay';
 import { useCatalogoMarcas } from '../../../utils/catalogoMarcas';
-import { Btn } from '../comunes';
-import { PanelMarcaIcono } from '../PanelMarcaIcono';
+import { Btn } from '../campos/comunes';
+import { PanelMarcaIcono } from '../campos/PanelMarcaIcono';
 import { FilaGlifosRapidos } from './FilaGlifosRapidos';
-import { PREFIJO_MARCAS } from '../constantesCatalogo';
-import type { TipoIcono } from '../tiposIcono';
+import { PREFIJO_MARCAS } from '../datos/constantesCatalogo';
+import type { TipoIcono } from '../datos/tiposIcono';
 
 export interface PanelCatalogoIconoProps {
   tipoIcono: TipoIcono;

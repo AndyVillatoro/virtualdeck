@@ -3,9 +3,9 @@ import { useTheme } from '../../../utils/theme';
 import { useFieldText } from '../../../utils/i18n';
 import { DotLabel } from '../../../components/DotLabel';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
-import { Field, Btn, estiloEntrada } from '../comunes';
-import { SelectorIconoGlifoCatalogo } from '../SelectorIconoGlifoCatalogo';
-import { CAT_ACCIONES, CAT_MARCAS } from '../constantesCatalogo';
+import { Field, Btn, estiloEntrada } from '../campos/comunes';
+import { SelectorIconoGlifoCatalogo } from '../campos/SelectorIconoGlifoCatalogo';
+import { CAT_ACCIONES, CAT_MARCAS } from '../datos/constantesCatalogo';
 import type { NombreCatalogo } from '../../../data/iconosDot/tipos';
 
 export interface CampoAspectoEncendidoProps {

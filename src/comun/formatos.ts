@@ -2,7 +2,7 @@
  * Formato de hora y fecha compartido por el deck y el proceso principal.
  *
  * Antes estaba duplicado en `src/utils/formatos.ts` y en
- * `electron/main/mandoVivo.ts` (con su propia caché). Un único dueño evita que
+ * `electron/main/mando/mandoVivo.ts` (con su propia caché). Un único dueño evita que
  * una corrección se quede solo en un lado.
  *
  * Sin React, DOM ni Electron (regla `comun-es-puro`).

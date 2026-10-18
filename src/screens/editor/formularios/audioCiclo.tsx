@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT } from '../../../utils/i18n';
-import { Field, estiloEntrada } from '../comunes';
+import { Field, estiloEntrada } from '../campos/comunes';
 import { Segmentado } from '../../../components/ui/Chip';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { heuristicaAudioDispositivo } from '../../../comun/audioIcono';

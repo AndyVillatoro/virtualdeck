@@ -22,9 +22,9 @@ if (fuentes) {
 }
 
 // La barra flotante es otra ventana de Electron, pero el mismo bundle: se
-// distingue por el hash con el que se abre (ver electron/main/floatingBar.ts).
+// distingue por el hash con el que se abre (ver electron/main/ventana/floatingBar.ts).
 // Asi no hay que compilar un segundo renderer solo para una columna de tiles.
-// La tienda va igual (`electron/main/tienda.ts`): mismo bundle, otra ventana.
+// La tienda va igual (`electron/main/ventana/tienda.ts`): mismo bundle, otra ventana.
 const esBarra = window.location.hash === '#barra';
 const esTienda = window.location.hash === '#tienda';
 

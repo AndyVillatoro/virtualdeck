@@ -5,7 +5,7 @@ import { estiloCampo } from '../../../components/ui/estilos';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { BotonIcono } from '../../../components/ui/BotonIcono';
-import { ACTION_TYPES } from '../actionData';
+import { ACTION_TYPES } from '../datos/actionData';
 import type { ButtonAction } from '../../../types';
 
 export interface PropsFilaAccionExtra {

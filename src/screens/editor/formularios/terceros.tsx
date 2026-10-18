@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useT } from '../../../utils/i18n';
-import { Field, estiloEntrada } from '../comunes';
+import { Field, estiloEntrada } from '../campos/comunes';
 import type { PropsFormulario } from './base';
 import type { DiscordStatus, SpotifyDevice } from '../../../types';
 

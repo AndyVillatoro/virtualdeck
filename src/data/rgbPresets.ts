@@ -1,7 +1,7 @@
 /**
  * Los ids de los presets "inteligentes" del RGB.
  *
- * La lista de verdad es `SMART_PRESETS`, en `electron/main/rgb.ts`: si se pide
+ * La lista de verdad es `SMART_PRESETS`, en `electron/main/rgb/presets.ts`: si se pide
  * un id que no está allí, `applySmartPreset` devuelve `false` y el botón no
  * hace **nada**, sin error. Por eso `scripts/check-acciones.mjs` comprueba que
  * las dos listas coincidan.

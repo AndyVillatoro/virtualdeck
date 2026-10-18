@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useFieldText } from '../../../utils/i18n';
-import { Field, BranchActionRow, estiloEntrada } from '../comunes';
+import { Field, BranchActionRow, estiloEntrada } from '../campos/comunes';
 import type { PropsFormulario } from './base';
 
 /** Variables, HTTP y control de flujo. */

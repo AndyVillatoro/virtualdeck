@@ -1,0 +1,238 @@
+import React, { useEffect, useState } from 'react';
+import { useTheme } from '../../../utils/theme';
+import { useT } from '../../../utils/i18n';
+import { DotGlyphIcon, resolveDotGlyph } from '../../../components/dot480/DotGlyphIcon';
+import { IconoPuntos } from '../../../components/dot480/IconoPuntos';
+import { resolverIconoCatalogo } from '../../../data/iconosDot';
+import { Segmentado } from '../../../components/ui/Chip';
+import { ACTION_TYPES, PRESET_CATEGORIES, type ButtonPreset } from '../datos/actionData';
+import type { PresetDock } from '../../../data/presetsDock';
+import { obtenerHuecoDePreset } from '../estado/useDockPresets';
+
+/**
+ * Pinta el icono del catálogo si hay `origen`, con el glifo de respaldo
+ * mientras carga (o si el origen no existe). El catálogo se carga bajo
+ * demanda una sola vez (`resolverIconoCatalogo` lo comparte).
+ */
+function IconoPreset({ origen, respaldo, tamano, color }: { origen?: string; respaldo: string; tamano: number; color: string }) {
+  const [bits, setBits] = useState<string | null>(null);
+  useEffect(() => {
+    if (!origen) { setBits(null); return; }
+    let vivo = true;
+    resolverIconoCatalogo(origen).then((r) => { if (vivo) setBits(r ? r.bits : null); }).catch(() => undefined);
+    return () => { vivo = false; };
+  }, [origen]);
+  if (origen && bits) return <IconoPuntos bits={bits} size={tamano} color={color} showRecessed />;
+  return <DotGlyphIcon glyph={respaldo} size={tamano} color={color} showRecessed />;
+}
+
+interface SeccionPresetsProps {
+  accent: string;
+  filteredPresets: ButtonPreset[];
+  dockPresets: PresetDock[];
+  esDock: boolean;
+  dockGesto?: 'izq' | 'pulsar' | 'der';
+  presetCategory: string;
+  setPresetCategory: (c: any) => void;
+  presetSearch: string;
+  setPresetSearch: (s: string) => void;
+  onApplyPreset: (p: ButtonPreset) => void;
+  onApplyDockPreset: (p: PresetDock) => void;
+}
+
+export function SeccionPresets({
+  accent,
+  filteredPresets,
+  dockPresets,
+  esDock,
+  dockGesto,
+  presetCategory,
+  setPresetCategory,
+  presetSearch,
+  setPresetSearch,
+  onApplyPreset,
+  onApplyDockPreset,
+}: SeccionPresetsProps) {
+  const VD = useTheme();
+  const t = useT();
+
+  const query = presetSearch.trim().toLowerCase();
+
+  const matchingDockPresets = dockPresets.filter((dp) => {
+    if (!query) return presetCategory === 'DOCK';
+    const nombre = t(dp.nombre).toLowerCase();
+    const id = dp.id.toLowerCase();
+    const coincideHueco = dp.huecos.some((h) => h.label.toLowerCase().includes(query));
+    return nombre.includes(query) || id.includes(query) || coincideHueco;
+  });
+
+  const categories = esDock ? ['DOCK', ...PRESET_CATEGORIES] : PRESET_CATEGORIES;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Buscador y categorías */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <input
+          value={presetSearch}
+          onChange={(e) => setPresetSearch(e.target.value)}
+          placeholder={t('ed.searchPresets')}
+          style={{
+            background: VD.elevated,
+            border: `1px solid ${VD.border}`,
+            padding: '4px 8px',
+            color: VD.text,
+            fontFamily: VD.mono,
+            fontSize: 9,
+            outline: 'none',
+            borderRadius: VD.radius.sm,
+            width: 140,
+          }}
+        />
+
+        {!presetSearch && (
+          <Segmentado
+            accent={accent}
+            valor={presetCategory}
+            onChange={setPresetCategory}
+            opciones={categories.map((cat) => ({
+              valor: cat,
+              etiqueta: cat === 'DOCK' ? t('cat.DOCK') : t(`cat.${cat}`),
+            }))}
+          />
+        )}
+      </div>
+
+      {/* Grid de Presets */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {/* Presets de dock */}
+        {matchingDockPresets.map((dp) => {
+          const hueco = obtenerHuecoDePreset(dp, dockGesto);
+          const glifo = resolveDotGlyph(dp.icon) || 'DOTS';
+          const origenCatalogo = hueco.iconoCatalogo ?? dp.iconoCatalogo;
+          const fg = hueco.fgColor || VD.text;
+          const bg = hueco.bgColor || VD.elevated;
+          return (
+            <div
+              key={`dock-${dp.id}`}
+              onClick={() => onApplyDockPreset(dp)}
+              title={`${t(dp.nombre)} · ${hueco.label}`}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: VD.radius.lg,
+                background: bg,
+                border: `1px solid ${VD.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                gap: 4,
+                padding: 4,
+                transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
+            >
+              <IconoPreset origen={origenCatalogo} respaldo={glifo} tamano={16} color={fg} />
+              <div
+                style={{
+                  fontFamily: VD.mono,
+                  fontSize: 7.5,
+                  color: fg,
+                  textAlign: 'center',
+                  maxWidth: 64,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.15,
+                  fontWeight: 600,
+                }}
+              >
+                {t(dp.nombre)}
+              </div>
+              <div
+                style={{
+                  fontFamily: VD.mono,
+                  fontSize: 7,
+                  color: VD.textDim,
+                  textAlign: 'center',
+                  maxWidth: 64,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {hueco.label}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Presets generales estándar */}
+        {filteredPresets.map((preset, i) => {
+          const dotGlyph = (preset.icon && resolveDotGlyph(preset.icon))
+            || ACTION_TYPES.find((at) => at.type === preset.action.type)?.glyph
+            || 'DOTS';
+          const fg = preset.fgColor || VD.text;
+          const bg = preset.bgColor || VD.elevated;
+          return (
+            <div
+              key={`std-${i}`}
+              onClick={() => onApplyPreset(preset)}
+              title={t('editor.applyPreset', { nombre: preset.label })}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: VD.radius.lg,
+                background: bg,
+                border: `1px solid ${VD.border}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                gap: 4,
+                padding: 4,
+                transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = accent)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = VD.border)}
+            >
+              <IconoPreset origen={preset.iconoCatalogo} respaldo={dotGlyph} tamano={16} color={fg} />
+              <div
+                style={{
+                  fontFamily: VD.mono,
+                  fontSize: 8,
+                  color: fg || VD.textDim,
+                  textAlign: 'center',
+                  maxWidth: 64,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  lineHeight: 1.15,
+                }}
+              >
+                {preset.label}
+              </div>
+            </div>
+          );
+        })}
+
+        {filteredPresets.length === 0 && matchingDockPresets.length === 0 && (
+          <div style={{ fontFamily: VD.mono, fontSize: 9, color: VD.textMuted, padding: '8px 0' }}>
+            {t('ed.noPresets')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

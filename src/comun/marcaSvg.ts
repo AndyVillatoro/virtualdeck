@@ -4,7 +4,7 @@
  * Vive en `src/comun/` porque la usan los dos procesos: el renderer la pinta
  * en la tecla física (`utils/superficies/pintarTecla.ts`, con `import()`
  * diferido) y el proceso principal la manda al mando móvil ya como SVG
- * (`electron/main/iconosMando.ts`). Antes cada lado repetía la resolución
+ * (`electron/main/mando/iconosMando.ts`). Antes cada lado repetía la resolución
  * —bitmap propio, color propio, paleta fusionada— y el móvil simplemente no
  * la tenía: la regla `main-no-renderer` le impedía importar el catálogo.
  *

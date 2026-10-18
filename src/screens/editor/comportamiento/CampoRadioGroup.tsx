@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
-import { estiloEntrada } from '../comunes';
+import { estiloEntrada } from '../campos/comunes';
 
 interface CampoRadioGroupProps {
   value: string;

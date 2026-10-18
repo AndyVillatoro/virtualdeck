@@ -3,7 +3,7 @@ import { useTheme } from '../../../utils/theme';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { Chip } from '../../../components/ui/Chip';
-import { estiloEntrada } from '../comunes';
+import { estiloEntrada } from '../campos/comunes';
 
 interface CampoTimerTriggerProps {
   value: string;

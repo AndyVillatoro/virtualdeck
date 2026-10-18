@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useFieldText } from '../../../utils/i18n';
 import { DotGlyphIcon, ALL_DOT_GLYPHS } from '../../../components/dot480/DotGlyphIcon';
-import { Btn, estiloEntrada } from '../comunes';
+import { Btn, estiloEntrada } from '../campos/comunes';
 
 const GLIFOS_RAPIDOS = [
   'PLAY', 'PAUSE', 'NEXT', 'PREV', 'MIC', 'SPEAKER', 'AUDIO_WAVE',

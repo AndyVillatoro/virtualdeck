@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTheme } from '../../../utils/theme';
 import { useFieldText, useT } from '../../../utils/i18n';
-import { Field, Btn, estiloEntrada } from '../comunes';
+import { Field, Btn, estiloEntrada } from '../campos/comunes';
 import { Segmentado } from '../../../components/ui/Chip';
 import type { PropsFormulario } from './base';
 

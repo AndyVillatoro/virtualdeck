@@ -7,7 +7,7 @@ export const RGB: Record<string, Manejador> = {
     const id = action.rgbDeviceId ?? -1;
     // `true` = duradero. Un botón de color quiere decir "deja las luces así",
     // no "así mientras VirtualDeck esté abierto": ver `setDeviceColor` en
-    // electron/main/rgb.ts.
+    // electron/main/rgb/aplicar.ts.
     const ok = await api.rgb.setDeviceColor(id, action.rgbColor, true);
     return ok ? OK : fail(t('act.err.rgbColor'));
   },

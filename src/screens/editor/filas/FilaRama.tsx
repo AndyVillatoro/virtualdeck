@@ -3,7 +3,7 @@ import type { VDTokens } from '../../../design';
 import { useTheme } from '../../../utils/theme';
 import { estiloCampo, estiloDesplegable } from '../../../components/ui/estilos';
 import { useT, useFieldText } from '../../../utils/i18n';
-import { ACTION_TYPES } from '../actionData';
+import { ACTION_TYPES } from '../datos/actionData';
 import type { ActionType, ButtonAction } from '../../../types';
 import { RGB_PRESET_IDS, clavePreset } from '../../../data/rgbPresets';
 

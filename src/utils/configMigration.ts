@@ -500,7 +500,7 @@ export function tiposDesconocidos(botones: unknown): string[] {
       for (const sub of (Array.isArray(a[clave]) ? a[clave] as unknown[] : [])) mirar(sub);
     }
     // Carpetas y cuadrantes 2×2 llevan acciones propias (misma paridad que
-    // `resumirRiesgo` en electron/main/galeria.ts).
+    // `resumirRiesgo` en electron/main/integraciones/galeria.ts).
     for (const fb of (Array.isArray(a.folderButtons) ? a.folderButtons as unknown[] : [])) {
       if (isObject(fb)) mirar(fb.action);
     }
