@@ -20,6 +20,7 @@ import { HIDAsync } from 'node-hid';
 import type { DriverSuperficie, CallbacksDispositivo, ControlId } from './driver';
 import type { ModeloMirabox } from './modelos';
 import * as proto from './protocoloMirabox';
+import { ColaImagenes } from './colaImagenes';
 
 export type { CallbacksDispositivo } from './driver';
 
@@ -36,6 +37,11 @@ export class DispositivoMirabox implements DriverSuperficie {
   private desconectado = false;
   private brilloPendiente: number | null = null;
   private brilloEnCola = false;
+  /** Las imágenes de tecla: la última de cada tecla gana (ver `ColaImagenes`). */
+  private readonly imagenes = new ColaImagenes(
+    (tarea) => this.enCola(tarea),
+    (lcdId, jpeg) => this.escribirImagen(lcdId, jpeg),
+  );
 
   private constructor(
     readonly serial: string,
@@ -88,13 +94,16 @@ export class DispositivoMirabox implements DriverSuperficie {
     const ctrl = this.modelo.controles.find((c) => c.tipo === 'key' && c.indice === indiceTecla);
     const lcdId = ctrl?.lcdId;
     if (lcdId === undefined) return;
-    await this.enCola(async () => {
-      await this.escribir(proto.paqueteComando(proto.cabeceraImagen(jpeg.byteLength, lcdId), this.modelo.packetSize));
-      for (const trozo of proto.trozosDeImagen(jpeg, this.modelo.packetSize)) {
-        await this.escribir(proto.paqueteTrozo(trozo, this.modelo.packetSize));
-      }
-      await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
-    });
+    await this.imagenes.poner(lcdId, jpeg);
+  }
+
+  /** Los paquetes de una imagen: cabecera, trozos y refresco. Va dentro de la cola de escritura. */
+  private async escribirImagen(lcdId: number, jpeg: Buffer): Promise<void> {
+    await this.escribir(proto.paqueteComando(proto.cabeceraImagen(jpeg.byteLength, lcdId), this.modelo.packetSize));
+    for (const trozo of proto.trozosDeImagen(jpeg, this.modelo.packetSize)) {
+      await this.escribir(proto.paqueteTrozo(trozo, this.modelo.packetSize));
+    }
+    await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
   }
 
   /**
@@ -125,10 +134,13 @@ export class DispositivoMirabox implements DriverSuperficie {
   /** Borra todas las teclas y refresca. */
   async limpiar(): Promise<void> {
     if (!this.estaVivo) return;
-    await this.enCola(async () => {
+    const hecho = this.enCola(async () => {
       await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO, this.modelo.packetSize));
       await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
     });
+    // Una imagen pedida después de borrar tiene que salir después del borrado.
+    this.imagenes.cerrarTanda();
+    await hecho;
   }
 
   /** Borra todo, apaga la pantalla de forma limpia (`CLE DC`) y cierra el HID. */
@@ -136,12 +148,14 @@ export class DispositivoMirabox implements DriverSuperficie {
     if (this.cerrando || this.cerrado) return;
     this.cerrando = true;
     if (this.latido) { clearInterval(this.latido); this.latido = null; }
-    await this.enCola(async () => {
+    const hecho = this.enCola(async () => {
       await this.escribir(proto.paqueteComando(proto.LIMPIAR_TODO, this.modelo.packetSize));
       await this.escribir(proto.paqueteComando(proto.REFRESCO, this.modelo.packetSize));
       await esperar(150);
       await this.escribir(proto.paqueteComando(proto.APAGAR, this.modelo.packetSize));
     });
+    this.imagenes.cerrarTanda();
+    await hecho;
     this.cerrado = true;
     try { await this.hid.close(); } catch { /* ya no está */ }
   }

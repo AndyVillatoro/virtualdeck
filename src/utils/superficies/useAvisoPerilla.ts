@@ -12,6 +12,7 @@ import {
   type ColoresSuperficie, type OpcionesPintado,
 } from './pintarTecla';
 import { avisoDeCuadrantes, avisoDeGiro, avisoDeModo, avisoDePagina, type AvisoPerilla } from './avisoPerilla';
+import { crearEstadoPinturas, pedirPintura } from './pinturaUltimaGana';
 
 /**
  * El aviso de la tecla al girar una perilla (T-HW-21, roadmap 85).
@@ -67,6 +68,7 @@ export interface AvisoPerillaApi {
 export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi {
   const { api, config, dispositivos, paginasActivas, colores, iconoSvg, esGlifoDot, vivo, t, alPintar } = opciones;
   const avisos = useRef(new Map<string, AvisoActivo>());
+  const pinturas = useRef(crearEstadoPinturas());
 
   // Al desmontar, ningún temporizador sigue vivo.
   useEffect(() => {
@@ -119,7 +121,7 @@ export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi
     const temporizador = setTimeout(() => { void restaurar(serial, hueco, generacion); }, MS_AVISO_TECLA);
     avisos.current.set(serial, { hueco, generacion, temporizador });
 
-    void (async () => {
+    const pintar = async () => {
       const pagina = paginaDeSerial(serial);
       const tecla = pagina && teclasLcd(pagina.disposicion).find((c) => c.hueco === hueco);
       if (!pagina || !tecla) return;
@@ -128,7 +130,11 @@ export function useAvisoPerilla(opciones: OpcionesAvisoPerilla): AvisoPerillaApi
       if (avisos.current.get(serial)?.generacion !== generacion) return;
       await api.superficies.imagen(serial, tecla.indice, imagen.jpegBase64);
       if (imagen.dataUrl) alPintar(serial, hueco, imagen.dataUrl);
-    })();
+    };
+    // Una sola pintura en vuelo por aparato (dibujar + JPEG + escritura HID
+    // cuesta más que el intervalo entre pasos de un giro rápido): los valores
+    // intermedios se saltan y al terminar sale el último.
+    pedirPintura(pinturas.current, serial, pintar);
   }, [api, paginaDeSerial, colores, alPintar, restaurar]);
 
   const avisarDeGiro = useCallback((

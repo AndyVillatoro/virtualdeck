@@ -8,6 +8,16 @@ import {
   getRunningProcesses, snapWindow, cycleWindow, openApps, iconoApp, isProcessRunning, focusWindow, closeWindow,
 } from '../launcher';
 
+// El atajo o el tecleo deben llegar a la app de destino, no a VirtualDeck: solo
+// si una ventana propia (principal, barra flotante...) tiene el foco se le
+// quita y se espera a que el sistema lo devuelva a la app anterior.
+async function soltarFocoSiPropio(win: BrowserWindow): Promise<void> {
+  const enfocada = BrowserWindow.getFocusedWindow();
+  if (!enfocada && !win.isFocused()) return;
+  (enfocada ?? win).blur();
+  await new Promise(r => setTimeout(r, 80));
+}
+
 export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:app', (_e: any, path: string, args: string[]) => launchApp(path, args));
   ipcMain.handle('launch:url', (_e: any, url: string) => {
@@ -29,8 +39,7 @@ export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:getBrightness', () => getBrightness());
   ipcMain.handle('launch:getVolume', () => getVolume());
   ipcMain.handle('launch:hotkey', async (_e: any, combo: string) => {
-    win.blur();
-    await new Promise(r => setTimeout(r, 80));
+    await soltarFocoSiPropio(win);
     return sendHotkey(combo);
   });
   ipcMain.handle('launch:mediaKey', (_e: any, key: string) => {
@@ -46,8 +55,7 @@ export function registerLauncherIpc(win: BrowserWindow) {
   ipcMain.handle('launch:clipboard', (_e: any, text: string) => copyToClipboard(text));
   ipcMain.handle('launch:speak', (_e: any, text: string) => speakText(String(text ?? '')));
   ipcMain.handle('launch:typeText', async (_e: any, text: string) => {
-    win.blur();
-    await new Promise(r => setTimeout(r, 80));
+    await soltarFocoSiPropio(win);
     return typeTextKeys(text);
   });
   ipcMain.handle('launch:killProcess', (_e: any, name: string) => killProcess(name));
