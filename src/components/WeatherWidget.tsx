@@ -92,7 +92,7 @@ export function WeatherWidget() {
       {!loading && !error && weather && (
         <div
           onClick={() => fetchWeather(true)}
-          title="Actualizar"
+          title={t('weather.refresh')}
           style={{ cursor: 'pointer', flexShrink: 0, padding: 2, display: 'flex', alignItems: 'center' }}
         >
           <DotGlyphIcon glyph="DOTS" size={8} color={VD.textMuted} />

@@ -71,10 +71,11 @@ export function useDeckPerfiles({ config, withHistory, setActivePage, t }: Conte
   }, [withHistory, setActivePage, t]);
 
   const appendPagesFromProfile = useCallback((profile: Profile) => {
-    let newActivePage = 0;
+    // D-065: se calcula fuera del updater. Asignar una variable externa dentro
+    // de `withHistory` no es idempotente si React re-ejecuta el updater.
+    const newActivePage = config.pages.length;
     withHistory(t('undo.appendProfile', { nombre: profile.name }), (prev) => {
       const baseIdx = prev.pages.length;
-      newActivePage = baseIdx;
       const timestamp = Date.now();
       const newPages: PageConfig[] = profile.pages.map((p, i) => {
         const { pagina: acotada } = sanearPagina(p);
@@ -109,7 +110,7 @@ export function useDeckPerfiles({ config, withHistory, setActivePage, t }: Conte
       };
     });
     if (newActivePage > 0) setActivePage(newActivePage);
-  }, [withHistory, setActivePage, t]);
+  }, [config.pages.length, withHistory, setActivePage, t]);
 
   const appendProfilePages = useCallback((id: string) => {
     const profile = config.profiles?.find((p) => p.id === id);

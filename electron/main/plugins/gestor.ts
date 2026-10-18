@@ -17,7 +17,7 @@
  * misma API (los mismos 9 exports).
  */
 export { listarPlugins } from './inventario';
-export { instalarPlugin, desinstalarPlugin, habilitarPlugin, instalarDesdeZip } from './instalar';
+export { instalarPlugin, desinstalarPlugin, habilitarPlugin } from './instalar';
 export { instalarDesdeUrl } from './descarga';
 export { aparecerPlugin, pulsarPlugin, abrirPIPlugin } from './interaccion';
 export { iniciarGestorPlugins, detenerGestorPlugins } from './cicloVida';

@@ -37,6 +37,14 @@ const MS_HUECO_MAXIMO = 5 * 60 * 1000;
 const MS_ENFRIAMIENTO = 60000;
 
 /**
+ * D-072: el enfriamiento sobrevive al desmontaje del hook. Antes vivía en un
+ * `ref` y al remontar se reiniciaba, así que un sensor que seguía en
+ * condición disparaba de inmediato. Al estar montado una sola vez en `App`
+ * no hay dos instancias que lo compartan.
+ */
+const enfriamientoSensores = new Map<string, number>();
+
+/**
  * ¿El instante «HH:MM» cae entre el tic anterior y este?
  *
  * Se compara sobre el día de `ahora`, que es lo correcto salvo justo al cruzar
@@ -111,15 +119,15 @@ export function useDisparadores({ botones, sensores, disparar }: Opciones) {
 
   // --- Por sensor. Por nivel, no por flanco: se repite mientras la condición
   // siga siendo cierta, con enfriamiento entre disparos.
-  const ultimoDisparo = useRef<Map<string, number>>(new Map());
   useEffect(() => {
-    if (sensores.length === 0) return;
-    const previos = ultimoDisparo.current;
+    const { botones: botonesActuales, sensores: sensoresActuales, disparar: dispararActual } = ref.current;
+    if (sensoresActuales.length === 0) return;
+    const previos = enfriamientoSensores;
     const ahora = Date.now();
-    for (const b of botones) {
+    for (const b of botonesActuales) {
       const trig = b.sensorTrigger;
       if (!trig) continue;
-      const s = findSensor(trig.id, sensores);
+      const s = findSensor(trig.id, sensoresActuales);
       if (!s) continue;
       if (!evalCondition(trig, s.value)) {
         // Flanco de bajada: se reinicia para que el siguiente cruce dispare ya.
@@ -128,7 +136,9 @@ export function useDisparadores({ botones, sensores, disparar }: Opciones) {
       }
       if (ahora - (previos.get(b.id) ?? 0) < (trig.cooldownMs ?? MS_ENFRIAMIENTO)) continue;
       previos.set(b.id, ahora);
-      void disparar(b);
+      void dispararActual(b);
     }
-  }, [sensores, botones, disparar]);
+    // Se lee por `ref` como el reloj de arriba: `disparar` cambia de identidad
+    // con la configuración y no debe rearmar la evaluación por sí solo.
+  }, [sensores, botones]);
 }

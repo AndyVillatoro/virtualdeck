@@ -102,6 +102,19 @@ export function isRecording(): boolean { return _recording; }
 // Reproduccion: nativa, con PowerShell de respaldo
 // ---------------------------------------------------------------------------
 
+/**
+ * D-074 — cola de reproducción en el proceso principal (una macro a la vez).
+ * La que llega con otra en marcha espera; a partir de 3 en espera la nueva se
+ * descarta con fallo y aviso en el registro.
+ */
+const MAX_COLA_MACRO = 3;
+let macroEnMarcha = false;
+const colaMacro: Array<{
+  steps: MacroStep[];
+  repeat: number;
+  resolver: (r: { ok: boolean; error?: string }) => void;
+}> = [];
+
 /** Reproduce los pasos. Nativo si esta disponible; si no, el script de siempre. */
 export async function playMacro(
   steps: MacroStep[],
@@ -109,6 +122,45 @@ export async function playMacro(
 ): Promise<{ ok: boolean; error?: string }> {
   if (!Array.isArray(steps) || steps.length === 0) return { ok: false, error: tm('macro.noSteps') };
 
+  // D-074 — una macro a la vez: dos botones (o un disparador) no pueden
+  // intercalar sus `SendInput`. La nueva espera su turno en una cola de 3;
+  // llena, se descarta con fallo (el llamador avisa con el genérico
+  // `act.err.macro`) y el detalle queda en el registro del proceso principal.
+  if (macroEnMarcha) {
+    if (colaMacro.length >= MAX_COLA_MACRO) {
+      console.error('[macro] cola llena (3 en espera): se descarta la macro nueva');
+      return { ok: false };
+    }
+    return new Promise<{ ok: boolean; error?: string }>((resolver) => {
+      colaMacro.push({ steps, repeat, resolver });
+    });
+  }
+  macroEnMarcha = true;
+  try {
+    return await ejecutarMacro(steps, repeat);
+  } finally {
+    macroEnMarcha = false;
+    void avanzarColaMacro();
+  }
+}
+
+/** Saca el siguiente turno de la cola, si hay. Sin `await` entre el `shift` y el flag: atómico. */
+async function avanzarColaMacro(): Promise<void> {
+  const turno = colaMacro.shift();
+  if (!turno) return;
+  macroEnMarcha = true;
+  try {
+    turno.resolver(await ejecutarMacro(turno.steps, turno.repeat));
+  } finally {
+    macroEnMarcha = false;
+    void avanzarColaMacro();
+  }
+}
+
+async function ejecutarMacro(
+  steps: MacroStep[],
+  repeat = 1,
+): Promise<{ ok: boolean; error?: string }> {
   // Los numéricos se acotan **antes** de los dos caminos. Ver `pasoSeguro`.
   const pasos = steps.map(pasoSeguro);
   const veces = entero(repeat, 1, MAX_REPETICIONES, 1);

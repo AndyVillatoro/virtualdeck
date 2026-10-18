@@ -49,7 +49,7 @@ export interface DatosPI {
  * plugin, LibreHardwareMonitor, etc. Todo lo demás —remotos y el propio
  * puerto— devuelve `true` para no romper los PIs que piden recursos remotos.
  */
-export function debeInyectarCors(urlRespuesta: string, puertoPropio: number): boolean {
+function debeInyectarCors(urlRespuesta: string, puertoPropio: number): boolean {
   let u: URL;
   try {
     u = new URL(urlRespuesta);

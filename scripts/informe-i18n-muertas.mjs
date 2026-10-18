@@ -1,4 +1,4 @@
-﻿// Informe de claves i18n sin usar. **No falla el build: informa.** Por eso va
+// Informe de claves i18n sin usar. **No falla el build: informa.** Por eso va
 // aparte de `check-i18n.mjs` y no está en la cadena de `npm run check`.
 //
 // `check-i18n.mjs` comprueba dos cosas: que ES y EN tengan las mismas claves, y
@@ -36,10 +36,14 @@ const DICCIONARIOS = [
   'src/utils/idiomas/esEditor.ts',
   'src/utils/idiomas/esAcciones.ts',
   'src/utils/idiomas/esAjustes.ts',
+  'src/utils/idiomas/esCatalogo.ts',
+  'src/utils/idiomas/esDispositivos.ts',
   'src/utils/idiomas/enComun.ts',
   'src/utils/idiomas/enEditor.ts',
   'src/utils/idiomas/enAcciones.ts',
   'src/utils/idiomas/enAjustes.ts',
+  'src/utils/idiomas/enCatalogo.ts',
+  'src/utils/idiomas/enDispositivos.ts',
   'src/utils/idiomas/campos.ts',
 ];
 // Los ficheros que **definen** las claves no cuentan como referencia de sí
@@ -74,6 +78,7 @@ const ES = new Map();
 for (const [fich, nombre] of [
   ['esComun', 'ES_COMUN'], ['esEditor', 'ES_EDITOR'],
   ['esAcciones', 'ES_ACCIONES'], ['esAjustes', 'ES_AJUSTES'],
+  ['esCatalogo', 'ES_CATALOGO'], ['esDispositivos', 'ES_DISPOSITIVOS'],
 ]) {
   for (const k of clavesDeFragmento(`src/utils/idiomas/${fich}.ts`, nombre)) {
     if (!ES.has(k)) ES.set(k, `${fich}.ts`);
@@ -179,9 +184,23 @@ FAMILIAS.push({
 {
   // Sin anclar con `^`: las claves van varias por línea (`0: '…', 1: '…',`) y
   // anclado solo se cogía la primera de cada una, dejando 16 códigos fuera.
-  const codigos = [...bloqueDe('src/components/WeatherWidget.tsx', 'const WX_GLYPH').matchAll(/(\d+)\s*:/g)].map((m) => Number(m[1]));
+  const codigos = [...bloqueDe('src/comun/widgets.ts', 'const WX_GLYPH').matchAll(/(\d+)\s*:/g)].map((m) => Number(m[1]));
   const conDecena = [...new Set([...codigos, ...codigos.map((c) => Math.floor(c / 10) * 10)])];
-  FAMILIAS.push({ nombre: 'wx.*', de: 'WX_GLYPH, y su decena (components/WeatherWidget.tsx)', claves: conDecena.map((c) => `wx.${c}`) });
+  FAMILIAS.push({ nombre: 'wx.*', de: 'WX_GLYPH, y su decena (comun/widgets.ts)', claves: conDecena.map((c) => `wx.${c}`) });
+}
+// t(`icat.${slug}`) y t(`ialias.${etiqueta}`) — categorias y etiquetas del
+// catalogo de Tabler (editor/catalogo/grupos.ts). El slug y la etiqueta salen
+// de datos del catalogo, no de un array del repo, asi que no se pueden
+// resolver sin cargarlos: se dan por vivas todas las claves de la familia que
+// existen en el diccionario. `construirMapaAlias` tolera la clave ausente (cae
+// al nombre ingles), de modo que una sobrante no rompe nada, pero tampoco se
+// detecta aqui: revisarlas a mano si se cambia el catalogo.
+for (const prefijo of ['icat.', 'ialias.']) {
+  FAMILIAS.push({
+    nombre: `${prefijo}*`,
+    de: 'catalogo de Tabler (editor/catalogo/grupos.ts), no verificable estaticamente',
+    claves: [...ES.keys()].filter((k) => k.startsWith(prefijo)),
+  });
 }
 const DINAMICAS = new Set(FAMILIAS.flatMap((f) => f.claves));
 

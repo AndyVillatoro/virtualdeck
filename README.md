@@ -16,7 +16,7 @@ visual retro de matriz de puntos. 100% local, gratis y sin cuentas.
 - **Widgets en vivo** en los botones — reloj, clima, sensores del PC, música actual y variables.
 - **Variables y plantillas** — contadores e interpolación `{var}` en cualquier acción.
 - **Macros** de teclado/ratón con grabador global.
-- **RGB** (OpenRGB) y **sensores** (LibreHardwareMonitor embebido).
+- **RGB** (OpenRGB) y **sensores** (LibreHardwareMonitor).
 - **Pantalla completa / kiosko**, multi-idioma (ES/EN), temas claro/oscuro, actualizaciones vía Store.
 
 ## Instalación

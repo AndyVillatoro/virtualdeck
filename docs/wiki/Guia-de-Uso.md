@@ -37,6 +37,11 @@ Stream Deck virtual para Windows. Botones configurables que disparan apps, atajo
 - **Reordenar dentro de la página**: arrastrar un botón sobre otro los intercambia.
 - **Mover a otra página**: arrastrar un botón sobre la pestaña destino. Mantén `Shift` mientras sueltas para *copiar* en lugar de mover.
 - **Reordenar pestañas**: arrastrar la pestaña de página.
+- **Con pantalla táctil**: mantenga pulsado un botón para empezar a arrastrarlo.
+
+## Selección múltiple
+
+`Ctrl+clic` selecciona varios botones. Aparece una barra sobre la cuadrícula para vaciarlos o moverlos a otra página en un solo paso; un único deshacer los recupera todos.
 
 ## Variables y plantillas
 
@@ -60,9 +65,15 @@ En la sección **COMPORTAMIENTO** del editor:
 - **Mostrar en tray**: el botón aparece en el menú contextual del icono de bandeja.
 - También: disparo por **hora** (con días de la semana) y por **umbral de sensor**.
 
+Un botón disparado por cualquiera de estas vías hace exactamente lo mismo que un clic con el ratón.
+
 ## Modo kiosko
 
 En fullscreen, el botón "🔒 KIOSKO" oculta toda la UI no esencial. ESC pide un PIN de 4 dígitos para salir. El PIN se establece la primera vez y se persiste.
+
+## Barra flotante
+
+Una columna estrecha de casillas que flota por encima de todo lo demás, para los botones que más use. Sus casillas se comportan igual que los botones del deck — incluido el estado de interruptor (toggle), que se comparte entre ambos.
 
 ## Backups
 

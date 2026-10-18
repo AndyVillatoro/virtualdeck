@@ -95,14 +95,16 @@ unsafe fn leer_mapa(mapa: HGDIOBJ) -> Option<(usize, usize, Vec<u8>)> {
     if ancho == 0 || alto == 0 {
         return None;
     }
-    let mut bmi = BITMAPINFO::default();
-    bmi.bmiHeader = BITMAPINFOHEADER {
-        biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-        biWidth: ancho as i32,
-        biHeight: -(alto as i32), // negativo = de arriba abajo
-        biPlanes: 1,
-        biBitCount: 32,
-        biCompression: BI_RGB.0,
+    let mut bmi = BITMAPINFO {
+        bmiHeader: BITMAPINFOHEADER {
+            biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+            biWidth: ancho as i32,
+            biHeight: -(alto as i32), // negativo = de arriba abajo
+            biPlanes: 1,
+            biBitCount: 32,
+            biCompression: BI_RGB.0,
+            ..Default::default()
+        },
         ..Default::default()
     };
     let mut buf = vec![0u8; ancho * alto * 4];

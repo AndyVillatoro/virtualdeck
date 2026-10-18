@@ -9,6 +9,7 @@ import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
 import { interpolate } from '../../src/comun/interpolar';
 import { botonVisibleSegun } from '../../src/comun/visibilidad';
 import { datosDeWidget, type DatosWidget, type FuentesWidget } from '../../src/comun/widgets';
+import { formatoHora, formatoFecha, type Lang } from '../../src/comun/formatos';
 import { botonAMando, type BotonFuenteMando, type BotonMandoMovil, type IconoPuntosMando } from './iconosMando';
 
 /**
@@ -41,26 +42,7 @@ function conPuntos(dato: DatosWidget): DatoWidgetVivo {
   return puntos ? { ...dato, puntos } : dato;
 }
 
-const formatoHoraMando = (() => {
-  const cache = new Map<string, Intl.DateTimeFormat>();
-  return (lang: 'es' | 'en'): Intl.DateTimeFormat => {
-    let f = cache.get(lang);
-    // 24 h a propósito, como el deck (`formatos.ts`): de un vistazo se lee mejor.
-    if (!f) { f = new Intl.DateTimeFormat(lang, { hour: '2-digit', minute: '2-digit', hour12: false }); cache.set(lang, f); }
-    return f;
-  };
-})();
-
-const formatoFechaMando = (() => {
-  const cache = new Map<string, Intl.DateTimeFormat>();
-  return (lang: 'es' | 'en'): Intl.DateTimeFormat => {
-    let f = cache.get(lang);
-    if (!f) { f = new Intl.DateTimeFormat(lang, { weekday: 'short', day: '2-digit', month: 'short' }); cache.set(lang, f); }
-    return f;
-  };
-})();
-
-function idiomaMando(pref: string | undefined): 'es' | 'en' {
+function idiomaMando(pref: string | undefined): Lang {
   if (pref === 'es') return 'es';
   if (pref === 'en') return 'en';
   try {
@@ -159,8 +141,8 @@ async function juntarFuentesVivo(
     sonando,
     sensores: base.sensores,
     divisas: tasas,
-    hora: formatoHoraMando(base.lang),
-    fecha: formatoFechaMando(base.lang),
+    hora: formatoHora(base.lang),
+    fecha: formatoFecha(base.lang),
   };
 }
 

@@ -482,11 +482,15 @@ export function useSuperficies({
     }
     conectadosAntes.current = ahora;
 
+    // D-063: si las dependencias cambian a mitad del `await`, la ejecución
+    // vieja sigue viva y pisaría con datos rancios lo que pinte la nueva.
+    let cancelado = false;
     void (async () => {
       const nuevasImagenes = { ...imagenesRef.current };
       let cambio = false;
       const encendidos = new Set(config.toggledIds ?? []);
       for (const dispositivo of conectados) {
+        if (cancelado) return;
         const pagina = paginaDe(
           config, dispositivo.serial, dispositivo.disposicion, activas[dispositivo.serial], vivo,
         );
@@ -503,6 +507,7 @@ export function useSuperficies({
           { iconoSvg: iconoRef.current, esGlifoDot: esGlifoDotRef.current }, firmas.current, fuentesListas,
           encendidos, widgets, config, avisosRef.current.conAviso,
         );
+        if (cancelado) return;
         const huecos = Object.keys(pintadas);
         if (huecos.length === 0) continue;
         const previas = nuevasImagenes[dispositivo.serial] ? [...nuevasImagenes[dispositivo.serial]] : [];
@@ -510,8 +515,10 @@ export function useSuperficies({
         nuevasImagenes[dispositivo.serial] = previas;
         cambio = true;
       }
+      if (cancelado) return;
       if (cambio) setImagenes(nuevasImagenes);
     })();
+    return () => { cancelado = true; };
   }, [api, config, dispositivos, activas, fondo, texto, aviso, critico, fuentesListas, vivo, widgets, versionVisuales]);
 
   // Los GIF animados de la tecla física. Va después del pintado estático (que

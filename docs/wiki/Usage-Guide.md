@@ -56,6 +56,20 @@ the clipboard directly as the button background.
 them or move them to another page in one step — a single undo brings them all
 back.
 
+## Variables and templates
+
+Two actions manipulate global state:
+
+- **Var: Set** (`set-var`) — stores a value (literal or `{otherVar}`).
+- **Var: Add** (`incr-var`) — adds or subtracts from a numeric variable.
+
+Any action field (URL, args, webhook body, TTS text…) replaces `{variable}` with its value at runtime. Typical use:
+
+```
+incr-var counter +1
+notify "You have done {counter} pomodoros today"
+```
+
 ## External triggers
 
 In the editor's **BEHAVIOR** section:

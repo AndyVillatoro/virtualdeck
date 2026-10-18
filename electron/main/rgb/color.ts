@@ -2,6 +2,7 @@ import { utils as orgbUtils } from 'openrgb-sdk';
 import type Device from 'openrgb-sdk/dist/device';
 import type { Mode, RGBColor } from 'openrgb-sdk/dist/device';
 import type { RGBDeviceInfo } from './tipos';
+import { rgbToHex as comunRgbToHex, hexToRgb as comunHexToRgb } from '../../../src/comun/color';
 
 // OpenRGB colorMode constants
 export const CM_NONE    = 0; // autonomous effect (Spectrum Cycle, Rainbow) — no user color input
@@ -11,12 +12,12 @@ export const CM_RANDOM  = 3; // random colors — no user input
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 export function rgbToHex(c: RGBColor): string {
-  const t = (n: number) => Math.max(0, Math.min(255, n | 0)).toString(16).padStart(2, '0');
-  return `#${t(c.red)}${t(c.green)}${t(c.blue)}`;
+  return comunRgbToHex(c.red, c.green, c.blue);
 }
 
 export function hexToRgb(hex: string): RGBColor {
-  return orgbUtils.hexColor(hex.replace('#', ''));
+  const [r, g, b] = comunHexToRgb(hex);
+  return { red: r, green: g, blue: b } as RGBColor;
 }
 
 function deviceTypeLabel(t: number): string {

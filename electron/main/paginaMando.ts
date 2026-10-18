@@ -2,7 +2,7 @@
  * El mando móvil (1.1): la página que sirve el servidor local en `/`.
  *
  * Página web ligera sin dependencias ni build. Estética DOT / 480 OLED Micro Interface:
- * mono, mayúsculas, grilla de 4 px, sin emojis. Los colores y acento reflejan
+ * mono, mayúsculas, cuadrícula de 4 px, sin emojis. Los colores y acento reflejan
  * el tema del usuario (oscuro, claro o sistema según prefers-color-scheme).
  *
  * Los iconos de los botones llegan ya resueltos a puntos desde el servidor
@@ -268,8 +268,13 @@ function svgGlifo57(filas, color) {
 
 // Contraste automático sobre un fondo propio (roadmap 102), la misma regla
 // que la celda (src/comun/contraste.ts, del que el servidor ya trae el
-// fgColor resuelto): aquí es el respaldo por si llega un botón con bgColor y
-// sin fgColor. Sin backticks ni interpolaciones: va dentro del literal.
+// fgColor resuelto en iconosMando.ts con el canonico textoSobre): aquí es
+// el respaldo por si llega un botón con bgColor y sin fgColor. Va dentro del
+// literal porque corre en el telefono, que no puede importar el modulo:
+// MANTENER SINCRONIZADO con textoSobre (umbral 0.22, pesos
+// 0.2126/0.7152/0.0722, linealizado 0.03928/12.92 con exponente 2.4,
+// #rgb/#rrggbb/#rrggbbaa y rgb()/rgba(), y oscuro ante lo
+// irreconocible). Sin backticks ni interpolaciones: va dentro del literal.
 // Con alfa (#rrggbbaa, rgba()), se usa el color tal cual.
 function textoSobreMovil(c) {
   var OSCURO = '#070809';

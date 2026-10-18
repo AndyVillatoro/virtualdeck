@@ -9,7 +9,8 @@ import { EN } from './idiomas/en';
 import { FIELDS_EN } from './idiomas/campos';
 import type { Dict } from './idiomas/tipos';
 
-export type Lang = 'es' | 'en';
+import type { Lang } from '../comun/formatos';
+export type { Lang };
 export type LangPref = 'system' | Lang;
 
 export function resolveLang(pref: LangPref | undefined): Lang {

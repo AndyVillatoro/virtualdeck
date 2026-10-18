@@ -1,8 +1,9 @@
 ﻿import type React from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { DeckConfig, SoundProfileId, ThemeMode } from '../../types';
 import { sonidoActivo } from '../sound';
 import type { ContextoDeck } from './contexto';
+import { guardarConfig } from './estado';
 
 /**
  * Lo que no es un botón ni una página: escala, tema, idioma, sonido, PIN del
@@ -14,10 +15,27 @@ import type { ContextoDeck } from './contexto';
  * deshacer. Por eso necesita `setConfig` directo, y por eso vive en el contexto
  * junto a lo demás: el historial es para lo que se puede deshacer.
  */
-export function useDeckPreferencias({ api, config, setConfig, saveConfig }: ContextoDeck) {
+export function useDeckPreferencias({ api, config, setConfig, saveConfig, t }: ContextoDeck) {
   /** Guarda el estado de las variables con un respiro, para no escribir en disco en cada tecla. */
   const stateSaveTimer = useRef<number>();
   const toggleSaveTimer = useRef<number>();
+  /**
+   * D-073 — lo último pendiente de escribir por cada reloj. `guardarConRespiro`
+   * lo actualiza en cada llamada y el temporizador lo limpia al disparar; si la
+   * app se cierra antes, `vaciarRespiros` lo escribe.
+   */
+  const pendienteToggle = useRef<DeckConfig | null>(null);
+  const pendienteState = useRef<DeckConfig | null>(null);
+
+  /**
+   * D-064 — espejo de la config para calcular `next` fuera del updater de
+   * `setConfig` (ver `estado.ts`): el guardado y los temporizadores no pueden
+   * vivir dentro del updater porque React puede invocarlo dos veces. Se
+   * actualiza en cada escritura para que el grupo radio —que llama a
+   * `toggleButton` varias veces seguidas en el mismo tick— no pise.
+   */
+  const configRef = useRef(config);
+  configRef.current = config;
 
   // UI scale handler
   const setUiScale = useCallback((scale: number) => {
@@ -38,38 +56,38 @@ export function useDeckPreferencias({ api, config, setConfig, saveConfig }: Cont
 
   // Hints contextuales: marcar uno como descartado (persistente, sin historial).
   const dismissHint = useCallback((id: string) => {
-    setConfig((prev) => {
-      if (prev.hintsDismissed?.includes(id)) return prev;
-      const next = { ...prev, hintsDismissed: [...(prev.hintsDismissed ?? []), id] };
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api, setConfig]);
+    const prev = configRef.current;
+    if (prev.hintsDismissed?.includes(id)) return;
+    const next = { ...prev, hintsDismissed: [...(prev.hintsDismissed ?? []), id] };
+    configRef.current = next;
+    setConfig(next);
+    guardarConfig(api, t, next);
+  }, [api, setConfig, t]);
 
   // Sound on press toggle
   const toggleSoundOnPress = useCallback(() => {
-    setConfig((prev) => {
-      const next = { ...prev, soundOnPress: !sonidoActivo(prev) };
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api, setConfig]);
+    const prev = configRef.current;
+    const next = { ...prev, soundOnPress: !sonidoActivo(prev) };
+    configRef.current = next;
+    setConfig(next);
+    guardarConfig(api, t, next);
+  }, [api, setConfig, t]);
 
   const setSoundProfile = useCallback((id: SoundProfileId) => {
-    setConfig((prev) => {
-      const next = { ...prev, soundProfile: id };
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api, setConfig]);
+    const prev = configRef.current;
+    const next = { ...prev, soundProfile: id };
+    configRef.current = next;
+    setConfig(next);
+    guardarConfig(api, t, next);
+  }, [api, setConfig, t]);
 
   const setKioskPin = useCallback((pin: string) => {
-    setConfig((prev) => {
-      const next = { ...prev, kiosk: { pin } };
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api, setConfig]);
+    const prev = configRef.current;
+    const next = { ...prev, kiosk: { pin } };
+    configRef.current = next;
+    setConfig(next);
+    guardarConfig(api, t, next);
+  }, [api, setConfig, t]);
 
   /**
    * Enciende o apaga un interruptor, en la configuración.
@@ -98,32 +116,72 @@ export function useDeckPreferencias({ api, config, setConfig, saveConfig }: Cont
    */
   const guardarConRespiro = useCallback((
     reloj: React.MutableRefObject<number | undefined>,
+    pendiente: React.MutableRefObject<DeckConfig | null>,
     next: DeckConfig,
   ) => {
-    if (reloj.current === undefined) api?.config.save(next).catch(() => {});
+    pendiente.current = next;
+    if (reloj.current === undefined) guardarConfig(api, t, next);
     clearTimeout(reloj.current);
     reloj.current = window.setTimeout(() => {
       reloj.current = undefined;
-      api?.config.save(next).catch(() => {});
+      pendiente.current = null;
+      guardarConfig(api, t, next);
     }, 400);
-  }, [api]);
+  }, [api, t]);
+
+  /**
+   * D-073 — vacía los guardados pendientes. Se llama al desmontar y con
+   * `beforeunload`/`pagehide`: sin esto, el último cambio de un interruptor o
+   * una variable se perdía si la app se cerraba dentro de los 400 ms del
+   * respiro. El temporizador ya cumplido no deja nada pendiente (`null`).
+   */
+  const vaciarRespiros = useCallback(() => {
+    const pares = [
+      [toggleSaveTimer, pendienteToggle],
+      [stateSaveTimer, pendienteState],
+    ] as const;
+    for (const [reloj, pendiente] of pares) {
+      if (reloj.current === undefined) continue;
+      clearTimeout(reloj.current);
+      reloj.current = undefined;
+      const next = pendiente.current;
+      pendiente.current = null;
+      if (next) guardarConfig(api, t, next);
+    }
+  }, [api, t]);
+
+  // Como los disparadores en `App`: este hook vive ahí, montado siempre, así
+  // que el desmontaje y los eventos de cierre cubren el único camino de
+  // salida. La ref evita re-suscribirse cuando cambia `api`.
+  const vaciarRef = useRef(vaciarRespiros);
+  vaciarRef.current = vaciarRespiros;
+  useEffect(() => {
+    const alSalir = (): void => { vaciarRef.current(); };
+    window.addEventListener('beforeunload', alSalir);
+    window.addEventListener('pagehide', alSalir);
+    return () => {
+      window.removeEventListener('beforeunload', alSalir);
+      window.removeEventListener('pagehide', alSalir);
+      vaciarRef.current();
+    };
+  }, []);
 
   const toggleButton = useCallback((id: string) => {
-    setConfig((prev) => {
-      const encendidos = new Set(prev.toggledIds ?? []);
-      if (encendidos.has(id)) encendidos.delete(id); else encendidos.add(id);
-      const next = { ...prev, toggledIds: [...encendidos] };
-      guardarConRespiro(toggleSaveTimer, next);
-      return next;
-    });
+    const prev = configRef.current;
+    const encendidos = new Set(prev.toggledIds ?? []);
+    if (encendidos.has(id)) encendidos.delete(id); else encendidos.add(id);
+    const next = { ...prev, toggledIds: [...encendidos] };
+    configRef.current = next;
+    setConfig(next);
+    guardarConRespiro(toggleSaveTimer, pendienteToggle, next);
   }, [guardarConRespiro, setConfig]);
 
   const updateState = useCallback((update: Record<string, string>) => {
-    setConfig((prev) => {
-      const next = { ...prev, state: { ...(prev.state ?? {}), ...update } };
-      guardarConRespiro(stateSaveTimer, next);
-      return next;
-    });
+    const prev = configRef.current;
+    const next = { ...prev, state: { ...(prev.state ?? {}), ...update } };
+    configRef.current = next;
+    setConfig(next);
+    guardarConRespiro(stateSaveTimer, pendienteState, next);
   }, [guardarConRespiro, setConfig]);
 
   const toggleAlwaysOnTop = useCallback(() => {

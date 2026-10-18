@@ -20,7 +20,10 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:damaged', () => configDanado());
 
   ipcMain.handle('config:save', (_e: any, data: object) => {
-    saveConfig(data);
+    // D-071: se devuelve si el guardado falló para que el renderer lo sepa
+    // (`preload` ya tipa `Promise<boolean>`). Los avisos a bandeja, sensores,
+    // remoto, barra y tienda van igual: describen la config en memoria.
+    const ok = saveConfig(data);
     // Antes de reconstruir el menu de la bandeja, por si cambio el idioma: si
     // no, la bandeja se queda en el anterior hasta el siguiente arranque.
     fijarIdioma((data as any)?.language);
@@ -41,7 +44,7 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
     // La tienda también lee la configuración (instalados para los avisos de
     // update): si no se le avisa, sigue con lo de al abrir.
     avisarTienda(data);
-    return true;
+    return ok;
   });
 
   // Estado del servidor local, para que los ajustes puedan decir si esta

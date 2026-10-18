@@ -34,7 +34,7 @@ type Clave =
   | 'gal.risk.click' | 'gal.risk.move' | 'gal.risk.scroll' | 'gal.risk.voice'
   | 'gal.risk.kill' | 'gal.risk.clipboard' | 'gal.risk.audio' | 'gal.risk.capture'
   | 'gal.risk.discord' | 'gal.risk.spotify' | 'gal.risk.timer' | 'gal.risk.timerDias' | 'gal.risk.sensor'
-  | 'gal.risk.play' | 'gal.risk.macroNumerico' | 'gal.risk.plugin'
+  | 'gal.risk.play' | 'gal.risk.macroNumerico' | 'gal.risk.plugin' | 'gal.risk.tooManyNodes'
   | 'discord.notRunning' | 'discord.disconnected' | 'discord.timeout' | 'discord.notAuthenticated' | 'discord.error'
   | 'spotify.tokenRequired' | 'spotify.noUri';
 
@@ -96,6 +96,7 @@ const ES: Record<Clave, string> = {
   'gal.risk.sensor': 'sensor {id} {op} {valor}',
   'gal.risk.play': 'reproducir',
   'gal.risk.plugin': 'plugin «{plugin}» (ejecuta código de un tercero)',
+  'gal.risk.tooManyNodes': 'el perfil anida demasiadas acciones para revisarlo y no se puede importar',
   'gal.risk.macroNumerico': 'paso de macro con un número que no es número (intento de código en una pausa o una coordenada)',
   'discord.notRunning': 'Discord no está abierto o no responde en el pipe local',
   'discord.disconnected': 'Discord desconectado',
@@ -164,6 +165,7 @@ const EN: Record<Clave, string> = {
   'gal.risk.sensor': 'sensor {id} {op} {valor}',
   'gal.risk.play': 'play',
   'gal.risk.plugin': 'plugin "{plugin}" (runs third-party code)',
+  'gal.risk.tooManyNodes': 'the profile nests too many actions to review and cannot be imported',
   'gal.risk.macroNumerico': 'macro step with a non-numeric number (attempt to inject code through a delay or a coordinate)',
   'discord.notRunning': 'Discord is not open or not responding on local pipe',
   'discord.disconnected': 'Discord disconnected',

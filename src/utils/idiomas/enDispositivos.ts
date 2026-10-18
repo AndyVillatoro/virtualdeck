@@ -15,7 +15,6 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.desconectado': 'Disconnected',
   'disp.sinDispositivos': 'No devices configured',
   'disp.sinDispositivosDesc': 'Connect a Stream Dock N3 via USB to get started.',
-  'disp.resumenN3': '6 LCD keys (64×64) · 3 buttons · 3 knobs',
   'disp.brillo': 'LCD Brightness',
   'disp.serial': 'Serial No.',
   'disp.pagina': 'Linked page',
@@ -30,7 +29,7 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.inspector.titulo': 'Control properties',
   'disp.inspector.tipo': 'Control type',
   'disp.inspector.accion': 'Assigned action',
-  'disp.inspector.sinAccion': 'No action assigned',
+  'disp.inspector.sinLcd': 'This control has no screen: customization does not apply; only the action can be configured.',
   'disp.inspector.ayuda': 'Click any key, button or knob action to edit its action.',
   'disp.inspector.error': 'The inspector could not render. Close the panel and pick the control again.',
   'disp.perfiles.titulo': 'PAGE PROFILES',
@@ -64,7 +63,6 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.renombrarPagina': 'Rename page',
   'disp.borrarPagina': 'Delete page',
   'disp.borrarUltima': 'Cannot delete: it is the last page of the device',
-  'disp.vincularApp': 'Bind application',
   'disp.panel.dispositivos': 'Devices',
   'disp.panel.inspector': 'Inspector',
   'disp.desplegablePagina': 'PAGE',
@@ -75,8 +73,6 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.gesto.pulsar': 'PRESS',
   'disp.gesto.giroDer': 'TURN RIGHT',
   'disp.gesto.deslizar': 'SWIPE LEFT/RIGHT',
-  'disp.gesto.deslizarIzq': 'SWIPE LEFT',
-  'disp.gesto.deslizarDer': 'SWIPE RIGHT',
 
   // Control inspector (roadmap 66)
   'disp.inspector.otrosGestos': 'Other knob gestures',

@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { ActionType, ButtonConfig, ModoPerilla } from '../../types';
 import { resolverIconoCatalogo } from '../../data/iconosDot';
 import type { ContextoDeck } from './contexto';
+import { guardarConfig } from './estado';
 
 /**
  * Los botones: editarlos, duplicarlos, copiarlos, pegarlos, moverlos y limpiarlos.
@@ -11,6 +12,14 @@ import type { ContextoDeck } from './contexto';
  * en el historial, porque copiar no es un cambio del deck.
  */
 export function useDeckBotones({ api, config, setConfig, withHistory, t }: ContextoDeck) {
+  /**
+   * D-064 — espejo de la config para calcular `next` fuera del updater de
+   * `setConfig` (ver `estado.ts`): el guardado no puede vivir dentro del
+   * updater porque React puede invocarlo dos veces.
+   */
+  const configRef = useRef(config);
+  configRef.current = config;
+
   const updateButton = useCallback((updated: ButtonConfig) => {
     withHistory(t('undo.edit', { nombre: updated.label || updated.action.type }), (prev) => ({
       ...prev,
@@ -226,18 +235,18 @@ export function useDeckBotones({ api, config, setConfig, withHistory, t }: Conte
         (r): r is { id: string; resuelto: { bits: string; origen: string } } => r.resuelto !== null
       );
       if (exitosos.length === 0) return;
-      setConfig((prev) => {
-        const next = {
-          ...prev,
-          buttons: prev.buttons.map((b) => {
-            const r = exitosos.find((x) => x.id === b.id);
-            if (!r) return b;
-            return { ...b, icon: '', iconoPuntos: r.resuelto };
-          }),
-        };
-        api?.config.save(next).catch(() => {});
-        return next;
-      });
+      const prev = configRef.current;
+      const next = {
+        ...prev,
+        buttons: prev.buttons.map((b) => {
+          const r = exitosos.find((x) => x.id === b.id);
+          if (!r) return b;
+          return { ...b, icon: '', iconoPuntos: r.resuelto };
+        }),
+      };
+      configRef.current = next;
+      setConfig(next);
+      guardarConfig(api, t, next);
     });
   }, [api, setConfig, withHistory, t]);
 

@@ -1,11 +1,12 @@
-import { useCallback, useRef } from 'react';
-import type { ActionType, ButtonConfig, DisposicionSuperficie, InfoSuperficie, PageConfig } from '../../types';
+import { useCallback, useEffect, useRef } from 'react';
+import type { ActionType, ButtonConfig, DeckConfig, DisposicionSuperficie, InfoSuperficie, PageConfig } from '../../types';
 import { PLANTILLAS_APP, repartirPlantillaDock } from '../../data/plantillasApp';
 import { resolverIconoCatalogo } from '../../data/iconosDot';
 import type { PresetHueco } from '../../data/presetsDock';
 import { columnasDock, rejillaDe, totalHuecos } from '../superficies/disposicion';
 import { normalizarApp } from '../apps';
 import type { ContextoDeck } from './contexto';
+import { guardarConfig } from './estado';
 
 /**
  * Destino de `crearPaginaDesdePlantilla`: `null` = página del deck (4×4);
@@ -27,6 +28,14 @@ export type DestinoPlantilla = null | {
  * leyendo `config`, para no decidir la página nueva con un render de atraso.
  */
 export function useDeckPaginas({ api, config, setConfig, withHistory, setActivePage, t }: ContextoDeck) {
+  /**
+   * D-064 — espejo de la config para calcular `next` fuera del updater de
+   * `setConfig` (ver `estado.ts`): el guardado y los temporizadores no pueden
+   * vivir dentro del updater porque React puede invocarlo dos veces.
+   */
+  const configRef = useRef(config);
+  configRef.current = config;
+
   // Page management
   const renamePage = useCallback((id: string, name: string) => {
     withHistory(t('undo.renameTo', { nombre: name }), (prev) => ({
@@ -281,18 +290,18 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
           (r): r is { buttonId: string; resuelto: { bits: string; origen: string } } => r.resuelto !== null
         );
         if (exitosos.length === 0) return;
-        setConfig((prev) => {
-          const next = {
-            ...prev,
-            buttons: prev.buttons.map((b) => {
-              const r = exitosos.find((x) => x.buttonId === b.id);
-              if (!r) return b;
-              return { ...b, icon: '', iconoPuntos: r.resuelto };
-            }),
-          };
-          api?.config.save(next).catch(() => {});
-          return next;
-        });
+        const prev = configRef.current;
+        const next = {
+          ...prev,
+          buttons: prev.buttons.map((b) => {
+            const r = exitosos.find((x) => x.buttonId === b.id);
+            if (!r) return b;
+            return { ...b, icon: '', iconoPuntos: r.resuelto };
+          }),
+        };
+        configRef.current = next;
+        setConfig(next);
+        guardarConfig(api, t, next);
       });
     }
     return id;
@@ -355,19 +364,46 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
    * variables y los interruptores de `preferencias`).
    */
   const brilloTimer = useRef<number>();
+  /** D-073 — lo último pendiente del respiro del brillo (ver `preferencias`). */
+  const pendienteBrillo = useRef<DeckConfig | null>(null);
   const fijarBrilloSuperficie = useCallback((serial: string, valor: number) => {
     const brillo = Math.max(0, Math.min(100, Math.round(valor)));
-    setConfig((prev) => {
-      const next = { ...prev, superficies: { ...prev.superficies, [serial]: { ...prev.superficies?.[serial], brillo } } };
-      if (brilloTimer.current === undefined) api?.config.save(next).catch(() => {});
-      clearTimeout(brilloTimer.current);
-      brilloTimer.current = window.setTimeout(() => {
-        brilloTimer.current = undefined;
-        api?.config.save(next).catch(() => {});
-      }, 400);
-      return next;
-    });
-  }, [api, setConfig]);
+    const prev = configRef.current;
+    const next = { ...prev, superficies: { ...prev.superficies, [serial]: { ...prev.superficies?.[serial], brillo } } };
+    configRef.current = next;
+    setConfig(next);
+    pendienteBrillo.current = next;
+    if (brilloTimer.current === undefined) guardarConfig(api, t, next);
+    clearTimeout(brilloTimer.current);
+    brilloTimer.current = window.setTimeout(() => {
+      brilloTimer.current = undefined;
+      pendienteBrillo.current = null;
+      guardarConfig(api, t, next);
+    }, 400);
+  }, [api, setConfig, t]);
+
+  // D-073 — vacía el respiro del brillo al desmontar o cerrar (mismo caso que
+  // `preferencias`: el deslizador escribe con respiro y el último tramo se
+  // perdía al cerrar dentro de los 400 ms).
+  const vaciarBrilloRef = useRef<() => void>(() => {});
+  vaciarBrilloRef.current = () => {
+    if (brilloTimer.current === undefined) return;
+    clearTimeout(brilloTimer.current);
+    brilloTimer.current = undefined;
+    const next = pendienteBrillo.current;
+    pendienteBrillo.current = null;
+    if (next) guardarConfig(api, t, next);
+  };
+  useEffect(() => {
+    const alSalir = (): void => { vaciarBrilloRef.current(); };
+    window.addEventListener('beforeunload', alSalir);
+    window.addEventListener('pagehide', alSalir);
+    return () => {
+      window.removeEventListener('beforeunload', alSalir);
+      window.removeEventListener('pagehide', alSalir);
+      vaciarBrilloRef.current();
+    };
+  }, []);
 
   /**
    * El giro de la pantalla de un dispositivo (0/90/180/270), en su mapa por serial.

@@ -1,12 +1,36 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { DEFAULT_CONFIG } from '../configDefaults';
-import { makeT, resolveLang } from '../i18n';
+import { makeT, resolveLang, type TFunc } from '../i18n';
 import type { DeckConfig, ElectronAPI } from '../../types';
 
 interface Opciones {
   api: ElectronAPI | undefined;
   /** Aviso flotante de "se deshizo X". Lo pinta App. */
   showUndoToast: (texto: string) => void;
+}
+
+/**
+ * D-071 — aviso visible cuando el guardado en disco falla.
+ *
+ * `config:save` devuelve `false` y el renderer lo ignoraba: el cambio se
+ * perdía sin decir nada. Se avisa con la notificación del sistema (el
+ * mecanismo que ya usa la app para `notify`), con respiro de 30 s para no
+ * spamear si cada guardado falla. Vive aquí porque este grupo es el dueño de
+ * la persistencia; los demás grupos la usan para sus guardados directos.
+ */
+let ultimoAvisoFalloGuardado = 0;
+export function guardarConfig(
+  api: ElectronAPI | undefined, t: TFunc, data: DeckConfig,
+): void {
+  api?.config.save(data)
+    .then((ok) => {
+      if (ok) return;
+      const ahora = Date.now();
+      if (ahora - ultimoAvisoFalloGuardado < 30000) return;
+      ultimoAvisoFalloGuardado = ahora;
+      api?.notify.show(t('ui.saveFailedTitle'), t('ui.saveFailedBody')).catch(() => {});
+    })
+    .catch(() => {});
 }
 
 /**
@@ -20,6 +44,21 @@ export function useDeckEstado({ api, showUndoToast }: Opciones) {
   const [config, setConfig] = useState<DeckConfig>(DEFAULT_CONFIG);
   const [loaded, setLoaded] = useState(false);
   const historyRef = useRef<{ config: DeckConfig; label: string }[]>([]);
+
+  /**
+   * D-064 — La config viva por referencia.
+   *
+   * `withHistory` y `saveConfig` calculan `next` fuera del updater de
+   * `setConfig`: React puede invocar el updater dos veces (StrictMode en
+   * desarrollo o un render concurrente descartado) y con el historial y el
+   * guardado dentro, la escritura a disco se duplicaba y el deshacer apilaba
+   * dos pasos por acción. El updater que se pasa a `setConfig` es ahora puro
+   * (`() => next`, vía `setConfig(next)`). La ref se actualiza en cada
+   * escritura para que las llamadas encadenadas en el mismo tick vean lo
+   * último sin esperar al re-render.
+   */
+  const configRef = useRef(config);
+  configRef.current = config;
 
   // El traductor sale de aqui y no llega por parametro: lo construye el idioma
   // de la propia configuracion, que es lo que este hook posee. Pasarlo desde
@@ -40,29 +79,30 @@ export function useDeckEstado({ api, showUndoToast }: Opciones) {
     updater: (prev: DeckConfig) => DeckConfig,
     rotulo?: (prev: DeckConfig) => string,
   ) => {
-    setConfig((prev) => {
-      historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: rotulo ? rotulo(prev) : label }];
-      const next = updater(prev);
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
-  }, [api]);
+    const prev = configRef.current;
+    const next = updater(prev);
+    historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: rotulo ? rotulo(prev) : label }];
+    configRef.current = next;
+    setConfig(next);
+    guardarConfig(api, t, next);
+  }, [api, t]);
 
   const undo = useCallback(() => {
     if (historyRef.current.length === 0) return;
     const last = historyRef.current[historyRef.current.length - 1];
     historyRef.current = historyRef.current.slice(0, -1);
+    configRef.current = last.config;
     setConfig(last.config);
-    api?.config.save(last.config).catch(() => {});
+    guardarConfig(api, t, last.config);
     showUndoToast(t('undo.done', { label: last.label }));
   }, [api, showUndoToast, t]);
 
   const saveConfig = useCallback((next: DeckConfig) => {
-    setConfig((prev) => {
-      historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: t('undo.configChange') }];
-      api?.config.save(next).catch(() => {});
-      return next;
-    });
+    const prev = configRef.current;
+    historyRef.current = [...historyRef.current.slice(-19), { config: prev, label: t('undo.configChange') }];
+    configRef.current = next;
+    setConfig(next);
+    guardarConfig(api, t, next);
   }, [api, t]);
 
   return { config, setConfig, loaded, setLoaded, t, withHistory, undo, saveConfig };

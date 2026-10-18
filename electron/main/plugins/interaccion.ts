@@ -81,18 +81,27 @@ async function marchaLista(ref: PluginRef | undefined): Promise<MarchaLista | nu
 function esperarRegistro(uuid: string, marcha: Marcha): Promise<boolean> {
   if (marcha.registrado) return Promise.resolve(true);
   return new Promise((listo) => {
+    // D-068: el temporizador queda rastreado en la marcha. Si el plugin se
+    // registra, `despertar` lo limpia; si se detiene, `detenerMarcha` vacía
+    // `enEspera` (despertando con `false`, que también lo limpia) y
+    // `cerrarRecursos` barre `temporizadores`. Sin esto el timer tardío
+    // releía una marcha ya sustituida.
     const temporizador = setTimeout(() => {
+      quitar();
       const indice = marcha.enEspera.indexOf(despertar);
       if (indice >= 0) marcha.enEspera.splice(indice, 1);
       listo(estado.enMarcha.get(uuid) === marcha && marcha.registrado);
     }, ESPERA_REGISTRO_MS);
-    const despertar = (ok: boolean) => {
+    const despertar = (ok: boolean): void => {
       clearTimeout(temporizador);
+      quitar();
       listo(ok);
     };
-    // Sin guardar el temporizador en la marcha: si se desinstala, la espera se
-    // resuelve con `false` por el vaciado de `detenerMarcha` y este `listo`
-    // tardío ya no hace nada.
+    const quitar = (): void => {
+      const i = marcha.temporizadores.indexOf(temporizador);
+      if (i >= 0) marcha.temporizadores.splice(i, 1);
+    };
+    marcha.temporizadores.push(temporizador);
     marcha.enEspera.push(despertar);
   });
 }

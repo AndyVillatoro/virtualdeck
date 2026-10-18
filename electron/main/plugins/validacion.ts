@@ -24,10 +24,16 @@ import { extname, join, resolve, sep } from 'path';
  */
 
 const UUID_RE = /^[a-z0-9][a-z0-9._-]{2,100}$/;
+const SHA_RE = /^[0-9a-fA-F]{64}$/;
 
 /** El UUID de un plugin: minúsculas, 3–101 caracteres. */
 export function validarUuid(valor: unknown): valor is string {
   return typeof valor === 'string' && UUID_RE.test(valor);
+}
+
+/** Un SHA-256 en hexadecimal (64 caracteres, mayúsculas o minúsculas). */
+export function validarSha256(valor: unknown): valor is string {
+  return typeof valor === 'string' && SHA_RE.test(valor);
 }
 
 /** Tope de `setSettings`/`setGlobalSettings` (lo que Elgato permite por contexto). */

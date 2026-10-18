@@ -72,3 +72,21 @@ La configuración RGB vive en su propia pantalla (botón **RGB** en la barra sup
 no aquí. VirtualDeck se conecta al SDK de **OpenRGB** para aplicar colores, modos y
 perfiles a los dispositivos compatibles. Es necesario tener OpenRGB en ejecución con
 su servidor SDK habilitado.
+
+VirtualDeck puede iniciarlo automáticamente: configure la ruta a `OpenRGB.exe` en el
+panel de ajustes (Ajustes → sección RGB) y se lanzará en modo `--server`, sin ventana.
+
+### Presets
+
+18 presets incluidos. No llevan un motor de animación detrás: cada preset define un
+color y una lista de modos que probar, del más específico al más genérico, hasta dar
+con uno que el dispositivo admita de verdad. Por eso el mismo preset puede verse
+ligeramente distinto en dos dispositivos.
+
+### Perfiles
+
+El gestor RGB puede guardar el estado actual de todos los dispositivos como un **perfil**,
+y un botón puede aplicarlo con la acción `rgb-profile`. También se puede marcar un perfil
+para que se aplique automáticamente al iniciar VirtualDeck — útil porque el color del modo
+Direct no se guarda en el hardware y se pierde al apagar el equipo.
+

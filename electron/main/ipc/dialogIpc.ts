@@ -1,5 +1,6 @@
-import { ipcMain, dialog, Notification, BrowserWindow, app } from 'electron';
+import { ipcMain, dialog, Notification, BrowserWindow } from 'electron';
 import { join } from 'path';
+import { dirImagenes } from '../rutas';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { tm } from '../idioma';
 
@@ -14,7 +15,7 @@ export function registerDialogIpc(win: BrowserWindow) {
       if (!m) return null;
       const ext = m[1].toLowerCase().replace('jpeg', 'jpg').replace('svg+xml', 'svg');
       const buf = Buffer.from(m[2], 'base64');
-      const imagesDir = join(app.getPath('userData'), 'images');
+      const imagesDir = dirImagenes();
       if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });
       const filename = `paste_${Date.now()}.${ext}`;
       writeFileSync(join(imagesDir, filename), buf);
@@ -34,7 +35,7 @@ export function registerDialogIpc(win: BrowserWindow) {
     try {
       const src = r.filePaths[0];
       const ext = src.split('.').pop()?.toLowerCase() ?? 'png';
-      const imagesDir = join(app.getPath('userData'), 'images');
+      const imagesDir = dirImagenes();
       if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });
       const filename = `img_${Date.now()}.${ext}`;
       copyFileSync(src, join(imagesDir, filename));

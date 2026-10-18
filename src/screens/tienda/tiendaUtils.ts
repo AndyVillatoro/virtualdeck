@@ -51,7 +51,7 @@ function esElMismo(e: EntradaGaleria, i: InstaladoTienda, manifestUrl: string): 
  * Estado de una entrada de perfil o página frente a lo instalado: nueva,
  * instalada o con versión nueva publicada.
  */
-export function estadoDeEntrada(
+function estadoDeEntrada(
   e: EntradaGaleria, instalados: InstaladoTienda[], manifestUrl: string,
 ): { estado: EstadoEntrada; instalado?: InstaladoTienda } {
   const instalado = instalados.find((i) => esElMismo(e, i, manifestUrl));

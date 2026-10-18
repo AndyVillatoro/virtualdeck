@@ -3,11 +3,12 @@ import { randomBytes } from 'node:crypto';
 import { networkInterfaces, hostname } from 'node:os';
 import { createReadStream, existsSync } from 'node:fs';
 import { join, normalize } from 'node:path';
-import { app, type BrowserWindow } from 'electron';
+import { type BrowserWindow } from 'electron';
 import { loadConfig } from './configManager';
 import { atender } from './enlacesExternos';
 import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
 import { paginaMando } from './paginaMando';
+import { dirImagenes } from './rutas';
 import { botonesVivosParaMando, widgetsVivosParaMando } from './mandoVivo';
 import motorPuntos from '../../src/components/dot480/efectosPuntos.js?raw';
 import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../src/types';
@@ -207,7 +208,7 @@ function atenderMedia(url: URL, res: ServerResponse): void {
   if (filename.includes('..') || filename.includes('/')) {
     return responder(res, 403, { ok: false, error: 'denegado' });
   }
-  const imagesDir = join(app.getPath('userData'), 'images');
+  const imagesDir = dirImagenes();
   const filePath = normalize(join(imagesDir, filename));
   if (!filePath.startsWith(imagesDir) || !existsSync(filePath)) {
     return responder(res, 404, { ok: false, error: 'no existe' });

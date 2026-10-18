@@ -289,7 +289,7 @@ fn aplanar(
     let texto = nodo.get("Text").and_then(Value::as_str);
     let sensor_id = nodo.get("SensorId").and_then(Value::as_str);
 
-    let es_contenedor = texto.map_or(false, |t| {
+    let es_contenedor = texto.is_some_and(|t| {
         let t_low = t.trim().to_lowercase();
         matches!(
             t_low.as_str(),

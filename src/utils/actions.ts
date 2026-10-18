@@ -14,9 +14,7 @@ import { OK, fail, interpolate, actionLabel, type ActionResult, type DetalleAcci
 
 // Se reexportan porque media aplicacion los importa desde aqui.
 export { interpolate };
-export type { ActionResult };
-
-export async function executeAction(
+async function executeAction(
   action: ButtonAction,
   api: ElectronAPI,
   state?: Record<string, string>,

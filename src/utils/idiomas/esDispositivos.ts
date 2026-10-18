@@ -15,7 +15,6 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.desconectado': 'Desconectado',
   'disp.sinDispositivos': 'No hay dispositivos configurados',
   'disp.sinDispositivosDesc': 'Conecta un Stream Dock N3 por USB para empezar a usarlo.',
-  'disp.resumenN3': '6 teclas LCD (64×64) · 3 botones · 3 perillas',
   'disp.brillo': 'Brillo LCD',
   'disp.serial': 'Nº Serie',
   'disp.pagina': 'Página vinculada',
@@ -30,7 +29,7 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.inspector.titulo': 'Propiedades del control',
   'disp.inspector.tipo': 'Tipo de control',
   'disp.inspector.accion': 'Acción asignada',
-  'disp.inspector.sinAccion': 'Sin acción asignada',
+  'disp.inspector.sinLcd': 'Este control no tiene pantalla: la personalización no aplica; solo se puede configurar la acción.',
   'disp.inspector.ayuda': 'Pulsa cualquier tecla, botón o acción de perilla para editar su acción.',
   'disp.inspector.error': 'El inspector no pudo dibujarse. Cierra el panel y vuelve a elegir el control.',
   'disp.perfiles.titulo': 'PERFILES DE PÁGINA',
@@ -64,7 +63,6 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.renombrarPagina': 'Renombrar página',
   'disp.borrarPagina': 'Borrar página',
   'disp.borrarUltima': 'No se puede borrar: es la última página del dispositivo',
-  'disp.vincularApp': 'Vincular aplicación',
   'disp.panel.dispositivos': 'Dispositivos',
   'disp.panel.inspector': 'Inspector',
   'disp.desplegablePagina': 'PÁGINA',
@@ -75,8 +73,6 @@ export const ES_DISPOSITIVOS: Dict = {
   'disp.gesto.pulsar': 'PULSAR',
   'disp.gesto.giroDer': 'GIRO DER',
   'disp.gesto.deslizar': 'DESLIZAR IZQ/DER',
-  'disp.gesto.deslizarIzq': 'DESLIZAR IZQ',
-  'disp.gesto.deslizarDer': 'DESLIZAR DER',
 
   // Inspector de controles (roadmap 66)
   'disp.inspector.otrosGestos': 'Otros gestos de la perilla',

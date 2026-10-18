@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import type { EntradaInstalacionUrl, ResultadoInstalacion } from '../../../src/types';
 import { desinstalarPlugin, instalarDesdeZip } from './instalar';
-import { validarUuid } from './validacion';
+import { validarUuid, validarSha256 } from './validacion';
 
 /**
  * Instalar un plugin desde una URL de la tienda (T-TND-10, manifiesto v3).
@@ -33,8 +33,6 @@ const LIMITE_ZIP_BYTES = 100 * 1024 * 1024;
 const MS_ESPERA = 120000;
 /** Saltos de redirección antes de rendirse. */
 const MAX_SALTOS = 5;
-
-const SHA_RE = /^[0-9a-fA-F]{64}$/;
 
 /** `https` y host permitido: lo demás ni se pide. */
 function esUrlDescargable(valor: unknown): valor is string {
@@ -102,7 +100,7 @@ export async function instalarDesdeUrl(entrada: EntradaInstalacionUrl): Promise<
   if (!entrada || !esUrlDescargable(entrada.url)) {
     return { ok: false, codigo: 'descarga', detalle: 'url' };
   }
-  if (typeof entrada.sha256 !== 'string' || !SHA_RE.test(entrada.sha256)) {
+  if (!validarSha256(entrada.sha256)) {
     return { ok: false, codigo: 'hash', detalle: 'sha-ausente' };
   }
   if (!validarUuid(entrada.uuid)) return { ok: false, codigo: 'invalido', detalle: 'uuid' };

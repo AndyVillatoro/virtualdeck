@@ -110,11 +110,10 @@ fn work_area_for_hwnd(hwnd: HWND) -> RECT {
         ..Default::default()
     };
     let hmon = unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) };
-    if !hmon.is_invalid() && unsafe { GetMonitorInfoW(hmon, &mut mi).as_bool() } {
-        if mi.rcWork.right > mi.rcWork.left && mi.rcWork.bottom > mi.rcWork.top {
+    if !hmon.is_invalid() && unsafe { GetMonitorInfoW(hmon, &mut mi).as_bool() }
+        && mi.rcWork.right > mi.rcWork.left && mi.rcWork.bottom > mi.rcWork.top {
             return mi.rcWork;
         }
-    }
     work_area()
 }
 

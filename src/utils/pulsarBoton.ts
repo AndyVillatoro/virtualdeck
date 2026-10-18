@@ -1,4 +1,4 @@
-import { executeAction, runActionSequence } from './actions';
+import { runActionSequence } from './actions';
 import { anotarContextos } from './acciones/plugins';
 import { contextoDe } from './plugins/ref';
 import type { DetalleAccion } from './acciones/base';
@@ -77,7 +77,17 @@ const MS_COLGADA = 60000;
 function conPlazo<T extends { ok: boolean; error?: string; stateUpdate?: Record<string, unknown> }>(
   p: Promise<T>, respaldo: T,
 ): Promise<T> {
-  return Promise.race([p, new Promise<T>((r) => setTimeout(() => r(respaldo), MS_COLGADA))]);
+  // D-066: el `setTimeout` se limpia cuando la promesa real se resuelve, para
+  // no dejar un temporizador vivo por pulsación. La cancelación del manejador
+  // subyacente no cambia: solo se evita la fuga del timer.
+  let temporizador: ReturnType<typeof setTimeout> | undefined;
+  const aPlazo = new Promise<T>((r) => {
+    temporizador = setTimeout(() => r(respaldo), MS_COLGADA);
+  });
+  return Promise.race([p, aPlazo]).then(
+    (r) => { if (temporizador) clearTimeout(temporizador); return r; },
+    (e) => { if (temporizador) clearTimeout(temporizador); throw e; },
+  );
 }
 
 /**
@@ -183,25 +193,47 @@ function noDisponible(btn: ButtonConfig, sinNavegar: boolean, e: EntornoPulsacio
   return { ok: false, error, tipo: btn.action.type };
 }
 
+/**
+ * El preámbulo del interruptor, fuera de `pulsarBoton` para no sumarle ramas.
+ *
+ * T-AUD-03 — El activo de un botón de audio sale SOLO del sistema
+ * (`botonActivo` con `activeAudioDeviceId`): pulsar no lo alterna. Si el
+ * botón quedó en `toggledIds` de antes (cuando `isToggle` lo encendía y el
+ * siguiente ya no lo apagaba), se limpia al pulsar, sin volver a encenderse.
+ *
+ * Devuelve el resultado cuando el toggle ya resuelve la pulsación (el
+ * apagado), o `null` para seguir con la ejecución normal.
+ */
+async function resolverToggle(btn: ButtonConfig, e: EntornoPulsacion): Promise<ResultadoPulsacion | null> {
+  if (btn.action.type === 'audio-device') {
+    if (btn.isToggle && e.toggledIds().has(btn.id)) {
+      e.onToggle(btn.id);
+    }
+    return null;
+  }
+  if (!btn.isToggle) return null;
+  const encendidos = e.toggledIds();
+  const estaba = encendidos.has(btn.id);
+  e.onToggle(btn.id);
+  // Grupo radio: al encender este, se apagan los demás del grupo.
+  if (!estaba && btn.radioGroup) {
+    for (const otro of e.config.buttons) {
+      if (otro.radioGroup === btn.radioGroup && otro.id !== btn.id && encendidos.has(otro.id)) {
+        e.onToggle(otro.id);
+      }
+    }
+  }
+  if (estaba && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
+    return ejecutarApagado(btn, e);
+  }
+  return null;
+}
+
 export async function pulsarBoton(
   btn: ButtonConfig, e: EntornoPulsacion,
 ): Promise<ResultadoPulsacion> {
-  if (btn.isToggle) {
-    const encendidos = e.toggledIds();
-    const estaba = encendidos.has(btn.id);
-    e.onToggle(btn.id);
-    // Grupo radio: al encender este, se apagan los demás del grupo.
-    if (!estaba && btn.radioGroup) {
-      for (const otro of e.config.buttons) {
-        if (otro.radioGroup === btn.radioGroup && otro.id !== btn.id && encendidos.has(otro.id)) {
-          e.onToggle(otro.id);
-        }
-      }
-    }
-    if (estaba && btn.actionToggleOff && btn.actionToggleOff.type !== 'none') {
-      return ejecutarApagado(btn, e);
-    }
-  }
+  const apagado = await resolverToggle(btn, e);
+  if (apagado) return apagado;
 
   const acciones = (btn.actions && btn.actions.length > 0) ? btn.actions : [btn.action];
   // Los pasos `page-nav` los resuelve el llamador; lo que queda —si queda—
@@ -236,11 +268,16 @@ async function ejecutarApagado(btn: ButtonConfig, e: EntornoPulsacion): Promise<
     return { ok: true, tipo: 'page-nav' };
   }
   anotarContextos([off], contextoDe(btn, e.config));
+  // D-067: por la secuencia con el gancho de scripts, como `ejecutarUna`.
+  // Con `executeAction` un `script` en el apagado se daba por bueno sin correr
+  // (lo resuelve el llamador) y su salida —mostrarla o guardarla en una
+  // variable— se perdía sin aviso.
+  const base = e.config.state ?? {};
   const r = await conPlazo(
-    executeAction(off, e.api, e.config.state, e.config.rgb?.profiles, e.t),
-    { ok: false, error: e.t('act.err.timeout') },
+    runActionSequence([off], e.api, base, ganchoScripts([off], e), e.config.rgb?.profiles, e.t),
+    { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
-  persistirYCrujir(r, e.config.state ?? {}, e);
+  persistirYCrujir(r, base, e);
   return { ok: r.ok, error: r.error, tipo: off.type, detalle: r.detalle };
 }
 
@@ -291,10 +328,14 @@ export async function pulsacionLarga(
     return { ok: true, tipo: 'page-nav' };
   }
   anotarContextos([btn.longPressAction], contextoDe(btn, e.config));
+  // D-067: lo mismo que el apagado — por la secuencia con el gancho de
+  // scripts, para que un `script` mantenido capture su salida igual que al
+  // pulsar normal.
+  const base = e.config.state ?? {};
   const r = await conPlazo(
-    executeAction(btn.longPressAction, e.api, e.config.state, e.config.rgb?.profiles, e.t),
-    { ok: false, error: e.t('act.err.timeout') },
+    runActionSequence([btn.longPressAction], e.api, base, ganchoScripts([btn.longPressAction], e), e.config.rgb?.profiles, e.t),
+    { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
-  persistirYCrujir(r, e.config.state ?? {}, e);
+  persistirYCrujir(r, base, e);
   return { ok: r.ok, error: r.error, tipo: btn.longPressAction.type };
 }

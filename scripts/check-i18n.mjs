@@ -445,7 +445,10 @@ const REGISTRO = [
   const fuentesES = FRAGMENTOS['ES: Dict'].map(([ruta]) => readFileSync(ruta, 'utf-8')).join('\n');
   const fuente = fuentesES
     + '\n' + readFileSync('src/utils/idiomas/campos.ts', 'utf-8')
-    + '\n' + readFileSync('electron/main/idioma.ts', 'utf-8');
+    + '\n' + readFileSync('electron/main/idioma.ts', 'utf-8')
+    // D-023: el cromo del mando movil tambien es español neutro vigilado (sus
+    // TEXTOS ya tienen paridad ES/EN en 5 bis; aqui se vigila el registro).
+    + '\n' + readFileSync('electron/main/paginaMando.ts', 'utf-8');
   for (const [i, linea] of fuente.split(/\r?\n/).entries()) {
     if (/^\s*(\/\/|\*|\/\*)/.test(linea)) continue;
     for (const [re, motivo] of REGISTRO) {

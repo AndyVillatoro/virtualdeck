@@ -1,5 +1,6 @@
 import { net } from 'electron';
 import { tm, diasDeLaSemana } from './idioma';
+import { validarUuid, validarSha256 } from './plugins/validacion';
 
 /**
  * La galería de perfiles (6.1): traerse un perfil de una dirección.
@@ -22,8 +23,7 @@ const TOPE_README = 64 * 1024;
 /** Capturas por entrada: la ficha no muestra más y así un manifiesto no fuerza cien descargas. */
 const MAX_CAPTURAS = 6;
 /** SHA-256 en hex (64) y UUID de plugin (minúsculas, 3–101): sin los dos no hay instalación. */
-const SHA_RE = /^[0-9a-fA-F]{64}$/;
-const UUID_RE = /^[a-z0-9][a-z0-9._-]{2,100}$/;
+// validación centralizada en `./plugins/validacion` (validarSha256 / validarUuid).
 
 type TipoEntradaGaleria = 'profile' | 'page' | 'plugin';
 
@@ -121,8 +121,7 @@ function esFilaValida(p: EntradaGaleria): boolean {
  */
 function traeRespaldoPlugin(p: EntradaGaleria): boolean {
   if (p.kind !== 'plugin') return true;
-  return typeof p.sha256 === 'string' && SHA_RE.test(p.sha256)
-    && typeof p.uuid === 'string' && UUID_RE.test(p.uuid);
+  return validarSha256(p.sha256) && validarUuid(p.uuid);
 }
 
 /** El tipo de la fila: lo desconocido es perfil (formato v1). */
@@ -136,8 +135,8 @@ function tipoDe(p: EntradaGaleria): TipoEntradaGaleria | undefined {
 function respaldoPlugin(p: EntradaGaleria): Pick<EntradaGaleria, 'sha256' | 'uuid' | 'license'> {
   if (p.kind !== 'plugin') return {};
   return {
-    sha256: typeof p.sha256 === 'string' && SHA_RE.test(p.sha256) ? p.sha256.toLowerCase() : undefined,
-    uuid: typeof p.uuid === 'string' && UUID_RE.test(p.uuid) ? p.uuid : undefined,
+    sha256: validarSha256(p.sha256) ? p.sha256.toLowerCase() : undefined,
+    uuid: validarUuid(p.uuid) ? p.uuid : undefined,
     license: typeof p.license === 'string' ? p.license.slice(0, 32) : undefined,
   };
 }
@@ -331,38 +330,94 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     if (x.type === 'plugin' && x.plugin) c.scripts.push(tm('gal.risk.plugin', { plugin: String(x.plugin.pluginUuid ?? '?') }));
   };
 
-  /** Acciones dentro de acciones: ramas, temporizador, carpetas y cuadrantes. */
-  const mirarHijas = (x: Record<string, any>, hondura: number): void => {
+  // Tope de nodos recorridos: un perfil puede anidar acciones sin límite, y
+  // antes el tope de profundidad (8) ocultaba lo que quedaba por debajo. Ahora
+  // se recorre con una pila y, si se supera el tope, se considera riesgo
+  // máximo (no importable) en vez de silenciarlo.
+  const MAX_NODOS_RIESGO = 20000;
+  let nodosRiesgo = 0;
+  let riesgoExcedido = false;
+
+  /** Encola las hijas de una acción (ramas, temporizador, carpeta, cuadrantes). */
+  const encolarSubButton = (s: unknown, pila: Array<unknown>): void => {
+    if (!s || typeof s !== 'object') return;
+    const o = s as Record<string, any>;
+    if (o.action) pila.push(o.action);
+    if (Array.isArray(o.actions)) for (const sub of o.actions) pila.push(sub);
+    if (o.actionToggleOff) pila.push(o.actionToggleOff);
+    if (o.longPressAction) pila.push(o.longPressAction);
+  };
+
+  const encolarHijas = (x: Record<string, any>, pila: Array<unknown>): void => {
     for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
-      for (const sub of (Array.isArray(x[clave]) ? x[clave] : [])) mirar(sub, hondura + 1);
+      const arr = Array.isArray(x[clave]) ? x[clave] : [];
+      for (const sub of arr) pila.push(sub);
     }
-    // Los botones de una carpeta llevan su propia accion, y ahi cabe cualquier cosa.
-    for (const fb of (Array.isArray(x.folderButtons) ? x.folderButtons : [])) mirar(fb?.action, hondura + 1);
-    // Los cuadrantes 2×2 llevan sus propias acciones, con la misma libertad.
-    for (const sb of (Array.isArray(x.subButtons) ? x.subButtons : [])) {
-      if (!sb || typeof sb !== 'object') continue;
-      mirar(sb.action, hondura + 1);
-      for (const sub of (Array.isArray(sb.actions) ? sb.actions : [])) mirar(sub, hondura + 1);
-      mirar(sb.actionToggleOff, hondura + 1);
-      mirar(sb.longPressAction, hondura + 1);
+    const fb = Array.isArray(x.folderButtons) ? x.folderButtons : [];
+    for (const f of fb) {
+      if (f && typeof f === 'object' && (f as Record<string, any>).action) {
+        pila.push((f as Record<string, any>).action);
+      }
+    }
+    const sb = Array.isArray(x.subButtons) ? x.subButtons : [];
+    for (const s of sb) encolarSubButton(s, pila);
+  };
+
+  const encolarModosPerilla = (y: Record<string, any>, pila: Array<unknown>): void => {
+    if (!Array.isArray(y.modosPerilla)) return;
+    for (const m of y.modosPerilla) {
+      if (!m || typeof m !== 'object') continue;
+      const mo = m as Record<string, any>;
+      if (mo.izq) pila.push(mo.izq);
+      if (mo.der) pila.push(mo.der);
     }
   };
 
-  const mirar = (a: unknown, hondura = 0): void => {
-    if (!a || typeof a !== 'object' || hondura > 8) return;
-    const x = a as Record<string, any>;
+  const procesarBoton = (y: Record<string, any>, pila: Array<unknown>): void => {
+    if (!y || typeof y !== 'object') return;
+    if (y.globalHotkey) atajosGlobales.push(String(y.globalHotkey));
+    mirarTimer(y);
+    const st = y.sensorTrigger;
+    if (st && typeof st === 'object') {
+      automaticos.push(tm('gal.risk.sensor', { id: String(st.id ?? '?'), op: String(st.op ?? '?'), valor: String(st.value ?? '?') }));
+    }
+    if (y.action) pila.push(y.action);
+    if (Array.isArray(y.actions)) for (const a of y.actions) pila.push(a);
+    if (y.actionToggleOff) pila.push(y.actionToggleOff);
+    if (y.longPressAction) pila.push(y.longPressAction);
+    encolarModosPerilla(y, pila);
+  };
+
+  const procesarAccion = (x: Record<string, any>, pila: Array<unknown>): void => {
     mirarDirectas(x, c);
     mirarMacro(x, c);
     mirarEfectos(x, c);
     mirarIntegraciones(x, c);
-    mirarHijas(x, hondura);
+    encolarHijas(x, pila);
   };
+
+  const pila: Array<unknown> = [];
+  for (const b of botones) pila.push({ __boton__: true, b });
+
+  while (pila.length > 0 && !riesgoExcedido) {
+    const item = pila.pop();
+    nodosRiesgo++;
+    if (nodosRiesgo > MAX_NODOS_RIESGO) { riesgoExcedido = true; break; }
+    if (!item || typeof item !== 'object') continue;
+    const o = item as Record<string, any>;
+    if (o.__boton__) { procesarBoton(o.b as Record<string, any>, pila); continue; }
+    procesarAccion(o, pila);
+  }
+
+  if (riesgoExcedido) {
+    throw new Error(tm('gal.risk.tooManyNodes'));
+  }
 
   /**
    * El disparo programado: la hora y, si el perfil los trae, los días elegidos
    * (`timerTriggerDias`, números de `Date.getDay()`).
    */
-  const mirarTimer = (y: Record<string, any>): void => {
+  function mirarTimer(y: Record<string, any>): void {
     if (typeof y.timerTriggerAt !== 'string' || !y.timerTriggerAt) return;
     const dias = Array.isArray(y.timerTriggerDias)
       ? (y.timerTriggerDias as unknown[]).filter((d): d is number => typeof d === 'number')
@@ -372,34 +427,14 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
       return;
     }
     automaticos.push(tm('gal.risk.timerDias', { hora: y.timerTriggerAt, dias: diasDeLaSemana(dias) }));
-  };
+  }
 
   /**
    * Lo propio de cada botón: sus acciones más lo que se dispara solo.
    * Un temporizador o un sensor ejecutan código sin que nadie pulse nada,
    * así que van en lista aparte (`automaticos`), no mezclados con el resto.
    */
-  const mirarBoton = (b: unknown): void => {
-    if (!b || typeof b !== 'object') return;
-    const y = b as Record<string, any>;
-    if (y.globalHotkey) atajosGlobales.push(String(y.globalHotkey));
-    mirarTimer(y);
-    const st = y.sensorTrigger;
-    if (st && typeof st === 'object') automaticos.push(tm('gal.risk.sensor', { id: String(st.id ?? '?'), op: String(st.op ?? '?'), valor: String(st.value ?? '?') }));
-    mirar(y.action);
-    for (const a of (Array.isArray(y.actions) ? y.actions : [])) mirar(a);
-    mirar(y.actionToggleOff);
-    mirar(y.longPressAction);
-    // Perilla multimodo (T-HW-19): un script escondido en un modo es un
-    // script igual — `mirar` entra en hijas (macros, ramas...) como siempre.
-    for (const m of (Array.isArray(y.modosPerilla) ? y.modosPerilla : [])) {
-      if (!m || typeof m !== 'object') continue;
-      mirar((m as Record<string, any>).izq);
-      mirar((m as Record<string, any>).der);
-    }
-  };
-
-  for (const b of botones) mirarBoton(b);
+  // Los botones ya se procesaron arriba (pila sembrada con `__boton__`).
   return { botones: botones.length, scripts, programas, atajosGlobales, webhooks, urls, teclas, automaticos, integraciones };
 }
 

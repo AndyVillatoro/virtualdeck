@@ -160,14 +160,21 @@ function escribirAtomico(ruta: string, texto: string) {
   try { unlinkSync(tmp); } catch {}
 }
 
-export function saveConfig(data: object, forzarCopia = false) {
+export function saveConfig(data: object, forzarCopia = false): boolean {
   try {
     const dir = app.getPath('userData');
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     const configPath = getConfigPath();
     rotateBackup(configPath, forzarCopia);
     escribirAtomico(configPath, JSON.stringify(data, null, 2));
-  } catch {}
+    return true;
+  } catch (e) {
+    // D-071: antes el fallo se tragaba y el renderer creía que había
+    // guardado. Se registra con contexto y se devuelve el fallo para que el
+    // IPC (`config:save`) pueda avisarlo.
+    console.error('[config] no se pudo guardar deck-config.json', e);
+    return false;
+  }
 }
 
 export function listBackups(): { filename: string; timestamp: number; sizeBytes: number }[] {
@@ -192,7 +199,7 @@ export function restoreBackup(filename: string): object | null {
     if (!existsSync(full)) return null;
     const data = JSON.parse(readFileSync(full, 'utf-8'));
     // `true`: copia obligatoria de lo que hay ahora, antes de pisarlo.
-    saveConfig(data, true);
+    if (!saveConfig(data, true)) return null;
     return data;
   } catch { return null; }
 }

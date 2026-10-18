@@ -1,6 +1,6 @@
 import { app, BrowserWindow, globalShortcut, net, protocol, session } from 'electron';
-import { join } from 'path';
 import { loadConfig } from './configManager';
+import { dirImagenes } from './rutas';
 import { createMainWindow } from './windowManager';
 import { createTray, applyTriggerableConfig } from './trayManager';
 import { registerAllIpc } from './ipc';
@@ -270,10 +270,10 @@ app.whenReady().then(() => {
   //
   // Se registra tanto en la sesión por defecto como en la partición de la barra
   // flotante.
-  const dirImagenes = join(app.getPath('userData'), 'images');
+  const carpetaImagenes = dirImagenes();
   const noHayImagen = new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   const handleVd = (request: Request) => {
-    const destino = rutaImagenDesdeUrl(request.url, dirImagenes);
+    const destino = rutaImagenDesdeUrl(request.url, carpetaImagenes);
     if (!destino) return noHayImagen;
     return net.fetch(`file:///${destino.replace(/\\/g, '/')}`).catch(() => noHayImagen);
   };
