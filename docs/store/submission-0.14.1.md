@@ -20,8 +20,8 @@
 ## 2. Novedades de esta versión (What's New)
 
 Archivos individuales listos para copiar y pegar:
-- Español: [`docs/store/novedades-0.14.1-es.txt`](file:///C:/Users/andyf/code%20proyects/virtualdeck/docs/store/novedades-0.14.1-es.txt)
-- English: [`docs/store/novedades-0.14.1-en.txt`](file:///C:/Users/andyf/code%20proyects/virtualdeck/docs/store/novedades-0.14.1-en.txt)
+- Español: [`docs/store/novedades-0.14.1-es.txt`](novedades-0.14.1-es.txt)
+- English: [`docs/store/novedades-0.14.1-en.txt`](novedades-0.14.1-en.txt)
 
 ### Texto en Español
 ```text
@@ -45,5 +45,5 @@ Archivos individuales listos para copiar y pegar:
 
 ## 3. Notas para la Certificación (Partner Center)
 
-- Documentación de capacidades: Consultar [`docs/MICROSOFT-STORE.md`](file:///C:/Users/andyf/code%20proyects/virtualdeck/docs/MICROSOFT-STORE.md) §4 (notas técnicas de `runFullTrust`) y §4.1 (versión concisa).
+- Documentación de capacidades: Consultar [`docs/MICROSOFT-STORE.md`](../MICROSOFT-STORE.md) §4 (notas técnicas de `runFullTrust`) y §4.1 (versión concisa).
 - Panel de control de Microsoft Store: [Partner Center Dashboard](https://partner.microsoft.com/dashboard/apps-and-games/overview)

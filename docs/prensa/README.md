@@ -7,6 +7,7 @@ Tres cosas distintas, hechas por tres caminos distintos:
 | **[Capturas](#capturas-e-icono)** | Once PNG (las nueve de la ficha de la Store, la 05b vertical y la 06b de la ficha) y el icono de 300×300, en español, y las mismas doce en `en/` | `node scripts/prensa/capturar.mjs` |
 | **[Artes](#artes-de-la-ficha-y-de-la-web)** | Los cuatro PNG que no son capturas: dos recursos de la ficha (tráiler y superhéroe) y dos de la web (`og-image` y banner) | HyperFrames, en `_referencias/trailer/` (fuera del repo) |
 | **[Animación](#animación-de-cabecera)** | `hero.svg`, y el `hero.mp4` del héroe | `npm run build:hero` · `bash docs/prensa/render.sh` |
+| **[Banners](#banners-de-prensa-y-artes-editadas-docsprensabanners)** | Once banners 1920×1080 en español y once en `en/`, más miniatura, superhéroe, banner y og-image | `node docs/prensa/banners/render.mjs` |
 
 **Nada de esto se edita a mano.** Las capturas salen de la aplicación corriendo, las
 artes y la animación de sendos generadores; si hay que cambiar algo, se cambia el
@@ -241,10 +242,9 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`.
   carátula real tendría derechos de autor**, así que la de las capturas se
   genera con la trama de puntos del proyecto (`scripts/prensa/caratula.mjs`,
   que el capturador ejecuta solo si falta el archivo).
-  **La barra de progreso no sale**: `PistaFija` (el camino de `VD_MEDIOS_FIJOS`)
-  no lleva `positionMs`/`durationMs`/`timelineUpdatedAt`, y `getNowPlaying`
-  devuelve el objeto fijo tal cual. Para verla haría falta tocar
-  `electron/main/mediosFijos.ts` y `media.ts`, que este encargo no permite.
+  **La barra de progreso sí se muestra**: `PistaFija` (el camino de `VD_MEDIOS_FIJOS`)
+  incluye `positionMs`/`durationMs`/`timelineUpdatedAt` en
+  `electron/main/mediosFijos.ts`, y las capturas salen con la barra avanzando.
 
 ### Un detalle del producto que salió al hacer esto
 
@@ -402,3 +402,73 @@ del héroe) **y** la miniatura del tráiler que sí se quiere en el repo. `.giti
 sigue ignorando —por lo que hoy la miniatura del tráiler es el único PNG de esta carpeta
 que git no ve— y `render.sh` la sigue sobreescribiendo con el fotograma del héroe. Si se
 vuelve a correr el guion, hay que reponer la del tráiler detrás.
+
+---
+
+## Banners de Prensa y Artes Editadas (`docs/prensa/banners/`)
+
+Este subdirectorio contiene las composiciones de diseño para la ficha de la Microsoft Store, la documentación de GitHub y la presencia web de VirtualDeck (v0.14.0+).
+
+A diferencia de las capturas de ventana sin editar, cada banner presenta una **composición de diseño editorial**:
+- Titular conciso (máximo 6 palabras por idioma).
+- Subtítulo explicativo y badges de características clave.
+- Captura de la aplicación enmarcada en ventanas de estudio, dispositivos móviles o pantallas ultrapanorámicas (1280×480).
+- Identidad visual DOT estricta (`#070809` OLED, `#111315` superficie, `#26292e` bordes, `#FF3B30` acento, `#e6e8eb` texto claro, sin emojis ni blanco puro `#ffffff`).
+- Reserva de seguridad en el tercio inferior para evitar superposiciones con los controles nativos de la Store.
+
+### Estructura de Archivos
+
+```
+docs/prensa/banners/
+├── 01-deck.html               # Panel principal (Hero)
+├── 02-editor.html             # Editor por secciones y presets
+├── 03-catalogo.html           # Catálogo de iconos 16×16 y acciones
+├── 04-dock.html               # Soporte hardware Stream Dock N3
+├── 05-movil.html              # Mando móvil Wi-Fi en teléfono
+├── 05b-movil-marco.html       # Experiencia táctil y latencia < 5ms
+├── 06-tienda.html             # Tienda de perfiles comunitarios
+├── 06b-tienda-ficha.html      # Auditoría de seguridad antes de instalar
+├── 07-barra-flotante.html     # Barra superpuesta en escritorio
+├── 08-kiosko-barra.html       # Modo kiosko ultrapanorámico 1280×480
+├── 09-rgb.html                # Sincronización OpenRGB de hardware
+├── miniatura.html             # Miniatura del tráiler de la Store (1920×1080)
+├── superheroe.html            # Superhéroe sin texto (1920×1080)
+├── banner.html                # Banner de cabecera GitHub/Releases (1280×640)
+├── og-image.html              # Tarjeta OpenGraph para web (1200×630)
+├── shared.css                 # Estilos compartidos y sistema de diseño DOT
+├── render.mjs                 # Guion de renderizado automatizado
+├── vista.html                 # Contacto interactivo para inspección visual
+├── assets/                    # Recursos gráficos auxiliares (LCD keys, icono)
+├── es/                        # Banners generados en español (1920×1080 PNG)
+└── en/                        # Banners generados en inglés (1920×1080 PNG)
+```
+
+### Cómo Regenerar Todo (Comando Exacto)
+
+Para regenerar todos los banners y artes de marca desde cero:
+
+```bash
+node docs/prensa/banners/render.mjs
+```
+
+#### Proceso de Renderizado y Resolución
+1. El guion levanta una instancia de Chrome headless shell mediante Chrome DevTools Protocol (CDP).
+2. Configura `deviceScaleFactor: 2` con `Emulation.setDeviceMetricsOverride` para capturar a doble resolución (3840×2160).
+3. Reduce las imágenes a sus dimensiones exactas (1920×1080, 1280×640, 1200×630) utilizando **Sharp con el filtro de remuestreo Lanczos3**, produciendo un resultado ultra-nítido sin pixelación ni artefactos.
+4. Exporta las versiones en español a `docs/prensa/banners/es/` y en inglés a `docs/prensa/banners/en/`.
+5. Actualiza las artes principales en `docs/prensa/` (`miniatura.png`, `superheroe.png`, `banner.png`, `og-image.png`) y sus variantes en inglés en `docs/prensa/en/`.
+6. Realiza un respaldo de seguridad de las capturas originales en `_referencias/store-0.14.0/capturas-*/originales/` y copia los nuevos banners editados a la carpeta de la Store.
+
+### Contacto e Inspección Visual
+
+Para revisar todas las piezas de forma interactiva en el navegador:
+- Abrir `docs/prensa/banners/vista.html` en cualquier navegador web.
+- Permite alternar entre la tanda en **Español (ES)** y en **Inglés (EN)**, hacer clic para ampliar cada arte a pantalla completa y abrir el código fuente HTML de cada composición.
+
+### Privacidad y Datos
+
+Todas las capturas y composiciones cumplen estrictamente con las reglas de privacidad:
+- Números de serie ficticios e inventados (`PRENSA-N3-0001`).
+- Apps y perfiles de demostración genéricos.
+- Cero nombres personales, rutas locales privadas ni identificadores de red.
+
