@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { normalizarApp } from './apps';
+import { mismoDispositivoAudio } from './acciones/audio';
 import { botonVisibleSegun } from '../comun/visibilidad';
 import type { ButtonConfig, RGBStatus, Sensor } from '../types';
 
@@ -88,7 +89,7 @@ export function useEstadoSistema(api: typeof window.electronAPI | null | undefin
 /** El botón representa algo que ya está puesto: la salida de audio, una app abierta. */
 export function botonActivo(b: ButtonConfig, e: EstadoSistema): boolean {
   const a = b.action;
-  if (a.type === 'audio-device' && a.deviceId) return a.deviceId === e.activeAudioDeviceId;
+  if (a.type === 'audio-device' && a.deviceId) return mismoDispositivoAudio(a.deviceId, e.activeAudioDeviceId);
   if (a.type === 'app' && a.appPath) {
     const nombre = extractExeName(a.appPath);
     return !!nombre && e.runningProcesses.has(nombre);

@@ -30,30 +30,19 @@ Any string field described as *accepts {variables}* is interpolated with
 | Type | Fields | Description |
 |---|---|---|
 | `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Runs a script. Can show stdout in a toast and/or store it in a variable. Both interpreters accept multiple lines and accented text. |
-| `audio-device` | `deviceId`, `deviceName?` | Switches the default output device. |
+| `audio-device` | `deviceId`, `deviceName?`, `audioMode?` (`fixed`/`cycle-all`/`cycle-list`), `excludedDeviceIds?`, `audioCandidates?` (with per-candidate `label`/`icon`/`iconoPuntos`/`fgColor`/`bgColor`) | Switches the default output device. With `fixed` (or no mode) it picks the given output; with `cycle-all` it moves to the next active output in alphabetical order skipping `excludedDeviceIds`; with `cycle-list` it cycles `audioCandidates` in order skipping disconnected ones. Reactive icon and sublabel: they show the active system output (CASCO/MONIT/USB/ALTAV heuristic when there is no custom icon; the candidate label wins in `cycle-list`), and cycle buttons pulse with `onda`. The active mark follows the real system output: it does not combine with `isToggle`. |
 | `volume-set` | `volumePercent` (0–100) | Sets the master volume to an exact percentage. |
 | `app-volume` | `appVolumeTarget?` (empty = active app), `appVolumeMode` (`adjust`/`set`/`mute`), `appVolumeDelta?` (±, for `adjust`), `appVolumeLevel?` (0–100, for `set`) | Raises, lowers, sets or mutes the volume of one app (what the Volume Mixer shows). If the app has no open sound, the button fails with that notice. Needs the native core; no fallback without it. |
 | `volume-up` / `volume-down` / `mute` | — | Media keys. |
 | `media-play-pause` / `media-next` / `media-prev` | — | Playback control. |
-| `media-shuffle` | — | Toggles shuffle on the active player. |
-| `media-repeat` | — | Cycles the repeat mode: none → list → track. |
 | `brightness` | `brightnessLevel` (0–100) | Sets the primary monitor's brightness via WMI. |
 | `kill-process` | `processName` | Closes a process by name, e.g. `notepad.exe`. |
-
-`media-shuffle` and `media-repeat` need an active Windows media session.
-
-## Step up and down
-
-| Type | Fields | Description |
-|---|---|---|
-| `adjust` | `adjustTarget` (`brightness`/`volume`), `adjustDelta` | Moves the value **from wherever it is**, instead of setting a number. The mouse wheel over the cell works too: up adds, down subtracts. A negative `adjustDelta` makes the press go down. |
 
 ## Keystrokes and text
 
 | Type | Fields | Description |
 |---|---|---|
 | `hotkey` | `hotkey`, e.g. `Ctrl+Shift+M` | Sends a key combination to the foreground app. |
-| `macro` | `macroSteps`, `macroRepeat?` | Replays a recorded or hand-written sequence of keys, clicks, movements and pauses. See [Shortcuts & Macros](Shortcuts-and-Macros). |
 | `clipboard` | `clipboardText` | Copies text to the clipboard. Accepts variables. |
 | `type-text` | `typeText` | Types text into the foreground app. Accepts variables. |
 | `notify` | `notifyTitle?`, `notifyBody?` | Native Windows notification. Accepts variables. |
@@ -76,6 +65,12 @@ Variables are read as `{name}` in any string field of any other action.
 | `mobile-remote` | `mobileRemoteAction?` (`pair-code`/`toggle-server`/`open-web`) | Controls the local mobile remote web server: generates a 6-digit pairing code, toggles the server on/off, or opens the remote interface in the browser. |
 | `tts` | `ttsText` | Reads the text aloud. Accepts variables. |
 | `region-capture` | — | Opens the native region-capture tool (`Win+Shift+S`). The clip lands in the clipboard. |
+
+## Step up and down
+
+| Type | Fields | Description |
+|---|---|---|
+| `adjust` | `adjustTarget` (`brightness`/`volume`), `adjustDelta` | Moves the value **from wherever it is**, instead of setting a number. The mouse wheel over the cell works too: up adds, down subtracts. A negative `adjustDelta` makes the press go down. |
 
 ## RGB
 
@@ -101,6 +96,21 @@ These need OpenRGB — see [Sensors & RGB](Sensors-and-RGB).
 |---|---|---|
 | `branch` | `branchVar`, `branchOp`, `branchValue`, `branchThen`, `branchElse?` | Compares a variable and runs one branch or the other. Operators: `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`, `empty`, `not-empty`. |
 | `countdown` | `timerDelay` (ms), `timerActions` | Waits, then runs a sub-sequence. Pick the action in the editor’s **WHEN DONE** field; without it the button waits and does nothing. Up to one hour. |
+
+## Extended media
+
+| Type | Fields | Description |
+|---|---|---|
+| `media-shuffle` | — | Toggles shuffle on the active player. |
+| `media-repeat` | — | Cycles the repeat mode: none → list → track. |
+
+Both need an active Windows media session.
+
+## Macros
+
+| Type | Fields | Description |
+|---|---|---|
+| `macro` | `macroSteps`, `macroRepeat?` | Replays a recorded or hand-written sequence of keys, clicks, movements and pauses. See [Shortcuts & Macros](Shortcuts-and-Macros). |
 
 ## Folder (sub-deck)
 

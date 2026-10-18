@@ -64,6 +64,25 @@ export interface FolderButton {
   action: ButtonAction;
 }
 
+/**
+ * Un candidato de la lista fija de rotación (`audioMode: 'cycle-list'`).
+ *
+ * En Fase 1 solo se rellenan `deviceId`/`deviceName` desde el editor; el
+ * resto queda reservado para la Fase 2 (icono y rótulo por dispositivo).
+ */
+interface AudioCycleCandidate {
+  deviceId: string;
+  deviceName: string;
+  label?: string;
+  icon?: string;
+  iconoPuntos?: { bits: string; origen: string };
+  fgColor?: string;
+  bgColor?: string;
+}
+
+/** Cómo elige el botón de audio qué salida pone: una fija o rotación. */
+export type AudioMode = 'fixed' | 'cycle-all' | 'cycle-list';
+
 export interface ButtonAction {
   type: ActionType;
   appPath?: string;
@@ -75,6 +94,21 @@ export interface ButtonAction {
   showOutput?: boolean;
   deviceId?: string;
   deviceName?: string;
+  /**
+   * T-AUD-03 (Fase 1 del switch de audio): cómo elige la salida.
+   *
+   * - `'fixed'` (o ausente): la de siempre, `deviceId` (+ `deviceName` de
+   *   respaldo). Botones viejos y perfiles importados siguen igual.
+   * - `'cycle-all'`: pasa a la siguiente salida activa del sistema en orden
+   *   estable, saltando las de `excludedDeviceIds`.
+   * - `'cycle-list'`: rota por `audioCandidates` en su orden, saltando las
+   *   que estén desconectadas.
+   */
+  audioMode?: AudioMode;
+  /** Ids o nombres de salidas que `cycle-all` salta (monitores HDMI mudos…). */
+  excludedDeviceIds?: string[];
+  /** Lista fija de rotación de `cycle-list`, en orden. */
+  audioCandidates?: AudioCycleCandidate[];
   hotkey?: string;
   brightnessLevel?: number;
   /** `adjust`: que se sube o se baja, y de cuanto en cuanto. */

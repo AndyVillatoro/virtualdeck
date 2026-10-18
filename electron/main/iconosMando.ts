@@ -3,6 +3,11 @@ import { GLIFO_POR_TIPO_ACCION } from '../../src/components/dot480/glifosPorTipo
 import { matrizDePuntos16 } from '../../src/components/dot480/puntos16';
 import { dataUriDeMarca, resolverMarca } from '../../src/comun/marcaSvg';
 import { textoSobre } from '../../src/comun/contraste';
+import {
+  aplicarAspectoAudio as fusionarAspectoAudio,
+  resolverAspectoAudio,
+} from '../../src/comun/audioIcono';
+import { estadoActual } from './estadoSistema';
 import type { EfectoPulsar, SliderWidgetConfig } from '../../src/types';
 
 /**
@@ -94,7 +99,22 @@ export interface BotonFuenteMando {
   label?: string;
   sublabel?: string;
   page?: number;
-  action?: { type: string };
+  action?: {
+    type: string;
+    deviceId?: string;
+    deviceName?: string;
+    audioMode?: 'fixed' | 'cycle-all' | 'cycle-list';
+    excludedDeviceIds?: string[];
+    audioCandidates?: Array<{
+      deviceId: string;
+      deviceName: string;
+      label?: string;
+      icon?: string;
+      iconoPuntos?: { bits: string; origen: string };
+      fgColor?: string;
+      bgColor?: string;
+    }>;
+  };
   longPressAction?: { type: string };
   bgColor?: string;
   fgColor?: string;
@@ -231,8 +251,29 @@ function mapearImagen(imageData: string | undefined): string | undefined {
  * interruptor está encendido (roadmap 79). La misma regla que la celda y la
  * tecla física; duplicada aquí porque el proceso principal no puede importar
  * de `src/` más que tipos y datos puros (ver `lint:arch`).
+ *
+ * T-AUD-03 — Los botones de audio no usan el interruptor: enseñan el icono y
+ * sublabel de la salida activa (`resolverAspectoAudio`, Fase 2 del switch),
+ * con la misma fusión que la celda (`aplicarAspectoAudio`). El proceso
+ * principal no sabe el nombre de la activa (la lista es asíncrona y esto es
+ * síncrono), así que `cycle-all` solo hereda el pulso de conmutación. El
+ * teléfono re-pide `/api/buttons` cada 3 s y redibuja si cambió, así que el
+ * icono cambia solo al conmutar, sin mecanismo de aviso nuevo.
  */
 function aplicarAspecto(b: BotonFuenteMando, encendido: boolean): BotonFuenteMando {
+  if (b.action?.type === 'audio-device') {
+    const aspecto = resolverAspectoAudio(
+      {
+        type: 'audio-device',
+        deviceId: b.action.deviceId,
+        deviceName: b.action.deviceName,
+        audioMode: b.action.audioMode,
+        audioCandidates: b.action.audioCandidates,
+      },
+      estadoActual().activeAudioDeviceId,
+    );
+    return fusionarAspectoAudio(b, aspecto);
+  }
   if (!encendido || !b.isToggle) return b;
   const aspecto = b.aspectoEncendido;
   if (!aspecto) return b;

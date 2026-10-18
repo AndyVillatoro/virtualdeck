@@ -27,7 +27,7 @@ Cualquier campo string que mencione "*acepta {variables}*" es interpolado en run
 | Tipo | Campos | Descripción |
 |------|--------|-------------|
 | `script` | `script`, `scriptShell?` (`powershell`/`cmd`), `showOutput?`, `captureToVar?` | Ejecuta un script. Puede mostrar la salida en un aviso y/o guardarla en una variable. Los dos intérpretes admiten varias líneas y acentos. |
-| `audio-device` | `deviceId`, `deviceName?` | Cambia dispositivo de salida por defecto. |
+| `audio-device` | `deviceId`, `deviceName?`, `audioMode?` (`fixed`/`cycle-all`/`cycle-list`), `excludedDeviceIds?`, `audioCandidates?` (con `label`/`icon`/`iconoPuntos`/`fgColor`/`bgColor` por candidato) | Cambia dispositivo de salida por defecto. En `fixed` (o sin modo) pone la salida indicada; en `cycle-all` rota a la siguiente salida activa en orden alfabético saltando `excludedDeviceIds`; en `cycle-list` rota por `audioCandidates` en su orden saltando las desconectadas. Icono y sublabel reactivos: enseñan la salida activa del sistema (heurística CASCO/MONIT/USB/ALTAV si no hay icono propio; la etiqueta del candidato manda en `cycle-list`), y el botón de ciclo pulsa con `onda`. El activo se marca con la salida real del sistema: no combina con `isToggle`. |
 | `volume-set` | `volumePercent` (0–100) | Establece volumen master a un porcentaje exacto. |
 | `app-volume` | `appVolumeTarget?` (vacío = app activa), `appVolumeMode` (`adjust`/`set`/`mute`), `appVolumeDelta?` (±, para `adjust`), `appVolumeLevel?` (0–100, para `set`) | Sube, baja, fija o silencia el volumen de una app concreta (lo que enseña el Mezclador de volumen). Si la app no tiene sonido abierto, el botón falla con ese aviso. Requiere el núcleo nativo; sin él no hay respaldo. |
 | `volume-up` / `volume-down` / `mute` | — | Teclas multimedia. |
@@ -125,6 +125,10 @@ Los dos necesitan una sesión de medios activa en Windows.
 
 Cualquier acción no `folder` puede marcarse como **toggle**. El botón mantiene un estado runtime (encendido/apagado) y opcionalmente puede definir `actionToggleOff` con una acción distinta para cuando se apaga. Si `actionToggleOff` está vacío, repite la misma acción.
 
+El estado se guarda y **se comparte entre las tres pantallas** — principal, pantalla completa y barra flotante — y persiste tras reiniciar.
+
+Si asigna un `radioGroup` a un toggle, solo un botón de ese grupo puede estar encendido a la vez: al activar uno se apagan los demás.
+
 ## Disparadores externos
 
 Independientemente del tipo, un botón puede tener:
@@ -132,8 +136,9 @@ Independientemente del tipo, un botón puede tener:
 - `globalHotkey`: combinación de teclas registrada a nivel SO (ej. `Ctrl+Alt+1`). Funciona aunque VirtualDeck esté en background.
 - `inTrayMenu`: aparece en el menú contextual del tray.
 - `timerTriggerAt`: se dispara a una hora fija del día. `timerTriggerDias` (lista de números de `Date.getDay()`, 0 = domingo … 6 = sábado) lo limita a esos días de la semana; vacío o ausente significa todos los días.
+- un umbral de sensor: se dispara cuando la lectura cruza un valor.
 
-Ambos ejecutan la cadena del botón mediante el canal IPC `button:trigger`. Los interruptores, las variables y los demás efectos se aplican igual que con un clic en la cuadrícula.
+Todos ejecutan la cadena del botón mediante el canal IPC `button:trigger`. Los interruptores, las variables y los demás efectos se aplican igual que con un clic en la cuadrícula.
 
 ## Secuencias y acciones encadenadas
 

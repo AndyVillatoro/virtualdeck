@@ -526,6 +526,37 @@ export const PRESETS_PERILLA: PresetDock[] = [
       },
     ],
   },
+  // T-AUD-03 — Switch de audio en la pulsación central: girar sube/baja el
+  // volumen master y pulsar rota a la siguiente salida activa (cycle-all).
+  {
+    id: 'audio-switch',
+    nombre: 'preset.dock.knob.audioSwitch',
+    icon: 'SPEAKER',
+    iconoCatalogo: 'acciones:repeat',
+    huecos: [
+      {
+        label: 'VOL -',
+        icon: 'SUBTRACT',
+        fgColor: '#38bdf8',
+        action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: -5 },
+        iconoCatalogo: 'acciones:volume-2',
+      },
+      {
+        label: 'SWITCH AUDIO',
+        icon: 'SPEAKER',
+        fgColor: '#38bdf8',
+        action: { type: 'audio-device', audioMode: 'cycle-all' },
+        iconoCatalogo: 'acciones:repeat',
+      },
+      {
+        label: 'VOL +',
+        icon: 'ADD',
+        fgColor: '#38bdf8',
+        action: { type: 'adjust', adjustTarget: 'volume', adjustDelta: 5 },
+        iconoCatalogo: 'acciones:volume',
+      },
+    ],
+  },
 ];
 
 /**
@@ -736,6 +767,20 @@ export const PRESETS_BOTON: PresetDock[] = [
         icon: 'NEXT',
         action: { type: 'window-cycle', windowCycle: 'next' },
         iconoCatalogo: 'acciones:arrow-right',
+      },
+    ],
+  },
+  {
+    id: 'button-audio-switch',
+    nombre: 'preset.dock.button.audioSwitch',
+    icon: 'SPEAKER',
+    iconoCatalogo: 'acciones:repeat',
+    huecos: [
+      {
+        label: 'SWITCH AUDIO',
+        icon: 'SPEAKER',
+        action: { type: 'audio-device', audioMode: 'cycle-all' },
+        iconoCatalogo: 'acciones:repeat',
       },
     ],
   },

@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import { listAudioDevices, setDefaultAudioDevice } from '../audio';
+import { refrescarYa } from '../estadoSistema';
 import {
   listarSesionesAudio, ajustarVolumenApp, fijarVolumenApp, alternarSilencioApp,
 } from '../volumenApp';
@@ -42,7 +43,14 @@ export function registerAudioIpc() {
 
   ipcMain.handle('audio:setDefault', async (_e: any, deviceId: string) => {
     const ok = await setDefaultAudioDevice(deviceId);
-    if (ok) _cache = null; // invalidate so next list() sees the new default
+    if (ok) {
+      _cache = null; // invalidate so next list() sees the new default
+      // Y un tic del estado fuera de turno: si no, la marca de «activo» tarda
+      // hasta cinco segundos en enterarse (el intervalo de `estadoSistema`) y
+      // el botón viejo sigue marcado mientras el audio ya suena por el nuevo.
+      // Igual que hace `rgbIpc` cuando cambian los dispositivos RGB.
+      refrescarYa();
+    }
     return ok;
   });
 

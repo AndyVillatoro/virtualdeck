@@ -138,6 +138,7 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'MEDIA', label: 'Vol. 50%',   action: { type: 'volume-set', volumePercent: 50 }, iconoCatalogo: 'acciones:volume' },
   { category: 'MEDIA', label: 'Vol. 80%',   action: { type: 'volume-set', volumePercent: 80 }, iconoCatalogo: 'acciones:volume-2' },
   // Volumen por app (roadmap 63): los equivalentes de botón de las perillas.
+  { category: 'MEDIA', label: 'Switch Audio', icon: 'SPEAKER', action: { type: 'audio-device', audioMode: 'cycle-all' }, iconoCatalogo: 'acciones:repeat' },
   { category: 'MEDIA', label: 'App Vol. −', icon: 'SPEAKER', action: { type: 'app-volume', appVolumeMode: 'adjust', appVolumeDelta: -5 }, iconoCatalogo: 'acciones:volume' },
   { category: 'MEDIA', label: 'App Vol. +', icon: 'SPEAKER', action: { type: 'app-volume', appVolumeMode: 'adjust', appVolumeDelta: 5 }, iconoCatalogo: 'acciones:volume' },
   { category: 'MEDIA', label: 'App Mute', icon: 'VOLUME_MUTE', action: { type: 'app-volume', appVolumeMode: 'mute' }, iconoCatalogo: 'acciones:volume-off' },

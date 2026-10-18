@@ -4,6 +4,7 @@ import { DotContinuousSlider } from '../dot480/DotContinuousSlider';
 import { DotRotaryDial } from '../dot480/DotRotaryDial';
 import { ContenidoCentral } from './ContenidoCentral';
 import { RotuloCelda } from './RotuloCelda';
+import { useAspectoAudio } from './useAspectoAudio';
 import type { ButtonConfig, SoundProfileId } from '../../types';
 
 export interface CuerpoCeldaProps {
@@ -48,7 +49,21 @@ export interface CuerpoCeldaProps {
  * - Dial rotativo (encoder de ajuste) o contenido central estándar
  * - Rótulo inferior
  */
-export function CuerpoCelda({
+export function CuerpoCelda(props: CuerpoCeldaProps) {
+  // Fase 2 del switch de audio: solo las celdas de audio resuelven el aspecto
+  // reactivo (icono y sublabel de la salida activa); el resto va por el camino
+  // de siempre, sin suscribirse ni pedir nada.
+  if (props.button.action.type === 'audio-device') return <CuerpoAudio {...props} />;
+  return <CuerpoEstatico {...props} />;
+}
+
+/** Celda de audio con el icono y sublabel de la salida que manda ahora. */
+function CuerpoAudio(props: CuerpoCeldaProps) {
+  const botonVivo = useAspectoAudio(props.button);
+  return <CuerpoEstatico {...props} button={botonVivo} />;
+}
+
+function CuerpoEstatico({
   button,
   accent,
   toggled,

@@ -6,6 +6,7 @@ import { Field, Btn, estiloEntrada } from '../comunes';
 import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { Chip, Segmentado } from '../../../components/ui/Chip';
 import type { PropsFormulario } from './base';
+import { SeccionModoAudio } from './audioCiclo';
 
 /** Lo que le habla al sistema: audio, teclas, portapapeles, procesos, pantalla. */
 
@@ -14,8 +15,12 @@ export function FormAudioDevice(p: PropsFormulario) {
   const tf = useFieldText();
   const inputStyle = estiloEntrada(VD);
   const { accent, action, setAction, audioDevices, audioError, label, setLabel, loadAudioDevices, loadingDevices } = p;
+  // En ciclo el destino fijo no se usa: solo se enseña en modo FIJA.
+  const modoFijo = (action.audioMode ?? 'fixed') === 'fixed';
   return (
     <>
+          <SeccionModoAudio {...p} />
+          {modoFijo && (
           <Field label={tf("DISPOSITIVO DE AUDIO")}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               {action.deviceName && (
@@ -97,6 +102,7 @@ export function FormAudioDevice(p: PropsFormulario) {
               ))}
             </div>
           </Field>
+          )}
     </>
   );
 }

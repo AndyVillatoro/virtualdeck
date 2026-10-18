@@ -84,6 +84,15 @@ export interface VisualTecla {
 }
 
 export function resolverBotonLcd(boton: ButtonConfig, encendido: boolean): ButtonConfig {
+  // T-AUD-03 — El activo de audio sale del sistema (`activeAudioDeviceId`), no
+  // del interruptor: un `toggledIds` viejo no cambia la tecla. Y un botón de
+  // ciclo sin `efectoPulsar` propio pulsa con `'onda'`: es el único aviso de
+  // una sola vez que soportan la celda, el LCD y el móvil.
+  if (boton.action?.type === 'audio-device') {
+    const modo = boton.action.audioMode ?? 'fixed';
+    if (modo !== 'fixed' && !boton.efectoPulsar) return { ...boton, efectoPulsar: 'onda' };
+    return boton;
+  }
   if (!encendido || boton.isToggle !== true) return boton;
   const aspecto = boton.aspectoEncendido;
   if (!aspecto) return boton;

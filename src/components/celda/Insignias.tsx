@@ -164,7 +164,9 @@ export function Insignias({
 
       <InsigniaMultiToggle
         multiCount={multiCount}
-        isToggle={button.isToggle}
+        // T-AUD-03 — El activo de audio sale del sistema, no del interruptor:
+        // un `toggledIds` viejo no pinta el punto en estos botones.
+        isToggle={button.isToggle === true && button.action.type !== 'audio-device'}
         toggled={toggled}
         hovered={hovered}
         accent={accent}
