@@ -3,7 +3,7 @@ import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from './DotGlyphIcon';
 import { Chip } from '../ui/Chip';
-import { SelectorColor } from './SelectorColor';
+import { SelectorColor } from '../ui/SelectorColor';
 import { mismoHex as hexEq } from './matricesPuntos';
 
 interface PanelColorPuntosProps {
@@ -129,7 +129,7 @@ export function PanelColorPuntos({
             {t('puntos.primario')}
           </Chip>
         </div>
-        <SelectorColor value={activo} onChange={alCambiarActivo} />
+        <SelectorColor value={activo} onChange={alCambiarActivo} showHexInput={false} compacto />
       </div>
 
       <div>

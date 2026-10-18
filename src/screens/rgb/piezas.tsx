@@ -7,7 +7,7 @@ import { DotLabel } from '../../components/DotLabel';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { BotonIcono } from '../../components/ui/BotonIcono';
 import { Chip } from '../../components/ui/Chip';
-import { ColorPicker } from '../../components/ColorPicker';
+import { SelectorColor } from '../../components/ui/SelectorColor';
 import type { RGBDeviceInfo, RGBSettings, RGBStatus } from '../../types';
 
 /**
@@ -88,7 +88,7 @@ export function DeviceDetail({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
         <div>
           <DotLabel size={9} color={VD.textMuted} spacing={2} style={{ display: 'block', marginBottom: 6 }}>{t('rgb.color')}</DotLabel>
-          <ColorPicker value={color} onChange={setColor} onCommit={(v) => onSetColor(v)} />
+          <SelectorColor value={color} onChange={setColor} onCommit={(v) => onSetColor(v)} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
