@@ -49,7 +49,7 @@ const DICCIONARIOS = [
 // Los ficheros que **definen** las claves no cuentan como referencia de sí
 // mismos, y `i18n.tsx`/`idioma.ts` se saltan porque sus literales son el
 // diccionario o el traductor, no una llamada.
-const NO_ES_REFERENCIA = new Set([...DICCIONARIOS, 'src/utils/i18n.tsx', 'electron/main/idioma.ts']);
+const NO_ES_REFERENCIA = new Set([...DICCIONARIOS, 'src/utils/i18n.tsx', 'electron/main/sistema/idioma.ts']);
 
 // Una pasada por tipo de comilla. Ver el punto 1 de la cabecera.
 const LITERALES = [
@@ -156,8 +156,8 @@ const FAMILIAS = [
   // las `category:` del fichero, no las que caen en los primeros 1600
   // caracteres: con la ventana se perdían MEDIA, SISTEMA, CREATIVO y RGB, que
   // salían como muertas.
-  const cats = [...new Set([...readFileSync('src/screens/editor/actionData.ts', 'utf-8').matchAll(/category:\s*'([^']+)'/g)].map((m) => m[1]))];
-  FAMILIAS.push({ nombre: 'cat.*', de: 'category: de PRESETS (editor/actionData.ts)', claves: cats.map((c) => `cat.${c}`) });
+  const cats = [...new Set([...readFileSync('src/screens/editor/datos/actionData.ts', 'utf-8').matchAll(/category:\s*'([^']+)'/g)].map((m) => m[1]))];
+  FAMILIAS.push({ nombre: 'cat.*', de: 'category: de PRESETS (editor/datos/actionData.ts)', claves: cats.map((c) => `cat.${c}`) });
 }
 // t(`settings.language.${opt}`) — el array de la fila, en PanelAjustes.tsx
 FAMILIAS.push({

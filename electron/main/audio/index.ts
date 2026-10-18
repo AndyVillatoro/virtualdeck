@@ -1,6 +1,6 @@
-import { nucleo } from './native';
-import { tm } from './idioma';
-import { runPS } from './ps-helpers';
+import { nucleo } from '../sistema/native';
+import { tm } from '../sistema/idioma';
+import { runPS } from '../launcher/ps-helpers';
 
 export interface AudioDevice {
   id: string;

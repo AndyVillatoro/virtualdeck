@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import { resolve } from 'node:path';
-import { loadConfig } from './configManager';
-import { tm } from './idioma';
+import { loadConfig } from '../sistema/configManager';
+import { tm } from '../sistema/idioma';
 
 /**
  * Disparar un botón desde fuera de VirtualDeck, con un enlace.

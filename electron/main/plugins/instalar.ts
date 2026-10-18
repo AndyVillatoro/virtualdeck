@@ -8,7 +8,7 @@ import { arrancar, detenerMarcha } from './cicloVida';
 import { leerManifiesto, type CodigoManifiesto } from './manifiesto';
 import { extraerZipSeguro, validarUuid } from './instalacion';
 import { guardarDeshabilitados } from './ajustesPlugins';
-import { tm } from '../idioma';
+import { tm } from '../sistema/idioma';
 
 /**
  * Instalar, desinstalar y habilitar plugins (roadmap 83, MVP).

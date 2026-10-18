@@ -18,7 +18,7 @@ const DIR = 'src/utils/acciones';
 const FORMULARIOS = 'src/screens/editor/formularios/index.tsx';
 const PRESETS_RENDERER = 'src/data/rgbPresets.ts';
 const PRESETS_MAIN = 'electron/main/rgb/presets.ts';
-const ACTION_DATA = 'src/screens/editor/actionData.ts';
+const ACTION_DATA = 'src/screens/editor/datos/actionData.ts';
 
 // ── tipos declarados ──────────────────────────────────────────────────────
 const fuenteTipos = readFileSync(TIPOS, 'utf-8');

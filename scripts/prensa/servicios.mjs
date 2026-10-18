@@ -27,7 +27,7 @@ import { join } from 'node:path';
 import { arrancar as arrancarOpenRGB } from './openrgb-falso.mjs';
 // ── Sensores: el `/data.json` de LibreHardwareMonitor ─────────────────────
 // El árbol es el de LHM de verdad: raíz → equipo → pieza de hardware →
-// tipo de sensor → hoja. `electron/main/sensors.ts` busca el nombre de la
+// tipo de sensor → hoja. `electron/main/sistema/sensors.ts` busca el nombre de la
 // pieza a profundidad 2 y la categoría en el nombre del icono.
 //
 // El nodo del equipo se llama «PC» a propósito: en un LHM real ahí va el

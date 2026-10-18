@@ -18,7 +18,7 @@
  * escritorio de quien lo prueba—.
  */
 
-import type { MacroStep } from '../../src/types';
+import type { MacroStep } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
 // Acotado de los numéricos

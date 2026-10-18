@@ -67,7 +67,7 @@ npx tsx docs/galeria-ejemplo/plugins/pruebas/probar-protocolo.ts
   módulos son puros en disco, no necesitan Electron), el sha256 contra el
   manifiesto de la galería y las imágenes por `resolverImagenVisual`.
 - **probar-manifiesto**: el manifiesto de la galería por el cargador de verdad
-  (`manifiesto()` y `resumirRiesgoPlugin` de `electron/main/galeria.ts`), con
+  (`manifiesto()` y `resumirRiesgoPlugin` de `electron/main/integraciones/galeria.ts`), con
   `net.fetch` sustituido por el fichero local. Comprueba que ve **6** entradas
   `kind: 'plugin'` con su sha256 y su uuid, que el sha256 es el del ZIP de
   verdad y que los dos perfiles de antes siguen ahí.

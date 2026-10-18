@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron';
-import { getRunningProcesses } from './launcher';
-import { listAudioDevices } from './audio';
-import * as rgb from './rgb';
+import { getRunningProcesses } from '../launcher';
+import { listAudioDevices } from '../audio';
+import * as rgb from '../rgb';
 
 /**
  * Lo que el deck sabe del sistema: qué salida de audio manda, qué procesos

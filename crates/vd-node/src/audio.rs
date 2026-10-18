@@ -14,7 +14,7 @@ pub struct AudioDevice {
 
 /// Lista los dispositivos de salida de audio.
 ///
-/// Sustituye a `listAudioDevices` de `electron/main/audio.ts`, que lanzaba
+/// Sustituye a `listAudioDevices` de `electron/main/audio/index.ts`, que lanzaba
 /// PowerShell y parseaba su salida.
 ///
 /// # Sobre la caché

@@ -17,7 +17,7 @@ Eres el **guardián de estética DOT / 480 OLED** del repositorio VirtualDeck. T
 ## Cómo auditar
 
 1. Recibe del orquestador la lista de archivos modificados (p. ej. un rango `git diff`). Si no te la dan, pide `git status` / `git diff --stat` tú mismo (permiso de lectura permitido).
-2. Inspecciona **solo** los archivos de UI implicados: `src/components/`, `src/screens/`, `src/design.ts`, `src/utils/idiomas/`, `electron/main/idioma.ts`, `docs/index.html` y hojas de estilo `.css`.
+2. Inspecciona **solo** los archivos de UI implicados: `src/components/`, `src/screens/`, `src/design.ts`, `src/utils/idiomas/`, `electron/main/sistema/idioma.ts`, `docs/index.html` y hojas de estilo `.css`.
 3. Recorre el checklist de abajo y anota cada hallazgo con `archivo:línea` y severidad (`BLOQUEANTE` / `MENOR` / `AVISO`).
 4. Devuelve el informe con el formato de la sección «Informe» y **nada más**.
 
@@ -57,7 +57,7 @@ Eres el **guardián de estética DOT / 480 OLED** del repositorio VirtualDeck. T
 
 - [ ] El componente nuevo no introduce emojis, ni `style={{ color: '#...' }}` con colores fuera de tema, ni `import { VD }` directo.
 - [ ] Los strings nuevos van a `src/utils/idiomas/` (fragmentos `es*/en*` ES/EN con la misma clave en ambos) o a `FIELDS_EN` (`campos.ts`) si es texto libre con `tf()`.
-- [ ] El diccionario del proceso principal (`electron/main/idioma.ts`) mantiene paridad ES/EN si se añade una entrada.
+- [ ] El diccionario del proceso principal (`electron/main/sistema/idioma.ts`) mantiene paridad ES/EN si se añade una entrada.
 
 ### F. Límites SRP y complejidad
 

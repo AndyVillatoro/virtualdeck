@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { disconnect } from './conexion';
 import { estado } from './estado';
-import { tm } from '../idioma';
+import { tm } from '../sistema/idioma';
 
 export async function spawnServer(exePath?: string): Promise<{ ok: boolean; error?: string }> {
   if (estado.serverProc && !estado.serverProc.killed) return { ok: true };

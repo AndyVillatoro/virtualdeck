@@ -4,7 +4,7 @@
 //! registra la sesion (pasa con algunas versiones de Edge/Chrome) o porque la
 //! app reproduce sin integrarse con Windows.
 //!
-//! El parser es un **puerto literal** del de `electron/main/media.ts`. Esas
+//! El parser es un **puerto literal** del de `electron/main/media/index.ts`. Esas
 //! expresiones estan afinadas contra rarezas reales de navegadores y romperlas
 //! "simplificando" es facil, asi que van con tests de las cadenas conocidas.
 

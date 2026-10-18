@@ -32,7 +32,7 @@ function cargarGaleria() {
   };
   const cargar = createRequire(import.meta.url);
   let g: any;
-  try { g = cargar('../electron/main/galeria.ts'); } finally { Module._load = cargaOriginal; }
+  try { g = cargar('../electron/main/integraciones/galeria.ts'); } finally { Module._load = cargaOriginal; }
   return g;
 }
 

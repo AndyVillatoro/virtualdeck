@@ -1,15 +1,15 @@
 import { app } from 'electron';
-import { loadConfig } from './configManager';
-import { estadoActual } from './estadoSistema';
-import { list as listarSensores, type Sensor } from './sensors';
-import { getNowPlaying } from './media';
-import { getWeather } from './weather';
-import { obtenerTasas, type TasasDivisa } from './divisas';
-import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
-import { interpolate } from '../../src/comun/interpolar';
-import { botonVisibleSegun } from '../../src/comun/visibilidad';
-import { datosDeWidget, type DatosWidget, type FuentesWidget } from '../../src/comun/widgets';
-import { formatoHora, formatoFecha, type Lang } from '../../src/comun/formatos';
+import { loadConfig } from '../sistema/configManager';
+import { estadoActual } from '../sistema/estadoSistema';
+import { list as listarSensores, type Sensor } from '../sistema/sensors';
+import { getNowPlaying } from '../media';
+import { getWeather } from '../integraciones/weather';
+import { obtenerTasas, type TasasDivisa } from '../integraciones/divisas';
+import { DOT_GLYPHS_8X8 } from '../../../src/components/dot480/dotGlyphs8x8';
+import { interpolate } from '../../../src/comun/interpolar';
+import { botonVisibleSegun } from '../../../src/comun/visibilidad';
+import { datosDeWidget, type DatosWidget, type FuentesWidget } from '../../../src/comun/widgets';
+import { formatoHora, formatoFecha, type Lang } from '../../../src/comun/formatos';
 import { botonAMando, type BotonFuenteMando, type BotonMandoMovil, type IconoPuntosMando } from './iconosMando';
 
 /**

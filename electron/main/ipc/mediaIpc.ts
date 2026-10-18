@@ -1,4 +1,4 @@
-import { intentarNativo } from '../native';
+import { intentarNativo } from '../sistema/native';
 import { ipcMain } from 'electron';
 import { getNowPlaying, controlMedia, shuffleMedia, repeatMedia, diagnose as diagnoseMedia, type MediaCommand } from '../media';
 import { runScript } from '../launcher';

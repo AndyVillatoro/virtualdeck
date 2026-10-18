@@ -1,5 +1,5 @@
 import { desktopCapturer } from 'electron';
-import type { PistaCaptura, ResultadoVentanas, VentanaCaptura } from '../../src/types';
+import type { PistaCaptura, ResultadoVentanas, VentanaCaptura } from '../../../src/types';
 
 /**
  * Lista de ventanas que se pueden mostrar dentro del panel de música.

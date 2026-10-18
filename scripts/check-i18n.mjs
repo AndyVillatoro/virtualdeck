@@ -19,9 +19,9 @@ const RAIZ = 'src';
 // El proceso principal tambien enseña texto —el menu de la bandeja, los
 // titulos de los dialogos— y era un punto ciego: la auditoria solo miraba
 // `src/`, asi que la bandeja seguia en español con la interfaz en ingles.
-// Su diccionario es `electron/main/idioma.ts`, con su propia funcion `tm`.
+// Su diccionario es `electron/main/sistema/idioma.ts`, con su propia funcion `tm`.
 const RAIZ_MAIN = 'electron/main';
-const IDIOMA_MAIN = 'electron/main/idioma.ts';
+const IDIOMA_MAIN = 'electron/main/sistema/idioma.ts';
 // Los tres diccionarios viven cada uno en su archivo desde que `i18n.tsx`
 // paso de las mil lineas. `I18N` sigue siendo el modulo que **no** se audita
 // como codigo de interfaz (sus literales son el diccionario en si).
@@ -197,7 +197,7 @@ const PALABRAS_SUELTAS = new Set([
 // Al principio la comprobacion se salteaba todos los `.ts` por este motivo, y
 // asi se colo el rotulo de deshacer de `useDeck.ts`, que si es interfaz viva.
 const DATOS_SEMBRADOS = new Set([
-  'src/screens/editor/actionData.ts',
+  'src/screens/editor/datos/actionData.ts',
   'src/data/presetsDock.ts',
   'src/data/plantillasApp.ts',
   'src/comun/brandIcons.ts',
@@ -213,7 +213,7 @@ const DATOS_SEMBRADOS = new Set([
 // claves**: si alguien añade una frase en español y se olvida de la inglesa,
 // sigue fallando.
 const TRADUCEN_APARTE = new Map([
-  ['electron/main/paginaMando.ts', 'TEXTOS'],
+  ['electron/main/mando/paginaMando.ts', 'TEXTOS'],
 ]);
 
 const PERMITIDOS = new Set([
@@ -445,10 +445,10 @@ const REGISTRO = [
   const fuentesES = FRAGMENTOS['ES: Dict'].map(([ruta]) => readFileSync(ruta, 'utf-8')).join('\n');
   const fuente = fuentesES
     + '\n' + readFileSync('src/utils/idiomas/campos.ts', 'utf-8')
-    + '\n' + readFileSync('electron/main/idioma.ts', 'utf-8')
+    + '\n' + readFileSync('electron/main/sistema/idioma.ts', 'utf-8')
     // D-023: el cromo del mando movil tambien es español neutro vigilado (sus
     // TEXTOS ya tienen paridad ES/EN en 5 bis; aqui se vigila el registro).
-    + '\n' + readFileSync('electron/main/paginaMando.ts', 'utf-8');
+    + '\n' + readFileSync('electron/main/mando/paginaMando.ts', 'utf-8');
   for (const [i, linea] of fuente.split(/\r?\n/).entries()) {
     if (/^\s*(\/\/|\*|\/\*)/.test(linea)) continue;
     for (const [re, motivo] of REGISTRO) {

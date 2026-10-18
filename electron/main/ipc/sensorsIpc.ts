@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import * as sensors from '../sensors';
+import * as sensors from '../sistema/sensors';
 
 export function registerSensorsIpc() {
   ipcMain.handle('sensors:list', (_e: any, force?: boolean) => sensors.list(!!force));

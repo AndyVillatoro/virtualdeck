@@ -1,4 +1,4 @@
-import { hayNucleo, intentarNativo } from './native';
+import { hayNucleo, intentarNativo } from '../sistema/native';
 import { medioFijo } from './mediosFijos';
 import { runPS, QUICK_SCRIPT, CAPS_SCRIPT, THUMB_SCRIPT, WINDOW_FALLBACK } from './mediaScripts';
 import {

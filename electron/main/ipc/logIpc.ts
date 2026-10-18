@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { logEntry, readRecentLog, openLogInExplorer, exportLog, type LogEntryInput } from '../logger';
+import { logEntry, readRecentLog, openLogInExplorer, exportLog, type LogEntryInput } from '../sistema/logger';
 
 export function registerLogIpc() {
   ipcMain.handle('log:write', (_e: any, entry: LogEntryInput) => { logEntry(entry); });

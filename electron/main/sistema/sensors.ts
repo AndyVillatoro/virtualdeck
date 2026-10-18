@@ -5,7 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tm } from './idioma';
 // Host y puerto por defecto, compartidos con el renderer (ver `src/types`).
-import { SENSORES_POR_DEFECTO } from '../../src/types';
+import { SENSORES_POR_DEFECTO } from '../../../src/types';
 
 // Integration with LibreHardwareMonitor (LHM). LHM exposes its full sensor
 // tree at http://host:port/data.json when "Run Web Server" is enabled in its

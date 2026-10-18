@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { BrowserWindow } from 'electron';
 import { runPS, runPSBool } from './ps-helpers';
 

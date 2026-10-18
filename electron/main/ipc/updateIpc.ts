@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { logError } from '../logger';
+import { logError } from '../sistema/logger';
 
 // Auto-update vía electron-updater (GitHub Releases provider, configurado en
 // package.json build.publish). El módulo se carga de forma lazy para que la

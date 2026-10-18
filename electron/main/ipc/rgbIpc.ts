@@ -1,7 +1,7 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import * as rgb from '../rgb';
-import { tm } from '../idioma';
-import { refrescarYa } from '../estadoSistema';
+import { tm } from '../sistema/idioma';
+import { refrescarYa } from '../sistema/estadoSistema';
 
 export function registerRgbIpc(win: BrowserWindow) {
   rgb.setOnDeviceListUpdated(() => {

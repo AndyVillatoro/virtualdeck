@@ -1,6 +1,6 @@
 //! Carga, guardado y backups de la configuracion.
 //!
-//! Portado de `electron/main/configManager.ts`, conservando su comportamiento
+//! Portado de `electron/main/sistema/configManager.ts`, conservando su comportamiento
 //! observable: mismo archivo, mismo formato (JSON indentado a 2 espacios),
 //! misma politica de backups (cooldown de 5 minutos, se retienen 5).
 

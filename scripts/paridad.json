@@ -132,7 +132,7 @@
     "pantallas": "no-aplica",
     "movil": "no-aplica",
     "dock": "no-aplica",
-    "nota": "disparo a nivel de app, no de superficie: se registra en electron/main (trayManager.ts:122-134) y emite button:trigger; ninguna superficie lo implementa por separado"
+    "nota": "disparo a nivel de app, no de superficie: se registra en electron/main/ventana (trayManager.ts:122-134) y emite button:trigger; ninguna superficie lo implementa por separado"
   },
   "inTrayMenu": {
     "pantallas": "no-aplica",
@@ -203,7 +203,7 @@
     "pantallas": "si",
     "movil": "si",
     "dock": "si",
-    "nota": "los cuadrantes llevan sus propios campos, iconoPuntos del catálogo 16x16 incluido (roadmap 93): celda (components/celda/Subdivision2x2.tsx), móvil (electron/main/iconosMando.ts) y tecla LCD (utils/superficies/subdivisionLcd.ts) los pintan; solo el dispositivo no ejecuta los cuadrantes"
+    "nota": "los cuadrantes llevan sus propios campos, iconoPuntos del catálogo 16x16 incluido (roadmap 93): celda (components/celda/Subdivision2x2.tsx), móvil (electron/main/mando/iconosMando.ts) y tecla LCD (utils/superficies/subdivisionLcd.ts) los pintan; solo el dispositivo no ejecuta los cuadrantes"
   },
   "fijo": {
     "pantallas": "si",

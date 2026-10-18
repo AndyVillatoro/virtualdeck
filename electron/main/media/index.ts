@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { runPS, controlScript, SHUFFLE_SCRIPT, REPEAT_SCRIPT, DIAGNOSE_SCRIPT } from './mediaScripts';
 import { olvidarCache, logErrorOnce } from './mediaEstado';
 import type { MediaCommand, MediaDiagnostic } from './mediaTipos';

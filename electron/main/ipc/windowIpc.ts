@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { getActiveApp } from '../activeWindow';
-import { getDisplaysInfo, moveWindowToDisplay } from '../displays';
+import { getActiveApp } from '../ventana/activeWindow';
+import { getDisplaysInfo, moveWindowToDisplay } from '../ventana/displays';
 
 export function registerWindowIpc(win: BrowserWindow) {
   ipcMain.on('window:minimize', () => { win.hide(); });

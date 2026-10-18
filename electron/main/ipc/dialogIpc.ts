@@ -1,8 +1,8 @@
 import { ipcMain, dialog, Notification, BrowserWindow } from 'electron';
 import { join } from 'path';
-import { dirImagenes } from '../rutas';
+import { dirImagenes } from '../sistema/rutas';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
-import { tm } from '../idioma';
+import { tm } from '../sistema/idioma';
 
 export function registerDialogIpc(win: BrowserWindow) {
   ipcMain.handle('dialog:openFile', (_e: any, opts: any) =>

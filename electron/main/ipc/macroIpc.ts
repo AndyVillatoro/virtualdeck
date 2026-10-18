@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { playMacro, startRecording, stopRecording, isRecording } from '../macro';
+import { playMacro, startRecording, stopRecording, isRecording } from '../launcher/macro';
 import type { MacroStep } from '../../../src/types';
 
 export function registerMacroIpc(win: BrowserWindow) {

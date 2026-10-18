@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import * as tienda from '../tienda';
+import * as tienda from '../ventana/tienda';
 
 /**
  * Puentes de la tienda. Dos direcciones:

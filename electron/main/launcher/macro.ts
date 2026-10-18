@@ -10,11 +10,11 @@
  * el script se conserva solo como respaldo.
  */
 
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { runPS } from './ps-helpers';
 import { buildPlaybackScript, entero, pasoSeguro, MAX_REPETICIONES } from './macroScript';
-import type { MacroStep } from '../../src/types';
-import { tm } from './idioma';
+import type { MacroStep } from '../../../src/types';
+import { tm } from '../sistema/idioma';
 
 import * as uiohook from 'uiohook-napi';
 

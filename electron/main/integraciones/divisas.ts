@@ -1,7 +1,7 @@
 import { app, net } from 'electron';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { tm } from './idioma';
+import { tm } from '../sistema/idioma';
 
 /**
  * Tasas de cambio para el widget de divisas.

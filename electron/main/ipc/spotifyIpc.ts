@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { playUri, getDevices, transferPlayback, getPlaybackState } from '../spotify';
+import { playUri, getDevices, transferPlayback, getPlaybackState } from '../integraciones/spotify';
 
 export function registerSpotifyIpc() {
   ipcMain.handle('spotify:playUri', async (_e, uriOrUrl: string, token?: string, deviceId?: string) => {

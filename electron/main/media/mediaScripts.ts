@@ -1,5 +1,5 @@
-import { runPS as runPSShared } from './ps-helpers';
-import { tm } from './idioma';
+import { runPS as runPSShared } from '../launcher/ps-helpers';
+import { tm } from '../sistema/idioma';
 import type { MediaCommand } from './mediaTipos';
 
 export function runPS(script: string): Promise<{ stdout: string; stderr: string; ok: boolean }> {

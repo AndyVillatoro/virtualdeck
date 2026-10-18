@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import { loadConfig } from '../configManager';
+import { loadConfig } from '../sistema/configManager';
 import { iniciarServidorArchivos } from './archivos';
 import type { ServidorArchivos } from './archivos';
 import { crearAnfitrion } from './anfitrion';

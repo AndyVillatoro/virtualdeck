@@ -36,7 +36,7 @@
 //! declaración de módulos, la sonda `version` y los ayudantes comunes. Los
 //! módulos son públicos porque sus funciones son la superficie exportada del
 //! crate (vía napi); los nombres exportados a JavaScript no cambian:
-//! `electron/main/native.ts` los llama por nombre.
+//! `electron/main/sistema/native.ts` los llama por nombre.
 
 #![deny(clippy::all)]
 

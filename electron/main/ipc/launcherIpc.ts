@@ -1,7 +1,7 @@
-import { intentarNativo } from '../native';
-import { estadoActual } from '../estadoSistema';
+import { intentarNativo } from '../sistema/native';
+import { estadoActual } from '../sistema/estadoSistema';
 import { ipcMain, shell, BrowserWindow } from 'electron';
-import { urlAbrible } from '../abrirExterno';
+import { urlAbrible } from '../ventana/abrirExterno';
 import {
   launchApp, runScript, runScriptCapture, openShortcut, setBrightness, getBrightness, getVolume,
   sendHotkey, copyToClipboard, typeTextKeys, killProcess, setVolume, speakText,

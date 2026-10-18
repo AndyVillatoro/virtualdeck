@@ -1,6 +1,6 @@
 //! Macros de teclado y raton: grabar y reproducir.
 //!
-//! Portado de `electron/main/macro.ts`, que dependia de dos cosas que aca
+//! Portado de `electron/main/launcher/macro.ts`, que dependia de dos cosas que aca
 //! desaparecen:
 //!
 //! - **`uiohook-napi`** para grabar — un modulo nativo de Node que habia que

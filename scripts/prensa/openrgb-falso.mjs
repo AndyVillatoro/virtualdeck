@@ -3,7 +3,7 @@
  *
  * Existe para las capturas de prensa: el gestor RGB no se puede fotografiar
  * sin dispositivos, y esta máquina no tiene ninguno. En vez de inyectar
- * dispositivos falsos dentro de `electron/main/rgb.ts` —que dejaría el código
+ * dispositivos falsos dentro de `electron/main/rgb/` —que dejaría el código
  * de la aplicación sin ejercitar justo en la pantalla que se enseña—, se
  * levanta un servidor de verdad en el puerto 6742 y VirtualDeck se conecta a
  * él con su `openrgb-sdk` de siempre.

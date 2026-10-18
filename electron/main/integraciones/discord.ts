@@ -1,8 +1,8 @@
 import net from 'node:net';
 import crypto from 'node:crypto';
 import { BrowserWindow } from 'electron';
-import { tm } from './idioma';
-import { isProcessRunning, sendHotkey } from './launcher';
+import { tm } from '../sistema/idioma';
+import { isProcessRunning, sendHotkey } from '../launcher';
 
 export interface DiscordVoiceSettings {
   mute: boolean;

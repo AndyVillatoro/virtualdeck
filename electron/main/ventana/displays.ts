@@ -1,7 +1,7 @@
 import { BrowserWindow, screen, Display } from 'electron';
 import { clampBoundsToDisplay } from './windowManager';
 import { huellaDe, marcarPendiente, moverSinGuardar, volverAlPendiente, hayMonitorPendiente } from './ventanaMonitor';
-import type { DisplayInfo } from '../../src/types';
+import type { DisplayInfo } from '../../../src/types';
 
 /**
  * Obtiene la lista completa de pantallas disponibles con sus metadatos y estado actual.

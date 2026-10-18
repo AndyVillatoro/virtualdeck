@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto';
 import { release } from 'os';
 import { shell } from 'electron';
 import { WebSocketServer, WebSocket } from 'ws';
-import { urlAbrible } from '../abrirExterno';
+import { urlAbrible } from '../ventana/abrirExterno';
 import { cabeEnLimite, esObjetoPlano } from './validacion';
 import { crearOrdenesVisuales, type AvisoVisual } from './ordenesVisuales';
 

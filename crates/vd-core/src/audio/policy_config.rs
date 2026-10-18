@@ -7,7 +7,7 @@
 //! el orden de la vtable tiene que coincidir **exactamente** con el de Windows
 //! o las llamadas caen en el metodo equivocado (y en el peor caso corrompen la
 //! pila). Los IIDs y el orden que hay aca vienen del codigo de la version
-//! Electron (`electron/main/audio.ts`), que esta verificado funcionando en
+//! Electron (`electron/main/audio/index.ts`), que esta verificado funcionando en
 //! Windows 10 y 11, y coinciden con los del crate `com-policy-config`.
 //!
 //! Un error historico del proyecto: usar el **CLSID** `870AF99C-…` como si
@@ -194,7 +194,7 @@ mod tests {
         // Estos valores estan verificados funcionando en Windows 10/11. Si
         // alguien los cambia sin querer, el cambio de dispositivo deja de
         // funcionar en silencio, que es exactamente el bug que motivo este
-        // modulo. Ver electron/main/audio.ts.
+        // modulo. Ver electron/main/audio/index.ts.
         assert_eq!(
             format!("{CLSID_POLICY_CONFIG_CLIENT:?}").to_lowercase(),
             "870af99c-171d-4f9e-af0d-e63df40c2bc9"

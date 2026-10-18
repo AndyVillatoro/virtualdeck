@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { getStatus, getVoiceSettings, setVoiceSettings, toggleMute, toggleDeaf } from '../discord';
+import { getStatus, getVoiceSettings, setVoiceSettings, toggleMute, toggleDeaf } from '../integraciones/discord';
 
 export function registerDiscordIpc() {
   ipcMain.handle('discord:status', async () => {

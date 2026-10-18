@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import * as barra from '../floatingBar';
+import * as barra from '../ventana/floatingBar';
 
 export function registerFloatingBarIpc() {
   ipcMain.handle('bar:open', (_e: any, g: barra.GeometriaBarra) => { barra.abrirBarra(g); return true; });

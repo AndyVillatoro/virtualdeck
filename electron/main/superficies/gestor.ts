@@ -10,7 +10,7 @@
 
 import { devicesAsync, type Device } from 'node-hid';
 import type { EntradaSuperficie, InfoSuperficie } from '../../../src/types';
-import { logEntry } from '../logger';
+import { logEntry } from '../sistema/logger';
 import { DispositivoMirabox } from './dispositivoMirabox';
 import { disposicionDe, modeloPorVidPid, type ModeloMirabox } from './modelos';
 import { interpretarEntrada } from './protocoloMirabox';

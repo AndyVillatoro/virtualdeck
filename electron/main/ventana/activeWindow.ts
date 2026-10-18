@@ -1,6 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { BrowserWindow } from 'electron';
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 
 export interface ActiveAppInfo {
   processName: string | null;

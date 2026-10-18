@@ -1,5 +1,5 @@
 import { shell } from 'electron';
-import { tm } from './idioma';
+import { tm } from '../sistema/idioma';
 import { normalizeSpotifyUri } from './spotifyUri';
 
 export interface SpotifyDevice {

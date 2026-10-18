@@ -2,8 +2,8 @@ import { BrowserWindow, session, shell, utilityProcess } from 'electron';
 import type { Session } from 'electron';
 import { execSync, spawn } from 'child_process';
 import { join } from 'path';
-import { urlAbrible } from '../abrirExterno';
-import { retirarPoliticaGeneral } from '../seguridadVentana';
+import { urlAbrible } from '../ventana/abrirExterno';
+import { retirarPoliticaGeneral } from '../ventana/seguridadVentana';
 
 /**
  * Cómo se lanza y cómo se encierra cada tipo de plugin.

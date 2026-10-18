@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { getUio } from './macro';
 import { runPSBool } from './ps-helpers';
 

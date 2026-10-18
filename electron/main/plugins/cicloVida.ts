@@ -8,7 +8,7 @@ import { leerManifiesto } from './manifiesto';
 import { lanzarPluginHTML, lanzarPluginNode, type PluginLanzado } from './procesos';
 import { guardarGlobales, leerDeshabilitados, leerGlobales } from './ajustesPlugins';
 import { validarUuid } from './instalacion';
-import { loadConfig } from '../configManager';
+import { loadConfig } from '../sistema/configManager';
 
 /**
  * Ciclo de vida de los plugins en marcha (roadmap 83, MVP).

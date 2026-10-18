@@ -1,5 +1,5 @@
-import { nucleo, type SesionAudioApp } from './native';
-import { tm } from './idioma';
+import { nucleo, type SesionAudioApp } from '../sistema/native';
+import { tm } from '../sistema/idioma';
 
 /**
  * Volumen de una app concreta (roadmap 63, parte TypeScript).

@@ -1,6 +1,6 @@
 /* El manifiesto de la galeria pasado por el cargador de verdad.
  *
- * `electron/main/galeria.ts` es el que decide si una entrada se ve en la
+ * `electron/main/integraciones/galeria.ts` es el que decide si una entrada se ve en la
  * tienda: `manifiesto()` lee `profiles` (linea 170), `sanearEntrada` separa
  * `profile`/`page`/`plugin` y `traeRespaldoPlugin` **deja fuera** los plugins sin
  * sha256 o sin uuid (uno sin los dos no se instala, asi que ni se lista).
@@ -81,9 +81,9 @@ async function main(): Promise<void> {
     if (request === 'electron') return electronFalso;
     return cargaOriginal.call(this, request, ...resto);
   };
-  let galeria: typeof import('../../../../electron/main/galeria');
+  let galeria: typeof import('../../../../electron/main/integraciones/galeria');
   try {
-    galeria = cargar('../../../../electron/main/galeria.ts');
+    galeria = cargar('../../../../electron/main/integraciones/galeria.ts');
   } finally {
     Module._load = cargaOriginal;
   }

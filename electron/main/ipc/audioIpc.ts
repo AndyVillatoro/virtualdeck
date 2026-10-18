@@ -1,10 +1,10 @@
 import { ipcMain } from 'electron';
 import { listAudioDevices, setDefaultAudioDevice } from '../audio';
-import { refrescarYa } from '../estadoSistema';
+import { refrescarYa } from '../sistema/estadoSistema';
 import {
   listarSesionesAudio, ajustarVolumenApp, fijarVolumenApp, alternarSilencioApp,
-} from '../volumenApp';
-import { hayNucleo } from '../native';
+} from '../audio/volumenApp';
+import { hayNucleo } from '../sistema/native';
 import type { AudioDevice } from '../../../src/types';
 
 /**

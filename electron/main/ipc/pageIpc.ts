@@ -1,6 +1,6 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { readFileSync, writeFileSync } from 'fs';
-import { tm } from '../idioma';
+import { tm } from '../sistema/idioma';
 
 export function registerPageIpc(win: BrowserWindow) {
   ipcMain.handle('page:export', async (_e: any, pageData: object) => {

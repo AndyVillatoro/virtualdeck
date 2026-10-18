@@ -1,6 +1,6 @@
 import { net } from 'electron';
-import { tm, diasDeLaSemana } from './idioma';
-import { validarUuid, validarSha256 } from './plugins/validacion';
+import { tm, diasDeLaSemana } from '../sistema/idioma';
+import { validarUuid, validarSha256 } from '../plugins/validacion';
 
 /**
  * La galería de perfiles (6.1): traerse un perfil de una dirección.

@@ -1,14 +1,14 @@
-import { DOT_GLYPHS_8X8, resolveDotGlyph } from '../../src/components/dot480/dotGlyphsCatalog';
-import { GLIFO_POR_TIPO_ACCION } from '../../src/components/dot480/glifosPorTipoAccion';
-import { matrizDePuntos16 } from '../../src/components/dot480/puntos16';
-import { dataUriDeMarca, resolverMarca } from '../../src/comun/marcaSvg';
-import { textoSobre } from '../../src/comun/contraste';
+import { DOT_GLYPHS_8X8, resolveDotGlyph } from '../../../src/components/dot480/dotGlyphsCatalog';
+import { GLIFO_POR_TIPO_ACCION } from '../../../src/components/dot480/glifosPorTipoAccion';
+import { matrizDePuntos16 } from '../../../src/components/dot480/puntos16';
+import { dataUriDeMarca, resolverMarca } from '../../../src/comun/marcaSvg';
+import { textoSobre } from '../../../src/comun/contraste';
 import {
   aplicarAspectoAudio as fusionarAspectoAudio,
   resolverAspectoAudio,
-} from '../../src/comun/audioIcono';
-import { estadoActual } from './estadoSistema';
-import type { EfectoPulsar, SliderWidgetConfig } from '../../src/types';
+} from '../../../src/comun/audioIcono';
+import { estadoActual } from '../sistema/estadoSistema';
+import type { EfectoPulsar, SliderWidgetConfig } from '../../../src/types';
 
 /**
  * El icono de cada botón, resuelto en el proceso principal para el mando

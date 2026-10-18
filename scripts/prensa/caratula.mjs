@@ -50,7 +50,7 @@ export async function caratulaEnBase64() {
  * La pista que se enseña.
  *
  * Título, artista y fuente son inventados a propósito: ver
- * `electron/main/mediosFijos.ts`. «Reproductor local» en vez del nombre de un
+ * `electron/main/media/mediosFijos.ts`. «Reproductor local» en vez del nombre de un
  * servicio, para no dar a entender que hay una integración que no existe.
  *
  * Los tiempos del final también los dice: sin `durationMs` el widget no pinta

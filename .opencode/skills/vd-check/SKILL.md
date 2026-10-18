@@ -41,7 +41,7 @@ Los problemas del resto de este skill asumen que estos dos pasan.
 
 ## 2. `check-i18n.mjs` — paridad ES/EN y neutralidad de registro
 
-**Qué audita** (6 grupos, en este orden): se lee `src/utils/idiomas/` (fragmentos `esComun/esEditor/esAcciones/esAjustes` + espejos `en*` + `campos.ts` con `FIELDS_EN`), más `electron/main/idioma.ts` y `electron/main/paginaMando.ts`. También se hace un barrido de **todo** `src/` y `electron/` buscando texto español visible que no pase por `t()`/`tf()`.
+**Qué audita** (6 grupos, en este orden): se lee `src/utils/idiomas/` (fragmentos `esComun/esEditor/esAcciones/esAjustes` + espejos `en*` + `campos.ts` con `FIELDS_EN`), más `electron/main/sistema/idioma.ts` y `electron/main/mando/paginaMando.ts`. También se hace un barrido de **todo** `src/` y `electron/` buscando texto español visible que no pase por `t()`/`tf()`.
 
 **Familias de fallos y dónde arreglar**:
 
@@ -53,12 +53,12 @@ Los problemas del resto de este skill asumen que estos dos pasan.
 | `ruta: tf('x') no está en FIELDS_EN` | `tf()` con texto sin entrada en `campos.ts` | Añadirlo a `FIELDS_EN`; si no, en inglés se vería el texto en español |
 | `"...está en español y no pasa por t() ni tf()"` | Texto visible no envuelto en traductor (heurística: acentos, palabras funcionales, `PALABRAS_SUELTAS`) | Envolverlo en `t()`/`tf()` o añadir la clave al diccionario; **no** meter el literal en `PERMITIDOS` salvo que sea legítimamente bilingüe (p. ej. `VirtualDeck`) |
 | `registro ES: "Hacé" (voseo)` / `tuteo` / `ícono` / `grilla` / `acá` / `snapear` | Registro prohibido en diccionarios | Reescribir en neutro formal (usted) |
-| `'x' está en es y falta en en` (paginaMando) | Diccionario local del mando móvil desequilibrado | Añadir la clave a la otra mitad (`es`/`en`) de `TEXTOS` en `electron/main/paginaMando.ts` |
+| `'x' está en es y falta en en` (paginaMando) | Diccionario local del mando móvil desequilibrado | Añadir la clave a la otra mitad (`es`/`en`) de `TEXTOS` en `electron/main/mando/paginaMando.ts` |
 | `puntos: onb.N.title usa «X», que no está en GLYPHS_5x7` | Carácter sin glifo en la fuente de puntos (`DotText` dibuja un hueco) | Añadir el glifo a `GLYPHS_5x7` en `src/design.ts` |
 | `puntos: <ruta> usa <DotText> y no está declarado en DOTTEXT_DECLARADOS` | Uso nuevo de `DotText` sin declarar | Añadir el archivo a `DOTTEXT_DECLARADOS` (y su clave a `CLAVES_EN_PUNTOS` si dibuja texto libre) |
 
 Notas de interpretación:
-- El barrido heurístico excluye `src/utils/i18n.tsx`, los diccionarios, `actionData.ts` y `brandIcons.ts` (datos sembrados que se copian tal cual al botón del usuario) y el `electron/main/idioma.ts`.
+- El barrido heurístico excluye `src/utils/i18n.tsx`, los diccionarios, `actionData.ts` y `brandIcons.ts` (datos sembrados que se copian tal cual al botón del usuario) y el `electron/main/sistema/idioma.ts`.
 - No reporta falsos positivos en **comentarios** (los descarta), en **console.* del proceso principal** (solo el renderer enseña texto) ni en **templates** (mira solo el texto, ignora `${...}`).
 - `DATOS_SEMBRADOS` y `PERMITIDOS` son listas cortas **a propósito**: si un mensaje te pide ampliarlas, sospecha del texto antes que de la lista.
 
@@ -69,8 +69,8 @@ Notas de interpretación:
 2. Manejadores en `src/utils/acciones/*.ts` (el mapa que reemplazó al `switch` con `default: return OK` — antes un tipo sin implementar **no hacía nada y decía que había ido bien**).
 3. `RESUELTAS_POR_EL_LLAMADOR` en `src/utils/acciones/index.ts` (tipos que resuelve la llamada, sin manejador).
 4. `FORMULARIOS` en `src/screens/editor/formularios/index.tsx` (entrada de configuración en el paso 2 del editor).
-5. `ACTION_TYPES` en `src/screens/editor/actionData.ts` (elegible en el paso 1 del editor).
-6. Presets RGB: `RGB_PRESET_IDS` en `src/data/rgbPresets.ts` contra `SMART_PRESETS` en `electron/main/rgb.ts`, y `ACTION_TYPES` del validador en `src/utils/configMigration.ts`.
+5. `ACTION_TYPES` en `src/screens/editor/datos/actionData.ts` (elegible en el paso 1 del editor).
+6. Presets RGB: `RGB_PRESET_IDS` en `src/data/rgbPresets.ts` contra `SMART_PRESETS` en `electron/main/rgb/presets.ts`, y `ACTION_TYPES` del validador en `src/utils/configMigration.ts`.
 
 **Familias de fallos**:
 
@@ -81,7 +81,7 @@ Notas de interpretación:
 | `'x' tiene manejador pero no está en ActionType` / variantes | Inventarios desalineados | Añadir/eliminar el tipo de `ActionType` según el caso |
 | `'x' no tiene entrada en FORMULARIOS` | Tipo ejecutable pero sin formulario → paso 2 del editor en blanco | Añadir entrada en `formularios/index.tsx` |
 | `'x' no está en ACTION_TYPES` | No elegible en el paso 1 → no se puede crear desde el editor | Añadir `{ type: 'x', label: ... }` en `actionData.ts` |
-| `el preset RGB 'x' ...` | Preset citado en el editor pero ausente en `SMART_PRESETS` (botón muerto) o al revés | Alinear `rgbPresets.ts` ↔ `electron/main/rgb.ts` |
+| `el preset RGB 'x' ...` | Preset citado en el editor pero ausente en `SMART_PRESETS` (botón muerto) o al revés | Alinear `rgbPresets.ts` ↔ `electron/main/rgb/presets.ts` |
 | `'x' es un tipo de accion y falta en ACTION_TYPES` | Validador de importación obsoleto → un deck con ese tipo se **rechazaría entero** al importar | Añadirlo al `Set` en `src/utils/configMigration.ts` |
 
 ## 4. `check-ipc.mjs` — sincronía bipolar principal ↔ preload

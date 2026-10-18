@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { runPS, runPSBool, runCmd, injectUtf8Prefix } from './ps-helpers';
 
 /**

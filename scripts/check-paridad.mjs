@@ -55,10 +55,10 @@ const ARCHIVOS = {
     ...paseo('src/comun'),
   ],
   movil: [
-    'electron/main/iconosMando.ts',
-    'electron/main/paginaMando.ts',
-    'electron/main/mandoVivo.ts',
-    'electron/main/servidorLocal.ts',
+    'electron/main/mando/iconosMando.ts',
+    'electron/main/mando/paginaMando.ts',
+    'electron/main/mando/mandoVivo.ts',
+    'electron/main/mando/servidorLocal.ts',
     ...paseo('src/comun'),
   ],
   dock: [

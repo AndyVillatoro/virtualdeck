@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { tm } from './idioma';
+import { tm } from '../sistema/idioma';
 
 /**
  * Diagnóstico y configuración del Firewall de Windows para el servidor local (1.4 y 1.1).

@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
-import { listarVentanasCaptura } from '../capturaVentana';
+import { listarVentanasCaptura } from '../media/capturaVentana';
 import type { PistaCaptura } from '../../../src/types';
 
 /**

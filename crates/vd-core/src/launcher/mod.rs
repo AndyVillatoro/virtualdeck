@@ -1,6 +1,6 @@
 //! Lanzar aplicaciones y actuar sobre el sistema.
 //!
-//! Portado de `electron/main/launcher.ts`, el modulo con mas superficie de todo
+//! Portado de `electron/main/launcher/index.ts`, el modulo con mas superficie de todo
 //! el backend (14 comandos IPC). Casi todo pasaba por PowerShell con C#
 //! embebido; aca son llamadas directas.
 //!

@@ -1,7 +1,7 @@
 import { BrowserWindow, Tray, Menu, nativeImage, globalShortcut, screen } from 'electron';
 import { join } from 'path';
 import { deflateSync } from 'zlib';
-import { tm } from './idioma';
+import { tm } from '../sistema/idioma';
 
 export interface TriggerableButton {
   id: string;

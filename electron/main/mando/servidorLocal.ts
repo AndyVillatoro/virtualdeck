@@ -4,14 +4,14 @@ import { networkInterfaces, hostname } from 'node:os';
 import { createReadStream, existsSync } from 'node:fs';
 import { join, normalize } from 'node:path';
 import { type BrowserWindow } from 'electron';
-import { loadConfig } from './configManager';
-import { atender } from './enlacesExternos';
-import { getVolume, setVolume, getBrightness, setBrightness } from './launcher';
+import { loadConfig } from '../sistema/configManager';
+import { atender } from '../ventana/enlacesExternos';
+import { getVolume, setVolume, getBrightness, setBrightness } from '../launcher';
 import { paginaMando } from './paginaMando';
-import { dirImagenes } from './rutas';
+import { dirImagenes } from '../sistema/rutas';
 import { botonesVivosParaMando, widgetsVivosParaMando } from './mandoVivo';
-import motorPuntos from '../../src/components/dot480/efectosPuntos.js?raw';
-import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../src/types';
+import motorPuntos from '../../../src/components/dot480/efectosPuntos.js?raw';
+import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../../src/types';
 
 
 /**

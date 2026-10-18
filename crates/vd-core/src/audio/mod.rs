@@ -1,6 +1,6 @@
 //! Dispositivos de audio: enumerar y cambiar el predeterminado.
 //!
-//! Portado de `electron/main/audio.ts`, que hacia esto lanzando un
+//! Portado de `electron/main/audio/index.ts`, que hacia esto lanzando un
 //! `powershell.exe` con ~150 lineas de C# embebido en cada llamada (150-400 ms).
 //! Aca son llamadas COM en proceso, en microsegundos, y sin el problema de
 //! codificacion que arrastraba el envoltorio de PowerShell.

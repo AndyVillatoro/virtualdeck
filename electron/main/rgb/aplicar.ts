@@ -5,7 +5,7 @@ import {
   hexToRgb, rgbToHex,
 } from './color';
 import { estado } from './estado';
-import { tm } from '../idioma';
+import { tm } from '../sistema/idioma';
 import type { RGBDeviceInfo } from './tipos';
 
 /**

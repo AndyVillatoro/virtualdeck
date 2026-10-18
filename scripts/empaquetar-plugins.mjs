@@ -270,7 +270,7 @@ function archivosDelPaquete(carpeta, uuid) {
  * Anade las entradas de los plugins al manifiesto de la galeria.
  *
  * Van **dentro de `profiles`**, con `kind: 'plugin'`, porque es la unica lista
- * que lee el cargador: `manifiesto()` en `electron/main/galeria.ts:170` hace
+ * que lee el cargador: `manifiesto()` en `electron/main/integraciones/galeria.ts:170` hace
  * `j.profiles` y recorre eso, y `sanearEntrada` ya distingue `plugin` de `page`
  * y de perfil (mismo archivo, linea 131). Una clave `plugins` propia seria un
  * manifiesto que la tienda no ve.

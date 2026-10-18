@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { exec, spawn } from 'child_process';
 import { shell } from 'electron';
 

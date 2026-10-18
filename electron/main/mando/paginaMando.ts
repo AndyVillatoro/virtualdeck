@@ -17,7 +17,7 @@
  * mientras haya algo animándose; con «reducir movimiento» no hay animación
  * continua, pero el destello de pulsar se queda.
  */
-import { DOT_GLYPHS_8X8 } from '../../src/components/dot480/dotGlyphs8x8';
+import { DOT_GLYPHS_8X8 } from '../../../src/components/dot480/dotGlyphs8x8';
 import { estiloPaginaMando } from './estiloMandoPagina';
 import { JS_ANIMACION_MANDO } from './iconosMando';
 import { JS_VIVO_MANDO, JS_SLIDER_MANDO } from './vivoMandoPagina';

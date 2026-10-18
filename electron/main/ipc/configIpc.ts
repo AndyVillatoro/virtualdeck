@@ -1,17 +1,17 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron';
 import { readFileSync, writeFileSync } from 'fs';
-import { loadConfig, saveConfig, listBackups, restoreBackup, configDanado } from '../configManager';
-import { applyTriggerableConfig } from '../trayManager';
-import * as sensors from '../sensors';
-import { getWeather } from '../weather';
-import { obtenerTasas } from '../divisas';
-import { avisarCambioDeConfig } from '../floatingBar';
-import { tm, fijarIdioma } from '../idioma';
-import * as remoto from '../servidorLocal';
-import { mandar, type OrdenRemota } from '../mandoRemoto';
-import * as galeria from '../galeria';
-import { avisarTienda } from '../tienda';
-import { comprobarReglaFirewall, abrirReglaFirewall } from '../firewall';
+import { loadConfig, saveConfig, listBackups, restoreBackup, configDanado } from '../sistema/configManager';
+import { applyTriggerableConfig } from '../ventana/trayManager';
+import * as sensors from '../sistema/sensors';
+import { getWeather } from '../integraciones/weather';
+import { obtenerTasas } from '../integraciones/divisas';
+import { avisarCambioDeConfig } from '../ventana/floatingBar';
+import { tm, fijarIdioma } from '../sistema/idioma';
+import * as remoto from '../mando/servidorLocal';
+import { mandar, type OrdenRemota } from '../mando/mandoRemoto';
+import * as galeria from '../integraciones/galeria';
+import { avisarTienda } from '../ventana/tienda';
+import { comprobarReglaFirewall, abrirReglaFirewall } from '../sistema/firewall';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());

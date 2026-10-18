@@ -1,4 +1,4 @@
-import { intentarNativo } from './native';
+import { intentarNativo } from '../sistema/native';
 import { runPSBool } from './ps-helpers';
 
 export async function snapWindow(position: string, processName?: string): Promise<boolean> {
