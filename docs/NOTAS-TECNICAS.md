@@ -26,17 +26,17 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
 - `src/screens/main/` — piezas de la principal: `BarraLateral` (reloj, clima, cuadros de sensores `SensorTile`, RGB,
   registro y franja de música fija anclada al pie), `PestanasPagina` (cambiar, renombrar, reordenar y recibir botones
   arrastrados), `OverlayCarpeta` y `PanelMusica` (panel de música plegable: transporte con aleatorio/repetir a los lados, `CuerpoVideo`, `CuerpoCaratula`, `ManejadorRedimension` y `useCompanionStream`)
-- `src/screens/editor/` — el editor en secciones plegables (`SeccionPresets`, `SeccionAccion`,
-  `SeccionApariencia`, `SeccionComportamiento`, `SeccionAvanzado`) con la vista previa al lado;
-  el estado vive en `useEstadoEditor.ts`. `valoresIniciales.ts` (de qué botón guardado salen los
+- `src/screens/editor/` — el editor en secciones plegables (`secciones/SeccionPresets`, `secciones/SeccionAccion`,
+  `secciones/SeccionApariencia`, `secciones/SeccionComportamiento`, `secciones/SeccionAvanzado`) con la vista previa al lado (`previa/`);
+  el estado vive en `estado/useEstadoEditor.ts`. `datos/valoresIniciales.ts` (de qué botón guardado salen los
   campos del formulario — ahí viven todos los `?? ''`, que eran la mitad de la complejidad de `EditorB`),
   `formularios/` (**un componente por tipo de acción en un mapa `FORMULARIOS`** — añadir un tipo
   es añadir una entrada, no tocar una cadena de condiciones; repartidos por familia: `basicos`,
-  `sistema`, `datos`, `rgb`, `compuestos`), `guardar.ts` (arma el botón a guardar, función pura),
-  `actionData.ts` deriva `PRESET_CATEGORIES` **de los propios presets**: escrita a mano faltaba
+  `sistema`, `datos`, `rgb`, `compuestos`), `datos/guardar.ts` (arma el botón a guardar, función pura),
+  `datos/actionData.ts` deriva `PRESET_CATEGORIES` **de los propios presets**: escrita a mano faltaba
   'RGB', y sus doce botones sembrados no salían por ninguna pestaña — solo buscándolos.
-  `comunes.tsx` (`Field`, `Btn`, los sub-selectores
-  y las funciones de estilo que comparten las secciones), `actionData.ts` (datos puros) y `MacroEditor.tsx`.
+  `campos/comunes.tsx` (`Field`, `Btn`, los sub-selectores
+  y las funciones de estilo que comparten las secciones), `datos/actionData.ts` (datos puros) y `macro/MacroEditor.tsx`.
   (El editor viejo por pasos —`PasoAccion`/`PasoEstilo`/`PasoConfigurar`— se borró el 2026-10-06:
   llevaba muerto desde el 80 y seguía descrito aquí como vivo.)
   `EditorB.tsx` se queda con el estado y el armado de la pantalla.
@@ -152,9 +152,9 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   cosas distintas que estaban dichas como una. **Las carátulas no dependen del
   certificado.**
 - `src/utils/nowPlaying.tsx` — hook que consulta media session via PowerShell
-- `electron/main/audio.ts` — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
-- `electron/main/media.ts` + `mediaEstado`/`mediaScripts`/`mediaAnalisis`/`mediaTipos` — info de reproducción actual + shuffle/repeat via SMTC
-- `electron/main/macro.ts` — grabación de macros (uiohook-napi) + reproducción via PowerShell
+- `electron/main/audio/` (`index` + `volumenApp`) — control de dispositivos de audio (PowerShell + C# IPolicyConfig)
+- `electron/main/media/` (`index` + `mediaEstado`/`mediaScripts`/`mediaAnalisis`/`mediaTipos`) — info de reproducción actual + shuffle/repeat via SMTC
+- `electron/main/launcher/macro.ts` — grabación de macros (uiohook-napi) + reproducción via PowerShell
 - `electron/main/rgb/` — control RGB vía OpenRGB SDK (fachada `index.ts`; el estado tiene un único dueño en `estado.ts`). `SMART_PRESETS`, en `rgb/presets.ts`, son 18 presets que
   se apoyan **solo en modos que el dispositivo ya sabe hacer**: no hay motor de animación,
   VirtualDeck no manda fotogramas. Cada uno lleva color, una lista de modos a intentar (de
@@ -200,7 +200,7 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   hueco de todas las páginas de su grupo; todo lo que **pinta o dispara** usa `botonesResueltos`, lo
   que **edita o guarda** trabaja con `config.buttons` tal cual.
 - `src/comun/` — **lógica pura que comparten el deck y el proceso principal** (interpolar `{var}`,
-  visibilidad condicional, los datos de cada widget). El mando móvil (`electron/main/mandoVivo.ts`) los
+  visibilidad condicional, los datos de cada widget). El mando móvil (`electron/main/mando/mandoVivo.ts`) los
   tenía copiados a mano y ya se habían separado (la divisa). `main-no-renderer` deja importar de aquí, y
   la regla `comun-es-puro` impide que `src/comun` importe nada que no sea `src/types` o ella misma: sin
   React, DOM, electron ni Node. Lo nuevo que tengan que calcular igual los dos procesos va aquí.
@@ -210,12 +210,12 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   SVG. Al móvil va como SVG autónomo en un `<img>`: su CSP solo admite `style` con nonce, así que el halo
   y la animación viajan dentro del propio SVG. Ni el renderer ni la tecla importan el catálogo en estático:
   sigue en su chunk diferido.
-- `electron/main/launcher.ts` + `launcherApps`/`launcherScripts`/`launcherTeclas`/`launcherVentanas`/`launcherBrilloVolumen` — ejecutar apps/scripts/atajos/ventanas
-- `electron/main/configManager.ts` — carga/guardado/backup de configuración (SRP)
-- `electron/main/windowManager.ts` — creación y estado de ventanas (SRP)
-- `electron/main/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
+- `electron/main/launcher/` (`index` + `launcherApps`/`launcherScripts`/`launcherTeclas`/`launcherVentanas`/`launcherBrilloVolumen`) — ejecutar apps/scripts/atajos/ventanas
+- `electron/main/sistema/configManager.ts` — carga/guardado/backup de configuración (SRP)
+- `electron/main/ventana/windowManager.ts` — creación y estado de ventanas (SRP)
+- `electron/main/ventana/trayManager.ts` — tray icon, menú contextual, hotkeys globales (SRP)
 - `electron/main/ipc/` — handlers IPC organizados por dominio (audio, media, macro, config, etc.)
-- `electron/main/galeria.ts` — traerse el deck de otra persona. `resumirRiesgo` es lo
+- `electron/main/integraciones/galeria.ts` — traerse el deck de otra persona. `resumirRiesgo` es lo
   **único** que separa «importar un perfil» de «ejecutar código de un desconocido», y hay
   que mirarlo entero: no basta con recorrer `action`, porque un script escondido en un
   `countdown`, una rama, una carpeta o el «mantener pulsado» no salía en la lista. Y
@@ -224,13 +224,13 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   daba el resumen entero vacío y la pantalla decía «no lanza programas ni ejecuta
   scripts». Medido con ese perfil exacto. Un tipo de acción nuevo que toque el sistema
   hay que añadirlo aquí, o el aviso miente por omisión.
-- `electron/main/divisas.ts` — las tasas de cambio del widget de divisas. Va en el proceso
+- `electron/main/integraciones/divisas.ts` — las tasas de cambio del widget de divisas. Va en el proceso
   principal por lo mismo que la descarga de perfiles: la CSP del renderer solo deja
   conectar con `self` y los dos servicios del clima. Fuente `open.er-api.com` (gratis, sin
   clave, 166 monedas incluido el lempira, una actualización al día). La respuesta dice
   cuándo toca la siguiente, así que no hay intervalo inventado; se cachea en `userData` y
   con eso se sigue enseñando la tasa de ayer sin conexión.
-- `electron/main/idioma.ts` — el puñado de textos que enseña el **proceso principal**
+- `electron/main/sistema/idioma.ts` — el puñado de textos que enseña el **proceso principal**
   (menú de la bandeja, títulos de los diálogos de archivo, los errores que devuelve al
   renderer). No puede usar el i18n de `src/`: son dos procesos. Estaba todo fijo en
   español y la auditoría no lo veía, porque solo miraba `src/`. `fijarIdioma()` se llama
@@ -396,7 +396,7 @@ nunca corrió el código roto. Para compilar: `npm run build:native`.
 `electron/main/plugins/` es un anfitrión **de prueba**: sin la variable no se crea nada. Con ella
 (`node scripts/probar-app.mjs abrir <quien> --plugin=<carpeta .sdPlugin> [--modo=utility|node] [--pulsar] [--pi]`)
 lanza el plugin, le manda `willAppear` y pulsaciones, y abre su PI; todo queda en el registro con `[plugins]`.
-Lo medido y lo que falta para el MVP está en `_referencias/informes/plugins-streamdeck.md` §9. Tres cosas
+Lo medido y lo que falta para el MVP procede de la investigación de plugins previa (informe local no conservado en repo). Tres cosas
 que no se deducen: el `UUID` puede faltar en el manifiesto (sale de la carpeta); para el CORS del PI hay que
 **quitar** las cabeceras `access-control-allow-*` que traiga la respuesta antes de poner las propias (si no,
 Chromium ve dos valores); y `asegurarWebContents` se aplica también a estas ventanas, que llevan su propia

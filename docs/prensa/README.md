@@ -235,7 +235,7 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`.
   nombre de usuario ni marcas de terceros a la vista.
 - **Reproducción — la única excepción.** La franja de música necesita una sesión
   de medios de Windows (SMTC), que es una API del sistema y no tiene cable que
-  enchufar. Así que `electron/main/mediosFijos.ts` lee la pista de un archivo
+  enchufar. Así que `electron/main/media/mediosFijos.ts` lee la pista de un archivo
   **solo si `VD_MEDIOS_FIJOS` está puesta**; sin esa variable devuelve `null` en
   la primera línea y no cambia nada de la aplicación instalada. El archivo es
   `fuentes/reproduccion.json`, y la pista es inventada a propósito: **una
@@ -244,7 +244,7 @@ VirtualDeck intacto.** Nada de esto toca `electron/main` ni `src`.
   que el capturador ejecuta solo si falta el archivo).
   **La barra de progreso sí se muestra**: `PistaFija` (el camino de `VD_MEDIOS_FIJOS`)
   incluye `positionMs`/`durationMs`/`timelineUpdatedAt` en
-  `electron/main/mediosFijos.ts`, y las capturas salen con la barra avanzando.
+  `electron/main/media/mediosFijos.ts`, y las capturas salen con la barra avanzando.
 
 ### Un detalle del producto que salió al hacer esto
 

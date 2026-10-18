@@ -26,18 +26,18 @@ Node.js con acceso al SO. No conoce React. Expone todo vía IPC.
 | Módulo | Responsabilidad única | SRP |
 |--------|----------------------|-----|
 | `index.ts` | Bootstrap: crear app, ventanas y registrar IPC. ~280 líneas. | ✅ |
-| `configManager.ts` | Cargar / guardar / respaldar la configuración en `userData`. | ✅ |
-| `windowManager.ts` | Crear `BrowserWindow` y persistir su tamaño/posición. | ✅ |
-| `trayManager.ts` | Ícono de bandeja, menú contextual y atajos globales. | ✅ |
-| `logger.ts` | Log rotativo en `userData/logs` (512KB, 1 backup). | ✅ |
-| `audio.ts` | Cambiar dispositivo de audio por defecto (núcleo nativo + respaldo PowerShell/C# IPolicyConfig). | ✅ |
-| `media.ts` (+ `mediaEstado`, `mediaScripts`, `mediaAnalisis`, `mediaTipos`) | Leer/controlar la reproducción actual vía SMTC (WinRT); el transporte en `media.ts` y los datos, scripts y diagnóstico por archivo. | ✅ |
-| `macro.ts` | Grabar macros (uiohook-napi) y reproducirlas (PowerShell). | ✅ |
+| `sistema/configManager.ts` | Cargar / guardar / respaldar la configuración en `userData`. | ✅ |
+| `ventana/windowManager.ts` | Crear `BrowserWindow` y persistir su tamaño/posición. | ✅ |
+| `ventana/trayManager.ts` | Ícono de bandeja, menú contextual y atajos globales. | ✅ |
+| `sistema/logger.ts` | Log rotativo en `userData/logs` (512KB, 1 backup). | ✅ |
+| `audio/` (`index` + `volumenApp`) | Cambiar dispositivo de audio por defecto (núcleo nativo + respaldo PowerShell/C# IPolicyConfig). | ✅ |
+| `media/` (`index` + `mediaEstado`, `mediaScripts`, `mediaAnalisis`, `mediaTipos`, `mediosFijos`, `capturaVentana`) | Leer/controlar la reproducción actual vía SMTC (WinRT); el transporte en `media/` y los datos, scripts y diagnóstico por archivo. | ✅ |
+| `launcher/macro.ts` (+ `macroScript`) | Grabar macros (uiohook-napi) y reproducirlas (PowerShell). | ✅ |
 | `rgb/` | Control RGB vía OpenRGB SDK (fachada `index.ts`; estado, conexión, presets, perfiles y servidor por dentro). | ✅ |
-| `launcher.ts` (+ `launcherApps`, `launcherScripts`, `launcherTeclas`, `launcherVentanas`, `launcherBrilloVolumen`) | Ejecutar apps / scripts / atajos / ventanas / brillo y volumen, y abrir URLs y carpetas. | ✅ |
-| `tienda.ts` | Ventana `#tienda`: abrir/enfocar/cerrar + reavisar config a la tienda. | ✅ |
-| `sensors.ts` + `sensors-parser.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL; el parser del árbol de sensores va aparte. | ✅ |
-| `ps-helpers.ts` | Ejecutar PowerShell con prefijo UTF-8 (parser de `param()`). | ✅ |
+| `launcher/` (fachada `index` + `launcherApps`, `launcherScripts`, `launcherTeclas`, `launcherVentanas`, `launcherBrilloVolumen`) | Ejecutar apps / scripts / atajos / ventanas / brillo y volumen, y abrir URLs y carpetas. | ✅ |
+| `ventana/tienda.ts` | Ventana `#tienda`: abrir/enfocar/cerrar + reavisar config a la tienda. | ✅ |
+| `sistema/sensors.ts` + `sistema/sensors-parser.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL; el parser del árbol de sensores va aparte. | ✅ |
+| `launcher/ps-helpers.ts` | Ejecutar PowerShell con prefijo UTF-8 (parser de `param()`). | ✅ |
 | `superficies/` | Controladores físicos (Stream Dock N3): `driver.ts` (contrato `DriverSuperficie`), `dispositivoMirabox.ts`, `protocoloMirabox.ts`, `gestor.ts` y la tabla de `modelos/`. | ✅ |
 | `plugins/` | Anfitrión de plugins de Stream Deck (MVP): manifiesto, instalación, ciclo de vida, eventos, procesos y Property Inspector. | ✅ |
 | `companion/ajustes.ts` | Persistir y sanear ajustes y token de la extensión compañera en `userData/companion.json` (aislado de `deck-config.json`). | ✅ |
@@ -78,10 +78,10 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `FloatingBarB.tsx` / `BarConfigB.tsx` | Barra flotante siempre encima y su configuración. | ✅ |
 | `WallpaperB.tsx` | Elegir el fondo del deck. | ✅ |
 | `RGBManagerB.tsx` | Configurar perfiles y dispositivos RGB (piezas en `rgb/`). | ✅ |
-| `editor/actionData.ts` | Datos puros del editor (tipos de acción, presets). | ✅ |
-| `editor/MacroEditor.tsx` | Editor manual de pasos de macro. | ✅ |
-| `editor/botonConfigurado.ts` | Dice si un botón cuenta como configurado (función pura). | ✅ |
-| `editor/CabeceraEditorB.tsx` | Cabecera del editor: título y selector de modo 1×1/2×2. | ✅ |
+| `editor/datos/actionData.ts` | Datos puros del editor (tipos de acción, presets). | ✅ |
+| `editor/macro/MacroEditor.tsx` | Editor manual de pasos de macro. | ✅ |
+| `editor/datos/botonConfigurado.ts` | Dice si un botón cuenta como configurado (función pura). | ✅ |
+| `editor/previa/CabeceraEditorB.tsx` | Cabecera del editor: título y selector de modo 1×1/2×2. | ✅ |
 | `main/atajosSeleccion.ts` | Atajos de selección múltiple (hook + resolutor puro). | ✅ |
 | `main/BarraSuperiorMain.tsx` | `TitleBar` de la principal con su cableado de config. | ✅ |
 | `main/AvisosContextuales.tsx` | Hints contextuales (uno a la vez, descartables). | ✅ |
@@ -116,7 +116,7 @@ Cada pantalla es una vista de pantalla completa conmutada por `App`.
 | `WeatherWidget.tsx` | Widget de clima (Open-Meteo). | ✅ |
 | `SensorPanel.tsx` | Tarjetas/agrupación de sensores y `SensorTile` (cuadro compacto con métrica, glifo DOT y umbral de color). | ✅ |
 | `ui/` | Primitivas compartidas: `Chip`/`Segmentado`, `BotonIcono` (title obligatorio), `Modal` y `estilos.ts` (campos y botones de texto). | ✅ |
-| `BrandIconDisplay` | Ícono de marca 17×17 (legado): mostrar. Elegir va por el catálogo (`editor/SelectorIconosDot`). | ✅ |
+| `BrandIconDisplay` | Ícono de marca 17×17 (legado): mostrar. Elegir va por el catálogo (`editor/campos/SelectorIconosDot`). | ✅ |
 | `settings/RGBSection` · `settings/SensorsSection` · `settings/CompanionSection` | Secciones extraídas de Ajustes (RGB, sensores y extensión compañera). | ✅ |
 | `help/HelpAboutPanel.tsx` | Panel Ayuda y Acerca de. | ✅ |
 

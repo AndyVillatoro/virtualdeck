@@ -26,25 +26,26 @@ Antes de tocar código:
 virtualdeck/
 ├── electron/
 │   ├── main/                  # Proceso principal Electron (Node)
-│   │   ├── index.ts           # Bootstrap (~95 lns) — solo orquestación
-│   │   ├── audio.ts           # COM IPolicyConfig para cambiar default device
-│   │   ├── media.ts           # SMTC: nowPlaying, control, shuffle, repeat (+ media*.ts)
-│   │   ├── macro.ts           # uiohook-napi grabador + PS playback
-│   │   ├── rgb/               # OpenRGB SDK (fachada index.ts)
-│   │   ├── launcher.ts        # apps/scripts/hotkeys/clipboard/etc. (+ launcher*.ts)
-│   │   ├── sensors.ts         # LibreHardwareMonitor HTTP polling (+ sensors-parser.ts)
-│   │   ├── weather.ts         # Open-Meteo
-│   │   ├── ps-helpers.ts      # runPS — wrapper de PowerShell con UTF-8
-│   │   ├── configManager.ts   # load/save/backup config JSON
-│   │   ├── windowManager.ts   # BrowserWindow + bounds persistence
-│   │   ├── trayManager.ts     # tray + global shortcuts
-│   │   └── ipc/               # 10+ módulos: 1 archivo por dominio IPC
+│   │   ├── index.ts           # Bootstrap — orquestación de servicios
+│   │   ├── audio/             # Dispositivo por defecto, volumen app
+│   │   ├── media/             # SMTC: nowPlaying, control, timeline, captura
+│   │   ├── launcher/          # Apps/scripts/hotkeys/ventanas/brillo y volumen/macro/ps-helpers
+│   │   ├── rgb/               # OpenRGB SDK (estado, conexión, presets, servidor)
+│   │   ├── mando/             # Servidor HTTP local y mando móvil en navegador
+│   │   ├── integraciones/     # Discord, Spotify, divisas, galería, clima
+│   │   ├── sistema/           # configManager, logger, sensors, firewall, idioma, native
+│   │   ├── ventana/           # windowManager, trayManager, displays, floatingBar, tienda
+│   │   ├── superficies/       # Docks físicos (N3 Mirabox/Ajazz)
+│   │   ├── companion/         # Servidor de extensión compañera (WS/HTTP)
+│   │   ├── plugins/           # Anfitrión de plugins Stream Deck
+│   │   └── ipc/               # Controladores IPC por dominio
 │   └── preload/index.ts       # contextBridge — API expuesta al renderer
+├── companion-extension/       # Extensión compañera de navegador (Manifest V3)
 ├── src/                       # Renderer (React)
 │   ├── App.tsx                # Root + estado global de config
 │   ├── design.ts              # Tokens VD/VD_LIGHT, ACCENT_PRESETS
-│   ├── types.ts               # Todos los tipos compartidos
-│   ├── screens/               # MainB, EditorB, FullscreenB, RGBManagerB, WallpaperB
+│   ├── types.ts               # Shim canónico hacia src/types/
+│   ├── screens/               # Pantallas (MainB, EditorB, FullscreenB, DispositivosB...)
 │   │   └── editor/            # actionData.ts, MacroEditor.tsx
 │   ├── components/            # ButtonCell, TitleBar, etc.
 │   │   └── settings/          # RGBSection, SensorsSection, settingHelpers
@@ -61,6 +62,9 @@ virtualdeck/
 ├── CLAUDE.md                  # Reglas, protocolo, mapa rápido y trampas (se carga en cada sesión)
 └── CONTRIBUTING.md            # ← este archivo
 ```
+
+> 📖 **Mapa SRP:** Cada módulo y su responsabilidad única están en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).  
+> 🧩 **Notas técnicas:** Detalles de bajo nivel (SMTC, uiohook, audio COM, extensión y docks) en [`docs/NOTAS-TECNICAS.md`](docs/NOTAS-TECNICAS.md).
 
 ---
 
@@ -420,7 +424,7 @@ El gate único es **`npm run check`** (`tsc --noEmit` + `dependency-cruiser` + `
 1. Agregá el literal a `ActionType` en `src/types.ts`.
 2. Agregá los campos opcionales que necesites a `ButtonAction`.
 3. Implementá el `case` en `executeAction` (`src/utils/actions.ts`) devolviendo `ActionResult` con `ok` y `error?` legible.
-4. Registrá el tipo en `src/screens/editor/actionData.ts` (label/icono/desc) y agregá su bloque de inputs en el paso CONFIGURAR de `EditorB.tsx`.
+4. Registrá el tipo en `src/screens/editor/datos/actionData.ts` (label/icono/desc) y agregá su formulario en `src/screens/editor/formularios/` (mapa `FORMULARIOS`).
 5. Sumá el literal al `Set` `ACTION_TYPES` de `src/utils/configMigration.ts` (si no, la validación de import lo rechaza).
 6. Si querés que el valor sea visible en un botón, considerá un `widget`.
 

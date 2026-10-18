@@ -9,9 +9,8 @@ Cubre el ítem 115 del roadmap («Compatibilidad multi-dock y revisión de OpenD
 - **Licencia: OpenDeck es GPL-3.0.** Este informe describe conductas, formatos y
   flujos para reimplementar desde cero; no se transcribe su código ni debe
   reutilizarse en VirtualDeck.
-- Informe previo relacionado: `_referencias/informes/opendeck.md` (2026-10-03,
-  protocolo del host de plugins en detalle). Este documento no lo repite: lo
-  referencia y se centra en hardware, SDK/distribución, comparativa y roadmap.
+- Informe previo relacionado: investigación previa (informe local no conservado en repo, 2026-10-03,
+  protocolo del host de plugins en detalle). Este documento no lo repite: se centra en hardware, SDK/distribución, comparativa y roadmap.
 
 ---
 
@@ -112,8 +111,8 @@ diales por ventanas de 200 px y `resize_exact(248, 58)` para la infobar.
 
 ## 2. Arquitectura de plugins y SDK
 
-El protocolo (eventos, registro, ciclo `keyDown`/`setImage`/…) está documentado
-en `_referencias/informes/opendeck.md` §§3-6 y sigue vigente en este commit. Aquí
+El protocolo (eventos, registro, ciclo `keyDown`/`setImage`/…) quedó documentado
+en la investigación inicial (informe local previo no conservado en repo) y sigue vigente en este commit. Aquí
 solo el resumen operativo más lo que aquel informe no cubría (SDK, distribución,
 dispositivos virtuales).
 

@@ -126,7 +126,7 @@ Cualquier perfil descargado pasa por `validateConfig`. Los errores se muestran c
 ⚙ → **TIENDA** → **ABRIR TIENDA**: se abre el catálogo en ventana propia, sale la
 lista, y al elegir una entrada se enseña **qué va a ejecutar** antes de importar.
 
-La descarga la hace el proceso principal (`electron/main/galeria.ts`), no la
+La descarga la hace el proceso principal (`electron/main/integraciones/galeria.ts`), no la
 pantalla: la CSP del renderer solo deja conectar con `self` y los dos servicios
 del clima, y un `fetch` desde la interfaz tumbaba la ventana.
 

@@ -1,9 +1,12 @@
-# Envío a Microsoft Store — VirtualDeck 0.14.1
+# Envío y Novedades a Microsoft Store — VirtualDeck 0.14.1
+
+Documento unificado de entrega y novedades para la versión 0.14.1 (consolida las notas oficiales bilingües y la ficha técnica de submission).
 
 - **Paquete generado**: `dist/VirtualDeck-0.14.1.msix` (120.5 MB)
 - **Versión MSIX**: `0.14.1.0`
-- **Fecha de compilación**: 2026-10-09
+- **Fecha de compilación / release**: 2026-10-09
 - **Canal de distribución**: Exclusivo Microsoft Store
+- **Fuentes de texto**: `docs/store/novedades-0.14.1-es.txt`, `docs/store/novedades-0.14.1-en.txt` y `CHANGELOG.md`.
 
 ---
 
@@ -19,27 +22,25 @@
 
 ## 2. Novedades de esta versión (What's New)
 
-Archivos individuales listos para copiar y pegar:
+Archivos individuales de texto plano listos para copiar y pegar:
 - Español: [`docs/store/novedades-0.14.1-es.txt`](novedades-0.14.1-es.txt)
 - English: [`docs/store/novedades-0.14.1-en.txt`](novedades-0.14.1-en.txt)
 
-### Texto en Español
-```text
-- Vídeo nativo en el panel de música en todos los formatos: resolución adaptativa según el tamaño en pantalla, reduciendo el consumo de CPU a un tercio sin pérdida de nitidez. Disponible en formato vertical estándar y en barra alargada (1280×480).
-- Detección de oclusión de ventana: aviso visual automático cuando otra aplicación cubre el reproductor de vídeo en segundo plano.
-- Portada web y galería renovadas: visualización interactiva con transición de puntos al scrollear, consola táctil interactiva, tráiler bilingüe (ES/EN) y banners en alta resolución.
-- Compilación automatizada de vd-core: el núcleo nativo de bajo nivel se compila e integra automáticamente en el empaquetado.
-- Soporte oficial y exclusivo en Microsoft Store: actualizaciones fluidas y seguras garantizadas mediante paquete MSIX con firma de confianza y certificación oficial de Windows.
-```
+### Texto en Español (ES)
 
-### Texto en Inglés
-```text
-- Native video in the music panel across all layouts: adaptive capture resolution matching on-screen dimensions, reducing CPU usage to one-third without losing crispness. Available in both standard vertical panel and ultrawide bar layout (1280x480).
-- Window occlusion detection: automatic visual notification when another window covers the video player in the background.
-- Redesigned web showcase and gallery: scroll-driven dot matrix dissolve transition, interactive touch console, bilingual trailer (ES/EN), and high-resolution banner captures.
-- Automated vd-core build: low-level native core is automatically compiled and bundled during the store build pipeline.
-- Official and exclusive Microsoft Store distribution: seamless and secure updates backed by trusted MSIX packaging and official Windows certification.
-```
+- **Vídeo nativo en el panel de música, en todos los formatos.** La resolución de captura se adapta al tamaño pintado en pantalla, bajando el consumo de CPU a un tercio (de 1,78 % a 0,64 %) sin perder nitidez. Disponible en el panel vertical estándar y en la barra alargada (1280x480), con botón `[VIDEO]`.
+- **Detección de oclusión de ventana.** Aviso visual automático (`music.videoCongelado`) cuando otra ventana tapa el navegador que reproduce el vídeo y la imagen se congela.
+- **Portada web y galería renovadas.** Transición de disolvencia dot-matrix al hacer scroll, consola táctil interactiva de 12 teclas, tráilers bilingües (ES/EN, ~41,7 s) y 11 banners en alta resolución (1080p).
+- **Compilación automatizada de `vd-core`.** El núcleo nativo se compila e integra solo (`npm run build:store`) antes de empaquetar para la Store.
+- **Soporte oficial y exclusivo en Microsoft Store.** Paquete MSIX firmado, con certificación oficial de Windows y actualizaciones fluidas y seguras. El instalador `.exe` / NSIS queda retirado: quien lo tenga debe pasarse a la Store, porque ya no recibirá actualizaciones automáticas.
+
+### Texto en Inglés (EN)
+
+- **Native video in the music panel, across all layouts.** Capture resolution adapts to the on-screen size, cutting CPU usage to one-third (from 1.78 % to 0.64 %) without losing crispness. Available in the standard vertical panel and in the ultrawide bar layout (1280x480), with a `[VIDEO]` button.
+- **Window occlusion detection.** Automatic visual notice (`music.videoCongelado`) when another window covers the browser playing the video and the frame freezes.
+- **Redesigned web showcase and gallery.** Scroll-driven dot-matrix dissolve transition, interactive 12-key touch console, bilingual trailers (ES/EN, ~41.7 s) and 11 high-resolution banners (1080p).
+- **Automated `vd-core` build.** The native core is compiled and bundled automatically (`npm run build:store`) before packaging for the Store.
+- **Official and exclusive Microsoft Store distribution.** Signed MSIX package with official Windows certification and seamless, secure updates. The `.exe` / NSIS installer is retired: anyone still on it must move to the Store, as it will no longer receive automatic updates.
 
 ---
 

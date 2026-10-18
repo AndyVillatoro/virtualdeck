@@ -15,7 +15,7 @@ Documento de auditoría técnica (roadmap 82). Cubre la coherencia funcional y v
 | **Principal** | `pantallas` | `src/screens/MainB.tsx` → `src/screens/main/CeldaPrincipal.tsx` → `src/components/ButtonCell.tsx` | `src/utils/pulsarBoton.ts` |
 | **Kiosko** | `pantallas` | `src/screens/FullscreenB.tsx` → `src/components/ButtonCell.tsx` | `src/utils/pulsarBoton.ts` |
 | **Barra flotante** | `pantallas` | `src/screens/FloatingBarB.tsx` → `src/components/ButtonCell.tsx` | `src/utils/pulsarBoton.ts` |
-| **Mando móvil** | `movil` | `electron/main/paginaMando.ts` (+ `iconosMando.ts`, `servidorLocal.ts` `listaDeBotones`) | `electron/main/servidorLocal.ts` → `virtualdeck://press/` → IPC `button:trigger` → `src/App.tsx` (`dispararBoton`) |
+| **Mando móvil** | `movil` | `electron/main/mando/paginaMando.ts` (+ `iconosMando.ts`, `servidorLocal.ts` `listaDeBotones`) | `electron/main/mando/servidorLocal.ts` → `virtualdeck://press/` → IPC `button:trigger` → `src/App.tsx` (`dispararBoton`) |
 | **Tecla física (dock)** | `dock` | `src/utils/superficies/pintarTecla.ts` (+ `iconoSvg.tsx`, `useAnimacionLcd.ts`) | `src/utils/superficies/useSuperficies.ts` → `src/App.tsx` (`dispararBoton`) |
 
 ---
