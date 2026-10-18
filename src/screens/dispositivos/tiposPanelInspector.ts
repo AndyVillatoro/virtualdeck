@@ -14,6 +14,7 @@ export interface PanelInspectorControlProps {
     control: ControlSuperficie;
     indice: number;
     gesto?: 'izq' | 'pulsar' | 'der';
+    tieneLcd?: boolean;
   } | null;
   boton?: ButtonConfig;
   disabled?: boolean;

@@ -125,3 +125,34 @@ export function MiniPreview({
     </div>
   );
 }
+
+/** Aviso para controles físicos que no disponen de pantalla LCD propia. */
+export function AvisoControlSinLcd({
+  vd,
+  texto,
+}: {
+  vd: ReturnType<typeof useTheme>;
+  texto: string;
+}) {
+  return (
+    <div
+      style={{
+        background: vd.surface,
+        border: `1px solid ${vd.border}`,
+        borderLeft: `2px solid ${vd.accent}`,
+        borderRadius: vd.radius.sm,
+        padding: `${vd.space.sm}px ${vd.space.md}px`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: vd.space.sm,
+        fontFamily: vd.mono,
+        fontSize: 8.5,
+        lineHeight: 1.6,
+        color: vd.textDim,
+      }}
+    >
+      <DotGlyphIcon glyph="LOCK" size={10} color={vd.accent} />
+      <span>{texto}</span>
+    </div>
+  );
+}

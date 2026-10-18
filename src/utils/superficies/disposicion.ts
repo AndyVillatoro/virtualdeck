@@ -82,16 +82,17 @@ export type GestoHueco = 'izq' | 'pulsar' | 'der';
 
 /** El control físico al que pertenece un hueco (para la pantalla de dispositivos). */
 export function controlDeHueco(d: DisposicionSuperficie, hueco: number):
-  { control: ControlSuperficie; indice: number; gesto?: GestoHueco } | null {
+  { control: ControlSuperficie; indice: number; gesto?: GestoHueco; tieneLcd: boolean } | null {
   if (hueco < 0) return null;
   const b = bases(d);
   for (let i = 0; i < d.controles.length; i++) {
     const c = d.controles[i];
     const resto = hueco - b[i];
     if (resto < 0 || resto >= HUECOS_POR_TIPO[c.tipo]) continue;
-    if (c.tipo === 'knob') return { control: c.tipo, indice: c.indice, gesto: (['izq', 'pulsar', 'der'] as const)[resto] };
-    if (c.tipo === 'swipe') return { control: c.tipo, indice: c.indice, gesto: resto === 0 ? 'izq' : 'der' };
-    return { control: c.tipo, indice: c.indice };
+    const tieneLcd = Boolean(c.lcd);
+    if (c.tipo === 'knob') return { control: c.tipo, indice: c.indice, gesto: (['izq', 'pulsar', 'der'] as const)[resto], tieneLcd };
+    if (c.tipo === 'swipe') return { control: c.tipo, indice: c.indice, gesto: resto === 0 ? 'izq' : 'der', tieneLcd };
+    return { control: c.tipo, indice: c.indice, tieneLcd };
   }
   return null;
 }

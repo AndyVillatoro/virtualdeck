@@ -8,7 +8,7 @@ import { SelectorPluginControl } from './SelectorPluginControl';
 import { LimiteErrorInspector } from './LimiteErrorInspector';
 import { PanelPerfilesPagina } from './PanelPerfilesPagina';
 import { PanelVacio } from './PanelInspectorVacio';
-import { MiniPreview } from './PreviaInspector';
+import { MiniPreview, AvisoControlSinLcd } from './PreviaInspector';
 import { BotonEditar, FilaAccion, SeccionModos } from './PiezasInspector';
 import { ListaHermanosPerilla } from './ListaHermanosPerilla';
 import { obtenerNombreYTipoControl, textoAccionSeleccionada } from './textoPanelInspector';
@@ -16,6 +16,8 @@ import { contextoDeBoton } from '../../utils/plugins/ref';
 import { useAppearPluginPreview } from '../../utils/plugins/useAppearPluginPreview';
 import type { PanelInspectorControlProps } from './tiposPanelInspector';
 import type { ButtonAction, ButtonConfig } from '../../types';
+import type { PresetHueco } from '../../data/presetsDock';
+import type { PerfilDock } from '../../data/perfilesDock';
 
 export type { HermanoPerilla, PanelInspectorControlProps } from './tiposPanelInspector';
 
@@ -54,25 +56,17 @@ function huecosDeTira(
   return { botones: [boton, hermano], seleccionado: 0 };
 }
 
-export function PanelInspectorControl({
-  controlMeta,
-  boton,
-  disabled = false,
-  onEditar,
-  onAplicarPreset,
-  ancho,
-  onCerrar,
-  hermanosPerilla,
-  onSelectHueco,
-  perilla,
-  modoActivo,
-  onFijarModos,
-  serial,
-}: PanelInspectorControlProps) {
-  const VD = useTheme();
-  const t = useT();
-  const w = ancho ?? 290;
+function filtrarPresetSinLcd(entrada: PresetHueco[]): PresetHueco[] {
+  return entrada.map((h) => ({
+    ...h,
+    icon: '',
+    bgColor: undefined,
+    fgColor: undefined,
+    iconoCatalogo: undefined,
+  }));
+}
 
+function useBotonVistaInspector(boton: ButtonConfig | undefined, serial?: string | null) {
   const [pluginPrevia, setPluginPrevia] = useState<{ pluginUuid: string; accionUuid: string } | null>(null);
 
   useEffect(() => {
@@ -123,6 +117,30 @@ export function PanelInspectorControl({
 
   const glifo = resolveDotGlyph(botonParaVista?.icon);
 
+  return { botonParaVista, glifo, contexto, setPluginPrevia };
+}
+
+export function PanelInspectorControl({
+  controlMeta,
+  boton,
+  disabled = false,
+  onEditar,
+  onAplicarPreset,
+  ancho,
+  onCerrar,
+  hermanosPerilla,
+  onSelectHueco,
+  perilla,
+  modoActivo,
+  onFijarModos,
+  serial,
+}: PanelInspectorControlProps) {
+  const VD = useTheme();
+  const t = useT();
+  const w = ancho ?? 290;
+
+  const { botonParaVista, glifo, contexto, setPluginPrevia } = useBotonVistaInspector(boton, serial);
+
   if (!controlMeta) {
     if (onAplicarPreset) {
       return (
@@ -141,6 +159,17 @@ export function PanelInspectorControl({
   const { nombre, tipo } = obtenerNombreYTipoControl(controlMeta, t);
   const textoAccion = textoAccionSeleccionada(controlMeta, boton, t);
   const pluginHuecos = huecosParaPlugin({ controlMeta, boton, perilla, hermanosPerilla });
+  const tieneLcd = Boolean(controlMeta.tieneLcd ?? (controlMeta.control === 'key'));
+
+  const handleAplicarPreset = onAplicarPreset
+    ? (entrada: PresetHueco[] | PerfilDock) => {
+        if (!Array.isArray(entrada) || tieneLcd) {
+          onAplicarPreset(entrada);
+          return;
+        }
+        onAplicarPreset(filtrarPresetSinLcd(entrada));
+      }
+    : undefined;
 
   return (
     <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
@@ -213,15 +242,19 @@ export function PanelInspectorControl({
           gap: VD.space.md,
         }}
       >
-        <MiniPreview
-          boton={botonParaVista}
-          glifo={glifo}
-          nombreControl={nombre}
-          controlTipo={controlMeta.control}
-          vd={VD}
-          vacioTexto={t('disp.vacio')}
-          contexto={contexto}
-        />
+        {tieneLcd ? (
+          <MiniPreview
+            boton={botonParaVista}
+            glifo={glifo}
+            nombreControl={nombre}
+            controlTipo={controlMeta.control}
+            vd={VD}
+            vacioTexto={t('disp.vacio')}
+            contexto={contexto}
+          />
+        ) : (
+          <AvisoControlSinLcd vd={VD} texto={t('disp.inspector.sinLcd')} />
+        )}
 
         {/* Tipo de control */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -285,24 +318,24 @@ export function PanelInspectorControl({
         </div>
 
         {/* Selector de presets si viene la prop */}
-        {onAplicarPreset && (
+        {handleAplicarPreset && (
           <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
             <SelectorPresetsControl
               control={controlMeta.control}
-              onAplicar={onAplicarPreset}
+              onAplicar={handleAplicarPreset}
               disabled={disabled}
             />
           </div>
         )}
 
         {/* Plugins instalados: la misma acción `plugin` del editor */}
-        {onAplicarPreset && pluginHuecos && (
+        {handleAplicarPreset && pluginHuecos && (
           <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
             <SelectorPluginControl
               key={boton?.id}
               botones={pluginHuecos.botones}
               seleccionado={pluginHuecos.seleccionado}
-              onAplicar={onAplicarPreset}
+              onAplicar={handleAplicarPreset}
               disabled={disabled}
               onCambiarPrevia={(pluginUuid, accionUuid) => setPluginPrevia({ pluginUuid, accionUuid })}
             />
