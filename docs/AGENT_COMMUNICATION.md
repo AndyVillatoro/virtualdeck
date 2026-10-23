@@ -175,6 +175,12 @@ Utiliza este apartado para dejar mensajes, advertencias técnicas o instruccione
     - `node scripts/prensa/caratula.mjs` **no hace nada en Windows**: el guardia `import.meta.url === \`file://${process.argv[1]}\`` nunca cuadra (`file:///C:/...` contra `file://C:\...`). Regeneré el JSON con un `node -e` que importa `reproduccion()`. Es un arreglo de una línea; no lo he tocado por no salirme del encargo.
     - Nada de esto está en el `[Unreleased]` del `CHANGELOG`.
 
+* **2026-10-22** — *opencode run Kimi K2.7 Code (T-CYC-01, acción `cycle`)*:
+  - Terminado: tipo + manejador, formulario, aspecto en celda/LCD/mando móvil, riesgo de galería, preset "Ambiente RGB", i18n ES/EN, wiki ES/EN y prueba pura.
+  - Arreglos finales: parámetro `accent` sin usar renombrado a `_accent` en `formularios/ciclo.tsx`; añadidas las 4 etiquetas de ciclo en `FIELDS_EN`.
+  - `npm run check` 7/7 guardianes verdes (0 errores, 0 advertencias), `npm run build` 1,78 s, `npx tsx scripts/probar-ciclo.ts` verde.
+  - **No probado en app real**: el candado de `scripts/probar-app.mjs` está ocupado por la copia de «t-deu-06» (PID 9184). La prueba manual en pantalla queda pendiente de liberar el candado.
+
 ---
 
 ## 3. Checklist de Entrega de Turno (Handoff Checklist)
@@ -208,3 +214,13 @@ Antes de liberar tu turno o enviar tu commit, marca que has cumplido:
 | **T-DOC-02** | P2 | Deuda tecnica al roadmap y docs unificadas | w18 Gemini 3.8 Flash | `docs/**`, README, CONTRIBUTING, `companion-extension/*.md` | `DONE` (roadmap filas 123-125 añadidas, docs extensión y 0.14.1 unificadas, deuda-tecnica borrada, check-wiki verde) | 2026-10-18 |
 | **T-PRE-01** | P3 | Proponer imagenes de prensa que sobran (solo lectura) | w17 Beam Free | ninguno | `DONE` (check, build, tsx y cargo en verde) | 2026-10-18 |
 | **T-ORG-02** | P2 | Reorganizar `src/screens/editor/` + comentarios con rutas viejas del main | w12 Muse Spark (Go) | `src/screens/editor/**`, imports y comentarios en `src/**`, `scripts/**` (rutas) | `DONE` (check 0 errores 7/7 guardianes, depcruise 504 módulos 0 violaciones, build ok, 5 probar-tsx verdes, editor abierto en app real con 5 secciones y 0 errores de consola; sin commit: lo pide el encargo) | 2026-10-18 |
+| **T-DEU-05** | P2 | Partir `formularios/sistema.tsx` (121a) | w19 DeepSeek V4.1 Flash Free | `formularios/sistema.tsx`, `formularios/sistema/**`, rutas en `check-campos`/`check-acciones` | `DONE` (movimiento puro verificado linea a linea por el supervisor; check y build en verde; sin commit) | 2026-10-22 |
+| **T-DEU-06** | P2 | Partir `EditorSubdivision2x2.tsx` y `VistaPreviaPiezas.tsx` (121b) | w17 MiMo-V2.6-Flash Free | esos dos + archivos nuevos junto a ellos | `DONE` (movimiento puro verificado por el supervisor; check/build verdes; probado en app) | 2026-10-22 |
+| **T-DEU-07** | P2 | Partir `PestanasSuperficie`, `FichaTienda`, `PluginsSection` (123 parte) | w18 agy Gemini 3.8 Flash | esos tres + archivos nuevos junto a ellos | `DONE` (movimiento puro verificado linea a linea por el supervisor; check y build en verde; sin commit) | 2026-10-22 |
+| **T-CYC-01** | P1 | Accion generica `cycle` (120 fase 3) | opencode run Kimi K2.7 Code (Go; Muse Spark cayo con "model not found") | ver `_referencias/encargos/T-CYC-01-accion-cycle.md` | `DONE` | 2026-10-22 |
+| **T-SEC-07** | P1 | Revision de seguridad de red y codigo ajeno (solo lectura) | w15 agy Gemini 4 Argon | ninguno (informe en `_referencias/informes/`) | `DONE` (17 hallazgos; el supervisor verifico los altos: H-11 y H-01 reales y altos, H-02/H-09 reales pero medios/bajos; H-01, H-02 y H-11 arreglados por el supervisor) | 2026-10-22 |
+| **T-SEC-08** | P1 | Endurecimiento acotado H-03/05/07/09/12/13/15/16/17 | opencode run Kimi K2.7 Code (Go) | ver `_referencias/encargos/T-SEC-08-endurecer.md` | `CLAIMED` | 2026-10-22 |
+| **T-DOC-03** | P3 | Documentar shims y politicas "no unificar" (124) | w17 MiMo-V2.6-Flash Free | comentarios en `src/types.ts`/`src/data/brandIcons.ts`, `NOTAS-TECNICAS.md`, fila 124 | `DONE` (revisado por el supervisor; check/build verdes) | 2026-10-22 |
+| **T-CYC-02** | P2 | Pulir formulario del ciclo con primitivas (SelectorColor, glifos, excluir `cycle`) | w18 agy Gemini 3.8 Flash | `formularios/ciclo.tsx`, `filas/FilaRama.tsx`, claves `ed.cycle.*` | `DONE` (revisado; el supervisor cambio colores fijos por tokens del tema) | 2026-10-22 |
+| **T-DEU-08** | P2 | Partir `paginaMando.ts` e `iconosMando.ts` (121e) | w19 DeepSeek V4.1 Flash Free | `electron/main/mando/` (esos dos + nuevos) | `DONE` (HTML del mando identico en 30 combinaciones tema/acento/motor, verificado por el supervisor contra HEAD; check/build verdes) | 2026-10-22 |
+| **T-DEU-09** | P2 | Partir `App.tsx` y `MainB.tsx` (123 resto) | opencode run GLM 5.3 Flash Free | esos dos + nuevos en `src/app/`, `src/screens/main/` | `CLAIMED` | 2026-10-22 |

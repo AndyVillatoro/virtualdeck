@@ -236,7 +236,7 @@ const DEBEN_VERSE = [
   // si la lectura de campos se rompia, el autotest se ponia verde igual. Estos
   // dos se piden con `tf('TITULO')` y `tf('A')` en el codigo, con comillas
   // dobles y con un solo caracter, que es justo lo que rompia el matcher.
-  ['TÍTULO', 'FIELDS_EN, tf("TÍTULO") en formularios/sistema.tsx'],
+  ['TÍTULO', 'FIELDS_EN, tf("TÍTULO") en formularios/sistema/avisos.tsx'],
   ['A', 'FIELDS_EN, placeholder={tf(\'A\')} en CamposDivisa.tsx'],
 ];
 const noLasVe = DEBEN_VERSE.filter(([k]) => !ref.codigo.has(k) && !DINAMICAS.has(k) && !CAMPOS.has(k));

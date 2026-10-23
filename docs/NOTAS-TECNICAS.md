@@ -378,6 +378,39 @@ y apunta aquí. **Leer la sección correspondiente antes de tocar esa zona.**
   canónico resuelve a ese comando.
 - **Audio device switching**: `audio.ts` chequea HRESULT por cada `SetDefaultEndpoint` (3 roles: Console/Multimedia/Communications). Si `IPolicyConfig` falla con `E_NOINTERFACE`, prueba `IPolicyConfigVista` (IID `568b9108-44bf-40b4-9006-86afe5b5a620`). Después de setear, vuelve a consultar `GetDefaultAudioEndpoint` para verificar que el cambio se aplicó (algunos drivers aceptan la llamada sin aplicarla). Logs en `console.error` con prefix `[audio]`.
 
+## Cosas que parecen duplicadas y no lo son (roadmap 124)
+
+Política «no unificar»: existen a propósito, y borrarlas o fusionarlas rompe cosas que el build
+no avisa. Lo que se puede demostrar con el código está abajo; lo que no, se marca como sin confirmar.
+
+- **`src/types.ts` — shim de tipos, NO borrar.** Un solo `export *` desde `src/types/`, pero lo
+  importan ~199 ficheros del renderer por ruta corta (`./types`, `../types`, `../../types`…) y 33 de
+  `electron/main` por `../../../src/types`. `.dependency-cruiser.cjs` permite a main/preload
+  `^src/types(/|\.ts$|$)` junto a `src/comun/`: la ruta corta forma parte del contrato de dependencias,
+  no es descuido.
+- **`src/data/brandIcons.ts` — shim del catálogo de marcas, NO borrar.** Los datos (~42 KiB de
+  bitmaps) viven en `src/comun/brandIcons.ts` porque el proceso principal también los necesita (el
+  mando móvil resuelve la marca vía `src/comun/marcaSvg`) y `electron/main` no puede importar de
+  `src/data`. La ruta vieja se conserva porque `utils/catalogoMarcas.ts` la baja con `import()`
+  diferido: es la única puerta de ese chunk, que no debe entrar en el bundle inicial.
+- **`DotText` vs `DotLabel` — no son la misma cosa.** `DotText` dibuja la matriz real letra a letra
+  desde `GLYPHS_5x7` (`design.ts`): un `<div>` por punto, quita las tildes para no perder la letra,
+  encoge punto y hueco hasta caber en `maxWidth` y pinta la trama de puntos apagados que sigue al
+  tema; es el de titulares e identidad, y `check-i18n` exige declararlo (`DOTTEXT_DECLARADOS`) y
+  que sus claves existan en la fuente. `DotLabel` es un `<span>` con la fuente DOT `DotGothic16`
+  (`VD.dots`): barato, sin límite de caracteres y sin mapa de puntos detrás. Unificarlas o bien
+  perdería la matriz real o bien el rótulo barato de todos los paneles. *Sin confirmar*: si hubo
+  además una decisión explícita al margen de lo que se lee en los dos componentes.
+- **Puntero de ratón vs táctil — dos hooks que no hacen lo mismo.** `celda/usePulsacionTactil.ts` va
+  por `addEventListener` con `preventDefault` (los eventos táctiles de React son pasivos y sin eso
+  mantener el dedo abría el menú contextual y arrastraba la página) y **mantener pulsado arrastra**,
+  porque el arrastre HTML5 es solo de ratón. `celda/usePulsacionRaton.ts` queda para **clic y
+  pulsación larga = acción alternativa**, porque el ratón ya arrastra por su cuenta. El destello y
+  el sonido salen de un solo sitio (`destellar()`, dentro del hook de ratón): estaban copiados en
+  tres gestos que leían props en vez de referencias. Fusionarlos en un solo hook volvería a mezclar
+  gestos que el `memo` de la celda distingue. *Sin confirmar*: qué pantalla táctil real motivó el
+  cambio (la política ya estaba al escribir estos hooks).
+
 ## 🦀 El núcleo Rust vuelve a compilar (2026-10-04)
 
 Las notas que dicen «el `.node` no se puede recompilar» (Smart App Control, os error 4551) **ya no
