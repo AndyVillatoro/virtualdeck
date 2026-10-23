@@ -11,16 +11,20 @@
  * y al abrir el editor se rellenan los huecos con sub-botones vacíos para que no
  * haya que comprobar el tamaño en cada sitio.
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../../utils/theme';
-import { textoSobre } from '../../../design';
 import { useT, useFieldText } from '../../../utils/i18n';
 import { DotLabel } from '../../../components/DotLabel';
-import { DotGlyphIcon, ALL_DOT_GLYPHS } from '../../../components/dot480/DotGlyphIcon';
+import { DotGlyphIcon } from '../../../components/dot480/DotGlyphIcon';
 import { IconoPuntos } from '../../../components/dot480/IconoPuntos';
 import { ACTION_TYPES } from '../datos/actionData';
 import { QuadActionInputs, inputEstilo } from '../campos/QuadActionInputs';
+import { QuadColorPicker, QuadGlyphPicker } from './subdivision2x2/pickers';
+import { SUBDIVISION_PRESETS } from './subdivision2x2/presets';
 import type { ActionType, SubButtonConfig } from '../../../types';
+
+// Export público que se mantiene en la misma ruta (quien lo importa no cambia).
+export { SUBDIVISION_PRESETS };
 
 interface EditorSubdivision2x2Props {
   parentId: string;
@@ -34,252 +38,12 @@ interface EditorSubdivision2x2Props {
 const BG_SWATCHES = ['#111315', '#1a1424', '#0d1b2a', '#1a3320', '#2a0000', '#242014', '#1f150a', '#141414'];
 const FG_SWATCHES = ['#e6e8eb', '#38bdf8', '#4ade80', '#fbbf24', '#f43f5e', '#a78bfa', '#ff9a00', '#ffffff'];
 
-export const SUBDIVISION_PRESETS = [
-  {
-    id: 'media',
-    nameKey: 'ed.split.presetMedia',
-    glyph: 'PLAY',
-    buttons: [
-      { idSuffix: 'q0', label: 'PREV', dotGlyph: 'PREV', action: { type: 'media-prev' as ActionType } },
-      { idSuffix: 'q1', label: 'NEXT', dotGlyph: 'NEXT', action: { type: 'media-next' as ActionType } },
-      { idSuffix: 'q2', label: 'PLAY', dotGlyph: 'PLAY', action: { type: 'media-play-pause' as ActionType }, isToggle: true },
-      { idSuffix: 'q3', label: 'MUTE', dotGlyph: 'MUTE', action: { type: 'mute' as ActionType }, isToggle: true },
-    ],
-  },
-  {
-    id: 'arrows',
-    nameKey: 'ed.split.presetArrows',
-    glyph: 'ARROW_UP',
-    buttons: [
-      { idSuffix: 'q0', label: 'UP', dotGlyph: 'ARROW_UP', action: { type: 'hotkey' as ActionType, hotkey: 'Up' } },
-      { idSuffix: 'q1', label: 'DOWN', dotGlyph: 'ARROW_DOWN', action: { type: 'hotkey' as ActionType, hotkey: 'Down' } },
-      { idSuffix: 'q2', label: 'LEFT', dotGlyph: 'ARROW_LEFT', action: { type: 'hotkey' as ActionType, hotkey: 'Left' } },
-      { idSuffix: 'q3', label: 'RIGHT', dotGlyph: 'ARROW_RIGHT', action: { type: 'hotkey' as ActionType, hotkey: 'Right' } },
-    ],
-  },
-  {
-    id: 'shortcuts',
-    nameKey: 'ed.split.presetShortcuts',
-    glyph: 'TERMINAL',
-    buttons: [
-      { idSuffix: 'q0', label: 'TERM', dotGlyph: 'TERMINAL', action: { type: 'script' as ActionType, script: 'wt' } },
-      { idSuffix: 'q1', label: 'CODE', dotGlyph: 'CODE', action: { type: 'app' as ActionType, appPath: 'code' } },
-      { idSuffix: 'q2', label: 'WEB', dotGlyph: 'WEB', action: { type: 'web' as ActionType, url: 'https://' } },
-      { idSuffix: 'q3', label: 'CONF', dotGlyph: 'GEAR', action: { type: 'none' as ActionType } },
-    ],
-  },
-  {
-    id: 'audio',
-    nameKey: 'ed.split.presetAudio',
-    glyph: 'SPEAKER',
-    buttons: [
-      { idSuffix: 'q0', label: 'VOL+', dotGlyph: 'ARROW_UP', action: { type: 'volume-up' as ActionType } },
-      { idSuffix: 'q1', label: 'VOL-', dotGlyph: 'ARROW_DOWN', action: { type: 'volume-down' as ActionType } },
-      { idSuffix: 'q2', label: 'MUTE', dotGlyph: 'MUTE', action: { type: 'mute' as ActionType }, isToggle: true },
-      { idSuffix: 'q3', label: 'MIC', dotGlyph: 'MIC', action: { type: 'audio-device' as ActionType } },
-    ],
-  },
-];
-
 const QUAD_KEYS = [
   { idx: 0, code: 'TL', labelKey: 'ed.quadrant.tl' },
   { idx: 1, code: 'TR', labelKey: 'ed.quadrant.tr' },
   { idx: 2, code: 'BL', labelKey: 'ed.quadrant.bl' },
   { idx: 3, code: 'BR', labelKey: 'ed.quadrant.br' },
 ];
-
-function QuadColorPicker({
-  label,
-  value,
-  swatches,
-  onChange,
-  VD,
-  tf,
-}: {
-  label: string;
-  value?: string;
-  swatches: string[];
-  onChange: (color?: string) => void;
-  VD: ReturnType<typeof useTheme>;
-  tf: (s: string) => string;
-}) {
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <DotLabel size={9} color={VD.textMuted} spacing={2}>{label}</DotLabel>
-        {value && (
-          <button
-            onClick={() => onChange(undefined)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: VD.textDim,
-              fontFamily: VD.mono,
-              fontSize: 8,
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            {tf('RESTABLECER')}
-          </button>
-        )}
-      </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-        {swatches.map((c) => {
-          const isSelected = value === c;
-          return (
-            <button
-              key={c}
-              onClick={() => onChange(c)}
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: VD.radius.sm,
-                background: c,
-                border: isSelected ? `2px solid ${textoSobre(c)}` : `1px solid ${VD.border}`,
-                cursor: 'pointer',
-                padding: 0,
-                boxShadow: isSelected ? '0 0 6px rgba(255,255,255,0.4)' : undefined,
-              }}
-              title={c}
-            />
-          );
-        })}
-        <input
-          type="text"
-          value={value || ''}
-          placeholder="#HEX"
-          maxLength={9}
-          onChange={(e) => onChange(e.target.value || undefined)}
-          style={{
-            width: 70,
-            height: 20,
-            padding: '2px 6px',
-            fontFamily: VD.mono,
-            fontSize: 9,
-            background: VD.surface,
-            border: `1px solid ${VD.border}`,
-            color: VD.text,
-            borderRadius: VD.radius.sm,
-            boxSizing: 'border-box',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function QuadGlyphPicker({
-  selectedGlyph,
-  onSelect,
-  onAbrirCatalogo,
-  accent,
-  VD,
-  t,
-  tf,
-}: {
-  selectedGlyph: string;
-  onSelect: (g: string) => void;
-  onAbrirCatalogo?: () => void;
-  accent: string;
-  VD: ReturnType<typeof useTheme>;
-  t: (k: string) => string;
-  tf: (s: string) => string;
-}) {
-  const [filtro, setFiltro] = useState('');
-
-  const glyphsFiltrados = useMemo(() => {
-    if (!filtro.trim()) return ALL_DOT_GLYPHS;
-    const q = filtro.toUpperCase().trim();
-    return ALL_DOT_GLYPHS.filter((g) => g.includes(q));
-  }, [filtro]);
-
-  const estiloEnlace: React.CSSProperties = {
-    background: 'transparent',
-    border: 'none',
-    color: VD.textDim,
-    fontFamily: VD.mono,
-    fontSize: 8,
-    cursor: 'pointer',
-    padding: 0,
-  };
-
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <DotLabel size={9} color={VD.textMuted} spacing={2}>{t('ed.split.icon')}</DotLabel>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {onAbrirCatalogo && (
-            <button onClick={onAbrirCatalogo} style={{ ...estiloEnlace, color: accent }}>
-              {tf('CATÁLOGO')}
-            </button>
-          )}
-          <button onClick={() => onSelect('')} style={estiloEnlace}>
-            {t('ed.split.noIcon')}
-          </button>
-        </div>
-      </div>
-
-      <input
-        type="text"
-        placeholder={tf('Buscar icono...')}
-        value={filtro}
-        onChange={(e) => setFiltro(e.target.value)}
-        style={{
-          width: '100%',
-          marginTop: 6,
-          marginBottom: 6,
-          padding: '4px 8px',
-          background: VD.surface,
-          border: `1px solid ${VD.border}`,
-          color: VD.text,
-          fontFamily: VD.mono,
-          fontSize: 10,
-          borderRadius: VD.radius.sm,
-          boxSizing: 'border-box',
-        }}
-      />
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(28px, 1fr))',
-          gap: 4,
-          maxHeight: 100,
-          overflowY: 'auto',
-          padding: 6,
-          background: VD.elevated,
-          borderRadius: VD.radius.sm,
-          border: `1px solid ${VD.border}`,
-        }}
-      >
-        {glyphsFiltrados.map((g) => {
-          const isSelected = selectedGlyph === g;
-          return (
-            <button
-              key={g}
-              onClick={() => onSelect(g)}
-              style={{
-                height: 28,
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: isSelected ? `${accent}33` : VD.surface,
-                border: isSelected ? `1px solid ${accent}` : `1px solid ${VD.border}`,
-                borderRadius: VD.radius.sm,
-                cursor: 'pointer',
-              }}
-              title={g}
-            >
-              <DotGlyphIcon glyph={g} size={13} color={isSelected ? accent : VD.text} />
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export function EditorSubdivision2x2({
   parentId,
