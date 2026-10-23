@@ -1,18 +1,22 @@
-import { DOT_GLYPHS_8X8, resolveDotGlyph } from '../../../src/components/dot480/dotGlyphsCatalog';
-import { GLIFO_POR_TIPO_ACCION } from '../../../src/components/dot480/glifosPorTipoAccion';
-import { matrizDePuntos16 } from '../../../src/components/dot480/puntos16';
 import { dataUriDeMarca, resolverMarca } from '../../../src/comun/marcaSvg';
 import { textoSobre } from '../../../src/comun/contraste';
 import {
   aplicarAspectoAudio as fusionarAspectoAudio,
   resolverAspectoAudio,
 } from '../../../src/comun/audioIcono';
+import {
+  aplicarAspectoCiclo as fusionarAspectoCiclo,
+  resolverAspectoCiclo,
+} from '../../../src/comun/cicloIcono';
 import { estadoActual } from '../sistema/estadoSistema';
-import type { EfectoPulsar, SliderWidgetConfig } from '../../../src/types';
+import type { ButtonAction, EfectoPulsar, SliderWidgetConfig } from '../../../src/types';
+import { mapearImagen, resolverIconoMando, type IconoPuntosMando } from './resolucionIconosMando';
+
+export type { IconoPuntosMando } from './resolucionIconosMando';
 
 /**
  * El icono de cada botón, resuelto en el proceso principal para el mando
- * móvil (roadmap 82).
+ * móvil (roadmap 82), y el aspecto con el que se pinta.
  *
  * Antes `paginaMando.ts` traía su propia tabla de glifos 8×8 (`G8`),
  * incompleta y copiada a mano: todo icono que no estuviera ahí —`CHAT`,
@@ -21,26 +25,10 @@ import type { EfectoPulsar, SliderWidgetConfig } from '../../../src/types';
  * mismos que la celda: catálogo 16×16, glifo por nombre, glifo del tipo de
  * acción) y lo manda ya como puntos. La página solo los dibuja.
  *
+ * La resolución de los puntos vive en `resolucionIconosMando.ts`; aquí queda el
+ * aspecto del botón (audio, ciclo, interruptor y marca) y el montaje final.
  * Módulo puro, sin Electron ni Node: se puede probar con esbuild + node.
  */
-
-/** Un icono ya resuelto a puntos: lado 8 (DOT 8×8) o 16 (catálogo). */
-export interface IconoPuntosMando {
-  lado: 8 | 16;
-  /** Una fila por número: bit 7 (8×8) o bit 15 (16×16) = izquierda. */
-  filas: number[];
-}
-
-/** Lo que el servidor manda por botón: puntos siempre, texto solo si `icon` no es glifo. */
-interface IconoResueltoMando {
-  puntos: IconoPuntosMando;
-  /**
-   * `icon` cuando no resuelve a ningún glifo (texto corto tipo «AB» o texto
-   * largo): la página lo dibuja como texto, como la celda, en vez de los
-   * puntos del tipo de acción.
-   */
-  iconTexto?: string;
-}
 
 interface SubBotonMandoMovil {
   id: string;
@@ -114,6 +102,16 @@ export interface BotonFuenteMando {
       fgColor?: string;
       bgColor?: string;
     }>;
+    cycleSteps?: Array<{
+      id: string;
+      label?: string;
+      sublabel?: string;
+      icon?: string;
+      iconoPuntos?: { bits: string; origen: string };
+      fgColor?: string;
+      bgColor?: string;
+      action: ButtonAction;
+    }>;
   };
   longPressAction?: { type: string };
   bgColor?: string;
@@ -160,93 +158,6 @@ export interface BotonFuenteMando {
 }
 
 /**
- * Los 5 alias de la tabla vieja (`G8`/`ALIAS` en `paginaMando.ts`) que
- * `resolveDotGlyph` no cubre. Se resuelven **por nombre** contra el catálogo
- * compartido: aquí no hay filas copiadas, solo los nombres que faltaban para
- * no cambiar lo que el móvil ya dibujaba. El quinto (el que la tabla vieja
- * mandaba a MINIMIZE) se construye por códigos para no depender de cómo lo
- * enseñe el editor.
- */
-const ALIAS_EXTRA: Record<string, string> = {
-  VOLUME: 'SPEAKER',
-  '📊': 'CPU',
-  '◷': 'CLOCK',
-  '⛶': 'FULLSCREEN',
-};
-ALIAS_EXTRA[String.fromCharCode(0xd83d, 0xddd7)] = 'MINIMIZE';
-
-/** Filas 8×8 de un nombre ya resuelto, o `null` si no existe. */
-function filas8(nombre: string | null | undefined): number[] | null {
-  if (!nombre) return null;
-  const filas = DOT_GLYPHS_8X8[nombre];
-  return filas ? [...filas] : null;
-}
-
-/** El icono del catálogo 16×16 copiado en el botón, como filas de 16 bits. */
-function filasDeCatalogo(bits: string | undefined): number[] | null {
-  if (!bits) return null;
-  const matriz = matrizDePuntos16(bits);
-  if (!matriz) return null;
-  return matriz.map((fila) =>
-    fila.reduce((n, encendido, x) => n | (encendido ? 1 << (15 - x) : 0), 0));
-}
-
-/** Glifo por nombre (`icon` o `dotGlyph` de un sub-botón), con los alias extra. */
-function filasDeNombre(icon: string | undefined, dotGlyph: string | undefined): number[] | null {
-  if (icon) {
-    const directo = filas8(resolveDotGlyph(icon));
-    if (directo) return directo;
-    const recortado = icon.trim();
-    const extra = ALIAS_EXTRA[recortado.toUpperCase()] ?? ALIAS_EXTRA[recortado];
-    if (extra) {
-      const porAlias = filas8(extra);
-      if (porAlias) return porAlias;
-    }
-  }
-  return filas8(dotGlyph);
-}
-
-/** Último recurso, como la celda: el glifo del tipo de acción. */
-function filasDeAccion(tipo: string | undefined): number[] {
-  const nombre = (GLIFO_POR_TIPO_ACCION as Record<string, string>)[tipo ?? ''] ?? 'DOTS';
-  return [...(DOT_GLYPHS_8X8[nombre] ?? DOT_GLYPHS_8X8.DOTS)];
-}
-
-/**
- * Resuelve el icono de un botón en el mismo orden que la celda
- * (`ContenidoCentral`): catálogo 16×16 → glifo por nombre → tipo de acción.
- * El fondo (imagen/marca) y el 5×7 los sigue decidiendo la página, que ya
- * los recibe aparte.
- */
-function resolverIconoMando(fuente: {
-  iconoPuntos?: { bits: string; origen: string };
-  icon?: string;
-  dotGlyph?: string;
-  actionType?: string;
-}): IconoResueltoMando {
-  const catalogo = filasDeCatalogo(fuente.iconoPuntos?.bits);
-  if (catalogo) return { puntos: { lado: 16, filas: catalogo } };
-  const nombrado = filasDeNombre(fuente.icon, fuente.dotGlyph);
-  if (nombrado) return { puntos: { lado: 8, filas: nombrado } };
-  const puntos = { lado: 8 as const, filas: filasDeAccion(fuente.actionType) };
-  const texto = fuente.icon?.trim();
-  return texto ? { puntos, iconTexto: texto } : { puntos };
-}
-
-/** `vd://images/…` → ruta servida por `/media/images/`. */
-function mapearImagen(imageData: string | undefined): string | undefined {
-  if (!imageData) return undefined;
-  if (imageData.startsWith('vd://images/')) {
-    return `/media/images/${encodeURIComponent(imageData.slice('vd://images/'.length))}`;
-  }
-  if (imageData.startsWith('vd://')) {
-    const resto = imageData.slice('vd://'.length).replace(/^images[/\\]/, '');
-    return `/media/images/${encodeURIComponent(resto)}`;
-  }
-  return imageData;
-}
-
-/**
  * Botón tal como se pinta en el móvil: con el `aspectoEncendido` si el
  * interruptor está encendido (roadmap 79). La misma regla que la celda y la
  * tecla física; duplicada aquí porque el proceso principal no puede importar
@@ -260,7 +171,7 @@ function mapearImagen(imageData: string | undefined): string | undefined {
  * teléfono re-pide `/api/buttons` cada 3 s y redibuja si cambió, así que el
  * icono cambia solo al conmutar, sin mecanismo de aviso nuevo.
  */
-function aplicarAspecto(b: BotonFuenteMando, encendido: boolean): BotonFuenteMando {
+function aplicarAspecto(b: BotonFuenteMando, encendido: boolean, state?: Record<string, string>): BotonFuenteMando {
   if (b.action?.type === 'audio-device') {
     const aspecto = resolverAspectoAudio(
       {
@@ -273,6 +184,17 @@ function aplicarAspecto(b: BotonFuenteMando, encendido: boolean): BotonFuenteMan
       estadoActual().activeAudioDeviceId,
     );
     return fusionarAspectoAudio(b, aspecto);
+  }
+  if (b.action?.type === 'cycle') {
+    const aspecto = resolverAspectoCiclo(
+      {
+        type: 'cycle',
+        cycleSteps: b.action.cycleSteps,
+      },
+      state,
+      b.id,
+    );
+    return fusionarAspectoCiclo(b, aspecto);
   }
   if (!encendido || !b.isToggle) return b;
   const aspecto = b.aspectoEncendido;
@@ -308,8 +230,8 @@ function marcaDeMando(
 }
 
 /** Un botón de la config → lo que el móvil necesita para pintarlo y pulsarlo. */
-export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoMovil {
-  const fuente = aplicarAspecto(b, encendido);
+export function botonAMando(b: BotonFuenteMando, encendido = false, state?: Record<string, string>): BotonMandoMovil {
+  const fuente = aplicarAspecto(b, encendido, state);
   const resuelto = resolverIconoMando({
     iconoPuntos: fuente.iconoPuntos,
     icon: fuente.icon,
@@ -362,130 +284,3 @@ export function botonAMando(b: BotonFuenteMando, encendido = false): BotonMandoM
     }),
   };
 }
-
-/**
- * La animación de la página del móvil, como texto para incrustar.
- *
- * Vive aquí y no en `paginaMando.ts` para no pasar el tope de 600 líneas de
- * ese archivo: es código de la página (sin tipos, con `var`), no del
- * servidor, y `paginaMando` lo interpola dentro del script que lleva el
- * nonce. Por eso no lleva ni comillas invertidas ni interpolaciones: romperían
- * el literal que lo contiene.
- */
-export const JS_ANIMACION_MANDO = `
-var animadosMovil = [];
-var rafMovil = 0;
-var ocultoMovilEn = 0;
-
-function matrizDePuntos(puntos) {
-  var lado = puntos && puntos.lado === 16 ? 16 : 8;
-  var filas = (puntos && puntos.filas) || [];
-  var mascara = lado === 16 ? 65535 : 255;
-  var m = [];
-  for (var y = 0; y < lado; y++) {
-    var f = [];
-    var bits = ((typeof filas[y] === 'number' && isFinite(filas[y]) ? Math.trunc(filas[y]) : 0) & mascara);
-    for (var x = 0; x < lado; x++) f.push(((bits >> ((lado - 1) - x)) & 1) === 1);
-    m.push(f);
-  }
-  return m;
-}
-
-function continuaMovil(b) {
-  if (!b.animacion || !b.animacion.efecto) return null;
-  if (b.animacion.cuando === 'siempre') return b.animacion.efecto;
-  if (b.animacion.cuando === 'encendido' && b.encendido) return b.animacion.efecto;
-  return null;
-}
-
-function entradaMovil(celda) {
-  for (var i = 0; i < animadosMovil.length; i++) {
-    if (animadosMovil[i].celda === celda) return animadosMovil[i];
-  }
-  return null;
-}
-
-function arrancarMovil() {
-  if (rafMovil || animadosMovil.length === 0) return;
-  rafMovil = requestAnimationFrame(pasoMovil);
-}
-
-function pasoMovil(ahora) {
-  rafMovil = 0;
-  var vivos = [];
-  for (var i = 0; i < animadosMovil.length; i++) {
-    var a = animadosMovil[i];
-    var intens = null;
-    var sigue = false;
-    if (a.pulso) {
-      var durP = HAY_MOTOR.duracionEfecto(a.pulso.efecto);
-      var dt = ahora - a.pulso.t0;
-      if (dt >= durP) {
-        a.pulso = null;
-      } else {
-        intens = HAY_MOTOR.calcularPuntos(a.matriz, a.pulso.efecto, dt).intensidades;
-        sigue = true;
-      }
-    }
-    if (!sigue && a.continua) {
-      var durC = HAY_MOTOR.duracionEfecto(a.efecto);
-      var t = (HAY_MOTOR.esContinuo(a.efecto) || durC <= 0)
-        ? ahora - a.inicio
-        : (ahora - a.inicio) % durC;
-      intens = HAY_MOTOR.calcularPuntos(a.matriz, a.efecto, t).intensidades;
-      sigue = true;
-    }
-    for (var j = 0; j < a.celdas.length; j++) {
-      var c = a.celdas[j];
-      var v = intens && intens[c.y] ? (intens[c.y][c.x] || 0) : 1;
-      c.el.setAttribute('opacity', String(v < 0 ? 0 : v > 1 ? 1 : v));
-    }
-    if (sigue) vivos.push(a);
-  }
-  animadosMovil = vivos;
-  if (vivos.length > 0 && !document.hidden) rafMovil = requestAnimationFrame(pasoMovil);
-}
-
-document.addEventListener('visibilitychange', function () {
-  if (document.hidden) {
-    ocultoMovilEn = performance.now();
-  } else if (animadosMovil.length > 0) {
-    var pausa = performance.now() - ocultoMovilEn;
-    for (var i = 0; i < animadosMovil.length; i++) {
-      animadosMovil[i].inicio += pausa;
-      if (animadosMovil[i].pulso) animadosMovil[i].pulso.t0 += pausa;
-    }
-    arrancarMovil();
-  }
-});
-
-function registrarAnimado(b, celda, celdas) {
-  if (!HAY_MOTOR || REDUCIDO || !b.puntos || !celdas || celdas.length === 0) return;
-  var fx = continuaMovil(b);
-  if (!fx) return;
-  animadosMovil.push({
-    celda: celda, celdas: celdas, matriz: matrizDePuntos(b.puntos),
-    efecto: fx, continua: true, inicio: performance.now(), pulso: null,
-  });
-  arrancarMovil();
-}
-
-function animarPulsoMovil(b, celda, celdas) {
-  if (!HAY_MOTOR || !b.puntos || !celdas || celdas.length === 0) return;
-  var fx = b.efectoPulsar || 'destello';
-  if (fx !== 'destello' && fx !== 'onda') {
-    fx = b.animacion && b.animacion.cuando === 'al-pulsar' ? b.animacion.efecto : null;
-    if (!fx) return;
-  }
-  var a = entradaMovil(celda);
-  if (!a) {
-    a = {
-      celda: celda, celdas: celdas, matriz: matrizDePuntos(b.puntos),
-      efecto: '', continua: false, inicio: 0, pulso: null,
-    };
-    animadosMovil.push(a);
-  }
-  a.pulso = { efecto: fx, t0: performance.now() };
-  arrancarMovil();
-}
-`;

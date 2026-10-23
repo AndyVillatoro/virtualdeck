@@ -107,7 +107,7 @@ async function baseViva(): Promise<BaseViva> {
 export async function botonesVivosParaMando(): Promise<BotonMandoMovil[]> {
   const base = await baseViva();
   return base.botones.map((b) => {
-    const m = botonAMando(b, b.isToggle === true && base.encendidos.has(b.id));
+    const m = botonAMando(b, b.isToggle === true && base.encendidos.has(b.id), base.estado);
     // Solo la etiqueta principal, como el deck (`resolvedLabel`): la
     // subetiqueta viaja tal cual.
     if (m.label.includes('{')) m.label = interpolate(m.label, base.estado);
