@@ -91,6 +91,7 @@ export const ACTION_TYPES: ActionTypeInfo[] = [
   { type: 'discord',           label: 'act.discord.label',          glyph: GLIFO_POR_TIPO_ACCION.discord,          desc: 'act.discord.desc',          familia: 'integraciones' },
   { type: 'spotify',           label: 'act.spotify.label',          glyph: GLIFO_POR_TIPO_ACCION.spotify,          desc: 'act.spotify.desc',          familia: 'integraciones' },
   { type: 'plugin',             label: 'act.plugin.label',           glyph: GLIFO_POR_TIPO_ACCION.plugin,            desc: 'act.plugin.desc',           familia: 'integraciones' },
+  { type: 'cycle',              label: 'act.cycle.label',            glyph: GLIFO_POR_TIPO_ACCION.cycle,             desc: 'act.cycle.desc',            familia: 'logica' },
 ];
 
 
@@ -221,6 +222,19 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'RGB', label: 'RGB Ola',        icon: 'SPARKLE', bgColor: '#001418', fgColor: '#00d0ff', action: { type: 'rgb-preset', rgbPresetId: 'wave' } },
   { category: 'RGB', label: 'RGB Fiesta',     icon: 'SPARKLE', bgColor: '#140014', fgColor: '#ff40c0', action: { type: 'rgb-preset', rgbPresetId: 'party' } },
   { category: 'RGB', label: 'RGB Estrobo',    icon: 'SPARKLE', bgColor: '#141414', fgColor: '#ffffff', action: { type: 'rgb-preset', rgbPresetId: 'strobe' } },
+  // 7.x — Ciclo genérico de presets (T-CYC-01)
+  {
+    category: 'RGB', label: 'Ambiente RGB', icon: 'REPEAT', bgColor: '#111315', fgColor: '#e6e8eb',
+    action: {
+      type: 'cycle',
+      cycleSteps: [
+        { id: 'work',   label: 'TRABAJO',  sublabel: 'RGB', icon: 'SPARKLE', bgColor: '#111116', fgColor: '#c8d8ff', action: { type: 'rgb-preset', rgbPresetId: 'work' } },
+        { id: 'gaming', label: 'GAMING',   sublabel: 'RGB', icon: 'SPARKLE', bgColor: '#1a0000', fgColor: '#ff3300', action: { type: 'rgb-preset', rgbPresetId: 'gaming' } },
+        { id: 'cinema', label: 'CINEMA',   sublabel: 'RGB', icon: 'SPARKLE', bgColor: '#0a0000', fgColor: '#aa2233', action: { type: 'rgb-preset', rgbPresetId: 'cinema' } },
+        { id: 'off',    label: 'APAGADO',  sublabel: 'RGB', icon: 'MINIMIZE', bgColor: '#050505', fgColor: '#444444', action: { type: 'rgb-preset', rgbPresetId: 'off' } },
+      ],
+    },
+  },
 ];
 
 /**

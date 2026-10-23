@@ -93,6 +93,7 @@ Requieren OpenRGB — ver [Sensores y RGB](Sensores-y-RGB).
 |------|--------|-------------|
 | `branch` | `branchVar`, `branchOp`, `branchValue`, `branchThen`, `branchElse?` | Compara una variable y ejecuta una rama u otra. Operadores: `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`, `empty`, `not-empty`. |
 | `countdown` | `timerDelay` (ms), `timerActions` | Espera y luego ejecuta una sub-secuencia. La acción del final se elige en el campo **AL TERMINAR** del editor; sin ella el botón espera y no hace nada. Hasta una hora. |
+| `cycle` | `cycleSteps` (lista de `{ id, label?, sublabel?, icon?, iconoPuntos?, fgColor?, bgColor?, action }`) | Rota entre varios pasos en cada pulsación. El botón muestra el label/sublabel/icono/colores del paso actual (índice guardado en `state['__cycle_<id>']`), ejecuta su `action` y avanza al siguiente. Un paso no puede contener otro `cycle`. |
 
 ## Media extendido
 

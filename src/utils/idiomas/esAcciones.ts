@@ -184,4 +184,13 @@ export const ES_ACCIONES: Dict = {
   'act.err.plugin': 'El plugin «{plugin}» no está instalado, está deshabilitado o no ha arrancado.',
   'act.err.pluginSinRef': 'Falta elegir plugin y acción en el editor del botón.',
   'act.err.pluginSinContexto': 'No se sabe desde qué botón se ejecutó (no es un botón del deck).',
+  // 7.x — Ciclo genérico de presets (T-CYC-01)
+  'act.cycle.label': 'Ciclo',
+  'act.cycle.desc': 'Rota entre varias acciones predefinidas en cada pulsación (presets RGB, ajustes…)',
+  'act.lbl.cycle': 'Ciclo ({n} pasos)',
+  'act.err.cycleVacio': 'El ciclo no tiene pasos.',
+  'act.err.cycleSinBoton': 'El ciclo solo puede usarse en un botón del deck.',
+  'act.err.cycleRecursivo': 'Un paso de ciclo no puede contener otro ciclo.',
+  'act.err.cycleSinEjecutor': 'El ejecutor de ciclos no está inicializado.',
+  'act.err.cycleSubAccion': 'El paso de ciclo no puede ejecutar la acción «{tipo}».',
 };

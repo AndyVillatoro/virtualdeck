@@ -3,6 +3,9 @@ import type { DatosWidget } from '../../comun/widgets';
 import {
   aplicarAspectoAudio, resolverAspectoAudio, type AspectoAudio,
 } from '../../comun/audioIcono';
+import {
+  aplicarAspectoCiclo, resolverAspectoCiclo, type AspectoCiclo,
+} from '../../comun/cicloIcono';
 import { teclasLcd } from './disposicion';
 import { contextoDe } from '../plugins/ref';
 import { leerVisual } from '../plugins/visual';
@@ -25,7 +28,7 @@ function firmaDe(
   boton: ButtonConfig | undefined, encendido: boolean,
   ancho: number, alto: number, rotacion: number,
   colores: ColoresSuperficie, fuentes: boolean, datos?: DatosWidget | null,
-  visual?: PluginVisual | null, audio?: string | null,
+  visual?: PluginVisual | null, audio?: string | null, ciclo?: string | null,
 ): string {
   if (!boton) return `empty:${ancho}:${alto}:${rotacion}:${fuentes}`;
   // `label`/`sublabel` llegan ya interpolados desde `paginaDe`: la firma lleva
@@ -36,6 +39,7 @@ function firmaDe(
   // `audio` es la salida activa + el aspecto reactivo de los botones de
   // audio: sin esto la tecla no se repinta al cambiar la salida fuera del
   // botón (Fase 2 del switch).
+  // `ciclo` es el aspecto del paso actual de un botón `cycle`.
   return JSON.stringify([
     boton.label, boton.sublabel, boton.icon, boton.iconoPuntos?.bits, boton.imageData,
     boton.customGlyph57, boton.brandIcon, boton.subButtons,
@@ -44,6 +48,7 @@ function firmaDe(
     boton.isToggle, boton.animacion, boton.efectoPulsar, boton.aspectoEncendido, encendido,
     ancho, alto, rotacion, colores.fondo, colores.texto, colores.aviso, colores.critico,
     fuentes, firmaWidget(datos), visual?.imagen ?? null, visual?.titulo ?? null, audio ?? null,
+    ciclo ?? null,
   ]);
 }
 
@@ -99,6 +104,16 @@ function aspectoAudioDe(
   return { aspecto, firma };
 }
 
+/** El aspecto reactivo de un botón `cycle` y su parte de la firma. */
+function aspectoCicloDe(
+  boton: ButtonConfig | undefined, state: Record<string, string> | undefined,
+): { aspecto: AspectoCiclo | null; firma: string | null } {
+  if (!boton || boton.action.type !== 'cycle') return { aspecto: null, firma: null };
+  const aspecto = resolverAspectoCiclo(boton.action, state, boton.id);
+  const firma = `${aspecto?.label ?? ''}|${aspecto?.sublabel ?? ''}|${aspecto?.icon ?? ''}|${aspecto?.bgColor ?? ''}|${aspecto?.fgColor ?? ''}`;
+  return { aspecto, firma };
+}
+
 /** Pinta las teclas cuya firma cambió y devuelve las imágenes nuevas por hueco. */
 export async function pintarCambiadas(
   api: ElectronAPI,
@@ -120,12 +135,15 @@ export async function pintarCambiadas(
   for (const { hueco, indice, lcd } of teclasLcd(pagina.disposicion)) {
     const boton = pagina.botones[hueco];
     const encendido = !!boton && encendidos.has(boton.id);
-    const { aspecto, firma: firmaAudio } = aspectoAudioDe(boton, ctxAudio);
-    const efectivo = boton ? aplicarAspectoAudio(resolverBotonLcd(boton, encendido), aspecto) : boton;
+    const { aspecto: aspectoAudio, firma: firmaAudio } = aspectoAudioDe(boton, ctxAudio);
+    const { aspecto: aspectoCiclo, firma: firmaCiclo } = aspectoCicloDe(boton, config.state);
+    let efectivo = boton ? resolverBotonLcd(boton, encendido) : boton;
+    if (efectivo) efectivo = aplicarAspectoAudio(efectivo, aspectoAudio);
+    if (efectivo) efectivo = aplicarAspectoCiclo(efectivo, aspectoCiclo);
     const datos = boton ? widgets[boton.id] : undefined;
     const visual = visualDe(boton, config);
     const rotacion = pagina.rotacion ?? lcd.rotacion;
-    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes, datos, visual, firmaAudio);
+    const firma = firmaDe(efectivo, encendido, lcd.ancho, lcd.alto, rotacion, colores, fuentes, datos, visual, firmaAudio, firmaCiclo);
     nuevas[hueco] = firma;
     if (previas[hueco] === firma) continue;
     // Una tecla que está enseñando un aviso no se pisa: la firma queda al día

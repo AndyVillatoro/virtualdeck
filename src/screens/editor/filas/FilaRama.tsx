@@ -11,6 +11,7 @@ export interface PropsFilaRama {
   action: ButtonAction;
   onChange: (a: ButtonAction) => void;
   accent: string;
+  excluir?: ActionType[];
 }
 
 interface PropsDetalleRama {
@@ -27,15 +28,18 @@ function estiloSelector(VD: VDTokens): React.CSSProperties {
   return estiloDesplegable(VD);
 }
 
-export function BranchActionRow({ action, onChange, accent }: PropsFilaRama) {
+export function BranchActionRow({ action, onChange, accent, excluir }: PropsFilaRama) {
   const VD = useTheme();
   const selectStyle = estiloSelector(VD);
   const tr = useT();
   const simpleTypes: ActionType[] = ['none', 'set-var', 'incr-var', 'hotkey', 'script', 'notify', 'webhook', 'clipboard', 'type-text', 'volume-set', 'brightness', 'rgb-preset', 'window-snap'];
+  const tiposVisibles = excluir && excluir.length > 0
+    ? simpleTypes.filter(ty => !excluir.includes(ty))
+    : simpleTypes;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <select value={action.type} onChange={(e) => onChange({ type: e.target.value as ActionType })} style={{ ...selectStyle }}>
-        {simpleTypes.map(ty => (
+        {tiposVisibles.map(ty => (
           <option key={ty} value={ty}>{tr(ACTION_TYPES.find(at => at.type === ty)?.label ?? '') || ty}</option>
         ))}
       </select>

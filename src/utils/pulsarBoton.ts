@@ -247,7 +247,7 @@ export async function pulsarBoton(
   if (fallo && (btn.action.type === 'folder' || resto.length === 0)) return fallo;
   const base = e.config.state ?? {};
   const r = await conPlazo(
-    runActionSequence(resto, e.api, base, ganchoScripts(resto, e), e.config.rgb?.profiles, e.t),
+    runActionSequence(resto, e.api, base, ganchoScripts(resto, e), e.config.rgb?.profiles, e.t, btn.id),
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
   persistirYCrujir(r, base, e);
@@ -274,7 +274,7 @@ async function ejecutarApagado(btn: ButtonConfig, e: EntornoPulsacion): Promise<
   // variable— se perdía sin aviso.
   const base = e.config.state ?? {};
   const r = await conPlazo(
-    runActionSequence([off], e.api, base, ganchoScripts([off], e), e.config.rgb?.profiles, e.t),
+    runActionSequence([off], e.api, base, ganchoScripts([off], e), e.config.rgb?.profiles, e.t, btn.id),
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
   persistirYCrujir(r, base, e);
@@ -333,7 +333,7 @@ export async function pulsacionLarga(
   // pulsar normal.
   const base = e.config.state ?? {};
   const r = await conPlazo(
-    runActionSequence([btn.longPressAction], e.api, base, ganchoScripts([btn.longPressAction], e), e.config.rgb?.profiles, e.t),
+    runActionSequence([btn.longPressAction], e.api, base, ganchoScripts([btn.longPressAction], e), e.config.rgb?.profiles, e.t, btn.id),
     { ok: false, error: e.t('act.err.timeout'), stateUpdate: {} },
   );
   persistirYCrujir(r, base, e);

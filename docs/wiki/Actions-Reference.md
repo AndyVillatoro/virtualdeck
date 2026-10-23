@@ -96,6 +96,7 @@ These need OpenRGB — see [Sensors & RGB](Sensors-and-RGB).
 |---|---|---|
 | `branch` | `branchVar`, `branchOp`, `branchValue`, `branchThen`, `branchElse?` | Compares a variable and runs one branch or the other. Operators: `==`, `!=`, `>`, `<`, `>=`, `<=`, `contains`, `empty`, `not-empty`. |
 | `countdown` | `timerDelay` (ms), `timerActions` | Waits, then runs a sub-sequence. Pick the action in the editor’s **WHEN DONE** field; without it the button waits and does nothing. Up to one hour. |
+| `cycle` | `cycleSteps` (list of `{ id, label?, sublabel?, icon?, iconoPuntos?, fgColor?, bgColor?, action }`) | Rotates between several steps on each press. The button shows the current step’s label/sublabel/icon/colours (index stored in `state['__cycle_<id>']`), runs its `action`, and advances to the next. A step cannot contain another `cycle`. |
 
 ## Extended media
 

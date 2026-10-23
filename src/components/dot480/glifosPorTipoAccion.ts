@@ -53,4 +53,5 @@ export const GLIFO_POR_TIPO_ACCION: Record<ActionType, string> = {
   discord: 'MIC',
   spotify: 'AUDIO_WAVE',
   plugin: 'USB_PLUG',
+  cycle: 'REPEAT',
 };

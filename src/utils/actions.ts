@@ -10,6 +10,7 @@ import { makeT, type TFunc } from './i18n';
 const T_POR_DEFECTO = makeT('es');
 
 import { MANEJADORES, RESUELTAS_POR_EL_LLAMADOR } from './acciones';
+import { setEjecutorCiclo } from './acciones/ciclo';
 import { OK, fail, interpolate, actionLabel, type ActionResult, type DetalleAccion } from './acciones/base';
 
 // Se reexportan porque media aplicacion los importa desde aqui.
@@ -20,6 +21,7 @@ async function executeAction(
   state?: Record<string, string>,
   rgbProfiles?: RGBProfile[],
   t: TFunc = T_POR_DEFECTO,
+  buttonId?: string,
 ): Promise<ActionResult> {
   const manejador = MANEJADORES[action.type];
   // Sin manejador y sin estar en la lista de las que resuelve el llamador, la
@@ -31,7 +33,7 @@ async function executeAction(
       : fail(t('act.err.sinManejador', { tipo: action.type }));
   }
   try {
-    return await manejador({ action, api, state, rgbProfiles, t });
+    return await manejador({ action, api, state, rgbProfiles, t, buttonId });
   } catch (e) {
     return fail(t('act.err.unexpected', { que: actionLabel(action, t), msg: String((e as Error).message ?? e) }));
   }
@@ -69,6 +71,8 @@ interface EntornoSecuencia {
   scriptHooks?: GanchosDeScript;
   rgbProfiles?: RGBProfile[];
   t: TFunc;
+  /** T-CYC-01 — Propagado a los manejadores que lo necesitan (cycle). */
+  buttonId?: string;
 }
 
 interface GanchosDeScript {
@@ -133,9 +137,10 @@ export async function runActionSequence(
   scriptHooks?: GanchosDeScript,
   rgbProfiles?: RGBProfile[],
   t: TFunc = T_POR_DEFECTO,
+  buttonId?: string,
 ): Promise<RunSequenceResult> {
   const merged: Record<string, string> = { ...state };
-  const entorno: EntornoSecuencia = { api, merged, scriptHooks, rgbProfiles, t };
+  const entorno: EntornoSecuencia = { api, merged, scriptHooks, rgbProfiles, t, buttonId };
   let lastOk = true;
   let firstError: string | undefined;
   let ultimoDetalle: DetalleAccion | undefined;
@@ -189,7 +194,7 @@ async function ejecutarPaso(a: ButtonAction, indice: number, entorno: EntornoSec
     const especial = EN_SECUENCIA[a.type];
     const res = especial
       ? await especial(a, entorno)
-      : await executeAction(a, entorno.api, entorno.merged, entorno.rgbProfiles, entorno.t);
+      : await executeAction(a, entorno.api, entorno.merged, entorno.rgbProfiles, entorno.t, entorno.buttonId);
 
     stepOk = res.ok;
     if (res.stateUpdate) Object.assign(entorno.merged, res.stateUpdate);
@@ -210,3 +215,22 @@ function debeSeguir(a: ButtonAction, indice: number, actions: ButtonAction[], st
   const hasFallback = actions.slice(indice + 1).some((next) => next.onlyIfPrevFailed);
   return a.continueOnError || hasFallback;
 }
+
+/**
+ * T-CYC-01 — Ejecuta una única sub-acción con el mismo entorno que una
+ * secuencia. Lo usa el manejador de `cycle` para correr el paso actual sin
+ * perder las actualizaciones de `state` ni los tipos resueltos por el
+ * llamador (`script`, `branch`, `countdown`…).
+ */
+export async function ejecutarSubAccion(
+  action: ButtonAction,
+  ctx: { api: ElectronAPI; state?: Record<string, string>; rgbProfiles?: RGBProfile[]; t: TFunc; buttonId?: string },
+): Promise<ActionResult> {
+  const r = await runActionSequence(
+    [action], ctx.api, { ...ctx.state }, undefined, ctx.rgbProfiles, ctx.t, ctx.buttonId,
+  );
+  return { ok: r.ok, error: r.error, stateUpdate: r.stateUpdate, detalle: r.detalle };
+}
+
+/** T-CYC-01 — El manejador de `cycle` necesita ejecutar sub-acciones con `runActionSequence`. */
+setEjecutorCiclo(ejecutarSubAccion);

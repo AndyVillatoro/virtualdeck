@@ -184,4 +184,13 @@ export const EN_ACCIONES: Dict = {
   'act.err.plugin': 'Plugin "{plugin}" is not installed, is disabled, or failed to start.',
   'act.err.pluginSinRef': 'Pick a plugin and an action in the button editor first.',
   'act.err.pluginSinContexto': 'It is unknown which button this ran from (it is not a deck button).',
+  // 7.x — Generic cycle of presets (T-CYC-01)
+  'act.cycle.label': 'Cycle',
+  'act.cycle.desc': 'Rotates between predefined actions on each press (RGB presets, adjustments…)',
+  'act.lbl.cycle': 'Cycle ({n} steps)',
+  'act.err.cycleVacio': 'The cycle has no steps.',
+  'act.err.cycleSinBoton': 'Cycle can only be used on a deck button.',
+  'act.err.cycleRecursivo': 'A cycle step cannot contain another cycle.',
+  'act.err.cycleSinEjecutor': 'The cycle executor is not initialized.',
+  'act.err.cycleSubAccion': 'The cycle step cannot run the "{tipo}" action.',
 };

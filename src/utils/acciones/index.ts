@@ -7,6 +7,7 @@ import { DATOS } from './datos';
 import { RGB } from './rgb';
 import { TERCEROS } from './terceros';
 import { PLUGINS } from './plugins';
+import { CICLO } from './ciclo';
 
 /**
  * Qué hace cada tipo de acción, por familia.
@@ -19,6 +20,7 @@ import { PLUGINS } from './plugins';
  */
 export const MANEJADORES: Record<string, Manejador> = {
   ...LANZAR, ...AUDIO, ...MEDIA, ...ENTRADA, ...DATOS, ...RGB, ...TERCEROS, ...PLUGINS,
+  ...CICLO,
 };
 
 

@@ -6,6 +6,7 @@ import { FormRgbColor, FormRgbMode, FormRgbProfile, FormRgbPreset } from './rgb'
 import { FormFolder, FormMacro, FormPageNav } from './compuestos';
 import { FormDiscord, FormSpotify } from './terceros';
 import { FormPlugin } from './plugins';
+import { FormCycle } from './ciclo';
 import type { PropsFormulario } from './base';
 
 /**
@@ -63,6 +64,7 @@ export const FORMULARIOS: Record<string, (p: PropsFormulario) => React.ReactElem
   'discord': FormDiscord,
   'spotify': FormSpotify,
   'plugin': FormPlugin,
+  'cycle': FormCycle,
 };
 
 

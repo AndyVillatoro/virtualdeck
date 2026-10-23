@@ -46,12 +46,14 @@ export const fail = (error: string): ActionResult => ({ ok: false, error });
 export { interpolate } from '../../comun/interpolar';
 
 /** Todo lo que un manejador necesita para ejecutar una acción. */
-interface Contexto {
+export interface Contexto {
   action: ButtonAction;
   api: ElectronAPI;
   state?: Record<string, string>;
   rgbProfiles?: RGBProfile[];
   t: TFunc;
+  /** T-CYC-01 — Solo algunas acciones lo necesitan (cycle). */
+  buttonId?: string;
 }
 
 export type Manejador = (c: Contexto) => Promise<ActionResult> | ActionResult;
@@ -109,6 +111,7 @@ export function actionLabel(a: ButtonAction, t: TFunc): string {
     case 'discord':        return `Discord: ${a.discordAction ?? 'toggle-mute'}`;
     case 'spotify':        return a.spotifyUri ? `Spotify: ${a.spotifyUri.split(':').pop()}` : 'Spotify';
     case 'plugin':         return `${t('act.lbl.plugin')}: ${a.plugin?.accionUuid ?? ''}`.trim();
+    case 'cycle':          return t('act.lbl.cycle', { n: a.cycleSteps?.length ?? 0 });
     default:               return a.type;
   }
 }

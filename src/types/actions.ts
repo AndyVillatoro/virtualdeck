@@ -53,7 +53,9 @@ export type ActionType =
   // Volumen de una app concreta (roadmap 63): subir/bajar, fijar o silenciar.
   | 'app-volume'
   // 83 — Acción de un plugin del SDK de Stream Deck.
-  | 'plugin';
+  | 'plugin'
+  // 7.x — Ciclo genérico de presets (roadmap 120 fase 3)
+  | 'cycle';
 
 export interface FolderButton {
   label: string;
@@ -61,6 +63,18 @@ export interface FolderButton {
   icon?: string;
   bgColor?: string;
   fgColor?: string;
+  action: ButtonAction;
+}
+
+/** Un paso de un ciclo genérico (`type: 'cycle'`). */
+export interface CycleStep {
+  id: string;
+  label?: string;
+  sublabel?: string;
+  icon?: string;
+  iconoPuntos?: { bits: string; origen: string };
+  fgColor?: string;
+  bgColor?: string;
   action: ButtonAction;
 }
 
@@ -119,6 +133,8 @@ export interface ButtonAction {
   processName?: string;
   volumePercent?: number;
   folderButtons?: FolderButton[];
+  // 7.x — Ciclo genérico de presets (roadmap 120 fase 3)
+  cycleSteps?: CycleStep[];
   // Navegación entre páginas (tipo 'page-nav', la resuelve quien la llama).
   // `pageNavTarget` es el **id** de la página, nunca el índice: borrar una
   // página renumera los índices pero no los ids (ver CLAUDE.md).

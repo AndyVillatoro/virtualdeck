@@ -38,6 +38,8 @@ const ACTION_TYPES = new Set([
   'app-volume',
   // 83 — Acción de un plugin del SDK de Stream Deck.
   'plugin',
+  // 7.x — Ciclo genérico de presets (roadmap 120 fase 3)
+  'cycle',
 ]);
 
 
@@ -498,6 +500,12 @@ export function tiposDesconocidos(botones: unknown): string[] {
     // inventado falla del mismo modo, solo que mas tarde.
     for (const clave of ['branchThen', 'branchElse', 'timerActions']) {
       for (const sub of (Array.isArray(a[clave]) ? a[clave] as unknown[] : [])) mirar(sub);
+    }
+    // Pasos de un ciclo genérico también llevan acciones anidadas.
+    if (Array.isArray(a.cycleSteps)) {
+      for (const paso of a.cycleSteps as unknown[]) {
+        if (isObject(paso)) mirar(paso.action);
+      }
     }
     // Carpetas y cuadrantes 2×2 llevan acciones propias (misma paridad que
     // `resumirRiesgo` en electron/main/integraciones/galeria.ts).

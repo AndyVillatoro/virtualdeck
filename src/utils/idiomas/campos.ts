@@ -45,6 +45,11 @@ export const FIELDS_EN: Record<string, string> = {
   'SI NO (acción si FALSO — opcional)': 'ELSE (action if FALSE — optional)',
   'TIEMPO DE ESPERA (milisegundos)': 'WAIT TIME (milliseconds)',
   'PASOS DE LA MACRO': 'MACRO STEPS',
+  // Ciclo genérico
+  'ETIQUETA': 'LABEL',
+  'SUB-ETIQUETA': 'SUB-LABEL',
+  'GLIFO 8×8': '8×8 GLYPH',
+  'ACCIÓN DEL PASO': 'STEP ACTION',
   // Labels de estilo / widget / disparadores
   'ETIQUETA DEL BOTÓN': 'BUTTON LABEL',
   'SUB-ETIQUETA (OPCIONAL)': 'SUB-LABEL (OPTIONAL)',

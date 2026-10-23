@@ -784,6 +784,30 @@ export const PRESETS_BOTON: PresetDock[] = [
       },
     ],
   },
+  {
+    id: 'button-rgb-cycle',
+    nombre: 'preset.dock.button.rgbCycle',
+    icon: 'SPARKLE',
+    iconoCatalogo: 'acciones:repeat',
+    huecos: [
+      {
+        label: 'AMBIENTE RGB',
+        icon: 'SPARKLE',
+        bgColor: '#111315',
+        fgColor: '#e6e8eb',
+        action: {
+          type: 'cycle',
+          cycleSteps: [
+            { id: 'work', label: 'TRABAJO', sublabel: 'RGB', icon: 'SPARKLE', bgColor: '#111116', fgColor: '#c8d8ff', action: { type: 'rgb-preset', rgbPresetId: 'work' } },
+            { id: 'gaming', label: 'GAMING', sublabel: 'RGB', icon: 'SPARKLE', bgColor: '#1a0000', fgColor: '#ff3300', action: { type: 'rgb-preset', rgbPresetId: 'gaming' } },
+            { id: 'cinema', label: 'CINEMA', sublabel: 'RGB', icon: 'SPARKLE', bgColor: '#0a0000', fgColor: '#aa2233', action: { type: 'rgb-preset', rgbPresetId: 'cinema' } },
+            { id: 'off', label: 'APAGADO', sublabel: 'RGB', icon: 'MINIMIZE', bgColor: '#050505', fgColor: '#444444', action: { type: 'rgb-preset', rgbPresetId: 'off' } },
+          ],
+        },
+        iconoCatalogo: 'acciones:repeat',
+      },
+    ],
+  },
 ];
 
 /**
