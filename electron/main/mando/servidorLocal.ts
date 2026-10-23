@@ -1,7 +1,7 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { networkInterfaces, hostname } from 'node:os';
-import { createReadStream, existsSync } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
 import { join, normalize } from 'node:path';
 import { type BrowserWindow } from 'electron';
 import { loadConfig } from '../sistema/configManager';
@@ -145,7 +145,10 @@ function hostAceptable(host: string | undefined): boolean {
   // Comprobar hostname y variantes mDNS (.local)
   const h = hostname().toLowerCase().trim();
   if (nombre === h || nombre === `${h}.local` || nombre === 'virtualdeck.local') return true;
-  if (nombre.startsWith(`${h}.`)) return true;
+  // `<equipo>.<sufijo>` de la red local (p. ej. `pc.lan`, `pc.home`): una sola
+  // etiqueta más. Con cualquier sufijo, `pc.atacante.com` pasaba el filtro
+  // anti-rebinding y el de `Origin` (T-SEC-07, H-02).
+  if (nombre.startsWith(`${h}.`) && /^[a-z0-9-]+$/.test(nombre.slice(h.length + 1))) return true;
 
   return false;
 }
@@ -203,14 +206,28 @@ function origenAceptable(origen: string | undefined): boolean {
   }
 }
 
+/** ¿Es un archivo normal (no carpeta)? Sin lanzar si no existe. */
+function esArchivo(ruta: string): boolean {
+  try { return statSync(ruta).isFile(); } catch { return false; }
+}
+
 function atenderMedia(url: URL, res: ServerResponse): void {
-  const filename = decodeURIComponent(url.pathname.slice('/media/images/'.length)).replace(/\\/g, '/');
-  if (filename.includes('..') || filename.includes('/')) {
+  // `decodeURIComponent` lanza con un `%` suelto: eso es un 400, no una
+  // excepción en el proceso principal (T-SEC-07, H-01).
+  let filename: string;
+  try {
+    filename = decodeURIComponent(url.pathname.slice('/media/images/'.length)).replace(/\\/g, '/');
+  } catch {
+    return responder(res, 400, { ok: false, error: 'ruta invalida' });
+  }
+  if (!filename || filename.includes('..') || filename.includes('/') || filename.includes(':')) {
     return responder(res, 403, { ok: false, error: 'denegado' });
   }
   const imagesDir = dirImagenes();
   const filePath = normalize(join(imagesDir, filename));
-  if (!filePath.startsWith(imagesDir) || !existsSync(filePath)) {
+  // Con el nombre vacío la ruta era la propia carpeta, y leerla como stream
+  // daba un EISDIR sin manejar: solo archivos normales.
+  if (!filePath.startsWith(imagesDir) || !esArchivo(filePath)) {
     return responder(res, 404, { ok: false, error: 'no existe' });
   }
   const ext = filename.split('.').pop()?.toLowerCase() ?? '';
@@ -226,7 +243,7 @@ function atenderMedia(url: URL, res: ServerResponse): void {
     'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     'X-Content-Type-Options': 'nosniff',
   });
-  createReadStream(filePath).pipe(res);
+  createReadStream(filePath).on('error', () => res.destroy()).pipe(res);
 }
 
 function atenderPair(req: IncomingMessage, res: ServerResponse): void {
@@ -252,7 +269,21 @@ function atenderEnlace(url: URL, res: ServerResponse): boolean {
   return false;
 }
 
+/**
+ * Todo lo que llega de la red pasa por aquí: una excepción dentro del manejador
+ * sería una excepción sin capturar en el proceso principal, y bastaba un
+ * `GET //` sin token desde la LAN para provocarla (T-SEC-07, H-01).
+ */
 function manejar(req: IncomingMessage, res: ServerResponse): void {
+  try {
+    manejarPeticion(req, res);
+  } catch {
+    if (!res.headersSent) responder(res, 400, { ok: false, error: 'peticion invalida' });
+    else res.destroy();
+  }
+}
+
+function manejarPeticion(req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(req.url ?? '/', 'http://localhost');
 
   if (!hostAceptable(req.headers.host)) return responder(res, 403, { ok: false, error: 'host no permitido' });

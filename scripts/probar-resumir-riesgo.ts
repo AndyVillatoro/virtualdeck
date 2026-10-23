@@ -54,6 +54,22 @@ async function main() {
     console.log('  ok anidado 12 niveles: script detectado');
   }
 
+  // 1b) Script en un cuadrante 2×2 (vive en el botón, no en su acción), en un
+  // botón de carpeta y en un paso de ciclo: los tres deben salir (T-SEC-07 H-11).
+  (globalThis as any).__PERFIL_ACTUAL__ = { buttons: [
+    { action: { type: 'none' }, subButtons: [{ action: { type: 'script', script: 'echo cuadrante' } }] },
+    { action: { type: 'folder', folderButtons: [{ label: 'x', action: { type: 'script', script: 'echo carpeta' } }] } },
+    { action: { type: 'cycle', cycleSteps: [{ id: 'a', action: { type: 'script', script: 'echo ciclo' } }] } },
+  ] };
+  const r1b = await galeria.perfil(URL);
+  comprobar(r1b.ok === true, `perfil con cuadrantes no se importó: ${r1b.error ?? '?'}`);
+  if (r1b.ok) {
+    for (const que of ['cuadrante', 'carpeta', 'ciclo']) {
+      comprobar(r1b.riesgo.scripts.some((s: string) => s.includes(que)), `el script de ${que} no apareció en el resumen`);
+    }
+    console.log('  ok cuadrante 2x2, carpeta y ciclo: scripts detectados');
+  }
+
   // 2) Perfil que supera el tope de nodos: debe marcarse como no importable.
   const muchos: any[] = [];
   for (let i = 0; i < 20005; i++) muchos.push({ type: 'script', script: `echo ${i}` });

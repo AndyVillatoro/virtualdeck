@@ -353,14 +353,17 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
       const arr = Array.isArray(x[clave]) ? x[clave] : [];
       for (const sub of arr) pila.push(sub);
     }
+    // Un botón de carpeta se mira como un botón entero, no solo su `action`:
+    // si mañana gana `actions` o pulsación larga, el resumen ya lo ve.
     const fb = Array.isArray(x.folderButtons) ? x.folderButtons : [];
-    for (const f of fb) {
-      if (f && typeof f === 'object' && (f as Record<string, any>).action) {
-        pila.push((f as Record<string, any>).action);
+    for (const f of fb) pila.push({ __boton__: true, b: f });
+    // Pasos de un ciclo genérico también ejecutan código ajeno.
+    const cs = Array.isArray(x.cycleSteps) ? x.cycleSteps : [];
+    for (const paso of cs) {
+      if (paso && typeof paso === 'object' && (paso as Record<string, any>).action) {
+        pila.push((paso as Record<string, any>).action);
       }
     }
-    const sb = Array.isArray(x.subButtons) ? x.subButtons : [];
-    for (const s of sb) encolarSubButton(s, pila);
   };
 
   const encolarModosPerilla = (y: Record<string, any>, pila: Array<unknown>): void => {
@@ -386,6 +389,11 @@ function resumirRiesgo(perfil: unknown): ResumenRiesgo {
     if (y.actionToggleOff) pila.push(y.actionToggleOff);
     if (y.longPressAction) pila.push(y.longPressAction);
     encolarModosPerilla(y, pila);
+    // Los cuadrantes 2×2 viven en el BOTÓN (`ButtonConfig.subButtons`), no en
+    // su acción: antes solo se buscaban en la acción y sus scripts no salían
+    // en el resumen (T-SEC-07, H-11).
+    const sb = Array.isArray(y.subButtons) ? y.subButtons : [];
+    for (const s of sb) encolarSubButton(s, pila);
   };
 
   const procesarAccion = (x: Record<string, any>, pila: Array<unknown>): void => {
