@@ -279,3 +279,11 @@ del build. Afecta a `utils/usoSelectorIconosDot.ts` y al mapa `MANEJADORES`, no 
 * **T-DEU-09 (GLM 5.3 Flash free, `opencode run`):** `App.tsx` 589→328 (`src/app/`: `useAppCentral`, `useEfectosApp`, `PantallaCargando`, `tiposVista`) y `MainB.tsx` 571→360 (`ZonaCentral`, `OverlaysEmergentes`, `useEjecucionMain`, `panelesQueCaben`). Movimiento puro salvo setters estables añadidos a arrays de dependencias. Roadmap 123 ✅. Ojo: el `opencode run` tardó horas sin escribir nada en el log ni en el árbol y luego terminó bien; no darlo por colgado solo por el log vacío.
 * **Fallo del ciclo encontrado en la app real:** la celda enseñaba el rótulo del botón y no el del paso (el aspecto se aplicaba dentro de `CuerpoCelda`, después de derivar rótulo y fondo) y el `memo` de `ButtonCell` no miraba `deckState`, así que no se repintaba al avanzar. Ahora `useBotonVisible` aplica el paso antes de `derivarCelda` y el `memo` compara solo el índice del ciclo. Comprobado por CDP: UNO→DOS→UNO con su fondo y `state` al día.
 
+## Turno 2026-10-23 (tarde) — H-08/H-10, roadmap 121 cerrado, presets del ciclo y medios (supervisor + paneles)
+
+* **T-SEC-09 (Kimi K2.7 Code, Go):** H-08: quitados `/companion/frame.jpg` y `/companion/stream` (nadie los usaba; llevaban el token en la URL) y tope de 30 fotogramas/s por socket. H-10: `debeInyectarCors` ya no da CORS a ninguna dirección local o privada (`esHostLocal`, `scripts/probar-cors-plugins.ts`); el supervisor devolvió la excepción del servidor de archivos del propio plugin, que Kimi había quitado. Sin tocar: `no-sandbox` y PI sin token (T-SEC-06, decisión del dueño).
+* **T-DEU-10 (w19 DeepSeek free):** `sensors-http.ts` (petición y caché de LHM; equivalente, revisado) y `animacionLcd.ts` → `gifLcd.ts`. Roadmap 121 ✅.
+* **T-CYC-03 (w17 MiMo free):** presets cíclicos «Plan de energía» y «Proyección de pantalla» (pasos `script`) en el editor y en docks.
+* **T-DOC-04 (w18 Gemini Flash):** informe de medios (roadmap 125 ⏸): recomienda dejarlo como está.
+* **Pendiente:** limpieza de knip (exports muertos de los endpoints quitados; exports que solo usan las pruebas `probar-*`) y NOTAS-TECNICAS con los endpoints viejos; roadmap 122.
+
