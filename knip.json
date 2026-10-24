@@ -3,6 +3,7 @@
   "entry": [
     "electron/main/index.ts",
     "electron/preload/index.ts",
+    "electron.vite.config.ts",
     "scripts/*.js",
     "scripts/probar-*.ts",
     "**/probar-*.ts"
