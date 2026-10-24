@@ -1,4 +1,5 @@
 import { app, BrowserWindow, globalShortcut, net, protocol, session } from 'electron';
+import { pathToFileURL } from 'node:url';
 import { loadConfig } from './sistema/configManager';
 import { dirImagenes } from './sistema/rutas';
 import { createMainWindow } from './ventana/windowManager';
@@ -275,7 +276,7 @@ app.whenReady().then(() => {
   const handleVd = (request: Request) => {
     const destino = rutaImagenDesdeUrl(request.url, carpetaImagenes);
     if (!destino) return noHayImagen;
-    return net.fetch(`file:///${destino.replace(/\\/g, '/')}`).catch(() => noHayImagen);
+    return net.fetch(pathToFileURL(destino).href).catch(() => noHayImagen);
   };
   protocol.handle('vd', handleVd);
   session.fromPartition(SESION_BARRA).protocol.handle('vd', handleVd);

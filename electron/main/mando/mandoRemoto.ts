@@ -53,10 +53,23 @@ export function mandar(o: OrdenRemota): Promise<{ ok: boolean; error?: string }>
   if (!o?.token?.trim()) return Promise.resolve({ ok: false, error: 'sinToken' });
   if (o.pagina === undefined && !o.boton?.trim()) return Promise.resolve({ ok: false, error: 'sinDestino' });
 
-  const destino = new URL(url(o));
+  // Un perfil importado puede colar rutas o consultas en `host` y usar el
+  // botón como petición HTTP arbitraria (SSRF; T-SEC-07 H-05).
+  const host = o.host.trim();
+  if (/[/?#@\s]/.test(host)) return Promise.resolve({ ok: false, error: 'sinHost' });
+  // El token viaja en cabecera: caracteres de control romperían `node:http`.
+  if (!/^[\x21-\x7e]+$/.test(o.token)) return Promise.resolve({ ok: false, error: 'sinToken' });
+
   return new Promise((resolver) => {
     let acabado = false;
     const terminar = (r: { ok: boolean; error?: string }) => { if (!acabado) { acabado = true; resolver(r); } };
+    let destino: URL;
+    try {
+      destino = new URL(url(o));
+    } catch {
+      terminar({ ok: false, error: 'sinHost' });
+      return;
+    }
     const q = request({
       hostname: destino.hostname,
       port: destino.port || 80,

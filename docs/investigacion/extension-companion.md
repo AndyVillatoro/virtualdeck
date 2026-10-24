@@ -131,7 +131,8 @@ Requieren autenticación con token (cabecera `X-VD-Token` o `?token=`):
    - Máximo 4 MB por fotograma de vídeo (lo que supere el límite se descarta).
    - Máximo 20 mensajes `meta` por segundo por socket.
    - Máximo 4 clientes MJPEG concurrentes (el 5° recibe `503 Service Unavailable`).
-5. **Cero Telemetría y Compatibilidad MSIX:** Ningún dato sale del equipo del usuario. No requiere permisos especiales ni afecta la certificación de la Microsoft Store.
+5. **La extensión no se fía del puerto (T-SEC-07, H-06, 2026-10-23):** quien escuche en `127.0.0.1:48201` puede ser otro proceso haciéndose pasar por VirtualDeck. Por eso la captura que pide el servidor (`start_capture`) solo se acepta en pestañas `https` de YouTube, Twitch, Spotify o SoundCloud (la que inicia el usuario desde el popup no tiene esa restricción), un `pair` con token solo se acepta en los 60 s siguientes a pulsar **Emparejar** en el popup, y el socket de control ya no lleva el token en la URL (va solo en el mensaje `auth`).
+6. **Cero Telemetría y Compatibilidad MSIX:** Ningún dato sale del equipo del usuario. No requiere permisos especiales ni afecta la certificación de la Microsoft Store.
 
 ---
 

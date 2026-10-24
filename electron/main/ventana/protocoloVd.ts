@@ -64,7 +64,7 @@ const EXTENSIONES = new Set([
  * NTFS (`fichero.txt::$DATA`). Los espacios y los acentos se permiten: los
  * nombres los pone el usuario.
  */
-const PROHIBIDOS = /[/\\:*?"<>|]/;
+const PROHIBIDOS = /[/\\:*%#?"<>|]/;
 
 /**
  * Nombres reservados de Windows, que se saltan la extensión.

@@ -1,8 +1,8 @@
 import { intentarNativo } from './native';
 import { app, net } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, writeFileSync, statSync } from 'fs';
+import { join, basename } from 'path';
 import { tm } from './idioma';
 // Host y puerto por defecto, compartidos con el renderer (ver `src/types`).
 import { SENSORES_POR_DEFECTO } from '../../../src/types';
@@ -46,9 +46,13 @@ const CACHE_MS = 1500;
 export function configure(opts: { host?: string; port?: number; enabled?: boolean; categories?: SensorCategory[] }) {
   if (opts.host) {
     const h = opts.host.trim();
-    host = (h === '0.0.0.0' || h === '') ? '127.0.0.1' : h;
+    // Solo nombre/IP plano: rutas o consultas en `host` permitirían SSRF al
+    // pedir `data.json` (T-SEC-07 H-15). Si no cumple, se ignora y queda el anterior.
+    if (!/[/?#@\s]/.test(h)) {
+      host = (h === '0.0.0.0' || h === '') ? '127.0.0.1' : h;
+    }
   }
-  if (typeof opts.port === 'number' && opts.port > 0) port = opts.port;
+  if (typeof opts.port === 'number' && Number.isInteger(opts.port) && opts.port >= 1 && opts.port <= 65535) port = opts.port;
   if (opts.enabled !== undefined) enabled = opts.enabled;
   if (opts.categories && Array.isArray(opts.categories)) allowedCategories = new Set(opts.categories);
 
@@ -292,7 +296,12 @@ export async function spawnLHM(customPath?: string, elevated = false): Promise<{
   if (lhmProc && !lhmProc.killed) return { ok: true };
   const exe = customPath || rutaLHMConocida();
   if (!exe || !existsSync(exe)) return { ok: false, error: 'LibreHardwareMonitor.exe no encontrado' };
-  
+  // Solo se permite ejecutar el binario esperado; un `customPath` arbitrario
+  // podría lanzar cualquier cosa con UAC (T-SEC-07 H-15).
+  if (basename(exe).toLowerCase() !== 'librehardwaremonitor.exe' || !statSync(exe).isFile()) {
+    return { ok: false, error: 'LibreHardwareMonitor.exe no encontrado' };
+  }
+
   // Asegurar que la configuración de LHM tenga el servidor web habilitado en el puerto correcto
   asegurarConfigLHM(exe, port);
 

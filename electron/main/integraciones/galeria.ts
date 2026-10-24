@@ -86,27 +86,52 @@ export interface ResumenRiesgo {
  * pidiera cosas a `127.0.0.1` o a la red interna en nombre del usuario — el
  * proceso principal no tiene CSP ni cortafuegos de navegador.
  */
-function direccionAceptable(url: string): boolean {
+export function direccionAceptable(url: string): boolean {
   let u: URL;
   try { u = new URL(url); } catch { return false; }
   if (u.protocol !== 'https:') return false;
-  const h = u.hostname.toLowerCase();
+  // `new URL('https://[::1]/')` deja los corchetes en `hostname`.
+  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (h === 'localhost' || h.endsWith('.localhost')) return false;
   if (/^127\./.test(h) || h === '::1' || h === '0.0.0.0') return false;
   if (/^10\./.test(h) || /^192\.168\./.test(h)) return false;
   if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
   if (/^169\.254\./.test(h)) return false;
+  // IPv6 link-local, unique-local y IPv4-mapeadas apuntan a la propia red.
+  // Solo para literales IPv6 (llevan `:`): un dominio como `fdroid.org` es válido.
+  if (h.includes(':') && (h.startsWith('::ffff:') || h.startsWith('fe80:') || h.startsWith('fc') || h.startsWith('fd'))) return false;
   return true;
 }
 
+const MAX_SALTOS = 5;
+
+/**
+ * GET con seguimiento manual de redirecciones: cada `Location` vuelve a pasar
+ * por `direccionAceptable` para evitar SSRF 30x (T-SEC-07 H-12).
+ */
+async function traerTextoSeguro(url: string, topeBytes: number): Promise<string> {
+  let actual = url;
+  for (let salto = 0; salto <= MAX_SALTOS; salto++) {
+    if (!direccionAceptable(actual)) throw new Error(tm('gal.badUrl'));
+    const res = await net.fetch(actual, { signal: AbortSignal.timeout(MS_ESPERA), redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) {
+      const destino = res.headers.get('location');
+      if (!destino) throw new Error(tm('gal.badUrl'));
+      actual = new URL(destino, actual).href;
+      continue;
+    }
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const texto = await res.text();
+    // Se mide después de leer porque `Content-Length` puede faltar o mentir; el
+    // tope está para que un archivo enorme no deje el proceso sin memoria.
+    if (texto.length > topeBytes) throw new Error(tm('gal.tooBig'));
+    return texto;
+  }
+  throw new Error(tm('gal.badUrl'));
+}
+
 async function traerJson(url: string): Promise<unknown> {
-  if (!direccionAceptable(url)) throw new Error(tm('gal.badUrl'));
-  const res = await net.fetch(url, { signal: AbortSignal.timeout(MS_ESPERA) });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  const texto = await res.text();
-  // Se mide después de leer porque `Content-Length` puede faltar o mentir; el
-  // tope está para que un archivo enorme no deje el proceso sin memoria.
-  if (texto.length > TOPE_BYTES) throw new Error(tm('gal.tooBig'));
+  const texto = await traerTextoSeguro(url, TOPE_BYTES);
   return JSON.parse(texto);
 }
 
@@ -518,10 +543,7 @@ export async function perfil(url: string): Promise<{ ok: true; perfil: unknown; 
  */
 export async function leerTexto(url: string): Promise<{ ok: true; texto: string } | { ok: false; error: string }> {
   try {
-    if (!direccionAceptable(url)) throw new Error(tm('gal.badUrl'));
-    const res = await net.fetch(url, { signal: AbortSignal.timeout(MS_ESPERA) });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const texto = await res.text();
+    const texto = await traerTextoSeguro(url, TOPE_README);
     return { ok: true, texto: texto.slice(0, TOPE_README) };
   } catch (e) {
     return { ok: false, error: String((e as Error).message ?? e) };

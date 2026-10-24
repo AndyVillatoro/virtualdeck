@@ -10,6 +10,7 @@ import { getVolume, setVolume, getBrightness, setBrightness } from '../launcher'
 import { paginaMando } from './paginaMando';
 import { dirImagenes } from '../sistema/rutas';
 import { botonesVivosParaMando, widgetsVivosParaMando } from './mandoVivo';
+import { LimiteFrecuencia, IntentosPareja } from './limiteFrecuencia';
 import motorPuntos from '../../../src/components/dot480/efectosPuntos.js?raw';
 import { REMOTO_POR_DEFECTO, type RemoteSettings } from '../../../src/types';
 
@@ -64,26 +65,48 @@ let ajustes: AjustesRemoto = { ...REMOTO_POR_DEFECTO };
  * a cambio de un código que caduca.
  *
  * Seis cifras son un millón de posibilidades, pero eso solo basta si no se
- * puede probar en bucle: el código dura cinco minutos, admite cinco intentos y
- * desaparece al acertar.
+ * puede probar en bucle: el código dura cinco minutos, admite cinco intentos
+ * por dirección y veinte en total, y desaparece al acertar. El cupo por
+ * dirección evita que otro equipo de la LAN queme el código del dueño
+ * (T-SEC-07, H-04); además `/api/pair` admite un intento por segundo por IP.
  */
 const PAREJA_MS = 5 * 60 * 1000;
-const PAREJA_INTENTOS = 5;
-let pareja: { codigo: string; caduca: number; intentos: number } | null = null;
+const PAREJA_INTENTOS_POR_IP = 5;
+const PAREJA_INTENTOS_TOTAL = 20;
+let pareja: { codigo: string; caduca: number; intentos: IntentosPareja } | null = null;
 
 export function nuevoCodigo(): string {
   const n = randomBytes(4).readUInt32BE(0) % 1000000;
-  pareja = { codigo: String(n).padStart(6, '0'), caduca: Date.now() + PAREJA_MS, intentos: 0 };
+  pareja = {
+    codigo: String(n).padStart(6, '0'),
+    caduca: Date.now() + PAREJA_MS,
+    intentos: new IntentosPareja(PAREJA_INTENTOS_POR_IP, PAREJA_INTENTOS_TOTAL),
+  };
   return pareja.codigo;
 }
 
-function canjear(codigo: string): string | null {
+function canjear(codigo: string, ip: string): string | null {
   if (!pareja) return null;
   if (Date.now() > pareja.caduca) { pareja = null; return null; }
-  if (++pareja.intentos > PAREJA_INTENTOS) { pareja = null; return null; }
-  if (codigo !== pareja.codigo) return null;
-  pareja = null;
-  return ajustes.token;
+  const admitido = pareja.intentos.contar(ip);
+  if (admitido && codigo === pareja.codigo) {
+    pareja = null;
+    return ajustes.token;
+  }
+  if (pareja.intentos.agotado()) pareja = null;
+  return null;
+}
+
+/**
+ * Límites de frecuencia por IP (T-SEC-07, H-04): la API admite ráfagas de 120 (abrir una página pide cada imagen) y
+ * 30 por segundo sostenidas (el móvil sondea cada pocos segundos y un slider
+ * arrastrado manda unas decenas); el emparejamiento, un intento por segundo.
+ */
+const limiteApi = new LimiteFrecuencia({ capacidad: 120, porSegundo: 30 });
+const limitePareja = new LimiteFrecuencia({ capacidad: 2, porSegundo: 1 });
+
+function ipDe(req: IncomingMessage): string {
+  return req.socket.remoteAddress ?? '?';
 }
 
 /** Las direcciones IPv4 de este equipo en la red local. */
@@ -247,10 +270,12 @@ function atenderMedia(url: URL, res: ServerResponse): void {
 }
 
 function atenderPair(req: IncomingMessage, res: ServerResponse): void {
+  const ip = ipDe(req);
+  if (!limitePareja.admitir(ip)) return responder(res, 429, { ok: false, error: 'demasiados intentos' });
   void leerCuerpo(req).then((cuerpo) => {
     let codigo = '';
     try { codigo = String(JSON.parse(cuerpo).code ?? ''); } catch { /* cuerpo ilegible */ }
-    const token = canjear(codigo.trim());
+    const token = canjear(codigo.trim(), ip);
     responder(res, token ? 200 : 401, token ? { ok: true, token } : { ok: false, error: 'codigo invalido' });
   });
 }
@@ -284,6 +309,7 @@ function manejar(req: IncomingMessage, res: ServerResponse): void {
 }
 
 function manejarPeticion(req: IncomingMessage, res: ServerResponse): void {
+  if (!limiteApi.admitir(ipDe(req))) return responder(res, 429, { ok: false, error: 'demasiadas peticiones' });
   const url = new URL(req.url ?? '/', 'http://localhost');
 
   if (!hostAceptable(req.headers.host)) return responder(res, 403, { ok: false, error: 'host no permitido' });

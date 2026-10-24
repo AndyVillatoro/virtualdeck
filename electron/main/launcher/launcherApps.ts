@@ -1,5 +1,5 @@
 import { intentarNativo } from '../sistema/native';
-import { exec, spawn } from 'child_process';
+import { exec, execFile, spawn } from 'child_process';
 import { shell } from 'electron';
 
 /**
@@ -110,10 +110,12 @@ export async function killProcess(name: string): Promise<boolean> {
   const r = intentarNativo('killProcess', (n) => n.killProcess(name));
   if (r !== undefined) return r;
 
-  const safe = name.replace(/['"&|<>]/g, '').trim();
-  if (!safe) return false;
+  // Solo nombres de proceso planos: sin comodines, separadores ni caracteres
+  // de shell que `taskkill` interprete (T-SEC-07 H-16).
+  const safe = name.trim();
+  if (!/^[\w.\- ]{1,120}$/.test(safe)) return false;
   return new Promise((resolve) => {
-    exec(`taskkill /IM "${safe}" /F`, { timeout: 10000 }, (err) => resolve(!err));
+    execFile('taskkill.exe', ['/IM', safe, '/F'], { timeout: 10000 }, (err) => resolve(!err));
   });
 }
 

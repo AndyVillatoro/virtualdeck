@@ -11,9 +11,14 @@ export function registerDialogIpc(win: BrowserWindow) {
 
   ipcMain.handle('dialog:saveClipboardImage', async (_e: any, dataUrl: string) => {
     try {
+      // Un data URL enorme o con tipo inventado puede llenar el disco o
+      // escribir algo que no es imagen (T-SEC-07 H-16).
+      if (typeof dataUrl !== 'string' || dataUrl.length > 15 * 1024 * 1024) return null;
       const m = /^data:image\/([a-z+]+);base64,(.+)$/i.exec(dataUrl);
       if (!m) return null;
       const ext = m[1].toLowerCase().replace('jpeg', 'jpg').replace('svg+xml', 'svg');
+      const EXT_PERMITIDAS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp', 'ico']);
+      if (!EXT_PERMITIDAS.has(ext)) return null;
       const buf = Buffer.from(m[2], 'base64');
       const imagesDir = dirImagenes();
       if (!existsSync(imagesDir)) mkdirSync(imagesDir, { recursive: true });

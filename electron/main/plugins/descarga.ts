@@ -4,7 +4,7 @@ import { rm, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import type { EntradaInstalacionUrl, ResultadoInstalacion } from '../../../src/types';
-import { desinstalarPlugin, instalarDesdeZip } from './instalar';
+import { instalarDesdeZip } from './instalar';
 import { validarUuid, validarSha256 } from './validacion';
 
 /**
@@ -123,13 +123,9 @@ export async function instalarDesdeUrl(entrada: EntradaInstalacionUrl): Promise<
     return { ok: false, codigo: 'zip', detalle: 'temporal' };
   }
   try {
-    const instalado = await instalarDesdeZip(temporal);
-    if (instalado.ok === false) return instalado;
-    if (instalado.plugin.uuid !== entrada.uuid) {
-      await desinstalarPlugin(instalado.plugin.uuid);
-      return { ok: false, codigo: 'invalido', detalle: 'uuid-distinto' };
-    }
-    return instalado;
+    // El UUID esperado se comprueba antes de mover el ZIP a su carpeta final
+    // y antes de arrancar el proceso del plugin (T-SEC-07 H-09).
+    return await instalarDesdeZip(temporal, entrada.uuid);
   } finally {
     await rm(temporal, { force: true }).catch(() => {});
   }

@@ -21,6 +21,40 @@ let tabCapturada = null;
 let reintentoTimer = null;
 let pingTimer = null;
 
+/** Hasta cuándo se acepta un `pair` del servidor: solo tras pedirlo en el popup. */
+const EMPAREJAR_VENTANA_MS = 60000;
+let emparejandoHasta = 0;
+
+/**
+ * Sitios cuyas pestañas puede pedir capturar el servidor. Quien escuche en el
+ * puerto puede ser otro proceso que se haga pasar por VirtualDeck: sin esta
+ * lista podía pedir el vídeo de cualquier pestaña (correo, banca). Son los
+ * mismos de `host_permissions`, y fuera de ellos Chrome no nos da la URL
+ * (T-SEC-07, H-06). La captura que inicia el usuario desde el popup no pasa
+ * por aquí.
+ */
+const SITIOS_CAPTURABLES = ['youtube.com', 'twitch.tv', 'spotify.com', 'soundcloud.com'];
+
+function esSitioCapturable(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return false;
+    return SITIOS_CAPTURABLES.some((s) => u.hostname === s || u.hostname.endsWith('.' + s));
+  } catch {
+    return false;
+  }
+}
+
+async function capturarPorOrdenDelServidor(tabId) {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab || !esSitioCapturable(tab.url)) return;
+    await iniciarCapturaTab(tabId);
+  } catch {
+    // Pestaña cerrada o inaccesible: nada que capturar
+  }
+}
+
 /** Último rectángulo de vídeo recibido por pestaña (`tabId` → rect en fracciones). */
 const rectsPorTab = new Map();
 
@@ -92,7 +126,8 @@ function conectarVirtualDeck() {
     return;
   }
 
-  const url = `ws://127.0.0.1:${ajustes.puerto}/companion?token=${encodeURIComponent(ajustes.token || '')}`;
+  // Sin el token en la URL: viaja solo en el mensaje `auth` de `onopen` (T-SEC-07, H-06).
+  const url = `ws://127.0.0.1:${ajustes.puerto}/companion`;
 
   try {
     const socket = new WebSocket(url);
@@ -170,6 +205,11 @@ function manejarMensajeServidor(mensaje) {
   if (!mensaje || typeof mensaje !== 'object') return;
 
   if (mensaje.tipo === 'pair' && mensaje.ok && mensaje.token) {
+    // Solo si el usuario acaba de pedir emparejar desde el popup: si no, un
+    // proceso que se haga pasar por VirtualDeck en el puerto podría colarnos
+    // su token (T-SEC-07, H-06).
+    if (Date.now() > emparejandoHasta) return;
+    emparejandoHasta = 0;
     ajustes.token = mensaje.token;
     chrome.storage.local.set({ token: mensaje.token });
     actualizarBadge();
@@ -184,7 +224,7 @@ function manejarMensajeServidor(mensaje) {
   if (mensaje.comando === 'start_capture' || mensaje.comando === 'iniciar_captura') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tabId = mensaje.tabId || (tabs[0] && tabs[0].id);
-      if (tabId) iniciarCapturaTab(tabId);
+      if (tabId) capturarPorOrdenDelServidor(tabId);
     });
     return;
   }
@@ -343,6 +383,7 @@ function manejarMensajePopup(mensaje, responder) {
   }
   if (mensaje.tipo === 'emparejar') {
     if (wsControl && wsControl.readyState === WebSocket.OPEN) {
+      emparejandoHasta = Date.now() + EMPAREJAR_VENTANA_MS;
       wsControl.send(JSON.stringify({ tipo: 'pair', code: mensaje.code }));
       responder({ ok: true });
     } else {

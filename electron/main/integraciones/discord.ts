@@ -104,13 +104,16 @@ function handleIncomingFrame(payload: { cmd?: string; evt?: string; data?: unkno
   }
 }
 
-function processBuffer(buf: Buffer): { remaining: Buffer; packets: Array<{ opcode: number; data: unknown }> } {
+function processBuffer(buf: Buffer): { remaining: Buffer; packets: Array<{ opcode: number; data: unknown }>; invalid: boolean } {
   const packets: Array<{ opcode: number; data: unknown }> = [];
   let offset = 0;
 
   while (offset + 8 <= buf.length) {
     const opcode = buf.readInt32LE(offset);
     const length = buf.readInt32LE(offset + 4);
+    // Un length negativo o descomunal permite un bucle infinito o DoS por
+    // memoria en el hilo principal (T-SEC-07 H-17).
+    if (length < 0 || length > 1024 * 1024) return { remaining: Buffer.alloc(0), packets, invalid: true };
     if (offset + 8 + length > buf.length) break;
 
     const body = buf.subarray(offset + 8, offset + 8 + length);
@@ -124,7 +127,7 @@ function processBuffer(buf: Buffer): { remaining: Buffer; packets: Array<{ opcod
     }
   }
 
-  return { remaining: buf.subarray(offset), packets };
+  return { remaining: buf.subarray(offset), packets, invalid: false };
 }
 
 function attachSocketHandlers(s: net.Socket) {
@@ -132,7 +135,13 @@ function attachSocketHandlers(s: net.Socket) {
 
   s.on('data', (chunk) => {
     inBuf = Buffer.concat([inBuf, chunk]);
-    const { remaining, packets } = processBuffer(inBuf);
+    const { remaining, packets, invalid } = processBuffer(inBuf);
+    if (invalid) {
+      // Cabecera maliciosa: cortamos la conexión en vez de seguir procesando
+      // el mismo byte eternamente (T-SEC-07 H-17).
+      disconnect();
+      return;
+    }
     inBuf = Buffer.from(remaining);
 
     for (const pkt of packets) {

@@ -40,9 +40,15 @@ export interface DatosTemaMando {
   accent?: string;
 }
 
+const TEMAS_PERMITIDOS: Array<NonNullable<DatosTemaMando['theme']>> = ['dark', 'light', 'system', 'dot480'];
+
 export function paginaMando(nonceScript: string, nonceEstilo: string, datosTema?: DatosTemaMando, motorJs?: string): string {
-  const modo = datosTema?.theme ?? 'dark';
-  const acento = datosTema?.accent || (modo === 'dot480' ? '#ff3b30' : '#4a8ef0');
+  const modoRaw = datosTema?.theme ?? 'dark';
+  const modo = TEMAS_PERMITIDOS.includes(modoRaw as NonNullable<DatosTemaMando['theme']>) ? modoRaw : 'dark';
+  // El acento y el tema se interpolan en HTML/JS: hay que sanejarlos antes de
+  // servir la página, no depender de quién escribió la config (T-SEC-07 H-03).
+  const acentoRaw = datosTema?.accent || (modo === 'dot480' ? '#ff3b30' : '#4a8ef0');
+  const acento = /^#[0-9a-fA-F]{6}$/.test(acentoRaw) ? acentoRaw : (modo === 'dot480' ? '#ff3b30' : '#4a8ef0');
   const temaInicial = modo === 'system' ? 'system' : modo === 'light' ? 'light' : 'dark';
   const colorScheme = modo === 'system' ? 'dark light' : modo === 'light' ? 'light' : 'dark';
   const metaThemeColor = modo === 'light' ? '#d8dbe0' : '#070809';

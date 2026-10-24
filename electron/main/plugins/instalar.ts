@@ -30,7 +30,7 @@ export async function instalarPlugin(ruta?: string): Promise<ResultadoInstalacio
   return instalarDesdeZip(elegido.filePaths[0]);
 }
 
-export async function instalarDesdeZip(zipPath: string): Promise<ResultadoInstalacion> {
+export async function instalarDesdeZip(zipPath: string, uuidEsperado?: string): Promise<ResultadoInstalacion> {
   let esArchivo: boolean;
   try {
     esArchivo = statSync(zipPath).isFile();
@@ -77,6 +77,12 @@ export async function instalarDesdeZip(zipPath: string): Promise<ResultadoInstal
   if (!validarUuid(lectura.manifiesto.uuid)) {
     limpiar();
     return { ok: false, codigo: 'invalido', detalle: 'uuid' };
+  }
+  // Cuando se instala desde URL el manifiesto de la tienda declara un UUID;
+  // si el ZIP trae otro, no se extrae ni se arranca (T-SEC-07 H-09).
+  if (uuidEsperado !== undefined && lectura.manifiesto.uuid !== uuidEsperado) {
+    limpiar();
+    return { ok: false, codigo: 'invalido', detalle: 'uuid-distinto' };
   }
   const uuid = lectura.manifiesto.uuid;
   if (existsSync(dirDe(uuid))) {

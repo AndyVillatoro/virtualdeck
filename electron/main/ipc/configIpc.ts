@@ -12,6 +12,7 @@ import { mandar, type OrdenRemota } from '../mando/mandoRemoto';
 import * as galeria from '../integraciones/galeria';
 import { avisarTienda } from '../ventana/tienda';
 import { comprobarReglaFirewall, abrirReglaFirewall } from '../sistema/firewall';
+import { conservarAjustesDelEquipo } from '../../../src/comun/ajustesEquipo';
 
 export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
   ipcMain.handle('config:load', () => loadConfig());
@@ -114,7 +115,12 @@ export function registerConfigIpc(win: BrowserWindow, onQuit: () => void) {
       // Ahora solo se lee y se devuelve. Quien valida es el renderer, y es el
       // quien guarda si vale — ademas ya migrado y fusionado con los valores
       // por defecto, que es lo que la aplicacion usa de verdad.
-      return JSON.parse(readFileSync(r.filePaths[0], 'utf-8'));
+      //
+      // Lo que es de este equipo (mando LAN, extension, rutas y arranque de
+      // LHM/OpenRGB) no viene del archivo: un JSON ajeno podia encender el
+      // mando con su token o dejar un .exe que se lanzaba elevado al arrancar
+      // (T-SEC-07, H-14).
+      return conservarAjustesDelEquipo(JSON.parse(readFileSync(r.filePaths[0], 'utf-8')), loadConfig());
     } catch { return null; }
   });
 

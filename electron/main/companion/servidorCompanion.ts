@@ -269,13 +269,21 @@ function procesarMensajeTexto(ws: WebSocket, texto: string): void {
 }
 
 function manejarHttp(req: IncomingMessage, res: ServerResponse): void {
-  const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
-
   // Sin cabeceras CORS: ninguna página web puede leer estas respuestas desde el navegador.
   // Además se valida Host para mitigar DNS rebinding.
   if (!hostPermitido(req.headers.host) || req.method === 'OPTIONS') {
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     res.end('Forbidden');
+    return;
+  }
+  // `req.headers.host` o `req.url` malformados pueden lanzar `TypeError` en
+  // el hilo principal; se valida Host primero y se envuelve el parseo (T-SEC-07 H-07).
+  let url: URL;
+  try {
+    url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'text/plain' });
+    res.end('Bad Request');
     return;
   }
 
@@ -379,8 +387,18 @@ export function iniciarServidorCompanion(win?: BrowserWindow): Promise<boolean> 
     wss = new WebSocketServer({ noServer: true, maxPayload: MAX_PAYLOAD_FRAME + 64 });
 
     servidorHttp.on('upgrade', (req, socket, head) => {
-      const url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
-      if (url.pathname !== '/companion' || !hostPermitido(req.headers.host) || !origenExtensionValido(req.headers.origin)) {
+      if (!hostPermitido(req.headers.host)) {
+        socket.destroy();
+        return;
+      }
+      let url: URL;
+      try {
+        url = new URL(req.url || '/', `http://${req.headers.host || '127.0.0.1'}`);
+      } catch {
+        socket.destroy();
+        return;
+      }
+      if (url.pathname !== '/companion' || !origenExtensionValido(req.headers.origin)) {
         socket.destroy();
         return;
       }
@@ -404,7 +422,13 @@ export function iniciarServidorCompanion(win?: BrowserWindow): Promise<boolean> 
     });
 
     wss.on('connection', (ws: WebSocket, req: IncomingMessage, autenticado?: boolean) => {
-      const url = new URL(req?.url || '/', `http://${req?.headers?.host || '127.0.0.1'}`);
+      let url: URL;
+      try {
+        url = new URL(req?.url || '/', `http://${req?.headers?.host || '127.0.0.1'}`);
+      } catch {
+        ws.terminate();
+        return;
+      }
       const esStream = url.searchParams.get('rol') === 'stream';
       sockets.add(ws);
       limiteMeta.set(ws, crearLimitador(MAX_META_POR_SEGUNDO));
@@ -429,7 +453,9 @@ export function iniciarServidorCompanion(win?: BrowserWindow): Promise<boolean> 
 
       ws.on('close', () => {
         sockets.delete(ws);
-        if (esStream) alCerrarStream();
+        // Solo el socket de stream autenticado debe limpiar el frame; un
+        // socket no autenticado que se cierre no debe cortar el vídeo (T-SEC-07 H-07).
+        if (esStream && autenticados.has(ws)) alCerrarStream();
         alCerrarControl(ws);
       });
 
