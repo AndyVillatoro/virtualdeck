@@ -450,6 +450,27 @@ VD_SIN_NUCLEO=1 ./dist/win-unpacked/VirtualDeck.exe
 La primera línea del registro lo confirma. Conviene pasar por aquí antes de dar
 por buena cualquier función que tenga las dos vías.
 
+**Volumen y brillo sin núcleo van por un PowerShell persistente**
+(`launcher/psPersistente.ts`, roadmap 122): un solo `powershell.exe` que lee
+órdenes por stdin, con 5 s de tope por orden (si se pasa, se mata y la siguiente
+lo relanza); si falla, `launcherBrilloVolumen` cae a `runPS`. Medido: ~300 ms
+la primera orden y **~2 ms** cada paso de perilla, frente a ~310 ms con un
+proceso por paso. Tres trampas:
+
+- Los tipos de `Add-Type` viven lo que vive el proceso. Dos definiciones C# que
+  declaren el mismo tipo (`MMDev`) compilan, pero la segunda falla al convertir
+  «`MMDev` a `MMDev`»: por eso el volumen tiene **una** definición
+  (`launcher/volumenPS.ts`) para leer y escribir.
+- Nada de `exit` en un script que pase por aquí: mata el proceso entero. Se sale
+  con `return` desde una función.
+- El error vuelve por stdout con una marca antes del fin de la orden; stderr va
+  por otro tubo y llega sin orden respecto a stdout.
+
+Prueba: `npx tsx scripts/probar-ps-persistente.ts` (deja el volumen como
+estaba). Hay salidas de audio que ignoran el volumen maestro también por el
+núcleo (en el equipo del dueño, la de por defecto se queda en 100): la prueba lo
+avisa en vez de fallar.
+
 ---
 
 ## 🔬 Sondas en el proceso principal: `require` no sirve
@@ -492,7 +513,7 @@ Captura de vídeo de pestañas del navegador y metadatos sin oclusión del siste
   - Escucha estrictamente en el bucle local `127.0.0.1:<puerto>` (puerto por defecto `48201`, configurable en Ajustes).
   - WebSocket bidireccional sobre `/companion`:
     - Canal de control y metadatos: la extensión se conecta a `ws://127.0.0.1:<puerto>/companion?token=...`. Envía metadatos de reproducción (`tipo: 'meta'`, duración, posición, pista, artista, volumen, estado) y recibe comandos de transporte (`play`, `pause`, `next`, `prev`, etc.).
-    - Canal de stream de vídeo (`rol=stream`): el documento offscreen de la extensión abre un socket dedicado con `ws://127.0.0.1:<puerto>/companion?rol=stream&token=...` por el que transmite fotogramas binarios en JPEG con cabecera de 16 bytes (magic `VDCM` uint32 BE, ancho uint16 LE, alto uint16 LE, timestamp uint32 LE y longitud del payload uint32 LE) seguida del JPEG.
+    - Canal de stream de vídeo (`rol=stream`): el documento offscreen de la extensión abre un socket dedicado con `ws://127.0.0.1:<puerto>/companion?rol=stream&token=...` por el que transmite fotogramas binarios en JPEG con cabecera de 16 bytes (magic `VDCM` uint32 BE, ancho uint16 LE, alto uint16 LE, timestamp (ID de fotograma) uint32 LE y longitud del payload uint32 LE) seguida del JPEG.
   - Endpoints HTTP:
     - `GET /companion/status`: **el único endpoint HTTP**; JSON con estado del servidor (conectado, puerto, FPS, metadatos, activo) y token en la cabecera `X-VD-Token` (o en `?token=`).
     - `/companion/frame.jpg` y `/companion/stream` (MJPEG continuo) se retiraron en T-SEC-07 H-08: nadie los consumía y llevaban el token en la URL. El vídeo va solo por el socket `rol=stream`.

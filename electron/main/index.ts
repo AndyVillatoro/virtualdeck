@@ -21,6 +21,7 @@ import * as remoto from './mando/servidorLocal';
 import { detener as detenerSuperficies } from './superficies/gestor';
 import { iniciarPrototipoPlugins, detenerPrototipoPlugins } from './plugins/prototipo';
 import { iniciarGestorPlugins, detenerGestorPlugins } from './plugins/gestor';
+import { cerrarPSPersistente } from './launcher/psPersistente';
 // Los valores por defecto de la barra y los sensores viven en `src/types`
 // (único `src/` que el proceso principal puede importar, ver `lint:arch`):
 // repetirlos aquí los desincroniza en silencio.
@@ -331,6 +332,7 @@ app.on('before-quit', () => {
   try { detenerSuperficies(); } catch {}
   try { detenerPrototipoPlugins(); } catch {}
   try { detenerGestorPlugins(); } catch {}
+  try { cerrarPSPersistente(); } catch {}
 });
 
 app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch {} });
