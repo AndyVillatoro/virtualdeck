@@ -14,6 +14,37 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Sensores en cuadros representativos (`SensorTile`)**: cuadros compactos con icono dot-matrix, valor numérico redondeado y color según umbrales de advertencia y peligro para CPU, GPU, memoria y almacenamiento.
 - **Indicaciones contextuales en reproducción de vídeo**: avisos sobre estado de la pestaña y ventana en captura.
 - **Franja de música fija en barra lateral**: bloque de reproducción anclado al pie de la barra lateral, fijo fuera del área con desplazamiento para permanecer siempre visible.
+- **Soporte para plugins de Stream Deck**: anfitrión para complementos Node y HTML, acciones dedicadas en botones y sección en Ajustes para gestionar plugins instalados.
+- **Tienda rediseñada con pestaña de plugins**: catálogo visual con instalación en un clic desde URL verificada con SHA-256, filtros por categoría y aviso sobre DRM.
+- **Plugins oficiales de ejemplo**: seis complementos instalables desde la tienda (reloj, cronómetro, dado, pomodoro, contador y conversor).
+- **Plugins en docks físicos**: asignación de acciones de plugin a teclas LCD y perillas en Stream Dock N3 y otros modelos de dock.
+- **Conmutador de salida de audio (`audio switch`)**: acción para alternar entre dispositivos de sonido (fijo, rotar todos o rotar lista) con icono y texto según el dispositivo activo.
+- **Acción secuencial `cycle`**: encadena múltiples sub-acciones en un solo botón con pasos configurables (rótulo, color e icono individual) que avanzan en cada pulsación.
+- **Presets cíclicos de energía y pantalla**: plantillas listas para usar que alternan planes de energía de Windows y proyección de pantalla en escritorio y docks.
+
+### Changed
+
+- **Reorganización interna del código**: modularización en carpetas por dominio (`electron/main`, editor, app, núcleo Rust) y depuración de dependencias y exportaciones no utilizadas.
+- **Personalización de controles sin pantalla en docks**: bloqueo de ajustes de apariencia en controles físicos sin pantalla LCD, mostrando una indicación explicativa.
+- **Perillas de volumen y brillo sin núcleo nativo**: un único proceso de PowerShell atiende todos los pasos (unos 2 ms por paso en vez de unos 300 ms).
+- **Seguimiento del dispositivo de audio activo**: el botón refleja inmediatamente el dispositivo real en uso y recupera la conexión por nombre si el identificador USB del sistema cambia.
+
+### Fixed
+
+- **Apertura del editor desde controles de dock**: corrección del fallo de suspensión en la interfaz que dejaba la pantalla en negro al editar un control por primera vez.
+- **Vista previa única en el inspector de dock**: previsualización LCD mostrada una sola vez y exclusivamente en controles con pantalla física según las capacidades del modelo.
+- **Fluidez en perillas de dock**: eliminación del encolado acumulativo de imágenes y de esperas fijas innecesarias al girar.
+- **Imagen de plugins en teclas físicas de dock**: la carátula del plugin se muestra con nitidez máxima y permanece fija sin ser sobrescrita por el destello de pulsación ni animaciones.
+- **Deduplicación en la tienda**: los elementos destacados ya no se repiten en la rejilla general y se sanean entradas duplicadas.
+- **Refresco visual de la acción `cycle`**: la celda muestra el rótulo, icono y fondo correspondientes al paso actual y se repinta de inmediato al avanzar la secuencia.
+
+### Security
+
+- **Resumen de riesgo con cuadrantes 2×2**: el analizador de riesgo para importaciones y tienda inspecciona scripts y acciones dentro de celdas 2×2, carpetas y pasos de ciclos.
+- **Límite de frecuencia en el mando LAN**: prevención de abusos y ataques de fuerza bruta en el emparejamiento mediante topes de ráfaga y límites de intentos por IP.
+- **Importación de configuración sin ajustes del equipo**: importar configuraciones preserva los ajustes locales del equipo anfitrión (mando remoto, tokens y rutas de sensores del sistema).
+- **Extensión compañera más estricta**: restricciones en orígenes locales para CORS de plugins, ventana de emparejamiento acotada a 60 segundos y retirada de endpoints HTTP obsoletos.
+- **Endurecimiento general de seguridad**: restricción a mapas de bits al pegar desde el portapapeles, validación estricta de ejecutables permitidos para sensores (LHM y OpenRGB) y saneamiento de direcciones y tokens.
 
 ## [0.14.1] — 2026-10-09
 
