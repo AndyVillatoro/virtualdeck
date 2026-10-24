@@ -116,10 +116,11 @@ El documento offscreen abre un socket secundario autenticado (`rol=stream`). Cad
 | 16..N | Bytes binarios | Payload de imagen en formato JPEG (calidad 0.85 adaptive) |
 
 ### 5.3 Endpoints HTTP Locales (Diagnóstico)
-Requieren autenticación con token (cabecera `X-VD-Token` o `?token=`):
+Requiere autenticación con token (cabecera `X-VD-Token`):
 - `GET http://127.0.0.1:48201/companion/status`: JSON con métricas de FPS, sockets conectados y metadatos (nunca expone el token).
-- `GET http://127.0.0.1:48201/companion/frame.jpg`: Último fotograma capturado (404 si no hay stream activo).
-- `GET http://127.0.0.1:48201/companion/stream`: Transmisión MJPEG continua (`multipart/x-mixed-replace`).
+
+Los endpoints `/companion/frame.jpg` y `/companion/stream` se eliminaron en
+T-SEC-07 H-08 porque nadie los consumía y exponían el token en la URL.
 
 ---
 

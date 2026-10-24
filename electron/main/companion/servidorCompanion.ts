@@ -19,7 +19,6 @@ import {
   obtenerClienteWs,
   actualizarMetadatos,
   registrarFrame,
-  obtenerUltimoFrame,
   limpiarUltimoFrame,
   obtenerEstadoCompanion,
   fijarFallo,
@@ -27,7 +26,6 @@ import {
 import {
   cabeFrame,
   crearLimitador,
-  MAX_CLIENTES_MJPEG,
   MAX_META_POR_SEGUNDO,
   MAX_PAYLOAD_FRAME,
 } from './limites';
@@ -39,8 +37,9 @@ import {
  * Endpoints:
  * - ws://127.0.0.1:<puerto>/companion (Canal bidireccional de control, metadatos y frames)
  * - http://127.0.0.1:<puerto>/companion/status (JSON de estado)
- * - http://127.0.0.1:<puerto>/companion/frame.jpg (Último fotograma capturado)
- * - http://127.0.0.1:<puerto>/companion/stream (MJPEG stream continuo para previews rápidos)
+ *
+ * Los endpoints HTTP de fotograma y stream se eliminaron en T-SEC-07 H-08
+ * porque nadie los consumía y exponían el token a logs/proxies vía query string.
  */
 
 const MAGIC_VDCM = 0x5644434d; // 'VDCM' en uint32 BE
@@ -63,15 +62,15 @@ let ventanaPrincipal: BrowserWindow | null = null;
  */
 const sockets = new Set<WebSocket>();
 
-/** Clientes MJPEG con el búfer lleno: se les salta el fotograma hasta que drenen. */
-const mjpegSaturados = new WeakSet<ServerResponse>();
-const clientesMjpeg = new Set<ServerResponse>();
-
 /** Sockets que han demostrado conocer el token (handshake, auth o pair). */
 const autenticados = new WeakSet<WebSocket>();
 
-/** Topes por socket: el límite de `meta` es por cliente, no global. */
+/** Topes por socket: el límite de `meta` y de frames es por cliente, no global. */
 const limiteMeta = new WeakMap<WebSocket, () => boolean>();
+
+/** Máximo de fotogramas binarios VDCM que aceptamos por segundo y socket (T-SEC-07 H-08). */
+const MAX_FRAMES_POR_SEGUNDO = 30;
+const limiteFrames = new WeakMap<WebSocket, () => boolean>();
 
 let ultimaNotificacion = 0;
 let notificacionPendiente: ReturnType<typeof setTimeout> | null = null;
@@ -138,52 +137,10 @@ function tokenHttpValido(req: IncomingMessage, url: URL): boolean {
   return esTokenValido(token);
 }
 
-/**
- * Un fotograma entero, o ninguno.
- *
- * Con `res.write()` se apila: un consumidor lento (una pestaña en segundo
- * plano, un proxy) acumulaba el stream entero en memoria, y con 20 fotogramas
- * por segundo eso son decenas de megabytes por cliente. Mientras el búfer esté
- * lleno se le salta el fotograma y se vuelve a entrar cuando drena.
- *
- * Los tres trozos van **siempre juntos**: si la cabecera se escribiera y el
- * cuerpo no, el cliente se quedaría con una frontera a medias y el siguiente
- * fotograma le llegaría descuadrado.
- */
-function escribirMjpeg(res: ServerResponse, cabecera: Buffer, cuerpo: Buffer, fin: Buffer): void {
-  if (res.destroyed || res.writableEnded) {
-    clientesMjpeg.delete(res);
-    return;
-  }
-  if (mjpegSaturados.has(res)) return;
-  let acepta: boolean;
-  try {
-    acepta = res.write(cabecera);
-    acepta = res.write(cuerpo) && acepta;
-    acepta = res.write(fin) && acepta;
-  } catch {
-    clientesMjpeg.delete(res);
-    return;
-  }
-  if (!acepta) {
-    mjpegSaturados.add(res);
-    res.once('drain', () => mjpegSaturados.delete(res));
-  }
-}
-
-function repartirFrame(payloadBytes: Buffer): void {
-  if (clientesMjpeg.size === 0) return;
-  const cabecera = Buffer.from(
-    `--frame\r\nContent-Type: image/jpeg\r\nContent-Length: ${payloadBytes.length}\r\n\r\n`,
-  );
-  const fin = Buffer.from('\r\n');
-  for (const res of clientesMjpeg) {
-    escribirMjpeg(res, cabecera, payloadBytes, fin);
-  }
-}
-
 function procesarFrameBinario(ws: WebSocket, buffer: Buffer): void {
   if (!autenticados.has(ws)) return;
+  // T-SEC-07 H-08: descartar en silencio los fotogramas que superen 30 FPS por socket.
+  if (!limiteFrames.get(ws)?.()) return;
   if (buffer.length < 16) return;
   const magic = buffer.readUInt32BE(0);
   if (magic !== MAGIC_VDCM) return;
@@ -200,8 +157,6 @@ function procesarFrameBinario(ws: WebSocket, buffer: Buffer): void {
   const payloadBytes = buffer.subarray(16, 16 + payloadLen);
 
   registrarFrame(ancho, alto, timestamp, payloadBytes);
-
-  repartirFrame(payloadBytes);
 
   // Notificar al renderer vía IPC como data URL
   const base64 = payloadBytes.toString('base64');
@@ -297,41 +252,6 @@ function manejarHttp(req: IncomingMessage, res: ServerResponse): void {
     // El token nunca se expone por HTTP, aunque el llamante lo conozca.
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ...obtenerEstadoCompanion(), token: '' }));
-    return;
-  }
-
-  if (url.pathname === '/companion/frame.jpg') {
-    const frame = obtenerUltimoFrame();
-    if (!frame) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('No frame available');
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': 'image/jpeg',
-      'Content-Length': frame.buffer.length,
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-    });
-    res.end(frame.buffer);
-    return;
-  }
-
-  if (url.pathname === '/companion/stream') {
-    if (clientesMjpeg.size >= MAX_CLIENTES_MJPEG) {
-      res.writeHead(503, { 'Content-Type': 'text/plain' });
-      res.end('Too many stream clients');
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': 'multipart/x-mixed-replace; boundary=frame',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Connection': 'close',
-      'Pragma': 'no-cache',
-    });
-    clientesMjpeg.add(res);
-    req.on('close', () => {
-      clientesMjpeg.delete(res);
-    });
     return;
   }
 
@@ -432,6 +352,7 @@ export function iniciarServidorCompanion(win?: BrowserWindow): Promise<boolean> 
       const esStream = url.searchParams.get('rol') === 'stream';
       sockets.add(ws);
       limiteMeta.set(ws, crearLimitador(MAX_META_POR_SEGUNDO));
+      limiteFrames.set(ws, crearLimitador(MAX_FRAMES_POR_SEGUNDO));
 
       if (autenticado && !esStream) {
         ws.send(JSON.stringify({ tipo: 'auth', ok: true }));
@@ -489,11 +410,6 @@ export function iniciarServidorCompanion(win?: BrowserWindow): Promise<boolean> 
 
 export function detenerServidorCompanion(): Promise<void> {
   return new Promise((resolve) => {
-    for (const res of clientesMjpeg) {
-      try { res.end(); } catch { /* noop */ }
-    }
-    clientesMjpeg.clear();
-
     if (notificacionPendiente) {
       clearTimeout(notificacionPendiente);
       notificacionPendiente = null;

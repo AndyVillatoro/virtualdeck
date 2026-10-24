@@ -41,25 +41,43 @@ export interface DatosPI {
 }
 
 /**
- * Si una respuesta puede llevar CORS permisivo (hallazgo #2).
+ * Decide si una dirección debe recibir CORS permisivo desde el Property Inspector.
  *
  * Pura a propósito, para probarla con `npx tsx` sin levantar Electron.
- * `false` solo para loopback ajeno (`127.0.0.1`/`localhost`/`::1` con puerto
- * distinto del propio servidor de archivos del plugin): el servidor de otro
- * plugin, LibreHardwareMonitor, etc. Todo lo demás —remotos y el propio
- * puerto— devuelve `true` para no romper los PIs que piden recursos remotos.
+ * Bloquea **cualquier** destino local: loopback, localhost, redes privadas,
+ * IPv6 link-local/unique-local, IPv4 mapeadas y nombres sin punto. Solo los
+ * dominios públicos (o con punto) reciben `true` (T-SEC-07 H-10).
  */
-function debeInyectarCors(urlRespuesta: string, puertoPropio: number): boolean {
+export function esHostLocal(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h.endsWith('.localhost')) return true;
+  if (/^127\./.test(h)) return true;
+  if (h === '::1') return true;
+  if (/^10\./.test(h) || /^192\.168\./.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+  if (/^169\.254\./.test(h)) return true;
+  if (h.includes(':')) {
+    if (h.startsWith('::ffff:')) return true;
+    if (h.startsWith('fe80:')) return true;
+    if (h.startsWith('fc') || h.startsWith('fd')) return true;
+  }
+  if (!h.includes('.') && !h.includes(':')) return true;
+  return false;
+}
+
+export function debeInyectarCors(urlRespuesta: string, puertoPropio: number): boolean {
   let u: URL;
   try {
     u = new URL(urlRespuesta);
   } catch {
     return true;
   }
-  const anfitrion = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  const esLoopback = anfitrion === '127.0.0.1' || anfitrion === 'localhost' || anfitrion === '::1';
-  if (!esLoopback) return true;
-  return u.port === String(puertoPropio);
+  if (!esHostLocal(u.hostname)) return true;
+  // La excepción de siempre: el servidor de archivos del PROPIO plugin
+  // (`127.0.0.1:<puertoPropio>`), del que el PI carga sus recursos.
+  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const esLoopback = h === '127.0.0.1' || h === 'localhost' || h === '::1';
+  return esLoopback && u.port === String(puertoPropio);
 }
 
 function prepararCors(uuid: string, puertoArchivos: number): void {
