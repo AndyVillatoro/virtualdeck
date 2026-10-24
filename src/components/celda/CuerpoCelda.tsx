@@ -5,7 +5,6 @@ import { DotRotaryDial } from '../dot480/DotRotaryDial';
 import { ContenidoCentral } from './ContenidoCentral';
 import { RotuloCelda } from './RotuloCelda';
 import { useAspectoAudio } from './useAspectoAudio';
-import { useAspectoCiclo } from './useAspectoCiclo';
 import type { ButtonConfig, SoundProfileId } from '../../types';
 
 export interface CuerpoCeldaProps {
@@ -55,14 +54,7 @@ export function CuerpoCelda(props: CuerpoCeldaProps) {
   // reactivo (icono y sublabel de la salida activa); el resto va por el camino
   // de siempre, sin suscribirse ni pedir nada.
   if (props.button.action.type === 'audio-device') return <CuerpoAudio {...props} />;
-  if (props.button.action.type === 'cycle') return <CuerpoCiclo {...props} />;
   return <CuerpoEstatico {...props} />;
-}
-
-/** Celda de ciclo con el aspecto del paso actual. */
-function CuerpoCiclo(props: CuerpoCeldaProps) {
-  const botonVivo = useAspectoCiclo(props.button, props.deckState);
-  return <CuerpoEstatico {...props} button={botonVivo} />;
 }
 
 /** Celda de audio con el icono y sublabel de la salida que manda ahora. */

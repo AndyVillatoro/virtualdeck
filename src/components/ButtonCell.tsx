@@ -10,6 +10,7 @@ import { usePulsacionRaton } from './celda/usePulsacionRaton';
 import { MenuContextual } from './celda/MenuContextual';
 import { DotRadialSweep } from './dot480/DotRadialSweep';
 import { botonEfectivo } from './dot480/animacionPuntos';
+import { botonConAspectoCiclo, claveCiclo } from '../comun/cicloIcono';
 import { colorDeFondo, colorDeBorde } from './celda/colores';
 import { CuerpoCelda } from './celda/CuerpoCelda';
 import { useVisualCelda } from './celda/useVisualCelda';
@@ -128,10 +129,7 @@ function ButtonCellInner(props: ButtonCellProps) {
   // Tal como se pinta: con el `aspectoEncendido` si el interruptor está
   // encendido. Los manejadores (editar, ejecutar, arrastrar) siguen usando el
   // botón original de las props: el aspecto solo cambia lo que se ve.
-  const vis = useMemo(
-    () => botonEfectivo(button, button.isToggle === true && toggled),
-    [button, toggled],
-  );
+  const vis = useBotonVisible(button, toggled, deckState);
 
   const { isEmpty, displayLabel, actionGlyph, iconColor, multiCount, titulo } =
     derivarCelda(vis, { accent, toggled, resolvedLabel, VD, t });
@@ -326,6 +324,22 @@ function ButtonCellInner(props: ButtonCellProps) {
 }
 
 /**
+ * El botón tal como se pinta: con su `aspectoEncendido` si es un interruptor
+ * encendido, y un `cycle` con el aspecto de su paso actual. Va antes de
+ * `derivarCelda` porque el rótulo y el fondo salen de aquí (aplicado dentro de
+ * `CuerpoCelda`, el ciclo solo cambiaba el icono). Depende solo del índice de
+ * su ciclo, no de todo `deckState`.
+ */
+function useBotonVisible(button: ButtonConfig, toggled: boolean, deckState?: Record<string, string>): ButtonConfig {
+  const indiceCiclo = button.action.type === 'cycle' ? deckState?.[claveCiclo(button.id)] : undefined;
+  return useMemo(() => {
+    const efectivo = botonEfectivo(button, button.isToggle === true && toggled);
+    if (indiceCiclo === undefined && button.action.type !== 'cycle') return efectivo;
+    return botonConAspectoCiclo(efectivo, indiceCiclo === undefined ? undefined : { [claveCiclo(button.id)]: indiceCiclo });
+  }, [button, toggled, indiceCiclo]);
+}
+
+/**
  * Props que obligan a redibujar la celda.
  */
 const REDIBUJAN = [
@@ -355,6 +369,12 @@ function celdasSonIguales(prev: ButtonCellProps, next: ButtonCellProps): boolean
     if (prev[k] !== next[k]) return false;
   }
   if (!arrayIgual(prev.subToggled, next.subToggled)) return false;
+  // `deckState` no entra entero (cualquier variable repintaría toda la
+  // rejilla): solo el índice de su ciclo, en los botones `cycle`.
+  if (next.button.action.type === 'cycle') {
+    const k = claveCiclo(next.button.id);
+    if (prev.deckState?.[k] !== next.deckState?.[k]) return false;
+  }
   return widgetDataIgual(prev.widgetData, next.widgetData);
 }
 

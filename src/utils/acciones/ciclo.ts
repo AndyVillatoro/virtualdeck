@@ -1,6 +1,7 @@
 import { fail, type ActionResult, type Manejador } from './base';
 import type { ButtonAction, CycleStep, ElectronAPI, RGBProfile } from '../../types';
 import type { TFunc } from '../i18n';
+import { claveCiclo } from '../../comun/cicloIcono';
 
 /**
  * Ciclo genérico de presets (T-CYC-01, roadmap 120 fase 3).
@@ -23,7 +24,6 @@ export function setEjecutorCiclo(fn: EjecutorSubAccion): void {
   ejecutor = fn;
 }
 
-const claveCiclo = (id: string): string => `__cycle_${id}`;
 
 function indiceActual(pasos: CycleStep[], state: Record<string, string> | undefined, buttonId: string): number {
   const raw = state?.[claveCiclo(buttonId)] ?? '0';

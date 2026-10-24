@@ -9,7 +9,8 @@ import type { ButtonConfig, ButtonAction, CycleStep } from '../types';
  * DOM, Electron ni Node.
  */
 
-const CLAVE_CICLO = (id: string): string => `__cycle_${id}`;
+/** Dónde guarda un botón `cycle` su paso actual: `config.state['__cycle_<id>']`. */
+export const claveCiclo = (id: string): string => `__cycle_${id}`;
 
 export interface AspectoCiclo {
   label?: string;
@@ -29,7 +30,7 @@ export function pasoActualCiclo(
   if (action.type !== 'cycle') return undefined;
   const pasos = action.cycleSteps ?? [];
   if (pasos.length === 0) return undefined;
-  const raw = state?.[CLAVE_CICLO(buttonId)] ?? '0';
+  const raw = state?.[claveCiclo(buttonId)] ?? '0';
   let idx = parseInt(raw, 10);
   if (!Number.isFinite(idx) || idx < 0 || idx >= pasos.length) idx = 0;
   return pasos[idx];
