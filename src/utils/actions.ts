@@ -222,7 +222,7 @@ function debeSeguir(a: ButtonAction, indice: number, actions: ButtonAction[], st
  * perder las actualizaciones de `state` ni los tipos resueltos por el
  * llamador (`script`, `branch`, `countdown`…).
  */
-export async function ejecutarSubAccion(
+async function ejecutarSubAccion(
   action: ButtonAction,
   ctx: { api: ElectronAPI; state?: Record<string, string>; rgbProfiles?: RGBProfile[]; t: TFunc; buttonId?: string },
 ): Promise<ActionResult> {

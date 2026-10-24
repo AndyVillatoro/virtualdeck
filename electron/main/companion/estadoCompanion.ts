@@ -30,7 +30,6 @@ let activoActual = COMPANION_POR_DEFECTO.enabled;
 let falloActual: CompanionFallo | null = null;
 
 let metadatosActuales: CompanionMetadata | null = null;
-let ultimoFrame: { ancho: number; alto: number; timestamp: number; buffer: Buffer } | null = null;
 
 // Medición de fotogramas por segundo (FPS) en una ventana rodante de 1 segundo
 let contadorFrames = 0;
@@ -169,8 +168,15 @@ export function actualizarMetadatos(meta: unknown): CompanionMetadata | null {
   return limpio;
 }
 
-export function registrarFrame(ancho: number, alto: number, timestamp: number, buffer: Buffer): void {
-  ultimoFrame = { ancho, alto, timestamp, buffer };
+/**
+ * Cuenta los fotogramas del socket de vídeo para el FPS del estado.
+ *
+ * Ya no guarda el último fotograma: solo lo leían `/companion/frame.jpg` y
+ * `/companion/stream`, retirados en T-SEC-07 H-08 porque llevaban el token en
+ * la URL. La firma se queda como la llama el servidor, que es quien decodifica
+ * la cabecera VDCM.
+ */
+export function registrarFrame(_ancho: number, _alto: number, _timestamp: number, _payload: Buffer): void {
   contadorFrames++;
   const ahora = Date.now();
   if (ahora - ultimoCalculoFps >= 1000) {
@@ -181,13 +187,8 @@ export function registrarFrame(ancho: number, alto: number, timestamp: number, b
 }
 
 export function limpiarUltimoFrame(): void {
-  ultimoFrame = null;
   contadorFrames = 0;
   fpsActual = 0;
-}
-
-export function obtenerUltimoFrame(): { ancho: number; alto: number; timestamp: number; buffer: Buffer } | null {
-  return ultimoFrame;
 }
 
 function obtenerFps(): number {

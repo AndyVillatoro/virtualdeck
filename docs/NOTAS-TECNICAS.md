@@ -492,11 +492,10 @@ Captura de vídeo de pestañas del navegador y metadatos sin oclusión del siste
   - Escucha estrictamente en el bucle local `127.0.0.1:<puerto>` (puerto por defecto `48201`, configurable en Ajustes).
   - WebSocket bidireccional sobre `/companion`:
     - Canal de control y metadatos: la extensión se conecta a `ws://127.0.0.1:<puerto>/companion?token=...`. Envía metadatos de reproducción (`tipo: 'meta'`, duración, posición, pista, artista, volumen, estado) y recibe comandos de transporte (`play`, `pause`, `next`, `prev`, etc.).
-    - Canal de stream de vídeo (`rol=stream`): el documento offscreen de la extensión abre un socket dedicado con `ws://127.0.0.1:<puerto>/companion?rol=stream&token=...` por el que transmite fotogramas binarios en JPEG con cabecera de 8 bytes (ancho uint16, alto uint16, timestamp uint32).
+    - Canal de stream de vídeo (`rol=stream`): el documento offscreen de la extensión abre un socket dedicado con `ws://127.0.0.1:<puerto>/companion?rol=stream&token=...` por el que transmite fotogramas binarios en JPEG con cabecera de 16 bytes (magic `VDCM` uint32 BE, ancho uint16 LE, alto uint16 LE, timestamp uint32 LE y longitud del payload uint32 LE) seguida del JPEG.
   - Endpoints HTTP:
-    - `GET /companion/status`: JSON con estado del servidor (conectado, puerto, FPS, metadatos, activo).
-    - `GET /companion/frame.jpg`: último fotograma capturado en JPEG.
-    - `GET /companion/stream`: stream MJPEG continuo (`multipart/x-mixed-replace`) para previsualizaciones directas.
+    - `GET /companion/status`: **el único endpoint HTTP**; JSON con estado del servidor (conectado, puerto, FPS, metadatos, activo) y token en la cabecera `X-VD-Token` (o en `?token=`).
+    - `/companion/frame.jpg` y `/companion/stream` (MJPEG continuo) se retiraron en T-SEC-07 H-08: nadie los consumía y llevaban el token en la URL. El vídeo va solo por el socket `rol=stream`.
 - **Token y emparejamiento con PIN de 6 dígitos**:
   - Al solicitar emparejamiento desde la UI de VirtualDeck (`Ajustes → Extensión Compañera`), se genera un código PIN numérico de 6 dígitos que caduca en 5 minutos y se bloquea tras 5 intentos fallidos (`CADUCIDAD_CODIGO_MS` y `MAX_INTENTOS_CODIGO`).
   - La extensión envía `{ tipo: 'pair', code: '...' }` desde su ventana emergente. Si el código coincide, el proceso principal genera un token criptográfico de 32 bytes hex (`randomBytes(32)`).
@@ -509,7 +508,7 @@ Captura de vídeo de pestañas del navegador y metadatos sin oclusión del siste
   - Al escuchar en `127.0.0.1`, cualquier proceso local puede alcanzar el puerto. Para evitar consumo descontrolado de memoria o bloqueos en el hilo principal:
     - `MAX_PAYLOAD_FRAME = 4 * 1024 * 1024` (4 MB por frame).
     - `MAX_META_POR_SEGUNDO = 20` mensajes/s por socket.
-    - `MAX_CLIENTES_MJPEG = 4` clientes simultáneos.
+    - `MAX_FRAMES_POR_SEGUNDO = 30` fotogramas/s por socket de vídeo (en `servidorCompanion.ts`; lo que pasa se descarta, T-SEC-07 H-08).
     - `LADO_MAX_FRAME = 4096` px máx.
     - `MAX_TEXTO_META = 400` caracteres por campo textual en metadatos y saneamiento estricto campo a campo.
 - **Recorte del vídeo por fracciones del viewport**:

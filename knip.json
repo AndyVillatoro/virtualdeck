@@ -3,7 +3,9 @@
   "entry": [
     "electron/main/index.ts",
     "electron/preload/index.ts",
-    "scripts/*.js"
+    "scripts/*.js",
+    "scripts/probar-*.ts",
+    "**/probar-*.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "electron/**/*.ts"],
   "ignoreDependencies": ["electron-updater"],

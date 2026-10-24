@@ -46,7 +46,7 @@ export const fail = (error: string): ActionResult => ({ ok: false, error });
 export { interpolate } from '../../comun/interpolar';
 
 /** Todo lo que un manejador necesita para ejecutar una acción. */
-export interface Contexto {
+interface Contexto {
   action: ButtonAction;
   api: ElectronAPI;
   state?: Record<string, string>;

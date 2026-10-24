@@ -14,8 +14,6 @@ import type { CompanionMetadata } from '../../../src/types';
 export const MAX_PAYLOAD_FRAME = 4 * 1024 * 1024;
 /** Mensajes `meta` admitidos por segundo y socket (~20). */
 export const MAX_META_POR_SEGUNDO = 20;
-/** Clientes MJPEG simultáneos: cada uno es un búfer de fotogramas en memoria. */
-export const MAX_CLIENTES_MJPEG = 4;
 /** Lado máximo de un fotograma (uint16 en la cabecera, pero acotado por si acaso). */
 const LADO_MAX_FRAME = 4096;
 /** Tope de los textos de metadatos, para no guardarlos enteros en memoria. */

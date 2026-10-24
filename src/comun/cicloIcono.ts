@@ -22,7 +22,7 @@ export interface AspectoCiclo {
 }
 
 /** El paso actual según el estado guardado. */
-export function pasoActualCiclo(
+function pasoActualCiclo(
   action: ButtonAction,
   state: Record<string, string> | undefined,
   buttonId: string,
