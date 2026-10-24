@@ -36,7 +36,7 @@ Node.js con acceso al SO. No conoce React. Expone todo vía IPC.
 | `rgb/` | Control RGB vía OpenRGB SDK (fachada `index.ts`; estado, conexión, presets, perfiles y servidor por dentro). | ✅ |
 | `launcher/` (fachada `index` + `launcherApps`, `launcherScripts`, `launcherTeclas`, `launcherVentanas`, `launcherBrilloVolumen`) | Ejecutar apps / scripts / atajos / ventanas / brillo y volumen, y abrir URLs y carpetas. | ✅ |
 | `ventana/tienda.ts` | Ventana `#tienda`: abrir/enfocar/cerrar + reavisar config a la tienda. | ✅ |
-| `sistema/sensors.ts` + `sistema/sensors-parser.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL; el parser del árbol de sensores va aparte. | ✅ |
+| `sistema/sensors.ts` + `sistema/sensors-http.ts` + `sistema/sensors-parser.ts` | Consultar LibreHardwareMonitor (HTTP) + registrar URL ACL; la petición `data.json` con su caché va en `sensors-http` y el parser del árbol de sensores aparte. | ✅ |
 | `launcher/ps-helpers.ts` | Ejecutar PowerShell con prefijo UTF-8 (parser de `param()`). | ✅ |
 | `superficies/` | Controladores físicos (Stream Dock N3): `driver.ts` (contrato `DriverSuperficie`), `dispositivoMirabox.ts`, `protocoloMirabox.ts`, `gestor.ts` y la tabla de `modelos/`. | ✅ |
 | `plugins/` | Anfitrión de plugins de Stream Deck (MVP): manifiesto, instalación, ciclo de vida, eventos, procesos y Property Inspector. | ✅ |

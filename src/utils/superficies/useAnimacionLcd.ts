@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { ButtonConfig, LcdControl } from '../../types';
 import { teclasLcd } from './disposicion';
 import { paginaDe } from './paginasSuperficie';
-import { decodificarGif, esGifAnimado, type GifAnimado } from './animacionLcd';
+import { decodificarGif, esGifAnimado, type GifAnimado } from './gifLcd';
 import {
   pintarTecla, pintarTeclaConCuadro, resolverBotonLcd,
   type ColoresSuperficie, type ExtrasAnimados,

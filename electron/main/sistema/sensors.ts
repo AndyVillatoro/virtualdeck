@@ -1,5 +1,5 @@
 import { intentarNativo } from './native';
-import { app, net } from 'electron';
+import { app } from 'electron';
 import { spawn, ChildProcess } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, statSync } from 'fs';
 import { join, basename } from 'path';
@@ -13,7 +13,10 @@ import { SENSORES_POR_DEFECTO } from '../../../src/types';
 // startup so the user doesn't need a separate install.
 
 export type { SensorCategory, Sensor } from './sensors-parser';
-import { parseLhmTree, applyCategoryFilter, type SensorCategory, type Sensor } from './sensors-parser';
+import { applyCategoryFilter, type SensorCategory, type Sensor } from './sensors-parser';
+// La petición a `data.json` y su caché viven en `sensors-http`; aquí queda la
+// configuración, el arranque de LHM y la fachada pública.
+import { CACHE_MS, REINTENTO_MS, actualizar, anotarError, estadoLhm } from './sensors-http';
 
 export interface SensorsStatus {
   enabled: boolean;
@@ -30,18 +33,10 @@ export interface SensorsStatus {
 let host = SENSORES_POR_DEFECTO.host;
 let port = SENSORES_POR_DEFECTO.port;
 let enabled = false;
-let lastError: string | undefined;
-let lastFetchAt = 0;
-let cache: Sensor[] = [];
-let connected = false;
 // Limit returned sensors to these categories. "other" is the catch-all for
 // network adapters, embedded controllers, batteries — usually noise for our use case.
 let allowedCategories: Set<SensorCategory> = new Set(['cpu', 'gpu', 'mainboard', 'memory', 'storage']);
 let lhmProc: ChildProcess | null = null;
-
-// 1.5 s cache absorbs bursts (multiple buttons reading the same sensor) without
-// hammering LHM. The poller in renderer ticks at 5 s, so most reads hit cache.
-const CACHE_MS = 1500;
 
 export function configure(opts: { host?: string; port?: number; enabled?: boolean; categories?: SensorCategory[] }) {
   if (opts.host) {
@@ -73,29 +68,16 @@ export function configure(opts: { host?: string; port?: number; enabled?: boolea
 }
 
 export function status(): SensorsStatus {
+  const lhm = estadoLhm();
   return {
-    enabled, connected, host, port,
-    count: cache.length, error: lastError, lastFetchAt,
+    enabled, connected: lhm.connected, host, port,
+    count: lhm.cache.length, error: lhm.lastError, lastFetchAt: lhm.lastFetchAt,
     bundledRunning: !!lhmProc && !lhmProc.killed,
   };
 }
 
 function filtrar(sensores: Sensor[]): Sensor[] {
   return applyCategoryFilter(sensores, allowedCategories);
-}
-
-async function fetchTree(): Promise<any> {
-  const targetHost = (host === '0.0.0.0' || !host.trim()) ? '127.0.0.1' : host;
-  const url = `http://${targetHost}:${port}/data.json`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2500);
-  try {
-    const res = await net.fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 /**
@@ -135,65 +117,41 @@ function unir(deLhm: Sensor[], delNucleo: Sensor[]): Sensor[] {
   return [...porId.values()];
 }
 
-let lastFailAt = 0;
-const REINTENTO_MS = 12000;
-
 export async function list(force = false): Promise<Sensor[]> {
   const delNucleo = nativos(force);
+  const lhm = estadoLhm();
 
   // Si LHM está apagado explícitamente y nunca se conectó, o si falló recientemente,
   // devolvemos de inmediato los sensores nativos para no congelar la UI con intentos de red.
-  const enEspera = !enabled && !connected && (Date.now() - lastFailAt < REINTENTO_MS);
+  const enEspera = !enabled && !lhm.connected && (Date.now() - lhm.lastFailAt < REINTENTO_MS);
   if (enEspera) {
     return filtrar(delNucleo);
   }
 
-  if (!force && Date.now() - lastFetchAt < CACHE_MS && (cache.length > 0 || !enabled)) {
-    return filtrar(unir(cache, delNucleo));
+  if (!force && Date.now() - lhm.lastFetchAt < CACHE_MS && (lhm.cache.length > 0 || !enabled)) {
+    return filtrar(unir(lhm.cache, delNucleo));
   }
 
-  try {
-    const tree = await fetchTree();
-    cache = parseLhmTree(tree);
-    connected = true;
-    lastError = undefined;
-    lastFetchAt = Date.now();
-    return filtrar(unir(cache, delNucleo));
-  } catch (e) {
-    connected = false;
-    lastError = (e as Error).message;
-    lastFailAt = Date.now();
-    // Return last-known cache on transient failures so the UI doesn't flicker
-    // to "no data" every time LHM hiccups for one tick.
-    return filtrar(unir(cache, delNucleo));
-  }
+  await actualizar(host, port);
+  // Return last-known cache on transient failures so the UI doesn't flicker
+  // to "no data" every time LHM hiccups for one tick.
+  return filtrar(unir(estadoLhm().cache, delNucleo));
 }
 
 export async function get(id: string): Promise<Sensor | null> {
   // Bypass the category filter for direct id lookup so a saved widget keeps
   // working even if the user later narrows the allowed categories.
-  if (Date.now() - lastFetchAt > CACHE_MS) await list();
+  if (Date.now() - estadoLhm().lastFetchAt > CACHE_MS) await list();
   // Se busca en las dos fuentes: un widget configurado sobre un sensor nativo
   // no aparece en `cache`, que solo guarda lo que vino de LHM. Sin esto, el
   // widget se quedaria en blanco para siempre.
-  return unir(cache, nativos(false)).find((s) => s.id === id) ?? null;
+  return unir(estadoLhm().cache, nativos(false)).find((s) => s.id === id) ?? null;
 }
 
 export async function probe(): Promise<{ ok: boolean; count: number; error?: string }> {
-  try {
-    const tree = await fetchTree();
-    cache = parseLhmTree(tree);
-    connected = true;
-    lastError = undefined;
-    lastFetchAt = Date.now();
-    return { ok: true, count: filtrar(cache).length };
-  } catch (e) {
-    connected = false;
-    const msg = (e as Error).message;
-    lastError = msg;
-    lastFailAt = Date.now();
-    return { ok: false, count: 0, error: msg };
-  }
+  const resultado = await actualizar(host, port);
+  if (!resultado.ok) return { ok: false, count: 0, error: resultado.error };
+  return { ok: true, count: filtrar(estadoLhm().cache).length };
 }
 
 /**
@@ -315,7 +273,7 @@ export async function spawnLHM(customPath?: string, elevated = false): Promise<{
         '-NoProfile', '-NonInteractive', '-Command',
         `Start-Process -FilePath '${exe.replace(/'/g, "''")}' -WorkingDirectory '${(cwd || '').replace(/'/g, "''")}' -Verb RunAs -WindowStyle Hidden`,
       ], { stdio: 'ignore', windowsHide: true });
-      ps.on('error', (err) => { lastError = `LHM spawn (elevated): ${err.message}`; });
+      ps.on('error', (err) => { anotarError(`LHM spawn (elevated): ${err.message}`); });
       await new Promise((r) => setTimeout(r, 3500));
       return { ok: true };
     } catch (e) {
@@ -337,12 +295,12 @@ export async function spawnLHM(customPath?: string, elevated = false): Promise<{
     let falloElevacion = false;
     child.on('exit', (code) => {
       if (lhmProc === child) lhmProc = null;
-      if (code !== 0 && code !== null && !connected) {
+      if (code !== 0 && code !== null && !estadoLhm().connected) {
         falloElevacion = true;
       }
     });
     child.on('error', (err: any) => {
-      lastError = `LHM spawn: ${err.message}`;
+      anotarError(`LHM spawn: ${err.message}`);
       if (err.code === 'EACCES' || (err.message && err.message.includes('EACCES'))) {
         falloElevacion = true;
       }
