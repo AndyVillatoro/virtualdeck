@@ -1,33 +1,24 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import { useT } from '../utils/i18n';
-import { BarraLateral } from './main/BarraLateral';
-import { BotonIcono } from '../components/ui/BotonIcono';
-import { useTamanoVentana } from '../utils/useTamanoVentana';
-import { useFormatoPantalla } from '../utils/useFormatoPantalla';
-import { PanelMusicaLateral } from './main/PanelesMusica';
-import { AvisosContextuales } from './main/AvisosContextuales';
-import { AvisoBarra } from './main/AvisoBarra';
 import { BarraSuperiorMain } from './main/BarraSuperiorMain';
-import { CeldaPrincipal } from './main/CeldaPrincipal';
-import { useAtajosSeleccion } from './main/atajosSeleccion';
-import { FolderOverlay } from './main/OverlayCarpeta';
 import { PestanasPagina } from './main/PestanasPagina';
 import { MenuContextualPagina } from './main/MenuContextualPagina';
-import { BarraSeleccionLote } from './main/BarraSeleccionLote';
-import { ModalVincularApp } from './main/ModalVincularApp';
-import { pulsarBoton, pulsacionLarga, type EntornoPulsacion } from '../utils/pulsarBoton';
-import { navegarDeck, indicesPaginasDeck } from '../utils/acciones/pageNav';
-import { logError } from '../utils/logger';
+import { useAtajosSeleccion } from './main/atajosSeleccion';
+import { useTamanoVentana } from '../utils/useTamanoVentana';
+import { useFormatoPantalla } from '../utils/useFormatoPantalla';
 import { Wallpaper } from '../components/Wallpaper';
 import { useDatosWidget, useClimaWidget, useDivisas } from '../components/celda/useDatosWidget';
 import { useEstadoSistema } from '../utils/estadoSistema';
-import { RejillaBotones } from '../components/rejilla/RejillaBotones';
 import { resolverBotonesPagina } from '../utils/botonesPagina';
 import { useNowPlaying, useNowPlayingActivation } from '../utils/nowPlaying';
 import { useSensors } from '../utils/sensors';
 import type { ButtonConfig } from '../types';
 import { type MainBProps, getSourceName } from './main/tipos';
+import { panelesQueCaben } from './main/panelesQueCaben';
+import { useEjecucionMain } from './main/useEjecucionMain';
+import { ZonaCentral } from './main/ZonaCentral';
+import { OverlaysEmergentes } from './main/OverlaysEmergentes';
 
 export function MainB({
   config, activePage, autostart, toggledIds, soundOnPress, soundProfile,
@@ -77,14 +68,8 @@ export function MainB({
     onPageAdd();
   }, [config.pages.length, onPageAdd]);
 
-  const [execLog, setExecLog] = useState<{ id: number; ts: number; label: string; actionType: string; ok: boolean; error?: string }[]>([]);
-  const execLogIdRef = useRef(0);
   const [showLog, setShowLog] = useState(false);
-  const [runningButtons, setRunningButtons] = useState<Set<string>>(new Set());
   const toastTimer = useRef<number>();
-  const touchStartXRef = useRef<number>(0);
-  const touchStartYRef = useRef<number>(0);
-  const lastSwipeAtRef = useRef<number>(0);
   const pendingBarraPageRef = useRef<{ prevLength: number } | null>(null);
 
   const { ancho: anchoVentana, alto: altoVentana } = useTamanoVentana();
@@ -165,65 +150,14 @@ export function MainB({
     avisar: showToast, t,
   });
 
-  // Se asigna en cada render, no en un efecto: solo la leen los manejadores
-  // de pulsacion, y ahi hace falta el valor de ahora, no el del render en el
-  // que se creo la celda.
-  // Igual que `toggledIds`: la celda conserva el manejador de su primer render,
-  // asi que leer `config` del cierre daba el de entonces. Se notaba en las
-  // acciones que interpolan `{variable}`: una accion `n = vi-{m}` escribia el
-  // valor de `m` de cuando se dibujo la celda, no el de ahora. Solo se salvaban
-  // los botones cuya **etiqueta** lleva `{}`, porque eso si fuerza el redibujo.
-  const configRef = useRef(config);
-  configRef.current = config;
-
-  const toggledRef = useRef(toggledIds);
-  toggledRef.current = toggledIds;
-
-  // La página actual también por referencia: la celda conserva el manejador de
-  // su primer render y `activePage` del cierre sería el de entonces.
-  const activePageRef = useRef(activePage);
-  activePageRef.current = activePage;
-
-  const entorno = useCallback((): EntornoPulsacion => ({
-    api: api!,
-    config: configRef.current, toggledIds: () => toggledRef.current, onToggle, onStateUpdate,
-    avisar: showToast, t,
-    // Navega entre las páginas del deck (sin las de docks) con el mismo
-    // `onPageChange` de siempre: así `useAutoProfile` lo toma como elección
-    // manual y la guarda como base.
-    navegar: (a) => navegarDeck(a, configRef.current.pages, configRef.current.pages[activePageRef.current]?.id, onPageChange),
-  // `toggledIds` no va aqui: se lee por referencia. Dejarlo ademas recreaba
-  // el entorno en cada encendido, sin ninguna falta.
-  }), [api, onToggle, onStateUpdate, showToast, t, onPageChange]);
-
-  /** Anota lo ejecutado en el registro lateral. Es lo unico propio de esta pantalla. */
-  const anotar = useCallback((etiqueta: string, tipo: string, ok: boolean, error?: string) => {
-    setExecLog((prev) => [
-      { id: ++execLogIdRef.current, ts: Date.now(), label: etiqueta, actionType: tipo, ok, error },
-      ...prev.slice(0, 99),
-    ]);
-  }, []);
-
-  const executeButton = useCallback(async (btn: ButtonConfig) => {
-    if (!api) return;
-    // Una carpeta abre un overlay; no hay accion que ejecutar.
-    if (btn.action.type === 'folder') { setOpenFolderBtn(btn); return; }
-
-    setRunningButtons((prev) => { const s = new Set(prev); s.add(btn.id); return s; });
-    try {
-      const r = await pulsarBoton(btn, entorno());
-      anotar(btn.label || btn.action.type, r.tipo, r.ok, r.error);
-      if (!r.ok && r.error) logError(`action:${btn.action.type}`, r.error, { label: btn.label });
-    } finally {
-      setRunningButtons((prev) => { const s = new Set(prev); s.delete(btn.id); return s; });
-    }
-  }, [api, entorno, anotar]);
-
-  const executeLongPressButton = useCallback(async (btn: ButtonConfig) => {
-    if (!api) return;
-    const r = await pulsacionLarga(btn, entorno());
-    if (r) anotar(t('main.log.largo', { boton: btn.label || r.tipo }), r.tipo, r.ok, r.error);
-  }, [api, entorno, anotar, t]);
+  // La ejecución de botones, con su registro lateral y su entorno de
+  // pulsación, extraída a `src/screens/main/useEjecucionMain.ts`.
+  const {
+    execLog, setExecLog, runningButtons, entorno, executeButton, executeLongPressButton,
+  } = useEjecucionMain({
+    api, config, toggledIds, activePage, onToggle, onStateUpdate,
+    showToast, t, onPageChange, setOpenFolderBtn,
+  });
 
   const currentPage = config.pages[activePage];
   const gridSize = currentPage?.gridSize ?? 4;
@@ -345,227 +279,82 @@ export function MainB({
           onClose={() => setPageContextMenu(null)}
         />
 
-        <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative' }}>
-          {/* El panel de musica, si toca por la izquierda. */}
-          <PanelMusicaLateral
-            config={config}
-            panelMusica={panelMusicaVisible}
-            lado="left"
-            onConfigChange={onConfigChange}
-            nowPlaying={nowPlaying}
-            isPlaying={isPlaying}
-            sourceName={sourceName}
-            api={api}
-          />
-          {/* Hints contextuales (uno a la vez). Descartables. */}
-          <AvisosContextuales
-            hayBotones={hasConfiguredButtons}
-            hintsDismissed={hintsDismissed}
-            onDismissHint={onDismissHint}
-            accent={config.accent}
-          />
-          {/* Formato barra: propone una página 6×2 (la rejilla admite hasta 6 columnas). */}
-          <AvisoBarra
-            enBarra={enBarra}
-            gridSize={gridSize}
-            gridRows={gridRows}
-            hintsDismissed={hintsDismissed}
-            onDismissHint={onDismissHint}
-            onCrearPagina={handleCrearPaginaBarra}
-            accent={config.accent}
-          />
-          <RejillaBotones
-            botones={pageButtons}
-            columnas={gridSize}
-            filas={gridRows}
-            modo={enBarra || config.tileMode === 'fill' ? 'fill' : 'square'}
-            relleno={isCompact ? 6 : 16}
-            senal={showSidebar}
-            onTouchStart={(e) => {
-              touchStartXRef.current = e.touches[0].clientX;
-              touchStartYRef.current = e.touches[0].clientY;
-            }}
-            onTouchEnd={(e) => {
-              const dx = e.changedTouches[0].clientX - touchStartXRef.current;
-              const dy = e.changedTouches[0].clientY - touchStartYRef.current;
-              const w = (e.currentTarget as HTMLDivElement).clientWidth || 600;
-              const threshold = Math.max(50, Math.min(120, w * 0.08));
-              const now = Date.now();
-              const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.5;
-              const debounced = now - lastSwipeAtRef.current < 300;
-              if (!isHorizontal || debounced || Math.abs(dx) < threshold) return;
-              lastSwipeAtRef.current = now;
-              // Solo entre páginas del deck (índices reales, sin renumerar).
-              const indices = indicesPaginasDeck(config.pages);
-              const pos = indices.indexOf(activePage);
-              if (pos === -1) return;
-              if (dx < 0 && pos < indices.length - 1) onPageChange(indices[pos + 1]);
-              else if (dx > 0 && pos > 0) onPageChange(indices[pos - 1]);
-            }}
-            celda={(btn) => {
-              const esFija = btn.fijo === true && btn.page !== activePage;
-              const paginaOriginal = config.pages[btn.page];
-              const nombrePaginaOriginal = paginaOriginal?.name || t('page.defaultName', { n: btn.page + 1 });
-              return (
-                <CeldaPrincipal
-                  btn={btn}
-                  esFija={esFija}
-                  nombrePaginaOriginal={nombrePaginaOriginal}
-                  onQuitarFijo={() => onUpdateButton?.({ ...btn, fijo: false })}
-                  onIrAPagina={() => onPageChange(btn.page)}
-                  accent={config.accent}
-                toggledIds={toggledIds}
-                selectedIds={selectedIds}
-                estadoSistema={estadoSistema}
-                sensorList={sensorList}
-                widgetDataMap={widgetDataMap}
-                runningButtons={runningButtons}
-                soundOnPress={soundOnPress}
-                soundProfile={soundProfile}
-                deckState={config.state ?? {}}
-                canPasteButton={canPasteButton}
-                onEditButton={onEditButton}
-                executeButton={executeButton}
-                executeLongPressButton={executeLongPressButton}
-                onStateUpdate={onStateUpdate}
-                onDuplicateButton={onDuplicateButton}
-                onCopyButton={onCopyButton}
-                onPasteButton={onPasteButton}
-                onClearButton={onClearButton}
-                onUpdateButton={onUpdateButton}
-                onToggleFijo={handleToggleFijo}
-                onConmutarSeleccion={conmutarSeleccion}
-                onArrastrar={setDragSourceId}
-                onSwapButtons={onSwapButtons}
-                showToast={showToast}
-              />
-            );
-          }}
-          />
-
-          {/* Bulk-select toolbar */}
-          <BarraSeleccionLote
-            selectedIds={selectedIds}
-            pages={config.pages}
-            activePage={activePage}
-            accent={config.accent}
-            onMoveButtonsToPage={onMoveButtonsToPage}
-            onClearButtons={onClearButtons}
-            onClearSelection={() => setSelectedIds(new Set())}
-            showToast={showToast}
-          />
-
-          {/* Sidebar */}
-          {verBarraLateral && (
-            <BarraLateral
-              config={config}
-              clock={clock}
-              api={api}
-              sensorList={sensorList}
-              sensorStatus={sensorStatus}
-              rgbStatus={rgbStatus}
-              onRGB={onRGB}
-              execLog={execLog}
-              setExecLog={setExecLog}
-              showLog={showLog}
-              setShowLog={setShowLog}
-              nowPlaying={nowPlaying}
-              isPlaying={isPlaying}
-              sourceName={sourceName}
-              showToast={showToast}
-              ocultarMusica={panelMusicaVisible.enabled}
-              panelMusicaAbierto={panelMusica.enabled}
-              onAlternarPanelMusica={() => onConfigChange({ ...config, musicPanel: { ...panelMusica, enabled: !panelMusica.enabled } })}
-            />
-          )}
-
-          <PanelMusicaLateral
-            config={config}
-            panelMusica={panelMusicaVisible}
-            lado="right"
-            onConfigChange={onConfigChange}
-            nowPlaying={nowPlaying}
-            isPlaying={isPlaying}
-            sourceName={sourceName}
-            api={api}
-          />
-
-          {/* Script output toast */}
-          {toast && (
-            <div style={{
-              position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
-              background: VD.surface, border: `1px solid ${VD.borderStrong}`,
-              borderRadius: VD.radius.lg, padding: '10px 16px',
-              maxWidth: 'min(500px, 90%)', minWidth: 'min(240px, 90%)',
-              fontFamily: VD.mono, fontSize: 10, color: VD.text,
-              boxShadow: VD.shadow.menu, zIndex: 100,
-              display: 'flex', gap: 12, alignItems: 'flex-start',
-            }}>
-              <span style={{ flex: 1, whiteSpace: 'pre-wrap', maxHeight: 140, overflowY: 'auto', lineHeight: 1.6 }}>{toast}</span>
-              <BotonIcono glifo="CLOSE" title={t('comun.cerrar')} onClick={() => setToast(null)} tamano={20} tamanoGlifo={8} color={VD.textMuted} />
-            </div>
-          )}
-        </div>
+        <ZonaCentral
+          config={config}
+          activePage={activePage}
+          pageButtons={pageButtons}
+          gridSize={gridSize}
+          gridRows={gridRows}
+          isCompact={isCompact}
+          enBarra={enBarra}
+          verBarraLateral={verBarraLateral}
+          panelMusica={panelMusica}
+          panelMusicaVisible={panelMusicaVisible}
+          nowPlaying={nowPlaying}
+          isPlaying={isPlaying}
+          sourceName={sourceName}
+          api={api}
+          estadoSistema={estadoSistema}
+          rgbStatus={rgbStatus}
+          sensorList={sensorList}
+          sensorStatus={sensorStatus}
+          widgetDataMap={widgetDataMap}
+          hasConfiguredButtons={hasConfiguredButtons}
+          hintsDismissed={hintsDismissed}
+          onDismissHint={onDismissHint}
+          toggledIds={toggledIds}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+          onCrearPaginaBarra={handleCrearPaginaBarra}
+          runningButtons={runningButtons}
+          soundOnPress={soundOnPress}
+          soundProfile={soundProfile}
+          canPasteButton={canPasteButton}
+          onEditButton={onEditButton}
+          executeButton={executeButton}
+          executeLongPressButton={executeLongPressButton}
+          onStateUpdate={onStateUpdate}
+          onDuplicateButton={onDuplicateButton}
+          onCopyButton={onCopyButton}
+          onPasteButton={onPasteButton}
+          onClearButton={onClearButton}
+          onUpdateButton={onUpdateButton}
+          onToggleFijo={handleToggleFijo}
+          onConmutarSeleccion={conmutarSeleccion}
+          setDragSourceId={setDragSourceId}
+          onSwapButtons={onSwapButtons}
+          onMoveButtonsToPage={onMoveButtonsToPage}
+          onClearButtons={onClearButtons}
+          onConfigChange={onConfigChange}
+          onRGB={onRGB}
+          clock={clock}
+          showSidebar={showSidebar}
+          execLog={execLog}
+          setExecLog={setExecLog}
+          showLog={showLog}
+          setShowLog={setShowLog}
+          showToast={showToast}
+          onPageChange={onPageChange}
+          toast={toast}
+          setToast={setToast}
+        />
       </div>
 
-      {/* Folder overlay */}
-      {openFolderBtn && (
-        <FolderOverlay
-          btn={openFolderBtn}
-          accent={config.accent}
-          soundEnabled={soundOnPress}
-          soundProfile={soundProfile}
-          entorno={entorno}
-          onClose={() => setOpenFolderBtn(null)}
-        />
-      )}
-
-      {/* App binding modal */}
-      {bindingAppPageId && (() => {
-        const targetPage = config.pages.find((p) => p.id === bindingAppPageId);
-        if (!targetPage) return null;
-        return (
-          <ModalVincularApp
-            page={targetPage}
-            accent={config.accent}
-            runningProcesses={estadoSistema.runningProcesses}
-            onSave={(cleaned, iconoApp) => {
-              // Con deshacer, como en Dispositivos: antes era un
-              // `onConfigChange` directo sin historial.
-              if (onFijarTargetApp) onFijarTargetApp(bindingAppPageId, cleaned, iconoApp);
-              else {
-                const updatedPages = config.pages.map((p) =>
-                  p.id === bindingAppPageId
-                    ? { ...p, targetApp: cleaned || undefined, iconoApp: cleaned ? iconoApp : undefined }
-                    : p,
-                );
-                onConfigChange({ ...config, pages: updatedPages });
-              }
-              setBindingAppPageId(null);
-            }}
-            onClose={() => setBindingAppPageId(null)}
-            onCrearDesdePlantilla={onCrearDesdePlantilla}
-          />
-        );
-      })()}
+      {/* Overlays: carpeta abierta y modal de vincular app a página */}
+      <OverlaysEmergentes
+        openFolderBtn={openFolderBtn}
+        setOpenFolderBtn={setOpenFolderBtn}
+        bindingAppPageId={bindingAppPageId}
+        setBindingAppPageId={setBindingAppPageId}
+        config={config}
+        soundOnPress={soundOnPress}
+        soundProfile={soundProfile}
+        entorno={entorno}
+        estadoSistema={estadoSistema}
+        onFijarTargetApp={onFijarTargetApp}
+        onConfigChange={onConfigChange}
+        onCrearDesdePlantilla={onCrearDesdePlantilla}
+      />
     </div>
   );
-}
-
-// ── Folder sub-deck overlay ────────────────────────────────────────────────
-
-/**
- * Qué paneles laterales se enseñan según el ancho (ver el comentario en
- * `MainB`). En `barra` el panel de música encendido sustituye a la barra
- * lateral: ahí el ancho es para la rejilla, no para dos columnas.
- */
-function panelesQueCaben<P extends { enabled: boolean }>(ancho: number, showSidebar: boolean, panelMusica: P, enBarra = false) {
-  const cabeLateral = ancho >= 760;
-  const cabenAmbos = ancho >= 1100;
-  const verBarraLateral = showSidebar && cabeLateral && !(enBarra && panelMusica.enabled);
-  const panelMusicaVisible: P = {
-    ...panelMusica,
-    enabled: panelMusica.enabled && cabeLateral && (enBarra || cabenAmbos || !verBarraLateral),
-  };
-  return { verBarraLateral, panelMusicaVisible };
 }
