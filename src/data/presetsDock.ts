@@ -808,6 +808,52 @@ export const PRESETS_BOTON: PresetDock[] = [
       },
     ],
   },
+  {
+    id: 'button-power-plan',
+    nombre: 'preset.dock.button.powerPlan',
+    icon: 'REPEAT',
+    iconoCatalogo: 'acciones:repeat',
+    huecos: [
+      {
+        label: 'PLAN ENERGÍA',
+        icon: 'REPEAT',
+        bgColor: '#111315',
+        fgColor: '#e6e8eb',
+        action: {
+          type: 'cycle',
+          cycleSteps: [
+            { id: 'balanced',    label: 'EQUILIBRADO', sublabel: 'ENERGÍA', icon: 'BOLT',    bgColor: '#111315', fgColor: '#e6e8eb', action: { type: 'script', script: 'powercfg /setactive SCHEME_BALANCED', scriptShell: 'cmd' } },
+            { id: 'performance', label: 'ALTO REND.',  sublabel: 'ENERGÍA', icon: 'CPU',     bgColor: '#1a1408', fgColor: '#ff9d3c', action: { type: 'script', script: 'powercfg /setactive SCHEME_MIN', scriptShell: 'cmd' } },
+            { id: 'saver',       label: 'AHORRO',      sublabel: 'ENERGÍA', icon: 'BATTERY', bgColor: '#0a1a12', fgColor: '#4caf7d', action: { type: 'script', script: 'powercfg /setactive SCHEME_MAX', scriptShell: 'cmd' } },
+          ],
+        },
+        iconoCatalogo: 'acciones:repeat',
+      },
+    ],
+  },
+  {
+    id: 'button-display-switch',
+    nombre: 'preset.dock.button.displaySwitch',
+    icon: 'REPEAT',
+    iconoCatalogo: 'acciones:repeat',
+    huecos: [
+      {
+        label: 'PROYECCIÓN',
+        icon: 'REPEAT',
+        bgColor: '#111315',
+        fgColor: '#e6e8eb',
+        action: {
+          type: 'cycle',
+          cycleSteps: [
+            { id: 'internal', label: 'SOLO PC',  sublabel: 'PANTALLA', icon: 'MONITOR',    bgColor: '#111315', fgColor: '#e6e8eb', action: { type: 'script', script: 'DisplaySwitch.exe /internal', scriptShell: 'cmd' } },
+            { id: 'extend',   label: 'EXTENDER', sublabel: 'PANTALLA', icon: 'FULLSCREEN', bgColor: '#0d1420', fgColor: '#6688cc', action: { type: 'script', script: 'DisplaySwitch.exe /extend', scriptShell: 'cmd' } },
+            { id: 'external', label: 'EXTERNA', sublabel: 'PANTALLA', icon: 'MONITOR',    bgColor: '#0a1a12', fgColor: '#4caf7d', action: { type: 'script', script: 'DisplaySwitch.exe /external', scriptShell: 'cmd' } },
+          ],
+        },
+        iconoCatalogo: 'acciones:repeat',
+      },
+    ],
+  },
 ];
 
 /**

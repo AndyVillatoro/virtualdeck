@@ -173,6 +173,31 @@ export const PRESETS: ButtonPreset[] = [
   { category: 'SISTEMA', label: 'Multitarea', icon: 'MONITOR', action: { type: 'hotkey', hotkey: 'Win+Tab' }, isToggle: true, actionToggleOff: { type: 'hotkey', hotkey: 'Esc' }, iconoCatalogo: 'acciones:layout-grid' },
   { category: 'SISTEMA', label: 'VENTANA ANT.', icon: 'PREV', action: { type: 'window-cycle', windowCycle: 'prev' }, iconoCatalogo: 'acciones:arrow-left' },
   { category: 'SISTEMA', label: 'VENTANA SIG.', icon: 'NEXT', action: { type: 'window-cycle', windowCycle: 'next' }, iconoCatalogo: 'acciones:arrow-right' },
+  // 7.x — Ciclo genérico de presets (T-CYC-03): energía y proyección
+  {
+    category: 'SISTEMA', label: 'Plan de Energía', icon: 'REPEAT', bgColor: '#111315', fgColor: '#e6e8eb',
+    action: {
+      type: 'cycle',
+      cycleSteps: [
+        { id: 'balanced',    label: 'EQUILIBRADO', sublabel: 'ENERGÍA', icon: 'BOLT',    bgColor: '#111315', fgColor: '#e6e8eb', action: { type: 'script', script: 'powercfg /setactive SCHEME_BALANCED', scriptShell: 'cmd' } },
+        { id: 'performance', label: 'ALTO REND.',  sublabel: 'ENERGÍA', icon: 'CPU',     bgColor: '#1a1408', fgColor: '#ff9d3c', action: { type: 'script', script: 'powercfg /setactive SCHEME_MIN', scriptShell: 'cmd' } },
+        { id: 'saver',       label: 'AHORRO',      sublabel: 'ENERGÍA', icon: 'BATTERY', bgColor: '#0a1a12', fgColor: '#4caf7d', action: { type: 'script', script: 'powercfg /setactive SCHEME_MAX', scriptShell: 'cmd' } },
+      ],
+    },
+    iconoCatalogo: 'acciones:repeat',
+  },
+  {
+    category: 'SISTEMA', label: 'Proyección de Pantalla', icon: 'REPEAT', bgColor: '#111315', fgColor: '#e6e8eb',
+    action: {
+      type: 'cycle',
+      cycleSteps: [
+        { id: 'internal', label: 'SOLO PC',  sublabel: 'PANTALLA', icon: 'MONITOR',    bgColor: '#111315', fgColor: '#e6e8eb', action: { type: 'script', script: 'DisplaySwitch.exe /internal', scriptShell: 'cmd' } },
+        { id: 'extend',   label: 'EXTENDER', sublabel: 'PANTALLA', icon: 'FULLSCREEN', bgColor: '#0d1420', fgColor: '#6688cc', action: { type: 'script', script: 'DisplaySwitch.exe /extend', scriptShell: 'cmd' } },
+        { id: 'external', label: 'EXTERNA', sublabel: 'PANTALLA', icon: 'MONITOR',    bgColor: '#0a1a12', fgColor: '#4caf7d', action: { type: 'script', script: 'DisplaySwitch.exe /external', scriptShell: 'cmd' } },
+      ],
+    },
+    iconoCatalogo: 'acciones:repeat',
+  },
   // CREATIVO — Illustrator
   { category: 'CREATIVO', label: 'AI Selección', icon: 'KEYBOARD', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'hotkey', hotkey: 'V' }, iconoCatalogo: 'acciones:brand-adobe-illustrator' },
   { category: 'CREATIVO', label: 'AI Sel. Dir.', icon: 'KEYBOARD', bgColor: '#0a0a1a', fgColor: '#ff9a00', action: { type: 'hotkey', hotkey: 'A' }, iconoCatalogo: 'acciones:brand-adobe-illustrator' },

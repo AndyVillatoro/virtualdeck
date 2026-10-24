@@ -197,6 +197,8 @@ export const ES_EDITOR: Dict = {
   'preset.dock.button.audioSwitch': 'Switch de audio',
   'preset.dock.knob.audioSwitch': 'Switch de audio',
   'preset.dock.button.rgbCycle': 'Ambiente RGB',
+  'preset.dock.button.powerPlan': 'Plan de Energía',
+  'preset.dock.button.displaySwitch': 'Proyección de Pantalla',
   'preset.dock.strip.media': 'Desplazamiento Multimedia',
   'preset.dock.strip.brightness': 'Ajuste de Brillo',
   'preset.dock.strip.tabs': 'Pestañas de Navegador',
