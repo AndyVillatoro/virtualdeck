@@ -69,6 +69,15 @@ export interface BotonMandoMovil {
   fijo?: boolean;
   widget?: string;
   sliderWidget?: SliderWidgetConfig;
+  /**
+   * Lo último que el plugin pintó en este botón (roadmap 83 c), o ausente si
+   * el botón no es de plugin o el plugin no conoce el contexto: la imagen
+   * ocupa el centro a sangre (gana a la del usuario y a la marca, como en la
+   * celda) y el título sustituye al rótulo. La imagen ya llega validada como
+   * `data:` raster dentro del tope (es lo que guarda `plugins/visualesMando.ts`).
+   */
+  pluginImagen?: string;
+  pluginTitulo?: string;
   subButtons?: SubBotonMandoMovil[];
   /** Botón de dos estados: con `encendido`, se pinta su `aspectoEncendido`. */
   isToggle?: boolean;
@@ -91,6 +100,8 @@ export interface BotonFuenteMando {
     type: string;
     deviceId?: string;
     deviceName?: string;
+    /** Acción de plugin: los uuids bastan para saber de quién es el botón. */
+    plugin?: { pluginUuid: string; accionUuid: string };
     audioMode?: 'fixed' | 'cycle-all' | 'cycle-list';
     excludedDeviceIds?: string[];
     audioCandidates?: Array<{

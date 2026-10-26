@@ -1,5 +1,10 @@
-import type { ButtonAction, ButtonConfig, DeckConfig, PageConfig } from '../../types';
-import type { PluginRef } from '../../types/plugins';
+import type { ButtonAction, ButtonConfig, PluginRef } from '../../types';
+import {
+  contextoDe,
+  contextoDeBoton,
+  idDeContexto,
+  superficieDe,
+} from '../../comun/contextoPlugin';
 
 /**
  * El `contexto` de un botón: lo que el plugin usa para saber **de quién** es
@@ -18,38 +23,20 @@ import type { PluginRef } from '../../types/plugins';
  * `superficie.serial`, y las del deck no llevan nada. La barra flotante, el
  * kiosco y el mando móvil enseñan los mismos botones del deck, así que
  * comparten contexto a propósito: es la misma tecla del mismo plugin.
- */
-
-const SUPERFICIE_DECK = 'deck';
-
-/** La superficie donde se ve un botón: el serial del dock, o `deck`. */
-export function superficieDe(paginas: PageConfig[] | undefined, indicePagina: number | undefined): string {
-  if (indicePagina === undefined) return SUPERFICIE_DECK;
-  return paginas?.[indicePagina]?.superficie?.serial ?? SUPERFICIE_DECK;
-}
-
-/** `<superficie>:<id>` para un botón del deck. */
-export function contextoDeBoton(id: string): string {
-  return `${SUPERFICIE_DECK}:${id}`;
-}
-
-/** `<superficie>:<id>` para un botón, mirando en qué página vive. */
-export function contextoDe(btn: ButtonConfig, config?: Pick<DeckConfig, 'pages'>): string {
-  const serial = superficieDe(config?.pages, btn.page);
-  return serial === SUPERFICIE_DECK ? contextoDeBoton(btn.id) : `${serial}:${btn.id}`;
-}
-
-/**
- * El id del botón dentro de un contexto. `null` si el contexto no trae id.
  *
- * Se parte por el **último** `:` porque el serial de un dock es arbitrario y
- * los ids de botón nunca llevan dos puntos.
+ * Cómo se forma el contexto (y cómo se vuelve de él al id del botón) vive en
+ * `src/comun/contextoPlugin.ts`: es lógica pura que el proceso principal
+ * también necesita ahora —el mando móvil le lleva al móvil lo último que
+ * pinta cada plugin, roadmap 83 c— y no puede importarla de `src/utils`
+ * (regla `main-no-renderer`). Se reexporta aquí para que nadie deje de
+ * importarla de `ref`. Este módulo conserva lo suyo: la narrowing de la
+ * acción y las referencias que viajan por IPC.
  */
-function idDeContexto(contexto: string): string | null {
-  const corte = contexto.lastIndexOf(':');
-  if (corte < 0 || corte === contexto.length - 1) return null;
-  return contexto.slice(corte + 1);
-}
+
+// La formación del contexto, tal cual estaba (movida a `src/comun/`):
+// mismas funciones, quien importaba de `ref` sigue igual. `idDeContexto`
+// siempre fue interna, solo se importa para `botonDeContexto`.
+export { superficieDe, contextoDeBoton, contextoDe };
 
 /** ¿Es esta acción una de plugin con los dos uuids puestos? */
 export function esAccionPlugin(a: ButtonAction): a is ButtonAction & {

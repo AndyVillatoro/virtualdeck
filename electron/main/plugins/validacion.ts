@@ -92,7 +92,7 @@ const MIME_POR_EXT: Record<string, string> = {
 const DATA_IMAGEN_RE = /^data:image\/(png|jpeg|gif|svg\+xml|webp|avif|bmp|x-icon);base64,[A-Za-z0-9+/]+={0,2}$/;
 
 /** Los bytes que pesa un `data:...;base64,...` una vez decodificado. */
-function bytesDeBase64(dataUrl: string): number {
+export function bytesDeBase64(dataUrl: string): number {
   const coma = dataUrl.indexOf(',');
   const cuerpo = coma >= 0 ? dataUrl.slice(coma + 1) : '';
   return Math.floor(cuerpo.length * 3 / 4);

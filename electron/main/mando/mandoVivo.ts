@@ -10,6 +10,8 @@ import { interpolate } from '../../../src/comun/interpolar';
 import { botonVisibleSegun } from '../../../src/comun/visibilidad';
 import { datosDeWidget, type DatosWidget, type FuentesWidget } from '../../../src/comun/widgets';
 import { formatoHora, formatoFecha, type Lang } from '../../../src/comun/formatos';
+import { contextoDeBoton } from '../../../src/comun/contextoPlugin';
+import { visualParaMando } from '../plugins/visualesMando';
 import { botonAMando, type BotonFuenteMando, type BotonMandoMovil, type IconoPuntosMando } from './iconosMando';
 
 /**
@@ -103,6 +105,21 @@ async function baseViva(): Promise<BaseViva> {
   };
 }
 
+/**
+ * Lo que el plugin de este botón pintó por última vez (roadmap 83 c), o nada.
+ *
+ * El contexto es el del deck (`deck:<id>`): el mando solo lista botones de
+ * páginas del deck (`baseViva` saca las de superficie), y la barra flotante,
+ * el kiosko y esta página enseñan los mismos botones con los mismos ids. Si
+ * el plugin no conoce el contexto (o el botón no es de plugin), no hay nada:
+ * el móvil ve lo de hasta hoy, el arte estático del botón.
+ */
+function visualDeBoton(b: BotonFuenteMando): { imagen?: string; titulo?: string } {
+  const plugin = b.action?.plugin;
+  if (!plugin?.pluginUuid || !plugin.accionUuid) return {};
+  return visualParaMando(contextoDeBoton(b.id)) ?? {};
+}
+
 /** Lo que sirve `/api/buttons`: puntos, etiqueta interpolada y visibilidad del deck. */
 export async function botonesVivosParaMando(): Promise<BotonMandoMovil[]> {
   const base = await baseViva();
@@ -111,6 +128,11 @@ export async function botonesVivosParaMando(): Promise<BotonMandoMovil[]> {
     // Solo la etiqueta principal, como el deck (`resolvedLabel`): la
     // subetiqueta viaja tal cual.
     if (m.label.includes('{')) m.label = interpolate(m.label, base.estado);
+    // Lo último que el plugin pintó (imagen y título), si hay algo: la página
+    // lo recibe con las demás capas y decide la precedencia, como la celda.
+    const plugin = visualDeBoton(b);
+    if (plugin.imagen) m.pluginImagen = plugin.imagen;
+    if (plugin.titulo) m.pluginTitulo = plugin.titulo;
     return m;
   });
 }

@@ -158,10 +158,16 @@ async function pantallaDeck() {
       continue;
     }
 
-    // La imagen propia gana a la marca, como en la celda (CapasDeFondo).
-    // La marca llega ya resuelta como data URI (SVG autónomo con su animación
-    // dentro): aquí solo se mete en un img, que la CSP admite.
-    if (b.imageData) {
+    // Las capas de fondo, en la misma precedencia que la celda
+    // (CapasDeFondo): la imagen del plugin (83 c) gana a la propia, y la
+    // propia a la marca. Ambas son data URI (o ruta sirve en /media/): aquí
+    // solo se meten en un img, que la CSP admite.
+    const conPlugin = !!b.pluginImagen;
+    if (conPlugin) {
+      const img = nodo('img', { className: 'fondo-img', alt: '' });
+      ponerImagen(img, b.pluginImagen);
+      celda.append(img);
+    } else if (b.imageData) {
       const img = nodo('img', { className: 'fondo-img', alt: '' });
       ponerImagen(img, b.imageData);
       celda.append(img);
@@ -170,10 +176,15 @@ async function pantallaDeck() {
     }
     // Con marca de fondo el centro solo se pinta si hay icono explícito
     // (iconoSobreMarca), como CentroSobreFondo en la celda: si no, la marca
-    // tapa el icono de puntos. Con imagen se queda como estaba.
-    const marcaFondo = !b.imageData && !!b.marca;
+    // tapa el icono de puntos. Con imagen (propia o de plugin) se queda como
+    // estaba.
+    const marcaFondo = !conPlugin && !b.imageData && !!b.marca;
 
-    if (b.customGlyph57 && b.customGlyph57.length === 7 && !marcaFondo) {
+    // Con imagen del plugin el centro va vacío, igual que la celda con
+    // imagenAjena: la imagen ya lo llena todo (el widget en vivo lo recupera).
+    if (conPlugin) {
+      celda._nodoIcono = null;
+    } else if (b.customGlyph57 && b.customGlyph57.length === 7 && !marcaFondo) {
       const wrap = nodo('div', { className: 'glifo57' });
       wrap.append(svgGlifo57(b.customGlyph57, colorFrente));
       celda.append(wrap);
@@ -195,20 +206,38 @@ async function pantallaDeck() {
     celda.append(slotW);
     celda._slotWidget = slotW;
 
-    if (b.label || b.sublabel) {
+    // El título del plugin sustituye al rótulo (CuerpoCelda dibuja la franja
+    // con el plugin.titulo por encima del nombre); sin él, el propio.
+    const textoRotulo = b.pluginTitulo || b.label;
+    if (textoRotulo || b.sublabel) {
       const rotulo = nodo('div', { className: 'rotulo' });
-      // Con fondo propio la franja va clara u oscura según el fondo, como en
-      // la celda: el velo del tema no sirve sobre un fondo del otro tono.
-      if (b.bgColor) {
+      // Sobre la imagen de un plugin, franja oscura y texto claro, igual que
+      // la franja sobreImagenPropia de la celda (RotuloCelda). Con fondo
+      // propio la franja va clara u oscura según el fondo, como en la celda:
+      // el velo del tema no sirve sobre un fondo del otro tono.
+      if (conPlugin) {
+        rotulo.style.background = 'linear-gradient(180deg, rgba(7,8,9,0) 0%, rgba(7,8,9,0.88) 45%)';
+      } else if (b.bgColor) {
         const fondoClaro = textoSobreMovil(b.bgColor) === '#070809';
         rotulo.style.background = fondoClaro ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
         rotulo.style.borderTop = fondoClaro ? '1px solid rgba(0,0,0,0.12)' : '1px solid rgba(255,255,255,0.08)';
       }
-      if (b.label) rotulo.append(nodo('span', { className: 'label-txt', textContent: b.label }));
+      if (textoRotulo) {
+        const el = nodo('span', { className: 'label-txt', textContent: textoRotulo });
+        if (conPlugin) {
+          // El mismo gris claro con sombra que el rótulo del deck sobre imagen
+          // (TEXTO_SOBRE_IMAGEN): nada de blanco puro (regla del proyecto).
+          el.style.color = '#e6e8eb';
+          el.style.textShadow = '0 1px 2px rgba(0,0,0,0.9)';
+        }
+        rotulo.append(el);
+      }
       if (b.sublabel) {
         const subEl = nodo('span', { className: 'sublabel-txt', textContent: b.sublabel });
         // La subetiqueta lleva el mismo color con transparencia, como en la celda.
-        if (b.fgColor || b.bgColor) {
+        if (conPlugin) {
+          subEl.style.color = '#9da2a8';
+        } else if (b.fgColor || b.bgColor) {
           if (colorFrente) subEl.style.color = colorFrente;
           subEl.style.opacity = '0.65';
         }

@@ -4,6 +4,7 @@ import { emitir, leerInstalados } from './inventario';
 import { emitirSettings, emitirVisual } from './eventos';
 import { iniciarServidorArchivos, type ServidorArchivos } from './archivos';
 import { crearAnfitrion, type Anfitrion } from './anfitrion';
+import { guardarVisualMando, olvidarVisualesDe } from './visualesMando';
 import { leerManifiesto } from './manifiesto';
 import { lanzarPluginHTML, lanzarPluginNode, type PluginLanzado } from './procesos';
 import { guardarGlobales, leerDeshabilitados, leerGlobales } from './ajustesPlugins';
@@ -98,7 +99,13 @@ async function levantar(uuid: string, marcha: Marcha): Promise<void> {
         carpeta: marcha.manifiesto.carpeta,
         dispositivo: DISPOSITIVO_GESTOR,
         globalesIniciales: leerGlobales(dirPlugins(), uuid) ?? {},
-        alVisual: (visual) => emitirVisual(visual),
+        alVisual: (visual) => {
+          // El main también lo recuerda (fusión por claves): es lo que la
+          // página del mando móvil enseñará en `/api/buttons` (83 c), porque
+          // el aviso `plugins:visual` no llega a una página servida por HTTP.
+          guardarVisualMando(visual);
+          emitirVisual(visual);
+        },
         alSettings: (contexto, settings) => alGuardarSettings(contexto, settings),
         alGlobales: (globales) => guardarGlobales(dirPlugins(), uuid, globales),
       },
@@ -292,6 +299,10 @@ export function detenerMarcha(uuid: string): void {
   const marcha = estado.enMarcha.get(uuid);
   if (!marcha) return;
   estado.enMarcha.delete(uuid);
+  // El mando móvil no debe seguir enseñando lo que pintó un plugin parado,
+  // deshabilitado o desinstalado (83 c): fuera su último visual. Los contextos
+  // se quedan a propósito (ver abajo); al rehabilitar el plugin repinta.
+  olvidarVisualesDe(estado.contextos.contextosDePlugin(uuid));
   marcha.deteniendo = true;
   const reintento = estado.reintentosPendientes.get(uuid);
   if (reintento) {

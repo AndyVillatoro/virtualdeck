@@ -2,6 +2,7 @@ import type { PluginRef } from '../../../src/types';
 import { ESPERA_REGISTRO_MS, estado, type Marcha, type MarchaLista } from './estado';
 import { existeInstalado } from './inventario';
 import { arrancar } from './cicloVida';
+import { olvidarVisualMando } from './visualesMando';
 import { validarUuid } from './instalacion';
 import { abrirVentanaPI } from './ventanaPI';
 
@@ -33,6 +34,8 @@ export async function aparecerPlugin(ref: PluginRef, visible: boolean): Promise<
   } else {
     lista.anfitrion.desaparecer(ref.contexto);
     estado.contextos.retirar(ref.contexto);
+    // El botón dejó la página: el mando tampoco lo enseña ya pintado (83 c).
+    olvidarVisualMando(ref.contexto);
   }
   return true;
 }
