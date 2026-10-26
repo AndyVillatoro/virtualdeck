@@ -82,6 +82,12 @@ export interface OpcionesSuperficies extends OpcionesPintado {
   dispararLargo?: (boton: ButtonConfig, opts?: { serial?: string }) => unknown;
   crearPaginaSuperficie: (info: InfoSuperficie) => void;
   colores: ColoresSuperficie;
+  /**
+   * Prepara lo que hace falta para dibujar los iconos de las teclas LCD
+   * (`prepararIconosLcd`, cargado con `import()`). Hasta que resuelva no se
+   * pinta ninguna tecla: la primera pintura ya sale con iconos.
+   */
+  prepararIconos?: () => Promise<void>;
   /** Traductor para los avisos de la tecla; sin él se resuelve por `config.language`. */
   t?: TFunc;
   /** Aviso al cambiar de modo en una perilla multimodo (lo pinta quien llama). */
@@ -191,12 +197,15 @@ function avisarMosaico(avisos: AvisoPerillaApi, entrada: EntradaSuperficie, huec
 }
 
 export function useSuperficies({
-  api, config, dispararBoton, dispararLargo, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot, alCambiarModo, t: tProp,
+  api, config, dispararBoton, dispararLargo, crearPaginaSuperficie, colores, iconoSvg, esGlifoDot,
+  prepararIconos, alCambiarModo, t: tProp,
 }: OpcionesSuperficies): Superficies {
   const [dispositivos, setDispositivos] = useState<InfoSuperficie[]>([]);
   const [modelos, setModelos] = useState<Record<string, DisposicionSuperficie>>({});
   const [imagenes, setImagenes] = useState<Record<string, (string | undefined)[]>>({});
   const [fuentesListas, setFuentesListas] = useState(false);
+  /** Sin `prepararIconos` no hay nada que esperar: se pinta desde el principio. */
+  const [iconosListos, setIconosListos] = useState(!prepararIconos);
   /** Página activa de cada serial, por id de página. En memoria: no se guarda. */
   const [activas, setActivas] = useState<Record<string, string>>({});
   /** Base elegida a mano de cada serial, por id de página. En memoria. */
@@ -312,6 +321,17 @@ export function useSuperficies({
       }
     };
   }, []);
+
+  // Los iconos de las teclas LCD (el `react-dom/server` diferido) llegan en su
+  // propio chunk: el pintado de abajo espera a `iconosListos`.
+  useEffect(() => {
+    if (!prepararIconos) return;
+    let vivo = true;
+    // Si el chunk no llegara, se pinta igual (sin iconos): un dock en negro es peor.
+    const listo = () => { if (vivo) setIconosListos(true); };
+    void prepararIconos().then(listo, listo);
+    return () => { vivo = false; };
+  }, [prepararIconos]);
 
   useEffect(() => {
     if (!api) return;
@@ -469,7 +489,7 @@ export function useSuperficies({
   const aviso = colores.aviso;
   const critico = colores.critico;
   useEffect(() => {
-    if (!api) return;
+    if (!api || !iconosListos) return;
     const conectados = dispositivos.filter((d) => d.conectado);
 
     // Al reconectar, el dispositivo perdió las imágenes: firma y brillo se olvidan.
@@ -519,7 +539,7 @@ export function useSuperficies({
       if (cambio) setImagenes(nuevasImagenes);
     })();
     return () => { cancelado = true; };
-  }, [api, config, dispositivos, activas, fondo, texto, aviso, critico, fuentesListas, vivo, widgets, versionVisuales]);
+  }, [api, config, dispositivos, activas, fondo, texto, aviso, critico, fuentesListas, iconosListos, vivo, widgets, versionVisuales]);
 
   // Los GIF animados de la tecla física. Va después del pintado estático (que
   // deja el primer fotograma) y comparte la resolución de página con él. Las

@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react';
 import { DotLabel } from '../../../../components/DotLabel';
 import { pintarTecla, resolverBotonLcd, COLORES_LCD } from '../../../../utils/superficies/pintarTecla';
-import { svgDeBoton, esGlifoDot } from '../../../../components/celda/iconoSvg';
+import { svgDeBoton, esGlifoDot, prepararIconosLcd } from '../../../../components/celda/iconoSvg';
 import { useDockPresets } from '../../estado/useDockPresets';
 import { alCambiarVisual, leerVisual } from '../../../../utils/plugins/visual';
 import type { DatosWidget } from '../../../../comun/widgets';
@@ -135,11 +135,14 @@ function useLcdPreview(
     const opciones = { iconoSvg: svgDeBoton, esGlifoDot };
     const visual = contexto ? leerVisual(contexto) : undefined;
 
-    pintarTecla(botonLcd, lcd, COLORES_LCD, opciones, 0, undefined, widgetData, visual)
-      .then((img) => {
-        if (activo) setLcdDataUrl(img.dataUrl);
-      })
-      .catch(() => {});
+    // El renderizador de los iconos (`react-dom/server`) va diferido: sin
+    // esperarlo, esta previa saldría sin el glifo del centro.
+    void (async () => {
+      await prepararIconosLcd();
+      if (!activo) return;
+      const img = await pintarTecla(botonLcd, lcd, COLORES_LCD, opciones, 0, undefined, widgetData, visual);
+      if (activo) setLcdDataUrl(img.dataUrl);
+    })().catch(() => {});
 
     return () => {
       activo = false;

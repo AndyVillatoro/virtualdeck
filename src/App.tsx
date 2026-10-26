@@ -12,7 +12,7 @@ import { usePluginAjustes } from './utils/plugins/usePluginAjustes';
 import { usePluginsVisibles } from './utils/plugins/usePluginsVisibles';
 import { useSuperficies } from './utils/superficies/useSuperficies';
 import { COLORES_LCD } from './utils/superficies/pintarTecla';
-import { esGlifoDot, svgDeBoton } from './components/celda/iconoSvg';
+import { esGlifoDot, prepararIconosLcd, svgDeBoton } from './components/celda/iconoSvg';
 import { sonidoActivo, perfilSonido } from './utils/sound';
 import { useSensors } from './utils/sensors';
 import { DEFAULT_CONFIG, PAGES_DEFAULT, conHuecosCompletos } from './utils/configDefaults';
@@ -154,6 +154,8 @@ export default function App() {
   const superficies = useSuperficies({
     api, config, dispararBoton, dispararLargo: dispararBotonLargo, crearPaginaSuperficie,
     colores: COLORES_LCD, iconoSvg: svgDeBoton, esGlifoDot,
+    // `react-dom/server` va diferido: las teclas LCD esperan a que llegue.
+    prepararIconos: prepararIconosLcd,
     // Perilla multimodo (T-HW-19): que se note el cambio de modo en el deck.
     alCambiarModo: (m) => showUndoToast(
       t('disp.modos.aviso', { n: m.perilla, i: m.modo + 1, total: m.total, modo: m.label }),
