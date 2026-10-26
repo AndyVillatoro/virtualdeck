@@ -1,9 +1,15 @@
-import React, { useRef, useState } from 'react';
+import React, { Suspense, useRef, useState } from 'react';
 import { useTheme } from '../utils/theme';
 import type { Profile, RGBSettings, RGBStatus, SensorsSettings, RemoteSettings, SensorsStatus, SoundProfileId, ThemeMode } from '../types';
-import { PanelAjustes } from './settings/PanelAjustes';
 import { FranjaSuperior } from './titlebar/FranjaSuperior';
 import { useClickOutsideSettings } from './titlebar/useClickOutsideSettings';
+
+// El panel (con sus secciones) solo se usa al abrirlo y nadie lo importa de
+// otro sitio: bajo demanda se queda fuera del bundle principal. Mismo patrón
+// que `EditorB` en `OverlaysApp.tsx`.
+const PanelAjustes = React.lazy(() =>
+  import('./settings/PanelAjustes').then((m) => ({ default: m.PanelAjustes })),
+);
 
 export interface TitleBarProps {
   showControls?: boolean;
@@ -149,55 +155,57 @@ export function TitleBar({
       />
 
       {showSettings && (
-        <PanelAjustes
-          accent={effectiveAccent}
-          onAccentChange={onAccentChange}
-          uiScale={uiScale}
-          onUiScaleChange={onUiScaleChange}
-          tileMode={tileMode}
-          onTileModeChange={onTileModeChange}
-          theme={theme}
-          onThemeChange={onThemeChange}
-          language={language}
-          onLanguageChange={onLanguageChange}
-          autostart={autostart}
-          onAutostartToggle={onAutostartToggle}
-          alwaysOnTop={alwaysOnTop}
-          onAlwaysOnTopToggle={onAlwaysOnTopToggle}
-          soundOnPress={soundOnPress}
-          onSoundToggle={onSoundToggle}
-          soundProfile={soundProfile}
-          onSoundProfileChange={onSoundProfileChange}
-          rgbConfig={rgbConfig}
-          onRGBConfigChange={onRGBConfigChange}
-          rgbStatus={rgbStatus}
-          sensorsConfig={sensorsConfig}
-          remoteConfig={remoteConfig}
-          onRemoteConfigChange={onRemoteConfigChange}
-          musicPanel={musicPanel}
-          onMusicPanelChange={onMusicPanelChange}
-          onSensorsConfigChange={onSensorsConfigChange}
-          sensorsStatus={sensorsStatus}
-          profiles={profiles}
-          onSaveProfile={onSaveProfile}
-          onLoadProfile={onLoadProfile}
-          onAppendProfilePages={onAppendProfilePages}
-          onDeleteProfile={onDeleteProfile}
-          onConfigExport={onConfigExport}
-          onConfigImport={onConfigImport}
-          onUpdateProfileTargetApp={onUpdateProfileTargetApp}
-          autoProfileSwitch={autoProfileSwitch}
-          onAutoProfileSwitchToggle={onAutoProfileSwitchToggle}
-          autoProfileRestoreDefault={autoProfileRestoreDefault}
-          onAutoProfileRestoreDefaultToggle={onAutoProfileRestoreDefaultToggle}
-          targetDisplayId={targetDisplayId}
-          onTargetDisplayChange={onTargetDisplayChange}
-          onReplayOnboarding={onReplayOnboarding}
-          newProfileName={newProfileName}
-          setNewProfileName={setNewProfileName}
-          panelRef={panelRef}
-          onCerrar={() => setShowSettings(false)}
-        />
+        <Suspense fallback={null}>
+          <PanelAjustes
+            accent={effectiveAccent}
+            onAccentChange={onAccentChange}
+            uiScale={uiScale}
+            onUiScaleChange={onUiScaleChange}
+            tileMode={tileMode}
+            onTileModeChange={onTileModeChange}
+            theme={theme}
+            onThemeChange={onThemeChange}
+            language={language}
+            onLanguageChange={onLanguageChange}
+            autostart={autostart}
+            onAutostartToggle={onAutostartToggle}
+            alwaysOnTop={alwaysOnTop}
+            onAlwaysOnTopToggle={onAlwaysOnTopToggle}
+            soundOnPress={soundOnPress}
+            onSoundToggle={onSoundToggle}
+            soundProfile={soundProfile}
+            onSoundProfileChange={onSoundProfileChange}
+            rgbConfig={rgbConfig}
+            onRGBConfigChange={onRGBConfigChange}
+            rgbStatus={rgbStatus}
+            sensorsConfig={sensorsConfig}
+            remoteConfig={remoteConfig}
+            onRemoteConfigChange={onRemoteConfigChange}
+            musicPanel={musicPanel}
+            onMusicPanelChange={onMusicPanelChange}
+            onSensorsConfigChange={onSensorsConfigChange}
+            sensorsStatus={sensorsStatus}
+            profiles={profiles}
+            onSaveProfile={onSaveProfile}
+            onLoadProfile={onLoadProfile}
+            onAppendProfilePages={onAppendProfilePages}
+            onDeleteProfile={onDeleteProfile}
+            onConfigExport={onConfigExport}
+            onConfigImport={onConfigImport}
+            onUpdateProfileTargetApp={onUpdateProfileTargetApp}
+            autoProfileSwitch={autoProfileSwitch}
+            onAutoProfileSwitchToggle={onAutoProfileSwitchToggle}
+            autoProfileRestoreDefault={autoProfileRestoreDefault}
+            onAutoProfileRestoreDefaultToggle={onAutoProfileRestoreDefaultToggle}
+            targetDisplayId={targetDisplayId}
+            onTargetDisplayChange={onTargetDisplayChange}
+            onReplayOnboarding={onReplayOnboarding}
+            newProfileName={newProfileName}
+            setNewProfileName={setNewProfileName}
+            panelRef={panelRef}
+            onCerrar={() => setShowSettings(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

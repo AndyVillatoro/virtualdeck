@@ -4,8 +4,10 @@ import type { DisposicionSuperficie } from '../types/superficies';
 import type { DestinoPlantilla } from '../utils/useDeck/paginas';
 import type { PresetHueco } from '../data/presetsDock';
 import type { Superficies } from '../utils/superficies/useSuperficies';
-import { FullscreenB } from './FullscreenB';
 
+// Mismo patrón que sus hermanos: el kiosko entra en el Suspense de `App` y solo
+// se descarga al abrirlo.
+const FullscreenB = React.lazy(() => import('./FullscreenB').then((m) => ({ default: m.FullscreenB })));
 const WallpaperB = React.lazy(() => import('./WallpaperB').then((m) => ({ default: m.WallpaperB })));
 const RGBManagerB = React.lazy(() => import('./RGBManagerB').then((m) => ({ default: m.RGBManagerB })));
 const BarConfigB = React.lazy(() => import('./BarConfigB').then((m) => ({ default: m.BarConfigB })));
