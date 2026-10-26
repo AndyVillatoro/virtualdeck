@@ -241,10 +241,8 @@ export function ContenidoTienda({ instalados, accent }: {
     setInstalandoPlugin(true);
     setErrorPlugin(null);
     try {
-      const actual = estadoGeneralDeEntrada(entrada, instalados, pluginsInstalados, manifestUrl);
-      if (actual.estadoPlugin === 'actualizable') {
-        await api.plugins.uninstall(entrada.uuid).catch(() => false);
-      }
+      // Ya no se desinstala antes: `installFromUrl` actualiza en el sitio
+      // (83 f) y conservar `<uuid>.global.json` es cosa del proceso principal.
       const res = await api.plugins.installFromUrl({
         url: entrada.url,
         sha256: entrada.sha256,

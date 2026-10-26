@@ -124,8 +124,10 @@ export async function instalarDesdeUrl(entrada: EntradaInstalacionUrl): Promise<
   }
   try {
     // El UUID esperado se comprueba antes de mover el ZIP a su carpeta final
-    // y antes de arrancar el proceso del plugin (T-SEC-07 H-09).
-    return await instalarDesdeZip(temporal, entrada.uuid);
+    // y antes de arrancar el proceso del plugin (T-SEC-07 H-09). Con
+    // `actualizar`, si el uuid ya está instalado el reemplazo es en el sitio
+    // (83 f): sin desinstalar, sin perder `<uuid>.global.json`.
+    return await instalarDesdeZip(temporal, { uuidEsperado: entrada.uuid, actualizar: true });
   } finally {
     await rm(temporal, { force: true }).catch(() => {});
   }
