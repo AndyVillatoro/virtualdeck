@@ -20,6 +20,7 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Plugins en docks físicos**: asignación de acciones de plugin a teclas LCD y perillas en Stream Dock N3 y otros modelos de dock.
 - **Conmutador de salida de audio (`audio switch`)**: acción para alternar entre dispositivos de sonido (fijo, rotar todos o rotar lista) con icono y texto según el dispositivo activo.
 - **Acción secuencial `cycle`**: encadena múltiples sub-acciones en un solo botón con pasos configurables (rótulo, color e icono individual) que avanzan en cada pulsación.
+- **Imagen de los plugins en el mando móvil**: el teléfono enseña la imagen y el título que pinta cada plugin, como el deck y los docks.
 - **Presets cíclicos de energía y pantalla**: plantillas listas para usar que alternan planes de energía de Windows y proyección de pantalla en escritorio y docks.
 
 ### Changed
@@ -27,10 +28,12 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Reorganización interna del código**: modularización en carpetas por dominio (`electron/main`, editor, app, núcleo Rust) y depuración de dependencias y exportaciones no utilizadas.
 - **Personalización de controles sin pantalla en docks**: bloqueo de ajustes de apariencia en controles físicos sin pantalla LCD, mostrando una indicación explicativa.
 - **Perillas de volumen y brillo sin núcleo nativo**: un único proceso de PowerShell atiende todos los pasos (unos 2 ms por paso en vez de unos 300 ms).
+- **Arranque más ligero**: Ajustes, el kiosko y el dibujo de iconos de las teclas LCD se cargan al usarse; el código que se carga al abrir baja de 747 a 601 KiB.
 - **Seguimiento del dispositivo de audio activo**: el botón refleja inmediatamente el dispositivo real en uso y recupera la conexión por nombre si el identificador USB del sistema cambia.
 
 ### Fixed
 
+- **Actualizar un plugin ya no borra sus ajustes**: la tienda lo actualiza en su sitio, sin desinstalarlo; conserva sus ajustes globales (cuentas, tokens) y, si la descarga falla, sigue la versión anterior.
 - **Apertura del editor desde controles de dock**: corrección del fallo de suspensión en la interfaz que dejaba la pantalla en negro al editar un control por primera vez.
 - **Vista previa única en el inspector de dock**: previsualización LCD mostrada una sola vez y exclusivamente en controles con pantalla física según las capacidades del modelo.
 - **Fluidez en perillas de dock**: eliminación del encolado acumulativo de imágenes y de esperas fijas innecesarias al girar.
