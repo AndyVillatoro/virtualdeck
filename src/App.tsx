@@ -4,7 +4,7 @@ import { EsperaVista } from './screens/EsperaVista';
 import { VistasSecundarias } from './screens/VistasSecundarias';
 import { OverlaysApp } from './screens/OverlaysApp';
 import { NowPlayingProvider } from './utils/nowPlaying';
-import { LanguageProvider } from './utils/i18n';
+import { LanguageProvider, prepararIdioma } from './utils/i18n';
 import { ThemeProvider } from './utils/theme';
 import { migrateConfig, sanearConfig, CURRENT_CONFIG_VERSION } from './utils/configMigration';
 import { useDisparadores } from './utils/useDisparadores';
@@ -81,12 +81,13 @@ export default function App() {
     Promise.all([
       api.config.load().catch((e) => { logError('config.load', e); return {}; }),
       api.app.getAutostart().catch(() => false),
-    ]).then(([saved, as]) => {
+    ]).then(async ([saved, as]) => {
       const migrated = migrateConfig(saved);
       // Se sanea antes de tocarlo: un `pages` con la forma rota reventaba el
       // primer `.map` y dejaba la ventana **en blanco**, sin mensaje ni forma
       // de llegar a los ajustes para arreglarlo.
       const { config: s, reparado } = sanearConfig(migrated);
+      await prepararIdioma(s.language ?? DEFAULT_CONFIG.language);
       if (reparado.length > 0) setImportError(t('config.repaired', { partes: reparado.join(', ') }));
       if (s && s.buttons && s.buttons.length > 0) {
         const merged = conHuecosCompletos(s.pages || PAGES_DEFAULT, s.buttons);

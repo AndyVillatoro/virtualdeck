@@ -3,10 +3,8 @@
 // estables (no el texto), así el español también pasa por el diccionario y se
 // evita el drift entre idiomas. Fallback: es → clave cruda.
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ES } from './idiomas/es';
-import { EN } from './idiomas/en';
-import { FIELDS_EN } from './idiomas/campos';
 import type { Dict } from './idiomas/tipos';
 
 import type { Lang } from '../comun/formatos';
@@ -20,7 +18,31 @@ export function resolveLang(pref: LangPref | undefined): Lang {
   return nav.startsWith('es') ? 'es' : 'en';
 }
 
-const DICTS: Record<Lang, Dict> = { es: ES, en: EN };
+let dictEn: Dict | null = null;
+let camposEn: Record<string, string> | null = null;
+let promesaIngles: Promise<void> | null = null;
+
+/**
+ * Carga bajo demanda los diccionarios en inglés (`en.ts` y `campos.ts`).
+ * Si el idioma resuelto es `'es'` o ya están cargados, resuelve al instante.
+ */
+export function prepararIdioma(pref: LangPref | undefined): Promise<void> {
+  if (resolveLang(pref) !== 'en' || (dictEn && camposEn)) {
+    return Promise.resolve();
+  }
+  if (!promesaIngles) {
+    promesaIngles = Promise.all([
+      import('./idiomas/en'),
+      import('./idiomas/campos'),
+    ]).then(([modEn, modCampos]) => {
+      dictEn = modEn.EN;
+      camposEn = modCampos.FIELDS_EN;
+    }).catch(() => {
+      promesaIngles = null;
+    });
+  }
+  return promesaIngles;
+}
 
 export type TFunc = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -33,8 +55,10 @@ export type TFunc = (key: string, vars?: Record<string, string | number>) => str
  * de identificadores en vez de frases.
  */
 export function makeT(lang: Lang): TFunc {
+  if (lang === 'en' && !dictEn) void prepararIdioma('en');
   return (key, vars) => {
-    let s = DICTS[lang][key] ?? ES[key] ?? key;
+    const tabla = lang === 'en' ? (dictEn ?? ES) : ES;
+    let s = tabla[key] ?? ES[key] ?? key;
     if (vars) {
       for (const k of Object.keys(vars)) s = s.replace(new RegExp(`\\{${k}\\}`, 'g'), String(vars[k]));
     }
@@ -50,10 +74,20 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue>({ lang: 'es', t: makeT('es') });
 
 export function LanguageProvider({ pref, children }: { pref: LangPref | undefined; children: React.ReactNode }) {
+  const [versionIngles, setVersionIngles] = useState(0);
+  useEffect(() => {
+    if (resolveLang(pref) !== 'en' || (dictEn && camposEn)) return;
+    let vivo = true;
+    void prepararIdioma(pref).then(() => {
+      if (vivo) setVersionIngles((v) => v + 1);
+    });
+    return () => { vivo = false; };
+  }, [pref]);
   const value = useMemo<I18nValue>(() => {
+    void versionIngles;
     const lang = resolveLang(pref);
     return { lang, t: makeT(lang) };
-  }, [pref]);
+  }, [pref, versionIngles]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
@@ -71,5 +105,5 @@ export function useLang(): Lang {
 /** Traductor de campos del editor por texto español (bulk). EN o passthrough. */
 export function useFieldText(): (es: string) => string {
   const lang = useLang();
-  return (es) => (lang === 'en' ? (FIELDS_EN[es] ?? es) : es);
+  return (es) => (lang === 'en' && camposEn ? (camposEn[es] ?? es) : es);
 }
