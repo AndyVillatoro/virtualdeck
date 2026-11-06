@@ -8,12 +8,14 @@
  * el dispositivo se retira y se sigue sondeando.
  */
 
+import { powerMonitor } from 'electron';
 import { devicesAsync, type Device } from 'node-hid';
 import type { EntradaSuperficie, InfoSuperficie } from '../../../src/types';
 import { logEntry } from '../sistema/logger';
 import { DispositivoMirabox } from './dispositivoMirabox';
 import { disposicionDe, modeloPorVidPid, type ModeloMirabox } from './modelos';
 import { interpretarEntrada } from './protocoloMirabox';
+import { crearGestorReposo } from './reposo';
 
 const CADA_MS = 3000;
 const BRILLO_INICIAL = 70;
@@ -28,6 +30,14 @@ let callbacks: CallbacksGestor | null = null;
 let dispositivos = new Map<string, DispositivoMirabox>();
 let infos = new Map<string, InfoSuperficie>();
 const abriendo = new Set<string>();
+let suscritoEnergia = false;
+
+const reposo = crearGestorReposo({
+  aplicarBrillo: (serial, valor) => {
+    const disp = dispositivos.get(serial);
+    if (disp) void disp.brillo(valor);
+  },
+});
 
 function registrar(nivel: 'info' | 'warn' | 'error', mensaje: string, meta?: unknown) {
   logEntry({ level: nivel, scope: 'superficies', message: mensaje, meta });
@@ -45,6 +55,8 @@ function avisarCambio(): void {
 function alEntradaCruda(serial: string, modelo: ModeloMirabox, buf: Buffer): void {
   const entrada = interpretarEntrada(buf, modelo);
   if (!entrada) return;
+  const { consumirEntrada } = reposo.registrarActividad(serial);
+  if (consumirEntrada) return;
   callbacks?.alEntrada({ serial, ...entrada });
 }
 
@@ -52,6 +64,7 @@ function retirar(serial: string, motivo: string): void {
   const dispositivo = dispositivos.get(serial);
   dispositivos.delete(serial);
   infos.delete(serial);
+  reposo.retirarDispositivo(serial);
   if (!dispositivo) return;
   registrar('info', `disconnected ${serial}: ${motivo}`);
   if (dispositivo.estaVivo) void dispositivo.cerrar();
@@ -67,6 +80,7 @@ async function abrir(serial: string, modelo: ModeloMirabox, path: string): Promi
     abriendo.delete(serial);
     if (!dispositivo.estaVivo) return;
     dispositivos.set(serial, dispositivo);
+    reposo.registrarDispositivo(serial, BRILLO_INICIAL);
     infos.set(serial, {
       serial,
       modelo: modelo.id,
@@ -84,6 +98,7 @@ async function abrir(serial: string, modelo: ModeloMirabox, path: string): Promi
 
 /** Enumera el bus, abre los que aparecen y retira los que ya no están. */
 async function tic(): Promise<void> {
+  reposo.evaluarInactividad();
   let encontrados: Device[];
   try {
     encontrados = await devicesAsync();
@@ -109,8 +124,21 @@ async function tic(): Promise<void> {
   }
 }
 
+function suscribirEnergia(): void {
+  if (suscritoEnergia) return;
+  suscritoEnergia = true;
+  powerMonitor.on('lock-screen', () => reposo.alBloquearSesion());
+  powerMonitor.on('unlock-screen', () => reposo.alDesbloquearSesion());
+  powerMonitor.on('suspend', () => reposo.alBloquearSesion());
+  powerMonitor.on('resume', () => {
+    reposo.alDesbloquearSesion();
+    void tic();
+  });
+}
+
 export function iniciarGestor(cbs: CallbacksGestor): void {
   callbacks = cbs;
+  suscribirEnergia();
   if (temporizador) return;
   void tic();
   temporizador = setInterval(() => { void tic(); }, CADA_MS);
@@ -130,6 +158,7 @@ export async function imagen(serial: string, tecla: number, jpegBase64: string):
 export async function brillo(serial: string, valor: number): Promise<boolean> {
   const dispositivo = dispositivos.get(serial);
   if (!dispositivo) return false;
+  reposo.fijarBrilloUsuario(serial, valor);
   await dispositivo.brillo(valor);
   return true;
 }
@@ -153,5 +182,6 @@ export function detener(): void {
   dispositivos = new Map();
   infos = new Map();
   abriendo.clear();
+  reposo.limpiar();
   callbacks = null;
 }
