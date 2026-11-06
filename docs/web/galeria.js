@@ -5,14 +5,14 @@
 
   var VERSION = "?v=0.15.0";
   var ITEMS = [
-    { img: "01-deck", n: "01", t: { es: "Deck principal", en: "Main deck" }, d: { es: "Panel de música con visualizador de puntos, rejilla de 4x4 con iconos del catálogo y barra lateral con reloj, clima, sensores y RGB.", en: "Music panel with dot visualizer, 4x4 grid of catalog icons, and a sidebar with clock, weather, sensors and RGB." }, alt: { es: "Pantalla principal de VirtualDeck", en: "VirtualDeck main screen" } },
-    { img: "02-editor", n: "02", t: { es: "Editor de acciones", en: "Action editor" }, d: { es: "Vista previa del botón, PRESETS con fichas de apps y APARIENCIA con el icono del catálogo, todo por secciones.", en: "Button preview, PRESETS with app cards and APPEARANCE with the catalog icon, all in sections." }, alt: { es: "Editor de botones por secciones", en: "Section-based button editor" } },
+    { img: "01-deck", n: "01", t: { es: "Deck principal", en: "Main deck" }, d: { es: "Panel de música redimensionable con vídeo en vivo y visualizador de puntos, rejilla 4x4 y barra lateral con catálogo de plugins arrastrables, sensores y RGB.", en: "Resizable music panel with live video and dot visualizer, 4x4 grid, and sidebar with draggable plugin catalog, sensors and RGB." }, alt: { es: "Pantalla principal de VirtualDeck", en: "VirtualDeck main screen" } },
+    { img: "02-editor", n: "02", t: { es: "Editor de acciones", en: "Action editor" }, d: { es: "Vista previa en vivo, 45 tipos de acción por familias (incluidos ciclo secuencial, switch de audio y plugins), presets y apariencia por secciones.", en: "Live button preview, 45 family-grouped action types (including sequential cycle, audio switch and plugins), presets and section-based appearance." }, alt: { es: "Editor de botones por secciones", en: "Section-based button editor" } },
     { img: "03-catalogo", n: "03", t: { es: "Catálogo de iconos", en: "Icon catalog" }, d: { es: "Un buscador para marcas y acciones a la vez, con grupos, filtros por tipo y alias en español.", en: "One search for brands and actions at once, with groups, type filters and Spanish aliases." }, alt: { es: "Catálogo único de iconos", en: "Unified icon catalog" } },
-    { img: "04-dock", n: "04", t: { es: "Dock N3", en: "N3 dock" }, d: { es: "La pantalla Dispositivos con el N3 conectado: rotación, brillo de teclas LCD, página pintada entera y perfiles.", en: "The Devices screen with the N3 plugged in: rotation, LCD key brightness, fully painted page and profiles." }, alt: { es: "Dock físico Stream Dock N3 configurado", en: "Configured Stream Dock N3 hardware" } },
-    { img: "05-movil", n: "05", t: { es: "Mando móvil", en: "Mobile remote" }, d: { es: "La misma rejilla en el navegador del teléfono, con widgets, tema y acento del deck, sin instalar nada.", en: "The same grid in the phone browser, with the deck widgets, theme and accent, with nothing to install." }, alt: { es: "Mando móvil en el teléfono", en: "Mobile remote on the phone" } },
+    { img: "04-dock", n: "04", t: { es: "Dock N3", en: "N3 dock" }, d: { es: "La pantalla Dispositivos con previa en vivo de presets y perfiles sobre el diagrama, catálogo lateral de plugins para arrastrar a teclas o perillas y reposo automático.", en: "The Devices screen with live preset and profile previews on the diagram, side plugin catalog to drag onto keys or dials, and auto-sleep." }, alt: { es: "Dock físico Stream Dock N3 configurado", en: "Configured Stream Dock N3 hardware" } },
+    { img: "05-movil", n: "05", t: { es: "Mando móvil", en: "Mobile remote" }, d: { es: "La misma rejilla en el navegador del teléfono, con widgets, carátulas de plugins en vivo, tema y acento del deck, sin instalar nada.", en: "The same grid in the phone browser, with live widgets, plugin artwork, deck theme and accent, with nothing to install." }, alt: { es: "Mando móvil en el teléfono", en: "Mobile remote on the phone" } },
     { img: "05b-movil-marco", n: "06", t: { es: "Mando en vertical", en: "Portrait remote" }, d: { es: "El mando llena el alto del teléfono: dos franjas finas de fondo y nada más que botones.", en: "The remote fills the phone height: two thin background strips and nothing but buttons." }, alt: { es: "Mando móvil en vertical", en: "Portrait mobile remote" } },
-    { img: "06-tienda", n: "07", t: { es: "Tienda", en: "Store" }, d: { es: "Ventana propia con buscador, filtros por tipo y app, y tarjetas con portada e icono.", en: "Its own window with search, type and app filters, and cards with cover and icon." }, alt: { es: "Tienda de perfiles", en: "Profile store" } },
-    { img: "06b-tienda-ficha", n: "08", t: { es: "Ficha con riesgo", en: "Risk card" }, d: { es: "Cada entrada enseña su aviso completo —programas, scripts, atajos— antes de instalar.", en: "Each entry shows its full warning —programs, scripts, hotkeys— before installing." }, alt: { es: "Ficha de perfil con auditoría de riesgo", en: "Profile card with risk audit" } },
+    { img: "06-tienda", n: "07", t: { es: "Tienda y Plugins", en: "Store & Plugins" }, d: { es: "Ventana propia con pestañas de Perfiles, Páginas y Plugins de Stream Deck verificados con SHA-256 e instalables en un clic.", en: "Dedicated window with Profiles, Pages and SHA-256 verified Stream Deck Plugins installable in one click." }, alt: { es: "Tienda de perfiles y plugins", en: "Profile and plugin store" } },
+    { img: "06b-tienda-ficha", n: "08", t: { es: "Ficha con riesgo", en: "Risk card" }, d: { es: "Cada entrada enseña su aviso completo —programas, scripts, atajos, celdas 2×2 y pasos de ciclo— antes de instalar.", en: "Each entry shows its full warning —programs, scripts, hotkeys, 2x2 cells and cycle steps— before installing." }, alt: { es: "Ficha de perfil con auditoría de riesgo", en: "Profile card with risk audit" } },
     { img: "07-barra-flotante", n: "09", t: { es: "Barra flotante", en: "Floating bar" }, d: { es: "La columna siempre encima del escritorio, con los mismos botones y widgets del deck.", en: "The always-on-top desktop column, with the same deck buttons and widgets." }, alt: { es: "Barra flotante sobre el escritorio", en: "Floating bar over the desktop" } },
     { img: "08-kiosko-barra", n: "10", t: { es: "Kiosko en barra", en: "Bar kiosk" }, d: { es: "Pantalla completa de verdad en 1280x480, pensada para una táctil secundaria o tableta.", en: "True fullscreen at 1280x480, meant for a secondary touchscreen or tablet." }, alt: { es: "Modo kiosko en formato barra", en: "Kiosk mode in bar format" } },
     { img: "09-rgb", n: "11", t: { es: "Luces RGB", en: "RGB lights" }, d: { es: "Dispositivos, zonas, pintor LED a LED y 18 presets vía OpenRGB.", en: "Devices, zones, LED-by-LED painter and 18 presets via OpenRGB." }, alt: { es: "Gestor de luces RGB", en: "RGB lighting manager" } }
@@ -100,6 +100,14 @@
     ctx.drawImage(img, (w - img.naturalWidth * s) / 2, (h - img.naturalHeight * s) / 2, img.naturalWidth * s, img.naturalHeight * s);
   }
 
+  function colorCeldaTransicion(da, db, x, y, zoom, entrante) {
+    if (!entrante) return colorDe(da, x, y);
+    var zx = Math.round((x - cols / 2) / zoom + cols / 2);
+    var zy = Math.round((y - filas / 2) / zoom + filas / 2);
+    if (zx < 0 || zy < 0 || zx >= cols || zy >= filas) return null;
+    return colorDe(db, zx, zy);
+  }
+
   /* Transición: la saliente se disuelve en puntos y la entrante se compone
      desde puntos, con un leve zoom de acercamiento como segundo efecto. */
   function dibujarTransicion(a, b, t) {
@@ -119,18 +127,9 @@
     for (var y = 0; y < filas; y++) {
       for (var x = 0; x < cols; x++) {
         var hh = hash(x, y);
-        var entrante = hh < t;
-        var c3;
-        if (entrante) {
-          var zx = Math.round((x - cols / 2) / zoom + cols / 2);
-          var zy = Math.round((y - filas / 2) / zoom + filas / 2);
-          if (zx < 0 || zy < 0 || zx >= cols || zy >= filas) continue;
-          c3 = colorDe(db, zx, zy);
-        } else {
-          c3 = colorDe(da, x, y);
-        }
-        var prox = Math.abs(hh - t);
-        var lado = Math.min(1, prox * 6);
+        var c3 = colorCeldaTransicion(da, db, x, y, zoom, hh < t);
+        if (!c3) continue;
+        var lado = Math.min(1, Math.abs(hh - t) * 6);
         var r = Math.min(cw, chh) * (0.14 + 0.34 * lado);
         if (r < 0.5) continue;
         ctx.fillStyle = "rgb(" + c3[0] + "," + c3[1] + "," + c3[2] + ")";
@@ -150,10 +149,8 @@
     }
     var redondo = Math.round(pos);
     if (redondo !== indice) mostrarIndice(redondo);
-    if (reducido) {
-      dibujarQuieta(ITEMS[redondo]);
-    } else if (f < 0.02) {
-      dibujarQuieta(ITEMS[i0]);
+    if (reducido || f < 0.02) {
+      dibujarQuieta(ITEMS[reducido ? redondo : i0]);
     } else if (f > 0.98) {
       dibujarQuieta(ITEMS[i0 + 1]);
     } else {
@@ -210,9 +207,10 @@
 
   function irA(k, suave) {
     if (!gal) return;
+    var idx = Math.max(0, Math.min(ITEMS.length - 1, k));
     var vh = window.innerHeight;
     var total = gal.offsetHeight - vh;
-    var y = gal.offsetTop + (total * k) / (ITEMS.length - 1);
+    var y = gal.offsetTop + (total * idx) / (ITEMS.length - 1);
     var animado = suave !== false && !reducido;
     window.scrollTo({ top: y, behavior: animado ? "smooth" : "auto" });
   }
@@ -230,6 +228,52 @@
     imgs[it.img] = img;
   }
 
+  function armarBotonesPaso() {
+    var prev = document.getElementById("gal-prev");
+    var next = document.getElementById("gal-next");
+    if (prev) {
+      prev.addEventListener("click", function () {
+        irA((indice < 0 ? 0 : indice) - 1);
+      });
+    }
+    if (next) {
+      next.addEventListener("click", function () {
+        irA((indice < 0 ? 0 : indice) + 1);
+      });
+    }
+  }
+
+  function armarPuntosNavegacion() {
+    if (!dotsNav) return;
+    for (var i = 0; i < ITEMS.length; i++) {
+      (function (k) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.setAttribute("data-k", String(k));
+        b.setAttribute("aria-label", ITEMS[k].n + " — " + ITEMS[k].t[idioma]);
+        b.addEventListener("click", function () { irA(k); });
+        dotsNav.appendChild(b);
+      })(i);
+    }
+  }
+
+  function precargarImagenes() {
+    cargar(0);
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (es) {
+        for (var j = 0; j < es.length; j++) {
+          if (es[j].isIntersecting) {
+            for (var k = 0; k < ITEMS.length; k++) cargar(k);
+            io.disconnect();
+          }
+        }
+      }, { rootMargin: "600px" });
+      io.observe(gal);
+    } else {
+      for (var k2 = 0; k2 < ITEMS.length; k2++) cargar(k2);
+    }
+  }
+
   function armar() {
     gal = document.getElementById("scrollgal");
     if (!gal) return;
@@ -245,34 +289,9 @@
     reducido = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     gal.style.height = ITEMS.length * 110 + 100 + "vh";
-
-    if (dotsNav) {
-      for (var i = 0; i < ITEMS.length; i++) {
-        (function (k) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.setAttribute("data-k", String(k));
-          b.setAttribute("aria-label", ITEMS[k].n + " — " + ITEMS[k].t[idioma]);
-          b.addEventListener("click", function () { irA(k); });
-          dotsNav.appendChild(b);
-        })(i);
-      }
-    }
-
-    cargar(0);
-    if ("IntersectionObserver" in window) {
-      var io = new IntersectionObserver(function (es) {
-        for (var j = 0; j < es.length; j++) {
-          if (es[j].isIntersecting) {
-            for (var k = 0; k < ITEMS.length; k++) cargar(k);
-            io.disconnect();
-          }
-        }
-      }, { rootMargin: "600px" });
-      io.observe(gal);
-    } else {
-      for (var k2 = 0; k2 < ITEMS.length; k2++) cargar(k2);
-    }
+    armarPuntosNavegacion();
+    armarBotonesPaso();
+    precargarImagenes();
 
     var tEspera = null;
     window.addEventListener("scroll", leerScroll, { passive: true });
@@ -303,9 +322,7 @@
     imgs = {};
     muestras = {};
     cargar(indice < 0 ? 0 : indice);
-    if ("IntersectionObserver" in window) {
-      for (var k = 0; k < ITEMS.length; k++) cargar(k);
-    }
+    for (var k = 0; k < ITEMS.length; k++) cargar(k);
     indice = -1;
     sucio = true;
     pedirFotograma();

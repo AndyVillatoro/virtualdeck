@@ -9,7 +9,8 @@
       { code: "F-15-02", t: { es: "Extensión compañera del navegador", en: "Browser companion extension" }, d: { es: "Captura directa de vídeo y metadatos en pestañas de YouTube, Spotify Web y Twitch sin congelarse al cubrir la ventana.", en: "Direct tab video and metadata capture from YouTube, Spotify Web and Twitch without freezing when occluded." } },
       { code: "F-15-03", t: { es: "Switch de audio + acción ciclo", en: "Audio switcher + cycle action" }, d: { es: "Alterna salidas de sonido con icono reactivo según el dispositivo activo y encadena múltiples pasos en un mismo botón.", en: "Switch sound outputs with a reactive active-device icon and chain multiple sequential steps in one button." } },
       { code: "F-15-04", t: { es: "Reposo en docks + mando con plugins", en: "Dock sleep + plugins on remote" }, d: { es: "Apagado automático por inactividad y bloqueo de sesión, previa en vivo de presets en el diagrama, perillas a ~2 ms y carátulas de plugin en el móvil.", en: "Auto-sleep on idle and session lock, live preset previews on the dock diagram, ~2 ms knob turns and live plugin art on the phone." } },
-      { code: "F-15-05", t: { es: "Arranque -32 % + tecla VOLVER", en: "32% lighter startup + BACK key" }, d: { es: "Bundle inicial reducido de 747 a 505 KiB con carga diferida y botón VOLVER automático con el icono en puntos de la app vinculada.", en: "Initial bundle reduced from 747 to 505 KiB via lazy chunks plus an automatic BACK key with the linked app's dot icon." } }
+      { code: "F-15-05", t: { es: "Arranque -32 % + tecla VOLVER", en: "32% lighter startup + BACK key" }, d: { es: "Bundle inicial reducido de 747 a 505 KiB con carga diferida y botón VOLVER automático con el icono en puntos de la app vinculada.", en: "Initial bundle reduced from 747 to 505 KiB via lazy chunks plus an automatic BACK key with the linked app's dot icon." } },
+      { code: "F-15-06", t: { es: "Endurecimiento LAN y auditoría 2×2", en: "LAN hardening & 2x2 risk audit" }, d: { es: "Límite de frecuencia contra fuerza bruta en el mando móvil, preservación de ajustes del equipo al importar y análisis de riesgo en celdas 2×2 y ciclos.", en: "Brute-force rate limiting on the mobile remote, host-settings preservation on config import, and risk auditing inside 2x2 cells and cycles." } }
     ] },
     { version: "v0.14.1", date: "2026-10-09", items: [
       { code: "F-14-11", t: { es: "Vídeo en vivo en panel de música", en: "Live video in music panel" }, d: { es: "Resolución nativa adaptada (CPU a 0,64%) en modo escritorio y formato barra con recorte ajustable.", en: "Adaptive native scaling (0.64% CPU) across desktop and bar layouts with custom cropping." } },
@@ -53,13 +54,59 @@
     ] }
   ];
 
+  var filtroVersion = "all";
+
   function lang() { return document.documentElement.lang === "en" ? "en" : "es"; }
+
+  function crearCeldaFeature(f, l) {
+    var cell = document.createElement("div");
+    cell.className = "feat";
+    var h = document.createElement("div");
+    h.className = "feat-code";
+    h.textContent = f.code;
+    var t = document.createElement("h3");
+    t.textContent = f.t[l];
+    t.setAttribute("data-feat", f.code);
+    var p = document.createElement("p");
+    p.textContent = f.d[l];
+    p.setAttribute("data-feat-d", f.code);
+    cell.appendChild(h);
+    cell.appendChild(t);
+    cell.appendChild(p);
+    return cell;
+  }
+
+  function renderFiltros() {
+    var bar = document.getElementById("rel-filters");
+    if (!bar) return;
+    bar.innerHTML = "";
+    var l = lang();
+    var opciones = [{ v: "all", txt: l === "en" ? "ALL RELEASES" : "TODAS LAS VERSIONES" }];
+    for (var i = 0; i < FEATURES.length; i++) {
+      opciones.push({ v: FEATURES[i].version, txt: FEATURES[i].version });
+    }
+    opciones.forEach(function (op) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "rel-filter-btn";
+      b.textContent = op.txt;
+      b.setAttribute("aria-pressed", String(filtroVersion === op.v));
+      b.addEventListener("click", function () {
+        filtroVersion = op.v;
+        renderFiltros();
+        renderRegistro();
+      });
+      bar.appendChild(b);
+    });
+  }
 
   function renderRegistro() {
     var host = document.getElementById("registro");
     if (!host) return;
     host.innerHTML = "";
+    var l = lang();
     FEATURES.forEach(function (rel) {
+      if (filtroVersion !== "all" && rel.version !== filtroVersion) return;
       var block = document.createElement("div");
       block.className = "rel-block";
       var head = document.createElement("div");
@@ -71,30 +118,16 @@
       var grid = document.createElement("div");
       grid.className = "rel-grid";
       rel.items.forEach(function (f) {
-        var cell = document.createElement("div");
-        cell.className = "feat";
-        var h = document.createElement("div");
-        h.className = "feat-code";
-        h.textContent = f.code;
-        var t = document.createElement("h3");
-        t.textContent = f.t[lang()];
-        t.setAttribute("data-feat", f.code);
-        var p = document.createElement("p");
-        p.textContent = f.d[lang()];
-        p.setAttribute("data-feat-d", f.code);
-        cell.appendChild(h);
-        cell.appendChild(t);
-        cell.appendChild(p);
-        grid.appendChild(cell);
+        grid.appendChild(crearCeldaFeature(f, l));
       });
       block.appendChild(grid);
       host.appendChild(block);
     });
-    applyLangToFeatures();
   }
 
   function applyLangToFeatures() {
     var l = lang();
+    renderFiltros();
     FEATURES.forEach(function (rel) {
       rel.items.forEach(function (f) {
         var t = document.querySelector('[data-feat="' + f.code + '"]');
@@ -109,13 +142,7 @@
   function recordado() { try { return localStorage.getItem("vd-lang"); } catch { return null; } }
   function recordar(l) { try { localStorage.setItem("vd-lang", l); } catch { return null; } }
 
-  function aplicar(l) {
-    document.documentElement.lang = l;
-    var btns = document.querySelectorAll(".idioma-bar button");
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].setAttribute("aria-pressed", String(btns[i].getAttribute("data-lang") === l));
-    }
-    applyLangToFeatures();
+  function sincronizarAlts(l) {
     var fotos = document.querySelectorAll("img[data-alt-en]");
     for (var j = 0; j < fotos.length; j++) {
       var altEn = fotos[j].getAttribute("data-alt-en");
@@ -126,6 +153,9 @@
         fotos[j].setAttribute("alt", fotos[j].getAttribute("data-alt-es"));
       }
     }
+  }
+
+  function sincronizarBanners(l) {
     var banners = document.querySelectorAll("img[src*='prensa/banners/']");
     for (var k = 0; k < banners.length; k++) {
       var s = banners[k].getAttribute("src");
@@ -135,6 +165,17 @@
         banners[k].setAttribute("src", s.replace("/en/", "/es/"));
       }
     }
+  }
+
+  function aplicar(l) {
+    document.documentElement.lang = l;
+    var btns = document.querySelectorAll(".idioma-bar button");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute("aria-pressed", String(btns[i].getAttribute("data-lang") === l));
+    }
+    applyLangToFeatures();
+    sincronizarAlts(l);
+    sincronizarBanners(l);
     if (window.VDGaleria && window.VDGaleria.setLang) window.VDGaleria.setLang(l);
     setTrailer(l);
   }
@@ -193,7 +234,21 @@
     } catch { return null; }
   }
 
+  function pintarMatrizPuntos() {
+    var cajas = document.querySelectorAll(".dk-dots[data-bits]");
+    for (var i = 0; i < cajas.length; i++) {
+      var bits = cajas[i].getAttribute("data-bits") || "";
+      cajas[i].innerHTML = "";
+      for (var b = 0; b < 25; b++) {
+        var dot = document.createElement("i");
+        if (bits.charAt(b) === "1") dot.className = "on";
+        cajas[i].appendChild(dot);
+      }
+    }
+  }
+
   function armarConsola() {
+    pintarMatrizPuntos();
     var hud = document.getElementById("hud-read");
     var audioBtn = document.getElementById("audio-toggle");
     if (audioBtn) {
@@ -210,19 +265,19 @@
           click();
           key.classList.add("hit");
           setTimeout(function () { key.classList.remove("hit"); }, 160);
-        var l = lang();
-        var msg = l === "es" ? key.getAttribute("data-hud-es") : key.getAttribute("data-hud-en");
-        var idleTxt = l === "es" ? "[ LISTO ] Pulsa una tecla de la consola" : "[ READY ] Press a console key";
-        if (hud) hud.textContent = "[>] " + msg;
-        if (hudTimer) clearTimeout(hudTimer);
-        hudTimer = setTimeout(function () {
-          if (!hud) return;
-          hud.innerHTML = "";
-          var idle = document.createElement("span");
-          idle.className = "idle";
-          idle.textContent = idleTxt;
-          hud.appendChild(idle);
-        }, 2200);
+          var l = lang();
+          var msg = l === "es" ? key.getAttribute("data-hud-es") : key.getAttribute("data-hud-en");
+          var idleTxt = l === "es" ? "[ LISTO ] Pulsa una tecla de la consola" : "[ READY ] Press a console key";
+          if (hud) hud.textContent = "[>] " + msg;
+          if (hudTimer) clearTimeout(hudTimer);
+          hudTimer = setTimeout(function () {
+            if (!hud) return;
+            hud.innerHTML = "";
+            var idle = document.createElement("span");
+            idle.className = "idle";
+            idle.textContent = idleTxt;
+            hud.appendChild(idle);
+          }, 2200);
         });
       })(keys[i]);
     }
@@ -240,6 +295,7 @@
         });
       })(btns[i]);
     }
+    renderFiltros();
     renderRegistro();
     aplicar(recordado() || delNavegador);
     versionViva();

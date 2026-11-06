@@ -4,54 +4,80 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VirtualDeck — Política de privacidad</title>
-<meta name="description" content="Qué datos maneja VirtualDeck y qué sale del equipo. Sin cuentas, sin telemetría.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230f0f0f'/%3E%3Cg fill='%234a8ef0'%3E%3Crect x='2' y='2' width='4' height='4'/%3E%3Crect x='10' y='2' width='4' height='4'/%3E%3Crect x='2' y='10' width='4' height='4'/%3E%3Crect x='10' y='10' width='4' height='4'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="description" content="Qué datos maneja VirtualDeck y qué sale del equipo. Sin cuentas, sin telemetría, 100% local.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23070809' rx='3'/%3E%3Cg fill='%23FF3B30'%3E%3Crect x='3' y='3' width='4' height='4' rx='1'/%3E%3Crect x='9' y='3' width='4' height='4' rx='1'/%3E%3Crect x='3' y='9' width='4' height='4' rx='1'/%3E%3Crect x='9' y='9' width='4' height='4' rx='1'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0f0f0f; --surface:#191919; --border:#2e2e2e;
-    --text:#dcdcdc; --dim:#9a9a9a; --muted:#555; --accent:#4a8ef0;
-    --font:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --bg: #070809;
+    --surface: #111315;
+    --border: #26292e;
+    --text: #e6e8eb;
+    --dim: #8a8f98;
+    --muted: #5c6169;
+    --accent: #ff3b30;
+    --accent-dim: rgba(255, 59, 48, 0.14);
+    --font: "Inter", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
   }
-  * { box-sizing:border-box; }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #d8dbe0;
+      --surface: #cbcfd5;
+      --border: #9da4ae;
+      --text: #111418;
+      --dim: #3c4149;
+      --muted: #6b7179;
+      --accent-dim: rgba(255, 59, 48, 0.12);
+    }
+  }
+  * { box-sizing: border-box; }
   body {
-    margin:0; background:var(--bg); color:var(--text); font-family:var(--font);
-    line-height:1.7; -webkit-font-smoothing:antialiased;
+    margin: 0;
+    background: var(--bg);
+    background-image: radial-gradient(rgba(127, 127, 127, 0.16) 1px, transparent 1.4px);
+    background-size: 16px 16px;
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
   }
-  .env { max-width:760px; margin:0 auto; padding:0 24px; }
-  a { color:var(--accent); }
-  header { padding:56px 0 28px; border-bottom:1px solid var(--border); }
-  .marca { font-family:var(--mono); font-weight:700; font-size:16px; letter-spacing:4px; margin:0 0 20px; }
-  .marca a { color:var(--text); text-decoration:none; }
-  .marca span { color:var(--accent); }
-  h1 { font-size:26px; margin:0 0 6px; }
-  .fecha { font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:1px; }
-  h2 { font-size:17px; margin:38px 0 10px; }
-  p, li { color:var(--dim); font-size:15px; }
-  li { margin-bottom:7px; }
-  strong { color:var(--text); }
+  .env { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header { padding: 56px 0 28px; border-bottom: 1px solid var(--border); }
+  .marca { font-family: var(--mono); font-weight: 700; font-size: 16px; letter-spacing: 3px; margin: 0 0 20px; }
+  .marca a { color: var(--text); text-decoration: none; }
+  .marca span { color: var(--accent); }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  .fecha { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  h2 { font-size: 17px; margin: 38px 0 10px; font-family: var(--mono); letter-spacing: 0.5px; }
+  p, li { color: var(--dim); font-size: 15px; }
+  li { margin-bottom: 7px; }
+  strong { color: var(--text); }
   .destacado {
-    background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent);
-    border-radius:6px; padding:16px 18px; margin:22px 0;
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 16px 18px; margin: 22px 0;
   }
-  .destacado p { margin:0; color:var(--text); }
-  table { width:100%; border-collapse:collapse; font-size:14px; margin:14px 0; }
-  th, td { padding:9px 10px 9px 0; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; color:var(--dim); }
-  th { font-family:var(--mono); font-size:11px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; font-weight:400; }
-  footer { margin-top:52px; padding:26px 0 60px; border-top:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--muted); }
-  footer a { color:var(--muted); text-decoration:none; }
-  .idioma { position:fixed; top:16px; right:16px; display:flex; gap:6px; z-index:5; }
+  .destacado p { margin: 0; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 14px 0; }
+  th, td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; color: var(--dim); }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; font-weight: 600; }
+  footer { margin-top: 52px; padding: 26px 0 60px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+  .idioma { position: fixed; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 5; }
   .idioma button {
-    font-family:var(--mono); font-size:10px; letter-spacing:1px; padding:6px 10px;
-    background:var(--surface); border:1px solid var(--border); color:var(--muted);
-    border-radius:4px; cursor:pointer;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1px; padding: 6px 10px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 4px; cursor: pointer;
   }
-  .idioma button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
-  [data-en] { display:none; }
-  html[lang="en"] [data-es] { display:none; }
-  html[lang="en"] [data-en] { display:revert; }
+  .idioma button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  [data-en] { display: none; }
+  html[lang="en"] [data-es] { display: none; }
+  html[lang="en"] [data-en] { display: revert; }
 </style>
 </head>
 <body>
@@ -66,22 +92,22 @@
     <p class="marca"><a href="./">VIRTUAL<span>DECK</span></a></p>
     <h1 data-es>Política de privacidad</h1>
     <h1 data-en>Privacy policy</h1>
-    <p class="fecha" data-es>Última actualización: 24 de agosto de 2026 · Versión 0.8.0</p>
-    <p class="fecha" data-en>Last updated: 24 August 2026 · Version 0.8.0</p>
+    <p class="fecha" data-es>Última actualización: 5 de noviembre de 2026 · Versión 0.15.0</p>
+    <p class="fecha" data-en>Last updated: 5 November 2026 · Version 0.15.0</p>
   </div>
 </header>
 
 <main class="env">
 
   <div class="destacado">
-    <p data-es><strong>Resumen:</strong> VirtualDeck no tiene cuentas, no recoge estadísticas de uso y no envía su configuración a ningún sitio. Todo lo que configura se guarda en un archivo de su equipo. Las únicas conexiones que hace son las que usted activa: el clima, las divisas y la comprobación de actualizaciones.</p>
-    <p data-en><strong>In short:</strong> VirtualDeck has no accounts, collects no usage statistics and never uploads your setup anywhere. Everything you configure is stored in a file on your own machine. The only connections it makes are the ones you turn on: weather, currency rates and the update check.</p>
+    <p data-es><strong>Resumen:</strong> VirtualDeck no tiene cuentas, no recoge estadísticas de uso y no envía su configuración a ningún sitio. Todo lo que configura se guarda en archivos locales de su equipo. Las únicas conexiones externas son las que usted activa explícitamente: la Tienda de perfiles y plugins (al abrirla o instalar un elemento), el clima y las divisas.</p>
+    <p data-en><strong>In short:</strong> VirtualDeck has no accounts, collects no usage statistics and never uploads your setup anywhere. Everything you configure is stored in local files on your own machine. The only external connections are the ones you explicitly trigger: the Profile &amp; Plugin Store (when opening it or installing an item), weather and currency rates.</p>
   </div>
 
   <h2 data-es>Qué guarda, y dónde</h2>
   <h2 data-en>What it stores, and where</h2>
-  <p data-es>Toda su configuración —páginas, botones, acciones, perfiles, variables, ajustes— vive en un único archivo JSON dentro de la carpeta de datos de la aplicación en su equipo. No hay servidor, no hay copia en la nube y no hay sincronización. Si desinstala la aplicación y borra esa carpeta, no queda nada en ninguna parte.</p>
-  <p data-en>Your whole setup — pages, buttons, actions, profiles, variables, settings — lives in a single JSON file inside the application's data folder on your machine. There is no server, no cloud copy and no sync. If you uninstall the app and delete that folder, nothing remains anywhere.</p>
+  <p data-es>Toda su configuración —páginas, botones, acciones, perfiles, variables, ajustes, credenciales locales de emparejamiento (`companion.json`) y plugins instalados— vive dentro de la carpeta local de datos de la aplicación en su equipo. No hay servidor externo, no hay copia en la nube y no hay sincronización. Si desinstala la aplicación y borra esa carpeta, no queda nada en ninguna parte.</p>
+  <p data-en>Your whole setup — pages, buttons, actions, profiles, variables, settings, local pairing tokens (`companion.json`) and installed plugins — lives inside the application's local data folder on your machine. There is no external server, no cloud copy and no sync. If you uninstall the app and delete that folder, nothing remains anywhere.</p>
 
   <h2 data-es>El grabador de macros y su teclado</h2>
   <h2 data-en>The macro recorder and your keyboard</h2>
@@ -102,8 +128,8 @@
     <li>You can view, edit and delete every recorded step from the editor itself.</li>
   </ul>
 
-  <h2 data-es>Conexiones a internet</h2>
-  <h2 data-en>Internet connections</h2>
+  <h2 data-es>Conexiones de red (locales y externas)</h2>
+  <h2 data-en>Network connections (local and external)</h2>
   <p data-es>La aplicación funciona entera sin conexión. Estas son todas las conexiones que puede hacer, y qué las provoca:</p>
   <p data-en>The application works entirely offline. These are all the connections it can make, and what triggers each:</p>
 
@@ -116,6 +142,29 @@
       </tr>
     </thead>
     <tbody>
+      <tr>
+        <td data-es>Al abrir la Tienda o instalar un perfil / plugin</td>
+        <td data-en>When opening the Store or installing a profile / plugin</td>
+        <td>raw.githubusercontent.com · github.com</td>
+        <td data-es>Solo la petición HTTPS de descarga del manifiesto o del paquete `.zip` (verificado con SHA-256).</td>
+        <td data-en>Only the HTTPS download request for the manifest or `.zip` package (SHA-256 verified).</td>
+      </tr>
+      <tr>
+        <td data-es>Al usar la extensión compañera del navegador</td>
+        <td data-en>When using the browser companion extension</td>
+        <td data-es>Su propio equipo (127.0.0.1)</td>
+        <td data-en>Your own machine (127.0.0.1)</td>
+        <td data-es>Vídeo y metadatos de la pestaña elegida hacia la app local. Nada sale de su equipo.</td>
+        <td data-en>Video frames and metadata from the selected tab to the local app. Nothing leaves your machine.</td>
+      </tr>
+      <tr>
+        <td data-es>Al activar el mando móvil en Ajustes</td>
+        <td data-en>When enabling the mobile remote in Settings</td>
+        <td data-es>Su red local (LAN)</td>
+        <td data-en>Your local network (LAN)</td>
+        <td data-es>La cuadrícula de botones hacia su teléfono en la misma red Wi-Fi, protegida por token y límite de frecuencia.</td>
+        <td data-en>The button grid to your phone on the same Wi-Fi network, protected by a token and rate limiting.</td>
+      </tr>
       <tr>
         <td data-es>Al usar un botón con el widget del clima</td>
         <td data-en>When using a button with the weather widget</td>
@@ -138,13 +187,6 @@
         <td data-en>The source currency code. Once a day.</td>
       </tr>
       <tr>
-        <td data-es>Al comprobar si hay una versión nueva</td>
-        <td data-en>When checking for a new version</td>
-        <td>github.com</td>
-        <td data-es>Nada más que la propia petición.</td>
-        <td data-en>Nothing beyond the request itself.</td>
-      </tr>
-      <tr>
         <td data-es>Si usted configura un botón de tipo «webhook»</td>
         <td data-en>If you configure a "webhook" button</td>
         <td data-es>La dirección que usted escriba</td>
@@ -153,8 +195,8 @@
         <td data-en>Whatever you put in that button. You choose the destination and the contents.</td>
       </tr>
       <tr>
-        <td data-es>Si activa los sensores de hardware</td>
-        <td data-en>If you enable hardware sensors</td>
+        <td data-es>Si activa los sensores de hardware o luces OpenRGB</td>
+        <td data-en>If you enable hardware sensors or OpenRGB lights</td>
         <td data-es>Su propio equipo (127.0.0.1)</td>
         <td data-en>Your own machine (127.0.0.1)</td>
         <td data-es>Nada sale del equipo.</td>
@@ -173,14 +215,14 @@
     <li>No hay analítica, telemetría ni informes de uso, ni siquiera anónimos.</li>
     <li>No hay publicidad ni rastreadores.</li>
     <li>No se vende ni se comparte ningún dato, porque no se recoge ninguno.</li>
-    <li>No se leen sus archivos, salvo los que usted elija expresamente al configurar un botón o al importar una configuración.</li>
+    <li>No se leen sus archivos, salvo los que usted elija expresamente al configurar un botón, instalar un plugin o importar una configuración.</li>
   </ul>
   <ul data-en>
     <li>There are no user accounts and no sign-up.</li>
     <li>There is no analytics, telemetry or usage reporting, not even anonymous.</li>
     <li>There are no ads and no trackers.</li>
     <li>No data is sold or shared, because none is collected.</li>
-    <li>Your files are not read, other than those you explicitly pick when configuring a button or importing a configuration.</li>
+    <li>Your files are not read, other than those you explicitly pick when configuring a button, installing a plugin or importing a configuration.</li>
   </ul>
 
   <h2 data-es>Permisos del sistema y para qué se usan</h2>
@@ -204,13 +246,18 @@
       </tr>
       <tr>
         <td data-es>Cambiar el dispositivo de audio</td><td data-en>Switching the audio device</td>
-        <td data-es>La acción de cambiar la salida de sonido, cuando usted pulsa ese botón.</td>
-        <td data-en>The switch-output action, when you press that button.</td>
+        <td data-es>La acción de cambiar o alternar la salida de sonido, cuando usted pulsa ese botón.</td>
+        <td data-en>The switch/cycle audio output action, when you press that button.</td>
+      </tr>
+      <tr>
+        <td data-es>Dispositivos USB HID</td><td data-en>USB HID devices</td>
+        <td data-es>Pintar teclas LCD y leer pulsaciones y giros de perilla en docks físicos conectados por USB (Stream Dock N3 y modelos compatibles).</td>
+        <td data-en>Painting LCD keys and reading key presses and knob turns on USB-connected physical docks (Stream Dock N3 and compatible models).</td>
       </tr>
       <tr>
         <td data-es>Permisos de administrador</td><td data-en>Administrator rights</td>
-        <td data-es>Opcional. Solo si activa los sensores de hardware, que lo necesitan para leerlos. Se le pedirá con el aviso de Windows.</td>
-        <td data-en>Optional. Only if you enable hardware sensors, which need them to be read. Windows will prompt you.</td>
+        <td data-es>Opcional. Solo si activa los sensores de hardware externos (LibreHardwareMonitor), que lo necesitan para leerlos. Se le pedirá con el aviso de Windows.</td>
+        <td data-en>Optional. Only if you enable external hardware sensors (LibreHardwareMonitor), which need them to be read. Windows will prompt you.</td>
       </tr>
     </tbody>
   </table>
@@ -233,16 +280,16 @@
 </main>
 
 <footer class="env">
-  <a href="./" data-es>← Volver</a>
-  <a href="./" data-en>← Back</a>
+  <a href="./" data-es>← Volver a VirtualDeck</a>
+  <a href="./" data-en>← Back to VirtualDeck</a>
   ·
   <a href="https://github.com/AndyVillatoro/virtualdeck">GitHub</a>
 </footer>
 
 <script>
 (function () {
-  function recordado() { try { return localStorage.getItem('vd-lang'); } catch (e) { return null; } }
-  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch (e) { /* sin memoria, sigue funcionando */ } }
+  function recordado() { try { return localStorage.getItem('vd-lang'); } catch { return null; } }
+  function recordar(l) { try { localStorage.setItem('vd-lang', l); } catch { /* sin memoria, sigue funcionando */ } }
   const delNavegador = (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en';
   aplicar(recordado() || delNavegador);
   document.querySelectorAll('.idioma button').forEach(function (b) {
