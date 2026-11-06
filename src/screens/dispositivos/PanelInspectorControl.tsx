@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
+import { CatalogoPluginsArrastrable } from '../../components/plugins/CatalogoPluginsArrastrable';
+import { BotonConfigurarPlugin } from '../editor/formularios/plugins';
 import { SelectorPresetsControl } from './SelectorPresetsControl';
-import { SelectorPluginControl } from './SelectorPluginControl';
 import { LimiteErrorInspector } from './LimiteErrorInspector';
 import { PanelPerfilesPagina } from './PanelPerfilesPagina';
 import { PanelVacio } from './PanelInspectorVacio';
@@ -13,15 +14,18 @@ import { BotonEditar, FilaAccion, SeccionModos } from './PiezasInspector';
 import { ListaHermanosPerilla } from './ListaHermanosPerilla';
 import { obtenerNombreYTipoControl, textoAccionSeleccionada } from './textoPanelInspector';
 import { contextoDeBoton } from '../../utils/plugins/ref';
+import { construirHuecosSoltarPlugin, type CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
+import { useListaPlugins } from '../../utils/plugins/listaPlugins';
 import { useAppearPluginPreview } from '../../utils/plugins/useAppearPluginPreview';
+import type { BotonConCatalogo } from './TeclaLcdHardware';
 import type { PanelInspectorControlProps } from './tiposPanelInspector';
-import type { ButtonAction, ButtonConfig } from '../../types';
+import type { ButtonConfig, PluginRef } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
 import type { PerfilDock } from '../../data/perfilesDock';
 
 export type { HermanoPerilla, PanelInspectorControlProps } from './tiposPanelInspector';
 
-/** Los botones del control en orden de hueco y cuál está elegido, para el plugin. */
+/** Los botones del control en orden de hueco y cuál está elegido, para soltar o asignar un plugin. */
 function huecosParaPlugin(
   props: Pick<PanelInspectorControlProps, 'controlMeta' | 'boton' | 'perilla' | 'hermanosPerilla'>,
 ): { botones: (ButtonConfig | undefined)[]; seleccionado: number } | null {
@@ -32,7 +36,6 @@ function huecosParaPlugin(
   return { botones: [boton], seleccionado: 0 };
 }
 
-/** La perilla son tres huecos fijos: izq, pulsar, der. */
 function huecosDePerilla(
   props: Pick<PanelInspectorControlProps, 'controlMeta' | 'perilla'>,
 ): { botones: (ButtonConfig | undefined)[]; seleccionado: number } | null {
@@ -45,7 +48,6 @@ function huecosDePerilla(
   };
 }
 
-/** La tira son dos: el elegido y su hermano. */
 function huecosDeTira(
   props: Pick<PanelInspectorControlProps, 'controlMeta' | 'boton' | 'hermanosPerilla'>,
 ): { botones: (ButtonConfig | undefined)[]; seleccionado: number } | null {
@@ -66,58 +68,102 @@ function filtrarPresetSinLcd(entrada: PresetHueco[]): PresetHueco[] {
   }));
 }
 
-function useBotonVistaInspector(boton: ButtonConfig | undefined, serial?: string | null) {
-  const [pluginPrevia, setPluginPrevia] = useState<{ pluginUuid: string; accionUuid: string } | null>(null);
-
-  useEffect(() => {
-    setPluginPrevia(null);
-  }, [boton?.id]);
+function useBotonVistaInspector(boton: BotonConCatalogo | undefined, serial?: string | null) {
+  const { lista } = useListaPlugins();
 
   const contexto = useMemo(() => {
     if (!boton) return null;
     return serial ? `${serial}:${boton.id}` : contextoDeBoton(boton.id);
   }, [serial, boton]);
 
-  const accionActiva = useMemo<ButtonAction | undefined>(() => {
-    if (pluginPrevia?.pluginUuid && pluginPrevia?.accionUuid) {
-      return { type: 'plugin', plugin: { pluginUuid: pluginPrevia.pluginUuid, accionUuid: pluginPrevia.accionUuid } };
-    }
-    return boton?.action;
-  }, [pluginPrevia, boton?.action]);
-
-  const refPlugin = useMemo(() => {
-    if (!contexto || !accionActiva || accionActiva.type !== 'plugin' || !accionActiva.plugin) return null;
+  const refPlugin = useMemo<PluginRef | null>(() => {
+    if (!contexto || !boton || boton.action.type !== 'plugin' || !boton.action.plugin) return null;
     return {
-      pluginUuid: accionActiva.plugin.pluginUuid,
-      accionUuid: accionActiva.plugin.accionUuid,
+      pluginUuid: boton.action.plugin.pluginUuid,
+      accionUuid: boton.action.plugin.accionUuid,
       contexto,
+      ...(boton.action.plugin.settings ? { settings: boton.action.plugin.settings } : {}),
     };
-  }, [contexto, accionActiva]);
+  }, [contexto, boton]);
 
   useAppearPluginPreview(refPlugin, Boolean(refPlugin));
 
-  const botonParaVista = useMemo(() => {
-    if (!boton) return undefined;
-    if (!pluginPrevia || (boton.action.type === 'plugin' && boton.action.plugin?.pluginUuid === pluginPrevia.pluginUuid && boton.action.plugin?.accionUuid === pluginPrevia.accionUuid)) {
-      return boton;
-    }
-    return {
-      ...boton,
-      label: '',
-      icon: '',
-      iconoPuntos: undefined,
-      imageData: undefined,
-      brandIcon: undefined,
-      customGlyph57: undefined,
-      bgColor: undefined,
-      fgColor: undefined,
-      action: { type: 'plugin' as const, plugin: pluginPrevia },
-    };
-  }, [boton, pluginPrevia]);
+  const tienePI = useMemo(() => {
+    if (!refPlugin) return false;
+    const pl = lista.find((p) => p.uuid === refPlugin.pluginUuid);
+    const acc = pl?.acciones.find((a) => a.uuid === refPlugin.accionUuid);
+    return Boolean(acc?.tienePI);
+  }, [lista, refPlugin]);
 
-  const glifo = resolveDotGlyph(botonParaVista?.icon);
+  const glifo = resolveDotGlyph(boton?.icon);
 
-  return { botonParaVista, glifo, contexto, setPluginPrevia };
+  return { botonParaVista: boton, glifo, contexto, refPlugin, tienePI };
+}
+
+function obtenerSeleccionPlugin(boton: ButtonConfig | undefined): { pluginUuid: string; accionUuid: string } | null {
+  if (boton?.action.type === 'plugin' && boton.action.plugin) {
+    return { pluginUuid: boton.action.plugin.pluginUuid, accionUuid: boton.action.plugin.accionUuid };
+  }
+  return null;
+}
+
+function CabeceraPanelInspector({
+  vd,
+  titulo,
+  cerrarTexto,
+  onCerrar,
+}: {
+  vd: ReturnType<typeof useTheme>;
+  titulo: string;
+  cerrarTexto: string;
+  onCerrar?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        padding: vd.space.md,
+        borderBottom: `1px solid ${vd.border}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: vd.space.xs,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 9,
+          color: vd.textMuted,
+          letterSpacing: 1.5,
+          fontFamily: vd.mono,
+          textTransform: 'uppercase',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {titulo}
+      </span>
+      {onCerrar && (
+        <button
+          type="button"
+          onClick={onCerrar}
+          title={cerrarTexto}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '2px 4px',
+            color: vd.textMuted,
+            display: 'inline-flex',
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <DotGlyphIcon glyph="CLOSE" size={10} color={vd.textMuted} />
+        </button>
+      )}
+    </div>
+  );
 }
 
 export function PanelInspectorControl({
@@ -126,6 +172,7 @@ export function PanelInspectorControl({
   disabled = false,
   onEditar,
   onAplicarPreset,
+  onPrevisualizarPreset,
   ancho,
   onCerrar,
   hermanosPerilla,
@@ -139,19 +186,22 @@ export function PanelInspectorControl({
   const t = useT();
   const w = ancho ?? 290;
 
-  const { botonParaVista, glifo, contexto, setPluginPrevia } = useBotonVistaInspector(boton, serial);
+  const { botonParaVista, glifo, contexto, refPlugin, tienePI } = useBotonVistaInspector(boton, serial);
 
   if (!controlMeta) {
-    if (onAplicarPreset) {
-      return (
-        <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
-          <PanelPerfilesPagina ancho={w} disabled={disabled} onAplicar={onAplicarPreset} onCerrar={onCerrar} />
-        </LimiteErrorInspector>
-      );
-    }
     return (
       <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
-        <PanelVacio vd={VD} texto={t('disp.inspector.ayuda')} ancho={w} onCerrar={onCerrar} t={t} />
+        {onAplicarPreset ? (
+          <PanelPerfilesPagina
+            ancho={w}
+            disabled={disabled}
+            onAplicar={onAplicarPreset}
+            onPrevisualizar={onPrevisualizarPreset}
+            onCerrar={onCerrar}
+          />
+        ) : (
+          <PanelVacio vd={VD} texto={t('disp.inspector.ayuda')} ancho={w} onCerrar={onCerrar} t={t} />
+        )}
       </LimiteErrorInspector>
     );
   }
@@ -163,186 +213,156 @@ export function PanelInspectorControl({
 
   const handleAplicarPreset = onAplicarPreset
     ? (entrada: PresetHueco[] | PerfilDock) => {
-        if (!Array.isArray(entrada) || tieneLcd) {
-          onAplicarPreset(entrada);
-          return;
-        }
-        onAplicarPreset(filtrarPresetSinLcd(entrada));
+        onAplicarPreset(!Array.isArray(entrada) || tieneLcd ? entrada : filtrarPresetSinLcd(entrada));
       }
     : undefined;
 
+  const handleElegirPluginDirecto = (carga: CargaArrastrePlugin) => {
+    if (!handleAplicarPreset || !pluginHuecos) return;
+    handleAplicarPreset(
+      construirHuecosSoltarPlugin(pluginHuecos.botones, pluginHuecos.seleccionado, carga),
+    );
+  };
+
+  const seleccionPluginActual = obtenerSeleccionPlugin(boton);
+
   return (
     <LimiteErrorInspector ancho={w} onCerrar={onCerrar}>
-    <aside
-      style={{
-        width: w,
-        minWidth: w,
-        maxWidth: w,
-        background: VD.surface,
-        borderLeft: `1px solid ${VD.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        height: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      <div
+      <aside
         style={{
-          padding: VD.space.md,
-          borderBottom: `1px solid ${VD.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: VD.space.xs,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 9,
-            color: VD.textMuted,
-            letterSpacing: 1.5,
-            fontFamily: VD.mono,
-            textTransform: 'uppercase',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {t('disp.inspector.titulo')}
-        </span>
-        {onCerrar && (
-          <button
-            type="button"
-            onClick={onCerrar}
-            title={t('disp.cerrar')}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '2px 4px',
-              color: VD.textMuted,
-              display: 'inline-flex',
-              alignItems: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <DotGlyphIcon glyph="CLOSE" size={10} color={VD.textMuted} />
-          </button>
-        )}
-      </div>
-
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: VD.space.lg,
+          width: w,
+          minWidth: w,
+          maxWidth: w,
+          background: VD.surface,
+          borderLeft: `1px solid ${VD.border}`,
           display: 'flex',
           flexDirection: 'column',
-          gap: VD.space.md,
+          flexShrink: 0,
+          height: '100%',
+          overflow: 'hidden',
         }}
       >
-        {tieneLcd ? (
-          <MiniPreview
-            boton={botonParaVista}
-            glifo={glifo}
-            nombreControl={nombre}
-            controlTipo={controlMeta.control}
-            vd={VD}
-            vacioTexto={t('disp.vacio')}
-            contexto={contexto}
-          />
-        ) : (
-          <AvisoControlSinLcd vd={VD} texto={t('disp.inspector.sinLcd')} />
-        )}
-
-        {/* Tipo de control */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 8.5, color: VD.textMuted, fontFamily: VD.mono, textTransform: 'uppercase', letterSpacing: 1 }}>
-            {t('disp.inspector.tipo')}
-          </label>
-          <div
-            style={{
-              fontSize: 10,
-              color: VD.text,
-              fontFamily: VD.mono,
-              background: VD.elevated,
-              border: `1px solid ${VD.border}`,
-              borderRadius: VD.radius.sm,
-              padding: `${VD.space.xs}px ${VD.space.sm}px`,
-            }}
-          >
-            {tipo}
-          </div>
-        </div>
-
-        {/* Acción configurada */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 8.5, color: VD.textMuted, fontFamily: VD.mono, textTransform: 'uppercase', letterSpacing: 1 }}>
-            {t('disp.inspector.accion')}
-          </label>
-          <FilaAccion
-            boton={boton}
-            vd={VD}
-            textoAccion={textoAccion}
-          />
-        </div>
-
-        {/* Perilla multimodo (T-HW-19): sus modos y cuál está activo. */}
-        <SeccionModos
-          controlMeta={controlMeta}
-          perilla={perilla}
-          modoActivo={modoActivo}
-          disabled={disabled}
-          onFijarModos={onFijarModos}
+        <CabeceraPanelInspector
+          vd={VD}
+          titulo={t('disp.inspector.titulo')}
+          cerrarTexto={t('disp.cerrar')}
+          onCerrar={onCerrar}
         />
 
-        {/* Si el control es una perilla: los otros dos gestos hermanos */}
-        {controlMeta.control === 'knob' && hermanosPerilla && hermanosPerilla.length > 0 && (
-          <ListaHermanosPerilla
-            hermanos={hermanosPerilla}
-            onSelectHueco={onSelectHueco}
-            vd={VD}
-            t={t}
-          />
-        )}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: VD.space.lg,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: VD.space.md,
+          }}
+        >
+          {tieneLcd ? (
+            <MiniPreview
+              boton={botonParaVista}
+              glifo={glifo}
+              nombreControl={nombre}
+              controlTipo={controlMeta.control}
+              vd={VD}
+              vacioTexto={t('disp.vacio')}
+              contexto={contexto}
+            />
+          ) : (
+            <AvisoControlSinLcd vd={VD} texto={t('disp.inspector.sinLcd')} />
+          )}
 
-        {/* Botón para editar acción en EditorB */}
-        <div style={{ marginTop: onAplicarPreset ? 0 : 'auto', paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
-          <BotonEditar
+          {/* Tipo de control */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ fontSize: 8.5, color: VD.textMuted, fontFamily: VD.mono, textTransform: 'uppercase', letterSpacing: 1 }}>
+              {t('disp.inspector.tipo')}
+            </label>
+            <div
+              style={{
+                fontSize: 10,
+                color: VD.text,
+                fontFamily: VD.mono,
+                background: VD.elevated,
+                border: `1px solid ${VD.border}`,
+                borderRadius: VD.radius.sm,
+                padding: `${VD.space.xs}px ${VD.space.sm}px`,
+              }}
+            >
+              {tipo}
+            </div>
+          </div>
+
+          {/* Acción configurada */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ fontSize: 8.5, color: VD.textMuted, fontFamily: VD.mono, textTransform: 'uppercase', letterSpacing: 1 }}>
+              {t('disp.inspector.accion')}
+            </label>
+            <FilaAccion
+              boton={boton}
+              vd={VD}
+              textoAccion={textoAccion}
+            />
+            {refPlugin && tienePI && (
+              <div style={{ marginTop: 4 }}>
+                <BotonConfigurarPlugin pluginRef={refPlugin} puede={true} />
+              </div>
+            )}
+          </div>
+
+          {/* Perilla multimodo (T-HW-19): sus modos y cuál está activo. */}
+          <SeccionModos
+            controlMeta={controlMeta}
+            perilla={perilla}
+            modoActivo={modoActivo}
             disabled={disabled}
-            onEditar={onEditar}
-            vd={VD}
-            texto={t('disp.editar')}
+            onFijarModos={onFijarModos}
           />
+
+          {/* Si el control es una perilla: los otros dos gestos hermanos */}
+          {controlMeta.control === 'knob' && hermanosPerilla && hermanosPerilla.length > 0 && (
+            <ListaHermanosPerilla
+              hermanos={hermanosPerilla}
+              onSelectHueco={onSelectHueco}
+              vd={VD}
+              t={t}
+            />
+          )}
+
+          {/* Botón para editar acción en EditorB */}
+          <div style={{ marginTop: onAplicarPreset ? 0 : 'auto', paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
+            <BotonEditar
+              disabled={disabled}
+              onEditar={onEditar}
+              vd={VD}
+              texto={t('disp.editar')}
+            />
+          </div>
+
+          {/* Selector de presets si viene la prop */}
+          {handleAplicarPreset && (
+            <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
+              <SelectorPresetsControl
+                control={controlMeta.control}
+                onAplicar={handleAplicarPreset}
+                onPrevisualizar={onPrevisualizarPreset}
+                disabled={disabled}
+              />
+            </div>
+          )}
+
+          {/* Catálogo lateral arrastrable de plugins (estilo Stream Deck) */}
+          {handleAplicarPreset && (
+            <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
+              <CatalogoPluginsArrastrable
+                disabled={disabled}
+                seleccionActual={seleccionPluginActual}
+                onElegirAccion={handleElegirPluginDirecto}
+              />
+            </div>
+          )}
         </div>
-
-        {/* Selector de presets si viene la prop */}
-        {handleAplicarPreset && (
-          <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
-            <SelectorPresetsControl
-              control={controlMeta.control}
-              onAplicar={handleAplicarPreset}
-              disabled={disabled}
-            />
-          </div>
-        )}
-
-        {/* Plugins instalados: la misma acción `plugin` del editor */}
-        {handleAplicarPreset && pluginHuecos && (
-          <div style={{ paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
-            <SelectorPluginControl
-              key={boton?.id}
-              botones={pluginHuecos.botones}
-              seleccionado={pluginHuecos.seleccionado}
-              onAplicar={handleAplicarPreset}
-              disabled={disabled}
-              onCambiarPrevia={(pluginUuid, accionUuid) => setPluginPrevia({ pluginUuid, accionUuid })}
-            />
-          </div>
-        )}
-      </div>
-    </aside>
+      </aside>
     </LimiteErrorInspector>
   );
 }

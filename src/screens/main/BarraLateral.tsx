@@ -7,6 +7,7 @@ import { DotText } from '../../components/DotText';
 import { SensorTile, getRepresentativeTiles } from '../../components/SensorPanel';
 import { WeatherWidget } from '../../components/WeatherWidget';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { CatalogoPluginsArrastrable } from '../../components/plugins/CatalogoPluginsArrastrable';
 import { EstadoRGB, RegistroEjecucion, FranjaMusica, type EntradaRegistro } from './apartadosBarraLateral';
 import type { DeckConfig, ElectronAPI, NowPlaying, RGBStatus, Sensor, SensorsStatus } from '../../types';
 
@@ -125,6 +126,9 @@ export function BarraLateral({ config, clock, api, sensorList, sensorStatus, rgb
 
           {/* RGB status */}
           <EstadoRGB rgbStatus={rgbStatus} onRGB={onRGB} accent={config.accent} />
+
+          {/* Plugins instalados: arrastrar hacia cualquier celda de la rejilla */}
+          <CatalogoPluginsArrastrable ocultarSiVacio />
 
           <RegistroEjecucion execLog={execLog} setExecLog={setExecLog} showLog={showLog} setShowLog={setShowLog} />
           </div>

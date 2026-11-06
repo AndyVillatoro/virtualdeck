@@ -12,8 +12,10 @@ import {
   ControlRotacion,
   HeaderDispositivoActivo,
 } from './BarraHardwareActivo';
-import type { ButtonConfig, PageConfig } from '../../types';
-import type { DisposicionSuperficie } from '../../types/superficies';
+import type { BotonConCatalogo } from './TeclaLcdHardware';
+import type { CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
+import type { PageConfig } from '../../types';
+import type { ControlFisico, DisposicionSuperficie } from '../../types/superficies';
 import type { DispositivoItem } from './ListaDispositivosHardware';
 
 interface ContenidoDispositivosProps {
@@ -32,7 +34,8 @@ interface ContenidoDispositivosProps {
   paginaEditadaId: string | null;
   paginaPredeterminadaId: string | null;
   puedeAgregar: boolean;
-  botonesPagina: ButtonConfig[];
+  botonesPagina: BotonConCatalogo[];
+  huecosEnPrevia?: ReadonlySet<number>;
   selectedHueco: number | null;
   serialActivo?: string;
   imagenes?: Record<string, (string | undefined)[]>;
@@ -48,6 +51,12 @@ interface ContenidoDispositivosProps {
   onCrearDesdePlantilla?: (plantillaId: string, app: string) => void;
   onSelectHueco: (hueco: number) => void;
   onEditarBoton: (id: string) => void;
+  onSoltarPluginControl?: (
+    control: ControlFisico,
+    indiceHuecoEnControl: number,
+    carga: CargaArrastrePlugin,
+    enEjeCentral?: boolean,
+  ) => void;
 }
 
 function VistaSinDispositivos() {
@@ -96,6 +105,7 @@ export function ContenidoDispositivos({
   paginaPredeterminadaId,
   puedeAgregar,
   botonesPagina,
+  huecosEnPrevia,
   selectedHueco,
   serialActivo,
   imagenes,
@@ -110,6 +120,7 @@ export function ContenidoDispositivos({
   onCrearDesdePlantilla,
   onSelectHueco,
   onEditarBoton,
+  onSoltarPluginControl,
 }: ContenidoDispositivosProps) {
   const VD = useTheme();
   const t = useT();
@@ -247,9 +258,12 @@ export function ContenidoDispositivos({
             selectedHueco={selectedHueco}
             brillo={brilloLocal}
             conectado={dispositivoActivo.conectado}
+            serial={serialActivo}
+            huecosEnPrevia={huecosEnPrevia}
             imagenes={serialActivo ? imagenes?.[serialActivo] : undefined}
             onSelectHueco={onSelectHueco}
             onEditarBoton={onEditarBoton}
+            onSoltarPluginControl={onSoltarPluginControl}
             esBarra={true}
           />
         )}
@@ -308,9 +322,12 @@ export function ContenidoDispositivos({
             selectedHueco={selectedHueco}
             brillo={brilloLocal}
             conectado={dispositivoActivo.conectado}
+            serial={serialActivo}
+            huecosEnPrevia={huecosEnPrevia}
             imagenes={serialActivo ? imagenes?.[serialActivo] : undefined}
             onSelectHueco={onSelectHueco}
             onEditarBoton={onEditarBoton}
+            onSoltarPluginControl={onSoltarPluginControl}
           />
         </>
       )}

@@ -2,38 +2,54 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
-import { TeclaLcdHardware } from './TeclaLcdHardware';
+import { TeclaLcdHardware, type BotonConCatalogo } from './TeclaLcdHardware';
 import { BotonFisicoHardware } from './BotonFisicoHardware';
 import { PerillaRotativaHardware } from './PerillaRotativaHardware';
 import { TiraTactilHardware } from './TiraTactilHardware';
 import { huecosDeControl } from '../../utils/superficies/disposicion';
 import { useFormatoPantalla } from '../../utils/useFormatoPantalla';
-import type { ButtonConfig } from '../../types';
+import type { CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
 import type { ControlFisico, DisposicionSuperficie } from '../../types/superficies';
 
 export interface VistaHardwareProps {
   disposicion: DisposicionSuperficie;
-  botones: ButtonConfig[];
+  botones: BotonConCatalogo[];
   selectedHueco: number | null;
   brillo: number;
   conectado: boolean;
+  serial?: string;
+  /** Huecos que están mostrando una vista previa temporal de preset o perfil. */
+  huecosEnPrevia?: ReadonlySet<number>;
   /** Última imagen pintada de cada tecla, indexada por hueco. */
   imagenes?: (string | undefined)[];
   onSelectHueco: (hueco: number) => void;
   onEditarBoton: (id: string) => void;
+  onSoltarPluginControl?: (
+    control: ControlFisico,
+    indiceHuecoEnControl: number,
+    carga: CargaArrastrePlugin,
+    enEjeCentral?: boolean,
+  ) => void;
   esBarra?: boolean;
 }
 
 interface ControlElementoProps {
   control: ControlFisico;
   disposicion: DisposicionSuperficie;
-  botones: ButtonConfig[];
+  botones: BotonConCatalogo[];
   selectedHueco: number | null;
   brillo: number;
-  conectado: boolean;
+  serial?: string;
+  huecosEnPrevia?: ReadonlySet<number>;
   imagenes?: (string | undefined)[];
   onSelectHueco: (hueco: number) => void;
   onEditarBoton: (id: string) => void;
+  onSoltarPluginControl?: (
+    control: ControlFisico,
+    indiceHuecoEnControl: number,
+    carga: CargaArrastrePlugin,
+    enEjeCentral?: boolean,
+  ) => void;
 }
 
 function ChasisTornillos({ color }: { color: string }) {
@@ -53,13 +69,17 @@ function ControlElemento({
   botones,
   selectedHueco,
   brillo,
-  conectado,
+  serial,
+  huecosEnPrevia,
   imagenes,
   onSelectHueco,
   onEditarBoton,
+  onSoltarPluginControl,
 }: ControlElementoProps) {
   const huecos = huecosDeControl(disposicion, control);
   if (huecos.length === 0) return null;
+
+  const sinPagina = botones.length === 0;
 
   const handleEditar = (h: number) => {
     const btn = botones[h];
@@ -77,10 +97,13 @@ function ControlElemento({
           boton={botones[h]}
           seleccionada={selectedHueco === h}
           brillo={brillo}
-          disabled={!conectado}
+          disabled={sinPagina}
           imagen={imagenes?.[h]}
+          enPrevia={huecosEnPrevia?.has(h) ?? false}
+          serial={serial}
           onSelect={() => onSelectHueco(h)}
           onEditar={() => handleEditar(h)}
+          onDropPlugin={onSoltarPluginControl ? (c) => onSoltarPluginControl(control, 0, c) : undefined}
         />
       </div>
     );
@@ -92,9 +115,10 @@ function ControlElemento({
           indice={control.indice}
           boton={botones[h]}
           seleccionado={selectedHueco === h}
-          disabled={!conectado}
+          disabled={sinPagina}
           onSelect={() => onSelectHueco(h)}
           onEditar={() => handleEditar(h)}
+          onDropPlugin={onSoltarPluginControl ? (c) => onSoltarPluginControl(control, 0, c) : undefined}
         />
       </div>
     );
@@ -115,6 +139,13 @@ function ControlElemento({
       handleEditar(h);
     };
 
+    const handleDropGesto = onSoltarPluginControl
+      ? (gesto: 'izq' | 'pulsar' | 'der', carga: CargaArrastrePlugin, enEjeCentral?: boolean) => {
+          const idx = gesto === 'izq' ? 0 : gesto === 'der' ? 2 : 1;
+          onSoltarPluginControl(control, idx, carga, enEjeCentral);
+        }
+      : undefined;
+
     nodoContenido = (
       <div style={{ width: '100%', maxWidth: 140 }}>
         <PerillaRotativaHardware
@@ -123,9 +154,10 @@ function ControlElemento({
           botonPulsar={botones[hPulsar]}
           botonDer={botones[hDer]}
           subAccionSeleccionada={subSeleccionada}
-          disabled={!conectado}
+          disabled={sinPagina}
           onSelectGesto={handleSelectGesto}
           onEditarGesto={handleEditarGesto}
+          onDropPluginGesto={handleDropGesto}
         />
       </div>
     );
@@ -145,6 +177,13 @@ function ControlElemento({
       handleEditar(h);
     };
 
+    const handleDropGesto = onSoltarPluginControl
+      ? (gesto: 'izq' | 'der', carga: CargaArrastrePlugin) => {
+          const idx = gesto === 'der' ? 1 : 0;
+          onSoltarPluginControl(control, idx, carga);
+        }
+      : undefined;
+
     nodoContenido = (
       <div style={{ width: '100%' }}>
         <TiraTactilHardware
@@ -152,9 +191,10 @@ function ControlElemento({
           botonIzq={botones[hIzq]}
           botonDer={botones[hDer]}
           subAccionSeleccionada={subSeleccionada}
-          disabled={!conectado}
+          disabled={sinPagina}
           onSelectGesto={handleSelectGesto}
           onEditarGesto={handleEditarGesto}
+          onDropPluginGesto={handleDropGesto}
         />
       </div>
     );
@@ -182,9 +222,12 @@ export function VistaHardware({
   selectedHueco,
   brillo,
   conectado,
+  serial,
+  huecosEnPrevia,
   imagenes,
   onSelectHueco,
   onEditarBoton,
+  onSoltarPluginControl,
   esBarra: esBarraProp,
 }: VistaHardwareProps) {
   const VD = useTheme();
@@ -235,16 +278,9 @@ export function VistaHardware({
     const pad = esBarra ? 8 : 12;
     const anchoDisp = Math.max(20, contenedorDims.ancho - pad);
     const altoDisp = Math.max(20, contenedorDims.alto - pad);
-    if (esBarra) {
-      // En barra el dibujo del dock ocupa todo el alto útil a la izquierda, escalado por alto
-      const escalaY = altoDisp / altoBase;
-      const escalaX = anchoDisp / anchoChasis;
-      escala = Math.min(1, Math.min(escalaY, escalaX));
-    } else {
-      const escalaX = anchoDisp / anchoChasis;
-      const escalaY = altoDisp / altoBase;
-      escala = Math.min(1, Math.min(escalaX, escalaY));
-    }
+    const escalaY = altoDisp / altoBase;
+    const escalaX = anchoDisp / anchoChasis;
+    escala = Math.min(1, Math.min(escalaY, escalaX));
   }
 
   const anchoEscalado = Math.round(anchoChasis * escala);
@@ -292,7 +328,7 @@ export function VistaHardware({
             flexDirection: 'column',
             alignItems: 'center',
             gap: VD.space.lg,
-            opacity: conectado ? 1 : 0.7,
+            opacity: conectado ? 1 : 0.85,
             transition: 'opacity 0.2s',
             boxSizing: 'border-box',
           }}
@@ -351,10 +387,12 @@ export function VistaHardware({
                 botones={botones}
                 selectedHueco={selectedHueco}
                 brillo={brillo}
-                conectado={conectado}
+                serial={serial}
+                huecosEnPrevia={huecosEnPrevia}
                 imagenes={imagenes}
                 onSelectHueco={onSelectHueco}
                 onEditarBoton={onEditarBoton}
+                onSoltarPluginControl={onSoltarPluginControl}
               />
             ))}
           </div>

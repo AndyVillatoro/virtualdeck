@@ -18,6 +18,8 @@ import { describirPreset } from './describirAccion';
 export interface SelectorPresetsControlProps {
   control: ControlSuperficie;
   onAplicar: (huecos: PresetHueco[]) => void;
+  /** Previsualiza el preset apuntado en el diagrama del dock y en el inspector. */
+  onPrevisualizar?: (huecos: PresetHueco[] | null) => void;
   disabled?: boolean;
 }
 
@@ -48,11 +50,13 @@ function ItemPreset({
   preset,
   control,
   onAplicar,
+  onPrevisualizar,
   disabled,
 }: {
   preset: PresetDock;
   control: ControlSuperficie;
   onAplicar: (huecos: PresetHueco[]) => void;
+  onPrevisualizar?: (huecos: PresetHueco[] | null) => void;
   disabled?: boolean;
 }) {
   const VD = useTheme();
@@ -70,9 +74,18 @@ function ItemPreset({
     <button
       type="button"
       disabled={disabled}
-      onClick={() => onAplicar(preset.huecos)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onClick={() => {
+        onPrevisualizar?.(null);
+        onAplicar(preset.huecos);
+      }}
+      onMouseEnter={() => {
+        setHovered(true);
+        if (!disabled) onPrevisualizar?.(preset.huecos);
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        onPrevisualizar?.(null);
+      }}
       title={tituloCompleto}
       style={{
         width: '100%',
@@ -205,11 +218,18 @@ function ItemPreset({
 export function SelectorPresetsControl({
   control,
   onAplicar,
+  onPrevisualizar,
   disabled = false,
 }: SelectorPresetsControlProps) {
   const VD = useTheme();
   const t = useT();
   const presets = obtenerPresetsPorControl(control);
+
+  useEffect(() => {
+    return () => {
+      onPrevisualizar?.(null);
+    };
+  }, [control, onPrevisualizar]);
 
   if (presets.length === 0) {
     return (
@@ -247,6 +267,7 @@ export function SelectorPresetsControl({
             preset={preset}
             control={control}
             onAplicar={onAplicar}
+            onPrevisualizar={onPrevisualizar}
             disabled={disabled}
           />
         ))}
@@ -254,4 +275,3 @@ export function SelectorPresetsControl({
     </div>
   );
 }
-

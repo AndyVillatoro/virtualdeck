@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { controlDeHueco, huecosDeControl, teclasLcd, type GestoHueco } from '../../utils/superficies/disposicion';
 import { rotacionDeSuperficie } from '../../utils/superficies/ajustesSuperficie';
 import { generarResumenControles } from './BarraHardwareActivo';
 import { botonesResueltos } from '../../utils/botonesFijos';
+import { construirHuecosSoltarPlugin, type CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
 import {
   brilloDePagina,
   idsDelControl,
@@ -10,10 +11,11 @@ import {
   obtenerTodosDispositivos,
   usePaginaDispositivo,
 } from './logicaDispositivos';
+import type { BotonConCatalogo } from './TeclaLcdHardware';
 import type { DeckConfig, ModoPerilla, ButtonConfig } from '../../types';
 import type { PresetHueco } from '../../data/presetsDock';
 import { huecosDePerfil, type PerfilDock } from '../../data/perfilesDock';
-import type { DisposicionSuperficie, InfoSuperficie } from '../../types/superficies';
+import type { ControlFisico, DisposicionSuperficie, InfoSuperficie } from '../../types/superficies';
 
 interface HermanoControl {
   gesto: 'izq' | 'pulsar' | 'der';
@@ -22,13 +24,6 @@ interface HermanoControl {
   esActual: boolean;
 }
 
-/**
- * Los gestos hermanos de una tira táctil (izq/der), con el actual marcado.
- *
- * `hermanosPerilla` nació para la perilla (sus otros dos gestos); la tira
- * necesita lo mismo para aplicar un plugin conservando al hermano: el tipo ya
- * admite `izq`/`der` y la lista de hermanos solo se enseña en perillas.
- */
 function hermanosDeTira(
   disposicionActiva: DisposicionSuperficie,
   controlSeleccionado: { indice: number; gesto?: GestoHueco },
@@ -53,12 +48,28 @@ function hermanosDeTira(
     .filter((h) => !h.esActual);
 }
 
+function fusionarHuecoEnBoton(base: ButtonConfig, preset: PresetHueco): BotonConCatalogo {
+  return {
+    id: base.id,
+    page: base.page,
+    label: preset.label,
+    icon: preset.icon,
+    bgColor: preset.bgColor,
+    fgColor: preset.fgColor,
+    action: preset.action,
+    ...(preset.isToggle ? { isToggle: true } : {}),
+    ...(preset.actionToggleOff ? { actionToggleOff: preset.actionToggleOff } : {}),
+    ...(preset.fijo ? { fijo: true } : {}),
+    ...(preset.modosPerilla ? { modosPerilla: preset.modosPerilla } : {}),
+    ...(preset.iconoCatalogo ? { iconoCatalogo: preset.iconoCatalogo } : {}),
+  };
+}
+
 interface UseDockHardwareStateProps {
   config: DeckConfig;
   superficies: InfoSuperficie[];
   modelos: Record<string, DisposicionSuperficie>;
   paginasActivas: Record<string, string>;
-  /** Modo activo de cada perilla multimodo (lo guarda `useSuperficies`, en memoria). */
   modosActivos: Record<string, number>;
   t: (k: string, p?: Record<string, string | number>) => string;
   onBrilloVivo: (serial: string, valor: number) => void;
@@ -67,7 +78,6 @@ interface UseDockHardwareStateProps {
   onActivarPagina: (serial: string, paginaId: string) => void;
   onEditarBoton: (id: string) => void;
   onRellenarHuecos: (ids: string[], contenidos: PresetHueco[], nombre: string) => void;
-  /** Escribir los modos de una perilla (con historial). */
   onFijarModosPerilla: (botonId: string, modos: ModoPerilla[], nombre: string) => void;
 }
 
@@ -107,9 +117,8 @@ export function useDockHardwareState({
 
   const paginaConfig = paginaEditada ?? undefined;
 
-  const botonesPagina = useMemo(() => {
+  const botonesPaginaBase = useMemo(() => {
     if (indicePagina < 0) return [];
-    // Lo mismo que enseña el aparato: con los fijos de las otras páginas del dock.
     return botonesResueltos(config, indicePagina);
   }, [config, indicePagina]);
 
@@ -118,10 +127,62 @@ export function useDockHardwareState({
   }, [dispositivoActivo, superficies, paginaConfig, modelos]);
 
   const [selectedHueco, setSelectedHueco] = useState<number | null>(null);
+  const [previaEntrada, setPreviaEntrada] = useState<PresetHueco[] | PerfilDock | null>(null);
 
   useEffect(() => {
     setSelectedHueco(null);
+    setPreviaEntrada(null);
   }, [paginaEditadaId]);
+
+  useEffect(() => {
+    setPreviaEntrada(null);
+  }, [selectedHueco]);
+
+  const controlSeleccionado = useMemo(() => {
+    if (selectedHueco === null || !disposicionActiva) return null;
+    return controlDeHueco(disposicionActiva, selectedHueco);
+  }, [selectedHueco, disposicionActiva]);
+
+  const { botonesPagina, huecosEnPrevia } = useMemo(() => {
+    const enPrevia = new Set<number>();
+    if (!previaEntrada || !disposicionActiva || botonesPaginaBase.length === 0) {
+      return { botonesPagina: botonesPaginaBase as BotonConCatalogo[], huecosEnPrevia: enPrevia };
+    }
+    if (!Array.isArray(previaEntrada)) {
+      const huecosPerfil = huecosDePerfil(previaEntrada, disposicionActiva);
+      if (!huecosPerfil || huecosPerfil.length !== botonesPaginaBase.length) {
+        return { botonesPagina: botonesPaginaBase as BotonConCatalogo[], huecosEnPrevia: enPrevia };
+      }
+      const vista = botonesPaginaBase.map((b, idx) => {
+        enPrevia.add(idx);
+        return fusionarHuecoEnBoton(b, huecosPerfil[idx]);
+      });
+      return { botonesPagina: vista, huecosEnPrevia: enPrevia };
+    }
+    if (!controlSeleccionado) {
+      return { botonesPagina: botonesPaginaBase as BotonConCatalogo[], huecosEnPrevia: enPrevia };
+    }
+    const ctrl = disposicionActiva.controles.find(
+      (c) => c.tipo === controlSeleccionado.control && c.indice === controlSeleccionado.indice,
+    );
+    if (!ctrl) {
+      return { botonesPagina: botonesPaginaBase as BotonConCatalogo[], huecosEnPrevia: enPrevia };
+    }
+    const huecosCtrl = huecosDeControl(disposicionActiva, ctrl);
+    if (huecosCtrl.length !== previaEntrada.length) {
+      return { botonesPagina: botonesPaginaBase as BotonConCatalogo[], huecosEnPrevia: enPrevia };
+    }
+    const porHueco = new Map<number, PresetHueco>();
+    huecosCtrl.forEach((h, i) => {
+      porHueco.set(h, previaEntrada[i]);
+      enPrevia.add(h);
+    });
+    const vista = botonesPaginaBase.map((b, idx) => {
+      const p = porHueco.get(idx);
+      return p ? fusionarHuecoEnBoton(b, p) : b;
+    });
+    return { botonesPagina: vista, huecosEnPrevia: enPrevia };
+  }, [previaEntrada, disposicionActiva, botonesPaginaBase, controlSeleccionado]);
 
   const brilloActual = brilloDePagina(config, paginaConfig);
   const [brilloLocal, setBrilloLocal] = useState<number>(brilloActual);
@@ -156,11 +217,6 @@ export function useDockHardwareState({
       onRotacion(dispositivoActivo.serial, grados);
     }
   };
-
-  const controlSeleccionado = useMemo(() => {
-    if (selectedHueco === null || !disposicionActiva) return null;
-    return controlDeHueco(disposicionActiva, selectedHueco);
-  }, [selectedHueco, disposicionActiva]);
 
   const botonSeleccionado = selectedHueco !== null ? botonesPagina[selectedHueco] : undefined;
 
@@ -199,29 +255,54 @@ export function useDockHardwareState({
     }
   };
 
-  // Un perfil (roadmap 62) rellena la página entera: sus botones propios, en
-  // el orden de hueco (el de `config.buttons` de esa página). Un solo paso.
   const aplicarPerfilPagina = (perfil: PerfilDock) => {
     if (!disposicionActiva || indicePagina < 0) return;
     const huecos = huecosDePerfil(perfil, disposicionActiva);
     if (!huecos) return;
     const ids = config.buttons.filter((b) => b.page === indicePagina).map((b) => b.id);
     if (ids.length !== huecos.length) return;
+    setPreviaEntrada(null);
     onRellenarHuecos(ids, huecos, t(perfil.nombre));
   };
 
-  // Sin control elegido, el inspector ofrece perfiles (vista de la página).
   const handleAplicarPreset = (entrada: PresetHueco[] | PerfilDock) => {
+    setPreviaEntrada(null);
     if (!Array.isArray(entrada)) {
       aplicarPerfilPagina(entrada);
       return;
     }
-    const ids = idsDelControl(disposicionActiva, controlSeleccionado, botonesPagina);
+    const ids = idsDelControl(disposicionActiva, controlSeleccionado, botonesPaginaBase);
     if (ids.length === entrada.length) onRellenarHuecos(ids, entrada, entrada.map((h) => h.label).join(' / '));
   };
 
-  // Los tres botones de la perilla elegida (T-HW-19): los modos viven en el
-  // «pulsar» y el modo 0 se enseña con lo de izq/der.
+  const handlePrevisualizarPreset = useCallback((entrada: PresetHueco[] | PerfilDock | null) => {
+    setPreviaEntrada(entrada);
+  }, []);
+
+  const handleSoltarPluginControl = useCallback((
+    control: ControlFisico,
+    indiceHuecoEnControl: number,
+    carga: CargaArrastrePlugin,
+    enEjeCentral?: boolean,
+  ) => {
+    if (!disposicionActiva || botonesPaginaBase.length === 0) return;
+    const huecos = huecosDeControl(disposicionActiva, control);
+    if (huecos.length === 0) return;
+    const huecoDestino = huecos[indiceHuecoEnControl] ?? huecos[0];
+    setSelectedHueco(huecoDestino);
+    const ids = huecos.flatMap((h) => (botonesPaginaBase[h] ? [botonesPaginaBase[h].id] : []));
+    if (ids.length !== huecos.length) return;
+    const botonesControl = huecos.map((h) => botonesPaginaBase[h]);
+    const aplicarATodos = Boolean(control.tipo === 'knob' && enEjeCentral && carga.esEncoder);
+    const contenidos = construirHuecosSoltarPlugin(
+      botonesControl,
+      indiceHuecoEnControl,
+      carga,
+      aplicarATodos,
+    );
+    onRellenarHuecos(ids, contenidos, carga.nombre);
+  }, [disposicionActiva, botonesPaginaBase, onRellenarHuecos]);
+
   const perilla = useMemo(() => {
     if (!disposicionActiva || controlSeleccionado?.control !== 'knob') return null;
     const ctrl = disposicionActiva.controles.find(
@@ -237,8 +318,6 @@ export function useDockHardwareState({
     };
   }, [disposicionActiva, controlSeleccionado, botonesPagina]);
 
-  // El modo que el aparato tiene activo, para enseñarlo en el inspector. Sin
-  // modos no hay nada que enseñar.
   const modoActivo = useMemo(() => {
     if (!perilla || !dispositivoActivo || controlSeleccionado?.control !== 'knob') return null;
     if ((perilla.pulsar?.modosPerilla?.length ?? 0) === 0) return null;
@@ -259,6 +338,7 @@ export function useDockHardwareState({
     setSelectedSerial,
     pestanas,
     botonesPagina,
+    huecosEnPrevia,
     disposicionActiva,
     selectedHueco,
     setSelectedHueco,
@@ -274,10 +354,11 @@ export function useDockHardwareState({
     hermanosPerilla,
     handleEditarActual,
     handleAplicarPreset,
+    handlePrevisualizarPreset,
+    handleSoltarPluginControl,
     perilla,
     modoActivo,
     handleFijarModos,
     resumenControles,
   };
 }
-

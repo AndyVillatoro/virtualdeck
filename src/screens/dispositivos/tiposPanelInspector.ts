@@ -21,6 +21,8 @@ export interface PanelInspectorControlProps {
   onEditar: () => void;
   /** Con un control elegido, sus huecos (preset de control). Sin control, un perfil de página (roadmap 62). */
   onAplicarPreset?: (entrada: PresetHueco[] | PerfilDock) => void;
+  /** Previsualiza en vivo un preset de control o un perfil completo en el diagrama del dock. */
+  onPrevisualizarPreset?: (entrada: PresetHueco[] | PerfilDock | null) => void;
   ancho?: number;
   onCerrar?: () => void;
   hermanosPerilla?: HermanoPerilla[];

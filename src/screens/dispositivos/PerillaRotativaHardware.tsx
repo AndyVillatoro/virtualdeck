@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { decodificarArrastrePlugin, type CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
 import type { ButtonConfig } from '../../types';
 
 interface PerillaRotativaHardwareProps {
@@ -13,6 +14,7 @@ interface PerillaRotativaHardwareProps {
   disabled?: boolean;
   onSelectGesto: (gesto: 'izq' | 'pulsar' | 'der') => void;
   onEditarGesto: (gesto: 'izq' | 'pulsar' | 'der') => void;
+  onDropPluginGesto?: (gesto: 'izq' | 'pulsar' | 'der', carga: CargaArrastrePlugin, enEjeCentral?: boolean) => void;
 }
 
 interface BotonSubAccionProps {
@@ -29,6 +31,7 @@ interface BotonSubAccionProps {
   mono: string;
   onClick: () => void;
   onDoubleClick: () => void;
+  onDropPlugin?: (carga: CargaArrastrePlugin) => void;
 }
 
 function BotonSubAccion({
@@ -45,19 +48,37 @@ function BotonSubAccion({
   mono,
   onClick,
   onDoubleClick,
+  onDropPlugin,
 }: BotonSubAccionProps) {
+  const [dragOver, setDragOver] = useState(false);
+  const activo = seleccionado || dragOver;
+
   return (
     <button
       type="button"
       onClick={disabled ? undefined : onClick}
       onDoubleClick={disabled ? undefined : onDoubleClick}
+      onDragOver={(e) => {
+        if (disabled || !onDropPlugin) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        setDragOver(false);
+        if (disabled || !onDropPlugin) return;
+        e.preventDefault();
+        const carga = decodificarArrastrePlugin(e.dataTransfer.getData('text/plain'));
+        if (carga) onDropPlugin(carga);
+      }}
       title={label}
       style={{
         flex: 1,
         minWidth: 0,
-        background: seleccionado ? accentBg : surface,
-        border: `1px solid ${seleccionado ? accent : border}`,
-        color: seleccionado ? accent : textDim,
+        background: activo ? accentBg : surface,
+        border: `1px solid ${activo ? accent : border}`,
+        color: activo ? accent : textDim,
         fontSize: 7.5,
         fontFamily: mono,
         padding: '3px 2px',
@@ -76,7 +97,7 @@ function BotonSubAccion({
       <DotGlyphIcon
         glyph={prefijoGlifo}
         size={8}
-        color={seleccionado ? accent : textDim}
+        color={activo ? accent : textDim}
       />
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
         {label}
@@ -156,13 +177,16 @@ export function PerillaRotativaHardware({
   disabled = false,
   onSelectGesto,
   onEditarGesto,
+  onDropPluginGesto,
 }: PerillaRotativaHardwareProps) {
   const VD = useTheme();
   const t = useT();
+  const [dragOverDial, setDragOverDial] = useState(false);
 
   const labelPulsar = botonPulsar?.label || t('disp.pulsar');
   const labelIzq = botonIzq?.label || t('disp.izq');
   const labelDer = botonDer?.label || t('disp.der');
+  const subVisual = dragOverDial ? 'pulsar' : subAccionSeleccionada;
 
   return (
     <div
@@ -171,7 +195,7 @@ export function PerillaRotativaHardware({
         flexDirection: 'column',
         alignItems: 'center',
         background: VD.elevated,
-        border: `1px solid ${subAccionSeleccionada ? VD.borderStrong : VD.border}`,
+        border: `1px solid ${subVisual ? VD.borderStrong : VD.border}`,
         borderRadius: VD.radius.md,
         padding: `${VD.space.sm}px ${VD.space.xs}px`,
         gap: VD.space.xs,
@@ -191,9 +215,9 @@ export function PerillaRotativaHardware({
         }}
       >
         <span>{t('disp.perilla', { n: indice + 1 })}</span>
-        {subAccionSeleccionada && (
+        {subVisual && (
           <span style={{ color: VD.accent, fontWeight: 600 }}>
-            {subAccionSeleccionada.toUpperCase()}
+            {subVisual.toUpperCase()}
           </span>
         )}
       </div>
@@ -201,6 +225,20 @@ export function PerillaRotativaHardware({
       <div
         onClick={disabled ? undefined : () => onSelectGesto('pulsar')}
         onDoubleClick={disabled ? undefined : () => onEditarGesto('pulsar')}
+        onDragOver={(e) => {
+          if (disabled || !onDropPluginGesto) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          setDragOverDial(true);
+        }}
+        onDragLeave={() => setDragOverDial(false)}
+        onDrop={(e) => {
+          setDragOverDial(false);
+          if (disabled || !onDropPluginGesto) return;
+          e.preventDefault();
+          const carga = decodificarArrastrePlugin(e.dataTransfer.getData('text/plain'));
+          if (carga) onDropPluginGesto('pulsar', carga, true);
+        }}
         style={{
           position: 'relative',
           width: 50,
@@ -209,7 +247,7 @@ export function PerillaRotativaHardware({
         }}
       >
         <DialSvg
-          sub={subAccionSeleccionada}
+          sub={subVisual}
           accent={VD.accent}
           borderStrong={VD.borderStrong}
           trama={VD.trama}
@@ -234,6 +272,7 @@ export function PerillaRotativaHardware({
           mono={VD.mono}
           onClick={() => onSelectGesto('izq')}
           onDoubleClick={() => onEditarGesto('izq')}
+          onDropPlugin={onDropPluginGesto ? (c) => onDropPluginGesto('izq', c) : undefined}
         />
         <BotonSubAccion
           prefijoGlifo="KNOB_PRESS"
@@ -249,6 +288,7 @@ export function PerillaRotativaHardware({
           mono={VD.mono}
           onClick={() => onSelectGesto('pulsar')}
           onDoubleClick={() => onEditarGesto('pulsar')}
+          onDropPlugin={onDropPluginGesto ? (c) => onDropPluginGesto('pulsar', c) : undefined}
         />
         <BotonSubAccion
           prefijoGlifo="ROTATE_CW"
@@ -264,6 +304,7 @@ export function PerillaRotativaHardware({
           mono={VD.mono}
           onClick={() => onSelectGesto('der')}
           onDoubleClick={() => onEditarGesto('der')}
+          onDropPlugin={onDropPluginGesto ? (c) => onDropPluginGesto('der', c) : undefined}
         />
       </div>
     </div>

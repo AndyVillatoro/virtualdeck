@@ -81,6 +81,8 @@ interface LateralInspectorProps {
   onEditar: () => void;
   /** Un control elegido: sus huecos. Sin control: un perfil de página (roadmap 62). */
   onAplicarPreset?: (entrada: PresetHueco[] | PerfilDock) => void;
+  /** Previsualiza en vivo un preset de control o un perfil completo en el diagrama del dock. */
+  onPrevisualizarPreset?: (entrada: PresetHueco[] | PerfilDock | null) => void;
   onCerrar: () => void;
   hermanosPerilla?: HermanoPerilla[];
   onSelectHueco?: (hueco: number) => void;
@@ -102,6 +104,7 @@ export function LateralInspector({
   anchoVentana,
   onEditar,
   onAplicarPreset,
+  onPrevisualizarPreset,
   onCerrar,
   hermanosPerilla,
   onSelectHueco,
@@ -133,6 +136,7 @@ export function LateralInspector({
           ancho={Math.min(290, anchoVentana - 40)}
           onEditar={onEditar}
           onAplicarPreset={onAplicarPreset}
+          onPrevisualizarPreset={onPrevisualizarPreset}
           onCerrar={onCerrar}
           hermanosPerilla={hermanosPerilla}
           onSelectHueco={onSelectHueco}
@@ -153,6 +157,7 @@ export function LateralInspector({
       ancho={ancho}
       onEditar={onEditar}
       onAplicarPreset={onAplicarPreset}
+      onPrevisualizarPreset={onPrevisualizarPreset}
       onCerrar={onCerrar}
       hermanosPerilla={hermanosPerilla}
       onSelectHueco={onSelectHueco}
@@ -163,4 +168,3 @@ export function LateralInspector({
     />
   );
 }
-

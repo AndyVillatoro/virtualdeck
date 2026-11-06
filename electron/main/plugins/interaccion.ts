@@ -2,8 +2,9 @@ import type { PluginRef } from '../../../src/types';
 import { ESPERA_REGISTRO_MS, estado, type Marcha, type MarchaLista } from './estado';
 import { existeInstalado } from './inventario';
 import { arrancar } from './cicloVida';
-import { olvidarVisualMando } from './visualesMando';
-import { validarUuid } from './instalacion';
+import { emitirVisual } from './eventos';
+import { guardarVisualMando, olvidarVisualMando } from './visualesMando';
+import { resolverImagenVisual, validarUuid } from './validacion';
 import { abrirVentanaPI } from './ventanaPI';
 
 /**
@@ -22,6 +23,13 @@ export async function aparecerPlugin(ref: PluginRef, visible: boolean): Promise<
   const accion = lista.marcha.manifiesto.acciones.find((a) => a.uuid === ref.accionUuid);
   if (!accion) return false;
   if (visible) {
+    const rutaBase = accion.imagenEstado ?? accion.icono;
+    const imagenBase = rutaBase ? resolverImagenVisual(rutaBase, lista.marcha.manifiesto.carpeta) : null;
+    if (imagenBase) {
+      const visualInicial = { contexto: ref.contexto, imagen: imagenBase };
+      guardarVisualMando(visualInicial);
+      emitirVisual(visualInicial);
+    }
     const settings = settingsDe(ref);
     const soloEncoder = accion.controladores.includes('Encoder') && !accion.controladores.includes('Keypad');
     lista.anfitrion.aparecer(ref.contexto, {

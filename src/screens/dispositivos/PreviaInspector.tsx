@@ -1,12 +1,55 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { useTheme } from '../../utils/theme';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { IconoPuntos } from '../../components/dot480/IconoPuntos';
+import { resolverIconoCatalogo } from '../../data/iconosDot';
 import { iconoFallback } from './textoPanelInspector';
 import { useVisualPlugin } from '../../utils/plugins/visual';
 import { contextoDeBoton } from '../../utils/plugins/ref';
-import type { ButtonConfig } from '../../types';
+import type { BotonConCatalogo } from './TeclaLcdHardware';
 import type { ControlSuperficie } from '../../types/superficies';
+
+function useBitsMiniPreview(boton?: BotonConCatalogo): string | null {
+  const [bitsCatalogo, setBitsCatalogo] = useState<string | null>(null);
+  const origenCatalogo = boton?.iconoCatalogo ?? boton?.iconoPuntos?.origen;
+  const bitsDirectos = boton?.iconoPuntos?.bits;
+
+  useEffect(() => {
+    if (bitsDirectos) {
+      setBitsCatalogo(bitsDirectos);
+      return;
+    }
+    if (!origenCatalogo) {
+      setBitsCatalogo(null);
+      return;
+    }
+    let vivo = true;
+    resolverIconoCatalogo(origenCatalogo)
+      .then((r) => { if (vivo) setBitsCatalogo(r ? r.bits : null); })
+      .catch(() => { if (vivo) setBitsCatalogo(null); });
+    return () => { vivo = false; };
+  }, [origenCatalogo, bitsDirectos]);
+
+  return bitsDirectos ?? bitsCatalogo;
+}
+
+function IconoMiniPreview({
+  bits,
+  glifo,
+  controlTipo,
+  fg,
+  accent,
+}: {
+  bits: string | null;
+  glifo: string | null;
+  controlTipo?: ControlSuperficie;
+  fg: string;
+  accent: string;
+}) {
+  if (bits) return <IconoPuntos bits={bits} size={18} color={fg} />;
+  if (glifo) return <DotGlyphIcon glyph={glifo} size={18} color={fg} />;
+  return <DotGlyphIcon glyph={iconoFallback(controlTipo)} size={18} color={accent} />;
+}
 
 /** La vista previa del hueco: su icono y su rótulo, como los verá el aparato. */
 export function MiniPreview({
@@ -18,7 +61,7 @@ export function MiniPreview({
   vacioTexto,
   contexto,
 }: {
-  boton?: ButtonConfig;
+  boton?: BotonConCatalogo;
   glifo: string | null;
   nombreControl: string;
   controlTipo?: ControlSuperficie;
@@ -27,6 +70,7 @@ export function MiniPreview({
   contexto?: string | null;
 }) {
   const visual = useVisualPlugin(contexto ?? (boton ? contextoDeBoton(boton.id) : null));
+  const bitsEfectivos = useBitsMiniPreview(boton);
   const bg = boton?.bgColor || vd.bg;
   const fg = boton?.fgColor || vd.text;
   const label = visual?.titulo || boton?.label || vacioTexto;
@@ -96,13 +140,13 @@ export function MiniPreview({
           </>
         ) : (
           <>
-            {glifo ? (
-              <DotGlyphIcon glyph={glifo} size={18} color={fg} />
-            ) : boton?.iconoPuntos ? (
-              <IconoPuntos bits={boton.iconoPuntos.bits} size={18} color={fg} />
-            ) : (
-              <DotGlyphIcon glyph={iconoFallback(controlTipo)} size={18} color={vd.accent} />
-            )}
+            <IconoMiniPreview
+              bits={bitsEfectivos}
+              glifo={glifo}
+              controlTipo={controlTipo}
+              fg={fg}
+              accent={vd.accent}
+            />
             <span
               style={{
                 fontSize: 7.5,

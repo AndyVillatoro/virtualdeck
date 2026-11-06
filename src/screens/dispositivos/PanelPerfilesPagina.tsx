@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
 import { resolveDotGlyph } from '../../components/dot480/resolveDotGlyph';
+import { CatalogoPluginsArrastrable } from '../../components/plugins/CatalogoPluginsArrastrable';
 import { PERFILES_DOCK, type PerfilDock } from '../../data/perfilesDock';
 
 export interface PanelPerfilesPaginaProps {
@@ -10,23 +11,43 @@ export interface PanelPerfilesPaginaProps {
   disabled?: boolean;
   /** Aplica el perfil a todos los botones de la página (un solo deshacer). */
   onAplicar: (perfil: PerfilDock) => void;
+  /** Previsualiza el perfil seleccionado/apuntado en la imagen de referencia del dock. */
+  onPrevisualizar?: (perfil: PerfilDock | null) => void;
   onCerrar?: () => void;
 }
 
 /**
  * Vista de la página en el inspector (sin control elegido): los perfiles
- * completos del dock (roadmap 62). Elegir uno pide confirmación, porque
- * sustituye todos los botones de la página.
+ * completos del dock (roadmap 62) y el catálogo arrastrable de plugins.
+ * Elegir o apuntar un perfil lo previsualiza inmediatamente en el diagrama del dock.
  */
-export function PanelPerfilesPagina({ ancho, disabled = false, onAplicar, onCerrar }: PanelPerfilesPaginaProps) {
+export function PanelPerfilesPagina({
+  ancho,
+  disabled = false,
+  onAplicar,
+  onPrevisualizar,
+  onCerrar,
+}: PanelPerfilesPaginaProps) {
   const VD = useTheme();
   const t = useT();
   const [pendiente, setPendiente] = useState<PerfilDock | null>(null);
+  const [hovered, setHovered] = useState<PerfilDock | null>(null);
   const w = ancho ?? 290;
+
+  useEffect(() => {
+    onPrevisualizar?.(hovered ?? pendiente);
+  }, [hovered, pendiente, onPrevisualizar]);
+
+  useEffect(() => {
+    return () => {
+      onPrevisualizar?.(null);
+    };
+  }, [onPrevisualizar]);
 
   const confirmar = () => {
     if (pendiente) onAplicar(pendiente);
     setPendiente(null);
+    setHovered(null);
   };
 
   return (
@@ -101,13 +122,15 @@ export function PanelPerfilesPagina({ ancho, disabled = false, onAplicar, onCerr
         </p>
 
         {PERFILES_DOCK.map((perfil) => {
-          const activo = pendiente?.id === perfil.id;
+          const activo = pendiente?.id === perfil.id || hovered?.id === perfil.id;
           return (
             <button
               key={perfil.id}
               type="button"
               disabled={disabled}
               onClick={() => setPendiente(perfil)}
+              onMouseEnter={() => { if (!disabled) setHovered(perfil); }}
+              onMouseLeave={() => setHovered(null)}
               style={{
                 width: '100%',
                 background: activo ? VD.elevatedHover : VD.elevated,
@@ -192,6 +215,10 @@ export function PanelPerfilesPagina({ ancho, disabled = false, onAplicar, onCerr
             </div>
           </div>
         )}
+
+        <div style={{ marginTop: VD.space.sm, paddingTop: VD.space.md, borderTop: `1px solid ${VD.border}` }}>
+          <CatalogoPluginsArrastrable disabled={disabled} />
+        </div>
       </div>
     </aside>
   );

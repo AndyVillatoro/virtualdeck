@@ -139,6 +139,7 @@ export const EN_DISPOSITIVOS: Dict = {
   'disp.aviso.cuadrantes': 'DECK 2x2',
   // Plugins in the dock inspector (same `plugin` action as the editor)
   'disp.plugin.titulo': 'INSTALLED PLUGINS',
+  'disp.plugin.arrastrarAyuda': 'Drag an action onto any button or control to assign it.',
   'disp.plugin.aplicar': 'Apply to control',
   'disp.plugin.aplicaPrimero': 'Apply first to open its settings window.',
 };

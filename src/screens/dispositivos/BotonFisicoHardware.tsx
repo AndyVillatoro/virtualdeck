@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
+import { decodificarArrastrePlugin, type CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
 import type { ButtonConfig } from '../../types';
 
 interface BotonFisicoHardwareProps {
@@ -10,6 +11,7 @@ interface BotonFisicoHardwareProps {
   disabled?: boolean;
   onSelect: () => void;
   onEditar: () => void;
+  onDropPlugin?: (carga: CargaArrastrePlugin) => void;
 }
 
 export function BotonFisicoHardware({
@@ -19,22 +21,40 @@ export function BotonFisicoHardware({
   disabled = false,
   onSelect,
   onEditar,
+  onDropPlugin,
 }: BotonFisicoHardwareProps) {
   const VD = useTheme();
   const t = useT();
+  const [dragOver, setDragOver] = useState(false);
 
   const etiqueta = boton?.label || t('disp.boton', { n: indice + 1 });
+  const isResaltado = seleccionado || dragOver;
 
   return (
     <button
       type="button"
       onClick={disabled ? undefined : onSelect}
       onDoubleClick={disabled ? undefined : onEditar}
+      onDragOver={(e) => {
+        if (disabled || !onDropPlugin) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        setDragOver(false);
+        if (disabled || !onDropPlugin) return;
+        e.preventDefault();
+        const carga = decodificarArrastrePlugin(e.dataTransfer.getData('text/plain'));
+        if (carga) onDropPlugin(carga);
+      }}
       title={boton?.label ? `B${indice + 1} · ${etiqueta}` : `B${indice + 1}`}
       style={{
         height: 34,
-        background: seleccionado ? VD.accentBg : VD.elevated,
-        border: `1px solid ${seleccionado ? VD.accent : VD.borderStrong}`,
+        width: '100%',
+        background: isResaltado ? VD.accentBg : VD.elevated,
+        border: `1px solid ${isResaltado ? VD.accent : VD.borderStrong}`,
         borderRadius: VD.radius.md,
         display: 'flex',
         alignItems: 'center',
@@ -43,8 +63,8 @@ export function BotonFisicoHardware({
         cursor: disabled ? 'default' : 'pointer',
         fontFamily: VD.mono,
         fontSize: 9,
-        color: seleccionado ? VD.accent : VD.textDim,
-        boxShadow: seleccionado
+        color: isResaltado ? VD.accent : VD.textDim,
+        boxShadow: isResaltado
           ? `0 0 0 1px ${VD.accent}, 0 2px 4px rgba(0, 0, 0, 0.4)`
           : '0 2px 0 var(--vd-border-strong, rgba(0,0,0,0.3))',
         opacity: disabled ? 0.5 : 1,

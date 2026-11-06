@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '../../utils/theme';
 import { useT } from '../../utils/i18n';
 import { DotGlyphIcon } from '../../components/dot480/DotGlyphIcon';
+import { decodificarArrastrePlugin, type CargaArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
 import type { ButtonConfig } from '../../types';
 
 export interface TiraTactilHardwareProps {
@@ -12,6 +13,7 @@ export interface TiraTactilHardwareProps {
   disabled?: boolean;
   onSelectGesto: (gesto: 'izq' | 'der') => void;
   onEditarGesto: (gesto: 'izq' | 'der') => void;
+  onDropPluginGesto?: (gesto: 'izq' | 'der', carga: CargaArrastrePlugin) => void;
 }
 
 interface SectorTactilProps {
@@ -28,6 +30,7 @@ interface SectorTactilProps {
   mono: string;
   onClick: () => void;
   onDoubleClick: () => void;
+  onDropPlugin?: (carga: CargaArrastrePlugin) => void;
 }
 
 function SectorTactil({
@@ -44,20 +47,38 @@ function SectorTactil({
   mono,
   onClick,
   onDoubleClick,
+  onDropPlugin,
 }: SectorTactilProps) {
+  const [dragOver, setDragOver] = useState(false);
+  const activo = seleccionado || dragOver;
+
   return (
     <button
       type="button"
       onClick={disabled ? undefined : onClick}
       onDoubleClick={disabled ? undefined : onDoubleClick}
+      onDragOver={(e) => {
+        if (disabled || !onDropPlugin) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        setDragOver(false);
+        if (disabled || !onDropPlugin) return;
+        e.preventDefault();
+        const carga = decodificarArrastrePlugin(e.dataTransfer.getData('text/plain'));
+        if (carga) onDropPlugin(carga);
+      }}
       title={label}
       style={{
         flex: 1,
         minWidth: 0,
-        background: seleccionado ? accentBg : surface,
-        border: `1px solid ${seleccionado ? accent : border}`,
+        background: activo ? accentBg : surface,
+        border: `1px solid ${activo ? accent : border}`,
         borderRadius: radiusSm,
-        color: seleccionado ? accent : textDim,
+        color: activo ? accent : textDim,
         cursor: disabled ? 'default' : 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -69,14 +90,14 @@ function SectorTactil({
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
-        boxShadow: seleccionado ? `0 0 8px ${accentBg}` : 'none',
+        boxShadow: activo ? `0 0 8px ${accentBg}` : 'none',
         transition: 'all 0.15s ease',
       }}
     >
       <DotGlyphIcon
         glyph={prefijoGlifo}
         size={10}
-        color={seleccionado ? accent : textDim}
+        color={activo ? accent : textDim}
       />
       <span
         style={{
@@ -101,6 +122,7 @@ export function TiraTactilHardware({
   disabled = false,
   onSelectGesto,
   onEditarGesto,
+  onDropPluginGesto,
 }: TiraTactilHardwareProps) {
   const VD = useTheme();
   const t = useT();
@@ -160,6 +182,7 @@ export function TiraTactilHardware({
           mono={VD.mono}
           onClick={() => onSelectGesto('izq')}
           onDoubleClick={() => onEditarGesto('izq')}
+          onDropPlugin={onDropPluginGesto ? (c) => onDropPluginGesto('izq', c) : undefined}
         />
         <SectorTactil
           label={labelDer}
@@ -175,6 +198,7 @@ export function TiraTactilHardware({
           mono={VD.mono}
           onClick={() => onSelectGesto('der')}
           onDoubleClick={() => onEditarGesto('der')}
+          onDropPlugin={onDropPluginGesto ? (c) => onDropPluginGesto('der', c) : undefined}
         />
       </div>
     </div>

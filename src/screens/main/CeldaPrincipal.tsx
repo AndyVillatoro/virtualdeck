@@ -3,6 +3,7 @@ import { ButtonCell } from '../../components/ButtonCell';
 import { useT } from '../../utils/i18n';
 import { interpolate } from '../../utils/actions';
 import { botonActivo, botonVisible, type useEstadoSistema } from '../../utils/estadoSistema';
+import { aplicarPluginABoton, decodificarArrastrePlugin } from '../../utils/plugins/arrastrePlugin';
 import type { useSensors } from '../../utils/sensors';
 import type { useDatosWidget } from '../../components/celda/useDatosWidget';
 import type { ButtonConfig, SoundProfileId } from '../../types';
@@ -131,6 +132,12 @@ export function CeldaPrincipal(props: CeldaPrincipalProps) {
       onDrop={(sourceId) => {
         if (esFija) {
           handleAvisoFijo();
+          onArrastrar(null);
+          return;
+        }
+        const cargaPlugin = decodificarArrastrePlugin(sourceId);
+        if (cargaPlugin) {
+          onUpdateButton?.(aplicarPluginABoton(btn, cargaPlugin));
           onArrastrar(null);
           return;
         }

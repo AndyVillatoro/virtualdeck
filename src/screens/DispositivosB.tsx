@@ -36,7 +36,6 @@ export interface DispositivosBProps {
   onFijarTargetApp: (id: string, app: string, iconoApp?: string) => void;
   onRenombrarPagina: (id: string, nombre: string) => void;
   onBorrarPagina: (id: string) => void;
-  /** Crear página preconfigurada desde plantilla (roadmap 75). */
   /** Página preconfigurada para el dispositivo activo: el destino lo añade esta pantalla. */
   onCrearDesdePlantilla?: (plantillaId: string, app: string, destino: DestinoPlantilla) => void;
   /** Un preset del inspector: rellena todos los huecos del control (3 en una perilla) en un solo deshacer. */
@@ -94,10 +93,11 @@ export function DispositivosB({
 
   const {
     todosDispositivos, dispositivoActivo, setSelectedSerial, pestanas,
-    botonesPagina, disposicionActiva, selectedHueco, setSelectedHueco,
+    botonesPagina, huecosEnPrevia, disposicionActiva, selectedHueco, setSelectedHueco,
     serialActivo, brilloLocal, handleBrilloMoving, handleBrilloCommit,
     lcds, rotacionActual, handleCambiarRotacion, controlSeleccionado,
-    botonSeleccionado, hermanosPerilla, handleEditarActual, handleAplicarPreset, resumenControles,
+    botonSeleccionado, hermanosPerilla, handleEditarActual, handleAplicarPreset,
+    handlePrevisualizarPreset, handleSoltarPluginControl, resumenControles,
     perilla, modoActivo, handleFijarModos,
   } = dock;
 
@@ -210,6 +210,7 @@ export function DispositivosB({
             paginaPredeterminadaId={paginaPredeterminadaId}
             puedeAgregar={puedeAgregar}
             botonesPagina={botonesPagina}
+            huecosEnPrevia={huecosEnPrevia}
             selectedHueco={selectedHueco}
             serialActivo={serialActivo}
             imagenes={imagenes}
@@ -228,6 +229,7 @@ export function DispositivosB({
               : undefined}
             onSelectHueco={handleSelectHueco}
             onEditarBoton={onEditarBoton}
+            onSoltarPluginControl={handleSoltarPluginControl}
           />
         </main>
 
@@ -241,6 +243,7 @@ export function DispositivosB({
           anchoVentana={anchoVentana}
           onEditar={handleEditarActual}
           onAplicarPreset={dispositivoActivo ? handleAplicarPreset : undefined}
+          onPrevisualizarPreset={handlePrevisualizarPreset}
           onCerrar={cerrarInspector}
           hermanosPerilla={hermanosPerilla}
           onSelectHueco={handleSelectHueco}

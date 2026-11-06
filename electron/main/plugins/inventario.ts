@@ -4,6 +4,7 @@ import type { PluginInfo } from '../../../src/types';
 import { leerManifiesto, type AccionManifiesto, type Manifiesto } from './manifiesto';
 import { emitirCambios } from './eventos';
 import { dirDe, dirPlugins, estado } from './estado';
+import { resolverImagenVisual } from './validacion';
 
 /**
  * Inventario de plugins instalados (roadmap 83, MVP).
@@ -20,6 +21,8 @@ export function emitir(): void {
 function aAccion(manifiesto: Manifiesto, accion: AccionManifiesto, indice: number): PluginInfo['acciones'][number] {
   const reserva = `${manifiesto.uuid}#${indice}`;
   const esEncoder = accion.controladores.includes('Encoder');
+  const rutaIcono = accion.imagenEstado ?? accion.icono;
+  const icono = rutaIcono ? (resolverImagenVisual(rutaIcono, manifiesto.carpeta) || undefined) : undefined;
   return {
     uuid: accion.uuid || reserva,
     nombre: accion.nombre || accion.uuid || reserva,
@@ -28,6 +31,7 @@ function aAccion(manifiesto: Manifiesto, accion: AccionManifiesto, indice: numbe
     tienePI: !!(accion.piPath ?? manifiesto.piPath),
     userTitleEnabled: accion.userTitleEnabled,
     tieneImagenPropia: Boolean(accion.icono ?? accion.imagenEstado),
+    ...(icono ? { icono } : {}),
   };
 }
 

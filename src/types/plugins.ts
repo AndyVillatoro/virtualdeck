@@ -20,6 +20,8 @@ export interface PluginAccionInfo {
   userTitleEnabled: boolean;
   /** La acción trae `Icon` o `States[0].Image`: el plugin controla la imagen. */
   tieneImagenPropia: boolean;
+  /** Icono resuelto como `data:` desde `States[0].Image` o `Icon` del manifiesto. */
+  icono?: string;
 }
 
 export interface PluginInfo {
