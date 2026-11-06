@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { normalizarApp } from './apps';
 import { mismoDispositivoAudio } from './acciones/audio';
+import { coincideNombreAudio } from '../comun/audioIcono';
 import { botonVisibleSegun } from '../comun/visibilidad';
 import type { ButtonConfig, RGBStatus, Sensor } from '../types';
 
@@ -22,11 +23,16 @@ import type { ButtonConfig, RGBStatus, Sensor } from '../types';
  */
 
 /** Lo que se enseña mientras no ha llegado la primera foto. */
-const VACIO: EstadoSistema = { rgbStatus: null, activeAudioDeviceId: null, runningProcesses: new Set() };
+const VACIO: EstadoSistema = { rgbStatus: null, activeAudioDeviceId: null, activeAudioDeviceName: null, runningProcesses: new Set() };
 
 export interface EstadoSistema {
   rgbStatus: RGBStatus | null;
   activeAudioDeviceId: string | null;
+  /**
+   * Nombre de la salida que manda (T-AUD-04): respaldo para marcar el botón
+   * y resolver su aspecto cuando el id del endpoint ya no coincide.
+   */
+  activeAudioDeviceName: string | null;
   runningProcesses: Set<string>;
 }
 
@@ -69,11 +75,17 @@ export function useEstadoSistema(api: typeof window.electronAPI | null | undefin
     if (!api) return;
     let cancelado = false;
     const adoptar = (crudo: unknown) => {
-      const d = crudo as { rgbStatus?: RGBStatus | null; activeAudioDeviceId?: string | null; runningProcesses?: string[] } | null;
+      const d = crudo as {
+        rgbStatus?: RGBStatus | null;
+        activeAudioDeviceId?: string | null;
+        activeAudioDeviceName?: string | null;
+        runningProcesses?: string[];
+      } | null;
       if (!d || cancelado) return;
       setEstado({
         rgbStatus: d.rgbStatus ?? null,
         activeAudioDeviceId: d.activeAudioDeviceId ?? null,
+        activeAudioDeviceName: d.activeAudioDeviceName ?? null,
         // Llega como array por IPC; el `Set` es cosa de quien lo consulta.
         runningProcesses: new Set(d.runningProcesses ?? []),
       });
@@ -89,7 +101,12 @@ export function useEstadoSistema(api: typeof window.electronAPI | null | undefin
 /** El botón representa algo que ya está puesto: la salida de audio, una app abierta. */
 export function botonActivo(b: ButtonConfig, e: EstadoSistema): boolean {
   const a = b.action;
-  if (a.type === 'audio-device' && a.deviceId) return mismoDispositivoAudio(a.deviceId, e.activeAudioDeviceId);
+  if (a.type === 'audio-device' && (a.audioMode ?? 'fixed') === 'fixed') {
+    if (a.deviceId && mismoDispositivoAudio(a.deviceId, e.activeAudioDeviceId)) return true;
+    // Respaldo por nombre (T-AUD-04): cuadrantes 2×2 que solo guardan el
+    // nombre, o id USB que cambió al reconectar. Los ciclos no se marcan.
+    return coincideNombreAudio(a.deviceName, e.activeAudioDeviceName);
+  }
   if (a.type === 'app' && a.appPath) {
     const nombre = extractExeName(a.appPath);
     return !!nombre && e.runningProcesses.has(nombre);

@@ -8,9 +8,10 @@ import type { ButtonConfig } from '../../types';
  *
  * Resuelve el icono y sublabel reactivos del `audio-device` según
  * `activeAudioDeviceId` y los fusiona sin pisar lo explícito del botón. El
- * nombre de la activa sale de `api.audio.list()` (caché corta compartida);
- * sin nombre solo resuelven los modos que no lo necesitan (`fixed` por id,
- * `cycle-list` por candidato).
+ * nombre de la activa sale del `estadoSistema` (T-AUD-04); si no llega
+ * (foto vieja o proceso sin sondeo), `mapaNombres` lo pide a `api.audio.list()`
+ * (caché corta compartida) y se queda como respaldo. Sin nombre solo resuelven
+ * los modos que no lo necesitan (`fixed` por id, `cycle-list` por candidato).
  *
  * Solo se monta en celdas de audio (lo usa `CuerpoAudio`): el resto ni se
  * suscribe al estado ni pide la lista.
@@ -44,9 +45,11 @@ export function useAspectoAudio(button: ButtonConfig): ButtonConfig {
   const estado = useEstadoSistema(api);
   const [nombres, setNombres] = useState<Map<string, string> | null>(null);
   const activoId = estado.activeAudioDeviceId;
+  const nombreEstado = estado.activeAudioDeviceName;
 
   useEffect(() => {
-    if (!api || !activoId) return;
+    // El nombre del estado manda (T-AUD-04): la lista solo se pide si falta.
+    if (!api || !activoId || nombreEstado) return;
     let vivo = true;
     void mapaNombres(() => api.audio.list()).then((m) => {
       if (vivo) setNombres(m);
@@ -54,12 +57,12 @@ export function useAspectoAudio(button: ButtonConfig): ButtonConfig {
     return () => {
       vivo = false;
     };
-  }, [api, activoId]);
+  }, [api, activoId, nombreEstado]);
 
   return useMemo(() => {
     if (button.action.type !== 'audio-device') return button;
-    const nombre = activoId && nombres?.get(activoId.trim().toLowerCase());
+    const nombre = nombreEstado ?? (activoId ? nombres?.get(activoId.trim().toLowerCase()) : undefined);
     const aspecto = resolverAspectoAudio(button.action, activoId, nombre);
     return aplicarAspectoAudio(button, aspecto);
-  }, [button, activoId, nombres]);
+  }, [button, activoId, nombreEstado, nombres]);
 }

@@ -1,11 +1,12 @@
 /**
- * Pruebas puras de audio (T-AUD-01 + T-AUD-03 Fase 1): se corren con
- * `npx tsx scripts/probar-audio.ts`, sin app abierta ni hardware.
+ * Pruebas puras de audio (T-AUD-01 + T-AUD-03 Fase 1 y 2 + T-AUD-04): se
+ * corren con `npx tsx scripts/probar-audio.ts`, sin app abierta ni hardware.
  *
  * Cubre la resolución de dispositivo (`src/utils/acciones/audio.ts`), el
  * reintento por nombre cuando el id guardado se queda viejo, el estado
- * activo (`botonActivo` en `src/utils/estadoSistema.ts`) y el switch de
- * audio (modos `cycle-all` / `cycle-list`).
+ * activo (`botonActivo` en `src/utils/estadoSistema.ts`), el switch de
+ * audio (modos `cycle-all` / `cycle-list`) y el respaldo por nombre del
+ * dispositivo activo (T-AUD-04).
  */
 import {
   AUDIO,
@@ -21,6 +22,7 @@ import {
 import { botonActivo } from '../src/utils/estadoSistema.js';
 import {
   aplicarAspectoAudio,
+  coincideNombreAudio,
   heuristicaAudioDispositivo,
   resolverAspectoAudio,
 } from '../src/comun/audioIcono.js';
@@ -85,6 +87,15 @@ async function main(): Promise<void> {
   afirman(!mismoDispositivoAudio('', '{B}'), 'vacío nunca coincide');
   afirman(!mismoDispositivoAudio(undefined, undefined), 'undefined nunca coincide');
 
+  console.log('coincideNombreAudio (T-AUD-04):');
+  afirman(coincideNombreAudio('Auriculares (Arctis)', 'auriculares (arctis)'), 'exacto sin caja');
+  afirman(coincideNombreAudio('  Auriculares ', 'Auriculares (Arctis Nova Pro)'), 'el real contiene la aguja');
+  afirman(coincideNombreAudio(DEV_B.name, DEV_B.name.toUpperCase()), 'misma cadena distinta caja');
+  afirman(!coincideNombreAudio('Altavoces (Realtek)', DEV_B.name), 'distintos no casan');
+  afirman(!coincideNombreAudio('', DEV_B.name), 'aguja vacía no coincide');
+  afirman(!coincideNombreAudio(DEV_B.name, ''), 'real vacío no coincide');
+  afirman(!coincideNombreAudio(undefined, null), 'sin nombres no coincide');
+
   console.log('manejador audio-device:');
   {
     // Id fresco: un solo setDefault, sin listar.
@@ -126,12 +137,30 @@ async function main(): Promise<void> {
   }
 
   console.log('botonActivo:');
-  const estadoB = { rgbStatus: null, activeAudioDeviceId: DEV_B.id, runningProcesses: new Set<string>() };
-  const btn = (action: { type: 'audio-device'; deviceId?: string; deviceName?: string }) => ({ id: 'b1', page: 0, label: 'x', action });
+  const estadoB = {
+    rgbStatus: null,
+    activeAudioDeviceId: DEV_B.id,
+    activeAudioDeviceName: DEV_B.name,
+    runningProcesses: new Set<string>(),
+  };
+  const btn = (action: {
+    type: 'audio-device';
+    deviceId?: string;
+    deviceName?: string;
+    audioMode?: 'fixed' | 'cycle-all' | 'cycle-list';
+  }) => ({ id: 'b1', page: 0, label: 'x', action });
   afirman(botonActivo(btn({ type: 'audio-device', deviceId: DEV_B.id }), estadoB), 'marca el dispositivo activo');
   afirman(!botonActivo(btn({ type: 'audio-device', deviceId: DEV_A.id }), estadoB), 'desmarca el anterior');
   afirman(botonActivo(btn({ type: 'audio-device', deviceId: DEV_B.id.toUpperCase() }), estadoB), 'activo sin distinguir caja');
-  afirman(!botonActivo(btn({ type: 'audio-device', deviceName: DEV_B.name }), estadoB), 'solo nombre no marca (sin id)');
+  afirman(botonActivo(btn({ type: 'audio-device', deviceName: DEV_B.name }), estadoB), 'solo nombre marca (cuadrante 2×2, sin id)');
+  afirman(!botonActivo(btn({ type: 'audio-device', deviceName: DEV_A.name }), estadoB), 'solo nombre de otra salida no marca');
+  afirman(botonActivo(btn({ type: 'audio-device', deviceId: '{USB-VIEJO}', deviceName: DEV_B.name }), estadoB), 'id viejo + nombre válido marca');
+  afirman(!botonActivo(btn({ type: 'audio-device', deviceId: '{USB-VIEJO}', deviceName: DEV_A.name }), estadoB), 'id viejo con nombre ajeno no marca');
+  afirman(
+    !botonActivo(btn({ type: 'audio-device', deviceId: DEV_A.id, deviceName: DEV_A.name }), { ...estadoB, activeAudioDeviceName: null }),
+    'sin nombre activo no se inventa coincidencia',
+  );
+  afirman(!botonActivo(btn({ type: 'audio-device', audioMode: 'cycle-all', deviceName: DEV_B.name }), estadoB), 'el ciclo no se marca activo');
 
   console.log('orden y ciclo (T-AUD-03, Fase 1):');
   const desorden = [
@@ -279,6 +308,41 @@ async function main(): Promise<void> {
     afirman(resolverAspectoAudio(action, DEV_B.id, DEV_B.name)?.sublabel === 'CASCO', 'todo con nombre resuelve');
     afirman(resolverAspectoAudio(action, DEV_B.id) === null, 'todo sin nombre no resuelve');
     afirman(resolverAspectoAudio({ type: 'mute' }, DEV_B.id, DEV_B.name) === null, 'no-audio no da aspecto');
+  }
+  {
+    // T-AUD-04 — respaldo por nombre cuando el id ya no sirve (USB
+    // reconectado) o el botón solo guardó el nombre (cuadrante 2×2).
+    const aspecto = resolverAspectoAudio(
+      { type: 'audio-device', deviceId: '{USB-VIEJO}', deviceName: DEV_B.name }, '{OTRO-ID}', DEV_B.name);
+    afirman(aspecto?.sublabel === 'CASCO' && aspecto?.icon === 'AUDIO_WAVE', 'fijo con id viejo responde por nombre', aspecto);
+    afirman(resolverAspectoAudio(
+      { type: 'audio-device', deviceId: '{USB-VIEJO}', deviceName: DEV_A.name }, '{OTRO-ID}', DEV_B.name) === null,
+      'fijo con id viejo y nombre ajeno no da aspecto');
+    afirman(resolverAspectoAudio(
+      { type: 'audio-device', deviceId: '{USB-VIEJO}', deviceName: DEV_A.name }, '{OTRO-ID}') === null,
+      'sin nombre activo no decide por nombre');
+    afirman(resolverAspectoAudio(
+      { type: 'audio-device', deviceName: 'Auriculares' }, '{OTRO-ID}', DEV_B.name)?.sublabel === 'CASCO',
+      'solo nombre responde por el nombre activo');
+    afirman(resolverAspectoAudio(
+      { type: 'audio-device', deviceName: 'Bocina BT' }, DEV_B.id, DEV_B.name) === null,
+      'solo nombre que no casa con la activa no da aspecto');
+  }
+  {
+    // T-AUD-04 — cycle-list: si ningún candidato casa por id, decide el
+    // nombre de la activa.
+    const action = {
+      type: 'audio-device' as const, audioMode: 'cycle-list' as const,
+      audioCandidates: [
+        { deviceId: '{USB-VIEJO}', deviceName: DEV_A.name },
+        { deviceId: '{OTRO-VIEJO}', deviceName: DEV_B.name, label: 'CASQUITOS', icon: 'MIC' },
+      ],
+    };
+    const porNombre = resolverAspectoAudio(action, '{ID-ACTUAL}', DEV_B.name);
+    afirman(porNombre?.sublabel === 'CASQUITOS' && porNombre?.icon === 'MIC', 'lista responde por nombre si el id falla', porNombre);
+    afirman(resolverAspectoAudio(action, '{ID-ACTUAL}', DEV_A.name)?.sublabel === 'ALTAV', 'lista por nombre con la otra activa');
+    afirman(resolverAspectoAudio(action, '{ID-ACTUAL}', 'Bocina BT') === null, 'lista sin coincidencia por id ni nombre');
+    afirman(resolverAspectoAudio(action, '{ID-ACTUAL}') === null, 'lista sin nombre activo no adivina');
   }
   {
     // aplicarAspectoAudio: lo explícito manda; el ciclo hereda pulso 'onda'.

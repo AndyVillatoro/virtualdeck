@@ -25,13 +25,20 @@ import * as rgb from '../rgb';
 export interface EstadoSistema {
   rgbStatus: unknown;
   activeAudioDeviceId: string | null;
+  /**
+   * Nombre legible de la salida activa. El id del endpoint de Windows cambia
+   * al reconectar un USB, y los cuadrantes 2×2 solo guardan el nombre: con
+   * este dato hay coincidencia por nombre en `botonActivo` y en
+   * `resolverAspectoAudio` (T-AUD-04).
+   */
+  activeAudioDeviceName: string | null;
   /** Nombres de ejecutable, sin extensión y en minúsculas. */
   runningProcesses: string[];
 }
 
 const CADA_MS = 5000;
 
-let actual: EstadoSistema = { rgbStatus: null, activeAudioDeviceId: null, runningProcesses: [] };
+let actual: EstadoSistema = { rgbStatus: null, activeAudioDeviceId: null, activeAudioDeviceName: null, runningProcesses: [] };
 let temporizador: NodeJS.Timeout | null = null;
 
 export function estadoActual(): EstadoSistema {
@@ -41,12 +48,14 @@ export function estadoActual(): EstadoSistema {
 async function tic(): Promise<void> {
   const [estadoRgb, audio, procesos] = await Promise.all([
     Promise.resolve(rgb.status()).catch(() => null),
-    listAudioDevices().catch(() => [] as Array<{ id: string; isDefault?: boolean }>),
+    listAudioDevices().catch(() => [] as Array<{ id: string; name: string; isDefault?: boolean }>),
     getRunningProcesses().catch(() => [] as string[]),
   ]);
+  const dispActivo = audio.find((d) => d.isDefault) ?? null;
   actual = {
     rgbStatus: estadoRgb ?? null,
-    activeAudioDeviceId: audio.find((d) => d.isDefault)?.id ?? null,
+    activeAudioDeviceId: dispActivo?.id ?? null,
+    activeAudioDeviceName: dispActivo?.name ?? null,
     runningProcesses: procesos,
   };
   for (const w of BrowserWindow.getAllWindows()) {

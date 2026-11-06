@@ -42,6 +42,20 @@ export function mismoDispositivoAudio(a: string | undefined | null, b: string | 
   return x !== '' && x.toLowerCase() === y.toLowerCase();
 }
 
+/**
+ * Coincidencia por nombre entre el dispositivo que guarda el botón y el que
+ * manda ahora (T-AUD-04). Es el respaldo cuando el id ya no sirve: Windows
+ * cambia el endpoint al reconectar un USB, y los cuadrantes 2×2 solo guardan
+ * `deviceName`. Vale si es el mismo (sin caja ni espacios de más) o si el
+ * real lo contiene («Auriculares» dentro de «Auriculares (Arctis Nova Pro)»);
+ * dos cadenas vacías nunca coinciden.
+ */
+export function coincideNombreAudio(aguja: string | undefined | null, nombreReal: string | undefined | null): boolean {
+  const a = normalizarNombreAudio(aguja);
+  const r = normalizarNombreAudio(nombreReal);
+  return a !== '' && (r === a || r.includes(a));
+}
+
 /** Icono y rótulo corto que deduce la heurística para una salida. */
 export interface HeuristicaAudio {
   /** Glifo DOT 8×8 (`AUDIO_WAVE`, `MONITOR`, `USB_PLUG` o `SPEAKER`). */
@@ -86,11 +100,15 @@ export interface AspectoAudio {
  * Selector puro del aspecto reactivo (spec §2.2): qué enseña el botón según
  * la salida que manda ahora mismo (`activeAudioDeviceId`).
  *
- * - `fixed`: el aspecto de su salida cuando es la activa; si no, `null`.
+ * - `fixed`: el aspecto de su salida cuando es la activa; si no, `null`. Si el
+ *   id no casa (endpoint reconectado o botón solo con nombre), decide el
+ *   nombre de la activa (`nombreActivo`).
  * - `cycle-list`: el aspecto del candidato activo (con su icono y etiqueta
- *   propios si los trae); si la activa no está en la lista, `null`.
+ *   propios si los trae); si la activa no está en la lista por id, se busca
+ *   por nombre; si tampoco, `null`.
  * - `cycle-all`: necesita el nombre de la activa (el renderer lo saca de
- *   `api.audio.list()`); sin nombre no hay heurística y es `null`.
+ *   `api.audio.list()`, y el proceso principal del `estadoSistema`); sin
+ *   nombre no hay heurística y es `null`.
  */
 export function resolverAspectoAudio(
   action: ButtonAction,
@@ -100,7 +118,9 @@ export function resolverAspectoAudio(
   if (action.type !== 'audio-device') return null;
   const modo = action.audioMode ?? 'fixed';
   if (modo === 'cycle-list') {
-    const c = (action.audioCandidates ?? []).find((x) => mismoDispositivoAudio(x.deviceId, activeAudioDeviceId));
+    const lista = action.audioCandidates ?? [];
+    const c = lista.find((x) => mismoDispositivoAudio(x.deviceId, activeAudioDeviceId))
+      ?? (nombreActivo ? lista.find((x) => coincideNombreAudio(x.deviceName, nombreActivo)) : undefined);
     if (!c) return null;
     const h = heuristicaAudioDispositivo(c.deviceName);
     return {
@@ -116,7 +136,9 @@ export function resolverAspectoAudio(
     const h = heuristicaAudioDispositivo(nombreActivo);
     return { icon: h.glifo, sublabel: h.corto };
   }
-  if (!action.deviceId || !mismoDispositivoAudio(action.deviceId, activeAudioDeviceId)) return null;
+  const idOk = !!action.deviceId && mismoDispositivoAudio(action.deviceId, activeAudioDeviceId);
+  const nombreOk = !!action.deviceName && coincideNombreAudio(action.deviceName, nombreActivo);
+  if (!idOk && !nombreOk) return null;
   const h = heuristicaAudioDispositivo(action.deviceName);
   return { icon: h.glifo, sublabel: h.corto };
 }

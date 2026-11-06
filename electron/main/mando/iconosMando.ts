@@ -177,13 +177,14 @@ export interface BotonFuenteMando {
  * T-AUD-03 — Los botones de audio no usan el interruptor: enseñan el icono y
  * sublabel de la salida activa (`resolverAspectoAudio`, Fase 2 del switch),
  * con la misma fusión que la celda (`aplicarAspectoAudio`). El proceso
- * principal no sabe el nombre de la activa (la lista es asíncrona y esto es
- * síncrono), así que `cycle-all` solo hereda el pulso de conmutación. El
- * teléfono re-pide `/api/buttons` cada 3 s y redibuja si cambió, así que el
- * icono cambia solo al conmutar, sin mecanismo de aviso nuevo.
+ * principal tiene el nombre de la activa en `estadoSistema` (T-AUD-04), así
+ * que `cycle-all` también resuelve icono y sublabel reactivos. El teléfono
+ * re-pide `/api/buttons` cada 3 s y redibuja si cambió, así que el icono
+ * cambia solo al conmutar, sin mecanismo de aviso nuevo.
  */
 function aplicarAspecto(b: BotonFuenteMando, encendido: boolean, state?: Record<string, string>): BotonFuenteMando {
   if (b.action?.type === 'audio-device') {
+    const { activeAudioDeviceId, activeAudioDeviceName } = estadoActual();
     const aspecto = resolverAspectoAudio(
       {
         type: 'audio-device',
@@ -192,7 +193,8 @@ function aplicarAspecto(b: BotonFuenteMando, encendido: boolean, state?: Record<
         audioMode: b.action.audioMode,
         audioCandidates: b.action.audioCandidates,
       },
-      estadoActual().activeAudioDeviceId,
+      activeAudioDeviceId,
+      activeAudioDeviceName,
     );
     return fusionarAspectoAudio(b, aspecto);
   }
