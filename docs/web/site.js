@@ -4,6 +4,13 @@
 
   /* ============ Registro de novedades (editar aquí) ============ */
   var FEATURES = [
+    { version: "v0.15.0", date: "2026-11-05", items: [
+      { code: "F-15-01", t: { es: "Plugins de Stream Deck + arrastrar", en: "Stream Deck plugins + drag & drop" }, d: { es: "Instala en un clic desde la Tienda (SHA-256), arrastra acciones desde el catálogo lateral a cualquier celda o perilla y usa los 6 plugins incluidos.", en: "One-click Store install (SHA-256), drag actions from the side catalog onto any key or dial, plus 6 bundled plugins." } },
+      { code: "F-15-02", t: { es: "Extensión compañera del navegador", en: "Browser companion extension" }, d: { es: "Captura directa de vídeo y metadatos en pestañas de YouTube, Spotify Web y Twitch sin congelarse al cubrir la ventana.", en: "Direct tab video and metadata capture from YouTube, Spotify Web and Twitch without freezing when occluded." } },
+      { code: "F-15-03", t: { es: "Switch de audio + acción ciclo", en: "Audio switcher + cycle action" }, d: { es: "Alterna salidas de sonido con icono reactivo según el dispositivo activo y encadena múltiples pasos en un mismo botón.", en: "Switch sound outputs with a reactive active-device icon and chain multiple sequential steps in one button." } },
+      { code: "F-15-04", t: { es: "Reposo en docks + mando con plugins", en: "Dock sleep + plugins on remote" }, d: { es: "Apagado automático por inactividad y bloqueo de sesión, previa en vivo de presets en el diagrama, perillas a ~2 ms y carátulas de plugin en el móvil.", en: "Auto-sleep on idle and session lock, live preset previews on the dock diagram, ~2 ms knob turns and live plugin art on the phone." } },
+      { code: "F-15-05", t: { es: "Arranque -32 % + tecla VOLVER", en: "32% lighter startup + BACK key" }, d: { es: "Bundle inicial reducido de 747 a 505 KiB con carga diferida y botón VOLVER automático con el icono en puntos de la app vinculada.", en: "Initial bundle reduced from 747 to 505 KiB via lazy chunks plus an automatic BACK key with the linked app's dot icon." } }
+    ] },
     { version: "v0.14.1", date: "2026-10-09", items: [
       { code: "F-14-11", t: { es: "Vídeo en vivo en panel de música", en: "Live video in music panel" }, d: { es: "Resolución nativa adaptada (CPU a 0,64%) en modo escritorio y formato barra con recorte ajustable.", en: "Adaptive native scaling (0.64% CPU) across desktop and bar layouts with custom cropping." } },
       { code: "F-14-12", t: { es: "Detección de oclusión y congelado", en: "Occlusion & freeze detection" }, d: { es: "Aviso en pantalla si otra ventana oculta el navegador en Windows.", en: "On-screen notice when another window occludes the browser in Windows." } },
@@ -136,7 +143,7 @@
   function setTrailer(l) {
     var v = document.getElementById("trailer");
     if (!v) return;
-    var src = l === "es" ? "video/trailer-es.mp4?v=0.14.1" : "video/trailer-en.mp4?v=0.14.1";
+    var src = l === "es" ? "video/trailer-es.mp4?v=0.15.0" : "video/trailer-en.mp4?v=0.15.0";
     if (v.getAttribute("src") !== src) {
       var t = v.currentTime || 0;
       v.setAttribute("src", src);

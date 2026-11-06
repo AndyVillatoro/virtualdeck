@@ -6,6 +6,8 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-11-05
+
 ### Added
 
 - **Extensión compañera del navegador (`companion-extension/`)**: captura directa de vídeo y metadatos desde pestañas Chromium (YouTube, Spotify Web, Twitch) sin oclusión de ventanas ni caídas de fotogramas, mediante WebSocket local `/companion`, documento offscreen MV3 y emparejamiento con código de 6 dígitos.
@@ -15,6 +17,7 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Indicaciones contextuales en reproducción de vídeo**: avisos sobre estado de la pestaña y ventana en captura.
 - **Franja de música fija en barra lateral**: bloque de reproducción anclado al pie de la barra lateral, fijo fuera del área con desplazamiento para permanecer siempre visible.
 - **Soporte para plugins de Stream Deck**: anfitrión para complementos Node y HTML, acciones dedicadas en botones y sección en Ajustes para gestionar plugins instalados.
+- **Catálogo lateral arrastrable de plugins estilo Stream Deck**: panel desplegable por plugin en la barra lateral derecha del deck y en Dispositivos, con los iconos reales del manifiesto e insignia `ENCODER / DIAL`, para arrastrar y soltar acciones directamente sobre cualquier celda, tecla LCD, botón físico, perilla o tira táctil.
 - **Tienda rediseñada con pestaña de plugins**: catálogo visual con instalación en un clic desde URL verificada con SHA-256, filtros por categoría y aviso sobre DRM.
 - **Plugins oficiales de ejemplo**: seis complementos instalables desde la tienda (reloj, cronómetro, dado, pomodoro, contador y conversor).
 - **Plugins en docks físicos**: asignación de acciones de plugin a teclas LCD y perillas en Stream Dock N3 y otros modelos de dock.
@@ -36,6 +39,7 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 
 ### Fixed
 
+- **Previsualización en vivo de presets y perfiles en el diagrama de dock**: seleccionar o pasar el cursor sobre un perfil de página o un preset de control muestra al instante los iconos en puntos y del catálogo sobre el diagrama de referencia (`VistaHardware`) y en la miniatura del inspector, incluso cuando el dock físico está desconectado.
 - **Actualizar un plugin ya no borra sus ajustes**: la tienda lo actualiza en su sitio, sin desinstalarlo; conserva sus ajustes globales (cuentas, tokens) y, si la descarga falla, sigue la versión anterior.
 - **Apertura del editor desde controles de dock**: corrección del fallo de suspensión en la interfaz que dejaba la pantalla en negro al editar un control por primera vez.
 - **Vista previa única en el inspector de dock**: previsualización LCD mostrada una sola vez y exclusivamente en controles con pantalla física según las capacidades del modelo.

@@ -39,9 +39,8 @@ Auditoría sobre el código (no solo el doc):
   ver [galeria.md](galeria.md)). El **repo público existe** (4 perfiles v1, validados
   con `npm run check:galeria`); diferido a otra versión dejarlo bien completo
   (versionado v2, más perfiles).
-- **Publicado / Versión actual:** **v0.14.1** en Microsoft Store (MSIX firmado). Canal único oficial.
-  En desarrollo activo hacia v0.15 (extensión compañera MV3, soporte de docks y modularidad).
-  Incluye vídeo adaptativo, detección de oclusión, tráilers web bilingües y automatización del núcleo.
+- **Publicado / Versión actual:** **v0.15.0** lista para envío a Microsoft Store (MSIX firmado; v0.14.1 publicada). Canal único oficial.
+  Incluye soporte de plugins de Stream Deck con catálogo lateral arrastrable, extensión compañera MV3, conmutador de audio, acción `cycle`, reposo de docks y reducción del 32 % del bundle inicial.
 
 
 - **Deuda Técnica y Modularidad (Bloque B): ✅ completado** — modularización de `DotGlyphIcon.tsx`

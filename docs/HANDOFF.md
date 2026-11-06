@@ -393,3 +393,13 @@ del build. Afecta a `utils/usoSelectorIconosDot.ts` y al mapa `MANEJADORES`, no 
        - Panel derecho de Dispositivos (`src/screens/dispositivos/PanelPerfilesPagina.tsx` y `PanelInspectorControl.tsx`) para arrastrar directo a cualquier tecla LCD, botón físico, perilla o tira táctil del diagrama (`TeclaLcdHardware.tsx`, `BotonFisicoHardware.tsx`, `PerillaRotativaHardware.tsx`, `TiraTactilHardware.tsx`).
        - Formulario de acción `plugin` en el editor modal (`src/screens/editor/formularios/plugins.tsx`), sustituyendo los `<select>` por el mismo catálogo + botón `BotonConfigurarPlugin` para abrir el Property Inspector.
 * **Verificación:** `npm run check` 7/7 guardianes en verde (0 errores, 0 advertencias), `npm run lint:dead` 0 huérfanos, `npx tsx scripts/probar-arrastre-plugin.ts` (21/21 en verde), `npm run build` en 1,63 s.
+
+## Turno 2026-11-05 (cierre) — Preparación de lanzamiento `v0.15.0` para Microsoft Store (`T-REL-02`)
+
+* **Quién:** Antigravity `w15:p1` (supervisor).
+* **Cambios realizados:**
+  1. `package.json` y `package-lock.json` subidos a `0.15.0`.
+  2. `CHANGELOG.md`: cerrada la sección `## [0.15.0] — 2026-11-05` incluyendo el catálogo arrastrable de plugins y la previsualización en vivo de presets/perfiles en el diagrama del dock.
+  3. `docs/store/novedades-0.15.0-{es,en}.txt` y `docs/store/submission-0.15.0.md` actualizados y listos para Partner Center.
+  4. `docs/web/site.js`, `docs/web/galeria.js`, `docs/index.html`, `docs/README-web.md` y `docs/ROADMAP.md` sincronizados con `v0.15.0`.
+  5. Empaquetado oficial `dist/VirtualDeck-0.15.0.msix` (`Version="0.15.0.0"`) y `dist/store-submission-0.15.0.md` generados y validados con `node scripts/build-store.mjs --preflight`.
