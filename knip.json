@@ -9,6 +9,6 @@
     "**/probar-*.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "electron/**/*.ts"],
-  "ignoreDependencies": ["electron-updater"],
+  "ignoreDependencies": ["electron-updater", "@tabler/icons", "simple-icons"],
   "ignoreBinaries": ["powershell"]
 }

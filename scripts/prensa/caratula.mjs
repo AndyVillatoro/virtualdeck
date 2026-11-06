@@ -11,7 +11,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const LADO = 17;         // el mismo 17×17 de los iconos de marca
 const PASO = 14;
@@ -72,7 +72,7 @@ export async function reproduccion() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const destino = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'prensa', 'fuentes');
   mkdirSync(destino, { recursive: true });
   const datos = await reproduccion();

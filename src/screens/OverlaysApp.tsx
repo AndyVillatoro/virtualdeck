@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import type { ButtonConfig, DeckConfig } from '../types';
-import { SearchOverlay } from '../components/SearchOverlay';
 import { DotGlyphIcon } from '../components/dot480/DotGlyphIcon';
 import { BotonIcono } from '../components/ui/BotonIcono';
 import { useTheme } from '../utils/theme';
@@ -8,6 +7,7 @@ import { useT } from '../utils/i18n';
 
 const EditorB = React.lazy(() => import('./EditorB').then((m) => ({ default: m.EditorB })));
 const Onboarding = React.lazy(() => import('../components/Onboarding').then((m) => ({ default: m.Onboarding })));
+const SearchOverlay = React.lazy(() => import('../components/SearchOverlay').then((m) => ({ default: m.SearchOverlay })));
 
 function AvisoDeshacer({ texto, onUndo }: { texto: string; onUndo?: () => void }) {
   const VD = useTheme();
@@ -184,16 +184,18 @@ export function OverlaysApp({
       )}
 
       {searchOpen && view === 'main' && (
-        <SearchOverlay
-          config={config}
-          accent={config.accent}
-          onClose={() => setSearchOpen(false)}
-          onPick={(btn) => {
-            setActivePage(btn.page);
-            setSearchOpen(false);
-            setEditingId(btn.id);
-          }}
-        />
+        <Suspense fallback={null}>
+          <SearchOverlay
+            config={config}
+            accent={config.accent}
+            onClose={() => setSearchOpen(false)}
+            onPick={(btn) => {
+              setActivePage(btn.page);
+              setSearchOpen(false);
+              setEditingId(btn.id);
+            }}
+          />
+        </Suspense>
       )}
 
       {undoToast && <AvisoDeshacer texto={undoToast} onUndo={undo} />}

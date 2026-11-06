@@ -1,8 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
-import { FloatingBarB } from './screens/FloatingBarB'
-import { TiendaB } from './screens/TiendaB'
 import './index.css'
 import './vd-icons.css'
 import './brand-icons.css'
@@ -28,6 +26,12 @@ if (fuentes) {
 const esBarra = window.location.hash === '#barra';
 const esTienda = window.location.hash === '#tienda';
 
+// Estas dos ventanas son hashes sobre el mismo bundle: en la ventana principal
+// (#/ o sin hash) no se ven nunca, así que su código no hace falta en el primer
+// pintado. Se piden con `React.lazy` y entran por su propio chunk.
+const FloatingBarB = React.lazy(() => import('./screens/FloatingBarB').then((m) => ({ default: m.FloatingBarB })));
+const TiendaB = React.lazy(() => import('./screens/TiendaB').then((m) => ({ default: m.TiendaB })));
+
 if (esBarra) {
   // Sin fondo: la ventana es transparente y lo unico que debe verse son los
   // tiles. El CSS global le pone color al body, asi que hay que quitarselo.
@@ -42,6 +46,8 @@ if (esBarra) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {esBarra ? <FloatingBarB /> : esTienda ? <TiendaB /> : <App />}
+    <React.Suspense fallback={null}>
+      {esBarra ? <FloatingBarB /> : esTienda ? <TiendaB /> : <App />}
+    </React.Suspense>
   </React.StrictMode>,
 )
