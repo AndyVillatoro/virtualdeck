@@ -1,0 +1,5 @@
+- Stream Deck plugin support: install plugins in one click from the new Plugins tab in the Store (with SHA-256 verification), assign them to keys and dials, and use the six bundled plugins (clock, stopwatch, dice, pomodoro, counter, and converter).
+- Browser companion extension (VirtualDeck Companion): direct tab-level video and metadata capture from YouTube, Spotify Web, and Twitch without freezing when windows are covered or switched.
+- Audio output switcher and "cycle" action: switch sound devices with a reactive icon matching the active output, and chain multiple sequential steps into a single button.
+- Physical docks and mobile remote upgrades: automatic screen sleep on idle and Windows session lock, ultra-fast knob turns (~2 ms per step), dial events for plugins, and live plugin artwork on the mobile remote.
+- Lighter startup and automatic "back" key: initial bundle size drops by over 30% (from 747 to 504 KiB), and linking a page to an app automatically places a "VOLVER" button featuring the app's dot-matrix icon.

@@ -369,4 +369,8 @@ del build. Afecta a `utils/usoSelectorIconosDot.ts` y al mapa `MANEJADORES`, no 
 * **Verificación:** `npm run check` 7/7 guardianes en verde (0 errores, 0 advertencias, 545 módulos en `depcruise`), `npm run lint:dead` 0 huérfanos/dependencias (exit 0), `npm run build` en 1,61 s, y las 12 pruebas puras `scripts/probar-*.ts` en verde.
 * **Qué queda para el dueño (hardware / decisiones):**
   - Probar con el Stream Dock N3 físico los ítems marcados `VERIFYING` / `SOLO-PRUEBA` (reposo/despertar al bloquear Windows, perillas con plugins, avisos de giro en tecla superior, presets cíclicos).
-  - Decisiones de producto abiertas: tecla «volver» automática al vincular app (86), inglés bajo demanda (84), estrategia de medios pesados (125) y catálogo curado de plugins de terceros (83).
+  - Decisiones de producto cerradas en el segundo bloque del turno (`T-UI-14`, `T-OPT-05`, `T-REL-01`):
+    1. **Ítem 86 (`T-UI-14`, `w18:p1` DeepSeek V4.1 Flash)**: `src/utils/useDeck/volverApp.ts` coloca automáticamente un botón `VOLVER` (`page-nav` -> `first`, con `iconoPuntos` de la app o `ARROW_LEFT`) en el último hueco libre al vincular una página o crearla desde plantilla, y lo limpia al desvincular (`scripts/probar-volver-app.ts` en verde).
+    2. **Ítem 84 (`T-OPT-05`, `w15:p1` supervisor)**: `src/utils/i18n.tsx` carga `en.ts` y `campos.ts` bajo demanda con `prepararIdioma` antes de `setLoaded(true)` en `src/App.tsx`, reduciendo `index-*.js` de 588 a **505 KiB** (517,67 kB decimal, un **-32,4 %** acumulado desde 747 KiB) sin destello de idioma.
+    3. **Ítem 125**: Marcado `✅` en `docs/ROADMAP.md` manteniendo los medios de `docs/prensa/` y `docs/video/` en Git normal.
+    4. **Auditoría de cambios desde `0.14.1` (`T-REL-01`, `w1A:p1` Claude Sonnet 5.5)**: Informe completo en `_referencias/informes/cambios-desde-0141.md`, `CHANGELOG.md` `[Unreleased]` al 100 % y borradores listos en `docs/store/novedades-0.15.0-{es,en}.txt` y `docs/store/submission-0.15.0.md`.

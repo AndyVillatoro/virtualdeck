@@ -1,0 +1,5 @@
+- Compatibilidad con plugins de Stream Deck: instala complementos en un clic desde la nueva pestaña de Plugins en la Tienda (con verificación SHA-256), asígnalos a teclas y perillas, y utiliza los seis plugins incluidos (reloj, cronómetro, dado, pomodoro, contador y conversor).
+- Extensión compañera del navegador (VirtualDeck Companion): captura directa de vídeo y metadatos desde pestañas de YouTube, Spotify Web y Twitch sin congelarse al cubrir o cambiar de ventana.
+- Conmutador de salida de audio y acción «ciclo» (cycle): cambia de dispositivo de sonido mostrando el icono reactivo de la salida activa y encadena múltiples acciones secuenciales en un mismo botón.
+- Mejoras en docks físicos y mando móvil: apagado/reposo automático por inactividad y al bloquear Windows, giros de perilla ultrarrápidos (~2 ms por paso), eventos de dial para plugins y visualización de carátulas de plugins en el teléfono.
+- Arranque más ligero y tecla «volver» automática: el bundle inicial se reduce en más de un 30 % (de 747 a 504 KiB) y al vincular una página a una aplicación se añade automáticamente un botón «VOLVER» con el icono en puntos del programa.
