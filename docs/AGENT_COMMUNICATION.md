@@ -195,18 +195,26 @@ Utiliza este apartado para dejar mensajes, advertencias técnicas o instruccione
   - `npm run check` 0 errores (tsc, depcruise 544 módulos, eslint, 7 guardianes), `npm run build` OK, `npm run lint:dead` sin huérfanos de estos archivos (solo las 2 devDependencies viejas). El JS embebido de la página del mando se parsea igual que antes (comprobado con `new Function`).
   - Paridad sin campo nuevo en `ButtonConfig` (`scripts/paridad.json` sin cambios). **No probado en el mando real** (haría falta el candado del dueño y un plugin que pinte); cubierto por la prueba pura.
 
+* **2026-11-05** — *Antigravity w15 (supervisor) + Herdr (`w18` opencode, `w19` opencode, `w1A` agy)*:
+  - **Auditoría integral y delegación multi-agente**: Revisado el estado real de código, guardianes, roadmap, informes de octubre y pruebas puras. Se delegaron 3 encargos a las 3 instancias libres de Herdr y el supervisor ejecutó el 4.º:
+    1. **`T-AUD-04` (`w18:p1` opencode)**: `estadoSistema.ts` ahora propaga `activeAudioDeviceName`; `botonActivo` y `resolverAspectoAudio` aplican respaldo por nombre (`coincideNombreAudio`) para botones fijos sin ID (cuadrantes 2×2), reconexión USB y `cycle-list`. `iconosMando.ts` pasa `activeAudioDeviceName` al mando móvil, activando icono y sublabel reactivos en `cycle-all`. `useAspectoAudio.ts` consume el nombre del estado sin pedir `api.audio.list()` salvo respaldo. `scripts/probar-audio.ts` ampliado a 84 afirmaciones en verde.
+    2. **`T-OPT-04` (`w19:p1` opencode)**: `FloatingBarB` y `TiendaB` diferidos con `React.lazy` en `src/main.tsx`; `SearchOverlay` diferido en `src/screens/OverlaysApp.tsx` (`index-*.js` de 601 → 588 KiB / 602 kB decimal, con chunks propios de ~4,7 kB cada uno). `knip.json` actualizado (`@tabler/icons`, `simple-icons`) dejando `npm run lint:dead` con salida 0 limpia. `scripts/prensa/caratula.mjs` reparado en Windows (`pathToFileURL`).
+    3. **`T-DOCK-04` (`w1A:p1` agy Sonnet 5.5)**: Implementada la Fase 1 de `docs/investigacion/plan-docks-v015.md` (ítem 115c): máquina de estados pura `electron/main/superficies/reposo.ts` (`despierto` → `atenuado` → `dormido`) integrada en `electron/main/superficies/gestor.ts` con consumo del primer toque al despertar desde `dormido`, memoria del brillo del usuario y conexión con `powerMonitor` (`lock-screen`, `unlock-screen`, `suspend`, `resume`). Prueba pura `scripts/probar-reposo-dock.ts` con 19 afirmaciones en verde.
+    4. **`T-PLG-06` (`w15:p1` agy Gemini 4 Argon, supervisor)**: Eventos de perilla (`dialRotate`, `dialDown`, `dialUp` y `willAppear` con `controller: 'Encoder'`) hacia plugins de Stream Deck (ítem 83d) en `anfitrion.ts`, `interaccion.ts`, `gestor.ts`, `pluginsIpc.ts`, `preload/index.ts`, `src/utils/acciones/plugins.ts` y `useSuperficies.ts` (con respaldo a `keyDown`/`keyUp` si la acción del plugin solo declara `Keypad`). Prueba pura `scripts/probar-dial-plugin.ts` en verde.
+  - **Verificación**: `npm run check` 7/7 guardianes en verde (0 errores, 0 advertencias), `npm run lint:dead` 0 huérfanos/dependencias (exit 0), `npm run build` OK, 12 scripts `scripts/probar-*.ts` en verde.
+
 ---
 
 ## 3. Checklist de Entrega de Turno (Handoff Checklist)
 
 Antes de liberar tu turno o enviar tu commit, marca que has cumplido:
 
-- [ ] ¿El código respeta la grilla de 4px y la paleta DOT (`VD_LIGHT` / `#070809`)?
-- [ ] ¿Cero emojis en la interfaz?
-- [ ] ¿Se ejecutó `npm run check` con 0 errores?
-- [ ] ¿Se verificó `npm run build` sin errores de bundle?
-- [ ] ¿Se actualizó el estado de la tarea en la tabla a `DONE`?
-- [ ] ¿Se dejó un mensaje en el buzón explicando qué se hizo y qué falta?
+- [x] ¿El código respeta la grilla de 4px y la paleta DOT (`VD_LIGHT` / `#070809`)?
+- [x] ¿Cero emojis en la interfaz?
+- [x] ¿Se ejecutó `npm run check` con 0 errores?
+- [x] ¿Se verificó `npm run build` sin errores de bundle?
+- [x] ¿Se actualizó el estado de la tarea en la tabla a `DONE`?
+- [x] ¿Se dejó un mensaje en el buzón explicando qué se hizo y qué falta?
 | **T-DEL-A..D** | P2 | A partir `plugins/gestor.ts` (w16 Muse Spark); B barra de progreso en `mediosFijos.ts` (w12 Space Bunny); C limpieza de docs (w11 DeepSeek free); D revision de seguridad de plugins, solo lectura (w14 Gemini 4 Argon) | ver `_referencias/encargos/T-DEL-*.md` | `electron/main/plugins/**`; `electron/main/mediosFijos.ts`; docs/README/wiki | `VERIFYING` (check y build en verde; sin probar con plugin real ni commit) | 2026-10-16 |
 | **T-DEL-E** | P1 | Arreglar hallazgos #3,#4,#5,#6,#8,#9,#10 de la revisión de plugins; NO tocar #1,#2,#7 (encargo `_referencias/encargos/T-DEL-E-arreglos-plugins.md`) | opencode (Muse Spark) | `electron/main/plugins/**`, `src/utils/plugins/**` (+`PluginsSection.tsx`, `src/types/plugins.ts` solo si hace falta) | `DONE` (check 0 errores 0 warnings, build ok, pruebas puras tsx ok; sin commit: lo pide el encargo; no probado en app) | 2026-10-17 |
 | **T-TND-10** | P1 | Instalar plugin desde URL con sha256 (contrato IPC + manifiesto v3) | w16 Muse Spark (Go) | `electron/main/plugins/**`, `ipc/**`, `galeria.ts`, preload, `src/types/**`, `src/utils/plugins/**` | `DONE` (check 0 errores 0 warnings, build ok, helper puro probado con tsx; sin commit: lo pide el encargo) | 2026-10-17 |
@@ -251,3 +259,7 @@ Antes de liberar tu turno o enviar tu commit, marca que has cumplido:
 | **T-OPT-02** | P3 | Ajustes y kiosko bajo demanda (84) | w19 DeepSeek V4.1 Flash (Go) | `src/components/TitleBar.tsx`, `src/screens/VistasSecundarias.tsx` | `DONE` (verificado: index 747 -> 670 KiB) | 2026-10-25 |
 | **T-OPT-03** | P3 | `react-dom/server` diferido (84) | w19 DeepSeek V4.1 Flash (Go) | `src/components/celda/iconoSvg.tsx`, `src/App.tsx`, `src/utils/superficies/useSuperficies.ts`, `src/screens/editor/previa/piezas/hardware.tsx` | `DONE` (verificado: index 670 -> 601 KiB) | 2026-10-25 |
 | **T-PLG-05** | P2 | Imagen del plugin en el mando móvil (83 c) | w1A GLM-5.3 Flash Free | `src/comun/contextoPlugin.ts` (nuevo), `src/utils/plugins/ref.ts`, `electron/main/plugins/` (visualesMando nuevo + validacion, cicloVida, interaccion), `electron/main/mando/` (mandoVivo, iconosMando, pantallaMandoPagina), `scripts/probar-visual-mando.ts` (nuevo), `docs/HANDOFF.md` | `DONE` (check y build en verde; prueba pura tsx de 16 escenarios en verde; paridad sin campo nuevo; sin commit: lo pide el encargo; sin probar en el mando real con plugin que pinte) | 2026-10-25 |
+| **T-AUD-04** | P2 | Nombre del dispositivo de audio activo en `estadoSistema` + respaldo por nombre en `botonActivo` y `resolverAspectoAudio` (mando móvil `cycle-all`) | w18 opencode | `src/comun/audioIcono.ts`, `electron/main/sistema/estadoSistema.ts`, `electron/main/mando/iconosMando.ts`, `src/utils/estadoSistema.ts`, `src/components/celda/useAspectoAudio.ts`, `scripts/probar-audio.ts` | `DONE` (check, build y 84 afirmaciones de `probar-audio.ts` en verde) | 2026-11-05 |
+| **T-OPT-04** | P3 | Lazy loading de `FloatingBarB`, `TiendaB` y `SearchOverlay` (84 #6/#7) + arreglo de `knip.json` y `caratula.mjs` en Windows | w19 opencode | `knip.json`, `scripts/prensa/caratula.mjs`, `src/main.tsx`, `src/screens/OverlaysApp.tsx` | `DONE` (check, `lint:dead` exit 0, build `index-*.js` 601 → 588 KiB) | 2026-11-05 |
+| **T-DOCK-04** | P1 | Reposo / sueño por inactividad y bloqueo de sesión en Docks (Fase 1 de `plan-docks-v015.md`, 115c) | w1A agy (Claude Sonnet 5.5) | `electron/main/superficies/reposo.ts` (nuevo), `electron/main/superficies/gestor.ts`, `scripts/probar-reposo-dock.ts` (nuevo) | `DONE` (check, build y 19 afirmaciones de `probar-reposo-dock.ts` en verde; falta probar con N3 físico) | 2026-11-05 |
+| **T-PLG-06** | P2 | Eventos de perilla (`dialRotate`/`dialDown`/`dialUp`) hacia plugins de Stream Deck (83d) | w15 agy (Gemini 4 Argon, supervisor) | `electron/main/plugins/{anfitrion,interaccion,gestor}.ts`, `electron/main/ipc/pluginsIpc.ts`, `electron/preload/index.ts`, `src/types/plugins.ts`, `src/utils/acciones/plugins.ts`, `src/utils/superficies/useSuperficies.ts`, `scripts/probar-dial-plugin.ts` (nuevo) | `DONE` (check, build y `probar-dial-plugin.ts` en verde; falta probar con N3 físico) | 2026-11-05 |

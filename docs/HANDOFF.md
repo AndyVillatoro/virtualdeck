@@ -339,4 +339,34 @@ del build. Afecta a `utils/usoSelectorIconosDot.ts` y al mapa `MANEJADORES`, no 
 * **Auditorías de solo lectura** (informes en `_referencias/informes/*-2026-10-25.md`): T-OPT-01 bundle (w19 GLM), T-PLG-AUD estado del 83 (w1A GLM), T-DOC-05 filas 🟡 (w15 Gemini Flash: 20 solo-prueba, 5 desfasadas; 3 de sus 5 «mejoras» ya estaban hechas — no fiarse sin comprobar). Roadmap corregido: 30 y 98 ✅; 83, 84, 86, 88, 105 al día.
 * **Código** (cada diff leído, `check`/`build` en verde): `5553807` T-PLG-04 actualizar plugin en el sitio (w1A); `10030ae` T-OPT-02 Ajustes y kiosko diferidos (w19); `8503c1c` T-OPT-03 `react-dom/server` diferido (w19, DeepSeek Go) — el supervisor añadió que si el chunk falla el dock pinte sin iconos en vez de quedarse en negro; `9553503` T-PLG-05 imagen del plugin en el mando móvil (w1A). `index-*.js` 747 → 601 KiB. Humo en copia de prueba: arranca, Ajustes abre, sin errores.
 * **Para el dueño:** ver las teclas del N3 tras T-OPT-03 (que salgan con iconos al conectar), un plugin que pinte visto desde el móvil, y actualizar un plugin desde la tienda cuando haya versión nueva publicada.
-* **Decisiones pendientes del dueño:** tecla «volver» automática al vincular una app (86); perillas hacia los plugins (`dialRotate`, 83 d); inglés bajo demanda (84, 63–85 KiB con riesgo de destello).
+* **Decisiones pendientes del dueño:** tecla «volver» automática al vincular una app (86); ~~perillas hacia los plugins (`dialRotate`, 83 d)~~ (hecho en T-PLG-06); inglés bajo demanda (84, 63–85 KiB con riesgo de destello).
+
+## Turno 2026-11-05 — Auditoría, delegación multi-agente Herdr y cierre de pendientes de código (`T-AUD-04`, `T-OPT-04`, `T-DOCK-04`, `T-PLG-06`)
+
+* **Quién:** Antigravity `w15:p1` (supervisor Gemini 4 Argon) + paneles Herdr (`w18:p1` opencode MiMo-V2.6-Flash, `w19:p1` opencode MiMo-V2.6-Flash, `w1A:p1` agy Claude Sonnet 5.5).
+* **Encargos resueltos:**
+  1. **`T-AUD-04` (`w18:p1` — nombre del dispositivo de audio activo y respaldo en mando/2×2):**
+     - `electron/main/sistema/estadoSistema.ts` expone `activeAudioDeviceName: string | null` obtenido de `listAudioDevices()`.
+     - `src/comun/audioIcono.ts` añade `coincideNombreAudio(aguja, nombreReal)` y respaldo por nombre en `resolverAspectoAudio` para modos `fixed` y `cycle-list`.
+     - `src/utils/estadoSistema.ts` usa `coincideNombreAudio` en `botonActivo` cuando el botón no tiene `deviceId` (cuadrantes 2×2) o cuando el ID de Windows cambió tras reconectar por USB.
+     - `electron/main/mando/iconosMando.ts` pasa `estadoActual().activeAudioDeviceName` a `resolverAspectoAudio`, habilitando icono y sublabel reactivos en el mando móvil también para `cycle-all`.
+     - `src/components/celda/useAspectoAudio.ts` lee `estado.activeAudioDeviceName` directamente y deja `api.audio.list()` solo como respaldo.
+     - `scripts/probar-audio.ts`: 84 afirmaciones en verde.
+  2. **`T-OPT-04` (`w19:p1` — bundle diferido 84 #6/#7, `knip` a cero y `caratula.mjs` en Windows):**
+     - `src/main.tsx`: `FloatingBarB` y `TiendaB` cargados bajo demanda con `React.lazy` + `Suspense`.
+     - `src/screens/OverlaysApp.tsx`: `SearchOverlay` cargado bajo demanda con `React.lazy` + `Suspense`.
+     - `out/renderer/assets/index-*.js` baja a **602,09 kB** (588 KiB), separando `FloatingBarB` (4,73 kB), `TiendaB` (4,69 kB) y `SearchOverlay` (4,75 kB).
+     - `knip.json`: registradas `@tabler/icons` y `simple-icons` en `ignoreDependencies` (usadas vía `createRequire` en `scripts/generar-iconos-dot.mjs`); `npm run lint:dead` sale con código 0 sin avisos.
+     - `scripts/prensa/caratula.mjs`: guardia CLI corregido en Windows con `pathToFileURL(process.argv[1]).href`.
+  3. **`T-DOCK-04` (`w1A:p1` — reposo de docks por inactividad y bloqueo de sesión, Fase 1 de `plan-docks-v015.md`, ítem 115c):**
+     - `electron/main/superficies/reposo.ts` (nuevo): máquina de estados pura (`despierto` → `atenuado` → `dormido`) con umbrales configurables (`dormirTrasMs: 600_000` por defecto), memoria de brillo del usuario, consumo de la primera entrada física al despertar desde `dormido` (`despertarSinEjecutar: true`) y apagado/encendido al bloquear/desbloquear sesión.
+     - `electron/main/superficies/gestor.ts`: integración con apertura/retirada de docks, filtrado en `alEntradaCruda`, evaluación en `tic()`, actualización en `fijarBrilloSuperficie` y eventos `lock-screen`/`unlock-screen`/`suspend`/`resume` de `powerMonitor`.
+     - `scripts/probar-reposo-dock.ts` (nuevo): 19 afirmaciones con reloj inyectado en verde.
+  4. **`T-PLG-06` (`w15:p1` supervisor — eventos `dialRotate`/`dialDown`/`dialUp` hacia plugins de Stream Deck, ítem 83d):**
+     - `electron/main/plugins/{inventario,anfitrion,interaccion,gestor}.ts`, `electron/main/ipc/pluginsIpc.ts`, `electron/preload/index.ts`, `src/types/plugins.ts`: soporte completo de `controllers: ['Encoder']`, `willAppear` con `controller: 'Encoder'`, `dialRotate` (`ticks`, `pressed: false`) y `dialDown`/`dialUp` (con respaldo a `keyDown`/`keyUp` si la acción del plugin solo declara `Keypad`).
+     - `src/utils/acciones/plugins.ts` y `src/utils/superficies/useSuperficies.ts`: los giros de perilla (`izq` = -1, `der` = +1) anotan los pasos en `anotarGiroPlugin` y el manejador `PLUGINS.plugin` invoca `api.plugins.rotate(ref, ticks)`.
+     - `scripts/probar-dial-plugin.ts` (nuevo): prueba pura con servidor WebSocket real verificando `willAppear` (`Encoder`), `dialRotate`, `dialDown`/`dialUp` y el manejador `PLUGINS.plugin`.
+* **Verificación:** `npm run check` 7/7 guardianes en verde (0 errores, 0 advertencias, 545 módulos en `depcruise`), `npm run lint:dead` 0 huérfanos/dependencias (exit 0), `npm run build` en 1,61 s, y las 12 pruebas puras `scripts/probar-*.ts` en verde.
+* **Qué queda para el dueño (hardware / decisiones):**
+  - Probar con el Stream Dock N3 físico los ítems marcados `VERIFYING` / `SOLO-PRUEBA` (reposo/despertar al bloquear Windows, perillas con plugins, avisos de giro en tecla superior, presets cíclicos).
+  - Decisiones de producto abiertas: tecla «volver» automática al vincular app (86), inglés bajo demanda (84), estrategia de medios pesados (125) y catálogo curado de plugins de terceros (83).

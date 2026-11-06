@@ -22,14 +22,16 @@ y este proyecto adhiere a [SemVer](https://semver.org/lang/es/).
 - **Acción secuencial `cycle`**: encadena múltiples sub-acciones en un solo botón con pasos configurables (rótulo, color e icono individual) que avanzan en cada pulsación.
 - **Imagen de los plugins en el mando móvil**: el teléfono enseña la imagen y el título que pinta cada plugin, como el deck y los docks.
 - **Presets cíclicos de energía y pantalla**: plantillas listas para usar que alternan planes de energía de Windows y proyección de pantalla en escritorio y docks.
+- **Reposo automático de docks físicos**: apagado/atenuado de pantalla por inactividad o al bloquear la sesión de Windows (`powerMonitor`), restaurando el brillo al tocar el dispositivo y consumiendo la primera pulsación de despertar.
+- **Eventos de perilla (`Encoder`) hacia plugins de Stream Deck**: las perillas de los docks envían `dialRotate`, `dialDown` y `dialUp` (con `controller: 'Encoder'` en `willAppear`) a los plugins que soportan diales, manteniendo el respaldo a pulsación de tecla para acciones estándar.
 
 ### Changed
 
 - **Reorganización interna del código**: modularización en carpetas por dominio (`electron/main`, editor, app, núcleo Rust) y depuración de dependencias y exportaciones no utilizadas.
 - **Personalización de controles sin pantalla en docks**: bloqueo de ajustes de apariencia en controles físicos sin pantalla LCD, mostrando una indicación explicativa.
 - **Perillas de volumen y brillo sin núcleo nativo**: un único proceso de PowerShell atiende todos los pasos (unos 2 ms por paso en vez de unos 300 ms).
-- **Arranque más ligero**: Ajustes, el kiosko y el dibujo de iconos de las teclas LCD se cargan al usarse; el código que se carga al abrir baja de 747 a 601 KiB.
-- **Seguimiento del dispositivo de audio activo**: el botón refleja inmediatamente el dispositivo real en uso y recupera la conexión por nombre si el identificador USB del sistema cambia.
+- **Arranque más ligero**: Ajustes, el kiosko, la barra flotante, la tienda, el buscador de botones y el dibujo de iconos de las teclas LCD se cargan al usarse; el código que se carga al abrir baja de 747 a 588 KiB.
+- **Seguimiento del dispositivo de audio activo**: el botón refleja inmediatamente el dispositivo real en uso (incluyendo cuadrantes 2×2 por nombre y el icono reactivo de `cycle-all` en el mando móvil) y recupera la conexión por nombre si el identificador USB del sistema cambia.
 
 ### Fixed
 
