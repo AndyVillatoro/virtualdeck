@@ -7,6 +7,7 @@ import { columnasDock, rejillaDe, totalHuecos } from '../superficies/disposicion
 import { normalizarApp } from '../apps';
 import type { ContextoDeck } from './contexto';
 import { guardarConfig } from './estado';
+import { aplicarBotonVolverApp } from './volverApp';
 
 /**
  * Destino de `crearPaginaDesdePlantilla`: `null` = página del deck (4×4);
@@ -252,16 +253,23 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
     contenidos.forEach((c, i) => {
       if (c?.iconoCatalogo) iconosPendientes.set(ids[i], c.iconoCatalogo);
     });
+    // En un dock, el «último hueco vacío» tiene que ser una tecla con
+    // pantalla: las perillas y las tiras van detrás en el orden de `controles`
+    // y no deben llevarse el VOLVER (86).
+    const huecosPreferidos = destino
+      ? destino.disposicion.controles.filter((c) => c.tipo === 'key').length
+      : undefined;
     withHistory(destino ? t('undo.addSurfacePage', { nombre }) : t('undo.addPage'), (prev) => {
       if (prev.pages.length >= 8) return prev;
       const newIdx = prev.pages.length;
       if (!destino) {
         const newPage: PageConfig = { id, name: nombre, gridSize: 4, targetApp: limpio };
-        const newButtons: ButtonConfig[] = plantilla.deck.map((contenido, slot) => ({
+        const preset: ButtonConfig[] = plantilla.deck.map((contenido, slot) => ({
           ...(contenido ?? { label: '', icon: '', action: { type: 'none' as ActionType } }),
           id: ids[slot],
           page: newIdx,
         }));
+        const newButtons = aplicarBotonVolverApp(preset, newIdx, limpio, undefined, huecosPreferidos);
         return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
       }
       const rejilla = rejillaDe(destino.disposicion);
@@ -274,13 +282,34 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
         superficie: { serial: destino.serial, modelo: destino.modelo },
         targetApp: limpio,
       };
-      const newButtons: ButtonConfig[] = contenidos.map((contenido, slot) => ({
+      const preset: ButtonConfig[] = contenidos.map((contenido, slot) => ({
         ...(contenido ?? { label: '', icon: '', action: { type: 'none' as ActionType } }),
         id: ids[slot],
         page: newIdx,
       }));
+      const newButtons = aplicarBotonVolverApp(preset, newIdx, limpio, undefined, huecosPreferidos);
       return { ...prev, pages: [...prev.pages, newPage], buttons: [...prev.buttons, ...newButtons] };
     });
+    // Roadmap 86 — el icono del `.exe` sale del núcleo por IPC y puede tardar:
+    // cuando llega se copia en la página y en la tecla VOLVER, que se creó sin
+    // él. Mismo camino que `iconosPendientes` (configRef, setConfig y guardar).
+    const pedir = api?.launch?.iconoApp ?? window.electronAPI?.launch?.iconoApp;
+    if (pedir) {
+      void pedir(limpio).then((bits) => {
+        if (!bits) return;
+        const prev = configRef.current;
+        const pageIdx = prev.pages.findIndex((p) => p.id === id);
+        if (pageIdx < 0) return;
+        const next = {
+          ...prev,
+          pages: prev.pages.map((p) => (p.id === id ? { ...p, iconoApp: bits } : p)),
+          buttons: aplicarBotonVolverApp(prev.buttons, pageIdx, limpio, bits),
+        };
+        configRef.current = next;
+        setConfig(next);
+        guardarConfig(api, t, next);
+      }).catch(() => {});
+    }
     if (iconosPendientes.size > 0) {
       const promesas = Array.from(iconosPendientes.entries()).map(([buttonId, origen]) =>
         resolverIconoCatalogo(origen).then((resuelto) => ({ buttonId, resuelto }))
@@ -318,10 +347,16 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
   const fijarTargetAppPagina = useCallback(async (id: string, app: string, iconoDirecto?: string) => {
     const cleaned = normalizarApp(app);
     if (!cleaned) {
-      withHistory('', (prev) => ({
-        ...prev,
-        pages: prev.pages.map((p) => p.id === id ? { ...p, targetApp: undefined, iconoApp: undefined } : p),
-      }), (prev) => {
+      withHistory('', (prev) => {
+        const pageIdx = prev.pages.findIndex((p) => p.id === id);
+        return {
+          ...prev,
+          pages: prev.pages.map((p) => p.id === id ? { ...p, targetApp: undefined, iconoApp: undefined } : p),
+          // Roadmap 86 — sin app no hay a dónde volver: se retira la tecla
+          // automática, pero solo esa (los `page-nav` del usuario quedan).
+          buttons: pageIdx >= 0 ? aplicarBotonVolverApp(prev.buttons, pageIdx, '') : prev.buttons,
+        };
+      }, (prev) => {
         const pagina = prev.pages.find((p) => p.id === id);
         return t('undo.unbindSurfaceApp', { nombre: pagina?.name ?? '' });
       });
@@ -340,18 +375,23 @@ export function useDeckPaginas({ api, config, setConfig, withHistory, setActiveP
       }
     }
 
-    withHistory('', (prev) => ({
-      ...prev,
-      pages: prev.pages.map((p) => {
-        if (p.id !== id) return p;
-        const iconoFinal = icono ?? (cleaned === p.targetApp ? p.iconoApp : undefined);
-        return {
-          ...p,
-          targetApp: cleaned,
-          iconoApp: iconoFinal,
-        };
-      }),
-    }), () => t('undo.bindSurfaceApp', { nombre: cleaned }));
+    withHistory('', (prev) => {
+      const pageIdx = prev.pages.findIndex((p) => p.id === id);
+      const previa = prev.pages[pageIdx];
+      const iconoFinal = icono ?? (cleaned === previa?.targetApp ? previa?.iconoApp : undefined);
+      return {
+        ...prev,
+        pages: prev.pages.map((p) => {
+          if (p.id !== id) return p;
+          return {
+            ...p,
+            targetApp: cleaned,
+            iconoApp: iconoFinal,
+          };
+        }),
+        buttons: pageIdx >= 0 ? aplicarBotonVolverApp(prev.buttons, pageIdx, cleaned, iconoFinal) : prev.buttons,
+      };
+    }, () => t('undo.bindSurfaceApp', { nombre: cleaned }));
   }, [api, withHistory, t]);
 
   /**
