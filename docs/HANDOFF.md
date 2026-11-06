@@ -403,3 +403,4 @@ del build. Afecta a `utils/usoSelectorIconosDot.ts` y al mapa `MANEJADORES`, no 
   3. `docs/store/novedades-0.15.0-{es,en}.txt` y `docs/store/submission-0.15.0.md` actualizados y listos para Partner Center.
   4. `docs/web/site.js`, `docs/web/galeria.js`, `docs/index.html`, `docs/README-web.md` y `docs/ROADMAP.md` sincronizados con `v0.15.0`.
   5. Empaquetado oficial `dist/VirtualDeck-0.15.0.msix` (`Version="0.15.0.0"`) y `dist/store-submission-0.15.0.md` generados y validados con `node scripts/build-store.mjs --preflight`.
+  6. **Estado Partner Center:** Paquete `0.15.0.0` enviado a certificación por el dueño, en espera de confirmación de la Microsoft Store.
