@@ -30,15 +30,29 @@ const MS_SOLTAR = 60;
  * ejecuta al pulsar un botón (ver su cabecera).
  */
 const contextos = new WeakMap<object, string>();
+const giros = new WeakMap<object, number>();
 
 /** Anota con qué contexto se van a ejecutar estas acciones. */
 export function anotarContextos(acciones: readonly object[], contexto: string): void {
   for (const a of acciones) contextos.set(a, contexto);
 }
 
+/** Anota los pasos de giro (`ticks` con signo o `'izq'`/`'der'`) de una perilla para una acción `plugin`. */
+export function anotarGiroPlugin(accion: object, giro: number | string): void {
+  const ticks = typeof giro === 'number' ? giro : (giro === 'izq' ? -1 : 1);
+  giros.set(accion, ticks);
+}
+
 /** El contexto con el que se está ejecutando esta acción, si se conoce. */
 function contextoDeAccion(accion: object): string | null {
   return contextos.get(accion) ?? null;
+}
+
+function consumirGiro(accion: object): number | null {
+  const ticks = giros.get(accion);
+  if (ticks === undefined) return null;
+  giros.delete(accion);
+  return ticks;
 }
 
 /**
@@ -68,12 +82,26 @@ async function bajar(api: ElectronAPI, ref: PluginRef, t: TFunc): Promise<Action
   return fail(t('act.err.plugin', { plugin: ref.pluginUuid }));
 }
 
+async function girar(api: ElectronAPI, ref: PluginRef, ticks: number, t: TFunc): Promise<ActionResult> {
+  try {
+    if (await api.plugins.rotate(ref, ticks)) return OK;
+  } catch (err) {
+    console.warn('[plugins] rotate refused', err);
+  }
+  return fail(t('act.err.plugin', { plugin: ref.pluginUuid }));
+}
+
 export const PLUGINS: Record<string, Manejador> = {
   'plugin': async ({ action, api, t }) => {
     const contexto = contextoDeAccion(action);
     if (!contexto) return sinContexto(t);
     const ref = refDe(action, contexto);
     if (!ref) return sinElegir(t);
+
+    const ticks = consumirGiro(action);
+    if (ticks !== null) {
+      return girar(api, ref, ticks, t);
+    }
 
     const r = await bajar(api, ref, t);
     if (!r.ok) return r;

@@ -303,6 +303,7 @@ const api = {
       ipcRenderer.invoke('plugins:setEnabled', uuid, habilitado),
     appear: (ref: PluginRef, visible: boolean): Promise<boolean> => ipcRenderer.invoke('plugins:appear', ref, visible),
     press: (ref: PluginRef, abajo: boolean): Promise<boolean> => ipcRenderer.invoke('plugins:press', ref, abajo),
+    rotate: (ref: PluginRef, ticks: boolean | number): Promise<boolean> => ipcRenderer.invoke('plugins:rotate', ref, ticks),
     openPI: (ref: PluginRef): Promise<boolean> => ipcRenderer.invoke('plugins:openPI', ref),
     onChanged: (handler: (lista: PluginInfo[]) => void): (() => void) => {
       const listener = (_e: unknown, l: PluginInfo[]) => handler(l);

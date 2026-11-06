@@ -78,11 +78,18 @@ export interface Anfitrion {
   enviar(mensaje: Mensaje): void;
   pulsar(contexto: string): void;
   /** Registra el contexto y le manda `willAppear` con sus ajustes. */
-  aparecer(contexto: string, datos: { accion: string; settings: unknown; columna?: number; fila?: number }): void;
+  aparecer(
+    contexto: string,
+    datos: { accion: string; settings: unknown; columna?: number; fila?: number; controlador?: 'Keypad' | 'Encoder' },
+  ): void;
   /** Le manda `willDisappear` y suelta el contexto. */
   desaparecer(contexto: string): void;
   /** Le manda `keyDown` o `keyUp` con los ajustes y coordenadas guardados. */
   tecla(contexto: string, abajo: boolean): void;
+  /** Le manda `dialRotate` (`ticks` con signo) a una acción de encoder/perilla. */
+  girar(contexto: string, ticks: number, pressed?: boolean): void;
+  /** Le manda `dialDown` o `dialUp` a una acción de encoder/perilla. */
+  dial(contexto: string, abajo: boolean): void;
   cerrar(): void;
 }
 
@@ -449,6 +456,8 @@ export function crearAnfitrion(
         aparecer,
         desaparecer,
         tecla,
+        girar,
+        dial,
         cerrar: () => {
           for (const cliente of wss.clients) {
             try {
@@ -482,8 +491,12 @@ export function crearAnfitrion(
    * `willAppear` al plugin con sus ajustes. Las coordenadas son ficticias (el
    * deck no es una rejilla de Stream Deck): donde cae el botón.
    */
-  function aparecer(contexto: string, datos: { accion: string; settings: unknown; columna?: number; fila?: number }): void {
+  function aparecer(
+    contexto: string,
+    datos: { accion: string; settings: unknown; columna?: number; fila?: number; controlador?: 'Keypad' | 'Encoder' },
+  ): void {
     const coordinates = { column: datos.columna ?? 0, row: datos.fila ?? 0 };
+    const controller = datos.controlador ?? 'Keypad';
     contextos.set(contexto, { accion: datos.accion, device: dispositivo.id, coordinates });
     ajustes.set(contexto, datos.settings ?? {});
     enviarAlPlugin({
@@ -491,7 +504,7 @@ export function crearAnfitrion(
       action: datos.accion,
       context: contexto,
       device: dispositivo.id,
-      payload: { settings: datos.settings ?? {}, coordinates, controller: 'Keypad', isInMultiAction: false },
+      payload: { settings: datos.settings ?? {}, coordinates, controller, isInMultiAction: false },
     });
   }
 
@@ -509,6 +522,36 @@ export function crearAnfitrion(
     }
     const payload = { settings: ajustes.get(contexto) ?? {}, coordinates: ctx.coordinates, isInMultiAction: false };
     enviarAlPlugin({ event: abajo ? 'keyDown' : 'keyUp', action: ctx.accion, context: contexto, device: ctx.device, payload });
+  }
+
+  function girar(contexto: string, ticks: number, pressed = false): void {
+    const ctx = contextos.get(contexto);
+    if (!ctx) {
+      console.log(`[plugins] no puedo girar ${contexto}: contexto desconocido`);
+      return;
+    }
+    const pasos = Math.trunc(ticks) || (ticks < 0 ? -1 : 1);
+    const payload = {
+      settings: ajustes.get(contexto) ?? {},
+      coordinates: ctx.coordinates,
+      ticks: pasos,
+      pressed: Boolean(pressed),
+    };
+    enviarAlPlugin({ event: 'dialRotate', action: ctx.accion, context: contexto, device: ctx.device, payload });
+  }
+
+  function dial(contexto: string, abajo: boolean): void {
+    const ctx = contextos.get(contexto);
+    if (!ctx) {
+      console.log(`[plugins] no puedo pulsar dial ${contexto}: contexto desconocido`);
+      return;
+    }
+    const payload = {
+      controller: 'Encoder',
+      settings: ajustes.get(contexto) ?? {},
+      coordinates: ctx.coordinates,
+    };
+    enviarAlPlugin({ event: abajo ? 'dialDown' : 'dialUp', action: ctx.accion, context: contexto, device: ctx.device, payload });
   }
 }
 

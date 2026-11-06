@@ -8,6 +8,7 @@ import {
   habilitarPlugin,
   aparecerPlugin,
   pulsarPlugin,
+  girarPlugin,
   abrirPIPlugin,
 } from '../plugins/gestor';
 
@@ -19,5 +20,6 @@ export function registerPluginsIpc(): void {
   ipcMain.handle('plugins:setEnabled', (_e, uuid: string, habilitado: boolean) => habilitarPlugin(uuid, !!habilitado));
   ipcMain.handle('plugins:appear', (_e, ref: PluginRef, visible: boolean) => aparecerPlugin(ref, !!visible));
   ipcMain.handle('plugins:press', (_e, ref: PluginRef, abajo: boolean) => pulsarPlugin(ref, !!abajo));
+  ipcMain.handle('plugins:rotate', (_e, ref: PluginRef, ticks: number) => girarPlugin(ref, Number(ticks)));
   ipcMain.handle('plugins:openPI', (_e, ref: PluginRef) => abrirPIPlugin(ref));
 }

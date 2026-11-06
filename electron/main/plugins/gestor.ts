@@ -19,5 +19,5 @@
 export { listarPlugins } from './inventario';
 export { instalarPlugin, desinstalarPlugin, habilitarPlugin } from './instalar';
 export { instalarDesdeUrl } from './descarga';
-export { aparecerPlugin, pulsarPlugin, abrirPIPlugin } from './interaccion';
+export { aparecerPlugin, pulsarPlugin, girarPlugin, abrirPIPlugin } from './interaccion';
 export { iniciarGestorPlugins, detenerGestorPlugins } from './cicloVida';

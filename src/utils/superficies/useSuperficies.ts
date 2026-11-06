@@ -13,6 +13,7 @@ import {
 import { paginaDe, type PaginaDispositivo, type VivoPagina } from './paginasSuperficie';
 import { usePluginsSuperficie } from './pluginsSuperficie';
 import { alCambiarVisual } from '../plugins/visual';
+import { anotarGiroPlugin } from '../acciones/plugins';
 import { useAnimacionLcd, registrarPulsoLcd } from './useAnimacionLcd';
 import { useAvisoPerilla, type AvisoPerillaApi } from './useAvisoPerilla';
 import { useWidgetsSuperficie } from './useWidgetsSuperficie';
@@ -344,8 +345,10 @@ export function useSuperficies({
       );
       if (!pagina) return;
       // Dispara el giro y, al volver, enseña el valor en la tecla de encima
-      // (T-HW-21): el detalle sale del resultado de la acción.
+      // (T-HW-21): el detalle sale del resultado de la acción. Si el botón es
+      // de plugin, se anotan los ticks con signo para enviar `dialRotate` (83d).
       const avisarGiro = async (boton: ButtonConfig) => {
+        anotarGiroPlugin(boton.action, entrada.gesto);
         const resultado = await dispararRef.current(boton, { sonido: 'giro', serial: entrada.serial });
         avisosRef.current.avisarDeGiro(entrada.serial, entrada.indice, boton, detalleDe(resultado));
       };
@@ -392,7 +395,8 @@ export function useSuperficies({
       // giro; pulsar (down) suena como siempre. El serial viaja en `opts` para
       // que un botón `page-nav` navegue entre las páginas de **este** dock.
       despacharBoton(entrada, boton, {
-        disparar: dispararRef.current, avisarGiro: (b) => { void avisarGiro(b); },
+        disparar: dispararRef.current,
+        avisarGiro: (b) => { void avisarGiro(b); },
         largo: dispararLargoRef.current, detector: detectorLargo.current,
       });
     }));

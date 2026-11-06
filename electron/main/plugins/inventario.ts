@@ -19,10 +19,12 @@ export function emitir(): void {
 
 function aAccion(manifiesto: Manifiesto, accion: AccionManifiesto, indice: number): PluginInfo['acciones'][number] {
   const reserva = `${manifiesto.uuid}#${indice}`;
+  const esEncoder = accion.controladores.includes('Encoder');
   return {
     uuid: accion.uuid || reserva,
     nombre: accion.nombre || accion.uuid || reserva,
-    esTecla: accion.controladores.includes('Keypad'),
+    esTecla: accion.controladores.includes('Keypad') || esEncoder,
+    esEncoder,
     tienePI: !!(accion.piPath ?? manifiesto.piPath),
     userTitleEnabled: accion.userTitleEnabled,
     tieneImagenPropia: Boolean(accion.icono ?? accion.imagenEstado),

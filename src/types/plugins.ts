@@ -11,8 +11,10 @@ export type EstadoPlugin = 'stopped' | 'starting' | 'running' | 'error';
 export interface PluginAccionInfo {
   uuid: string;
   nombre: string;
-  /** Solo se pueden usar en teclas las que declaran `Keypad`. */
+  /** Se puede asignar en teclas o giros (`Keypad` o `Encoder`). */
   esTecla: boolean;
+  /** Declara `Encoder` (`Knob` en VSD Craft): recibe `dialRotate`/`dialDown`/`dialUp`. */
+  esEncoder?: boolean;
   tienePI: boolean;
   /** `UserTitleEnabled` del manifiesto (defecto `true`): con `false` el título lo pinta el plugin. */
   userTitleEnabled: boolean;
@@ -84,6 +86,8 @@ export interface ApiPlugins {
   /** El botón apareció en pantalla (`willAppear`) o dejó de estarlo (`willDisappear`). */
   appear: (ref: PluginRef, visible: boolean) => Promise<boolean>;
   press: (ref: PluginRef, abajo: boolean) => Promise<boolean>;
+  /** Giro de perilla (`dialRotate` si la acción soporta `Encoder`, o pulso si es `Keypad`). */
+  rotate: (ref: PluginRef, ticks: number) => Promise<boolean>;
   /** Abre el Property Inspector de la acción en una ventana propia. */
   openPI: (ref: PluginRef) => Promise<boolean>;
   onChanged: (handler: (lista: PluginInfo[]) => void) => () => void;

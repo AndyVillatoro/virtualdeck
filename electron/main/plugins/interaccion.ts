@@ -23,7 +23,12 @@ export async function aparecerPlugin(ref: PluginRef, visible: boolean): Promise<
   if (!accion) return false;
   if (visible) {
     const settings = settingsDe(ref);
-    lista.anfitrion.aparecer(ref.contexto, { accion: ref.accionUuid, settings });
+    const soloEncoder = accion.controladores.includes('Encoder') && !accion.controladores.includes('Keypad');
+    lista.anfitrion.aparecer(ref.contexto, {
+      accion: ref.accionUuid,
+      settings,
+      controlador: soloEncoder ? 'Encoder' : 'Keypad',
+    });
     estado.contextos.registrar(ref.contexto, {
       pluginUuid: ref.pluginUuid,
       accionUuid: ref.accionUuid,
@@ -43,7 +48,28 @@ export async function aparecerPlugin(ref: PluginRef, visible: boolean): Promise<
 export async function pulsarPlugin(ref: PluginRef, abajo: boolean): Promise<boolean> {
   const lista = await marchaLista(ref);
   if (!lista || !estado.contextos.tiene(ref.contexto)) return false;
-  lista.anfitrion.tecla(ref.contexto, abajo);
+  const accion = lista.marcha.manifiesto.acciones.find((a) => a.uuid === ref.accionUuid);
+  const soloEncoder = Boolean(accion?.controladores.includes('Encoder') && !accion.controladores.includes('Keypad'));
+  if (soloEncoder) lista.anfitrion.dial(ref.contexto, abajo);
+  else lista.anfitrion.tecla(ref.contexto, abajo);
+  return true;
+}
+
+/**
+ * Giro de perilla sobre una acción de plugin (roadmap 83 d).
+ * Si la acción soporta `Encoder` (`Knob` en VSD Craft), envía `dialRotate` con
+ * los `ticks` con signo; si solo soporta `Keypad`, cae a un pulso `keyDown`/`keyUp`.
+ */
+export async function girarPlugin(ref: PluginRef, ticks: number): Promise<boolean> {
+  if (!Number.isFinite(ticks) || ticks === 0) return false;
+  const lista = await marchaLista(ref);
+  if (!lista || !estado.contextos.tiene(ref.contexto)) return false;
+  const accion = lista.marcha.manifiesto.acciones.find((a) => a.uuid === ref.accionUuid);
+  if (accion?.controladores.includes('Encoder')) {
+    lista.anfitrion.girar(ref.contexto, Math.trunc(ticks) || (ticks < 0 ? -1 : 1));
+  } else {
+    lista.anfitrion.pulsar(ref.contexto);
+  }
   return true;
 }
 
