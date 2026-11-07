@@ -203,20 +203,27 @@ function claveDeFila(p: EntradaGaleria): string {
 
 /**
  * Sanea y deduplica las filas de un manifiesto primario y, opcionalmente,
- * incorpora las entradas de respaldo (como nuevos plugins oficiales de `main`)
- * cuya clave no exista todavía en el primario.
+ * incorpora o actualiza las entradas de plugins oficiales del espejo de `main`
+ * para que su `sha256` y `version` coincidan siempre con el binario publicado.
  */
 function fusionarEntradasGaleria(primarias: unknown[], respaldo: unknown[] = []): EntradaGaleria[] {
+  const mapaRespaldo = new Map<string, EntradaGaleria>();
+  for (const cruda of respaldo) {
+    const entrada = sanearEntrada(cruda as EntradaGaleria);
+    if (entrada && entrada.kind === 'plugin') {
+      mapaRespaldo.set(claveDeFila(entrada), entrada);
+    }
+  }
   const profiles: EntradaGaleria[] = [];
   const vistas = new Set<string>();
   for (const lista of [primarias, respaldo]) {
     for (const cruda of lista) {
-      const entrada = sanearEntrada(cruda as EntradaGaleria);
-      if (!entrada) continue;
-      const clave = claveDeFila(entrada);
+      const saneada = sanearEntrada(cruda as EntradaGaleria);
+      if (!saneada) continue;
+      const clave = claveDeFila(saneada);
       if (vistas.has(clave)) continue;
       vistas.add(clave);
-      profiles.push(entrada);
+      profiles.push(mapaRespaldo.get(clave) ?? saneada);
     }
   }
   return profiles;
