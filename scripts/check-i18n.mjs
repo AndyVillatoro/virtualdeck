@@ -231,6 +231,9 @@ const PERMITIDOS = new Set([
   // pantalla y la UI lo traduce con su diccionario, nunca se enseña tal cual.
   // `hash` pasa solo; `descarga` es palabra española y este barrido la marca.
   'descarga',
+  // Discriminantes internos de `EventoSuperficie` (plan-docks-v015.md §3.4):
+  // identifican eventos HID decodificados en el proceso principal, no texto UI.
+  'tecla:abajo', 'tecla:arriba', 'rueda:abajo', 'rueda:arriba',
 ]);
 
 function pareceEspanol(s) {

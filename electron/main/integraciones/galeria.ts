@@ -18,6 +18,9 @@ import { validarUuid, validarSha256 } from '../plugins/validacion';
 /** Un perfil descargado no debería pasar de esto ni de lejos. */
 const TOPE_BYTES = 2 * 1024 * 1024;
 const MS_ESPERA = 10000;
+/** URL oficial de la tienda y espejo del repo principal para nuevos plugins oficiales. */
+const GALERIA_OFICIAL_URL = 'https://raw.githubusercontent.com/AndyVillatoro/virtualdeck-gallery/main/manifest.json';
+const GALERIA_RESPALDO_OFICIAL_URL = 'https://raw.githubusercontent.com/AndyVillatoro/virtualdeck/main/docs/galeria-ejemplo/manifest.json';
 /** Un README es texto para leer, no un deck: tope aparte y más chico. */
 const TOPE_README = 64 * 1024;
 /** Capturas por entrada: la ficha no muestra más y así un manifiesto no fuerza cien descargas. */
@@ -198,24 +201,41 @@ function claveDeFila(p: EntradaGaleria): string {
   return `${p.kind ?? 'profile'}:${p.id}`;
 }
 
-export async function manifiesto(url: string): Promise<{ ok: true; profiles: EntradaGaleria[] } | { ok: false; error: string }> {
-  try {
-    const j = await traerJson(url) as { profiles?: unknown };
-    if (!Array.isArray(j?.profiles)) return { ok: false, error: tm('gal.badManifest') };
-    const profiles: EntradaGaleria[] = [];
-    const vistas = new Set<string>();
-    for (const p of (j.profiles as EntradaGaleria[])) {
-      const entrada = sanearEntrada(p);
+/**
+ * Sanea y deduplica las filas de un manifiesto primario y, opcionalmente,
+ * incorpora las entradas de respaldo (como nuevos plugins oficiales de `main`)
+ * cuya clave no exista todavía en el primario.
+ */
+function fusionarEntradasGaleria(primarias: unknown[], respaldo: unknown[] = []): EntradaGaleria[] {
+  const profiles: EntradaGaleria[] = [];
+  const vistas = new Set<string>();
+  for (const lista of [primarias, respaldo]) {
+    for (const cruda of lista) {
+      const entrada = sanearEntrada(cruda as EntradaGaleria);
       if (!entrada) continue;
-      // Un manifiesto puede traer la misma fila dos veces (basta con que al
-      // publicarla se añada a una lista que ya la tenía). La primera manda y
-      // el orden se respeta: la tienda enseña una tarjeta por cosa.
       const clave = claveDeFila(entrada);
       if (vistas.has(clave)) continue;
       vistas.add(clave);
       profiles.push(entrada);
     }
-    return { ok: true, profiles };
+  }
+  return profiles;
+}
+
+export async function manifiesto(url: string): Promise<{ ok: true; profiles: EntradaGaleria[] } | { ok: false; error: string }> {
+  try {
+    const j = await traerJson(url) as { profiles?: unknown };
+    if (!Array.isArray(j?.profiles)) return { ok: false, error: tm('gal.badManifest') };
+    let respaldo: unknown[] = [];
+    if (url === GALERIA_OFICIAL_URL) {
+      try {
+        const espejo = await traerJson(GALERIA_RESPALDO_OFICIAL_URL) as { profiles?: unknown };
+        if (Array.isArray(espejo?.profiles)) respaldo = espejo.profiles;
+      } catch {
+        /* Si el espejo falla, la tienda sigue funcionando con el manifiesto primario. */
+      }
+    }
+    return { ok: true, profiles: fusionarEntradasGaleria(j.profiles, respaldo) };
   } catch (e) {
     return { ok: false, error: String((e as Error).message ?? e) };
   }

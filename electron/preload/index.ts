@@ -277,6 +277,8 @@ const api = {
       ipcRenderer.invoke('companion:setPort', puerto),
     setEnabled: (enabled: boolean): Promise<boolean> =>
       ipcRenderer.invoke('companion:setEnabled', enabled),
+    openFolder: (): Promise<string | null> =>
+      ipcRenderer.invoke('companion:openFolder'),
     onStatus: (handler: (status: CompanionStatus) => void): (() => void) => {
       const listener = (_e: unknown, s: CompanionStatus) => handler(s);
       ipcRenderer.on('companion:status', listener);

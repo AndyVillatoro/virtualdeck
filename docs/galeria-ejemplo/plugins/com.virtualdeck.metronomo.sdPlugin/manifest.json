@@ -1,0 +1,51 @@
+{
+  "Actions": [
+    {
+      "Controllers": [
+        "Keypad",
+        "Encoder"
+      ],
+      "DisableAutomaticStates": true,
+      "Name": "Metronomo",
+      "PropertyInspectorPath": "inspector.html",
+      "States": [
+        {
+          "Name": "parado",
+          "FontSize": "12"
+        },
+        {
+          "Name": "corriendo",
+          "FontSize": "12"
+        }
+      ],
+      "SupportedInMultiActions": true,
+      "UUID": "com.virtualdeck.metronomo.pulso",
+      "VisibleInActionsList": true
+    }
+  ],
+  "Author": "VirtualDeck",
+  "Category": "Utilities",
+  "CodePath": "metronomo.html",
+  "CodePathWin": "metronomo.html",
+  "DefaultWindowSize": [
+    320,
+    260
+  ],
+  "Description": "Metronomo de 40 a 240 BPM con compas de 2, 3, 4 o 6 tiempos. Gira la perilla para el tempo y pulsa para arrancar o parar el pulso.",
+  "Icon": "icon.png",
+  "Name": "VirtualDeck: Metronomo",
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10.0.0"
+    }
+  ],
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "0.14.1"
+  },
+  "URL": "https://github.com/AndyVillatoro/virtualdeck",
+  "UUID": "com.virtualdeck.metronomo",
+  "Version": "1.0.0",
+  "CategoryIcon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAACCUlEQVR42u3dMY7CQBBEUWfAGZAIOIFz7n8uExF4RGbJ7ul6QUkr9Sa2vnDNZ/Ast/tjk9wsvz+er/cu4z+a95wv/4bjP5n3nQMAAG4QANygbACUpPASKJaBwgP4iOQBlCSrADcIAG4QANwgHkBJ4gGEBxAeoMZ8+6y7pM2jPcB4c8ab1H0evwoAAAAAAAAARHsAJZAHEB5AeIBiH6FnXR8PULREnXF9VgEAAAAAAAAAHkAJ5AGEBxAewCOAB1ACrQIAAAAAAAAAPIASyAMIDyA8gC1jPIBNo1YBAAAAAAAAAB5ACeQBhAcQHoAKth/Al0G+DQQAAAAAAADYD6AEWgYKAMQjwCNACVQCAQAAAAAAADyAEsgDCA8gPIBHAA+gBFoFAAAAAAAAAHgAJZAHEB5AeICJf7o1+/WV9gDdD11yahgAAAAAAADAuYFKoHMDhQeQQA8w+0dw+vUd8gCzl7D06zu8CgAAAAAAAAC0BUBJCi+BYhkoPIBHwJVbyniAwiWw86ZXAAAAAAAAQDYASmB4CRTLQOEBsrdMdVfNrX8X4Mum8F3BAAAAAAAAgOjfBSiBPIDwAMIDTHp07VWvqFECC1zflS+pAgAAAAAAAGQDoASGl0CxDBQeoParVM2DzwswD39buDkAzAFgHn1egDkPIDyA8ADmPIC5VYA5AMwBYM4DmPMAciBfllSKOoge4eYAAAAASUVORK5CYII="
+}

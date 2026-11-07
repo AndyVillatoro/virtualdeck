@@ -299,6 +299,19 @@ const ESCENARIOS: Escenario[] = [
       comprobar(/^00:5\d$/.test(p.titulo()), `pomodoro: deberia estar en el ultimo medio minuto, dice ${p.titulo()}`);
       await largo(p);
       comprobar(p.titulo() === '01:00', `pomodoro: la pulsacion larga deberia volver al foco, dice ${p.titulo()}`);
+      /* La perilla ajusta los minutos de la fase y pulsarla arranca o pausa. */
+      p.anfitrion.girar(p.contexto, 1);
+      await esperar(250);
+      comprobar(p.titulo() === '02:00', `pomodoro: girar +1 minuto deberia dar 02:00, dice ${p.titulo()}`);
+      comprobar(p.ultimoAjuste().foco === 2, `pomodoro: el foco girado deberia guardarse, guarda ${JSON.stringify(p.ultimoAjuste())}`);
+      p.anfitrion.girar(p.contexto, -1);
+      await esperar(250);
+      comprobar(p.titulo() === '01:00', `pomodoro: girar -1 minuto deberia volver a 01:00, dice ${p.titulo()}`);
+      p.anfitrion.dial(p.contexto, true);
+      await esperar(150);
+      p.anfitrion.dial(p.contexto, false);
+      await esperar(1300);
+      comprobar(/^00:5\d$/.test(p.titulo()), `pomodoro: la perilla deberia arrancar, dice ${p.titulo()}`);
     },
   },
   {
@@ -316,6 +329,19 @@ const ESCENARIOS: Escenario[] = [
       await largo(p);
       comprobar(p.titulo() === '0', `contador: la pulsacion larga deberia reiniciar, dice ${p.titulo()}`);
       comprobar(p.ultimoAjuste().valor === 0, 'contador: el reinicio deberia guardarse en los ajustes');
+      /* Girar suma o resta; pulsar la perilla hace lo mismo que la tecla. */
+      p.anfitrion.girar(p.contexto, 3);
+      await esperar(250);
+      comprobar(p.titulo() === '3', `contador: girar +3 deberia dejar 3, dice ${p.titulo()}`);
+      p.anfitrion.girar(p.contexto, -1);
+      await esperar(250);
+      comprobar(p.titulo() === '2', `contador: girar -1 deberia dejar 2, dice ${p.titulo()}`);
+      p.anfitrion.dial(p.contexto, true);
+      await esperar(150);
+      p.anfitrion.dial(p.contexto, false);
+      await esperar(250);
+      comprobar(p.titulo() === '3', `contador: pulsar la perilla deberia sumar uno, dice ${p.titulo()}`);
+      comprobar(p.ultimoAjuste().valor === 3, 'contador: el valor de la perilla deberia guardarse');
       imagenValida(p, 'contador');
     },
   },
@@ -355,6 +381,17 @@ const ESCENARIOS: Escenario[] = [
       comprobar(vistos.every((n) => n >= 1 && n <= 6), `dado: salio una cara fuera de rango: ${vistos.join(',')}`);
       comprobar(new Set(vistos).size > 1, `dado: ocho tiradas dieron siempre lo mismo (${vistos.join(',')})`);
       comprobar(p.ultimoAjuste().ultimo === vistos[vistos.length - 1], 'dado: el ultimo resultado deberia quedar en los ajustes');
+      /* En una perilla, girar y pulsar tambien tiran. */
+      p.anfitrion.girar(p.contexto, 1);
+      await esperar(250);
+      const girada = Number(p.titulo());
+      comprobar(girada >= 1 && girada <= 6, `dado: girar la perilla deberia tirar, dice ${p.titulo()}`);
+      comprobar(puntosDe(svgDe(p.imagen()), '#FF3B30') === girada, 'dado: el giro deberia dibujar la cara que salio');
+      p.anfitrion.dial(p.contexto, true);
+      await esperar(150);
+      p.anfitrion.dial(p.contexto, false);
+      await esperar(250);
+      comprobar(Number(p.titulo()) >= 1 && Number(p.titulo()) <= 6, `dado: pulsar la perilla deberia tirar, dice ${p.titulo()}`);
       /* Un d20 guardado vuelve a pintarse con sus numeros, no con puntos. */
       p.anfitrion.aparecer(p.contexto + '-d20', { accion: 'com.virtualdeck.dado.dado', settings: { caras: 20, ultimo: 13 } });
       await esperar(250);
@@ -378,6 +415,55 @@ const ESCENARIOS: Escenario[] = [
       comprobar(p.titulo() === esperado, `fecha: hoy deberia ser «${esperado}», dice «${p.titulo()}»`);
       comprobar(puntosDe(svgDe(p.imagen()), '#d7dade') === puntosDeTexto(dia), `fecha: la imagen deberia dibujar el dia ${dia} en puntos`);
       imagenValida(p, 'fecha');
+    },
+  },
+  {
+    uuid: 'com.virtualdeck.metronomo',
+    code: 'metronomo.html',
+    accion: 'com.virtualdeck.metronomo.pulso',
+    ajustes: { bpm: 120, compas: 4 },
+    correr: async (p) => {
+      comprobar(p.titulo() === '120 BPM 4/4', `metronomo: al aparecer deberia decir 120 BPM 4/4, dice ${p.titulo()}`);
+      imagenValida(p, 'metronomo');
+      p.anfitrion.girar(p.contexto, 10);
+      await esperar(250);
+      comprobar(p.titulo() === '130 BPM 4/4', `metronomo: girar +10 deberia dar 130 BPM, dice ${p.titulo()}`);
+      comprobar(p.ultimoAjuste().bpm === 130, `metronomo: el tempo girado deberia guardarse, guarda ${JSON.stringify(p.ultimoAjuste())}`);
+      p.anfitrion.girar(p.contexto, -3);
+      await esperar(250);
+      comprobar(p.titulo() === '127 BPM 4/4', `metronomo: girar -3 deberia dar 127 BPM, dice ${p.titulo()}`);
+      /* Tocar la perilla (dialDown) arranca; otro toque lo para. */
+      p.anfitrion.dial(p.contexto, true);
+      await esperar(250);
+      comprobar(svgDe(p.imagen()).includes('#FF3B30'), 'metronomo: al arrancar deberia encender un tiempo en acento');
+      p.anfitrion.dial(p.contexto, false);
+      await esperar(600);
+      p.anfitrion.dial(p.contexto, true);
+      await esperar(250);
+      comprobar(!svgDe(p.imagen()).includes('#FF3B30'), 'metronomo: parado no deberia quedar ningun tiempo en acento');
+      p.anfitrion.dial(p.contexto, false);
+      /* La tecla hace lo mismo que la perilla: arranca y para. */
+      await corto(p);
+      comprobar(svgDe(p.imagen()).includes('#FF3B30'), 'metronomo: la tecla deberia arrancar el pulso');
+      await corto(p);
+      comprobar(!svgDe(p.imagen()).includes('#FF3B30'), 'metronomo: la tecla deberia parar el pulso');
+    },
+  },
+  {
+    uuid: 'com.virtualdeck.notas-rapidas',
+    code: 'nota.html',
+    accion: 'com.virtualdeck.notas-rapidas.nota',
+    ajustes: { etiqueta: 'pan', color: 'acento', hecho: false },
+    correr: async (p) => {
+      comprobar(p.titulo() === 'PAN', `notas: la etiqueta deberia salir como PAN, dice ${p.titulo()}`);
+      imagenValida(p, 'notas');
+      comprobar(puntosDe(svgDe(p.imagen()), '#FF3B30') > 0, 'notas: pendiente deberia pintar la etiqueta en acento');
+      await corto(p);
+      comprobar(p.ultimoAjuste().hecho === true, 'notas: la pulsacion deberia marcar completado');
+      comprobar(p.ultimoAjuste().etiqueta === 'PAN', 'notas: la pulsacion no puede perder la etiqueta');
+      comprobar(puntosDe(svgDe(p.imagen()), '#FF3B30') > 0, 'notas: completado deberia pintar HECHO en acento');
+      await corto(p);
+      comprobar(p.ultimoAjuste().hecho === false, 'notas: otra pulsacion deberia volver a pendiente');
     },
   },
 ];
@@ -411,7 +497,7 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  console.log('plugins: ok — los 6 registran, pintan y responden a las teclas');
+  console.log('plugins: ok — los 8 registran, pintan y responden a teclas y perillas');
 }
 
 main();

@@ -84,6 +84,7 @@ export interface ApiCompanion {
   setEnabled: (enabled: boolean) => Promise<boolean>;
   regenerateToken: () => Promise<string>;
   setPort: (puerto: number) => Promise<boolean>;
+  openFolder: () => Promise<string | null>;
   onStatus: (handler: (status: CompanionStatus) => void) => () => void;
   onFrame: (handler: (frame: CompanionFrame) => void) => () => void;
   onMetadata: (handler: (meta: CompanionMetadata) => void) => () => void;

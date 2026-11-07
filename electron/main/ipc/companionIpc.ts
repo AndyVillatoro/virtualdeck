@@ -1,4 +1,6 @@
-import { ipcMain } from 'electron';
+import { app, ipcMain, shell } from 'electron';
+import { cpSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { CompanionCommand } from '../../../src/types';
 import {
   obtenerEstadoCompanion,
@@ -51,5 +53,21 @@ export function registerCompanionIpc(): void {
       guardarAjustesCompanion(obtenerAjustesCompanion());
       return ok;
     });
+  });
+
+  ipcMain.handle('companion:openFolder', async () => {
+    const enRecursos = join(process.resourcesPath, 'companion-extension');
+    const enApp = join(app.getAppPath(), 'companion-extension');
+    const origen = existsSync(enRecursos) ? enRecursos : enApp;
+    if (!existsSync(origen)) return null;
+    const destino = join(app.getPath('userData'), 'companion-extension');
+    try {
+      cpSync(origen, destino, { recursive: true, force: true });
+      await shell.openPath(destino);
+      return destino;
+    } catch {
+      await shell.openPath(origen);
+      return origen;
+    }
   });
 }

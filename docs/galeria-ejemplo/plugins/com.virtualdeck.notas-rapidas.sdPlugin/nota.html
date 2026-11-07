@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nota rapida</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Nota rapida de VirtualDeck.
+       *
+       * Cada pulsacion alterna entre pendiente y completada. La etiqueta corta
+       * y el color de estado salen del inspector; las tres cosas se guardan con
+       * `setSettings`, asi que el estado sobrevive a cambiar de pagina o de
+       * perfil.
+       */
+      (function () {
+        const COLORES = { acento: true, punto: true, tenue: true };
+        const LARGO_MAXIMO = 8;
+        const botones = new Map();
+
+        /** La etiqueta en las letras que sabe dibujar `punto.js` (5×7, sin acentos). */
+        function etiquetaDe(valor) {
+          const limpio = String(valor == null ? '' : valor)
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9 .:/+,\-?]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, LARGO_MAXIMO)
+            .trim();
+          return limpio || 'NOTA';
+        }
+
+        function colorDe(valor) {
+          return COLORES[valor] ? valor : 'acento';
+        }
+
+        function ajustesDe(mensaje) {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          return {
+            etiqueta: etiquetaDe(ajustes.etiqueta),
+            color: colorDe(ajustes.color),
+            hecho: !!ajustes.hecho,
+          };
+        }
+
+        function estadoDe(contexto, ajustes) {
+          if (!botones.has(contexto)) {
+            botones.set(contexto, ajustes || {
+              etiqueta: 'NOTA',
+              color: 'acento',
+              hecho: false,
+            });
+          }
+          return botones.get(contexto);
+        }
+
+        /** La imagen: la nota y su estado en puntos, con el marco DOT. */
+        function pintar(contexto) {
+          const estado = botones.get(contexto);
+          if (!estado) return;
+          const svg = Puntos.svg(
+            [
+              { t: estado.etiqueta, c: estado.hecho ? 'tenue' : estado.color },
+              { t: estado.hecho ? 'HECHO' : 'PENDIENTE', c: estado.hecho ? estado.color : 'tenue' },
+            ],
+            { led: estado.hecho ? estado.color : 'tenue', marca: estado.hecho },
+          );
+          const marco = '<rect x="8" y="8" width="240" height="240" fill="none" stroke="#26292e" stroke-width="2"/>';
+          StreamDeck.setTitle(contexto, estado.etiqueta);
+          StreamDeck.setImage(
+            contexto,
+            'data:image/svg+xml;base64,' + Puntos.base64(svg.replace('</svg>', marco + '</svg>')),
+          );
+        }
+
+        function guardar(contexto) {
+          const estado = botones.get(contexto);
+          if (!estado) return;
+          pintar(contexto);
+          StreamDeck.setSettings(contexto, {
+            etiqueta: estado.etiqueta,
+            color: estado.color,
+            hecho: estado.hecho,
+          });
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          botones.set(mensaje.context, ajustesDe(mensaje));
+          pintar(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          botones.set(mensaje.context, ajustesDe(mensaje));
+          pintar(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          botones.delete(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('keyDown', (mensaje) => {
+          const estado = estadoDe(mensaje.context, ajustesDe(mensaje));
+          estado.hecho = !estado.hecho;
+          StreamDeck.setState(mensaje.context, estado.hecho ? 1 : 0);
+          guardar(mensaje.context);
+        });
+      })();
+    </script>
+  </body>
+</html>

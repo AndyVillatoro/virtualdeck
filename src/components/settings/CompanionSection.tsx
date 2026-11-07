@@ -207,6 +207,13 @@ export function CompanionSection({ accent }: { accent: string }) {
     }
   }, [api, puerto]);
 
+  const abrirCarpetaExtension = useCallback(async () => {
+    if (!api?.companion?.openFolder) return;
+    try {
+      await api.companion.openFolder();
+    } catch {}
+  }, [api]);
+
   const activo = estado?.activo ?? true;
 
   return (
@@ -256,6 +263,21 @@ export function CompanionSection({ accent }: { accent: string }) {
       }}>
         <div style={{ fontFamily: VD.mono, fontSize: 8, color: VD.textMuted, lineHeight: 1.4 }}>
           {t('set.companionInstallHint')}
+        </div>
+        <div>
+          <button
+            onClick={abrirCarpetaExtension}
+            title={t('set.companionOpenFolderHint')}
+            style={{
+              ...estiloBotonMiniAjustes(VD, accent),
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <DotGlyphIcon glyph="FOLDER" size={10} color={VD.accent} />
+            {t('set.companionOpenFolder')}
+          </button>
         </div>
       </div>
 

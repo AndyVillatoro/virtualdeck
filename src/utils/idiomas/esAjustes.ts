@@ -231,6 +231,8 @@ export const ES_AJUSTES: Dict = {
   'set.companionRegenTokenHint': 'Genera un token nuevo. La extensión tendrá que emparejarse otra vez.',
   'set.companionCopy': 'COPIAR',
   'set.companionCopied': 'COPIADO',
+  'set.companionOpenFolder': 'ABRIR CARPETA DE EXTENSIÓN',
+  'set.companionOpenFolderHint': 'Prepara una copia lista para cargar en el navegador y abre su carpeta en el Explorador.',
   'set.musicPanel': 'PANEL DE MUSICA',
   'set.sensors': 'SENSORES (LIBRE HARDWARE MONITOR)',
   'set.lhmPath': 'RUTA DE LHM (vacío = se busca sola)',

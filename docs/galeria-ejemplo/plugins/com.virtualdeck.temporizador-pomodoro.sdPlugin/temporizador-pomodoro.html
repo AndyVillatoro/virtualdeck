@@ -10,15 +10,16 @@
     <script>
       /* Temporizador pomodoro de VirtualDeck: 25 de foco y 5 de pausa.
        *
-       * Pulsacion corta: arranca o pausa. Pulsacion larga: vuelve al inicio del
-       * foco. Los minutos de cada fase salen de los ajustes del boton (los
-       * cambia el Property Inspector) y al terminar el foco se encadena la
-       * pausa sola.
+       * Tecla: pulsacion corta arranca o pausa; pulsacion larga vuelve al
+       * inicio del foco. Perilla: girar ajusta los minutos de la fase actual
+       * (foco o pausa) y pulsarla hace lo mismo que la tecla. Los minutos de
+       * cada fase salen de los ajustes del boton (los cambia el Property
+       * Inspector) y al terminar el foco se encadena la pausa sola.
        */
       (function () {
         const botones = new Map();
+        const pulsado = new Map();
         const LARGO_MS = 700;
-        let pulsado = 0;
 
         function minutosDe(valor, defecto) {
           const n = Math.round(Number(valor));
@@ -36,7 +37,8 @@
 
         function estadoDe(contexto, ajustes) {
           if (!botones.has(contexto)) {
-            botones.set(contexto, { fase: 'foco', restante: ajustes.foco * 60000, fin: 0, ajustes });
+            const base = ajustes || { foco: 25, descanso: 5, encadenar: true };
+            botones.set(contexto, { fase: 'foco', restante: base.foco * 60000, fin: 0, ajustes: base });
           }
           return botones.get(contexto);
         }
@@ -103,9 +105,66 @@
           pintar(contexto);
         }
 
+        function guardarAjustes(contexto, estado) {
+          StreamDeck.setSettings(contexto, {
+            foco: estado.ajustes.foco,
+            descanso: estado.ajustes.descanso,
+            encadenar: estado.ajustes.encadenar,
+          });
+        }
+
+        /**
+         * Suma o resta minutos a la fase actual.
+         *
+         * Si el temporizador corre, el final se mueve lo mismo; si esta en
+         * pausa, la cifra guardada se mueve dentro del nuevo total. Los topes
+         * son los del inspector: 180 de foco y 60 de pausa.
+         */
+        function ajustarMinutos(contexto, delta) {
+          const estado = estadoDe(contexto);
+          const foco = estado.fase === 'foco';
+          const clave = foco ? 'foco' : 'descanso';
+          const tope = foco ? 180 : 60;
+          const antes = estado.ajustes[clave];
+          const despues = Math.max(1, Math.min(tope, antes + delta));
+          if (despues === antes) return;
+          estado.ajustes[clave] = despues;
+          const cambio = (despues - antes) * 60000;
+          if (estado.fin) {
+            estado.fin += cambio;
+          } else {
+            const total = despues * 60000;
+            const lleno = estado.restante <= 0 || estado.restante >= antes * 60000;
+            estado.restante = lleno ? total : Math.max(0, Math.min(total, estado.restante + cambio));
+          }
+          guardarAjustes(contexto, estado);
+          pintar(contexto);
+        }
+
+        function abajo(contexto) {
+          if (!pulsado.has(contexto)) pulsado.set(contexto, Date.now());
+          StreamDeck.setState(contexto, 1);
+        }
+
+        function arriba(contexto, mensaje) {
+          const estado = estadoDe(contexto);
+          const desde = pulsado.get(contexto) || Date.now();
+          pulsado.delete(contexto);
+          StreamDeck.setState(contexto, 0);
+          const largo = Date.now() - desde;
+          const ajustes = ajustesDe(mensaje);
+          /* Del inspector solo interesan los minutos; si la perilla acaba de
+           * cambiarlos, el payload puede venir un paso por detras. */
+          estado.ajustes.encadenar = ajustes.encadenar;
+          if (largo >= LARGO_MS) reiniciar(contexto);
+          else if (estado.fin) pausar(contexto);
+          else arrancar(contexto);
+        }
+
         StreamDeck.addEventListener('willAppear', (mensaje) => {
           const ajustes = ajustesDe(mensaje);
-          estadoDe(mensaje.context, ajustes);
+          const estado = estadoDe(mensaje.context, ajustes);
+          estado.ajustes = ajustes;
           pintar(mensaje.context);
         });
 
@@ -118,22 +177,29 @@
 
         StreamDeck.addEventListener('willDisappear', (mensaje) => {
           botones.delete(mensaje.context);
+          pulsado.delete(mensaje.context);
         });
 
         StreamDeck.addEventListener('keyDown', (mensaje) => {
-          if (!pulsado) pulsado = Date.now();
-          StreamDeck.setState(mensaje.context, 1);
+          abajo(mensaje.context);
         });
 
         StreamDeck.addEventListener('keyUp', (mensaje) => {
-          const estado = estadoDe(mensaje.context);
-          estado.ajustes = ajustesDe(mensaje);
-          const largo = Date.now() - pulsado;
-          pulsado = 0;
-          StreamDeck.setState(mensaje.context, 0);
-          if (largo >= LARGO_MS) reiniciar(mensaje.context);
-          else if (estado.fin) pausar(mensaje.context);
-          else arrancar(mensaje.context);
+          arriba(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialDown', (mensaje) => {
+          abajo(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('dialUp', (mensaje) => {
+          arriba(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialRotate', (mensaje) => {
+          const pasos = Math.trunc(Number(mensaje.payload && mensaje.payload.ticks)) || 0;
+          if (!pasos) return;
+          ajustarMinutos(mensaje.context, pasos);
         });
 
         /* Un solo reloj: al acabarse la fase se encadena la siguiente si toca. */

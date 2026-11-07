@@ -4,6 +4,33 @@ Registro de traspaso exigido por `CLAUDE.md` (protocolo, canal 2). Cada turno ac
 
 Turnos anteriores archivados en [`docs/archivo/HANDOFF-hasta-2026-10-05.md`](archivo/HANDOFF-hasta-2026-10-05.md) y [`docs/archivo/HANDOFF-hasta-2026-10-09.md`](archivo/HANDOFF-hasta-2026-10-09.md).
 
+## Turno 2026-11-07 (T-GAL-01, T-PLG-08, T-EXT-03, T-DOCK-05) — Galería en vivo, 8 plugins oficiales (4 con Encoder), empaquetador Companion Chrome/Firefox y protocolo Elgato Plus/Neo
+
+* **Quién:** Supervisor (`w15:p1`, Antigravity) + delegación paralela en Herdr (`w18:p1` OpenCode DeepSeek V4.1 Flash, `w19:p1` OpenCode MiMo-V2.6-Flash, `w1A:p1` Antigravity Claude Sonnet 5.5).
+* **Rama:** `main`.
+
+### 1. `T-GAL-01` + apertura directa de carpeta Companion (`w15:p1`)
+- `scripts/check-perfiles.mjs`: validación recursiva de `cycleSteps` y soporte completo para entradas `kind: 'plugin'` (verifica `uuid`, `sha256` hex de 64 caracteres, firma binaria ZIP `PK\x03\x04` y digest SHA-256 real contra el manifiesto remoto). `npm run check:galeria` pasa 10/10 en verde contra `virtualdeck-gallery`.
+- `electron/main/integraciones/galeria.ts`: `fusionarEntradasGaleria` fusiona el manifiesto espejo oficial del repo principal cuando se consulta la galería oficial para que los plugins nuevos estén disponibles de inmediato.
+- `electron/main/ipc/companionIpc.ts`, `electron/preload/index.ts`, `src/types/companion.ts`, `src/components/settings/CompanionSection.tsx`: nuevo canal `companion:openFolder` (y `companion-extension` en `extraResources` de `package.json`) que copia la extensión fuera de `WindowsApps` a `%APPDATA%/VirtualDeck/companion-extension` y abre el Explorador en un clic.
+
+### 2. `T-PLG-08` — 8 plugins oficiales y soporte `Encoder` (`w18:p1`)
+- `com.virtualdeck.contador.sdPlugin`, `com.virtualdeck.temporizador-pomodoro.sdPlugin` y `com.virtualdeck.dado.sdPlugin` actualizados a `1.1.0` con `Controllers: ["Keypad", "Encoder"]` (`dialRotate`, `dialDown`, `dialUp`).
+- Dos plugins oficiales nuevos en estilo DOT Matrix:
+  - `com.virtualdeck.metronomo.sdPlugin` (`Controllers: ["Keypad", "Encoder"]`, ajuste de BPM 40–240 con perilla y pulso visual DOT).
+  - `com.virtualdeck.notas-rapidas.sdPlugin` (`Controllers: ["Keypad"]`, nota corta con estado pendiente/completado persistente).
+- Verificado con `npm run build:plugins`, `npx tsx docs/galeria-ejemplo/plugins/pruebas/probar-zip.ts` (8/8) y `npx tsx docs/galeria-ejemplo/plugins/pruebas/probar-protocolo.ts` (8/8).
+
+### 3. `T-EXT-03` — Empaquetador ZIP reproducible para Companion (`w19:p1`)
+- `companion-extension/manifest.firefox.json`: manifiesto MV3 adaptado para Firefox (`browser_specific_settings.gecko.id = "companion@virtualdeck.app"`, `background.scripts`).
+- `scripts/empaquetar-extension.mjs` (`npm run build:extension`) y `scripts/probar-empaquetar-extension.ts`: genera `dist/extension/virtualdeck-companion-chrome.zip` y `dist/extension/virtualdeck-companion-firefox.zip` de forma 100 % determinista sin dependencias externas.
+
+### 4. `T-DOCK-05` — Fase 2 de Docks: Elgato Stream Deck Plus y Neo (`w1A:p1`)
+- `electron/main/superficies/elgato/modelos.ts`: descriptores `STREAM_DECK_PLUS` (`0x0fd9:0x0084`, `verificado: false`) y `STREAM_DECK_NEO` (`0x0fd9:0x009a`, `verificado: false`).
+- `electron/main/superficies/elgato/protocoloElgato.ts`: paginación HID Gen2 de 1024 bytes para teclas (`0x02, 0x07`), tira táctil LCD (`0x02, 0x0c`), infobar Neo (`0x02, 0x0b`), feature reports de brillo/reset y decodificador puro `interpretarEntradaElgato` (teclas, touchpoints Neo, toques/arrastres de tira y giros/pulsaciones de encoders).
+- `electron/main/superficies/elgato/driverElgato.ts`: adaptador `DriverSuperficie` con cola de escritura serializada sobre transporte inyectable `TransporteHidElgato`.
+- Verificado con `npx tsx scripts/probar-protocolo-elgato.ts` (68/68) y `npx tsx scripts/probar-driver-elgato.ts` (31/31).
+
 ## Turno 2026-10-10 (T-DEU-02) — Partir `rgb.ts`, `useEstadoEditor.ts` y `PanelInspectorControl.tsx` por responsabilidad
 
 * **Quién:** opencode `space-bunny-free`. **Rama:** `main`, sin commit (lo pide el encargo).

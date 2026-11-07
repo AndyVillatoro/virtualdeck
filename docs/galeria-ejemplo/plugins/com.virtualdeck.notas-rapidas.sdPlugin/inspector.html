@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nota rapida</title>
+    <style>
+      /* Property Inspector de la nota rapida.
+       *
+       * Lo abre VirtualDeck (`PropertyInspectorPath` de la accion). Se registra
+       * como PI en el mismo puerto del plugin y guarda con `setSettings`, que el
+       * anfitrion reenvia al plugin como `didReceiveSettings`.
+       *
+       * Estetica DOT: fondo OLED, superficie y bordes de la paleta, grilla de
+       * 4px y sin nada de blanco puro.
+       */
+      :root {
+        color-scheme: dark;
+        --fondo: #070809;
+        --superficie: #111315;
+        --borde: #26292e;
+        --texto: #d7dade;
+        --tenue: #8a8f96;
+        --acento: #ff3b30;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: var(--fondo);
+        color: var(--texto);
+        font: 12px/20px ui-monospace, Consolas, monospace;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: var(--acento);
+      }
+      label {
+        display: block;
+        margin: 12px 0 4px;
+        color: var(--tenue);
+        letter-spacing: 1px;
+      }
+      input[type='text'],
+      select {
+        width: 100%;
+        height: 32px;
+        padding: 0 8px;
+        background: var(--superficie);
+        color: var(--texto);
+        border: 1px solid var(--borde);
+        border-radius: 4px;
+        font: inherit;
+      }
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--acento);
+      }
+      .nota {
+        margin-top: 16px;
+        color: var(--tenue);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>NOTA RAPIDA</h1>
+    <label for="etiqueta">ETIQUETA (8 LETRAS)</label>
+    <input id="etiqueta" type="text" maxlength="8" value="NOTA" />
+    <label for="color">COLOR DE ESTADO</label>
+    <select id="color">
+      <option value="acento" selected>ACENTO</option>
+      <option value="punto">CLARO</option>
+      <option value="tenue">ATENUADO</option>
+    </select>
+    <p class="nota">Una pulsacion alterna entre pendiente y completado.</p>
+    <script src="sdk.js"></script>
+    <script>
+      (function () {
+        const etiqueta = document.getElementById('etiqueta');
+        const color = document.getElementById('color');
+        const COLORES = { acento: true, punto: true, tenue: true };
+        const LARGO_MAXIMO = 8;
+        let actuales = { hecho: false };
+
+        function etiquetaDe(valor) {
+          const limpio = String(valor == null ? '' : valor)
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9 .:/+,\-?]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, LARGO_MAXIMO)
+            .trim();
+          return limpio || 'NOTA';
+        }
+
+        function guardar() {
+          const texto = etiquetaDe(etiqueta.value);
+          const tinta = COLORES[color.value] ? color.value : 'acento';
+          etiqueta.value = texto;
+          color.value = tinta;
+          actuales = { ...actuales, etiqueta: texto, color: tinta };
+          StreamDeck.setSettings(undefined, actuales);
+        }
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          actuales = {
+            etiqueta: etiquetaDe(ajustes.etiqueta),
+            color: COLORES[ajustes.color] ? ajustes.color : 'acento',
+            hecho: !!ajustes.hecho,
+          };
+          etiqueta.value = actuales.etiqueta;
+          color.value = actuales.color;
+        });
+
+        for (const campo of [etiqueta, color]) campo.addEventListener('change', guardar);
+        /* El anfitrion responde a este `getSettings` con lo que haya guardado. */
+        StreamDeck.getSettings(undefined);
+      })();
+    </script>
+  </body>
+</html>

@@ -102,8 +102,8 @@ const entradas = leido.profiles as unknown as Entrada[];
   const paginas = entradas.filter((entrada) => entrada.kind === 'page');
   /* Lo que no trae `kind` es perfil (formato v1): `tipoDe` devuelve indefinido. */
   const perfiles = entradas.filter((entrada) => entrada.kind === undefined);
-  comprobar(plugins.length === 6, `el cargador ve ${plugins.length} plugins y se esperan 6`);
-  comprobar(entradas.length === 8, `el cargador ve ${entradas.length} entradas y se esperan 8 (2 de antes + 6 plugins)`);
+  comprobar(plugins.length === 8, `el cargador ve ${plugins.length} plugins y se esperan 8`);
+  comprobar(entradas.length === 10, `el cargador ve ${entradas.length} entradas y se esperan 10 (2 de antes + 8 plugins)`);
   comprobar(perfiles.length === 1 && paginas.length === 1, 'los perfiles y paginas de antes deberian seguir en su sitio');
 
   for (const plugin of plugins) {
@@ -130,7 +130,7 @@ const entradas = leido.profiles as unknown as Entrada[];
     process.exitCode = 1;
     return;
   }
-  console.log('plugins: ok — el cargador ve 6 plugins en `profiles`, con sha256 y uuid');
+  console.log('plugins: ok — el cargador ve 8 plugins en `profiles`, con sha256 y uuid');
 }
 
 main();

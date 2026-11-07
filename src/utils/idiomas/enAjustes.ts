@@ -231,6 +231,8 @@ export const EN_AJUSTES: Dict = {
   'set.companionRegenTokenHint': 'Generates a new token. The extension will have to pair again.',
   'set.companionCopy': 'COPY',
   'set.companionCopied': 'COPIED',
+  'set.companionOpenFolder': 'OPEN EXTENSION FOLDER',
+  'set.companionOpenFolderHint': 'Prepares a ready-to-load copy of the extension and opens its folder in Explorer.',
   'set.musicPanel': 'MUSIC PANEL',
   'set.sensors': 'SENSORS (LIBRE HARDWARE MONITOR)',
   'set.lhmPath': 'LHM PATH (empty = auto-detect)',

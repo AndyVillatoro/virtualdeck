@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Metronomo</title>
+  </head>
+  <body>
+    <script src="sdk.js"></script>
+    <script src="punto.js"></script>
+    <script>
+      /* Metronomo de VirtualDeck.
+       *
+       * Tecla o pulsacion de la perilla: arranca o para el pulso. Girar la
+       * perilla sube o baja el tempo (40 a 240 BPM, un paso por tick). El
+       * compas sale del inspector (2/4, 3/4, 4/4 o 6/8) y se ve como una fila de
+       * puntos: el que suena se enciende en acento y el LED parpadea con el.
+       *
+       * Todo se pinta en la matriz DOT del proyecto, con marco, sin emojis.
+       */
+      (function () {
+        const MIN_BPM = 40;
+        const MAX_BPM = 240;
+        const COMPASES = { 2: true, 3: true, 4: true, 6: true };
+        const botones = new Map();
+
+        function bpmDe(valor) {
+          const n = Math.round(Number(valor));
+          if (!Number.isFinite(n)) return 120;
+          return Math.max(MIN_BPM, Math.min(MAX_BPM, n));
+        }
+
+        function compasDe(valor) {
+          const n = Math.round(Number(valor));
+          return COMPASES[n] ? n : 4;
+        }
+
+        function ajustesDe(mensaje) {
+          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
+          return { bpm: bpmDe(ajustes.bpm), compas: compasDe(ajustes.compas) };
+        }
+
+        function etiquetaCompas(compas) {
+          return compas === 6 ? '6/8' : compas + '/4';
+        }
+
+        function estadoDe(contexto, ajustes) {
+          if (!botones.has(contexto)) {
+            const base = ajustes || { bpm: 120, compas: 4 };
+            botones.set(contexto, {
+              bpm: base.bpm,
+              compas: base.compas,
+              corriendo: false,
+              siguiente: 0,
+              tic: 0,
+              apagon: 0,
+            });
+          }
+          return botones.get(contexto);
+        }
+
+        /** La imagen: el BPM en puntos, la fila de tiempos y el marco DOT. */
+        function pintar(contexto, destello) {
+          const estado = botones.get(contexto);
+          if (!estado) return;
+          const svg = Puntos.svg(
+            [{ t: String(estado.bpm), c: 'punto' }],
+            { led: destello ? 'acento' : 'tenue', marca: estado.corriendo },
+          );
+          const tiempos = [];
+          for (let i = 0; i < estado.compas; i++) {
+            const activo = estado.corriendo && i === estado.tic - 1;
+            const cx = 128 + (i - (estado.compas - 1) / 2) * 28;
+            tiempos.push(
+              `<circle cx="${cx}" cy="220" r="6" fill="${activo ? Puntos.COLORES.acento : Puntos.COLORES.tenue}"/>`,
+            );
+          }
+          const marco = '<rect x="8" y="8" width="240" height="240" fill="none" stroke="#26292e" stroke-width="2"/>';
+          const imagen = svg.replace('</svg>', tiempos.join('') + marco + '</svg>');
+          StreamDeck.setTitle(contexto, estado.bpm + ' BPM ' + etiquetaCompas(estado.compas));
+          StreamDeck.setImage(contexto, 'data:image/svg+xml;base64,' + Puntos.base64(imagen));
+        }
+
+        function apagarDestello(contexto, estado) {
+          if (estado.apagon) clearTimeout(estado.apagon);
+          estado.apagon = 0;
+          pintar(contexto, false);
+        }
+
+        function destellar(contexto, estado) {
+          pintar(contexto, true);
+          if (estado.apagon) clearTimeout(estado.apagon);
+          const duracion = Math.max(40, Math.min(100, Math.round(30000 / estado.bpm)));
+          estado.apagon = setTimeout(() => {
+            estado.apagon = 0;
+            if (botones.get(contexto) === estado) pintar(contexto, false);
+          }, duracion);
+        }
+
+        function alternar(contexto, mensaje) {
+          const ajustes = ajustesDe(mensaje);
+          const estado = estadoDe(contexto, ajustes);
+          estado.bpm = ajustes.bpm;
+          estado.compas = ajustes.compas;
+          estado.corriendo = !estado.corriendo;
+          estado.tic = 0;
+          estado.siguiente = 0;
+          StreamDeck.setState(contexto, estado.corriendo ? 1 : 0);
+          if (!estado.corriendo) {
+            apagarDestello(contexto, estado);
+            return;
+          }
+          estado.tic = 1;
+          estado.siguiente = Date.now() + 60000 / estado.bpm;
+          destellar(contexto, estado);
+        }
+
+        StreamDeck.addEventListener('willAppear', (mensaje) => {
+          const ajustes = ajustesDe(mensaje);
+          const estado = estadoDe(mensaje.context, ajustes);
+          estado.bpm = ajustes.bpm;
+          estado.compas = ajustes.compas;
+          pintar(mensaje.context, false);
+        });
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          const ajustes = ajustesDe(mensaje);
+          const estado = estadoDe(mensaje.context, ajustes);
+          estado.bpm = ajustes.bpm;
+          estado.compas = ajustes.compas;
+          if (estado.corriendo) estado.siguiente = Date.now() + 60000 / estado.bpm;
+          pintar(mensaje.context, false);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          const estado = botones.get(mensaje.context);
+          if (estado && estado.apagon) clearTimeout(estado.apagon);
+          botones.delete(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('keyDown', (mensaje) => {
+          alternar(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialDown', (mensaje) => {
+          alternar(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialRotate', (mensaje) => {
+          const pasos = Math.trunc(Number(mensaje.payload && mensaje.payload.ticks)) || 0;
+          if (!pasos) return;
+          const ajustes = ajustesDe(mensaje);
+          const estado = estadoDe(mensaje.context, ajustes);
+          const bpm = Math.max(MIN_BPM, Math.min(MAX_BPM, estado.bpm + pasos));
+          if (bpm === estado.bpm) return;
+          estado.bpm = bpm;
+          estado.siguiente = estado.corriendo ? Date.now() + 60000 / bpm : 0;
+          StreamDeck.setSettings(mensaje.context, { bpm, compas: estado.compas });
+          pintar(mensaje.context, false);
+        });
+
+        /* El reloj del pulso: un tic por tiempo, sin sonido (el visual manda). */
+        setInterval(() => {
+          const ahora = Date.now();
+          for (const contexto of [...botones.keys()]) {
+            const estado = botones.get(contexto);
+            if (!estado.corriendo || ahora < estado.siguiente) continue;
+            estado.tic = estado.tic >= estado.compas ? 1 : estado.tic + 1;
+            estado.siguiente = ahora + 60000 / estado.bpm;
+            destellar(contexto, estado);
+          }
+        }, 20);
+      })();
+    </script>
+  </body>
+</html>

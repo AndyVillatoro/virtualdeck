@@ -1,4 +1,4 @@
-/* Prueba de los seis `.streamDeckPlugin` de `docs/galeria-ejemplo/plugins/`.
+/* Prueba de los ocho `.streamDeckPlugin` de `docs/galeria-ejemplo/plugins/`.
  *
  * Pasa cada ZIP por lo mismo que pasa en la app: `extraerZipSeguro` (que es la
  * parte de instalacion que decide) y despues `leerManifiesto` sobre lo
@@ -44,7 +44,7 @@ function entradasDeGaleria(): { uuid: string; sha256: string; url: string; icono
   return manifiesto.profiles.filter((entrada: { kind?: string }) => entrada.kind === 'plugin');
 }
 
-async function pruebaPlugin(entrada: { uuid: string; sha256: string; url: string; icono: string }): Promise<void> {
+async function pruebaPlugin(entrada: { uuid: string; sha256: string; url: string; icono: string }): Promise<string[]> {
   const zip = join(DIST, `${entrada.uuid}.streamDeckPlugin`);
   const carpeta = mkdtempSync(join(tmpdir(), 'vd-plugin-'));
   try {
@@ -54,7 +54,7 @@ async function pruebaPlugin(entrada: { uuid: string; sha256: string; url: string
     const resultado = await extraerZipSeguro(zip, carpeta);
     if (resultado.ok !== true) {
       comprobar(false, `${entrada.uuid}: extraerZipSeguro devolvio ${JSON.stringify(resultado)}`);
-      return;
+      return [];
     }
     comprobar(validarUuid(resultado.uuid), `${entrada.uuid}: el ZIP no trae un uuid valido`);
     comprobar(resultado.uuid === entrada.uuid, `${entrada.uuid}: el ZIP instala otro plugin`);
@@ -62,7 +62,7 @@ async function pruebaPlugin(entrada: { uuid: string; sha256: string; url: string
     const lectura = leerManifiesto(resultado.carpeta);
     if (lectura.estado !== 'ok') {
       comprobar(false, `${entrada.uuid}: el manifiesto no vale (${lectura.codigo})`);
-      return;
+      return [];
     }
     const manifiesto = lectura.manifiesto;
     comprobar(manifiesto.tipo === 'html', `${entrada.uuid}: CodePath ${manifiesto.codePath} no es HTML`);
@@ -104,6 +104,7 @@ async function pruebaPlugin(entrada: { uuid: string; sha256: string; url: string
     );
 
     console.log(`  ok ${entrada.uuid} (${manifiesto.nombre} ${manifiesto.version}, ${manifiesto.acciones.length} accion/es)`);
+    return accion.controladores;
   } finally {
     rmSync(carpeta, { recursive: true, force: true });
   }
@@ -112,20 +113,23 @@ async function pruebaPlugin(entrada: { uuid: string; sha256: string; url: string
 async function main(): Promise<void> {
   console.log('plugins: empaquetado y manifiesto');
   const entradas = entradasDeGaleria();
-  comprobar(entradas.length === 6, `el manifiesto anuncia ${entradas.length} plugins y se esperan 6`);
+  comprobar(entradas.length === 8, `el manifiesto anuncia ${entradas.length} plugins y se esperan 8`);
+  let conEncoder = 0;
   for (const entrada of entradas) {
     comprobar(entrada.url.endsWith(`${entrada.uuid}.streamDeckPlugin`), `${entrada.uuid}: la url no apunta a su ZIP`);
     comprobar(entrada.minAppVersion === '0.14.1', `${entrada.uuid}: minAppVersion ${entrada.minAppVersion}`);
     comprobar(entrada.license === 'MIT', `${entrada.uuid}: licencia ${entrada.license}`);
     comprobar(!!entrada.icono, `${entrada.uuid}: sin icono del catalogo DOT`);
-    await pruebaPlugin(entrada);
+    const controladores = await pruebaPlugin(entrada);
+    if (controladores.includes('Encoder')) conEncoder += 1;
   }
+  comprobar(conEncoder >= 4, `solo ${conEncoder} plugins declaran Encoder y se esperan al menos 4`);
   if (fallos.length) {
     console.error(`\nplugins: ${fallos.length} fallo(s)`);
     process.exitCode = 1;
     return;
   }
-  console.log('plugins: ok — 6 ZIP pasan extraerZipSeguro y leerManifiesto');
+  console.log(`plugins: ok — 8 ZIP pasan extraerZipSeguro y leerManifiesto (${conEncoder} con Encoder)`);
 }
 
 main();

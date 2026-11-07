@@ -1,17 +1,19 @@
 # Plugins propios de VirtualDeck
 
-Seis plugins HTML del protocolo de Stream Deck que instala el gestor
+Ocho plugins HTML del protocolo de Stream Deck que instala el gestor
 (`electron/main/plugins/`) y que la tienda ofrece con un clic. Sin dependencias:
 cada paquete es su carpeta y tres o cuatro archivos.
 
 | Plugin | UUID | Qué hace |
 |---|---|---|
 | Cronometro | `com.virtualdeck.cronometro` | Pulsación corta arranca o pausa; larga (700 ms) reinicia. |
-| Temporizador pomodoro | `com.virtualdeck.temporizador-pomodoro` | 25 de foco y 5 de pausa, ajustables en su Property Inspector; encadena la pausa. |
-| Contador | `com.virtualdeck.contador` | Suma uno por pulsación, la larga lo reinicia, y el valor se guarda en los ajustes del botón. |
+| Temporizador pomodoro | `com.virtualdeck.temporizador-pomodoro` | 25 de foco y 5 de pausa, ajustables en su Property Inspector o con la perilla; encadena la pausa. |
+| Contador | `com.virtualdeck.contador` | Suma con cada pulsación o giro de perilla, la larga lo reinicia, y el valor se guarda en los ajustes del botón. |
 | Reloj mundial | `com.virtualdeck.reloj-mundial` | La hora de la zona IANA que se elija en su Property Inspector, con su desfase con UTC. |
-| Dado | `com.virtualdeck.dado` | Tira un d6 (con puntos) o un d20 (con la matriz de números). |
+| Dado | `com.virtualdeck.dado` | Tira un d6 (con puntos) o un d20 (con la matriz de números) al pulsar o girar la perilla. |
 | Fecha | `com.virtualdeck.fecha` | Día, mes y semana ISO del año. No necesita ajustes. |
+| Metrónomo | `com.virtualdeck.metronomo` | De 40 a 240 BPM y compás de 2, 3, 4 o 6 tiempos; la perilla cambia el tempo y la pulsación arranca o para. |
+| Notas rápidas | `com.virtualdeck.notas-rapidas` | Una nota corta por tecla, con etiqueta y color de estado; la pulsación la marca pendiente o completada. |
 
 ## Cómo está cada paquete
 
@@ -21,14 +23,19 @@ com.virtualdeck.<nombre>.sdPlugin/
                      CategoryIcon, Actions, OS, SDKVersion 2
   <code>.html        el plugin: el script de este paquete, nada mas
   pi.html            Property Inspector (solo pomodoro y reloj)
-  sdk.js             el puente del protocolo (identico en los seis)
-  punto.js           la matriz 5×7 y el SVG de puntos (identico en los seis)
+  inspector.html     Property Inspector (metronomo y notas rapidas)
+  sdk.js             el puente del protocolo (identico en los ocho)
+  punto.js           la matriz 5×7 y el SVG de puntos (identico en los ocho)
   icon.png           128×128, generado desde el catálogo DOT del proyecto
 ```
 
 `sdk.js` y `punto.js` son copias: un paquete tiene que poder instalarse solo,
-como los de Elgato. Si se tocan, se copian a los seis
+como los de Elgato. Si se tocan, se copian a los ocho
 (`Copy-Item ...\sdk.js` a cada carpeta) y se vuelve a empaquetar.
+
+Contador, pomodoro, dado y metrónomo declaran `Encoder` en su acción, además de
+`Keypad`: girar la perilla les manda `dialRotate` (`payload.ticks` con signo) y
+pulsarla manda `dialDown`/`dialUp`.
 
 ## Estética
 
@@ -68,15 +75,16 @@ npx tsx docs/galeria-ejemplo/plugins/pruebas/probar-protocolo.ts
   manifiesto de la galería y las imágenes por `resolverImagenVisual`.
 - **probar-manifiesto**: el manifiesto de la galería por el cargador de verdad
   (`manifiesto()` y `resumirRiesgoPlugin` de `electron/main/integraciones/galeria.ts`), con
-  `net.fetch` sustituido por el fichero local. Comprueba que ve **6** entradas
+  `net.fetch` sustituido por el fichero local. Comprueba que ve **8** entradas
   `kind: 'plugin'` con su sha256 y su uuid, que el sha256 es el del ZIP de
   verdad y que los dos perfiles de antes siguen ahí.
 - **probar-protocolo**: levanta el anfitrión de verdad (`crearAnfitrion`) y le
   mete el código real de cada plugin en un contexto de `node:vm` con un
   `WebSocket` de puente: registro, `willAppear`, teclas cortas y largas,
-  `setTitle`/`setImage`/`setSettings`. Comprueba el glifo pintado contando los
-  `<circle>` de la imagen (la cara del dado son sus puntos; el día, sus
-  dígitos). `VD_TEST_VERBOSE=1` enseña el registro del anfitrión.
+  perillas (`dialRotate`, `dialDown`, `dialUp`), `setTitle`/`setImage`/
+  `setSettings`. Comprueba el glifo pintado contando los `<circle>` de la
+  imagen (la cara del dado son sus puntos; el día, sus dígitos).
+  `VD_TEST_VERBOSE=1` enseña el registro del anfitrión.
 
 Lo que **no** cubren: el Property Inspector (necesita la ventana real de
 Electron) y el encadenado de fases del pomodoro (son 25 minutos).

@@ -34,9 +34,9 @@ const VERSION_MINIMA = '0.14.1';
 const LADO_ICONO = 128;
 
 /**
- * Los seis plugins. `code` es el `CodePath`, `icono` el id del catalogo DOT (que
- * va tambien en la entrada de la galeria) y `etiqueta`/`descripcion` lo que se
- * ve en la tienda.
+ * Los ocho plugins. `code` es el `CodePath`, `icono` el id del catalogo DOT (que
+ * va tambien en la entrada de la galeria), `version` la del manifiesto y
+ * `etiqueta`/`descripcion` lo que se ve en la tienda.
  */
 const PLUGINS = [
   {
@@ -44,6 +44,7 @@ const PLUGINS = [
     etiqueta: 'Cronometro',
     code: 'cronometro.html',
     icono: 'stopwatch',
+    version: '1.0.0',
     etiquetas: ['plugin', 'utilidad', 'cronometro'],
     descripcion: 'Cronometro con arranque, pausa y reinicio con pulsacion larga. La hora se pinta en puntos.',
   },
@@ -52,22 +53,25 @@ const PLUGINS = [
     etiqueta: 'Temporizador pomodoro',
     code: 'temporizador-pomodoro.html',
     icono: 'hourglass-high',
+    version: '1.1.0',
     etiquetas: ['plugin', 'utilidad', 'productividad'],
-    descripcion: '25 de foco y 5 de pausa, con los minutos de cada fase ajustables desde el inspector del boton.',
+    descripcion: '25 de foco y 5 de pausa ajustables desde el inspector o girando la perilla, con la pausa encadenada.',
   },
   {
     uuid: 'com.virtualdeck.contador',
     etiqueta: 'Contador',
     code: 'contador.html',
     icono: 'hash',
+    version: '1.1.0',
     etiquetas: ['plugin', 'utilidad', 'contador'],
-    descripcion: 'Suma uno con cada pulsacion, se reinicia con la pulsacion larga y guarda el valor con el boton.',
+    descripcion: 'Suma con cada pulsacion o giro de perilla, se reinicia con la pulsacion larga y guarda el valor con el boton.',
   },
   {
     uuid: 'com.virtualdeck.reloj-mundial',
     etiqueta: 'Reloj mundial',
     code: 'reloj-mundial.html',
     icono: 'world',
+    version: '1.0.0',
     etiquetas: ['plugin', 'utilidad', 'reloj'],
     descripcion: 'La hora de la zona horaria que elijas en el inspector del boton, con su desfase con UTC.',
   },
@@ -76,16 +80,36 @@ const PLUGINS = [
     etiqueta: 'Dado',
     code: 'dado.html',
     icono: 'dice',
+    version: '1.1.0',
     etiquetas: ['plugin', 'utilidad', 'juego'],
-    descripcion: 'Tira un dado de 6 o de 20 con cada pulsacion; el ultimo resultado se guarda con el boton.',
+    descripcion: 'Tira un dado de 6 o de 20 con cada pulsacion o giro de perilla; el ultimo resultado se guarda con el boton.',
   },
   {
     uuid: 'com.virtualdeck.fecha',
     etiqueta: 'Fecha',
     code: 'fecha.html',
     icono: 'calendar-week',
+    version: '1.0.0',
     etiquetas: ['plugin', 'utilidad', 'reloj'],
     descripcion: 'El dia y el mes con la semana ISO del ano. No necesita ajustes.',
+  },
+  {
+    uuid: 'com.virtualdeck.metronomo',
+    etiqueta: 'Metronomo',
+    code: 'metronomo.html',
+    icono: 'music',
+    version: '1.0.0',
+    etiquetas: ['plugin', 'utilidad', 'musica'],
+    descripcion: 'Metronomo de 40 a 240 BPM con compas de 2, 3, 4 o 6 tiempos; la perilla cambia el tempo y la pulsacion arranca o para.',
+  },
+  {
+    uuid: 'com.virtualdeck.notas-rapidas',
+    etiqueta: 'Notas rapidas',
+    code: 'nota.html',
+    icono: 'pin',
+    version: '1.0.0',
+    etiquetas: ['plugin', 'utilidad', 'productividad'],
+    descripcion: 'Una nota corta por tecla con etiqueta y color de estado; una pulsacion la marca pendiente o completada.',
   },
 ];
 
@@ -314,7 +338,7 @@ function main() {
       label: plugin.etiqueta,
       author: '@AndyVillatoro',
       description: plugin.descripcion,
-      version: '1.0.0',
+      version: plugin.version,
       url: `${BASE_CRUDO}/${plugin.uuid}.streamDeckPlugin`,
       sha256,
       uuid: plugin.uuid,

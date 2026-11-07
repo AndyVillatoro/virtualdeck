@@ -7,6 +7,7 @@
 //
 // Uso: node scripts/check-perfiles.mjs <carpeta-o-archivo> [...]
 
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -45,6 +46,13 @@ function revisarAccion(a, donde) {
     for (const [k, sub] of (sb.actions ?? []).entries()) revisarAccion(sub, `${donde}.cuadrante[${i}].accion[${k}]`);
     if (sb.actionToggleOff) revisarAccion(sb.actionToggleOff, `${donde}.cuadrante[${i}] (apagar)`);
     if (sb.longPressAction) revisarAccion(sb.longPressAction, `${donde}.cuadrante[${i}] (mantener)`);
+  }
+  for (const [i, paso] of (a.cycleSteps ?? []).entries()) {
+    if (!paso || typeof paso !== 'object') continue;
+    revisarAccion(paso.action, `${donde}.ciclo[${i}]`);
+    for (const [k, sub] of (paso.actions ?? []).entries()) revisarAccion(sub, `${donde}.ciclo[${i}].accion[${k}]`);
+    if (paso.actionToggleOff) revisarAccion(paso.actionToggleOff, `${donde}.ciclo[${i}] (apagar)`);
+    if (paso.longPressAction) revisarAccion(paso.longPressAction, `${donde}.ciclo[${i}] (mantener)`);
   }
 }
 
@@ -155,6 +163,29 @@ if (rutas.length === 0) { console.error('uso: node scripts/check-perfiles.mjs <c
 // conexion y se marca `exitCode` en vez de matar el proceso a mano.
 const SIN_KEEPALIVE = { headers: { connection: 'close' } };
 
+function revisarEntradaPlugin(e, bytes) {
+  const id = e.uuid ?? e.id ?? e.url ?? 'plugin?';
+  if (typeof e.uuid !== 'string' || !/^[a-z0-9-]+(\.[a-z0-9-]+){2,}$/.test(e.uuid)) {
+    problemas.push(`${id}: uuid de plugin invalido '${e.uuid ?? ''}'`);
+  }
+  if (typeof e.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(e.sha256)) {
+    problemas.push(`${id}: sha256 de plugin invalido`);
+  }
+  if (typeof e.url !== 'string' || !e.url.endsWith('.streamDeckPlugin')) {
+    problemas.push(`${id}: url de plugin no termina en .streamDeckPlugin`);
+  }
+  if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
+    problemas.push(`${id}: el paquete no empieza por cabecera ZIP (PK\\x03\\x04)`);
+    return;
+  }
+  if (typeof e.sha256 === 'string' && /^[a-f0-9]{64}$/i.test(e.sha256)) {
+    const shaReal = createHash('sha256').update(bytes).digest('hex');
+    if (shaReal !== e.sha256.toLowerCase()) {
+      problemas.push(`${id}: sha256 real (${shaReal.slice(0, 12)}…) no coincide con el manifiesto (${e.sha256.slice(0, 12)}…)`);
+    }
+  }
+}
+
 async function revisarManifiesto(url) {
   let man;
   try {
@@ -168,13 +199,18 @@ async function revisarManifiesto(url) {
   }
   let vistos = 0;
   for (const e of man.profiles) {
-    if (!e.url) { problemas.push(`${url}: la entrada '${e.id ?? '?'}' no trae url`); continue; }
+    const etiqueta = e.id ?? e.uuid ?? '?';
+    if (!e.url) { problemas.push(`${url}: la entrada '${etiqueta}' no trae url`); continue; }
     try {
       const r = await fetch(e.url, SIN_KEEPALIVE);
-      if (!r.ok) { problemas.push(`${e.id}: HTTP ${r.status} en ${e.url}`); continue; }
-      revisarPerfil(e.id ?? e.url, await r.text());
+      if (!r.ok) { problemas.push(`${etiqueta}: HTTP ${r.status} en ${e.url}`); continue; }
+      if (e.kind === 'plugin') {
+        revisarEntradaPlugin(e, Buffer.from(await r.arrayBuffer()));
+      } else {
+        revisarPerfil(etiqueta, await r.text());
+      }
       vistos++;
-    } catch (err) { problemas.push(`${e.id}: no se pudo bajar — ${err.message}`); }
+    } catch (err) { problemas.push(`${etiqueta}: no se pudo bajar — ${err.message}`); }
   }
   return vistos;
 }

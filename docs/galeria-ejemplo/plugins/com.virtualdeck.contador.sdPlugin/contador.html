@@ -10,19 +10,37 @@
     <script>
       /* Contador de VirtualDeck.
        *
-       * Pulsacion corta: suma uno. Pulsacion larga (700 ms): vuelve a cero. El
-       * valor viaja en los ajustes del boton (`setSettings`), que es donde el
-       * anfitrion lo persiste: asi el numero sobrevive a reiniciar la
-       * aplicacion y se ve igual en las tres superficies.
+       * Tecla: pulsacion corta suma uno. Pulsacion larga (700 ms): vuelve a
+       * cero. Perilla: girar suma o resta un paso por tick; pulsar la perilla
+       * hace lo mismo que la tecla (corto suma, largo reinicia). El valor viaja
+       * en los ajustes del boton (`setSettings`), que es donde el anfitrion lo
+       * persiste: asi el numero sobrevive a reiniciar la aplicacion y se ve
+       * igual en las tres superficies.
        */
       (function () {
         const MAXIMO = 9999;
         const LARGO_MS = 700;
-        let pulsado = 0;
+        /* El valor vive aqui entre eventos: el payload de la perilla puede
+         * traer los ajustes de un giro anterior si se gira muy rapido. */
+        const valores = new Map();
+        const pulsado = new Map();
 
         function valorDe(ajustes) {
           const n = Math.round(Number(ajustes && ajustes.valor));
           return Number.isFinite(n) && n >= 0 ? Math.min(MAXIMO, n) : 0;
+        }
+
+        function acotar(valor) {
+          return Math.max(0, Math.min(MAXIMO, valor));
+        }
+
+        function ajustesDe(mensaje) {
+          return (mensaje.payload && mensaje.payload.settings) || {};
+        }
+
+        function valorEn(contexto, ajustes) {
+          if (!valores.has(contexto)) valores.set(contexto, valorDe(ajustes));
+          return valores.get(contexto);
         }
 
         function pintar(contexto, valor) {
@@ -40,32 +58,68 @@
         }
 
         function guardar(contexto, valor) {
-          pintar(contexto, valor);
+          const acotado = acotar(valor);
+          valores.set(contexto, acotado);
+          pintar(contexto, acotado);
           /* Los ajustes son el payload del `setSettings`, sin envoltura. */
-          StreamDeck.setSettings(contexto, { valor });
+          StreamDeck.setSettings(contexto, { valor: acotado });
+        }
+
+        function abajo(contexto) {
+          if (!pulsado.has(contexto)) pulsado.set(contexto, Date.now());
+          StreamDeck.setState(contexto, 1);
+        }
+
+        function arriba(contexto, mensaje) {
+          const desde = pulsado.get(contexto) || Date.now();
+          pulsado.delete(contexto);
+          StreamDeck.setState(contexto, 0);
+          const valor = valorEn(contexto, ajustesDe(mensaje));
+          if (Date.now() - desde >= LARGO_MS) {
+            guardar(contexto, 0);
+            return;
+          }
+          guardar(contexto, valor >= MAXIMO ? 0 : valor + 1);
         }
 
         StreamDeck.addEventListener('willAppear', (mensaje) => {
-          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
-          pintar(mensaje.context, valorDe(ajustes));
+          const valor = valorDe(ajustesDe(mensaje));
+          valores.set(mensaje.context, valor);
+          pintar(mensaje.context, valor);
+        });
+
+        StreamDeck.addEventListener('didReceiveSettings', (mensaje) => {
+          const valor = valorDe(ajustesDe(mensaje));
+          valores.set(mensaje.context, valor);
+          pintar(mensaje.context, valor);
+        });
+
+        StreamDeck.addEventListener('willDisappear', (mensaje) => {
+          valores.delete(mensaje.context);
+          pulsado.delete(mensaje.context);
         });
 
         StreamDeck.addEventListener('keyDown', (mensaje) => {
-          if (!pulsado) pulsado = Date.now();
-          StreamDeck.setState(mensaje.context, 1);
+          abajo(mensaje.context);
         });
 
         StreamDeck.addEventListener('keyUp', (mensaje) => {
-          const largo = Date.now() - pulsado;
-          pulsado = 0;
-          StreamDeck.setState(mensaje.context, 0);
-          const ajustes = (mensaje.payload && mensaje.payload.settings) || {};
-          const valor = valorDe(ajustes);
-          if (largo >= LARGO_MS) {
-            guardar(mensaje.context, 0);
-            return;
-          }
-          guardar(mensaje.context, valor >= MAXIMO ? 0 : valor + 1);
+          arriba(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialDown', (mensaje) => {
+          abajo(mensaje.context);
+        });
+
+        StreamDeck.addEventListener('dialUp', (mensaje) => {
+          arriba(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialRotate', (mensaje) => {
+          const pasos = Math.trunc(Number(mensaje.payload && mensaje.payload.ticks)) || 0;
+          if (!pasos) return;
+          const valor = valorEn(mensaje.context, ajustesDe(mensaje));
+          guardar(mensaje.context, valor + pasos);
         });
       })();
     </script>

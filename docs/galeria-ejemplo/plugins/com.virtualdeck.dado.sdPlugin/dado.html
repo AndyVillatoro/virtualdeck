@@ -10,10 +10,10 @@
     <script>
       /* Dado de VirtualDeck: d6 o d20 segun los ajustes del boton.
        *
-       * Cada pulsacion tira. El d6 se pinta con sus puntos (uno por cara, en la
-       * retícula de un dado de verdad) y el d20 con su numero; el ultimo
-       * resultado se guarda en los ajustes para que no se pierda al cambiar de
-       * pagina.
+       * Cada pulsacion tira; en una perilla, tambien cada giro y cada pulsacion
+       * del dial. El d6 se pinta con sus puntos (uno por cara, en la reticula
+       * de un dado de verdad) y el d20 con su numero; el ultimo resultado se
+       * guarda en los ajustes para que no se pierda al cambiar de pagina.
        */
       (function () {
         const CARAS = { 6: true, 20: true };
@@ -90,6 +90,21 @@
 
         StreamDeck.addEventListener('keyUp', (mensaje) => {
           StreamDeck.setState(mensaje.context, 0);
+          tirar(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialDown', (mensaje) => {
+          StreamDeck.setState(mensaje.context, 1);
+        });
+
+        StreamDeck.addEventListener('dialUp', (mensaje) => {
+          StreamDeck.setState(mensaje.context, 0);
+          tirar(mensaje.context, mensaje);
+        });
+
+        StreamDeck.addEventListener('dialRotate', (mensaje) => {
+          const pasos = Math.trunc(Number(mensaje.payload && mensaje.payload.ticks)) || 0;
+          if (!pasos) return;
           tirar(mensaje.context, mensaje);
         });
       })();
