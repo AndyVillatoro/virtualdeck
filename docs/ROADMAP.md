@@ -39,7 +39,7 @@ Auditoría sobre el código (no solo el doc):
   ver [galeria.md](galeria.md)). El **repo público existe** (4 perfiles v1, validados
   con `npm run check:galeria`); diferido a otra versión dejarlo bien completo
   (versionado v2, más perfiles).
-- **Publicado / Versión actual:** **v0.15.0** enviada a certificación en Microsoft Store (2026-11-05, en espera de confirmación de Partner Center; v0.14.1 publicada). Canal único oficial.
+- **Publicado / Versión actual:** **v0.15.0** en Microsoft Store (MSIX firmado, publicada el 2026-11-07). Canal único oficial.
   Incluye soporte de plugins de Stream Deck con catálogo lateral arrastrable, extensión compañera MV3, conmutador de audio, acción `cycle`, reposo de docks y reducción del 32 % del bundle inicial.
 
 
